@@ -30,7 +30,7 @@ import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 
@@ -50,7 +50,7 @@ public class SocketTransportConnection implements ITransportConnection
         _socketConnectorFactory = socketConnectorFactory;
     }
 
-    public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail)
+    public void connect(AMQProtocolHandlerImpl protocolHandler, BrokerDetails brokerDetail)
             throws IOException
     {
         ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));

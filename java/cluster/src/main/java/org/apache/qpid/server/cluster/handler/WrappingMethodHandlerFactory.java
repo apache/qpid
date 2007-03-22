@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.cluster.handler;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.server.cluster.MethodHandlerFactory;
 import org.apache.qpid.server.cluster.MethodHandlerRegistry;
 import org.apache.qpid.server.state.AMQState;
@@ -66,12 +66,12 @@ public abstract class WrappingMethodHandlerFactory implements MethodHandlerFacto
         return registry;
     }
 
-    private <A extends AMQMethodBody, B extends Class<A>> void wrap(MethodHandlerRegistry r, B type, A frame)
+    private <A extends AMQMethodBodyImpl, B extends Class<A>> void wrap(MethodHandlerRegistry r, B type, A frame)
     {
         r.addHandler(type, new WrappedListener<A>(r.getHandler(frame), _pre, _post));
     }
 
-    protected static class FrameDescriptor<A extends AMQMethodBody, B extends Class<A>>
+    protected static class FrameDescriptor<A extends AMQMethodBodyImpl, B extends Class<A>>
     {
         protected final A instance;
         protected final B type;

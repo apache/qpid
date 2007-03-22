@@ -65,7 +65,7 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
 
         QueueDeleteBody body = evt.getMethod();
         AMQQueue queue;
-        if(body.queue == null)
+        if(body.getQueue() == null)
         {
              AMQChannel channel = session.getChannel(evt.getChannelId());
 
@@ -79,31 +79,31 @@ public class QueueDeleteHandler  implements StateAwareMethodListener<QueueDelete
         }
         else
         {
-            queue = queueRegistry.getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.getQueue());
         }
 
         if(queue == null)
         {
             if(_failIfNotFound)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
             }
         }
         else
         {
-            if(body.ifEmpty && !queue.isEmpty())
+            if(body.getIfEmpty() && !queue.isEmpty())
             {
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is not empty." );
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is not empty." );
             }
-            else if(body.ifUnused && !queue.isUnused())
+            else if(body.getIfUnused() && !queue.isUnused())
             {                
                 // TODO - Error code
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is still used." );
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is still used." );
 
             }
             else
             {
-                int purged = queue.delete(body.ifUnused, body.ifEmpty);
+                int purged = queue.delete(body.getIfUnused(), body.getIfEmpty());
                 store.removeQueue(queue.getName());
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

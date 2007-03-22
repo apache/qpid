@@ -18,32 +18,30 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
-public class BasicDeliverMethodHandler implements StateAwareMethodListener
+public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener
 {
-    private static final Logger _logger = Logger.getLogger(BasicDeliverMethodHandler.class);
+    private static final ConnectionOpenOkMethodHandler _instance = new ConnectionOpenOkMethodHandler();
 
-    private static final BasicDeliverMethodHandler _instance = new BasicDeliverMethodHandler();
-
-    public static BasicDeliverMethodHandler getInstance()
+    public static ConnectionOpenOkMethodHandler getInstance()
     {
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    private ConnectionOpenOkMethodHandler()
     {
-        final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), (BasicDeliverBody) evt.getMethod());
-        _logger.debug("New JmsDeliver method received");
-        protocolSession.unprocessedMessageReceived(msg);
     }
+
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    {
+        stateManager.changeState(AMQState.CONNECTION_OPEN);
+    }
+
 }

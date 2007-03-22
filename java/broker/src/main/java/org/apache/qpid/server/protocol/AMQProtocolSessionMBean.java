@@ -24,6 +24,7 @@ import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
+import javax.management.NotCompliantMBeanException;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -39,6 +40,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.amqp_8_0.ConnectionCloseBodyImpl;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.management.AMQManagedObject;
@@ -65,7 +67,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
             new AMQShortString("Broker Management Console has closed the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
-    public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws JMException
+    public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws NotCompliantMBeanException, OpenDataException
     {
         super(ManagedConnection.class, ManagedConnection.TYPE);
         _session = session;
@@ -74,6 +76,8 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         _name = jmxEncode(new StringBuffer(remote), 0).toString();
         init();
     }
+
+
     static
     {
         try
@@ -94,7 +98,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     {
 
         _channelType = new CompositeType("Channel", "Channel Details", _channelAtttibuteNames,
-                _channelAtttibuteNames, _channelAttributeTypes);
+                                         _channelAtttibuteNames, _channelAttributeTypes);
         _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
     }
 
@@ -215,18 +219,11 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     public void closeConnection() throws JMException
     {        
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame response = ConnectionCloseBody.createAMQFrame(0,
-            _session.getProtocolMajorVersion(),
-            _session.getProtocolMinorVersion(),	// AMQP version (major, minor)
-            0,	// classId
-            0,	// methodId
-        	AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
+        ConnectionCloseBody connectionCloseBody =
+                createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
             BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION    // replyText
             );
-        _session.writeFrame(response);
+        _session.writeFrame(new AMQFrame(0,connectionCloseBody));
 
         try
         {
@@ -236,6 +233,11 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         {
             throw new MBeanException(ex, ex.toString());
         }
+    }
+
+    private ConnectionCloseBody createConnectionCloseBody(int code, AMQShortString replyText)
+    {
+        return new ConnectionCloseBodyImpl(code,replyText,0,0);
     }
 
     @Override

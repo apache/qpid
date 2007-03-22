@@ -25,7 +25,7 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.IoSession;
 import org.apache.qpid.AMQDisconnectedException;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
 import org.apache.qpid.client.state.AMQStateManager;
 
 /**
@@ -42,7 +42,7 @@ public class FailoverHandler implements Runnable
     private static final Logger _logger = Logger.getLogger(FailoverHandler.class);
 
     private final IoSession _session;
-    private AMQProtocolHandler _amqProtocolHandler;
+    private AMQProtocolHandlerImpl _amqProtocolHandler;
 
     /**
      * Used where forcing the failover host
@@ -54,7 +54,7 @@ public class FailoverHandler implements Runnable
      */
     private int _port;
 
-    public FailoverHandler(AMQProtocolHandler amqProtocolHandler, IoSession session)
+    public FailoverHandler(AMQProtocolHandlerImpl amqProtocolHandler, IoSession session)
     {
         _amqProtocolHandler = amqProtocolHandler;
         _session = session;

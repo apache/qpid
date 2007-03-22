@@ -21,6 +21,7 @@
 package org.apache.qpid.server.state;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 

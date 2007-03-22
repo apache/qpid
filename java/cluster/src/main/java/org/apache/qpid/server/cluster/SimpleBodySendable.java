@@ -18,16 +18,16 @@
 package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQBodyImpl;
 import org.apache.qpid.framing.AMQFrame;
 
 /**
  */
 public class SimpleBodySendable implements Sendable
 {
-    private final AMQBody _body;
+    private final AMQBodyImpl _body;
 
-    public SimpleBodySendable(AMQBody body)
+    public SimpleBodySendable(AMQBodyImpl body)
     {
         _body = body;
     }

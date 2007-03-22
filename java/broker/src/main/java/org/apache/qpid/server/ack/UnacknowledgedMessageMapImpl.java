@@ -209,7 +209,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 
                 if(consumerTag != null)
                 {
-                    msg.writeDeliver(protocolSession, channelId, deliveryTag, consumerTag);
+                    protocolSession.getProtocolOutputConverter().writeDeliver(msg, channelId, deliveryTag, consumerTag);
                 }
             }
         }

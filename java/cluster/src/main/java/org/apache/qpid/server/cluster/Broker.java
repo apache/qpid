@@ -22,7 +22,7 @@ package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.cluster.util.LogMessage;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -88,7 +88,7 @@ abstract class Broker extends SimpleMemberHandle implements Member
      * @param response the response received
      * @return  true if the response matched an outstanding request
      */
-    protected synchronized boolean handleResponse(int channel, AMQMethodBody response)
+    protected synchronized boolean handleResponse(int channel, AMQMethodBodyImpl response)
     {
         ResponseHandler request = _requests.get(channel);
         if (request == null)
@@ -174,7 +174,7 @@ abstract class Broker extends SimpleMemberHandle implements Member
     /**
      * Start connection process, including replay
      */
-    abstract void connectAsynch(Iterable<AMQMethodBody> msgs);
+    abstract void connectAsynch(Iterable<AMQMethodBodyImpl> msgs);
 
     /**
      * Replay messages to the remote peer this instance represents. These messages
@@ -182,7 +182,7 @@ abstract class Broker extends SimpleMemberHandle implements Member
      *
      * @param msgs
      */
-    abstract void replay(Iterable<AMQMethodBody> msgs);
+    abstract void replay(Iterable<AMQMethodBodyImpl> msgs);
 
     /**
      * establish connection, handling redirect if required...
@@ -200,7 +200,7 @@ abstract class Broker extends SimpleMemberHandle implements Member
             this.channel = channel;
         }
 
-        public void responded(AMQMethodBody response)
+        public void responded(AMQMethodBodyImpl response)
         {
             request.responseReceived(Broker.this, response);
             _requests.remove(channel);
@@ -228,7 +228,7 @@ abstract class Broker extends SimpleMemberHandle implements Member
             this.channel = channel;
         }
 
-        public void responded(AMQMethodBody response)
+        public void responded(AMQMethodBodyImpl response)
         {
             handler.responded(response);
             _requests.remove(channel);

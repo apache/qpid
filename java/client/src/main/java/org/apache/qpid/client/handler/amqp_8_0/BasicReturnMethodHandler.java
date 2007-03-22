@@ -18,31 +18,34 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
-public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener
+public class BasicReturnMethodHandler implements StateAwareMethodListener
 {
-    private static final ConnectionOpenOkMethodHandler _instance = new ConnectionOpenOkMethodHandler();
+    private static final Logger _logger = Logger.getLogger(BasicReturnMethodHandler.class);
 
-    public static ConnectionOpenOkMethodHandler getInstance()
+    private static final BasicReturnMethodHandler _instance = new BasicReturnMethodHandler();
+
+    public static BasicReturnMethodHandler getInstance()
     {
         return _instance;
     }
 
-    private ConnectionOpenOkMethodHandler()
+    public void methodReceived(AMQStateManager stateManager,  AMQMethodEvent evt) throws AMQException
     {
-    }
+        _logger.debug("New JmsBounce method received");
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
+        final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(),(BasicReturnBody)evt.getMethod());
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
-    {
-        stateManager.changeState(AMQState.CONNECTION_OPEN);
+        protocolSession.unprocessedMessageReceived(msg);
     }
-
 }

@@ -59,6 +59,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.AMQInvalidArgumentException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverSupport;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.JMSBytesMessage;
@@ -68,41 +69,12 @@ import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
+import org.apache.qpid.client.protocol.ProtocolOutputHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.AccessRequestBody;
-import org.apache.qpid.framing.AccessRequestOkBody;
-import org.apache.qpid.framing.BasicAckBody;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicConsumeOkBody;
-import org.apache.qpid.framing.BasicRecoverBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.ChannelCloseOkBody;
-import org.apache.qpid.framing.ChannelFlowBody;
-import org.apache.qpid.framing.ExchangeBoundBody;
-import org.apache.qpid.framing.ExchangeBoundOkBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
-import org.apache.qpid.framing.ExchangeDeclareOkBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.framing.QueueBindBody;
-import org.apache.qpid.framing.QueueDeclareBody;
-import org.apache.qpid.framing.QueueDeleteBody;
-import org.apache.qpid.framing.QueueDeleteOkBody;
-import org.apache.qpid.framing.TxCommitBody;
-import org.apache.qpid.framing.TxCommitOkBody;
-import org.apache.qpid.framing.TxRollbackBody;
-import org.apache.qpid.framing.TxRollbackOkBody;
-import org.apache.qpid.framing.QueueBindOkBody;
-import org.apache.qpid.framing.QueueDeclareOkBody;
-import org.apache.qpid.framing.ChannelFlowOkBody;
-import org.apache.qpid.framing.BasicRecoverOkBody;
-import org.apache.qpid.framing.BasicRejectBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -197,6 +169,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private boolean _suspended;
 
     private final Object _suspensionLock = new Object();
+    private static final AMQShortString CHANNEL_CLOSE_REPLY_TEXT = new AMQShortString("JMS client closing channel");
 
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
@@ -271,11 +244,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             if (message.getDeliverBody() != null)
             {
-                final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.getDeliverBody().consumerTag);
+                final BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(message.getDeliverBody().getConsumerTag());
 
                 if (consumer == null)
                 {
-                    _logger.warn("Received a message from queue " + message.getDeliverBody().consumerTag + " without a handler - ignoring...");
+                    _logger.warn("Received a message from queue " + message.getDeliverBody().getConsumerTag() + " without a handler - ignoring...");
                     _logger.warn("Consumers that exist: " + _consumers);
                     _logger.warn("Session hashcode: " + System.identityHashCode(this));
                 }
@@ -513,14 +486,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 i.next().acknowledgeLastDelivered();
             }
 
-            // Commits outstanding messages sent and outstanding acknowledgements.
-            // TODO: Be aware of possible changes to parameter order as versions change.
-            final AMQProtocolHandler handler = getProtocolHandler();
+            TxCommitBody commitBody = getAMQMethodFactory().createTxCommit();
+            sendCommandReceiveResponse(commitBody);
 
-            handler.syncWrite(TxCommitBody.createAMQFrame(_channelId,
-                                                          getProtocolMajorVersion(),
-                                                          getProtocolMinorVersion()),
-                              TxCommitOkBody.class);
+
+
         }
         catch (AMQException e)
         {
@@ -549,8 +519,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     suspendChannel(true);
                 }
 
-                _connection.getProtocolHandler().syncWrite(
-                        TxRollbackBody.createAMQFrame(_channelId, getProtocolMajorVersion(), getProtocolMinorVersion()), TxRollbackOkBody.class);
+                TxRollbackBody rollbackBody = getAMQMethodFactory().createTxRollback();
+                sendCommandReceiveResponse(rollbackBody);
 
                 if (_dispatcher != null)
                 {
@@ -590,15 +560,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 {
 
                     getProtocolHandler().closeSession(this);
-                    // TODO: Be aware of possible changes to parameter order as versions change.
-                    final AMQFrame frame = ChannelCloseBody.createAMQFrame(getChannelId(),
-                                                                           getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                           0,    // classId
-                                                                           0,    // methodId
-                                                                           AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
-                                                                           new AMQShortString("JMS client closing channel"));    // replyText
+                    ChannelCloseBody closeBody = getAMQMethodFactory().createChannelClose(AMQConstant.REPLY_SUCCESS.getCode(),    // replyCode
+                                                                                          CHANNEL_CLOSE_REPLY_TEXT);
+                    sendCommandReceiveResponse(closeBody, timeout);
 
-                    getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
+
+
                     // When control resumes at this point, a reply will have been received that
                     // indicates the broker has closed the channel successfully
 
@@ -617,21 +584,17 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    private AMQProtocolHandler getProtocolHandler()
+    private AMQProtocolHandlerImpl getProtocolHandler()
     {
         return _connection.getProtocolHandler();
     }
 
-
-    private byte getProtocolMinorVersion()
+    public ProtocolOutputHandler getProtocolOutputHandler()
     {
-        return getProtocolHandler().getProtocolMinorVersion();
+        return _connection.getProtocolOutputHandler();
     }
 
-    private byte getProtocolMajorVersion()
-    {
-        return getProtocolHandler().getProtocolMajorVersion();
-    }
+
 
 
     /**
@@ -835,14 +798,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 consumer.clearUnackedMessages();
             }
 
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            _connection.getProtocolHandler().syncWrite(BasicRecoverBody.createAMQFrame(_channelId,
-                                                                                       getProtocolMajorVersion(),
-                                                                                       getProtocolMinorVersion(),
-                                                                                       false)    // requeue
-                    , BasicRecoverOkBody.class);
+            final boolean requeue = false;
+            AMQMethodBody recoverBody = getAMQMethodFactory().createRecover(requeue);
+            sendCommandReceiveResponse(recoverBody);
+
+
+
 
             if (_dispatcher != null)
             {
@@ -1226,136 +1187,60 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void declareExchange(AMQShortString name, AMQShortString type) throws AMQException
     {
-        declareExchange(name, type, getProtocolHandler());
+        ExchangeDeclareBody exchangeDeclare = getAMQMethodFactory().createExchangeDeclare(name,type,getTicket());
+        sendCommandReceiveResponse(exchangeDeclare);
     }
 
     public void declareExchangeSynch(AMQShortString name, AMQShortString type) throws AMQException
     {
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame frame = ExchangeDeclareBody.createAMQFrame(_channelId,
-                                                            getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                            null,    // arguments
-                                                            false,    // autoDelete
-                                                            false,    // durable
-                                                            name,    // exchange
-                                                            false,    // internal
-                                                            false,    // nowait
-                                                            false,    // passive
-                                                            getTicket(),    // ticket
-                                                            type);    // type
-        getProtocolHandler().syncWrite(frame, ExchangeDeclareOkBody.class);
+        ExchangeDeclareBody exchangeDeclare = getAMQMethodFactory().createExchangeDeclare(name,type,getTicket());
+        sendCommandReceiveResponse(exchangeDeclare);
+
     }
-
-    private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler) throws AMQException
-    {
-        declareExchange(amqd.getExchangeName(), amqd.getExchangeClass(), protocolHandler);
-    }
-
-    private void declareExchange(AMQShortString name, AMQShortString type, AMQProtocolHandler protocolHandler) throws AMQException
-    {
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame exchangeDeclare = ExchangeDeclareBody.createAMQFrame(_channelId,
-                                                                      getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                      null,    // arguments
-                                                                      false,    // autoDelete
-                                                                      false,    // durable
-                                                                      name,    // exchange
-                                                                      false,    // internal
-                                                                      false,    // nowait
-                                                                      false,    // passive
-                                                                      getTicket(),    // ticket
-                                                                      type);    // type
-
-        protocolHandler.syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class);
-    }
-
 
     public void createQueue(AMQShortString name, boolean autoDelete, boolean durable, boolean exclusive) throws AMQException
     {
-        AMQFrame queueDeclare = QueueDeclareBody.createAMQFrame(_channelId,
-                                                                getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                null,    // arguments
-                                                                autoDelete,    // autoDelete
-                                                                durable,    // durable
-                                                                exclusive,    // exclusive
-                                                                false,    // nowait
-                                                                false,    // passive
-                                                                name,    // queue
-                                                                getTicket());    // ticket
-
-        getProtocolHandler().syncWrite(queueDeclare, QueueDeclareOkBody.class);
-
+        QueueDeclareBody queueDeclare = getAMQMethodFactory().createQueueDeclare(name, null, autoDelete, durable, exclusive, false ,getTicket());
+        sendCommandReceiveResponse(queueDeclare);
     }
 
 
     public void bindQueue(AMQShortString queueName, AMQShortString routingKey, FieldTable arguments, AMQShortString exchangeName) throws AMQException
     {
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame queueBind = QueueBindBody.createAMQFrame(_channelId,
-                                                          getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                          arguments,    // arguments
-                                                          exchangeName,    // exchange
-                                                          false,    // nowait
-                                                          queueName,    // queue
-                                                          routingKey,    // routingKey
-                                                          getTicket());    // ticket
-
-
-        getProtocolHandler().syncWrite(queueBind, QueueBindOkBody.class);
+        QueueBindBody queueBind = getAMQMethodFactory().createQueueBind(queueName,exchangeName,routingKey,arguments,getTicket());
+        sendCommandReceiveResponse(queueBind);
     }
 
     /**
      * Declare the queue.
      *
      * @param amqd
-     * @param protocolHandler
      *
      * @return the queue name. This is useful where the broker is generating a queue name on behalf of the client.
      *
      * @throws AMQException
      */
-    private AMQShortString declareQueue(AMQDestination amqd, AMQProtocolHandler protocolHandler) throws AMQException
+    private AMQShortString declareQueue(AMQDestination amqd) throws AMQException
     {
         // For queues (but not topics) we generate the name in the client rather than the
         // server. This allows the name to be reused on failover if required. In general,
         // the destination indicates whether it wants a name generated or not.
         if (amqd.isNameRequired())
         {
-            amqd.setQueueName(protocolHandler.generateQueueName());
+            amqd.setQueueName(getProtocolHandler().generateQueueName());
         }
 
         //TODO verify the destiation is valid. else throw 
 
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame queueDeclare = QueueDeclareBody.createAMQFrame(_channelId,
-                                                                getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                null,    // arguments
-                                                                amqd.isAutoDelete(),    // autoDelete
-                                                                amqd.isDurable(),    // durable
-                                                                amqd.isExclusive(),    // exclusive
-                                                                false,    // nowait
-                                                                false,    // passive
-                                                                amqd.getAMQQueueName(),    // queue
-                                                                getTicket());    // ticket
+        createQueue(amqd.getAMQQueueName(),amqd.isAutoDelete(),amqd.isDurable(),amqd.isExclusive());
 
-        protocolHandler.syncWrite(queueDeclare, QueueDeclareOkBody.class);
+
         return amqd.getAMQQueueName();
     }
 
-    private void bindQueue(AMQDestination amqd, AMQShortString queueName, AMQProtocolHandler protocolHandler, FieldTable ft) throws AMQException
+    private void bindQueue(AMQDestination amqd, AMQShortString queueName, FieldTable ft) throws AMQException
     {
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame queueBind = QueueBindBody.createAMQFrame(_channelId,
-                                                          getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                          ft,    // arguments
-                                                          amqd.getExchangeName(),    // exchange
-                                                          false,    // nowait
-                                                          queueName,    // queue
-                                                          amqd.getRoutingKey(),    // routingKey
-                                                          getTicket());    // ticket
-
-
-        protocolHandler.syncWrite(queueBind, QueueBindOkBody.class);
+        bindQueue(queueName,amqd.getRoutingKey(),ft,amqd.getExchangeName());
     }
 
     /**
@@ -1365,8 +1250,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *
      * @return the consumer tag generated by the broker
      */
-    private void consumeFromQueue(BasicMessageConsumer consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler,
-                                  boolean nowait, String messageSelector) throws AMQException
+    private void consumeFromQueue(BasicMessageConsumer consumer, AMQShortString queueName, boolean nowait, String messageSelector) throws AMQException
     {
         //fixme prefetch values are not used here. Do we need to have them as parametsrs?
         //need to generate a consumer tag on the client so we can exploit the nowait flag
@@ -1392,25 +1276,24 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         try
         {
-            // TODO: Be aware of possible changes to parameter order as versions change.
-            AMQFrame jmsConsume = BasicConsumeBody.createAMQFrame(_channelId,
-                                                                  getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                  arguments,    // arguments
-                                                                  tag,    // consumerTag
-                                                                  consumer.isExclusive(),    // exclusive
-                                                                  consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,    // noAck
-                                                                  consumer.isNoLocal(),    // noLocal
-                                                                  nowait,    // nowait
-                                                                  queueName,    // queue
-                                                                  getTicket());    // ticket
-            if (nowait)
+            final boolean noAck = consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE;
+
+            AMQMethodBody consumeBody = getAMQMethodFactory().createConsumer(tag,
+                                                 queueName,
+                                                 arguments,
+                                                 noAck,
+                                                 consumer.isExclusive(),
+                                                 consumer.isNoLocal(),
+                                                 getTicket());
+            if(nowait)
             {
-                protocolHandler.writeFrame(jmsConsume);
+                sendCommand(consumeBody);
             }
             else
             {
-                protocolHandler.syncWrite(jmsConsume, BasicConsumeOkBody.class);
+                sendCommandReceiveResponse(consumeBody);
             }
+
         }
         catch (AMQException e)
         {
@@ -1606,15 +1489,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         try
         {
-            // TODO: Be aware of possible changes to parameter order as versions change.
-            AMQFrame queueDeleteFrame = QueueDeleteBody.createAMQFrame(_channelId,
-                                                                       getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                       false,    // ifEmpty
-                                                                       false,    // ifUnused
-                                                                       true,    // nowait
-                                                                       queueName,    // queue
-                                                                       getTicket());    // ticket
-            getProtocolHandler().syncWrite(queueDeleteFrame, QueueDeleteOkBody.class);
+            
+            QueueDeleteBody deleteBody = getAMQMethodFactory().createQueueDelete(queueName, false, false, getTicket());
+            sendCommandReceiveResponse(deleteBody);
         }
         catch (AMQException e)
         {
@@ -1697,23 +1574,23 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     boolean isQueueBound(AMQShortString exchangeName, AMQShortString queueName, AMQShortString routingKey) throws JMSException
     {
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame boundFrame = ExchangeBoundBody.createAMQFrame(_channelId,
-                                                               getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                               exchangeName,    // exchange
-                                                               queueName,    // queue
-                                                               routingKey);    // routingKey
         AMQMethodEvent response = null;
         try
         {
-            response = getProtocolHandler().syncWrite(boundFrame, ExchangeBoundOkBody.class);
+            ExchangeBoundBody exchangeBoundBody =
+                getAMQMethodFactory().createExchangeBound(exchangeName,    // exchange
+                                                          queueName,    // queue
+                                                          routingKey);    // routingKey
+
+
+            ExchangeBoundOkBody responseBody = sendCommandReceiveResponse(exchangeBoundBody, ExchangeBoundOkBody.class);
+            return (responseBody.getReplyCode() == 0);
         }
         catch (AMQException e)
         {
             throw new JMSAMQException(e);
         }
-        ExchangeBoundOkBody responseBody = (ExchangeBoundOkBody) response.getMethod();
-        return (responseBody.replyCode == 0); //ExchangeBoundHandler.OK); Remove Broker compile dependency
+
     }
 
     private void checkTransacted() throws JMSException
@@ -1770,13 +1647,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                             // Bounced message is processed here, away from the mina thread
                             AbstractJMSMessage bouncedMessage = _messageFactoryRegistry.createMessage(0,
                                                                                                       false,
-                                                                                                      message.getBounceBody().exchange,
-                                                                                                      message.getBounceBody().routingKey,
+                                                                                                      message.getBounceBody().getExchange(),
+                                                                                                      message.getBounceBody().getRoutingKey(),
                                                                                                       message.getContentHeader(),
                                                                                                       message.getBodies());
 
-                            AMQConstant errorCode = AMQConstant.getConstant(message.getBounceBody().replyCode);
-                            AMQShortString reason = message.getBounceBody().replyText;
+                            AMQConstant errorCode = AMQConstant.getConstant(message.getBounceBody().getReplyCode());
+                            AMQShortString reason = message.getBounceBody().getReplyText();
                             _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
 
                             //@TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
@@ -1812,16 +1689,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public void acknowledgeMessage(long deliveryTag, boolean multiple)
     {
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        final AMQFrame ackFrame = BasicAckBody.createAMQFrame(_channelId,
-                                                              getProtocolMajorVersion(), getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                              deliveryTag,    // deliveryTag
-                                                              multiple);    // multiple
+        AMQMethodBody ackBody = getAMQMethodFactory().createAcknowledge(deliveryTag, multiple);
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Sending ack for delivery tag " + deliveryTag + " on channel " + _channelId);
         }
-        getProtocolHandler().writeFrame(ackFrame);
+        sendCommand(ackBody);
     }
 
     public int getDefaultPrefetch()
@@ -1908,17 +1781,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         AMQDestination amqd = consumer.getDestination();
 
-        AMQProtocolHandler protocolHandler = getProtocolHandler();
+        declareExchange(amqd.getExchangeName(), amqd.getExchangeClass());
 
-        declareExchange(amqd, protocolHandler);
+        AMQShortString queueName = declareQueue(amqd);
 
-        AMQShortString queueName = declareQueue(amqd, protocolHandler);
-
-        bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
+        bindQueue(amqd, queueName, consumer.getRawSelectorFieldTable());
 
         try
         {
-            consumeFromQueue(consumer, queueName, protocolHandler, nowait, consumer.getMessageSelector());
+            consumeFromQueue(consumer, queueName, nowait, consumer.getMessageSelector());
         }
         catch (JMSException e) //thrown by getMessageSelector
         {
@@ -2019,14 +1890,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
             _suspended = suspend;
 
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            AMQFrame channelFlowFrame = ChannelFlowBody.createAMQFrame(_channelId,
-                                                                       getProtocolMajorVersion(),
-                                                                       getProtocolMinorVersion(),
-                                                                       !suspend);    // active
+            AMQMethodBody flowBody = getAMQMethodFactory().createChannelFlow(!suspend);
+            sendCommandReceiveResponse(flowBody);
 
-            _connection.getProtocolHandler().syncWrite(channelFlowFrame, ChannelFlowOkBody.class);
         }
     }
 
@@ -2118,32 +1984,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void requestAccess(AMQShortString realm, boolean exclusive, boolean passive, boolean active, boolean write, boolean read) throws AMQException
     {
-        getProtocolHandler().writeCommandFrameAndWaitForReply(AccessRequestBody.createAMQFrame(getChannelId(),
-                                                                                               getProtocolMajorVersion(),
-                                                                                               getProtocolMinorVersion(),
-                                                                                               active,
-                                                                                               exclusive,
-                                                                                               passive,
-                                                                                               read,
-                                                                                               realm,
-                                                                                               write),
-                                                              new BlockingMethodFrameListener(_channelId)
-                                                              {
 
-                                                                  public boolean processMethod(int channelId, AMQMethodBody frame) throws AMQException
-                                                                  {
-                                                                      if (frame instanceof AccessRequestOkBody)
-                                                                      {
-                                                                          setTicket(((AccessRequestOkBody) frame).getTicket());
-                                                                          return true;
-                                                                      }
-                                                                      else
-                                                                      {
-                                                                          return false;
-                                                                      }
-                                                                  }
-                                                              });
+        AccessRequestBody accessRequest = getAMQMethodFactory().createAccessRequest(active,exclusive,passive,read,realm,write);
+        AccessRequestOkBody okBody = getProtocolOutputHandler().sendCommandReceiveResponse(_channelId,accessRequest, AccessRequestOkBody.class );
+        setTicket(okBody.getTicket());
+    }
 
+    AMQMethodFactory getAMQMethodFactory()
+    {
+        return getProtocolOutputHandler().getAMQMethodFactory();
     }
 
     private class SuspenderRunner implements Runnable
@@ -2187,7 +2036,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             UnprocessedMessage message = (UnprocessedMessage) messages.next();
 
-            if (consumerTag == null || message.getDeliverBody().consumerTag.equals(consumerTag))
+            if (consumerTag == null || message.getDeliverBody().getConsumerTag().equals(consumerTag))
             {
                 if (_logger.isTraceEnabled())
                 {
@@ -2196,7 +2045,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                 messages.remove();
 
-                rejectMessage(message.getDeliverBody().deliveryTag, requeue);
+                rejectMessage(message.getDeliverBody().getDeliveryTag(), requeue);
 
                 _logger.debug("Rejected the message(" + message.getDeliverBody() + ") for consumer :" + consumerTag);
             }
@@ -2209,13 +2058,27 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     public void rejectMessage(long deliveryTag, boolean requeue)
     {
-        AMQFrame basicRejectBody = BasicRejectBody.createAMQFrame(_channelId,
-                                                                  getProtocolMajorVersion(),
-                                                                  getProtocolMinorVersion(),
-                                                                  deliveryTag,
-                                                                  requeue);
+        AMQMethodBody rejectBody = getAMQMethodFactory().createRejectBody(deliveryTag, requeue);
+        sendCommand(rejectBody);
 
-        _connection.getProtocolHandler().writeFrame(basicRejectBody);
     }
 
+    <T extends AMQMethodBody> T sendCommandReceiveResponse(AMQMethodBody command, Class<T> responseClass) throws AMQException
+    {
+        return getProtocolOutputHandler().sendCommandReceiveResponse(_channelId, command, responseClass);
+    }
+    AMQMethodBody sendCommandReceiveResponse(AMQMethodBody command) throws AMQException
+    {
+        return getProtocolOutputHandler().sendCommandReceiveResponse(_channelId, command);
+    }
+    AMQMethodBody sendCommandReceiveResponse(AMQMethodBody command, long timeout) throws AMQException
+    {
+        return getProtocolOutputHandler().sendCommandReceiveResponse(_channelId, command, timeout);
+    }
+
+
+    void sendCommand(AMQMethodBody command)
+    {
+        getProtocolOutputHandler().sendCommand(_channelId, command);
+    }
 }

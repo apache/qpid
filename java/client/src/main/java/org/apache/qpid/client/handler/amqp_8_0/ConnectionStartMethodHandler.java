@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;
@@ -44,7 +44,8 @@ import org.apache.qpid.framing.ConnectionStartBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.framing.amqp_8_0.ConnectionStartOkBodyImpl;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class ConnectionStartMethodHandler implements StateAwareMethodListener
@@ -61,55 +62,49 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
     private ConnectionStartMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt)
                         throws AMQException
     {
         _log.debug("public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, "
                    + "AMQMethodEvent evt): called");
 
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
         ConnectionStartBody body = (ConnectionStartBody) evt.getMethod();
 
-        byte major = (byte) body.versionMajor;
-        byte minor = (byte) body.versionMinor;
-        boolean versionOk = false;
+        ProtocolVersion pv = new ProtocolVersion((byte) body.getVersionMajor(),(byte) body.getVersionMinor());
+
 
         // For the purposes of interop, we can make the client accept the broker's version string.
         // If it does, it then internally records the version as being the latest one that it understands.
         // It needs to do this since frame lookup is done by version.
-        if (Boolean.getBoolean("qpid.accept.broker.version"))
+        if (Boolean.getBoolean("qpid.accept.broker.version") && !pv.isSupported())
         {
-            versionOk = true;
-            int lastIndex = ProtocolVersionList.pv.length - 1;
-            major = ProtocolVersionList.pv[lastIndex][ProtocolVersionList.PROTOCOL_MAJOR];
-            minor = ProtocolVersionList.pv[lastIndex][ProtocolVersionList.PROTOCOL_MINOR];
-        }
-        else
-        {
-            versionOk = checkVersionOK(major, minor);
+
+            pv = ProtocolVersion.getLatestSupportedVersion();
         }
 
-        if (versionOk)
+        if (pv.isSupported())
         {
-            protocolSession.setProtocolVersion(major, minor);
+            protocolSession.setProtocolVersion(pv);
 
             try
             {
                 // Used to hold the SASL mechanism to authenticate with.
                 String mechanism;
 
-                if (body.mechanisms == null)
+                if (body.getMechanisms() == null)
                 {
                     throw new AMQException("mechanism not specified in ConnectionStart method frame");
                 }
                 else
                 {
-                    mechanism = chooseMechanism(body.mechanisms);
+                    mechanism = chooseMechanism(body.getMechanisms());
                     _log.debug("mechanism = " + mechanism);
                 }
 
                 if (mechanism == null)
                 {
-                    throw new AMQException("No supported security mechanism found, passed: " + new String(body.mechanisms));
+                    throw new AMQException("No supported security mechanism found, passed: " + new String(body.getMechanisms()));
                 }
 
                 byte[] saslResponse;
@@ -135,12 +130,12 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                     throw new AMQException("Unable to create SASL client: " + e, e);
                 }
 
-                if (body.locales == null)
+                if (body.getLocales() == null)
                 {
                     throw new AMQException("Locales is not defined in Connection Start method");
                 }
 
-                final String locales = new String(body.locales, "utf8");
+                final String locales = new String(body.getLocales(), "utf8");
                 final StringTokenizer tokenizer = new StringTokenizer(locales, " ");
                 String selectedLocale = null;
                 if (tokenizer.hasMoreTokens())
@@ -155,24 +150,19 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
                 FieldTable clientProperties = FieldTableFactory.newFieldTable();
 
-                clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()),
+                clientProperties.setString(ClientProperties.instance.getName(),
                                            protocolSession.getClientID());
-                clientProperties.setString(new AMQShortString(ClientProperties.product.toString()),
+                clientProperties.setString(ClientProperties.product.getName(),
                                            QpidProperties.getProductName());
-                clientProperties.setString(new AMQShortString(ClientProperties.version.toString()),
+                clientProperties.setString(ClientProperties.version.getName(),
                                            QpidProperties.getReleaseVersion());
-                clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
+                clientProperties.setString(ClientProperties.platform.getName(), getFullSystemInfo());
 
-                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                // Be aware of possible changes to parameter order as versions change.
-                protocolSession.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
-                                                                                protocolSession.getProtocolMajorVersion(),
-                                                                                protocolSession.getProtocolMinorVersion(),
-                                                                                clientProperties, // clientProperties
+                ConnectionStartOkBody startOkBody = createConnectionStartOkBody(clientProperties, // clientProperties
                                                                                 new AMQShortString(selectedLocale), // locale
                                                                                 new AMQShortString(mechanism), // mechanism
-                                                                                saslResponse)); // response
+                                                                                saslResponse); // response
+                protocolSession.getOutputHandler().sendCommand(0, startOkBody);
 
             }
             catch (UnsupportedEncodingException e)
@@ -182,26 +172,18 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
         }
         else
         {
-            _log.error("Broker requested Protocol [" + body.versionMajor + "-" + body.versionMinor
+            _log.error("Broker requested Protocol [" + body.getVersionMajor() + "-" + body.getVersionMinor()
                        + "] which is not supported by this version of the client library");
 
             protocolSession.closeProtocolSession();
         }
     }
 
-    private boolean checkVersionOK(byte versionMajor, byte versionMinor)
+    private ConnectionStartOkBody createConnectionStartOkBody(FieldTable clientProperties, AMQShortString locale, AMQShortString mechanism, byte[] saslResponse)
     {
-        byte[][] supportedVersions = ProtocolVersionList.pv;
-        boolean supported = false;
-        int i = supportedVersions.length;
-        while ((i-- != 0) && !supported)
-        {
-            supported = (supportedVersions[i][ProtocolVersionList.PROTOCOL_MAJOR] == versionMajor)
-                        && (supportedVersions[i][ProtocolVersionList.PROTOCOL_MINOR] == versionMinor);
-        }
-
-        return supported;
+        return new ConnectionStartOkBodyImpl(clientProperties,mechanism,saslResponse,locale);
     }
+
 
     private String getFullSystemInfo()
     {

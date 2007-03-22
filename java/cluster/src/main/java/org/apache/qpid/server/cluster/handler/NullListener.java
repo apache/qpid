@@ -21,15 +21,12 @@
 package org.apache.qpid.server.cluster.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
-public class NullListener<T extends AMQMethodBody> implements StateAwareMethodListener<T>
+public class NullListener<T extends AMQMethodBodyImpl> implements StateAwareMethodListener<T>
 {
     public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<T> evt) throws AMQException
     {

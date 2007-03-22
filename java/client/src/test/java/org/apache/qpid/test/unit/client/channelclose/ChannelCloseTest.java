@@ -44,6 +44,9 @@ import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeclareOkBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.amqp_8_0.ChannelCloseOkBodyImpl;
+import org.apache.qpid.framing.amqp_8_0.ExchangeDeclareBodyImpl;
+import org.apache.qpid.framing.amqp_8_0.ChannelOpenBodyImpl;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.url.URLSyntaxException;
@@ -270,9 +273,7 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
 
     private void sendClose(int channel)
     {
-        AMQFrame frame = ChannelCloseOkBody.createAMQFrame(channel,
-                                                           ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                                                           ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion());
+        AMQFrame frame = new AMQFrame(channel, new ChannelCloseOkBodyImpl());
 
         ((AMQConnection) _connection).getProtocolHandler().writeFrame(frame);
     }
@@ -332,37 +333,29 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
 
     private void declareExchange(int channelId, String _type, String _name, boolean nowait) throws AMQException
     {
-        AMQFrame exchangeDeclare = ExchangeDeclareBody.createAMQFrame(channelId,
-                                                                      ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                                                                      ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(),
-                                                                      null,    // arguments
-                                                                      false,    // autoDelete
-                                                                      false,    // durable
-                                                                      new AMQShortString(_name),    // exchange
-                                                                      false,    // internal
-                                                                      nowait,    // nowait
-                                                                      true,    // passive
-                                                                      0,    // ticket
-                                                                      new AMQShortString(_type));    // type
+        ExchangeDeclareBody exchangeDeclareBody =
+                ((AMQConnection) _connection).getProtocolOutputHandler().getAMQMethodFactory().createExchangeDeclare(new AMQShortString(_name),new AMQShortString(_type),0);
+//                new ExchangeDeclareBodyImpl(0,new AMQShortString(_name),new AMQShortString(_type),true,false,false,false,nowait,null);
+
+        //AMQFrame exchangeDeclare = new AMQFrame(channelId, exchangeDeclareBody);
 
         if (nowait)
         {
-            ((AMQConnection) _connection).getProtocolHandler().writeFrame(exchangeDeclare);
+            ((AMQConnection) _connection).getProtocolOutputHandler().sendCommand(channelId, exchangeDeclareBody);
+
         }
         else
         {
-            ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class, SYNC_TIMEOUT);
+            ((AMQConnection) _connection).getProtocolOutputHandler().sendCommandReceiveResponse(channelId, exchangeDeclareBody, SYNC_TIMEOUT);                    
         }
     }
 
     private void createChannel(int channelId) throws AMQException
     {
-        ((AMQConnection) _connection).getProtocolHandler().syncWrite(
-                ChannelOpenBody.createAMQFrame(channelId,
-                                               ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                                               ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(),
-                                               null),    // outOfBand
-                                                         ChannelOpenOkBody.class);
+
+        ChannelOpenBody openBody =
+                ((AMQConnection) _connection).getProtocolOutputHandler().getAMQMethodFactory().createChannelOpen();
+        ((AMQConnection) _connection).getProtocolOutputHandler().sendCommandReceiveResponse(channelId, openBody);
 
     }
 

@@ -48,6 +48,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     private static ConnectionStartOkMethodHandler _instance = new ConnectionStartOkMethodHandler();
 
     private static final int DEFAULT_FRAME_SIZE = 65536;
+    private static final int DEFAULT_CHANNEL_MAX = 65536;
 
     public static StateAwareMethodListener<ConnectionStartOkBody> getInstance()
     {
@@ -62,23 +63,23 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         final ConnectionStartOkBody body = evt.getMethod();
-        _logger.info("SASL Mechanism selected: " + body.mechanism);
-        _logger.info("Locale selected: " + body.locale);
+        _logger.info("SASL Mechanism selected: " + body.getMechanism());
+        _logger.info("Locale selected: " + body.getLocale());
 
         AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
 
         SaslServer ss = null;
         try
         {
-            ss = authMgr.createSaslServer(String.valueOf(body.mechanism), session.getLocalFQDN());
+            ss = authMgr.createSaslServer(String.valueOf(body.getMechanism()), session.getLocalFQDN());
             session.setSaslServer(ss);
 
-            AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
+            AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
 
             //save clientProperties
             if (session.getClientProperties() == null)
             {
-                session.setClientProperties(body.clientProperties);
+                session.setClientProperties(body.getClientProperties());
             }
 
             switch (authResult.status)
@@ -140,6 +141,15 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         final int framesize = config.getInt("advanced.framesize", DEFAULT_FRAME_SIZE);
         _logger.info("Framesize set to " + framesize);
         return framesize;
+    }
+
+
+    static int getConfiguredMaxChannels()
+    {
+        final Configuration config = ApplicationRegistry.getInstance().getConfiguration();
+        final int maxChannels = config.getInt("advanced.maxchannels", DEFAULT_CHANNEL_MAX);
+        _logger.info("Max Channels set to " + maxChannels);
+        return maxChannels;
     }
 }
 

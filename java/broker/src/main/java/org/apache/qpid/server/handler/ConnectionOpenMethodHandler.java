@@ -58,13 +58,13 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
 
         //ignore leading '/'
         String virtualHostName;
-        if((body.virtualHost != null) && body.virtualHost.charAt(0) == '/')
+        if((body.getVirtualHost() != null) && body.getVirtualHost().charAt(0) == '/')
         {
-            virtualHostName = new StringBuilder(body.virtualHost.subSequence(1,body.virtualHost.length())).toString();
+            virtualHostName = new StringBuilder(body.getVirtualHost().subSequence(1,body.getVirtualHost().length())).toString();
         }
         else
         {
-            virtualHostName = body.virtualHost == null ? null : String.valueOf(body.virtualHost);
+            virtualHostName = body.getVirtualHost() == null ? null : String.valueOf(body.getVirtualHost());
         }
 
         VirtualHost virtualHost = stateManager.getVirtualHostRegistry().getVirtualHost(virtualHostName);
@@ -90,7 +90,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
             // Be aware of possible changes to parameter order as versions change.
             AMQFrame response = ConnectionOpenOkBody.createAMQFrame((short)0,
                 (byte)8, (byte)0,	// AMQP version (major, minor)
-                body.virtualHost);	
+                body.getVirtualHost());	
             stateManager.changeState(AMQState.CONNECTION_OPEN);
             session.writeFrame(response);
         }

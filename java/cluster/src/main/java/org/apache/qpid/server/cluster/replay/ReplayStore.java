@@ -26,10 +26,8 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.server.cluster.ClusteredProtocolSession;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.cluster.util.Bindings;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -48,8 +46,8 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
 {
     private static final Logger _logger = Logger.getLogger(ReplayStore.class);
 
-    private final Map<Class<? extends AMQMethodBody>, MethodRecorder> _globalRecorders = new HashMap<Class<? extends AMQMethodBody>, MethodRecorder>();
-    private final Map<Class<? extends AMQMethodBody>, MethodRecorder> _localRecorders = new HashMap<Class<? extends AMQMethodBody>, MethodRecorder>();
+    private final Map<Class<? extends AMQMethodBodyImpl>, MethodRecorder> _globalRecorders = new HashMap<Class<? extends AMQMethodBodyImpl>, MethodRecorder>();
+    private final Map<Class<? extends AMQMethodBodyImpl>, MethodRecorder> _localRecorders = new HashMap<Class<? extends AMQMethodBodyImpl>, MethodRecorder>();
     private final Map<AMQShortString, QueueDeclareBody> _sharedQueues = new ConcurrentHashMap<AMQShortString, QueueDeclareBody>();
     private final Map<AMQShortString, QueueDeclareBody> _privateQueues = new ConcurrentHashMap<AMQShortString, QueueDeclareBody>();
     private final Bindings<AMQShortString, AMQShortString, QueueBindBody> _sharedBindings = new Bindings<AMQShortString, AMQShortString, QueueBindBody>();
@@ -80,7 +78,7 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         VirtualHost virtualHost = session.getVirtualHost();
 
         _logger.debug(new LogMessage("Replay store received {0}", evt.getMethod()));
-        AMQMethodBody request = evt.getMethod();
+        AMQMethodBodyImpl request = evt.getMethod();
 
         //allow any (relevant) recorder registered for this type of request to record it:
         MethodRecorder recorder = getRecorders(session).get(request.getClass());
@@ -90,7 +88,7 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         }
     }
 
-    private Map<Class<? extends AMQMethodBody>, MethodRecorder> getRecorders(AMQProtocolSession session)
+    private Map<Class<? extends AMQMethodBodyImpl>, MethodRecorder> getRecorders(AMQProtocolSession session)
     {
         if (ClusteredProtocolSession.isPeerSession(session))
         {
@@ -102,9 +100,9 @@ public class ReplayStore implements ReplayManager, StateAwareMethodListener
         }
     }
 
-    public List<AMQMethodBody> replay(boolean isLeader)
+    public List<AMQMethodBodyImpl> replay(boolean isLeader)
     {
-        List<AMQMethodBody> methods = new ArrayList<AMQMethodBody>();
+        List<AMQMethodBodyImpl> methods = new ArrayList<AMQMethodBodyImpl>();
         methods.addAll(_exchanges.values());
         methods.addAll(_privateQueues.values());
         synchronized(_privateBindings)

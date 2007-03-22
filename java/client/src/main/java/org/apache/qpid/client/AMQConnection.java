@@ -25,7 +25,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
 import org.apache.qpid.AMQUnresolvedAddressException;
 import org.apache.qpid.client.failover.FailoverSupport;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
+import org.apache.qpid.client.protocol.ProtocolOutputHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -36,6 +37,8 @@ import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
 import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
+import org.apache.qpid.framing.AMQMethodFactory;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.Connection;
@@ -92,7 +95,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * the handler deals with this. It also deals with the initial dispatch of any protocol frames to their appropriate
      * handler.
      */
-    private AMQProtocolHandler _protocolHandler;
+    private AMQProtocolHandlerImpl _protocolHandler;
 
     /** Maps from session id (Integer) to AMQSession instance */
     private final Map _sessions = new LinkedHashMap(); //fixme this is map is replicated in amqprotocolsession as _channelId2SessionMap    
@@ -273,7 +276,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         _failoverPolicy = new FailoverPolicy(connectionURL);
 
-        _protocolHandler = new AMQProtocolHandler(this);
+        _protocolHandler = new AMQProtocolHandlerImpl(this);
 
         // We are not currently connected
         _connected = false;
@@ -550,26 +553,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
             throws AMQException
     {
+        // define this here, should be poassed in
+        final int prefetchSize = 0;
 
-        // TODO: Be aware of possible changes to parameter order as versions change.
+        AMQMethodFactory methodFactory = getAMQMethodFactory();
 
-        _protocolHandler.syncWrite(
-                ChannelOpenBody.createAMQFrame(channelId,
-                                               _protocolHandler.getProtocolMajorVersion(),
-                                               _protocolHandler.getProtocolMinorVersion(),
-                                               null),    // outOfBand
-                                                         ChannelOpenOkBody.class);
-
-        //todo send low water mark when protocol allows.
-        //todo Be aware of possible changes to parameter order as versions change.
-        _protocolHandler.syncWrite(
-                BasicQosBody.createAMQFrame(channelId,
-                                            _protocolHandler.getProtocolMajorVersion(),
-                                            _protocolHandler.getProtocolMinorVersion(),
-                                            false,    // global
-                                            prefetchHigh,    // prefetchCount
-                                            0),    // prefetchSize
-                                                   BasicQosOkBody.class);
+        ChannelOpenBody openBody = methodFactory.createChannelOpen();
+        sendCommandReceiveResponse(channelId, openBody);
+        AMQMethodBody qosBody = methodFactory.createMessageQos(prefetchHigh, prefetchSize);
+        sendCommandReceiveResponse(channelId, qosBody);
 
         if (transacted)
         {
@@ -578,12 +570,19 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 _logger.debug("Issuing TxSelect for " + channelId);
             }
 
-            // TODO: Be aware of possible changes to parameter order as versions change.
-            _protocolHandler.syncWrite(TxSelectBody.createAMQFrame(channelId,
-                                                                   _protocolHandler.getProtocolMajorVersion(),
-                                                                   _protocolHandler.getProtocolMinorVersion()),
-                                       TxSelectOkBody.class);
+            TxSelectBody txSelectBody = methodFactory.createTxSelect();
+            sendCommandReceiveResponse(channelId, txSelectBody);
         }
+    }
+
+    private AMQMethodBody sendCommandReceiveResponse(int channelId, AMQMethodBody command) throws AMQException
+    {
+        return getProtocolOutputHandler().sendCommandReceiveResponse(channelId, command);
+    }
+
+    private AMQMethodFactory getAMQMethodFactory()
+    {
+        return getProtocolOutputHandler().getAMQMethodFactory();
     }
 
     private void reopenChannel(int channelId, int prefetchHigh, int prefetchLow, boolean transacted) throws AMQException
@@ -934,7 +933,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _virtualHost;
     }
 
-    public AMQProtocolHandler getProtocolHandler()
+    public AMQProtocolHandlerImpl getProtocolHandler()
     {
         return _protocolHandler;
     }
@@ -1217,5 +1216,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public void performConnectionTask(Runnable task)
     {
         _taskPool.execute(task);
+    }
+
+    public ProtocolOutputHandler getProtocolOutputHandler()
+    {
+        return _protocolHandler.getOutputHandler();
     }
 }

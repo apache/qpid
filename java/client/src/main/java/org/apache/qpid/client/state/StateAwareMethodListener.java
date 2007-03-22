@@ -31,6 +31,6 @@ import org.apache.qpid.protocol.AMQMethodEvent;
  */
 public interface StateAwareMethodListener
 {
-    void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession,
-        AMQMethodEvent evt) throws AMQException;
+    void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException;
+
 }

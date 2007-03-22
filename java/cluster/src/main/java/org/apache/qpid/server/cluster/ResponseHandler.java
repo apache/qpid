@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.cluster;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 public interface ResponseHandler
 {
-    public void responded(AMQMethodBody response);
+    public void responded(AMQMethodBodyImpl response);
 
     public void removed();
 }

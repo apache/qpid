@@ -23,11 +23,12 @@ package org.apache.qpid.client.protocol;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 
-public abstract class BlockingMethodFrameListener implements AMQMethodListener
+public abstract class BlockingMethodFrameListener<T extends AMQMethodBody> implements AMQMethodListener
 {
     private volatile boolean _ready = false;
 
@@ -43,7 +44,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
 
     protected int _channelId;
 
-    protected AMQMethodEvent _doneEvt = null;
+    protected AMQMethodEvent<T> _doneEvt = null;
 
     public BlockingMethodFrameListener(int channelId)
     {
@@ -91,7 +92,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
     /**
      * This method is called by the thread that wants to wait for a frame.
      */
-    public AMQMethodEvent blockForFrame(long timeout) throws AMQException
+    public AMQMethodEvent<T> blockForFrame(long timeout) throws AMQException
     {
         synchronized (_lock)
         {

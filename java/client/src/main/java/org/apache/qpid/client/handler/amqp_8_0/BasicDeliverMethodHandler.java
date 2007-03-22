@@ -18,33 +18,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.ChannelFlowOkBody;
+import org.apache.qpid.framing.BasicDeliverBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
-public class ChannelFlowOkMethodHandler implements StateAwareMethodListener
+public class BasicDeliverMethodHandler implements StateAwareMethodListener
 {
-     private static final Logger _logger = Logger.getLogger(ChannelFlowOkMethodHandler.class);
-     private static final ChannelFlowOkMethodHandler _instance = new ChannelFlowOkMethodHandler();
+    private static final Logger _logger = Logger.getLogger(BasicDeliverMethodHandler.class);
 
-     public static ChannelFlowOkMethodHandler getInstance()
-     {
-         return _instance;
-     }
+    private static final BasicDeliverMethodHandler _instance = new BasicDeliverMethodHandler();
 
-     private ChannelFlowOkMethodHandler()
-     {
-     }
+    public static BasicDeliverMethodHandler getInstance()
+    {
+        return _instance;
+    }
 
-     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
-     {
-         ChannelFlowOkBody method = (ChannelFlowOkBody) evt.getMethod();
-         _logger.debug("Received Channel.Flow-Ok message, active = " + method.active);
-     }
+    public void methodReceived(AMQStateManager stateManager,  AMQMethodEvent evt) throws AMQException
+    {
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
+        final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), (BasicDeliverBody) evt.getMethod());
+        _logger.debug("New JmsDeliver method received");
+        protocolSession.unprocessedMessageReceived(msg);
+    }
 }

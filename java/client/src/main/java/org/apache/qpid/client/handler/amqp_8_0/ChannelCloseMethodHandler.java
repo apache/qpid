@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelClosedException;
@@ -29,10 +29,10 @@ import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.amqp_8_0.ChannelCloseOkBodyImpl;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
@@ -47,21 +47,23 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         return _handler;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
         _logger.debug("ChannelClose method received");
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
         ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
 
-        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
-        AMQShortString reason = method.replyText;
+        AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
+        AMQShortString reason = method.getReplyText();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
         }
 
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame frame = ChannelCloseOkBody.createAMQFrame(evt.getChannelId(), method.getMajor(), method.getMinor());
-        protocolSession.writeFrame(frame);
+        protocolSession.getOutputHandler().sendCommand(evt.getChannelId(), createChannelCloseOkBody());
+        
+
+
         if (errorCode != AMQConstant.REPLY_SUCCESS)
         {
             if (_logger.isDebugEnabled())
@@ -95,5 +97,10 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
 
         }
         protocolSession.channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
+    }
+
+    protected ChannelCloseOkBody createChannelCloseOkBody()
+    {
+        return new ChannelCloseOkBodyImpl();
     }
 }

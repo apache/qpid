@@ -20,23 +20,34 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQBodyImpl;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
-import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.txn.TransactionalContext;
 
 /** Combines the information that make up a deliverable message into a more manageable form. */
+
+import org.apache.log4j.Logger;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+/**
+ * Combines the information that make up a deliverable message into a more manageable form.
+ */
 public class AMQMessage
 {
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -114,7 +125,7 @@ public class AMQMessage
             try
             {
 
-                AMQBody cb = getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(), _messageId, ++_index));
+                AMQBodyImpl cb = getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(), _messageId, ++_index));
                 return new AMQFrame(_channel, cb);
             }
             catch (AMQException e)
@@ -136,7 +147,7 @@ public class AMQMessage
         }
     }
 
-    private StoreContext getStoreContext()
+    public StoreContext getStoreContext()
     {
         return _txnContext.getStoreContext();
     }
@@ -579,6 +590,7 @@ public class AMQMessage
         }
     }
 
+/*
     public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
             throws AMQException
     {
@@ -745,6 +757,12 @@ public class AMQMessage
         {
             protocolSession.writeFrame(bodyFrameIterator.next());
         }
+    }
+*/
+
+    public AMQMessageHandle getMessageHandle()
+    {
+        return _messageHandle;
     }
 
 

@@ -21,6 +21,8 @@
 package org.apache.qpid.codec;
 
 import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_8_0.BasicDeliverBodyImpl;
+
 import org.apache.mina.common.*;
 import org.apache.mina.common.support.BaseIoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
@@ -238,7 +240,7 @@ public class BasicDeliverTest
         return new CompositeAMQDataBlock(frames);
     }
 
-    static AMQFrame wrapBody(AMQBody body)
+    static AMQFrame wrapBody(AMQBodyImpl body)
     {
         AMQFrame frame = new AMQFrame(1, body);
         return frame;
@@ -264,13 +266,11 @@ public class BasicDeliverTest
         return body;
     }
 
-    static BasicDeliverBody createBasicDeliverBody()
+    static BasicDeliverBodyImpl createBasicDeliverBody()
     {
-        BasicDeliverBody body = new BasicDeliverBody((byte) 8, (byte) 0,
-                                                     BasicDeliverBody.getClazz((byte) 8, (byte) 0),
-                                                     BasicDeliverBody.getMethod((byte) 8, (byte) 0),                                                     
-                                                     new AMQShortString("myConsumerTag"), 1,
-                                                     new AMQShortString("myExchange"), false,
+        BasicDeliverBodyImpl body = new BasicDeliverBodyImpl(                                                     
+                                                     new AMQShortString("myConsumerTag"), 1,false,
+                                                     new AMQShortString("myExchange"),
                                                      new AMQShortString("myRoutingKey"));
         return body;
     }

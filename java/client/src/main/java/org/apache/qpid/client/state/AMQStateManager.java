@@ -27,34 +27,20 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.handler.BasicCancelOkMethodHandler;
-import org.apache.qpid.client.handler.BasicDeliverMethodHandler;
-import org.apache.qpid.client.handler.BasicReturnMethodHandler;
-import org.apache.qpid.client.handler.ChannelCloseMethodHandler;
-import org.apache.qpid.client.handler.ChannelCloseOkMethodHandler;
-import org.apache.qpid.client.handler.ChannelFlowOkMethodHandler;
-import org.apache.qpid.client.handler.ConnectionCloseMethodHandler;
-import org.apache.qpid.client.handler.ConnectionOpenOkMethodHandler;
-import org.apache.qpid.client.handler.ConnectionSecureMethodHandler;
-import org.apache.qpid.client.handler.ConnectionStartMethodHandler;
-import org.apache.qpid.client.handler.ConnectionTuneMethodHandler;
-import org.apache.qpid.client.handler.ExchangeBoundOkMethodHandler;
-import org.apache.qpid.client.handler.QueueDeleteOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.BasicCancelOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.BasicDeliverMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ChannelCloseOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ChannelFlowOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionOpenOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionTuneMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ExchangeBoundOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.QueueDeleteOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionCloseMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionSecureMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.BasicReturnMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.*;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.BasicCancelOkBody;
-import org.apache.qpid.framing.BasicDeliverBody;
-import org.apache.qpid.framing.BasicReturnBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.ChannelCloseOkBody;
-import org.apache.qpid.framing.ChannelFlowOkBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionOpenOkBody;
-import org.apache.qpid.framing.ConnectionSecureBody;
-import org.apache.qpid.framing.ConnectionStartBody;
-import org.apache.qpid.framing.ConnectionTuneBody;
-import org.apache.qpid.framing.ExchangeBoundOkBody;
-import org.apache.qpid.framing.QueueDeleteOkBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 
@@ -62,7 +48,7 @@ import org.apache.qpid.protocol.AMQMethodListener;
  * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
  * there is a separate state manager.
  */
-public class AMQStateManager implements AMQMethodListener
+public class AMQStateManager 
 {
     private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
     private AMQProtocolSession _protocolSession;
@@ -178,7 +164,7 @@ public class AMQStateManager implements AMQMethodListener
         StateAwareMethodListener handler = findStateTransitionHandler(_currentState, evt.getMethod());
         if (handler != null)
         {
-            handler.methodReceived(this, _protocolSession, evt);
+            handler.methodReceived(this, evt);
             return true;
         }
         return false;

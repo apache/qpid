@@ -222,17 +222,17 @@ public class ClusterMethodHandlerFactory implements MethodHandlerFactory
         }
     }
 
-    private <B extends AMQMethodBody> ReplicatingHandler<B> replicated(StateAwareMethodListener<B> handler)
+    private <B extends AMQMethodBodyImpl> ReplicatingHandler<B> replicated(StateAwareMethodListener<B> handler)
     {
         return new ReplicatingHandler<B>(_groupMgr, handler);
     }
 
-    private <B extends AMQMethodBody> StateAwareMethodListener<B> alternate(StateAwareMethodListener<B> peer, StateAwareMethodListener<B> client)
+    private <B extends AMQMethodBodyImpl> StateAwareMethodListener<B> alternate(StateAwareMethodListener<B> peer, StateAwareMethodListener<B> client)
     {
         return new PeerHandler<B>(peer, client);
     }
 
-    private <B extends AMQMethodBody> StateAwareMethodListener<B> chain(ClusterMethodHandler<B>... h)
+    private <B extends AMQMethodBodyImpl> StateAwareMethodListener<B> chain(ClusterMethodHandler<B>... h)
     {
         return new ChainedClusterMethodHandler<B>(h);
     }

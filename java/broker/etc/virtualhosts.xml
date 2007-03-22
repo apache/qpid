@@ -27,8 +27,13 @@
             <exchanges>
                 <exchange>
                     <type>direct</type>
+
                     <name>test.direct</name>
-                    <durable>true</durable>
+                    <test>
+                        <direct>
+                            <durable>true</durable>
+                        </direct>
+                    </test>
                 </exchange>
                 <exchange>
                     <type>topic</type>
@@ -40,7 +45,7 @@
                 <maximumQueueDepth>4235264</maximumQueueDepth>  <!-- 4Mb -->
                 <maximumMessageSize>2117632</maximumMessageSize> <!-- 2Mb -->
                 <maximumMessageAge>600000</maximumMessageAge>  <!-- 10 mins -->
-
+                <durable>true</durable>
                 <queue>
                     <name>queue</name>
                 </queue>

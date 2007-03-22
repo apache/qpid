@@ -25,7 +25,8 @@ import java.util.HashMap;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.CommonContentHeaderProperties;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQMessage;
 
 /**
@@ -63,8 +64,9 @@ public class PropertyExpression implements Expression
                     {
                         try
                         {
-                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
-                            return _properties.getReplyTo();
+                            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
+                            AMQShortString replyTo = _properties.getReplyTo();
+                            return replyTo == null ? null : replyTo.toString();
                         }
                         catch (AMQException e)
                         {
@@ -83,8 +85,9 @@ public class PropertyExpression implements Expression
                     {
                         try
                         {
-                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
-                            return _properties.getType();
+                            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
+                            AMQShortString type = _properties.getType();
+                            return type == null ? null : type.toString();
                         }
                         catch (AMQException e)
                         {
@@ -126,7 +129,7 @@ public class PropertyExpression implements Expression
                     {
                         try
                         {
-                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
                             return (int) _properties.getPriority();
                         }
                         catch (AMQException e)
@@ -147,8 +150,9 @@ public class PropertyExpression implements Expression
 
                         try
                         {
-                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
-                            return _properties.getMessageId();
+                            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
+                            AMQShortString messageId =  _properties.getMessageId();
+                            return messageId == null ? null : messageId;
                         }
                         catch (AMQException e)
                         {
@@ -168,7 +172,7 @@ public class PropertyExpression implements Expression
 
                         try
                         {
-                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
                             return _properties.getTimestamp();
                         }
                         catch (AMQException e)
@@ -189,8 +193,9 @@ public class PropertyExpression implements Expression
 
                         try
                         {
-                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
-                            return _properties.getCorrelationId();
+                            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
+                            AMQShortString correlationId = _properties.getCorrelationId();
+                            return correlationId == null ? null : correlationId.toString();
                         }
                         catch (AMQException e)
                         {
@@ -210,7 +215,7 @@ public class PropertyExpression implements Expression
 
                         try
                         {
-                            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+                            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
                             return _properties.getExpiration();
                         }
                         catch (AMQException e)
@@ -254,7 +259,7 @@ public class PropertyExpression implements Expression
         else
         {
 
-            BasicContentHeaderProperties _properties = (BasicContentHeaderProperties) message.getContentHeaderBody().properties;
+            CommonContentHeaderProperties _properties = (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
 
             if(_logger.isDebugEnabled())
             {

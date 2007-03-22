@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
@@ -27,9 +27,9 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ConnectionSecureBody;
 import org.apache.qpid.framing.ConnectionSecureOkBody;
+import org.apache.qpid.framing.amqp_8_0.ConnectionSecureOkBodyImpl;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
 public class ConnectionSecureMethodHandler implements StateAwareMethodListener
@@ -41,8 +41,9 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
         SaslClient client = protocolSession.getSaslClient();
         if (client == null)
         {
@@ -54,14 +55,10 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         try
         {
             // Evaluate server challenge
-            byte[] response = client.evaluateChallenge(body.challenge);
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            AMQFrame responseFrame = ConnectionSecureOkBody.createAMQFrame(evt.getChannelId(),
-                body.getMajor(), body.getMinor(),
-                response);	// response
-            protocolSession.writeFrame(responseFrame);
+            byte[] response = client.evaluateChallenge(body.getChallenge());
+
+            ConnectionSecureOkBody secureOkBody = createConnectionSecureOkBody(response);
+            protocolSession.getOutputHandler().sendCommand(evt.getChannelId(),secureOkBody);
         }
         catch (SaslException e)
         {
@@ -69,5 +66,10 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         }
 
 
+    }
+
+    protected ConnectionSecureOkBody createConnectionSecureOkBody(byte[] response)
+    {
+        return new ConnectionSecureOkBodyImpl(response);
     }
 }

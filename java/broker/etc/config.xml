@@ -89,8 +89,8 @@
 			<name>localhost</name>
 			<localhost>
 			    <store>
-					<!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>  -->
-					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
+					<class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+					<!--<class>org.apache.qpid.server.store.MemoryMessageStore</class>-->
 					<environment-path>localhost-store</environment-path>
 			    </store>		
 			</localhost>
@@ -101,7 +101,9 @@
 			<development>
 			    <store>
 					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
-			    </store>			
+                    <!--<class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>-->
+                    <environment-path>development-store</environment-path>
+                </store>
 			</development>
 		</virtualhost>
 		
@@ -110,7 +112,10 @@
 			<test>
 			    <store>
 					<class>org.apache.qpid.server.store.MemoryMessageStore</class>
-			    </store>			
+                    <!--<class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>-->
+                    <environment-path>test-store</environment-path>
+
+			    </store>
 			</test>
 		</virtualhost>
 		

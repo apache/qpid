@@ -18,12 +18,13 @@
 
 package org.apache.qpid.framing.abstraction;
 
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.framing.AMQMethodBody;
 
 
 public interface MessagePublishInfoConverter
 {
     public MessagePublishInfo convertToInfo(AMQMethodBody body);
-    public AMQMethodBody convertToBody(MessagePublishInfo info);
+    public AMQMethodBodyImpl convertToBody(MessagePublishInfo info);
 
 }

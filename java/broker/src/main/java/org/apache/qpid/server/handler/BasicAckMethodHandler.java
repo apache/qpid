@@ -61,6 +61,6 @@ public class BasicAckMethodHandler implements StateAwareMethodListener<BasicAckB
         }
 
         // this method throws an AMQException if the delivery tag is not known
-        channel.acknowledgeMessage(body.deliveryTag, body.multiple);
+        channel.acknowledgeMessage(body.getDeliveryTag(), body.getMultiple());
     }
 }

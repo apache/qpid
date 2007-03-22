@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionClosedException;
@@ -31,6 +31,7 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
+import org.apache.qpid.framing.amqp_8_0.ConnectionCloseOkBodyImpl;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
@@ -45,26 +46,31 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         return _handler;
     }
 
-    private ConnectionCloseMethodHandler()
+    protected ConnectionCloseMethodHandler()
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
         _logger.info("ConnectionClose frame received");
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
         ConnectionCloseBody method = (ConnectionCloseBody) evt.getMethod();
 
         // does it matter
         //stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
-        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
-        AMQShortString reason = method.replyText;
+        AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
+        AMQShortString reason = method.getReplyText();
 
         try
         {
-            // TODO: check whether channel id of zero is appropriate
-            // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short) 0, method.getMajor(), method.getMinor()));
+
+
+
+            ConnectionCloseOkBody closeOkBody = createConnectionCloseOkBody();
+            protocolSession.getOutputHandler().sendCommand(0, closeOkBody);
+
+
 
             if (errorCode != AMQConstant.REPLY_SUCCESS)
             {
@@ -97,4 +103,10 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
             stateManager.changeState(AMQState.CONNECTION_CLOSED);
         }
     }
+
+    protected ConnectionCloseOkBody createConnectionCloseOkBody()
+    {
+        return new ConnectionCloseOkBodyImpl();
+    }
+
 }

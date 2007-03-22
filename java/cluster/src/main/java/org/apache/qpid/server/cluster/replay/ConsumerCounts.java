@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.cluster.replay;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.AMQShortString;
 
@@ -48,7 +48,7 @@ class ConsumerCounts
         return count == null ? 0 : count;
     }
 
-    synchronized void replay(List<AMQMethodBody> messages)
+    synchronized void replay(List<AMQMethodBodyImpl> messages)
     {
         for(AMQShortString queue : _counts.keySet())
         {
@@ -72,7 +72,7 @@ class ConsumerCounts
         }
     }
 
-    private void replay(BasicConsumeBody msg, List<AMQMethodBody> messages)
+    private void replay(BasicConsumeBody msg, List<AMQMethodBodyImpl> messages)
     {
         int count = _counts.get(msg.queue);
         for(int i = 0; i < count; i++)

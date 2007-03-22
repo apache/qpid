@@ -43,25 +43,15 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionStartBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.MainRegistry;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
-import org.apache.qpid.framing.VersionSpecificRegistry;
-import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_8_0.ConnectionStartBodyImpl;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -71,7 +61,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public class AMQMinaProtocolSession implements AMQProtocolSession,
-                                               ProtocolVersionList,
                                                Managable
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
@@ -111,12 +100,13 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private long _maxNoOfChannels = 1000;
 
     /* AMQP Version for this session */
-    private byte _major = pv[pv.length - 1][PROTOCOL_MAJOR];
-    private byte _minor = pv[pv.length - 1][PROTOCOL_MINOR];
+    private ProtocolVersion _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
+
     private FieldTable _clientProperties;
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
-    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(pv[pv.length - 1][PROTOCOL_MAJOR], pv[pv.length - 1][PROTOCOL_MINOR]);
+    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(_protocolVersion);
     private List<Integer> _closingChannelsList = new ArrayList<Integer>();
+    private ProtocolOutputConverter _protocolOutputConverter;
 
 
     public ManagedObject getManagedObject()
@@ -195,86 +185,123 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _lastReceived = message;
         if (message instanceof ProtocolInitiation)
         {
-            ProtocolInitiation pi = (ProtocolInitiation) message;
-            // this ensures the codec never checks for a PI message again
-            ((AMQDecoder) _codecFactory.getDecoder()).setExpectProtocolInitiation(false);
-            try
-            {
-                pi.checkVersion(this); // Fails if not correct
+            protocolInitiationReceived((ProtocolInitiation) message);
 
-                // This sets the protocol version (and hence framing classes) for this session.
-                setProtocolVersion(pi.protocolMajor, pi.protocolMinor);
+        }
+        else if (message instanceof AMQFrame)
+        {
+            AMQFrame frame = (AMQFrame) message;
+            frameReceived(frame);
 
-                String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
-
-                String locales = "en_US";
-
-                // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
-                AMQFrame response = ConnectionStartBody.createAMQFrame((short) 0,
-                                                                       _major, _minor,    // AMQP version (major, minor)
-                                                                       locales.getBytes(),    // locales
-                                                                       mechanisms.getBytes(),    // mechanisms
-                                                                       null,    // serverProperties
-                                                                       (short) _major,    // versionMajor
-                                                                       (short) _minor);    // versionMinor
-                _minaProtocolSession.write(response);
-            }
-            catch (AMQException e)
-            {
-                _logger.error("Received incorrect protocol initiation", e);
-                /* Find last protocol version in protocol version list. Make sure last protocol version
-                listed in the build file (build-module.xml) is the latest version which will be used
-                here. */
-                int i = pv.length - 1;
-                _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
-                // TODO: Close connection (but how to wait until message is sent?)
-                // ritchiem 2006-12-04 will this not do?
-//                WriteFuture future = _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
-//                future.join();
-//                close connection
-
-            }
         }
         else
         {
-            AMQFrame frame = (AMQFrame) message;
-
-            if (frame.getBodyFrame() instanceof AMQMethodBody)
-            {
-                methodFrameReceived(frame);
-            }
-            else
-            {
-                contentFrameReceived(frame);
-            }
+            throw new UnknnownMessageTypeException(message);
         }
     }
 
-    private void methodFrameReceived(AMQFrame frame)
+    private void frameReceived(AMQFrame frame)
+            throws AMQException
     {
-        if (_logger.isDebugEnabled())
+        int channelId = frame.getChannel();
+        AMQBody body = frame.getBodyFrame();
+
+        if(_logger.isDebugEnabled())
         {
-            _logger.debug("Method frame received: " + frame);
+            _logger.debug("Frame Received: " + frame);
         }
 
-        final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(frame.getChannel(),
-                                                                                    (AMQMethodBody) frame.getBodyFrame());
+        if (body instanceof AMQMethodBodyImpl)
+        {
+            methodFrameReceived(channelId, (AMQMethodBodyImpl)body);
+        }
+        else if (body instanceof ContentHeaderBody)
+        {
+            contentHeaderReceived(channelId, (ContentHeaderBody)body);
+        }
+        else if (body instanceof ContentBody)
+        {
+            contentBodyReceived(channelId, (ContentBody)body);
+        }
+        else if (body instanceof HeartbeatBody)
+        {
+            // NO OP
+        }
+        else
+        {
+            _logger.warn("Unrecognised frame " + frame.getClass().getName());
+        }
+    }
+
+    private void protocolInitiationReceived(ProtocolInitiation pi)
+    {
+        // this ensures the codec never checks for a PI message again
+        ((AMQDecoder) _codecFactory.getDecoder()).setExpectProtocolInitiation(false);
+        try
+        {
+            pi.checkVersion(); // Fails if not correct
+
+            // This sets the protocol version (and hence framing classes) for this session.
+            setProtocolVersion(pi._protocolMajor, pi._protocolMinor);
+
+            String mechanisms = ApplicationRegistry.getInstance().getAuthenticationManager().getMechanisms();
+
+            String locales = "en_US";
+
+            ConnectionStartBody connectionStartBody = createConnectionStartBody(pi,
+                                                                                locales.getBytes(),
+                                                                                mechanisms.getBytes(),
+                                                                                null);
+
+            // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
+            AMQFrame response = new AMQFrame((short) 0,connectionStartBody);    // versionMinor
+            _minaProtocolSession.write(response);
+        }
+        catch (AMQException e)
+        {
+            _logger.error("Received incorrect protocol initiation", e);
+
+            _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
+
+            // TODO: Close connection (but how to wait until message is sent?)
+            // ritchiem 2006-12-04 will this not do?
+//                WriteFuture future = _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOLgetProtocolMajorVersion()], pv[i][PROTOCOLgetProtocolMinorVersion()]));
+//                future.join();
+//                close connection
+
+        }
+    }
+
+    private ConnectionStartBody createConnectionStartBody(ProtocolInitiation pi,
+                                                          byte[] locales,
+                                                          byte[] mechanisms,
+                                                          FieldTable serverProperties)
+    {
+        return new ConnectionStartBodyImpl(pi._protocolMajor, pi._protocolMinor,serverProperties,mechanisms,locales);
+    }
+
+
+    private void methodFrameReceived(int channelId, AMQMethodBodyImpl methodBody)
+    {
+
+        final AMQMethodEvent<AMQMethodBodyImpl> evt = new AMQMethodEvent<AMQMethodBodyImpl>(channelId,
+                                                                                    methodBody);
 
         //Check that this channel is not closing
-        if (channelAwaitingClosure(frame.getChannel()))
+        if (channelAwaitingClosure(channelId))
         {
             if ((evt.getMethod() instanceof ChannelCloseOkBody))
             {
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Channel[" + frame.getChannel() + "] awaiting closure - processing close-ok");
+                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
                 }
             }
             else
             {
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Channel[" + frame.getChannel() + "] awaiting closure ignoring");
+                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
                 }
                 return;
             }
@@ -298,19 +325,19 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 }
                 if (!wasAnyoneInterested)
                 {
-                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener on Broker.");
+                    throw new AMQNoMethodHandlerException(evt);
                 }
             }
             catch (AMQChannelException e)
             {
-                if (getChannel(frame.getChannel()) != null)
+                if (getChannel(channelId) != null)
                 {
                     if (_logger.isInfoEnabled())
                     {
                         _logger.info("Closing channel due to: " + e.getMessage());
                     }
-                    writeFrame(e.getCloseFrame(frame.getChannel()));
-                    closeChannel(frame.getChannel());
+                    writeFrame(e.getCloseFrame(channelId));
+                    closeChannel(channelId);
                 }
                 else
                 {
@@ -328,7 +355,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                                                                                        AMQConstant.CHANNEL_ERROR.getName().toString());
 
                     _stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                    writeFrame(ce.getCloseFrame(frame.getChannel()));
+                    writeFrame(ce.getCloseFrame(channelId));
                 }
             }
             catch (AMQConnectionException e)
@@ -339,7 +366,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 }
                 closeSession();
                 _stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                writeFrame(e.getCloseFrame(frame.getChannel()));
+                writeFrame(e.getCloseFrame(channelId));
             }
         }
         catch (Exception e)
@@ -353,61 +380,21 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         }
     }
 
-    private void contentFrameReceived(AMQFrame frame) throws AMQException
+
+    private void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException
     {
-        if (frame.getBodyFrame() instanceof ContentHeaderBody)
-        {
-            contentHeaderReceived(frame);
-        }
-        else if (frame.getBodyFrame() instanceof ContentBody)
-        {
-            contentBodyReceived(frame);
-        }
-        else if (frame.getBodyFrame() instanceof HeartbeatBody)
-        {
-            _logger.debug("Received heartbeat from client");
-        }
-        else
-        {
-            _logger.warn("Unrecognised frame " + frame.getClass().getName());
-        }
+
+        AMQChannel channel = getAndAssertChannel(channelId);
+
+        channel.publishContentHeader(body);
+
     }
 
-    private void contentHeaderReceived(AMQFrame frame) throws AMQException
+    private void contentBodyReceived(int channelId, ContentBody body) throws AMQException
     {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Content header frame received: " + frame);
-        }
+        AMQChannel channel = getAndAssertChannel(channelId);
 
-        AMQChannel channel = getChannel(frame.getChannel());
-
-        if (channel == null)
-        {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + frame.getChannel());
-        }
-        else
-        {
-            channel.publishContentHeader((ContentHeaderBody) frame.getBodyFrame());
-        }
-    }
-
-    private void contentBodyReceived(AMQFrame frame) throws AMQException
-    {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Content body frame received: " + frame);
-        }
-        AMQChannel channel = getChannel(frame.getChannel());
-
-        if (channel == null)
-        {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + frame.getChannel());
-        }
-        else
-        {
-            channel.publishContentBody((ContentBody) frame.getBodyFrame(), this);
-        }
+        channel.publishContentBody(body, this);
     }
 
     /**
@@ -435,6 +422,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     public List<AMQChannel> getChannels()
     {
         return new ArrayList<AMQChannel>(_channelMap.values());
+    }
+
+    public AMQChannel getAndAssertChannel(int channelId) throws AMQException
+    {
+        AMQChannel channel = getChannel(channelId);
+        if (channel == null)
+        {
+            throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + channelId);
+        }
+        return channel;
     }
 
     public AMQChannel getChannel(int channelId) throws AMQException
@@ -685,24 +682,26 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     private void setProtocolVersion(byte major, byte minor)
     {
-        _major = major;
-        _minor = minor;
-        _registry = MainRegistry.getVersionSpecificRegistry(major, minor);
+        _protocolVersion = new ProtocolVersion(major,minor);
+
+        _registry = MainRegistry.getVersionSpecificRegistry(_protocolVersion);
+
+        _protocolOutputConverter = ProtocolOutputConverterRegistry.getConverter(this);
     }
 
     public byte getProtocolMajorVersion()
     {
-        return _major;
+        return _protocolVersion.getMajorVersion();
     }
 
     public byte getProtocolMinorVersion()
     {
-        return _minor;
+        return _protocolVersion.getMinorVersion();
     }
 
     public boolean isProtocolVersion(byte major, byte minor)
     {
-        return _major == major && _minor == minor;
+        return getProtocolMajorVersion() == major && getProtocolMinorVersion() == minor;
     }
 
     public VersionSpecificRegistry getRegistry()
@@ -739,5 +738,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         _taskList.remove(task);
     }
 
+    public ProtocolOutputConverter getProtocolOutputConverter()
+    {
+        return _protocolOutputConverter;
+    }
 
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolVersion;
+    }
 }

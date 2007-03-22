@@ -41,10 +41,14 @@ public class FieldTable
     private LinkedHashMap<AMQShortString, AMQTypedValue> _properties;
     private long _encodedSize;
     private static final int INITIAL_HASHMAP_CAPACITY = 16;
+    private static final int INITIAL_ENCODED_FORM_SIZE = 256;
 
     public FieldTable()
     {
         super();
+//        _encodedForm = ByteBuffer.allocate(INITIAL_ENCODED_FORM_SIZE);
+//        _encodedForm.setAutoExpand(true);
+//        _encodedForm.limit(0);
     }
 
     /**
@@ -109,11 +113,28 @@ public class FieldTable
     private AMQTypedValue setProperty(AMQShortString key, AMQTypedValue val)
     {
         initMapIfNecessary();
-        _encodedForm = null;
-        if(val == null)
+        if(_properties.containsKey(key))
         {
-            return removeKey(key);
+            _encodedForm = null;
+
+            if(val == null)
+            {
+                return removeKey(key);
+            }
         }
+        else if(_encodedForm != null && val != null)
+        {
+            EncodingUtils.writeShortStringBytes(_encodedForm, key);
+            val.writeToBuffer(_encodedForm);
+
+        }
+        else if (val == null)
+        {
+            return null;
+        }
+
+
+
         AMQTypedValue oldVal = _properties.put(key,val);
         if(oldVal != null)
         {
@@ -134,7 +155,7 @@ public class FieldTable
         {
             if(_properties == null)
             {
-                if(_encodedForm == null)
+                if(_encodedForm == null  || _encodedSize == 0)
                 {
                     _properties = new LinkedHashMap<AMQShortString,AMQTypedValue>();
                 }
@@ -655,6 +676,7 @@ public class FieldTable
         if (trace)
         {
             _logger.trace("FieldTable::writeToBuffer: Writing encoded length of " + getEncodedSize() + "...");
+            _logger.trace(_properties);
         }
 
         EncodingUtils.writeUnsignedInteger(buffer, getEncodedSize());
@@ -701,6 +723,7 @@ public class FieldTable
     public void addAll(FieldTable fieldTable)
     {
         initMapIfNecessary();
+        _encodedForm = null;
         _properties.putAll(fieldTable._properties);
         recalculateEncodedSize();
     }
@@ -836,7 +859,13 @@ public class FieldTable
 
         if(_encodedForm != null)
         {
-             buffer.put(_encodedForm);
+
+            if(_encodedForm.position() != 0)
+            {
+                _encodedForm.flip();
+            }
+//            _encodedForm.limit((int)getEncodedSize());
+            buffer.put(_encodedForm);
         }
         else if(_properties != null)
         {
@@ -924,4 +953,33 @@ public class FieldTable
         }
     }
 
+    public int hashCode()
+    {
+        initMapIfNecessary();
+        return _properties.hashCode();
+    }
+
+
+    public boolean equals(Object o)
+    {
+        if(o == this)
+        {
+            return true;
+        }
+        if(o == null)
+        {
+            return false;
+        }
+        if(!(o instanceof FieldTable))
+        {
+            return false;
+        }
+
+        initMapIfNecessary();
+
+        FieldTable f = (FieldTable) o;
+        f.initMapIfNecessary();
+
+        return _properties.equals(f._properties);
+    }
 }

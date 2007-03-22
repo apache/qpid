@@ -118,8 +118,8 @@ public class FieldTableTest extends TestCase
         //decode
         buffer.flip();
 
-        header = new ContentHeaderBody();
-        header.populateFromBuffer(buffer, size);
+        header = new ContentHeaderBody(buffer, size);
+        
 
         return ((BasicContentHeaderProperties) header.properties).getHeaders();
     }

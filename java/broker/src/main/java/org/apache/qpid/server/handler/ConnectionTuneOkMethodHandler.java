@@ -49,6 +49,6 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
             _logger.debug(body);
         }
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
-        session.initHeartbeats(body.heartbeat);
+        session.initHeartbeats(body.getHeartbeat());
     }
 }

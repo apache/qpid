@@ -44,7 +44,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
 
         QueuePurgeBody body = evt.getMethod();
         AMQQueue queue;
-        if(body.queue == null)
+        if(body.getQueue() == null)
         {
 
            if (channel == null)
@@ -65,14 +65,14 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         }
         else
         {
-            queue = queueRegistry.getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.getQueue());
         }
 
         if(queue == null)
         {
             if(_failIfNotFound)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
             }
         }
         else
@@ -80,7 +80,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
                 long purged = queue.clearQueue(channel.getStoreContext());
 
 
-                if(!body.nowait)
+                if(!body.getNowait())
                 {
                     // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

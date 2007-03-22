@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.cluster.replay;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
-abstract class ChainedMethodRecorder <T extends AMQMethodBody> implements MethodRecorder<T>
+abstract class ChainedMethodRecorder <T extends AMQMethodBodyImpl> implements MethodRecorder<T>
 {
     private final MethodRecorder<T> _recorder;
 

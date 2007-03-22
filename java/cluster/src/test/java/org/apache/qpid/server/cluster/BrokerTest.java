@@ -23,11 +23,11 @@ package org.apache.qpid.server.cluster;
 import junit.framework.TestCase;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQBodyImpl;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.server.cluster.policy.StandardPolicies;
 
 import java.util.ArrayList;
@@ -91,13 +91,13 @@ public class BrokerTest extends TestCase
     //simple send (no response)
     public void testSend_noResponse() throws AMQException
     {
-        AMQBody[] msgs = new AMQBody[]{
+        AMQBodyImpl[] msgs = new AMQBodyImpl[]{
                 new TestMethod("A"),
                 new TestMethod("B"),
                 new TestMethod("C")
         };
         RecordingBroker broker = new RecordingBroker("myhost", 1);
-        for (AMQBody msg : msgs)
+        for (AMQBodyImpl msg : msgs)
         {
             broker.send(new SimpleBodySendable(msg), null);
         }
@@ -142,7 +142,7 @@ public class BrokerTest extends TestCase
         assertTrue(handler.failed());
     }
 
-    private static class TestMethod extends AMQMethodBody
+    private static class TestMethod extends AMQMethodBodyImpl
     {
         private final Object id;
 
@@ -209,19 +209,19 @@ public class BrokerTest extends TestCase
 
     private static class GroupResponseValidator implements GroupResponseHandler
     {
-        private final AMQMethodBody _response;
+        private final AMQMethodBodyImpl _response;
         private final List<Member> _members;
         private boolean _completed = false;
 
-        GroupResponseValidator(AMQMethodBody response, List<Member> members)
+        GroupResponseValidator(AMQMethodBodyImpl response, List<Member> members)
         {
             _response = response;
             _members = members;
         }
 
-        public void response(List<AMQMethodBody> responses, List<Member> members)
+        public void response(List<AMQMethodBodyImpl> responses, List<Member> members)
         {
-            for (AMQMethodBody r : responses)
+            for (AMQMethodBodyImpl r : responses)
             {
                 assertEquals(_response, r);
             }

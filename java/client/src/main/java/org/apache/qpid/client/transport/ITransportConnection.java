@@ -22,11 +22,11 @@ package org.apache.qpid.client.transport;
 
 import java.io.IOException;
 
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
 import org.apache.qpid.jms.BrokerDetails;
 
 public interface ITransportConnection
 {
-    void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail)
+    void connect(AMQProtocolHandlerImpl protocolHandler, BrokerDetails brokerDetail)
             throws IOException;
 }

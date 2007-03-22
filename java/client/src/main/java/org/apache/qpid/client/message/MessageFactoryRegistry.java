@@ -92,14 +92,14 @@ public class MessageFactoryRegistry
 
         // Get the message content type. This may be null for pure AMQP messages, but will always be set for JMS over
         // AMQP. When the type is null, it can only be assumed that the message is a byte message.
-        AMQShortString contentTypeShortString = properties.getContentTypeShortString();
+        AMQShortString contentTypeShortString = properties.getContentType();
         contentTypeShortString = (contentTypeShortString == null) ? new AMQShortString(JMSBytesMessage.MIME_TYPE)
                                                                   : contentTypeShortString;
 
         MessageFactory mf = _mimeShortStringToFactoryMap.get(contentTypeShortString);
         if (mf == null)
         {
-            throw new AMQException("Unsupport MIME type of " + properties.getContentType());
+            throw new AMQException("Unsupport MIME type of " + properties.getContentTypeAsString());
         }
         else
         {

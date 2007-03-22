@@ -38,17 +38,11 @@ import javax.jms.Topic;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageConverter;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.CompositeAMQDataBlock;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
+import org.apache.qpid.framing.*;
 
 public class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
@@ -91,7 +85,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
      */
     private String _mimeType;
 
-    private AMQProtocolHandler _protocolHandler;
+    private AMQProtocolHandlerImpl _protocolHandler;
 
     /**
      * True if this producer was created from a transacted session
@@ -121,7 +115,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
+                                   AMQSession session, AMQProtocolHandlerImpl protocolHandler, long producerId,
                                    boolean immediate, boolean mandatory, boolean waitUntilSent)
     {
         _connection = connection;
@@ -152,20 +146,28 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     private void declareDestination(AMQDestination destination)
     {
         // Declare the exchange
-        // Note that the durable and internal arguments are ignored since passive is set to false
-        // TODO: Be aware of possible changes to parameter order as versions change.
-        AMQFrame declare =
-            ExchangeDeclareBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
-                                               _protocolHandler.getProtocolMinorVersion(), null, // arguments
-                                               false, // autoDelete
-                                               false, // durable
-                                               destination.getExchangeName(), // exchange
-                                               false, // internal
-                                               true, // nowait
-                                               false, // passive
-                                               _session.getTicket(), // ticket
-                                               destination.getExchangeClass()); // type
-        _protocolHandler.writeFrame(declare);
+
+        ExchangeDeclareBody exchangeDeclareBody =
+                getAMQMethodFactory().createExchangeDeclare(destination.getExchangeName(),
+                                                            destination.getExchangeClass(),
+                                                            _session.getTicket());
+        sendCommand(exchangeDeclareBody);
+
+    }
+
+    private void sendCommand(AMQMethodBody command)
+    {
+        getSession().sendCommand(command);
+    }
+
+    private AMQMethodBody sendCommandReceiveResponse(AMQMethodBody command) throws AMQException
+    {
+        return getSession().sendCommandReceiveResponse(command);
+    }
+
+    private AMQMethodFactory getAMQMethodFactory()
+    {
+        return getSession().getAMQMethodFactory();
     }
 
     public void setDisableMessageID(boolean b) throws JMSException
@@ -467,21 +469,9 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
         message.getJmsHeaders().setInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName(), type);
 
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        AMQFrame publishFrame =
-            BasicPublishBody.createAMQFrame(
-                _channelId, _protocolHandler.getProtocolMajorVersion(), _protocolHandler.getProtocolMinorVersion(),
-                destination.getExchangeName(), // exchange
-                immediate, // immediate
-                mandatory, // mandatory
-                destination.getRoutingKey(), // routingKey
-                _session.getTicket()); // ticket
-
         message.prepareForSending();
         ByteBuffer payload = message.getData();
-        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
+        CommonContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
 
         if (!_disableTimestamps)
         {
@@ -501,37 +491,15 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         contentHeaderProperties.setDeliveryMode((byte) deliveryMode);
         contentHeaderProperties.setPriority((byte) priority);
 
-        final int size = (payload != null) ? payload.limit() : 0;
-        final int contentBodyFrameCount = calculateContentBodyFrameCount(payload);
-        final AMQFrame[] frames = new AMQFrame[2 + contentBodyFrameCount];
+        getSession().getProtocolOutputHandler().publishMessage(getSession().getChannelId(),
+                                                               destination.getExchangeName(),
+                                                               destination.getRoutingKey(),
+                                                               immediate,
+                                                               mandatory,
+                                                               payload,
+                                                               contentHeaderProperties,
+                                                               getSession().getTicket());
 
-        if (payload != null)
-        {
-            createContentBodies(payload, frames, 2, _channelId);
-        }
-
-        if ((contentBodyFrameCount != 0) && _logger.isDebugEnabled())
-        {
-            _logger.debug("Sending content body frames to " + destination);
-        }
-
-        // weight argument of zero indicates no child content headers, just bodies
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        AMQFrame contentHeaderFrame =
-            ContentHeaderBody.createAMQFrame(_channelId,
-                                             BasicConsumeBody.getClazz(_protocolHandler.getProtocolMajorVersion(),
-                                                                       _protocolHandler.getProtocolMinorVersion()), 0,
-                                             contentHeaderProperties, size);
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Sending content header frame to " + destination);
-        }
-
-        frames[0] = publishFrame;
-        frames[1] = contentHeaderFrame;
-        CompositeAMQDataBlock compositeFrame = new CompositeAMQDataBlock(frames);
-        _protocolHandler.writeFrame(compositeFrame, wait);
 
         if (message != origMessage)
         {
@@ -543,6 +511,8 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             origMessage.setJMSMessageID(message.getJMSMessageID());
         }
     }
+
+
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException
     {
@@ -564,59 +534,6 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         }
     }
 
-    /**
-     * Create content bodies. This will split a large message into numerous bodies depending on the negotiated
-     * maximum frame size.
-     *
-     * @param payload
-     * @param frames
-     * @param offset
-     * @param channelId @return the array of content bodies
-     */
-    private void createContentBodies(ByteBuffer payload, AMQFrame[] frames, int offset, int channelId)
-    {
-
-        if (frames.length == (offset + 1))
-        {
-            frames[offset] = ContentBody.createAMQFrame(channelId, new ContentBody(payload));
-        }
-        else
-        {
-
-            final long framePayloadMax = _session.getAMQConnection().getMaximumFrameSize() - 1;
-            long remaining = payload.remaining();
-            for (int i = offset; i < frames.length; i++)
-            {
-                payload.position((int) framePayloadMax * (i - offset));
-                int length = (remaining >= framePayloadMax) ? (int) framePayloadMax : (int) remaining;
-                payload.limit(payload.position() + length);
-                frames[i] = ContentBody.createAMQFrame(channelId, new ContentBody(payload.slice()));
-
-                remaining -= length;
-            }
-        }
-
-    }
-
-    private int calculateContentBodyFrameCount(ByteBuffer payload)
-    {
-        // we substract one from the total frame maximum size to account for the end of frame marker in a body frame
-        // (0xCE byte).
-        int frameCount;
-        if ((payload == null) || (payload.remaining() == 0))
-        {
-            frameCount = 0;
-        }
-        else
-        {
-            int dataLength = payload.remaining();
-            final long framePayloadMax = _session.getAMQConnection().getMaximumFrameSize() - 1;
-            int lastFrame = ((dataLength % framePayloadMax) > 0) ? 1 : 0;
-            frameCount = (int) (dataLength / framePayloadMax) + lastFrame;
-        }
-
-        return frameCount;
-    }
 
     public void setMimeType(String mimeType) throws JMSException
     {

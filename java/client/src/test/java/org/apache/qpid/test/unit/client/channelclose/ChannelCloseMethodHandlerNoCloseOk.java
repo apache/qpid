@@ -46,13 +46,14 @@ public class ChannelCloseMethodHandlerNoCloseOk implements StateAwareMethodListe
         return _handler;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
         _logger.debug("ChannelClose method received");
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
         ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
 
-        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
-        AMQShortString reason = method.replyText;
+        AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
+        AMQShortString reason = method.getReplyText();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);

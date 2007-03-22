@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.framing.VersionSpecificRegistry;
+import org.apache.qpid.framing.MethodRegistry;
 
 public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, ProtocolVersionAware
 {
-    public VersionSpecificRegistry getRegistry();
+    public MethodRegistry getRegistry();
 }

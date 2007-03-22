@@ -18,40 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.store;
+package org.apache.qpid.framing;
 
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-
-import org.apache.mina.common.ByteBuffer;
-
-public class ContentChunkAdapter
+public class MainRegistry
 {
-    public static ContentBody toConentBody(ContentChunk contentBodyChunk)
+
+    public static VersionSpecificRegistry getVersionSpecificRegistry(byte versionMajor, byte versionMinor)
     {
-        return new ContentBody(contentBodyChunk.getData());
+        return null;  //To change body of created methods use File | Settings | File Templates.
     }
 
-    public static ContentChunk toConentChunk(final ContentBody contentBodyChunk)
+    public static VersionSpecificRegistry getVersionSpecificRegistry(ProtocolVersion pv)
     {
-        return new ContentChunk() {
-
-            public int getSize()
-            {
-                return contentBodyChunk.getSize();
-            }
-
-            public ByteBuffer getData()
-            {
-                return contentBodyChunk.payload;
-            }
-
-            public void reduceToFit()
-            {
-                contentBodyChunk.reduceBufferToFit();
-            }
-        };
-
+        return null;  //To change body of created methods use File | Settings | File Templates.
     }
-
 }

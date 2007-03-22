@@ -22,13 +22,14 @@ package org.apache.qpid.client.state.listener;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.framing.AMQMethodBody;
 
-public class SpecificMethodFrameListener extends BlockingMethodFrameListener
+public class SpecificMethodFrameListener<T extends AMQMethodBody> extends BlockingMethodFrameListener
 {
     private final Class _expectedClass;
 
-    public SpecificMethodFrameListener(int channelId, Class expectedClass)
+    public SpecificMethodFrameListener(int channelId, Class<T> expectedClass)
     {
         super(channelId);
         _expectedClass = expectedClass;

@@ -48,13 +48,21 @@ public class AMQDecoder extends CumulativeProtocolDecoder
 
     protected boolean doDecode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out) throws Exception
     {
-        if (_expectProtocolInitiation)
+        try
         {
-            return doDecodePI(session, in, out);
+            if (_expectProtocolInitiation)
+            {
+                return doDecodePI(session, in, out);
+            }
+            else
+            {
+                return doDecodeDataBlock(session, in, out);
+            }
         }
-        else
+        catch (Exception e)
         {
-            return doDecodeDataBlock(session, in, out);
+            e.printStackTrace();
+            throw e;
         }
     }
 

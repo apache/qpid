@@ -92,7 +92,7 @@
         <source>../../common/bin/qpid-run</source>
         <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
         <destName>qpid-run</destName>
-        <fileMode>493</fileMode>
+        <fileMode>473</fileMode>
     </file>
 
     <!-- Common Configuration -->

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.cluster;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.server.cluster.replay.ReplayManager;
 
 import java.util.ArrayList;
@@ -28,19 +28,19 @@ import java.util.List;
 
 class TestReplayManager implements ReplayManager
 {
-    private final List<AMQMethodBody> _msgs;
+    private final List<AMQMethodBodyImpl> _msgs;
 
     TestReplayManager()
     {
-        this(new ArrayList<AMQMethodBody>());
+        this(new ArrayList<AMQMethodBodyImpl>());
     }
 
-    TestReplayManager(List<AMQMethodBody> msgs)
+    TestReplayManager(List<AMQMethodBodyImpl> msgs)
     {
         _msgs = msgs;
     }
 
-    public List<AMQMethodBody> replay(boolean isLeader)
+    public List<AMQMethodBodyImpl> replay(boolean isLeader)
     {
         return _msgs;
     }

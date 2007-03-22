@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -45,12 +45,13 @@ public class ConnectionRedirectMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
     {
         _logger.info("ConnectionRedirect frame received");
+        final AMQProtocolSession protocolSession = stateManager.getProtocolSession();
         ConnectionRedirectBody method = (ConnectionRedirectBody) evt.getMethod();
 
-        String host = method.host.toString();
+        String host = method.getHost().toString();
         // the host is in the form hostname:port with the port being optional
         int portIndex = host.indexOf(':');
 

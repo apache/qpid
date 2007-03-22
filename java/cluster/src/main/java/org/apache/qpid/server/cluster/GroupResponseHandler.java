@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.cluster;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 import java.util.List;
 
 public interface GroupResponseHandler
 {
     //Note: this implies that the response to a group request will always be a method body...
-    public void response(List<AMQMethodBody> responses, List<Member> members);
+    public void response(List<AMQMethodBodyImpl> responses, List<Member> members);
 }

@@ -22,7 +22,7 @@ package org.apache.qpid.server.cluster.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.cluster.*;
 import org.apache.qpid.server.cluster.policy.StandardPolicies;
@@ -41,7 +41,7 @@ import java.util.List;
  * processed locally after 'completion' of this broadcast.
  *
  */
-class ReplicatingHandler<A extends AMQMethodBody> extends ClusterMethodHandler<A> implements StandardPolicies
+class ReplicatingHandler<A extends AMQMethodBodyImpl> extends ClusterMethodHandler<A> implements StandardPolicies
 {
     protected static final Logger _logger = Logger.getLogger(ReplicatingHandler.class);
 
@@ -109,7 +109,7 @@ class ReplicatingHandler<A extends AMQMethodBody> extends ClusterMethodHandler<A
             _evt = evt;
         }
 
-        public void response(List<AMQMethodBody> responses, List<Member> members)
+        public void response(List<AMQMethodBodyImpl> responses, List<Member> members)
         {
             try
             {

@@ -21,14 +21,12 @@
 package org.apache.qpid.server.cluster;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.IllegalStateTransitionException;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.cluster.util.LogMessage;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -74,7 +72,7 @@ class ServerHandlerRegistry extends AMQStateManager
         }
     }
 
-    protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState state, B frame) throws IllegalStateTransitionException
+    protected <B extends AMQMethodBodyImpl> StateAwareMethodListener<B> findStateTransitionHandler(AMQState state, B frame) throws IllegalStateTransitionException
     {
         MethodHandlerRegistry registry = _handlers.get(state);
         StateAwareMethodListener<B> handler = (registry == null) ? null : registry.getHandler(frame);
@@ -85,7 +83,7 @@ class ServerHandlerRegistry extends AMQStateManager
         return handler;
     }
 
-    <A extends AMQMethodBody, B extends Class<A>> void addHandler(AMQState state, B type, StateAwareMethodListener<A> handler)
+    <A extends AMQMethodBodyImpl, B extends Class<A>> void addHandler(AMQState state, B type, StateAwareMethodListener<A> handler)
     {
         MethodHandlerRegistry registry = _handlers.get(state);
         if (registry == null)

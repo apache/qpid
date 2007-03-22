@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.cluster;
 
-import org.apache.qpid.client.handler.ConnectionCloseMethodHandler;
-import org.apache.qpid.client.handler.ConnectionOpenOkMethodHandler;
-import org.apache.qpid.client.handler.ConnectionSecureMethodHandler;
-import org.apache.qpid.client.handler.ConnectionStartMethodHandler;
-import org.apache.qpid.client.handler.ConnectionTuneMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionCloseMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionOpenOkMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionSecureMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionTuneMethodHandler;
+import org.apache.qpid.client.handler.amqp_8_0.ConnectionStartMethodHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.IllegalStateTransitionException;
@@ -78,14 +78,14 @@ public class ClientHandlerRegistry extends AMQStateManager
         return registry;
     }
 
-    protected StateAwareMethodListener findStateTransitionHandler(AMQState state, AMQMethodBody frame) throws IllegalStateTransitionException
+    protected StateAwareMethodListener findStateTransitionHandler(AMQState state, AMQMethodBodyImpl frame) throws IllegalStateTransitionException
     {
         ClientRegistry registry = _handlers.get(state);
         return registry == null ? null : registry.getHandler(frame);
     }
 
 
-    <A extends Class<AMQMethodBody>> void addHandlers(Class type, StateAwareMethodListener handler, AMQState... states)
+    <A extends Class<AMQMethodBodyImpl>> void addHandlers(Class type, StateAwareMethodListener handler, AMQState... states)
     {
         for (AMQState state : states)
         {
@@ -93,7 +93,7 @@ public class ClientHandlerRegistry extends AMQStateManager
         }
     }
 
-    <A extends Class<AMQMethodBody>> void addHandler(Class type, StateAwareMethodListener handler, AMQState state)
+    <A extends Class<AMQMethodBodyImpl>> void addHandler(Class type, StateAwareMethodListener handler, AMQState state)
     {
         ClientRegistry registry = _handlers.get(state);
         if (registry == null)
@@ -106,15 +106,15 @@ public class ClientHandlerRegistry extends AMQStateManager
 
     static class ClientRegistry
     {
-        private final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener> registry
-                = new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener>();
+        private final Map<Class<? extends AMQMethodBodyImpl>, StateAwareMethodListener> registry
+                = new HashMap<Class<? extends AMQMethodBodyImpl>, StateAwareMethodListener>();
 
-        <A extends Class<AMQMethodBody>> void add(A type, StateAwareMethodListener handler)
+        <A extends Class<AMQMethodBodyImpl>> void add(A type, StateAwareMethodListener handler)
         {
             registry.put(type, handler);
         }
 
-        StateAwareMethodListener getHandler(AMQMethodBody frame)
+        StateAwareMethodListener getHandler(AMQMethodBodyImpl frame)
         {
             return registry.get(frame.getClass());
         }
@@ -122,9 +122,9 @@ public class ClientHandlerRegistry extends AMQStateManager
 
     class ConnectionTuneHandler extends ConnectionTuneMethodHandler
     {
-        protected AMQFrame createConnectionOpenFrame(int channel, AMQShortString path, AMQShortString capabilities, boolean insist, byte major, byte minor)
+        protected AMQFrame createConnectionOpenBody(int channel, AMQShortString path, AMQShortString capabilities, boolean insist, byte major, byte minor)
         {
-            return super.createConnectionOpenFrame(channel, path, new AMQShortString(ClusterCapability.add(capabilities, _identity)), insist, major, minor);
+            return super.createConnectionOpenBody(channel, path, new AMQShortString(ClusterCapability.add(capabilities, _identity)), insist, major, minor);
         }
     }
 }

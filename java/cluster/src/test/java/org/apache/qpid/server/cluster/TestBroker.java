@@ -23,7 +23,7 @@ package org.apache.qpid.server.cluster;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 import java.io.IOException;
 
@@ -39,16 +39,16 @@ class TestBroker extends Broker
         return true;
     }
 
-    void connectAsynch(Iterable<AMQMethodBody> msgs)
+    void connectAsynch(Iterable<AMQMethodBodyImpl> msgs)
     {
         replay(msgs);
     }
 
-    void replay(Iterable<AMQMethodBody> msgs)
+    void replay(Iterable<AMQMethodBodyImpl> msgs)
     {
         try
         {
-            for (AMQMethodBody b : msgs)
+            for (AMQMethodBodyImpl b : msgs)
             {
                 send(new AMQFrame(0, b));
             }

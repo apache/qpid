@@ -230,7 +230,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
             //connect to the host and port specified:
             Broker prospect = connectToProspect(member);
             announceMembership();
-            List<AMQMethodBody> msgs = _replayMgr.replay(true);
+            List<AMQMethodBodyImpl> msgs = _replayMgr.replay(true);
             _logger.info(new LogMessage("Replaying {0} from leader to {1}", msgs, prospect));
             prospect.replay(msgs);
         }

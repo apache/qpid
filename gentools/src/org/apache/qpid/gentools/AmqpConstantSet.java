@@ -20,55 +20,58 @@
  */
 package org.apache.qpid.gentools;
 
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
 import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.TreeSet;
 
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 /**
  * @author kpvdr
- * This class implements a set collection for {@link #AmqpConstant AmqpConstant} objects, being the collection
- * of constants accumulated from various AMQP specification files processed. Each name occurs once only in the set.
- * The {@link #AmqpConstant AmqpConstant} objects (derived from {@link java.util#TreeMap TreeMap}) keep track of
- * the value and version(s) assigned to this name.
+ *         This class implements a set collection for {@link AmqpConstant AmqpConstant} objects, being the collection
+ *         of constants accumulated from various AMQP specification files processed. Each name occurs once only in the set.
+ *         The {@link AmqpConstant AmqpConstant} objects (derived from {@link java.util.TreeMap TreeMap}) keep track of
+ *         the value and version(s) assigned to this name.
  */
 @SuppressWarnings("serial")
-public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable, NodeAware, Comparable<AmqpConstantSet>
+public class AmqpConstantSet implements Printable, NodeAware //, Comparable<AmqpConstantSet>
 {
-    public LanguageConverter converter;
+    private final LanguageConverter _converter;
+    private final TreeSet<AmqpConstant> _constants = new TreeSet<AmqpConstant>();
+    private final AmqpVersionSet _versionSet = new AmqpVersionSet();
 
     public AmqpConstantSet(LanguageConverter converter)
     {
-        this.converter = converter;
-        this.converter.setConstantSet(this);
+        _converter = converter;
+
     }
-    
-   /* (non-Javadoc)
-     * @see org.apache.qpid.gentools.NodeAware#addFromNode(org.w3c.dom.Node, int, org.apache.qpid.gentools.AmqpVersion)
-     */
+
+    /* (non-Javadoc)
+    * @see org.apache.qpid.gentools.NodeAware#addFromNode(org.w3c.dom.Node, int, org.apache.qpid.gentools.AmqpVersion)
+    */
     public boolean addFromNode(Node node, int ordinal, AmqpVersion version)
-        throws AmqpParseException, AmqpTypeMappingException
+            throws AmqpParseException, AmqpTypeMappingException
     {
+        _versionSet.add(version);
         NodeList nodeList = node.getChildNodes();
-        for (int i=0; i<nodeList.getLength(); i++)
+        for (int i = 0; i < nodeList.getLength(); i++)
         {
             Node childNode = nodeList.item(i);
             if (childNode.getNodeName().compareTo(Utils.ELEMENT_CONSTANT) == 0)
             {
-                String name = converter.prepareDomainName(Utils.getNamedAttribute(childNode, Utils.ATTRIBUTE_NAME));
+                String name = getConverter().prepareConstantName(Utils.getNamedAttribute(childNode, Utils.ATTRIBUTE_NAME));
                 String value = Utils.getNamedAttribute(childNode, Utils.ATTRIBUTE_VALUE);
                 // Find this name in the existing set of objects
                 boolean foundName = false;
-                Iterator<AmqpConstant> cItr = iterator();
+                Iterator<AmqpConstant> cItr = _constants.iterator();
                 while (cItr.hasNext() && !foundName)
                 {
                     AmqpConstant thisConstant = cItr.next();
-                    if (name.compareTo(thisConstant.name) == 0)
+                    if (name.compareTo(thisConstant.getName()) == 0)
                     {
                         foundName = true;
-                        thisConstant.versionSet.add(version);
+                        thisConstant.getVersionSet().add(version);
                         // Now, find the value in the map
                         boolean foundValue = false;
                         for (String thisValue : thisConstant.keySet())
@@ -76,7 +79,7 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
                             if (value.compareTo(thisValue) == 0)
                             {
                                 foundValue = true;
-                               // Add this version to existing version set.
+                                // Add this version to existing version set.
                                 AmqpVersionSet versionSet = thisConstant.get(thisValue);
                                 versionSet.add(version);
                             }
@@ -85,49 +88,65 @@ public class AmqpConstantSet extends TreeSet<AmqpConstant> implements Printable,
                         if (!foundValue)
                         {
                             thisConstant.put(value, new AmqpVersionSet(version));
-                        }              
+                        }
                     }
                 }
                 // Check that the name was found - if not, add it
                 if (!foundName)
                 {
-                    add(new AmqpConstant(name, value, version));
+                    _constants.add(new AmqpConstant(name, value, version));
                 }
-           }
+            }
         }
         return true;
     }
-    
+
     /* (non-Javadoc)
-     * @see org.apache.qpid.gentools.Printable#print(java.io.PrintStream, int, int)
-     */
+    * @see org.apache.qpid.gentools.Printable#print(java.io.PrintStream, int, int)
+    */
     public void print(PrintStream out, int marginSize, int tabSize)
     {
         out.println(Utils.createSpaces(marginSize) + "Constants: ");
-        for (AmqpConstant thisAmqpConstant : this)
+        for (AmqpConstant thisAmqpConstant : _constants)
         {
-        	thisAmqpConstant.print(out, marginSize, tabSize);
+            thisAmqpConstant.print(out, marginSize, tabSize);
         }
     }
-    
+
     /* (non-Javadoc)
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
-    public int compareTo(AmqpConstantSet other)
+    * @see java.lang.Comparable#compareTo(java.lang.Object)
+    */
+//    public int compareTo(AmqpConstantSet other)
+//    {
+//        int res = size() - other.size();
+//        if (res != 0)
+//            return res;
+//        Iterator<AmqpConstant> cItr = iterator();
+//        Iterator<AmqpConstant> oItr = other.iterator();
+//        while (cItr.hasNext() && oItr.hasNext())
+//        {
+//            AmqpConstant constant = cItr.next();
+//            AmqpConstant oConstant = oItr.next();
+//            res = constant.compareTo(oConstant);
+//            if (res != 0)
+//                return res;
+//        }
+//        return 0;
+//    }
+
+    public Iterable<? extends AmqpConstant> getContstants()
     {
-        int res = size() - other.size();
-        if (res != 0)
-            return res;
-        Iterator<AmqpConstant> cItr = iterator();
-        Iterator<AmqpConstant> oItr = other.iterator();
-        while (cItr.hasNext() && oItr.hasNext())
-        {
-            AmqpConstant constant = cItr.next();
-            AmqpConstant oConstant = oItr.next();
-            res = constant.compareTo(oConstant);
-            if (res != 0)
-                return res;
-        }
-        return 0;
+        return _constants;
     }
+
+    public AmqpVersionSet getVersionSet()
+    {
+        return _versionSet;
+    }
+
+    public LanguageConverter getConverter()
+    {
+        return _converter;
+    }
+
 }

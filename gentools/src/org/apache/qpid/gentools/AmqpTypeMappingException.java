@@ -21,10 +21,10 @@
 package org.apache.qpid.gentools;
 
 @SuppressWarnings("serial")
-public class AmqpTypeMappingException extends Exception
+public class AmqpTypeMappingException extends RuntimeException
 {
-	public AmqpTypeMappingException(String msg)
-	{
-		super(msg);
-	}
+    public AmqpTypeMappingException(String msg)
+    {
+        super(msg);
+    }
 }

@@ -49,10 +49,10 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        _logger.info("FIXME: Rejecting:" + evt.getMethod().deliveryTag + ": Requeue:" + evt.getMethod().requeue);
+        _logger.info("FIXME: Rejecting:" + evt.getMethod().getDeliveryTag() + ": Requeue:" + evt.getMethod().getRequeue());
 
         int channelId = evt.getChannelId();
-        UnacknowledgedMessage message = session.getChannel(channelId).getUnacknowledgedMessageMap().get(evt.getMethod().deliveryTag);
+        UnacknowledgedMessage message = session.getChannel(channelId).getUnacknowledgedMessageMap().get(evt.getMethod().getDeliveryTag());
 
         _logger.info("Need to reject message:" + message);
 //        if (evt.getMethod().requeue)

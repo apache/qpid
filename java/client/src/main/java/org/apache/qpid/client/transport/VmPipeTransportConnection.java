@@ -27,7 +27,7 @@ import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.mina.transport.vmpipe.VmPipeConnector;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.PoolingFilter;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
@@ -43,7 +43,7 @@ public class VmPipeTransportConnection implements ITransportConnection
         _port = port;
     }
 
-    public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail) throws IOException
+    public void connect(AMQProtocolHandlerImpl protocolHandler, BrokerDetails brokerDetail) throws IOException
     {
         final VmPipeConnector ioConnector = new VmPipeConnector();
         final IoServiceConfig cfg = ioConnector.getDefaultConfig();

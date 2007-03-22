@@ -21,15 +21,12 @@
 package org.apache.qpid.server.cluster.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
-public class WrappedListener<T extends AMQMethodBody> implements StateAwareMethodListener<T>
+public class WrappedListener<T extends AMQMethodBodyImpl> implements StateAwareMethodListener<T>
 {
     private final StateAwareMethodListener<T> _primary;
     private final StateAwareMethodListener _post;
@@ -49,7 +46,7 @@ public class WrappedListener<T extends AMQMethodBody> implements StateAwareMetho
         _post.methodReceived(stateMgr, evt);
     }
 
-    private static <T extends AMQMethodBody> StateAwareMethodListener<T> check(StateAwareMethodListener<T> in)
+    private static <T extends AMQMethodBodyImpl> StateAwareMethodListener<T> check(StateAwareMethodListener<T> in)
     {
         return in == null ? new NullListener<T>() : in;
     }

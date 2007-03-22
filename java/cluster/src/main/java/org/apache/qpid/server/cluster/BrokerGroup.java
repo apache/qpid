@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.cluster.replay.ReplayManager;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.cluster.util.InvokeMultiple;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -225,7 +225,7 @@ class BrokerGroup
         if (create)
         {
             Broker b = _factory.create(handle);
-            List<AMQMethodBody> msgs = _replayMgr.replay(isLeader(_local));
+            List<AMQMethodBodyImpl> msgs = _replayMgr.replay(isLeader(_local));
             _logger.info(new LogMessage("Replaying {0} from {1} to {2}", msgs, _local, b));
             b.connectAsynch(msgs);
 

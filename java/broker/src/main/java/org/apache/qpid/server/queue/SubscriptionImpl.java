@@ -29,9 +29,9 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -258,7 +258,7 @@ public class SubscriptionImpl implements Subscription
             {
                 channel.addUnacknowledgedBrowsedMessage(msg, deliveryTag, consumerTag, queue);
             }
-            msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
+            protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
         }
     }
 
@@ -294,7 +294,7 @@ public class SubscriptionImpl implements Subscription
                     msg.decrementReference(storeContext);
                 }
 
-                msg.writeDeliver(protocolSession, channel.getChannelId(), deliveryTag, consumerTag);
+                protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
 
             }
         }
@@ -466,13 +466,9 @@ public class SubscriptionImpl implements Subscription
         if (_autoClose && !_sentClose)
         {
             _logger.info("Closing autoclose subscription:" + this);
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeFrame(BasicCancelOkBody.createAMQFrame(channel.getChannelId(),
-                                                                        (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                        consumerTag    // consumerTag
-            ));
+            ProtocolOutputConverter converter = protocolSession.getProtocolOutputConverter();
+            converter.confirmConsumerAutoClose(channel.getChannelId(), consumerTag);
+
             _sentClose = true;
         }
     }

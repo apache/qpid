@@ -68,14 +68,14 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         else
         {
 
-            AMQQueue queue = body.queue == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.queue);
+            AMQQueue queue = body.getQueue() == null ? channel.getDefaultQueue() : vHost.getQueueRegistry().getQueue(body.getQueue());
 
             if (queue == null)
             {
-                _log.info("No queue for '" + body.queue + "'");
-                if (body.queue != null)
+                _log.info("No queue for '" + body.getQueue() + "'");
+                if (body.getQueue() != null)
                 {
-                    String msg = "No such queue, '" + body.queue + "'";
+                    String msg = "No such queue, '" + body.getQueue() + "'";
                     throw body.getChannelException(AMQConstant.NOT_FOUND, msg);
                 }
                 else
@@ -88,9 +88,9 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             {
                 try
                 {
-                    AMQShortString consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck,
-                                                                          body.arguments, body.noLocal, body.exclusive);
-                    if (!body.nowait)
+                    AMQShortString consumerTag = channel.subscribeToQueue(body.getConsumerTag(), queue, session, !body.getNoAck(),
+                                                                          body.getArguments(), body.getNoLocal(), body.getExclusive());
+                    if (!body.getNowait())
                     {
                         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -110,9 +110,9 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                 }
                 catch (ConsumerTagNotUniqueException e)
                 {
-                    AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.consumerTag + "'");
+                    AMQShortString msg = new AMQShortString("Non-unique consumer tag, '" + body.getConsumerTag() + "'");
                     throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
-                                                      "Non-unique consumer tag, '" + body.consumerTag + "'");
+                                                      "Non-unique consumer tag, '" + body.getConsumerTag() + "'");
                 }
                 catch (AMQQueue.ExistingExclusiveSubscription e)
                 {

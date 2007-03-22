@@ -21,15 +21,12 @@
 package org.apache.qpid.server.cluster.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
-class ExtendedHandler<A extends AMQMethodBody> implements StateAwareMethodListener<A>
+class ExtendedHandler<A extends AMQMethodBodyImpl> implements StateAwareMethodListener<A>
 {
     private final StateAwareMethodListener<A> _base;
 

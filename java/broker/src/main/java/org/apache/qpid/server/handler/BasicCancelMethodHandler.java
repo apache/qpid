@@ -55,15 +55,15 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
             throw body.getChannelNotFoundException(evt.getChannelId());
         }
 
-        channel.unsubscribeConsumer(protocolSession, body.consumerTag);
-        if (!body.nowait)
+        channel.unsubscribeConsumer(protocolSession, body.getConsumerTag());
+        if (!body.getNowait())
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             final AMQFrame responseFrame = BasicCancelOkBody.createAMQFrame(evt.getChannelId(),
                                                                             (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                            body.consumerTag);    // consumerTag
+                                                                            body.getConsumerTag());    // consumerTag
             protocolSession.writeFrame(responseFrame);
         }
     }

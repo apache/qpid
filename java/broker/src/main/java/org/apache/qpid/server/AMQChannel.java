@@ -433,7 +433,10 @@ public class AMQChannel
     }
 
 
-    /** Called to resend all outstanding unacknowledged messages to this same channel. */
+    /** Called to resend all outstanding unacknowledged messages to this same channel.
+     * @param session the session
+     * @param requeue if true then requeue, else resend
+     * @throws org.apache.qpid.AMQException */
     public void resend(final AMQProtocolSession session, final boolean requeue) throws AMQException
     {
         final List<UnacknowledgedMessage> msgToRequeue = new LinkedList<UnacknowledgedMessage>();
@@ -752,7 +755,9 @@ public class AMQChannel
         for (RequiredDeliveryException bouncedMessage : _returnMessages)
         {
             AMQMessage message = bouncedMessage.getAMQMessage();
-            message.writeReturn(session, _channelId, bouncedMessage.getReplyCode().getCode(), new AMQShortString(bouncedMessage.getMessage()));
+            session.getProtocolOutputConverter().writeReturn(message, _channelId,
+                                                             bouncedMessage.getReplyCode().getCode(),
+                                                             new AMQShortString(bouncedMessage.getMessage()));
         }
         _returnMessages.clear();
     }

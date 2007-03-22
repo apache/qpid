@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.cluster.replay;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
@@ -30,15 +28,8 @@ import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.framing.QueueDeclareBody;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.server.cluster.MethodHandlerFactory;
-import org.apache.qpid.server.cluster.MethodHandlerRegistry;
 import org.apache.qpid.server.cluster.handler.WrappingMethodHandlerFactory;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQState;
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.state.StateAwareMethodListener;
 
 import java.util.Arrays;
 

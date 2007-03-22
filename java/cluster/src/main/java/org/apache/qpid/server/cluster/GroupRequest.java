@@ -21,7 +21,7 @@
 package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +35,7 @@ import java.util.Map;
  */
 class GroupRequest
 {
-    private final Map<Member, AMQMethodBody> _responses = new HashMap<Member, AMQMethodBody>();
+    private final Map<Member, AMQMethodBodyImpl> _responses = new HashMap<Member, AMQMethodBodyImpl>();
     private final List<Member> _brokers = new ArrayList<Member>();
     private boolean _sent;
 
@@ -62,7 +62,7 @@ class GroupRequest
         return checkCompletion();
     }
 
-    public boolean responseReceived(Member broker, AMQMethodBody response)
+    public boolean responseReceived(Member broker, AMQMethodBodyImpl response)
     {
         _responses.put(broker, response);
         return checkCompletion();
@@ -90,9 +90,9 @@ class GroupRequest
         return true;
     }
 
-    List<AMQMethodBody> getResults()
+    List<AMQMethodBodyImpl> getResults()
     {
-        List<AMQMethodBody> results = new ArrayList<AMQMethodBody>(_brokers.size());
+        List<AMQMethodBodyImpl> results = new ArrayList<AMQMethodBodyImpl>(_brokers.size());
         for (Member b : _brokers)
         {
             results.add(_responses.get(b));

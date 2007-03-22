@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
@@ -61,14 +62,15 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             _log.debug("Publish received on channel " + evt.getChannelId());
         }
 
+        AMQShortString exchangeName = body.getExchange();
         // TODO: check the delivery tag field details - is it unique across the broker or per subscriber?
-        if (body.exchange == null)
+        if (exchangeName == null)
         {
-            body.exchange = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
+            exchangeName = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
 
         }
         VirtualHost vHost = session.getVirtualHost();
-        Exchange e = vHost.getExchangeRegistry().getExchange(body.exchange);
+        Exchange e = vHost.getExchangeRegistry().getExchange(exchangeName);
         // if the exchange does not exist we raise a channel exception
         if (e == null)
         {

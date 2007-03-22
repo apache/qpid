@@ -26,6 +26,7 @@ import org.apache.qpid.AMQInvalidRoutingKeyException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.QueueBindBody;
 import org.apache.qpid.framing.QueueBindOkBody;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.exchange.Exchange;
@@ -61,8 +62,10 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
         final QueueBindBody body = evt.getMethod();
+
+        AMQShortString routingKey = body.getRoutingKey();
         final AMQQueue queue;
-        if (body.queue == null)
+        if (body.getQueue() == null)
         {
             AMQChannel channel = session.getChannel(evt.getChannelId());
 
@@ -77,33 +80,35 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
             {
                 throw body.getChannelException(AMQConstant.NOT_FOUND, "No default queue defined on channel and queue was null");
             }
-            
-            if (body.routingKey == null)
+
+
+
+            if (routingKey == null)
             {
-                body.routingKey = queue.getName();
+                routingKey = queue.getName();
             }
         }
         else
         {
-            queue = queueRegistry.getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.getQueue());
         }
 
         if (queue == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
         }
-        final Exchange exch = exchangeRegistry.getExchange(body.exchange);
+        final Exchange exch = exchangeRegistry.getExchange(body.getExchange());
         if (exch == null)
         {
-            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.exchange + " does not exist.");
+            throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.getExchange() + " does not exist.");
         }
         try
         {            
-            queue.bind(body.routingKey, body.arguments, exch);
+            queue.bind(routingKey, body.getArguments(), exch);
         }
         catch (AMQInvalidRoutingKeyException rke)
         {
-            throw body.getChannelException(AMQConstant.INVALID_ROUTING_KEY, body.routingKey.toString());
+            throw body.getChannelException(AMQConstant.INVALID_ROUTING_KEY, routingKey.toString());
         }
         catch (AMQException e)
         {
@@ -112,9 +117,9 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
 
         if (_log.isInfoEnabled())
         {
-            _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + body.routingKey);
+            _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + routingKey);
         }
-        if (!body.nowait)
+        if (!body.getNowait())
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

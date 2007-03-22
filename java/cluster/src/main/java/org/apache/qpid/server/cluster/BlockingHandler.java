@@ -20,26 +20,26 @@
  */
 package org.apache.qpid.server.cluster;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 public class BlockingHandler implements ResponseHandler
 {
     private final Class _expected;
     private boolean _completed;
-    private AMQMethodBody _response;
+    private AMQMethodBodyImpl _response;
 
 
     public BlockingHandler()
     {
-        this(AMQMethodBody.class);
+        this(AMQMethodBodyImpl.class);
     }
 
-    public BlockingHandler(Class<? extends AMQMethodBody> expected)
+    public BlockingHandler(Class<? extends AMQMethodBodyImpl> expected)
     {
         _expected = expected;
     }
 
-    public void responded(AMQMethodBody response)
+    public void responded(AMQMethodBodyImpl response)
     {
         if (_expected.isInstance(response))
         {
@@ -74,7 +74,7 @@ public class BlockingHandler implements ResponseHandler
         }
     }
 
-    AMQMethodBody getResponse()
+    AMQMethodBodyImpl getResponse()
     {
         return _response;
     }

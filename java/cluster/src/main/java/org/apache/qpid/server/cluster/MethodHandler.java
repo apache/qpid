@@ -21,9 +21,9 @@
 package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 interface MethodHandler
 {
-    public void handle(int channel, AMQMethodBody method) throws AMQException;
+    public void handle(int channel, AMQMethodBodyImpl method) throws AMQException;
 }

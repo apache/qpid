@@ -33,13 +33,13 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQBodyImpl;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.framing.ConnectionRedirectBody;
 import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.ProtocolVersion;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -57,7 +57,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
     private final MemberHandle _local;
     private IoSession _session;
     private MethodHandler _handler;
-    private Iterable<AMQMethodBody> _replay;
+    private Iterable<AMQMethodBodyImpl> _replay;
 
     MinaBrokerProxy(String host, int port, MemberHandle local)
     {
@@ -106,13 +106,13 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         return _connectionMonitor.waitUntilOpen();
     }
 
-    void connectAsynch(Iterable<AMQMethodBody> msgs)
+    void connectAsynch(Iterable<AMQMethodBodyImpl> msgs)
     {
         _replay = msgs;
         connectImpl();
     }
 
-    void replay(Iterable<AMQMethodBody> msgs)
+    void replay(Iterable<AMQMethodBodyImpl> msgs)
     {
         _replay = msgs;
         if(_connectionMonitor.isOpened())
@@ -138,7 +138,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
     }
 
-    public void send(AMQDataBlock data) throws AMQException
+    public void send(AMQDataBlock data) throws AMQConnectionWaitException
     {
         if (_session == null)
         {
@@ -146,9 +146,9 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
             {
                 _connectionMonitor.waitUntilOpen();
             }
-            catch (Exception e)
+            catch (InterruptedException e)
             {
-                throw new AMQException("Failed to send " + data + ": " + e, e);
+                throw new AMQConnectionWaitException("Failed to send " + data + ": " + e, e);
             }
         }
         _session.write(data);
@@ -158,14 +158,14 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
     {
         if(_replay != null)
         {
-            for(AMQMethodBody b : _replay)
+            for(AMQMethodBodyImpl b : _replay)
             {
                 _session.write(new AMQFrame(0, b));
             }
         }
     }
 
-    public void handle(int channel, AMQMethodBody method) throws AMQException
+    public void handle(int channel, AMQMethodBodyImpl method) throws AMQException
     {
         _logger.info(new LogMessage("Handling method: {0} for channel {1}", method, channel));
         if (!handleResponse(channel, method))
@@ -174,7 +174,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
     }
 
-    private void handleMethod(int channel, AMQMethodBody method) throws AMQException
+    private void handleMethod(int channel, AMQMethodBodyImpl method) throws AMQException
     {
         if (method instanceof ConnectionRedirectBody)
         {
@@ -200,14 +200,14 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
 
     private void handleFrame(AMQFrame frame) throws AMQException
     {
-        AMQBody body = frame.getBodyFrame();
-        if (body instanceof AMQMethodBody)
+        AMQBodyImpl body = frame.getBodyFrame();
+        if (body instanceof AMQMethodBodyImpl)
         {
-            handleMethod(frame.getChannel(), (AMQMethodBody) body);
+            handleMethod(frame.getChannel(), (AMQMethodBodyImpl) body);
         }
         else
         {
-            throw new AMQException("Client only expects method body, got: " + body);
+            throw new AMQUnexpectedBodyTypeException(AMQMethodBodyImpl.class, body);
         }
     }
 
@@ -216,7 +216,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         return "MinaBrokerProxy[" + (_session == null ? super.toString() : _session.getRemoteAddress()) + "]";
     }
 
-    private class MinaBinding extends IoHandlerAdapter implements ProtocolVersionList
+    private class MinaBinding extends IoHandlerAdapter
     {
         public void sessionCreated(IoSession session) throws Exception
         {
@@ -228,8 +228,8 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
             /* Find last protocol version in protocol version list. Make sure last protocol version
             listed in the build file (build-module.xml) is the latest version which will be used
             here. */
-            int i = pv.length - 1;
-            session.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
+
+            session.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
         }
 
         public void sessionOpened(IoSession session) throws Exception
@@ -260,7 +260,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
             }
             else
             {
-                throw new AMQException("Received message of unrecognised type: " + object);
+                throw new AMQUnexpectedFrameTypeException("Received message of unrecognised type: " + object);
             }
         }
 

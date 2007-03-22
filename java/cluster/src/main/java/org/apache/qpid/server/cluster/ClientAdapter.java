@@ -26,7 +26,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 /**
  * Hack to assist with reuse of the client handlers for connection setup in
@@ -49,7 +49,7 @@ class ClientAdapter implements MethodHandler
         _stateMgr = stateMgr;
     }
 
-    public void handle(int channel, AMQMethodBody method) throws AMQException
+    public void handle(int channel, AMQMethodBodyImpl method) throws AMQException
     {
         AMQMethodEvent evt = new AMQMethodEvent(channel, method);
         _stateMgr.methodReceived(evt);

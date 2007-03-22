@@ -18,37 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.handler;
+package org.apache.qpid.client.handler.amqp_8_0;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
-import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
-/**
- * @author Apache Software Foundation
- */
-public class BasicCancelOkMethodHandler implements StateAwareMethodListener
+public class ChannelCloseOkMethodHandler implements StateAwareMethodListener
 {
-     private static final Logger _logger = Logger.getLogger(BasicCancelOkMethodHandler.class);
-     private static final BasicCancelOkMethodHandler _instance = new BasicCancelOkMethodHandler();
+    private static final Logger _logger = Logger.getLogger(ChannelCloseOkMethodHandler.class);
 
-     public static BasicCancelOkMethodHandler getInstance()
-     {
-         return _instance;
-     }
+    private static final ChannelCloseOkMethodHandler _instance = new ChannelCloseOkMethodHandler();
 
-     private BasicCancelOkMethodHandler()
-     {
-     }
+    public static ChannelCloseOkMethodHandler getInstance()
+    {
+        return _instance;
+    }
 
-     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
-     {
-         _logger.debug("New BasicCancelOk method received");
-         BasicCancelOkBody body = (BasicCancelOkBody) evt.getMethod();
-         protocolSession.confirmConsumerCancelled(evt.getChannelId(), body.consumerTag);                  
-     }
+    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent evt) throws AMQException
+    {
+        _logger.info("Received channel-close-ok for channel-id " + evt.getChannelId());
+
+        //todo this should do the closure
+    }
 }

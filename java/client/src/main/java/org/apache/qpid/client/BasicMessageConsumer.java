@@ -33,6 +33,7 @@ import javax.jms.MessageListener;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
@@ -42,6 +43,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.AMQMethodFactory;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
 
@@ -438,16 +441,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 if (sendClose)
                 {
-                    // TODO: Be aware of possible changes to parameter order as versions change.
-                    final AMQFrame cancelFrame = BasicCancelBody.createAMQFrame(_channelId,
-                                                                                _protocolHandler.getProtocolMajorVersion(),
-                                                                                _protocolHandler.getProtocolMinorVersion(),
-                                                                                _consumerTag,    // consumerTag
-                                                                                false);    // nowait
-
                     try
                     {
-                        _protocolHandler.syncWrite(cancelFrame, BasicCancelOkBody.class);
+                        AMQMethodBody cancelBody = getAMQMethodFactory().createConsumerCancel(_consumerTag);
+                        sendCommandReceiveResponse(cancelBody);
                     }
                     catch (AMQException e)
                     {
@@ -465,6 +462,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
             }
         }
+    }
+
+    private AMQMethodBody sendCommandReceiveResponse(AMQMethodBody cancelBody) throws AMQException
+    {
+        return getSession().sendCommandReceiveResponse(cancelBody);
+    }
+
+    private AMQMethodFactory getAMQMethodFactory()
+    {
+        return getSession().getAMQMethodFactory();
     }
 
     /**
@@ -490,14 +497,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         if (debug)
         {
-            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliverBody().deliveryTag);
+            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliverBody().getDeliveryTag());
         }
         try
         {
-            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.getDeliverBody().deliveryTag,
-                                                                          messageFrame.getDeliverBody().redelivered,
-                                                                          messageFrame.getDeliverBody().exchange,
-                                                                          messageFrame.getDeliverBody().routingKey,
+            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.getDeliverBody().getDeliveryTag(),
+                                                                          messageFrame.getDeliverBody().getRedelivered(),
+                                                                          messageFrame.getDeliverBody().getExchange(),
+                                                                          messageFrame.getDeliverBody().getRoutingKey(),
                                                                           messageFrame.getContentHeader(),
                                                                           messageFrame.getBodies());
 

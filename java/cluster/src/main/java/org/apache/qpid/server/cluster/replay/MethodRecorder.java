@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.cluster.replay;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 /**
  * Abstraction through which a method can be recorded for replay
  *
  */
-interface MethodRecorder<T extends AMQMethodBody>
+interface MethodRecorder<T extends AMQMethodBodyImpl>
 {
     public void record(T method);
 }

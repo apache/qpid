@@ -23,6 +23,8 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.framing.TxRollbackOkBody;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.amqp_8_0.TxRollbackBodyImpl;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -56,10 +58,10 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
             }
 
             channel.rollback();
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            session.writeFrame(TxRollbackOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0));
+
+            TxRollbackBody rollbackBody = createTxRollbackBody();
+            session.writeFrame(new AMQFrame(evt.getChannelId(), rollbackBody));
+
             //Now resend all the unacknowledged messages back to the original subscribers.
             //(Must be done after the TxnRollback-ok response).
             // Why, are we not allowed to send messages back to client before the ok method?
@@ -69,5 +71,10 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
         {
             throw evt.getMethod().getChannelException(e.getErrorCode(), "Failed to rollback: " + e.getMessage());
         }
+    }
+
+    private TxRollbackBody createTxRollbackBody()
+    {
+        return new TxRollbackBodyImpl();
     }
 }

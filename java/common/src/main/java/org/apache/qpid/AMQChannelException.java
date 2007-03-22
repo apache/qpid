@@ -23,6 +23,8 @@ package org.apache.qpid;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.amqp_8_0.ConnectionCloseBodyImpl;
+import org.apache.qpid.framing.amqp_8_0.ChannelCloseBodyImpl;
 import org.apache.qpid.protocol.AMQConstant;
 
 public class AMQChannelException extends AMQException
@@ -53,6 +55,6 @@ public class AMQChannelException extends AMQException
 
     public AMQFrame getCloseFrame(int channel)
     {
-        return ChannelCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode().getCode(), new AMQShortString(getMessage()));
+        return new AMQFrame(channel, new ChannelCloseBodyImpl(getErrorCode().getCode(), new AMQShortString(getMessage()),0,0));        
     }
 }

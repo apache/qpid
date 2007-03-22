@@ -78,10 +78,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
         QueueDeclareBody body = evt.getMethod();
 
+        AMQShortString queueName = body.getQueue();
+
         // if we aren't given a queue name, we create one which we return to the client
-        if (body.queue == null)
+        if (body.getQueue() == null)
         {
-            body.queue = createName();
+            queueName = createName();
         }
 
         AMQQueue queue;
@@ -90,11 +92,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         synchronized (queueRegistry)
         {
 
-            if (((queue = queueRegistry.getQueue(body.queue)) == null) )
+            if (((queue = queueRegistry.getQueue(queueName)) == null) )
             {
-                if(body.passive)
+                if(body.getPassive())
                 {
-                    String msg = "Queue: " + body.queue + " not found.";
+                    String msg = "Queue: " + queueName + " not found.";
                     throw body.getChannelException(AMQConstant.NOT_FOUND,msg );
                 }
                 else
@@ -109,8 +111,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     {
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                        queue.bind(body.queue, null, defaultExchange);
-                        _log.info("Queue " + body.queue + " bound to default exchange");
+                        queue.bind(queueName, null, defaultExchange);
+                        _log.info("Queue " + body.getQueue() + " bound to default exchange");
                     }
                 }
             }
@@ -130,7 +132,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             channel.setDefaultQueue(queue);
         }
 
-        if (!body.nowait)
+        if (!body.getNowait())
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
@@ -139,8 +141,8 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 (byte)8, (byte)0,	// AMQP version (major, minor)
                 queue.getConsumerCount(), // consumerCount
                 queue.getMessageCount(), // messageCount
-                body.queue); // queue
-            _log.info("Queue " + body.queue + " declared successfully");
+                queueName); // queue
+            _log.info("Queue " + queueName + " declared successfully");
             session.writeFrame(response);
         }
     }
@@ -159,11 +161,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             throws AMQException
     {
         final QueueRegistry registry = virtualHost.getQueueRegistry();
-        AMQShortString owner = body.exclusive ? session.getContextKey() : null;
-        final AMQQueue queue =  new AMQQueue(body.queue, body.durable, owner, body.autoDelete, virtualHost);
+        AMQShortString owner = body.getExclusive() ? session.getContextKey() : null;
+        final AMQQueue queue =  new AMQQueue(body.getQueue(), body.getDurable(), owner, body.getAutoDelete(), virtualHost);
         final AMQShortString queueName = queue.getName();
 
-        if(body.exclusive && !body.durable)
+        if(body.getExclusive() && !body.getDurable())
         {
             final AMQProtocolSession.Task deleteQueueTask =
                 new AMQProtocolSession.Task()

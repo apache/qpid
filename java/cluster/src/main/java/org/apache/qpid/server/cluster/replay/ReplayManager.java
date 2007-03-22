@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.server.cluster.replay;
 
-import org.apache.qpid.server.cluster.Sendable;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 
 import java.util.List;
 
@@ -33,5 +31,5 @@ import java.util.List;
  */
 public interface ReplayManager
 {
-    public List<AMQMethodBody> replay(boolean isLeader);
+    public List<AMQMethodBodyImpl> replay(boolean isLeader);
 }

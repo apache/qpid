@@ -21,12 +21,8 @@
 package org.apache.qpid.server.cluster.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.server.cluster.ClusteredProtocolSession;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
@@ -36,7 +32,7 @@ import org.apache.qpid.server.state.StateAwareMethodListener;
  * application).
  *
  */
-public class PeerHandler<A extends AMQMethodBody> extends ClusterMethodHandler<A>
+public class PeerHandler<A extends AMQMethodBodyImpl> extends ClusterMethodHandler<A>
 {
     private final StateAwareMethodListener<A> _peer;
     private final StateAwareMethodListener<A> _client;

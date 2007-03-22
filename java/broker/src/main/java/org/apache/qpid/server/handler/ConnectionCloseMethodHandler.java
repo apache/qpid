@@ -49,8 +49,8 @@ public class ConnectionCloseMethodHandler implements  StateAwareMethodListener<C
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         final ConnectionCloseBody body = evt.getMethod();
-        _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode + "/" +
-                     body.replyText +  " for " + session);
+        _logger.info("ConnectionClose received with reply code/reply text " + body.getReplyCode() + "/" +
+                     body.getReplyText() +  " for " + session);
         try
         {
             session.closeSession();

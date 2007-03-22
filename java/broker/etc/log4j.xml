@@ -36,20 +36,22 @@
             <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
         </layout>
     </appender>
-
-    <!--<category name="org.apache.qpid.server.store">
+     <!--
+    <category name="org.apache.qpid.server.store.StoreContext">
         <priority value="debug"/>
     </category>
-
-    <category name="org.apache.qpid.server.queue">
+         -->
+    <!--<category name="org.apache.qpid.server.queue.AMQMessage">
         <priority value="debug"/>
     </category>
-
-    <category name="org.apache.qpid.server.txn">
+        -->
+    <!--
+     <category name="org.apache.qpid.server.store.berkeleydb.BDBMessageStore">
         <priority value="debug"/>
-    </category>-->
+    </category>
+     -->
     <root>
-        <priority value="info"/>
+        <priority value="${AMQJ_LOGGING_LEVEL}"/>
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FileAppender"/>
     </root>

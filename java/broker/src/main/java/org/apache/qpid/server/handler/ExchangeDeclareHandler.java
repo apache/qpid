@@ -64,43 +64,43 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
         final ExchangeDeclareBody body = evt.getMethod();
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Request to declare exchange of type " + body.type + " with name " + body.exchange);
+            _logger.debug("Request to declare exchange of type " + body.getType() + " with name " + body.getExchange());
         }
         synchronized(exchangeRegistry)
         {
-            Exchange exchange = exchangeRegistry.getExchange(body.exchange);
+            Exchange exchange = exchangeRegistry.getExchange(body.getExchange());
 
 
 
             if (exchange == null)
             {
-                if(body.passive && ((body.type == null) || body.type.length() ==0))
+                if(body.getPassive() && ((body.getType() == null) || body.getType().length() ==0))
                 {
-                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + body.exchange);                    
+                    throw body.getChannelException(AMQConstant.NOT_FOUND, "Unknown exchange: " + body.getExchange());
                 }
                 else
                 {
                     try
                     {
 
-                    exchange = exchangeFactory.createExchange(body.exchange, body.type, body.durable,
-                                                              body.passive, body.ticket);
+                    exchange = exchangeFactory.createExchange(body.getExchange(), body.getType(), body.getDurable(),
+                                                              body.getPassive(), body.getTicket());
                     exchangeRegistry.registerExchange(exchange);
                     }
                     catch(AMQUnknownExchangeType e)
                     {
-                        throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + body.exchange,e);
+                        throw body.getConnectionException(AMQConstant.COMMAND_INVALID, "Unknown exchange: " + body.getExchange(),e);
                     }
                 }
             }
-            else if (!exchange.getType().equals(body.type))
+            else if (!exchange.getType().equals(body.getType()))
             {
 
-                throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " + body.exchange + " of type " + exchange.getType() + " to " + body.type +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor());    
+                throw new AMQConnectionException(AMQConstant.NOT_ALLOWED, "Attempt to redeclare exchange: " + body.getExchange() + " of type " + exchange.getType() + " to " + body.getType() +".",body.getClazz(), body.getMethod(),body.getMajor(),body.getMinor());
             }
 
         }
-        if(!body.nowait)
+        if(!body.getNowait())
         {
             // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.

@@ -22,8 +22,6 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
-import java.util.HashMap;
-
 import junit.framework.TestCase;
 
 
@@ -94,14 +92,14 @@ public class BasicContentHeaderPropertiesTest extends TestCase
     {
         String contentType = "contentType";
         _testProperties.setContentType(contentType);
-        assertEquals(contentType, _testProperties.getContentType());
+        assertEquals(contentType, _testProperties.getContentTypeAsString());
     }
 
     public void testSetGetEncoding()
     {
         String encoding = "encoding";
         _testProperties.setEncoding(encoding);
-        assertEquals(encoding, _testProperties.getEncoding());
+        assertEquals(encoding, _testProperties.getEncodingAsString());
     }
 
     public void testSetGetHeaders()
@@ -128,14 +126,14 @@ public class BasicContentHeaderPropertiesTest extends TestCase
     {
         String correlationId = "correlationId";
         _testProperties.setCorrelationId(correlationId);
-        assertEquals(correlationId, _testProperties.getCorrelationId());
+        assertEquals(correlationId, _testProperties.getCorrelationIdAsString());
     }
 
     public void testSetGetReplyTo()
     {
         String replyTo = "replyTo";
         _testProperties.setReplyTo(replyTo);
-        assertEquals(replyTo, _testProperties.getReplyTo());
+        assertEquals(replyTo, _testProperties.getReplyToAsString());
     }
 
     public void testSetGetExpiration()
@@ -149,7 +147,7 @@ public class BasicContentHeaderPropertiesTest extends TestCase
     {
         String messageId = "messageId";
         _testProperties.setMessageId(messageId);
-        assertEquals(messageId, _testProperties.getMessageId());
+        assertEquals(messageId, _testProperties.getMessageIdAsString());
     }
 
     public void testSetGetTimestamp()
@@ -163,28 +161,28 @@ public class BasicContentHeaderPropertiesTest extends TestCase
     {
         String type = "type";
         _testProperties.setType(type);
-        assertEquals(type, _testProperties.getType());
+        assertEquals(type, _testProperties.getTypeAsString());
     }
 
     public void testSetGetUserId()
     {
         String userId = "userId";
         _testProperties.setUserId(userId);
-        assertEquals(userId, _testProperties.getUserId());
+        assertEquals(userId, _testProperties.getUserIdAsString());
     }
 
     public void testSetGetAppId()
     {
         String appId = "appId";
         _testProperties.setAppId(appId);
-        assertEquals(appId, _testProperties.getAppId());
+        assertEquals(appId, _testProperties.getAppIdAsString());
     }
 
     public void testSetGetClusterId()
     {
         String clusterId = "clusterId";
         _testProperties.setClusterId(clusterId);
-        assertEquals(clusterId, _testProperties.getClusterId());
+        assertEquals(clusterId, _testProperties.getClusterIdAsString());
     }
 
 }

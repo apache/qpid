@@ -43,10 +43,11 @@ import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.MainRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersionList;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.VersionSpecificRegistry;
+import org.apache.qpid.framing.MainRegistry;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.protocol.AMQConstant;
 
@@ -56,7 +57,7 @@ import org.apache.qpid.protocol.AMQConstant;
  * The underlying protocol session is still available but clients should not
  * use it to obtain session attributes.
  */
-public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareProtocolSession
+public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 {
 
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
@@ -81,7 +82,7 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
      * The handler from which this session was created and which is used to handle protocol events.
      * We send failover events to the handler.
      */
-    protected final AMQProtocolHandler _protocolHandler;
+    protected final AMQProtocolHandlerImpl _protocolHandler;
 
     /**
      * Maps from the channel id to the AMQSession that it represents.
@@ -102,9 +103,10 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
     protected int _queueId = 1;
     protected final Object _queueIdLock = new Object();
 
-    private byte _protocolMinorVersion;
-    private byte _protocolMajorVersion;
-    private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(pv[pv.length-1][PROTOCOL_MAJOR],pv[pv.length-1][PROTOCOL_MINOR]);
+    private MethodRegistry _registry = MethodRegistry.getMethodRegistry(ProtocolVersion.getLatestSupportedVersion());
+    private ProtocolVersion _protocolVersion;
+    private ProtocolOutputHandler _outputHandler = ProtocolOutputHandlerFactory.createOutputHandler(ProtocolVersion.getLatestSupportedVersion(), this);
+    ;
 
 
     /**
@@ -118,7 +120,7 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
         _stateManager = new AMQStateManager(this);
     }
 
-    public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
+    public AMQProtocolSession(AMQProtocolHandlerImpl protocolHandler, IoSession protocolSession, AMQConnection connection)
     {
         _protocolHandler = protocolHandler;
         _minaProtocolSession = protocolSession;
@@ -129,7 +131,7 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
         _stateManager = new AMQStateManager(this);
     }
 
-    public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection, AMQStateManager stateManager)
+    public AMQProtocolSession(AMQProtocolHandlerImpl protocolHandler, IoSession protocolSession, AMQConnection connection, AMQStateManager stateManager)
     {
         _protocolHandler = protocolHandler;
         _minaProtocolSession = protocolSession;
@@ -147,11 +149,8 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
     {
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
-        /* Find last protocol version in protocol version list. Make sure last protocol version
-        listed in the build file (build-module.xml) is the latest version which will be used
-        here. */
-        int i = pv.length - 1;
-        _minaProtocolSession.write(new ProtocolInitiation(pv[i][PROTOCOL_MAJOR], pv[i][PROTOCOL_MINOR]));
+        
+        _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
     }
 
     public String getClientID()
@@ -474,26 +473,27 @@ public class AMQProtocolSession implements ProtocolVersionList, AMQVersionAwareP
         session.confirmConsumerCancelled(consumerTag);
     }
 
-    public void setProtocolVersion(final byte versionMajor, final byte versionMinor)
+    public void setProtocolVersion(ProtocolVersion pv)
     {
-        _protocolMajorVersion = versionMajor;
-        _protocolMinorVersion = versionMinor;
-        _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);        
+        _protocolVersion = pv;
+
+        _registry = MethodRegistry.getMethodRegistry(pv);
     }
 
-    public byte getProtocolMinorVersion()
+    public ProtocolVersion getProtocolVersion()
     {
-        return _protocolMinorVersion;
+        return _protocolVersion;
     }
 
-    public byte getProtocolMajorVersion()
-    {
-        return _protocolMajorVersion;
-    }
-
-    public VersionSpecificRegistry getRegistry()
+    public MethodRegistry getRegistry()
     {
         return _registry;
     }
+
+    public ProtocolOutputHandler getOutputHandler()
+    {
+        return _outputHandler;
+    }
+
 
 }

@@ -24,7 +24,7 @@ import junit.framework.TestCase;
 
 import org.apache.mina.common.IoSession;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.client.protocol.AMQProtocolHandlerImpl;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 
@@ -36,7 +36,7 @@ public class AMQProtocolSessionTest extends TestCase
         {
         }
 
-        public AMQProtSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
+        public AMQProtSession(AMQProtocolHandlerImpl protocolHandler, IoSession protocolSession, AMQConnection connection)
         {
             super(protocolHandler,protocolSession,connection);
         }

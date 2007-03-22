@@ -51,8 +51,8 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         ChannelCloseBody body = evt.getMethod();
-        _logger.info("Received channel close for id " + evt.getChannelId() + " citing class " + body.classId +
-                     " and method " + body.methodId);
+        _logger.info("Received channel close for id " + evt.getChannelId() + " citing class " + body.getClassId() +
+                     " and method " + body.getMethodId());
         int channelId = evt.getChannelId();
 
         AMQChannel channel = session.getChannel(channelId);

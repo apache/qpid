@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.cluster;
 
-import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQMethodBodyImpl;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 
 import java.util.HashMap;
@@ -28,16 +28,16 @@ import java.util.Map;
 
 public class MethodHandlerRegistry
 {
-    private final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> registry =
-            new HashMap<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>();
+    private final Map<Class<? extends AMQMethodBodyImpl>, StateAwareMethodListener<? extends AMQMethodBodyImpl>> registry =
+            new HashMap<Class<? extends AMQMethodBodyImpl>, StateAwareMethodListener<? extends AMQMethodBodyImpl>>();
 
-    public <A extends AMQMethodBody, B extends Class<A>> MethodHandlerRegistry addHandler(B type, StateAwareMethodListener<A> handler)
+    public <A extends AMQMethodBodyImpl, B extends Class<A>> MethodHandlerRegistry addHandler(B type, StateAwareMethodListener<A> handler)
     {
         registry.put(type, handler);
         return this;
     }
 
-    public <B extends AMQMethodBody> StateAwareMethodListener<B> getHandler(B frame)
+    public <B extends AMQMethodBodyImpl> StateAwareMethodListener<B> getHandler(B frame)
     {
         return (StateAwareMethodListener<B>) registry.get(frame.getClass());
     }
