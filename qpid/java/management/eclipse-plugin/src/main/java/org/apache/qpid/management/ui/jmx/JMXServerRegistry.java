@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.management.ListenerNotFoundException;
@@ -82,7 +83,9 @@ public class JMXServerRegistry extends ServerRegistry
     {
         super(server);
         JMXServiceURL jmxUrl = new JMXServiceURL(server.getUrl());
-        _jmxc = JMXConnectorFactory.connect(jmxUrl, null);
+        Map<String, Object> env = null;
+
+        _jmxc = JMXConnectorFactory.connect(jmxUrl, env);
         _mbsc = _jmxc.getMBeanServerConnection();
         
         _clientListener = new ClientListener(server);
@@ -144,6 +147,7 @@ public class JMXServerRegistry extends ServerRegistry
             addConnectionMBean(mbean);
         }
         
+        addVirtualHost(mbean.getVirtualHostName());
         _mbeansMap.put(mbean.getUniqueName(), mbean);
     }
 
