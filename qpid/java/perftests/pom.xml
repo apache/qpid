@@ -158,32 +158,32 @@
 
                         <!-- More example Tests. These are examples to exercise all the features of the test harness. Can scale up with option overrides. -->
                         <Ping-Tx>-n Ping-Tx -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Ping-Tx>
-                        <Ping-Size>-n Ping-Size -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messagesize=512</Ping-Size>
+                        <Ping-Size>-n Ping-Size -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=512</Ping-Size>
                         <Ping-Concurrent>-n Ping-Concurrent -s [100] -c [4] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Concurrent>
-                        <Ping-Many-Queues>-n Ping-Many-Queues -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationscount=4</Ping-Many-Queues>
+                        <Ping-Many-Queues>-n Ping-Many-Queues -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf destinationCount=4</Ping-Many-Queues>
                         <Ping-Duration>-n Ping-Duration -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf</Ping-Duration>
                         <Ping-Rate>-n Ping-Rate -s [100] -d10S -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf rate=500</Ping-Rate>
                         <Ping-PubSub>-n Ping-PubSub -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true</Ping-PubSub>
                         <Ping-Many-Topics>
-                            -n Ping-Many-Topics -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationscount=4
+                            -n Ping-Many-Topics -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf pubsub=true destinationCount=4
                         </Ping-Many-Topics>
                         <Ping-Persistent>
                             -n Ping-Persistent -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true
                         </Ping-Persistent>
                         <Ping-Batch-Logging>
-                            -n Ping-Batch-Logging -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf BatchSize=10
+                            -n Ping-Batch-Logging -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf batchSize=10
                         </Ping-Batch-Logging>
                         <Ping-Failover-Before-Send> 
-                            -n Ping-Failover-Before-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeSend=true
+                            -n Ping-Failover-Before-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=10 failBeforeSend=true
                         </Ping-Failover-Before-Send>
                         <Ping-Failover-After-Send>
-                            -n Ping-Failover-After-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterSend=true
+                            -n Ping-Failover-After-Send -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=10 failAfterSend=true
                         </Ping-Failover-After-Send>
                         <Ping-Failover-Before-Commit>
-                            -n Ping-Failover-Before-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailBeforeCommit=true
+                            -n Ping-Failover-Before-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=10 failBeforeCommit=true
                         </Ping-Failover-Before-Commit>
                         <Ping-Failover-After-Commit>
-                            -n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf CommitBatchSize=10 FailAfterCommit=true
+                            -n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=10 failAfterCommit=true
                         </Ping-Failover-After-Commit>
 
                     </commands>
