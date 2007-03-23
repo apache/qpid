@@ -39,8 +39,13 @@ public class AccessManagerImpl implements AccessManager
 
     public AccessManagerImpl(String name, Configuration hostConfig) throws ConfigurationException
     {
-        String accessClass = hostConfig.getString("security.access.class");
+        if (hostConfig == null)
+        {
+            _logger.warn("No Configuration specified. Using default access controls for VirtualHost:'" + name + "'");
+            return;
+        }
 
+        String accessClass = hostConfig.getString("security.access.class");
         if (accessClass == null)
         {
             _logger.warn("No access control specified. Using default access controls for VirtualHost:'" + name + "'");
@@ -111,7 +116,7 @@ public class AccessManagerImpl implements AccessManager
             }
             catch (Exception e)
             {
-                throw new ConfigurationException(e.getCause());
+                throw new ConfigurationException(e.getMessage(), e.getCause());
             }
         }
     }
@@ -121,7 +126,15 @@ public class AccessManagerImpl implements AccessManager
     {
         if (_accessManager == null)
         {
-            return ApplicationRegistry.getInstance().getAccessManager().isAuthorized(accessObject, username);
+            if (ApplicationRegistry.getInstance().getAccessManager() == this)
+            {
+                _logger.warn("No Default access manager specified DENYING ALL ACCESS");
+                return new AccessResult(this, AccessResult.AccessStatus.REFUSED);
+            }
+            else
+            {
+                return ApplicationRegistry.getInstance().getAccessManager().isAuthorized(accessObject, username);
+            }
         }
         else
         {
@@ -129,7 +142,8 @@ public class AccessManagerImpl implements AccessManager
         }
     }
 
-    public String getName()
+    public String getName
+            ()
     {
         return "AccessManagerImpl";
     }

@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.access;
 
 public interface AccessManager
 {
+    //AccessResult isAuthorized(Accessable accessObject, Principal username, AccessRights rights);
     AccessResult isAuthorized(Accessable accessObject, String username);
 
     String getName();

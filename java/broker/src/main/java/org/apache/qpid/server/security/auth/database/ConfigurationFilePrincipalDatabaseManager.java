@@ -136,7 +136,14 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             }
             catch (Exception ite)
             {
-                throw new ConfigurationException(ite.getCause());
+                if (ite instanceof ConfigurationException)
+                {
+                    throw(ConfigurationException) ite;
+                }
+                else
+                {
+                    throw new ConfigurationException(ite.getMessage(), ite.getCause());
+                }
             }
         }
     }

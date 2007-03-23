@@ -75,7 +75,7 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
 
         if (virtualHost == null)
         {
-            throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown virtual host: " + virtualHostName);
+            throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown virtual host: '" + virtualHostName+"'");
         }
         else
         {
