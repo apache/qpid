@@ -39,6 +39,7 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.TestMessageFactory;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.MessageProducer;
@@ -734,6 +735,12 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                     if ((remainingCount % _txBatchSize) == 0)
                     {
                         commitTx(_consumerSession);
+                        if (!_consumerSession.getTransacted() &&
+                            _consumerSession.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+                        {
+                            // Acknowledge the messages when the session is not transacted but client_ack
+                            ((AMQSession) _consumerSession).acknowledge();
+                        }
                     }
 
                     // Forward the message and remaining count to any interested chained message listener.
