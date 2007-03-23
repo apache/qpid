@@ -71,7 +71,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         Map<String, Class<? extends SaslServerFactory>> providerMap = new TreeMap<String, Class<? extends SaslServerFactory>>();
 
 
-        if (name == null)
+        if (name == null || hostConfig == null)
         {
             initialiseAuthenticationMechanisms(providerMap, ApplicationRegistry.getInstance().getDatabaseManager().getDatabases());
         }
