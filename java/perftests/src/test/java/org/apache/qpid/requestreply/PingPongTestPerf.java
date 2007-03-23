@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
 /**
  * PingPongTestPerf is a full round trip ping test, that has been written with the intention of being scaled up to run
@@ -67,53 +68,53 @@ public class PingPongTestPerf extends AsymptoticTestCase
     // Set up a property reader to extract the test parameters from. Once ContextualProperties is available in
     // the project dependencies, use it to get property overrides for configurable tests and to notify the test runner
     // of the test parameters to log with the results. It also providers some basic type parsing convenience methods.
-    //private Properties testParameters = System.getProperties();
-    private ParsedProperties testParameters = new ParsedProperties(System.getProperties());
+    // private Properties testParameters = System.getProperties();
+    private ParsedProperties testParameters = new TestContextProperties(System.getProperties());
 
     public PingPongTestPerf(String name)
     {
         super(name);
 
         // Sets up the test parameters with defaults.
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.COMMIT_BATCH_SIZE_PROPNAME,
-                                              Integer.toString(PingPongProducer.DEFAULT_TX_BATCH_SIZE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.MESSAGE_SIZE_PROPNAME,
-                                              Integer.toString(PingPongProducer.DEFAULT_MESSAGE_SIZE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.PING_QUEUE_NAME_PROPNAME,
-                                              PingPongProducer.DEFAULT_PING_DESTINATION_NAME);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.PERSISTENT_MODE_PROPNAME,
-                                              Boolean.toString(PingPongProducer.DEFAULT_PERSISTENT_MODE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.TRANSACTED_PROPNAME,
-                                              Boolean.toString(PingPongProducer.DEFAULT_TRANSACTED));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.BROKER_PROPNAME, PingPongProducer.DEFAULT_BROKER);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.USERNAME_PROPNAME, PingPongProducer.DEFAULT_USERNAME);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.PASSWORD_PROPNAME, PingPongProducer.DEFAULT_PASSWORD);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.VIRTUAL_PATH_PROPNAME, PingPongProducer.DEFAULT_VIRTUAL_PATH);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.VERBOSE_OUTPUT_PROPNAME,
-                                              Boolean.toString(PingPongProducer.DEFAULT_VERBOSE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.RATE_PROPNAME,
-                                              Integer.toString(PingPongProducer.DEFAULT_RATE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.IS_PUBSUB_PROPNAME,
-                                              Boolean.toString(PingPongProducer.DEFAULT_PUBSUB));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.COMMIT_BATCH_SIZE_PROPNAME,
-                                              Integer.toString(PingPongProducer.DEFAULT_TX_BATCH_SIZE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.TIMEOUT_PROPNAME,
-                                              Long.toString(PingPongProducer.DEFAULT_TIMEOUT));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.PING_DESTINATION_COUNT_PROPNAME,
-                                              Integer.toString(PingPongProducer.DEFAULT_DESTINATION_COUNT));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.FAIL_AFTER_COMMIT_PROPNAME,
-                                              PingPongProducer.DEFAULT_FAIL_AFTER_COMMIT);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.FAIL_BEFORE_COMMIT_PROPNAME,
-                                              PingPongProducer.DEFAULT_FAIL_BEFORE_COMMIT);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.FAIL_AFTER_SEND_PROPNAME,
-                                              PingPongProducer.DEFAULT_FAIL_AFTER_SEND);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.FAIL_BEFORE_SEND_PROPNAME,
-                                              PingPongProducer.DEFAULT_FAIL_BEFORE_SEND);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.FAIL_ONCE_PROPNAME, PingPongProducer.DEFAULT_FAIL_ONCE);
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.UNIQUE_PROPNAME, Boolean.toString(PingPongProducer.DEFAULT_UNIQUE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.ACK_MODE_PROPNAME,
-                                              Integer.toString(PingPongProducer.DEFAULT_ACK_MODE));
-        ParsedProperties.setSysPropertyIfNull(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME, 0l);
+        testParameters.setPropertyIfNull(PingPongProducer.TX_BATCH_SIZE_PROPNAME,
+                                         Integer.toString(PingPongProducer.TX_BATCH_SIZE_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.MESSAGE_SIZE_PROPNAME,
+                                         Integer.toString(PingPongProducer.MESSAGE_SIZE_DEAFULT));
+        testParameters.setPropertyIfNull(PingPongProducer.PING_QUEUE_NAME_PROPNAME,
+                                         PingPongProducer.PING_QUEUE_NAME_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.PERSISTENT_MODE_PROPNAME,
+                                         Boolean.toString(PingPongProducer.PERSISTENT_MODE_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.TRANSACTED_PROPNAME,
+                                         Boolean.toString(PingPongProducer.TRANSACTED_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.BROKER_PROPNAME, PingPongProducer.BROKER_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.USERNAME_PROPNAME, PingPongProducer.USERNAME_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.PASSWORD_PROPNAME, PingPongProducer.PASSWORD_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.VIRTUAL_HOST_PROPNAME, PingPongProducer.VIRTUAL_HOST_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.VERBOSE_PROPNAME,
+                                         Boolean.toString(PingPongProducer.VERBOSE_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.RATE_PROPNAME, Integer.toString(PingPongProducer.RATE_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.PUBSUB_PROPNAME,
+                                         Boolean.toString(PingPongProducer.PUBSUB_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.TX_BATCH_SIZE_PROPNAME,
+                                         Integer.toString(PingPongProducer.TX_BATCH_SIZE_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.TIMEOUT_PROPNAME, Long.toString(PingPongProducer.TIMEOUT_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.DESTINATION_COUNT_PROPNAME,
+                                         Integer.toString(PingPongProducer.DESTINATION_COUNT_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.FAIL_AFTER_COMMIT_PROPNAME,
+                                         PingPongProducer.FAIL_AFTER_COMMIT_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.FAIL_BEFORE_COMMIT_PROPNAME,
+                                         PingPongProducer.FAIL_BEFORE_COMMIT_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.FAIL_AFTER_SEND_PROPNAME,
+                                         PingPongProducer.FAIL_AFTER_SEND_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.FAIL_BEFORE_SEND_PROPNAME,
+                                         PingPongProducer.FAIL_BEFORE_SEND_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.FAIL_ONCE_PROPNAME, PingPongProducer.FAIL_ONCE_DEFAULT);
+        testParameters.setPropertyIfNull(PingPongProducer.UNIQUE_DESTS_PROPNAME,
+                                         Boolean.toString(PingPongProducer.UNIQUE_DESTS_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.ACK_MODE_PROPNAME,
+                                         Integer.toString(PingPongProducer.ACK_MODE_DEFAULT));
+        testParameters.setPropertyIfNull(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME,
+                                         PingPongProducer.PAUSE_AFTER_BATCH_DEFAULT);
     }
 
     /**
@@ -153,7 +154,7 @@ public class PingPongTestPerf extends AsymptoticTestCase
 
         // Send the message and wait for a reply.
         int numReplies =
-            perThreadSetup._testPingProducer.pingAndWaitForReply(msg, numPings, PingPongProducer.DEFAULT_TIMEOUT);
+            perThreadSetup._testPingProducer.pingAndWaitForReply(msg, numPings, PingPongProducer.TIMEOUT_DEFAULT);
 
         // Fail the test if the timeout was exceeded.
         if (numReplies != numPings)
@@ -175,22 +176,22 @@ public class PingPongTestPerf extends AsymptoticTestCase
             String brokerDetails = testParameters.getProperty(PingPongProducer.BROKER_PROPNAME);
             String username = testParameters.getProperty(PingPongProducer.USERNAME_PROPNAME);
             String password = testParameters.getProperty(PingPongProducer.PASSWORD_PROPNAME);
-            String virtualPath = testParameters.getProperty(PingPongProducer.VIRTUAL_PATH_PROPNAME);
+            String virtualPath = testParameters.getProperty(PingPongProducer.VIRTUAL_HOST_PROPNAME);
             String destinationName = testParameters.getProperty(PingPongProducer.PING_QUEUE_NAME_PROPNAME);
             boolean persistent = testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME);
             boolean transacted = testParameters.getPropertyAsBoolean(PingPongProducer.TRANSACTED_PROPNAME);
             String selector = testParameters.getProperty(PingPongProducer.SELECTOR_PROPNAME);
-            boolean verbose = testParameters.getPropertyAsBoolean(PingPongProducer.VERBOSE_OUTPUT_PROPNAME);
+            boolean verbose = testParameters.getPropertyAsBoolean(PingPongProducer.VERBOSE_PROPNAME);
             int messageSize = testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME);
             int rate = testParameters.getPropertyAsInteger(PingPongProducer.RATE_PROPNAME);
-            boolean pubsub = testParameters.getPropertyAsBoolean(PingPongProducer.IS_PUBSUB_PROPNAME);
+            boolean pubsub = testParameters.getPropertyAsBoolean(PingPongProducer.PUBSUB_PROPNAME);
             boolean failAfterCommit = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_AFTER_COMMIT_PROPNAME);
             boolean failBeforeCommit = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_BEFORE_COMMIT_PROPNAME);
             boolean failAfterSend = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_AFTER_SEND_PROPNAME);
             boolean failBeforeSend = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_BEFORE_SEND_PROPNAME);
-            int batchSize = testParameters.getPropertyAsInteger(PingPongProducer.COMMIT_BATCH_SIZE_PROPNAME);
+            int batchSize = testParameters.getPropertyAsInteger(PingPongProducer.TX_BATCH_SIZE_PROPNAME);
             Boolean failOnce = testParameters.getPropertyAsBoolean(PingPongProducer.FAIL_ONCE_PROPNAME);
-            boolean unique = testParameters.getPropertyAsBoolean(PingPongProducer.UNIQUE_PROPNAME);
+            boolean unique = testParameters.getPropertyAsBoolean(PingPongProducer.UNIQUE_DESTS_PROPNAME);
             int ackMode = testParameters.getPropertyAsInteger(PingPongProducer.ACK_MODE_PROPNAME);
             long pause = testParameters.getPropertyAsInteger(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME);
 
@@ -210,8 +211,8 @@ public class PingPongTestPerf extends AsymptoticTestCase
                                                                         destinationName, selector, transacted, persistent,
                                                                         messageSize, verbose, failAfterCommit,
                                                                         failBeforeCommit, failAfterSend, failBeforeSend,
-                                                                        failOnce, batchSize, 0, rate, pubsub,
-                                                                        unique, ackMode, pause);
+                                                                        failOnce, batchSize, 0, rate, pubsub, unique,
+                                                                        ackMode, pause);
                 perThreadSetup._testPingProducer.getConnection().start();
             }
 
@@ -240,7 +241,7 @@ public class PingPongTestPerf extends AsymptoticTestCase
             synchronized (this)
             {
                 perThreadSetup._testPingProducer.close();
-                //perThreadSetup._testPingBouncer.close();
+                // perThreadSetup._testPingBouncer.close();
             }
 
             // Ensure the per thread fixture is reclaimed.

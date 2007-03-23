@@ -57,10 +57,10 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
     private static Logger _logger = Logger.getLogger(PingAsyncTestPerf.class);
 
     /** Holds the name of the property to get the test results logging batch size. */
-    public static final String TEST_RESULTS_BATCH_SIZE_PROPNAME = "BatchSize";
+    public static final String TEST_RESULTS_BATCH_SIZE_PROPNAME = "batchSize";
 
     /** Holds the default test results logging batch size. */
-    public static final int DEFAULT_TEST_RESULTS_BATCH_SIZE = 1000;
+    public static final int TEST_RESULTS_BATCH_SIZE_DEFAULT = 1000;
 
     /** Used to hold the timing controller passed from the test runner. */
     private TimingController _timingController;
@@ -70,7 +70,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
     /** Holds test specifics by correlation id. This consists of the expected number of messages and the timing controler. */
     private Map<String, PerCorrelationId> perCorrelationIds =
-            Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
+        Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
 
     /** Holds the batched results listener, that does logging on batch boundaries. */
     private BatchedResultsListener batchedResultsListener = null;
@@ -86,12 +86,12 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Sets up the test parameters with defaults.
         testParameters.setPropertyIfNull(TEST_RESULTS_BATCH_SIZE_PROPNAME,
-                                              Integer.toString(DEFAULT_TEST_RESULTS_BATCH_SIZE));
+                                         Integer.toString(TEST_RESULTS_BATCH_SIZE_DEFAULT));
     }
 
     /**
      * Compile all the tests into a test suite.
-     * @return The test suite to run. Should only contain testAsyncPingOk method. 
+     * @return The test suite to run. Should only contain testAsyncPingOk method.
      */
     public static Test suite()
     {
@@ -129,7 +129,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
      * all replies have been received or a time out occurs before exiting this method.
      *
      * @param numPings The number of pings to send.
-     * @throws Exception pass all errors out to the test harness  
+     * @throws Exception pass all errors out to the test harness
      */
     public void testAsyncPingOk(int numPings) throws Exception
     {
@@ -246,9 +246,9 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                 // Extract the correlation id from the message.
                 String correlationId = message.getJMSCorrelationID();
 
-                _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount +
-                              "): called on batch boundary for message id: " + correlationId +
-                              " with thread id: " + Thread.currentThread().getId());
+                _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount
+                              + "): called on batch boundary for message id: " + correlationId + " with thread id: "
+                              + Thread.currentThread().getId());
 
                 // Get the details for the correlation id and check that they are not null. They can become null
                 // if a test times out.
@@ -268,7 +268,6 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                     // Register a test result for the correlation id.
                     try
                     {
-
                         tc.completeTest(true, receivedInBatch);
                     }
                     catch (InterruptedException e)
