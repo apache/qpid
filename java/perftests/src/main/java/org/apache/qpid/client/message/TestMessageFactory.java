@@ -103,7 +103,7 @@ public class TestMessageFactory
     {
         StringBuffer buf = new StringBuffer(size);
         int count = 0;
-        while (count < size)
+        while (count <= (size - MESSAGE_DATA_BYTES.length()))
         {
             buf.append(MESSAGE_DATA_BYTES);
             count += MESSAGE_DATA_BYTES.length();

@@ -171,7 +171,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            throw new MBeanException(ex,"Error in creating queue " + queueName);
+            throw new MBeanException(new JMException(ex.getMessage()),"Error in creating queue " + queueName);
         }
     }
 
@@ -202,7 +202,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            throw new MBeanException(ex, ex.toString());
+            throw new MBeanException(new JMException(ex.getMessage()), "Error in deleting queue " + queueName);
         }
     }
 

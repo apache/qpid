@@ -56,6 +56,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 {
     private AMQMinaProtocolSession _session = null;
     private String _name = null;
+    
     //openmbean data types for representing the channel attributes
     private final static String[] _channelAtttibuteNames = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
     private final static String[] _indexNames = {_channelAtttibuteNames[0]};
@@ -95,12 +96,26 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     private static void init() throws OpenDataException
     {
-
         _channelType = new CompositeType("Channel", "Channel Details", _channelAtttibuteNames,
                                          _channelAtttibuteNames, _channelAttributeTypes);
         _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
     }
 
+    public String getClientId()
+    {
+        return _session.getContextKey() == null ? null : _session.getContextKey().toString();
+    }
+
+    public String getAuthorizedId()
+    {
+        return _session.getAuthorizedID();
+    }
+
+    public String getVersion()
+    {
+        return _session.getClientVersion() == null ? null : _session.getClientVersion().toString();
+    }
+    
     public Date getLastIoTime()
     {
         return new Date(_session.getIOSession().getLastIoTime());
