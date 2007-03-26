@@ -488,7 +488,7 @@ public class AttributesTabControl extends TabControl
         GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false);
         label.setLayoutData(layoutData);
         Text  value = new Text(parent, SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY);
-        value.setText(attribute.getName());
+        value.setText(ViewUtility.getDisplayText(attribute.getName()));
         value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         
