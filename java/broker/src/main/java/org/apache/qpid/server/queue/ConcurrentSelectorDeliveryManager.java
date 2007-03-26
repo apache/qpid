@@ -401,7 +401,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         _lock.lock();
         
         AMQMessage message = _messages.poll();
-        _totalMessageSize.addAndGet(-message.getSize());
+        if (message != null)
+        {
+            _totalMessageSize.addAndGet(-message.getSize());
+        }
 
         _lock.unlock();
     }
@@ -539,7 +542,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     subscriberHasPendingResend(false, sub, null);
                     //better to use the above method as this keeps all the tracking in one location.
-//                    _hasContent.remove(sub);
+                    // _hasContent.remove(sub);
                 }
 
                 _extraMessages.decrementAndGet();
@@ -552,7 +555,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 }
             }
 
-            _totalMessageSize.addAndGet(-message.getSize());
+            if ((message != null) && (messageQueue == _messages))
+            {
+                _totalMessageSize.addAndGet(-message.getSize());
+            }
         }
         catch (AMQException e)
         {
