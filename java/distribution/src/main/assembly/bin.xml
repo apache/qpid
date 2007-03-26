@@ -95,6 +95,12 @@
       <fileMode>420</fileMode>
     </file>
     <file>
+        <source>../broker/etc/passwdVhost</source>
+        <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
+        <destName>passwdVhost</destName>
+        <fileMode>420</fileMode>
+    </file>
+    <file>
       <source>../broker/etc/qpid-server.conf</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>qpid-server.conf</destName>
