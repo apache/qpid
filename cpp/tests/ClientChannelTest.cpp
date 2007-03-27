@@ -166,20 +166,13 @@ class ClientChannelTest : public CppUnit::TestCase
     void testGetFragmentedMessage() {
         string longStr(FRAME_MAX*2, 'x'); // Longer than max frame size.
         channel.publish(Message(longStr), exchange, qname);
-        // FIXME aconway 2007-03-21: Remove couts.
-        cout << "==== Fragmented publish:" << endl
-             << connection.conversation << endl;
         Message getMsg;
-        cout << "==== Fragmented get:" << endl
-             << connection.conversation << endl;
         CPPUNIT_ASSERT(channel.get(getMsg, queue));
     }
     
     void testConsumeFragmentedMessage() {
         string xx(FRAME_MAX*2, 'x');
         channel.publish(Message(xx), exchange, qname);
-        cout << "==== Fragmented publish:" << endl
-             << connection.conversation << endl;
         channel.start();
         string tag;
         channel.consume(queue, tag, &listener);
@@ -190,10 +183,6 @@ class ClientChannelTest : public CppUnit::TestCase
             while (listener.messages.size() != 2)
                 CPPUNIT_ASSERT(listener.monitor.wait(1*TIME_SEC));
         }
-        // FIXME aconway 2007-03-21: 
-        cout << "==== Fragmented consme 2 messages:" << endl
-             << connection.conversation << endl;
-
         CPPUNIT_ASSERT_EQUAL(xx, listener.messages[0].getData());
         CPPUNIT_ASSERT_EQUAL(yy, listener.messages[1].getData());
     }

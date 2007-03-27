@@ -53,7 +53,7 @@ public:
     void testAllSpecificProperties(){
 	string contentType("text/html");
 	string contentEncoding("UTF8");
-	uint8_t deliveryMode(2);
+	DeliveryMode deliveryMode(PERSISTENT);
 	uint8_t priority(3);
 	string correlationId("abc");
 	string replyTo("no-address");
@@ -106,7 +106,7 @@ public:
 
     void testSomeSpecificProperties(){
         string contentType("application/octet-stream");
-        uint8_t deliveryMode(5);
+        DeliveryMode deliveryMode(PERSISTENT);
         uint8_t priority(6);
         string expiration("Z");
         uint64_t timestamp(0xabe4a34a);

@@ -95,7 +95,7 @@ class ProducerConsumerTest : public CppUnit::TestCase
     CPPUNIT_TEST_SUITE(ProducerConsumerTest);
     CPPUNIT_TEST(testProduceConsume);
     CPPUNIT_TEST(testTimeout);
-    CPPUNIT_TEST(testStop);
+    CPPUNIT_TEST(testShutdown);
     CPPUNIT_TEST(testCancel);
     CPPUNIT_TEST_SUITE_END();
 
@@ -103,7 +103,7 @@ class ProducerConsumerTest : public CppUnit::TestCase
     client::InProcessBrokerClient client;
     ProducerConsumer pc;
 
-    WatchedCounter stopped;
+    WatchedCounter shutdown;
     WatchedCounter timeout;
     WatchedCounter consumed;
     WatchedCounter produced;
@@ -124,8 +124,8 @@ class ProducerConsumerTest : public CppUnit::TestCase
 
 
     void consumeInternal(ProducerConsumer::ConsumerLock& consumer) {
-        if (pc.isStopped()) {
-            ++stopped;
+        if (pc.isShutdown()) {
+            ++shutdown;
             return;
         }
         if (consumer.isTimedOut()) {
@@ -189,7 +189,7 @@ public:
         produce();
         CPPUNIT_ASSERT(consumed.waitFor(5));
         join(threads);
-        CPPUNIT_ASSERT_EQUAL(0, int(stopped));
+        CPPUNIT_ASSERT_EQUAL(0, int(shutdown));
     }
 
     void testTimeout() {
@@ -219,30 +219,30 @@ public:
     }
 
     
-    void testStop() {
+    void testShutdown() {
         ConsumeRunnable runMe(*this);
         vector<Thread> threads = startThreads(2, runMe);
         while (pc.consumers() != 2)
             Thread::yield(); 
-        pc.stop();
-        CPPUNIT_ASSERT(stopped.waitFor(2));
+        pc.shutdown();
+        CPPUNIT_ASSERT(shutdown.waitFor(2));
         join(threads);
 
-        threads = startThreads(1, runMe); // Should stop immediately.
-        CPPUNIT_ASSERT(stopped.waitFor(3));
+        threads = startThreads(1, runMe); // Should shutdown immediately.
+        CPPUNIT_ASSERT(shutdown.waitFor(3));
         join(threads);
 
-        // Produce/consume while stopped should return isStopped and
+        // Produce/consume while shutdown should return isShutdown and
         // throw on confirm.
         try {
             ProducerConsumer::ProducerLock p(pc);
-            CPPUNIT_ASSERT(pc.isStopped());
+            CPPUNIT_ASSERT(pc.isShutdown());
             CPPUNIT_FAIL("Expected exception");
         }
         catch (...) {}          // Expected
         try {
             ProducerConsumer::ConsumerLock c(pc);
-            CPPUNIT_ASSERT(pc.isStopped());
+            CPPUNIT_ASSERT(pc.isShutdown());
             CPPUNIT_FAIL("Expected exception");
         }
         catch (...) {}          // Expected

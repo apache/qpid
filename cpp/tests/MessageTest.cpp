@@ -69,12 +69,11 @@ class MessageTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchange());
         CPPUNIT_ASSERT_EQUAL(routingKey, msg->getRoutingKey());
         CPPUNIT_ASSERT_EQUAL(messageId, msg->getHeaderProperties()->getMessageId());
-        CPPUNIT_ASSERT_EQUAL((uint8_t) PERSISTENT, msg->getHeaderProperties()->getDeliveryMode());
+        CPPUNIT_ASSERT_EQUAL(PERSISTENT, msg->getHeaderProperties()->getDeliveryMode());
         CPPUNIT_ASSERT_EQUAL(string("xyz"), msg->getHeaderProperties()->getHeaders().getString("abc"));
         CPPUNIT_ASSERT_EQUAL((uint64_t) 14, msg->contentSize());
 
         MockChannel channel(1);
-        // FIXME aconway 2007-02-02: deliver should take ProtocolVersion
         msg->deliver(channel, "ignore", 0, 100); 
         CPPUNIT_ASSERT_EQUAL((size_t) 3, channel.out.frames.size());
         AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(channel.out.frames[2]->getBody()));

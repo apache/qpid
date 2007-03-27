@@ -49,14 +49,6 @@ BasicMessage::BasicMessage(
     size(0)
 {}
 
-// FIXME aconway 2007-02-01: remove.
-// BasicMessage::BasicMessage(Buffer& buffer, bool headersOnly, uint32_t contentChunkSize) : 
-//     publisher(0), size(0)
-// {
-
-//     decode(buffer, headersOnly, contentChunkSize);
-// }
-
 // For tests only.
 BasicMessage::BasicMessage() : size(0)
 {}
@@ -227,12 +219,13 @@ void BasicMessage::releaseContent(MessageStore* store)
         store->stage(this);
     }
     if (!content.get() || content->size() > 0) {
-        // FIXME aconway 2007-02-07: handle MessageMessage.
-        //set content to lazy loading mode (but only if there is stored content):
+        //set content to lazy loading mode (but only if there is
+        //stored content):
 
-        //Note: the LazyLoadedContent instance contains a raw pointer to the message, however it is
-        //      then set as a member of that message so its lifetime is guaranteed to be no longer than
-        //      that of the message itself
+        //Note: the LazyLoadedContent instance contains a raw pointer
+        //to the message, however it is then set as a member of that
+        //message so its lifetime is guaranteed to be no longer than
+        //that of the message itself
         content = std::auto_ptr<Content>(
             new LazyLoadedContent(store, this, expectedContentSize()));
     }

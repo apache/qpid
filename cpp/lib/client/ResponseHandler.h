@@ -18,51 +18,58 @@
  * under the License.
  *
  */
-#include <string>
-
-#include <framing/amqp_framing.h> // FIXME aconway 2007-02-01: #include cleanup.
+#include "shared_ptr.h"
 #include <sys/Monitor.h>
 
 #ifndef _ResponseHandler_
 #define _ResponseHandler_
 
 namespace qpid {
+
+namespace framing {
+class AMQMethodBody;
+}
+
 namespace client {
 
 /**
  * Holds a response from the broker peer for the client.
  */ 
 class ResponseHandler{
+    typedef shared_ptr<framing::AMQMethodBody> MethodPtr;
     bool waiting;
-    qpid::framing::AMQMethodBody::shared_ptr response;
-    qpid::sys::Monitor monitor;
+    bool shutdownFlag;
+    MethodPtr response;
+    sys::Monitor monitor;
 
   public:
     ResponseHandler();
     ~ResponseHandler();
-    
-    bool isWaiting(){ return waiting; }
-    framing::AMQMethodBody::shared_ptr getResponse();
-    void waitForResponse();
-    
-    void signalResponse(framing::AMQMethodBody::shared_ptr response);
 
-    void expect();//must be called before calling receive
-    bool validate(framing::ClassId, framing::MethodId);
-    void receive(framing::ClassId, framing::MethodId);
+    /** Is a response expected? */
+    bool isWaiting();
 
-    framing::RequestId getRequestId();
+    /** Provide a response to the waiting thread */
+    void signalResponse(MethodPtr response);
 
-    template <class BodyType> bool validate() {
-        return validate(BodyType::CLASS_ID, BodyType::METHOD_ID);
-    }
-    template <class BodyType> void receive() {
-        receive(BodyType::CLASS_ID, BodyType::METHOD_ID);
+    /** Indicate a message is expected. */
+    void expect();
+
+    /** Wait for a response. */
+    MethodPtr receive();
+
+    /** Wait for a specific response. */
+    MethodPtr receive(framing::ClassId, framing::MethodId);
+
+    /** Template version of receive returns typed pointer. */
+    template <class BodyType>
+    shared_ptr<BodyType> receive() {
+        return shared_polymorphic_downcast<BodyType>(
+            receive(BodyType::CLASS_ID, BodyType::METHOD_ID));
     }
 };
 
-}
-}
+}}
 
 
 #endif
