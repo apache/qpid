@@ -31,7 +31,7 @@ namespace framing {
     class InitiationHandler{
     public:
         virtual ~InitiationHandler();
-	virtual void initiated(ProtocolInitiation* header) = 0;
+	virtual void initiated(const ProtocolInitiation&) = 0;
     };
 
 }

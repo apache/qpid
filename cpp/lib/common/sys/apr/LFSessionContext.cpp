@@ -71,7 +71,7 @@ void LFSessionContext::read(){
     }else{
         ProtocolInitiation protocolInit;
         if(protocolInit.decode(in)){
-            handler->initiated(&protocolInit);
+            handler->initiated(protocolInit);
             initiated = true;
             if(debug) std::cout << "INIT [" << &socket << "]" << std::endl;
         }

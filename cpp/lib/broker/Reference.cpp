@@ -28,8 +28,6 @@ namespace broker {
 
 Reference::shared_ptr  ReferenceRegistry::open(const Reference::Id& id) {
     ReferenceMap::iterator i = references.find(id);
-    // TODO aconway 2007-02-05: should we throw Channel or Connection
-    // exceptions here?
     if (i != references.end())
         throw ConnectionException(503, "Attempt to re-open reference " +id);
     return references[id] = Reference::shared_ptr(new Reference(id, this));

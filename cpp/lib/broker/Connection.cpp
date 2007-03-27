@@ -76,15 +76,15 @@ void Connection::close(
     getOutput().close();
 }
 
-void Connection::initiated(framing::ProtocolInitiation* header) {
-    version = ProtocolVersion(header->getMajor(), header->getMinor());
+void Connection::initiated(const framing::ProtocolInitiation& header) {
+    version = ProtocolVersion(header.getMajor(), header.getMinor());
     FieldTable properties;
     string mechanisms("PLAIN");
     string locales("en_US");
     getChannel(0).init(0, *out, getVersion());
     client = &getChannel(0).getAdatper().getProxy().getConnection();
     client->start(
-        header->getMajor(), header->getMinor(),
+        header.getMajor(), header.getMinor(),
         properties, mechanisms, locales);
 }
 
