@@ -234,10 +234,9 @@ void Queue::create(const FieldTable& settings)
 
 void Queue::configure(const FieldTable& settings)
 {
-    QueuePolicy* _policy = new QueuePolicy(settings);
-    if (_policy->getMaxCount() || _policy->getMaxSize()) {
-        setPolicy(std::auto_ptr<QueuePolicy>(_policy));
-    }
+    std::auto_ptr<QueuePolicy> _policy(new QueuePolicy(settings));
+    if (_policy->getMaxCount() || _policy->getMaxSize()) 
+        setPolicy(_policy);
 }
 
 void Queue::destroy()

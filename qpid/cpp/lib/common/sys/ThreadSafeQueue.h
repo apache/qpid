@@ -46,7 +46,7 @@ class ThreadSafeQueue
     }
 
     /** Pop a value from the front of the queue. Waits till value is available.
-     *@throw ShutdownException if queue is stopped while waiting.
+     *@throw ShutdownException if queue is shutdown while waiting.
      */
     T pop() {
         ProducerConsumer::ConsumerLock consumer(pc);
@@ -75,10 +75,10 @@ class ThreadSafeQueue
     }
 
     /** Interrupt threads waiting in pop() */
-    void stop() { pc.stop(); }
+    void shutdown() { pc.shutdown(); }
 
-    /** True if queue is stopped */
-    bool isStopped() { return pc.isStopped(); }
+    /** True if queue is shutdown */
+    bool isShutdown() { return pc.isShutdown(); }
 
     /** Size of the queue */
     size_t size() { ProducerConsumer::Lock l(pc); return container.size(); }

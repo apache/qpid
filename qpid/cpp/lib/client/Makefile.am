@@ -12,7 +12,6 @@ libqpidclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidclient_la_SOURCES =			\
   ClientChannel.cpp				\
   ClientExchange.cpp				\
-  ClientMessage.cpp				\
   ClientQueue.cpp				\
   BasicMessageChannel.cpp			\
   Connection.cpp				\

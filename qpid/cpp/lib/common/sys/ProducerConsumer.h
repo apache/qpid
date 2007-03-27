@@ -30,7 +30,7 @@ namespace sys {
  * 
  * Producers increase the number of available items, consumers reduce it.
  * Consumers wait till an item is available. Waiting threads can be
- * woken for shutdown using stop().
+ * woken for shutdown using shutdown().
  *
  * Note: Currently implements unbounded producer-consumer, i.e. no limit
  * to available items, producers never block. Can be extended to support
@@ -43,16 +43,16 @@ class ProducerConsumer
   public:
     ProducerConsumer(size_t init_items=0);
 
-    ~ProducerConsumer() { stop(); }
+    ~ProducerConsumer() { shutdown(); }
 
     /**
      * Wake any threads waiting for ProducerLock or ConsumerLock.
      *@post No threads are waiting in Producer or Consumer locks.
      */
-    void stop();
+    void shutdown();
 
-    /** True if queue is stopped */
-    bool isStopped() { return stopped; }
+    /** True if queue is shutdown */
+    bool isShutdown() { return shutdownFlag; }
 
     /** Number of items available for consumers */
     size_t available() const;
@@ -76,7 +76,7 @@ class ProducerConsumer
          *confirm() or cancel() before the lock goes out of scope.
          *
          * false means the lock failed - timed out or the
-         * ProducerConsumer is stopped. You should not do anything in
+         * ProducerConsumer is shutdown. You should not do anything in
          * the scope of the lock.
          */
         bool isOk() const;
@@ -98,8 +98,8 @@ class ProducerConsumer
         /** True if this lock experienced a timeout */
         bool isTimedOut() const { return status == TIMEOUT; }
 
-        /** True if we have been stopped */
-        bool isStopped() const { return pc.isStopped(); }
+        /** True if we have been shutdown */
+        bool isShutdown() const { return pc.isShutdown(); }
         
         ProducerConsumer& pc;
 
@@ -141,7 +141,7 @@ class ProducerConsumer
          * Wait up to timeout to acquire lock.
          *@post If isOk() caller has a producer lock.
          * If isTimedOut() there was a timeout.
-         * If neither then we were stopped.
+         * If neither then we were shutdown.
          */
         ConsumerLock(ProducerConsumer& p, const Time& timeout);
 
@@ -153,7 +153,7 @@ class ProducerConsumer
     mutable Monitor monitor;
     size_t items;
     size_t waiters;
-    bool stopped;
+    bool shutdownFlag;
 
   friend class Lock;
   friend class ProducerLock;

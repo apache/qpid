@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-#include <iostream>
 #include "BasicMessageChannel.h"
 #include "AMQMethodBody.h"
 #include "ClientChannel.h"
@@ -23,39 +22,93 @@
 #include "MessageListener.h"
 #include "framing/FieldTable.h"
 #include "Connection.h"
-
-using namespace std;
+#include <queue>
+#include <iostream>
+#include <boost/format.hpp>
+#include <boost/variant.hpp>
 
 namespace qpid {
 namespace client {
 
+using namespace std;
 using namespace sys;
 using namespace framing;
+using boost::format;
+
+namespace {
+
+// Destination name constants
+const std::string BASIC_GET("__basic_get__");
+const std::string BASIC_RETURN("__basic_return__");
+
+// Reference name constant
+const std::string BASIC_REF("__basic_reference__");
+}
+    
+class BasicMessageChannel::WaitableDestination :
+        public IncomingMessage::Destination
+{
+  public:
+    WaitableDestination() : shutdownFlag(false) {}
+    void message(const Message& msg) {
+        Mutex::ScopedLock l(monitor);
+        queue.push(msg);
+        monitor.notify();   
+    }
+        
+    void empty() {
+        Mutex::ScopedLock l(monitor);
+        queue.push(Empty());
+        monitor.notify();
+    }
+    
+    bool wait(Message& msgOut) {
+        Mutex::ScopedLock l(monitor);
+        while (queue.empty() && !shutdownFlag)
+            monitor.wait();
+        if (shutdownFlag)
+            return false;
+        Message* msg = boost::get<Message>(&queue.front());
+        bool success = msg;
+        if (success) 
+            msgOut=*msg;
+        queue.pop();
+        if (!queue.empty())
+            monitor.notify();   // Wake another waiter.
+        return success;
+    }
+
+    void shutdown() {
+        Mutex::ScopedLock l(monitor);
+        shutdownFlag = true;
+        monitor.notifyAll();
+    }
+
+  private:
+    struct Empty {};
+    typedef boost::variant<Message,Empty> Item;
+    sys::Monitor monitor;
+    std::queue<Item> queue;
+    bool shutdownFlag;
+};
+ 
 
 BasicMessageChannel::BasicMessageChannel(Channel& ch)
-    : channel(ch), returnsHandler(0) {}
+    : channel(ch), returnsHandler(0),
+      destGet(new WaitableDestination()),
+      destDispatch(new WaitableDestination())
+{
+    incoming.addDestination(BASIC_RETURN, *destDispatch);
+}
 
 void BasicMessageChannel::consume(
     Queue& queue, std::string& tag, MessageListener* listener, 
     AckMode ackMode, bool noLocal, bool synch, const FieldTable* fields)
 {
-    channel.sendAndReceiveSync<BasicConsumeOkBody>(
-        synch,
-        new BasicConsumeBody(
-            channel.version, 0, queue.getName(), tag, noLocal,
-            ackMode == NO_ACK, false, !synch,
-            fields ? *fields : FieldTable()));
-    if (synch) {
-        BasicConsumeOkBody::shared_ptr response =
-            boost::shared_polymorphic_downcast<BasicConsumeOkBody>(
-                channel.responses.getResponse());
-        tag = response->getConsumerTag();
-    }
-    // FIXME aconway 2007-02-20: Race condition!
-    // We could receive the first message for the consumer
-    // before we create the consumer below.
-    // Move consumer creation to handler for BasicConsumeOkBody
     {
+        // Note we create a consumer even if tag="". In that case
+        // It will be renamed when we handle BasicConsumeOkBody.
+        // 
         Mutex::ScopedLock l(lock);
         ConsumerMap::iterator i = consumers.find(tag);
         if (i != consumers.end())
@@ -66,6 +119,23 @@ void BasicMessageChannel::consume(
         c.ackMode = ackMode;
         c.lastDeliveryTag = 0;
     }
+
+    // FIXME aconway 2007-03-23: get processed in both.
+    
+    // BasicConsumeOkBody is really processed in handle(), here
+    // we just pick up the tag to return to the user.
+    //
+    // We can't process it here because messages for the consumer may
+    // already be arriving.
+    //
+    BasicConsumeOkBody::shared_ptr ok =
+        channel.sendAndReceiveSync<BasicConsumeOkBody>(
+            synch,
+            new BasicConsumeBody(
+                channel.version, 0, queue.getName(), tag, noLocal,
+                ackMode == NO_ACK, false, !synch,
+                fields ? *fields : FieldTable()));
+    tag = ok->getConsumerTag();
 }
 
 
@@ -92,6 +162,8 @@ void BasicMessageChannel::close(){
         consumersCopy = consumers;
         consumers.clear();
     }
+    destGet->shutdown();
+    destDispatch->shutdown();
     for (ConsumerMap::iterator i=consumersCopy.begin();
          i  != consumersCopy.end(); ++i)
     {
@@ -102,28 +174,37 @@ void BasicMessageChannel::close(){
             channel.send(new BasicAckBody(channel.version, c.lastDeliveryTag, true));
         }
     }
-    incoming.shutdown();
 }
 
 
-
-bool BasicMessageChannel::get(Message& msg, const Queue& queue, AckMode ackMode) {
-    // Expect a message starting with a BasicGetOk
-    incoming.startGet();
-    channel.send(new BasicGetBody(channel.version, 0, queue.getName(), ackMode));
-    return incoming.waitGet(msg);
+bool BasicMessageChannel::get(
+    Message& msg, const Queue& queue, AckMode ackMode)
+{
+    // Prepare for incoming response
+    incoming.addDestination(BASIC_GET, *destGet);
+    channel.send(
+        new BasicGetBody(channel.version, 0, queue.getName(), ackMode));
+    bool got = destGet->wait(msg);
+    return got;
 }
 
 void BasicMessageChannel::publish(
     const Message& msg, const Exchange& exchange,
     const std::string& routingKey, bool mandatory, bool immediate)
 {
-    msg.getHeader()->setContentSize(msg.getData().size());
     const string e = exchange.getName();
     string key = routingKey;
-    channel.send(new BasicPublishBody(channel.version, 0, e, key, mandatory, immediate));
-    //break msg up into header frame and content frame(s) and send these
-    channel.send(msg.getHeader());
+
+    // Make a header for the message
+    AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
+    BasicHeaderProperties::copy(
+        *static_cast<BasicHeaderProperties*>(header->getProperties()), msg);
+    header->setContentSize(msg.getData().size());
+
+    channel.send(
+        new BasicPublishBody(
+            channel.version, 0, e, key, mandatory, immediate));
+    channel.send(header);
     string data = msg.getData();
     u_int64_t data_length = data.length();
     if(data_length > 0){
@@ -149,22 +230,76 @@ void BasicMessageChannel::publish(
 void BasicMessageChannel::handle(boost::shared_ptr<AMQMethodBody> method) {
     assert(method->amqpClassId() ==BasicGetBody::CLASS_ID);
     switch(method->amqpMethodId()) {
-      case BasicDeliverBody::METHOD_ID:
-      case BasicReturnBody::METHOD_ID:
-      case BasicGetOkBody::METHOD_ID:
-      case BasicGetEmptyBody::METHOD_ID:
-        incoming.add(method);   
-        return;
+      case BasicGetOkBody::METHOD_ID: {
+          incoming.openReference(BASIC_REF);
+          incoming.createMessage(BASIC_GET, BASIC_REF);
+          return;
+      }
+      case BasicGetEmptyBody::METHOD_ID: {
+          incoming.getDestination(BASIC_GET).empty();
+          incoming.removeDestination(BASIC_GET);
+          return;
+      }
+      case BasicDeliverBody::METHOD_ID: {
+          BasicDeliverBody::shared_ptr deliver=
+              boost::shared_polymorphic_downcast<BasicDeliverBody>(method);
+          incoming.openReference(BASIC_REF);
+          Message& msg = incoming.createMessage(
+              deliver->getConsumerTag(), BASIC_REF);
+          msg.setDestination(deliver->getConsumerTag());
+          msg.setDeliveryTag(deliver->getDeliveryTag());
+          msg.setRedelivered(deliver->getRedelivered());
+          return;
+      }
+      case BasicReturnBody::METHOD_ID: {
+          incoming.openReference(BASIC_REF);
+          incoming.createMessage(BASIC_RETURN, BASIC_REF);
+          return;
+      }
+      case BasicConsumeOkBody::METHOD_ID: {
+          Mutex::ScopedLock l(lock);
+          BasicConsumeOkBody::shared_ptr consumeOk =
+              boost::shared_polymorphic_downcast<BasicConsumeOkBody>(method);
+          std::string tag = consumeOk->getConsumerTag();
+          ConsumerMap::iterator i = consumers.find(std::string());
+          if (i != consumers.end()) {
+              // Need to rename the un-named consumer.
+              if (consumers.find(tag) == consumers.end()) {
+                  consumers[tag] = i->second;
+                  consumers.erase(i);
+              }
+              else              // Tag already exists.
+                  throw ChannelException(404, "Tag already exists: "+tag);
+          }
+          // FIXME aconway 2007-03-23: Integrate consumer & destination
+          // maps.
+          incoming.addDestination(tag, *destDispatch);
+          return;
+      }
     }
     throw Channel::UnknownMethod();
 }
 
-void BasicMessageChannel::handle(AMQHeaderBody::shared_ptr body){
-    incoming.add(body);
+void BasicMessageChannel::handle(AMQHeaderBody::shared_ptr header) {
+    BasicHeaderProperties* props = 
+        boost::polymorphic_downcast<BasicHeaderProperties*>(
+            header->getProperties());
+    IncomingMessage::Reference& ref = incoming.getReference(BASIC_REF);
+    assert (ref.messages.size() == 1);
+    ref.messages.front().BasicHeaderProperties::operator=(*props);
+    incoming_size = header->getContentSize();
+    if (incoming_size==0)
+        incoming.closeReference(BASIC_REF);
 }
     
-void BasicMessageChannel::handle(AMQContentBody::shared_ptr body){
-    incoming.add(body);
+void BasicMessageChannel::handle(AMQContentBody::shared_ptr content){
+    incoming.appendReference(BASIC_REF, content->getData());
+    size_t size = incoming.getReference(BASIC_REF).data.size();
+    if (size >= incoming_size) {
+        incoming.closeReference(BASIC_REF);
+        if (size > incoming_size)
+            throw ChannelException(502, "Content exceeded declared size");
+    }
 }
 
 void BasicMessageChannel::deliver(Consumer& consumer, Message& msg){
@@ -186,7 +321,9 @@ void BasicMessageChannel::deliver(Consumer& consumer, Message& msg){
             consumer.lastDeliveryTag = 0;
             channel.send(
                 new BasicAckBody(
-                    channel.version, msg.getDeliveryTag(), multiple));
+                    channel.version,
+                    msg.getDeliveryTag(),
+                    multiple));
           case NO_ACK:          // Nothing to do
           case CLIENT_ACK:      // User code must ack.
             break;
@@ -204,35 +341,32 @@ void BasicMessageChannel::deliver(Consumer& consumer, Message& msg){
 void BasicMessageChannel::run() {
     while(channel.isOpen()) {
         try {
-            Message msg = incoming.waitDispatch();
-            if(msg.getMethod()->isA<BasicReturnBody>()) {
-                ReturnedMessageHandler* handler=0;
-                {
-                    Mutex::ScopedLock l(lock);
-                    handler=returnsHandler;
+            Message msg;
+            bool gotMessge = destDispatch->wait(msg);
+            if (gotMessge) {
+                if(msg.getDestination() == BASIC_RETURN) {
+                    ReturnedMessageHandler* handler=0;
+                    {
+                        Mutex::ScopedLock l(lock);
+                        handler=returnsHandler;
+                    }
+                    if(handler != 0) 
+                        handler->returned(msg);
                 }
-                if(handler == 0) {
-                    // TODO aconway 2007-02-20: proper logging.
-                    cout << "Message returned: " << msg.getData() << endl;
+                else {
+                    Consumer consumer;
+                    {
+                        Mutex::ScopedLock l(lock);
+                        ConsumerMap::iterator i = consumers.find(
+                            msg.getDestination());
+                        if(i == consumers.end()) 
+                            THROW_QPID_ERROR(PROTOCOL_ERROR+504,
+                                             "Unknown consumer tag=" +
+                                             msg.getDestination());
+                        consumer = i->second;
+                    }
+                    deliver(consumer, msg);
                 }
-                else 
-                    handler->returned(msg);
-            }
-            else {
-                BasicDeliverBody::shared_ptr deliverBody =
-                    boost::shared_polymorphic_downcast<BasicDeliverBody>(
-                        msg.getMethod());
-                std::string tag = deliverBody->getConsumerTag();
-                Consumer consumer;
-                {
-                    Mutex::ScopedLock l(lock);
-                    ConsumerMap::iterator i = consumers.find(tag);
-                    if(i == consumers.end()) 
-                        THROW_QPID_ERROR(PROTOCOL_ERROR+504,
-                                         "Unknown consumer tag=" + tag);
-                    consumer = i->second;
-                }
-                deliver(consumer, msg);
             }
         }
         catch (const ShutdownException&) {
@@ -240,8 +374,8 @@ void BasicMessageChannel::run() {
         }
         catch (const Exception& e) {
             // FIXME aconway 2007-02-20: Report exception to user.
-            cout << "client::Basic::run() terminated by: " << e.toString()
-                 << "(" << typeid(e).name() << ")" << endl;
+            cout << "client::BasicMessageChannel::run() terminated by: "
+                 << e.toString() << endl;
         }
     }
 }
