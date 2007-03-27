@@ -42,7 +42,7 @@ import java.util.HashSet;
 /** This class tests all the alerts an AMQQueue can throw based on threshold values of different parameters */
 public class AMQQueueAlertTest extends TestCase
 {
-    private final static int MAX_MESSAGE_COUNT = 50;
+    private final static long MAX_MESSAGE_COUNT = 50;
     private final static long MAX_MESSAGE_AGE = 250;   // 0.25 sec
     private final static long MAX_MESSAGE_SIZE = 2000;  // 2 KB
     private final static long MAX_QUEUE_DEPTH = 10000;  // 10 KB
@@ -175,7 +175,7 @@ public class AMQQueueAlertTest extends TestCase
                                        new AMQShortString("consumer_tag"), true, null, false, false);
         
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
-        _queueMBean.setMaximumMessageCount(9999);   // Set a high value, because this is not being tested
+        _queueMBean.setMaximumMessageCount(9999l);   // Set a high value, because this is not being tested
         _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
 
         // Send messages(no of message to be little more than what can cause a Queue_Depth alert)
@@ -268,9 +268,9 @@ public class AMQQueueAlertTest extends TestCase
         _virtualHost = applicationRegistry.getVirtualHostRegistry().getVirtualHost("test");
     }
 
-    private void sendMessages(int messageCount, long size) throws AMQException
+    private void sendMessages(long messageCount, long size) throws AMQException
     {
-        AMQMessage[] messages = new AMQMessage[messageCount];
+        AMQMessage[] messages = new AMQMessage[(int)messageCount];
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message(false, size);

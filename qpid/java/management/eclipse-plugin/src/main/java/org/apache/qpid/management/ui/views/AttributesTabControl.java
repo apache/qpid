@@ -488,7 +488,7 @@ public class AttributesTabControl extends TabControl
         GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false);
         label.setLayoutData(layoutData);
         Text  value = new Text(parent, SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY);
-        value.setText(attribute.getName());
+        value.setText(ViewUtility.getDisplayText(attribute.getName()));
         value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         
@@ -527,23 +527,7 @@ public class AttributesTabControl extends TabControl
                 {
                     style = SWT.BEGINNING | SWT.BORDER;
                     value = new Text(parent, style);
-                    value.addVerifyListener(new VerifyListener()
-                        {
-                        public void verifyText(VerifyEvent event)
-                        {
-                            String string = event.text;
-                            char [] chars = new char [string.length ()];
-                            string.getChars (0, chars.length, chars, 0);
-                            for (int i=0; i<chars.length; i++)
-                            {
-                                if (!('0' <= chars [i] && chars [i] <= '9'))
-                                {
-                                    event.doit = false;
-                                    return;
-                                }
-                            }
-                        }
-                        });
+                    value.addVerifyListener(new NumberVerifyListener());
                     
                     // set data to access in the listener
                     parent.setData(attribute);
