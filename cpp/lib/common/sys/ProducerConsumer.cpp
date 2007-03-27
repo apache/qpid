@@ -27,12 +27,12 @@ namespace sys {
 // // ================ ProducerConsumer
 
 ProducerConsumer::ProducerConsumer(size_t init_items)
-    : items(init_items), waiters(0), stopped(false)
+    : items(init_items), waiters(0), shutdownFlag(false)
 {}
 
-void ProducerConsumer::stop() {
+void ProducerConsumer::shutdown() {
     Mutex::ScopedLock l(monitor);
-    stopped = true;
+    shutdownFlag = true;
     monitor.notifyAll();
     // Wait for waiting consumers to wake up.
     while (waiters > 0)
@@ -55,16 +55,16 @@ ProducerConsumer::Lock::Lock(ProducerConsumer& p)
     : pc(p), lock(p.monitor), status(INCOMPLETE) {}
 
 bool ProducerConsumer::Lock::isOk() const {
-    return !pc.isStopped() && status==INCOMPLETE;
+    return !pc.isShutdown() && status==INCOMPLETE;
 }
     
 void ProducerConsumer::Lock::checkOk() const {
-    assert(!pc.isStopped());
+    assert(!pc.isShutdown());
     assert(status == INCOMPLETE);
 }
 
 ProducerConsumer::Lock::~Lock() {
-    assert(status != INCOMPLETE || pc.isStopped());
+    assert(status != INCOMPLETE || pc.isShutdown());
 }
 
 void ProducerConsumer::Lock::confirm() {
@@ -96,7 +96,7 @@ ProducerConsumer::ConsumerLock::ConsumerLock(ProducerConsumer& p) : Lock(p)
 {
     if (isOk()) {
         ScopedIncrement<size_t> inc(pc.waiters);
-        while (pc.items == 0 && !pc.stopped) {
+        while (pc.items == 0 && !pc.shutdownFlag) {
             pc.monitor.wait();
         }
     }
@@ -115,7 +115,7 @@ ProducerConsumer::ConsumerLock::ConsumerLock(
         else {
             Time deadline = now() + timeout;
             ScopedIncrement<size_t> inc(pc.waiters);
-            while (pc.items == 0 && !pc.stopped) {
+            while (pc.items == 0 && !pc.shutdownFlag) {
                 if (!pc.monitor.wait(deadline)) {
                     status = TIMEOUT;
                     return;
@@ -126,9 +126,9 @@ ProducerConsumer::ConsumerLock::ConsumerLock(
 }
 
 ProducerConsumer::ConsumerLock::~ConsumerLock() {
-    if (pc.isStopped())  {
+    if (pc.isShutdown())  {
         if (pc.waiters == 0)
-            pc.monitor.notifyAll(); // All waiters woken, notify stop thread(s)
+            pc.monitor.notifyAll(); // Notify shutdown thread(s)
     }
     else if (status==CONFIRMED) {
         pc.items--;
