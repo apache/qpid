@@ -215,11 +215,6 @@ public class NavigationView extends ViewPart
         }
     }
     
-    private String getRMIURL(String host)
-    {
-        return "service:jmx:rmi:///jndi/rmi://" + host + "/jmxrmi";
-    }
-    
     /**
      * Adds a new server node in the navigation view if server connection is successful.
      * @param transportProtocol
@@ -228,24 +223,30 @@ public class NavigationView extends ViewPart
      * @param domain
      * @throws Exception
      */
-    public void addNewServer(String transportProtocol, String host, String port, String domain)
-        throws Exception
+    public void addNewServer(String transportProtocol, String host, int port,
+                             String domain, String user, String pwd) throws Exception
     {
         String serverAddress = host + ":" + port;
         String url = null;
-        ManagedServer managedServer = null;
+        ManagedServer managedServer = new ManagedServer(host, port, domain, user, pwd);
         
         if ("RMI".equals(transportProtocol))
         {            
-            url = getRMIURL(serverAddress);
+            url = managedServer.getUrl();
             List<TreeObject> list = _serversRootNode.getChildren();
             for (TreeObject node : list)
             {
                 if (url.equals(node.getUrl()))
-                    throw new InfoRequiredException("Server " + serverAddress + " is already added");
+                {
+                    // Server is already in the list of added servers, so now connect it.
+                    // Set the server node as selected and then connect it.
+                    _treeViewer.setSelection(new StructuredSelection(node));
+                    reconnect(user, pwd);
+                    return;
+                }
             }
             
-            managedServer = new ManagedServer(url, domain);
+            // The server is not in the list of already added servers, so now connect and add it.
             managedServer.setName(serverAddress);
             createRMIServerConnection(managedServer);
         }
@@ -710,14 +711,16 @@ public class NavigationView extends ViewPart
      * Connects the selected server node
      * @throws Exception
      */
-    public void reconnect() throws Exception
+    public void reconnect(String user, String password) throws Exception
     {
         TreeObject selectedNode = getSelectedServerNode();
         ManagedServer managedServer = (ManagedServer)selectedNode.getManagedObject();
         if(_managedServerMap.containsKey(managedServer))
         {
             throw new InfoRequiredException("Server " + managedServer.getName() + " is already connected");
-        }           
+        }   
+        managedServer.setUser(user);
+        managedServer.setPassword(password);
         createRMIServerConnection(managedServer);
         
         // put the server in the managed server map
@@ -880,7 +883,7 @@ public class NavigationView extends ViewPart
         return list;
     }
     
-    private TreeObject getSelectedServerNode() throws Exception
+    public TreeObject getSelectedServerNode() throws Exception
     {
         IStructuredSelection ss = (IStructuredSelection)_treeViewer.getSelection();
         TreeObject selectedNode = (TreeObject)ss.getFirstElement();
@@ -935,11 +938,9 @@ public class NavigationView extends ViewPart
         {
             for (String serverAddress : serversList)
             {
-                String url = getRMIURL(serverAddress);
-                ManagedServer managedServer = new ManagedServer(url, "org.apache.qpid");
-                managedServer.setName(serverAddress);
+                String[] server = serverAddress.split(":");
+                ManagedServer managedServer = new ManagedServer(server[0], Integer.parseInt(server[1]), "org.apache.qpid");
                 TreeObject serverNode = new TreeObject(serverAddress, NODE_TYPE_SERVER);
-                serverNode.setUrl(url);
                 serverNode.setManagedObject(managedServer);
                 _serversRootNode.addChild(serverNode);
             }

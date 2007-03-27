@@ -20,60 +20,84 @@
  */
 package org.apache.qpid.management.ui;
 
+import static org.apache.qpid.management.ui.Constants.DEFAULT_PROTOCOL;
 /**
  * Class representing a server being managed eg. MBeanServer
  * @author Bhupendra Bhardwaj
  */
 public class ManagedServer extends ManagedObject
 {
-    private String host;
-    private String port;
-    private String url;
-    private String domain;
-    
-    public ManagedServer(String host, String port, String domain)
-    {
-        this.host = host;
-        this.port = port;
-        this.domain = domain;
-        setName(host + ":" + port);
-    }
-    
-    public ManagedServer(String url, String domain)
-    {
-        this.url = url;
-        this.domain = domain;
-    }
+    private String _host;
+    private int _port;
+    private String _url;
+    private String _domain;
+    private String _user;
+    private String _password;
+    private String _protocol = DEFAULT_PROTOCOL;
 
+    public ManagedServer(String host, int port, String domain)
+    {
+        this(host, port, domain, null, null);
+    }
+    
+    public ManagedServer(String host, int port, String domain, String user, String password)
+    {
+        setName(host + ":" + port);
+        _host = host;
+        _port = port;
+        _domain = domain;
+        _url = getRMIURL(host, port);
+        _user = user;
+        _password = password;
+    }
+    
     public String getDomain()
     {
-        return domain;
+        return _domain;
     }
 
     public String getHost()
     {
-        return host;
+        return _host;
     }
 
-    public String getPort()
+    public int getPort()
     {
-        return port;
+        return _port;
     }
 
     public String getUrl()
     {
-        return url;
-    }
-
-    public void setHostAndPort(String host, String port)
-    {
-        this.host = host;
-        this.port = port;
-        setName(host + ":" + port);
+        return _url;
     }
     
-    public void setUrl(String url)
+    public String getProtocol()
     {
-        this.url = url;
+        return _protocol;
+    }
+
+    public String getPassword()
+    {
+        return _password;
+    }
+    
+    public void setPassword(String password)
+    {
+        _password = password;
+    }
+
+    public String getUser()
+    {
+        return _user;
+    }
+    
+    public void setUser(String user)
+    {
+        _user = user;
+    }
+    
+    private String getRMIURL(String host, int port)
+    {
+        return "service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi";
     }
 }
