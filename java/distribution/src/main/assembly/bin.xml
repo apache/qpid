@@ -127,13 +127,13 @@
     <file>
       <source>../broker/bin/qpid.stop</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid-server</destName>
+      <destName>qpid.stop</destName>
       <fileMode>493</fileMode>
     </file>
     <file>
       <source>../broker/bin/qpid.stopall</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid-server</destName>
+      <destName>qpid.stopall</destName>
       <fileMode>493</fileMode>
     </file>
     <file>
