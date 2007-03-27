@@ -895,7 +895,7 @@ public class NavigationView extends ViewPart
         return selectedNode;
     }
 	/**
-     * This is a callback that will allow us to create the viewer and initialize
+     * This is a callback that will allow us to create the viewer and establishConnection
      * it.
      */
 	public void createPartControl(Composite parent)

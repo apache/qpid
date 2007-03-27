@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
  *
  * <p/>In order to test whether a class implements an interface or extends a class, the class must be loaded (unless
  * the class files were to be scanned directly). Using this collector can cause problems when it scans the classpath,
- * because loading classes will initialize their statics, which in turn may cause undesired side effects. For this
+ * because loading classes will establishConnection their statics, which in turn may cause undesired side effects. For this
  * reason, the collector should always be used with a regular expression, through which the class file names are
  * filtered, and only those that pass this filter will be tested. For example, if you define tests in classes that
  * end with the keyword "Test" then use the regular expression "Test$" to match this.

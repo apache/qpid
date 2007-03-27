@@ -607,7 +607,7 @@ public class QpidCompositeRollingAppender extends FileAppender
 
     /**
      * Sets initial conditions including date/time roll over information, first check, scheduledFilename, and calls
-     * <code>existingInit</code> to initialize the current # of backups.
+     * <code>existingInit</code> to establishConnection the current # of backups.
      */
     public void activateOptions()
     {
