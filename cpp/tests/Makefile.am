@@ -40,7 +40,6 @@ framing_tests =		\
   HeaderTest
 
 misc_tests =		\
-  ExceptionTest		\
   ProducerConsumerTest
 
 posix_tests =		\
