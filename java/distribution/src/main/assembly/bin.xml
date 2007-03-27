@@ -83,6 +83,18 @@
       <fileMode>420</fileMode>
     </file>
     <file>
+      <source>../broker/etc/transient_config.xml</source>
+      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
+      <destName>config.xml</destName>
+      <fileMode>420</fileMode>
+    </file>
+    <file>
+      <source>../broker/etc/persistent_config.xml</source>
+      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
+      <destName>config.xml</destName>
+      <fileMode>420</fileMode>
+    </file>
+    <file>
       <source>../broker/etc/log4j.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>log4j.xml</destName>
@@ -111,6 +123,18 @@
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>virtualhosts.xml</destName>
       <fileMode>420</fileMode>
+    </file>
+    <file>
+      <source>../broker/bin/qpid.stop</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>qpid-server</destName>
+      <fileMode>493</fileMode>
+    </file>
+    <file>
+      <source>../broker/bin/qpid.stopall</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>qpid-server</destName>
+      <fileMode>493</fileMode>
     </file>
     <file>
       <source>../common/bin/qpid-run</source>
