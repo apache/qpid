@@ -35,8 +35,8 @@ IncomingMessage::Destination::~Destination() {}
 void IncomingMessage::openReference(const std::string& name) {
     Mutex::ScopedLock l(lock);
     if (references.find(name) != references.end())
-        throw ChannelException(
-            406,  format("Attempt to open existing reference %s.") % name);
+        throw ConnectionException(
+            503,  format("Attempt to open existing reference %s.") % name);
     references[name];
     return;
 }
@@ -84,16 +84,16 @@ void  IncomingMessage::addDestination(std::string name, Destination& dest) {
     if (i == destinations.end()) 
         destinations[name]=&dest;
     else if (i->second != &dest)
-        throw ChannelException(
-            404, format("Destination already exists: %s.") % name);
+        throw ConnectionException(
+            503, format("Destination already exists: %s.") % name);
 }
 
 void  IncomingMessage::removeDestination(std::string name) {
     Mutex::ScopedLock l(lock);
     DestinationMap::iterator i = destinations.find(name);
     if (i == destinations.end())
-        throw ChannelException(
-            406, format("No such destination: %s.") % name);
+        throw ConnectionException(
+            503, format("No such destination: %s.") % name);
     destinations.erase(i);
 }
 
@@ -112,8 +112,8 @@ IncomingMessage::Reference&  IncomingMessage::getRefUnlocked(
     Mutex::ScopedLock l(lock);
     ReferenceMap::iterator i = references.find(name);
     if (i == references.end())
-        throw ChannelException(
-            404,  format("No such reference: %s.") % name);
+        throw ConnectionException(
+            503,  format("No such reference: %s.") % name);
     return i->second;
 }
 
@@ -122,8 +122,8 @@ IncomingMessage::Destination&  IncomingMessage::getDestUnlocked(
     Mutex::ScopedLock l(lock);
     DestinationMap::iterator i = destinations.find(name);
     if (i == destinations.end())
-        throw ChannelException(
-            404,  format("No such destination: %s.") % name);
+        throw ConnectionException(
+            503,  format("No such destination: %s.") % name);
     return *i->second;
 }
 

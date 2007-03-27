@@ -146,7 +146,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         broker(Broker::create()),
         connection(&handler, *broker)
     {
-        connection.initiated(new ProtocolInitiation());
+        connection.initiated(ProtocolInitiation());
     }
 
 
