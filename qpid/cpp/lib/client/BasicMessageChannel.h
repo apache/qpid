@@ -21,6 +21,7 @@
 
 #include "MessageChannel.h"
 #include "IncomingMessage.h"
+#include <boost/scoped_ptr.hpp>
 
 namespace qpid {
 namespace client {
@@ -62,13 +63,13 @@ class BasicMessageChannel : public MessageChannel
 
   private:
 
+    class WaitableDestination;
     struct Consumer{
         MessageListener* listener;
         AckMode ackMode;
         int count;
         u_int64_t lastDeliveryTag;
     };
-
     typedef std::map<std::string, Consumer> ConsumerMap;
 
     void deliver(Consumer& consumer, Message& msg);
@@ -76,8 +77,11 @@ class BasicMessageChannel : public MessageChannel
     sys::Mutex lock;
     Channel& channel;
     IncomingMessage incoming;
-    ConsumerMap consumers;
+    uint64_t incoming_size;
+    ConsumerMap consumers ;
     ReturnedMessageHandler* returnsHandler;
+    boost::scoped_ptr<WaitableDestination> destGet;
+    boost::scoped_ptr<WaitableDestination> destDispatch;
 };
 
 }} // namespace qpid::client

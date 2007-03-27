@@ -22,12 +22,10 @@
  *
  */
 #include <string>
-#include <framing/amqp_framing.h>
+#include "framing/BasicHeaderProperties.h"
 
 namespace qpid {
-
 namespace client {
-class IncomingMessage;
 
 /**
  * A representation of messages for sent or recived through the
@@ -35,67 +33,28 @@ class IncomingMessage;
  *
  * \ingroup clientapi
  */
-class Message {
-    framing::AMQMethodBody::shared_ptr method;
-    framing::AMQHeaderBody::shared_ptr header;
-    std::string data;
-    bool redelivered;
-
-    // FIXME aconway 2007-02-20: const incorrect, needs const return type.
-    framing::BasicHeaderProperties* getHeaderProperties() const;
-    Message(qpid::framing::AMQHeaderBody::shared_ptr& header);
-        
+class Message : public framing::BasicHeaderProperties {
   public:
-    enum DeliveryMode { DURABLE=1, NON_DURABLE=2 };
-    Message(const std::string& data=std::string());
-    ~Message();
+    Message(const std::string& data_=std::string()) : data(data_) {}
 
     std::string getData() const { return data; }
+    void setData(const std::string& _data) { data = _data; }
+
+    std::string getDestination() const { return destination; }
+    void setDestination(const std::string& dest) { destination = dest; }
+
+    // TODO aconway 2007-03-22: only needed for Basic.deliver support.
+    uint64_t getDeliveryTag() const { return deliveryTag; }
+    void setDeliveryTag(uint64_t dt) { deliveryTag = dt; }
+
     bool isRedelivered() const { return redelivered; }
-    uint64_t getDeliveryTag() const;
-    std::string getContentType() const;
-    std::string getContentEncoding() const;
-    qpid::framing::FieldTable& getHeaders() const;
-    uint8_t getDeliveryMode() const;
-    uint8_t getPriority() const;
-    std::string getCorrelationId() const;
-    std::string getReplyTo() const;
-    std::string getExpiration() const;
-    std::string getMessageId() const;
-    uint64_t getTimestamp() const;
-    std::string getType() const;
-    std::string getUserId() const;
-    std::string getAppId() const;
-    std::string getClusterId() const;
-
-    void setData(const std::string& _data);
     void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
-    void setContentType(const std::string& type);
-    void setContentEncoding(const std::string& encoding);
-    void setHeaders(const qpid::framing::FieldTable& headers);
-    void setDeliveryMode(DeliveryMode mode);
-    void setPriority(uint8_t priority);
-    void setCorrelationId(const std::string& correlationId);
-    void setReplyTo(const std::string& replyTo);
-    void setExpiration(const std::string&  expiration);
-    void setMessageId(const std::string& messageId);
-    void setTimestamp(uint64_t timestamp);
-    void setType(const std::string& type);
-    void setUserId(const std::string& userId);
-    void setAppId(const std::string& appId);
-    void setClusterId(const std::string& clusterId);
 
-    /** Get the method used to deliver this message */
-    boost::shared_ptr<framing::AMQMethodBody> getMethod() const
-    { return method; }
-        
-    void setMethod(framing::AMQMethodBody::shared_ptr m) { method=m; }
-    boost::shared_ptr<framing::AMQHeaderBody> getHeader() const
-    { return header; }
-
-    // TODO aconway 2007-02-15: remove friendships.
-  friend class IncomingMessage;
-  friend class Channel;
+  private:
+    std::string data;
+    std::string destination;
+    bool redelivered;
+    uint64_t deliveryTag;
 };
 
 }}

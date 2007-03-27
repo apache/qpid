@@ -81,24 +81,25 @@ class Channel : public framing::ChannelAdapter
         const std::string& uid, const std::string& pwd,
         const std::string& vhost);
     
-    void sendAndReceive(
+    framing::AMQMethodBody::shared_ptr sendAndReceive(
         framing::AMQMethodBody*, framing::ClassId, framing::MethodId);
 
-    void sendAndReceiveSync(
+    framing::AMQMethodBody::shared_ptr sendAndReceiveSync(
         bool sync,
         framing::AMQMethodBody*, framing::ClassId, framing::MethodId);
 
     template <class BodyType>
     boost::shared_ptr<BodyType> sendAndReceive(framing::AMQMethodBody* body) {
-        sendAndReceive(body, BodyType::CLASS_ID, BodyType::METHOD_ID);
         return boost::shared_polymorphic_downcast<BodyType>(
-            responses.getResponse());
+            sendAndReceive(body, BodyType::CLASS_ID, BodyType::METHOD_ID));
     }
 
-    template <class BodyType> void sendAndReceiveSync(
+    template <class BodyType>
+    boost::shared_ptr<BodyType> sendAndReceiveSync(
         bool sync, framing::AMQMethodBody* body) {
-        sendAndReceiveSync(
-            sync, body, BodyType::CLASS_ID, BodyType::METHOD_ID);
+        return boost::shared_polymorphic_downcast<BodyType>(
+            sendAndReceiveSync(
+                sync, body, BodyType::CLASS_ID, BodyType::METHOD_ID));
     }
 
     void open(framing::ChannelId, Connection&);

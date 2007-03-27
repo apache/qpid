@@ -20,10 +20,15 @@
  */
 
 #include <boost/shared_ptr.hpp>
+#include <boost/cast.hpp>
 
 namespace qpid {
-/// Import shared_ptr into qpid namespace.
+/// Import shared_ptr definitions into qpid namespace.
 using boost::shared_ptr;
+using boost::dynamic_pointer_cast;
+using boost::static_pointer_cast;
+using boost::const_pointer_cast;
+using boost::shared_polymorphic_downcast;
 } // namespace qpid
 
 

@@ -22,7 +22,7 @@
 
 //TODO: This could be easily generated from the spec
 
-qpid::framing::BasicHeaderProperties::BasicHeaderProperties() : deliveryMode(0), priority(0), timestamp(0){}
+qpid::framing::BasicHeaderProperties::BasicHeaderProperties() : deliveryMode(DeliveryMode(0)), priority(0), timestamp(0){}
 qpid::framing::BasicHeaderProperties::~BasicHeaderProperties(){}
 
 uint32_t qpid::framing::BasicHeaderProperties::size() const{
@@ -70,7 +70,7 @@ void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer,
     if(flags & (1 << 15)) buffer.getShortString(contentType);
     if(flags & (1 << 14)) buffer.getShortString(contentEncoding);
     if(flags & (1 << 13)) buffer.getFieldTable(headers);
-    if(flags & (1 << 12)) deliveryMode = buffer.getOctet();
+    if(flags & (1 << 12)) deliveryMode = DeliveryMode(buffer.getOctet());
     if(flags & (1 << 11)) priority = buffer.getOctet();
     if(flags & (1 << 10)) buffer.getShortString(correlationId);
     if(flags & (1 <<  9)) buffer.getShortString(replyTo);

@@ -40,7 +40,6 @@ uint32_t InMemoryContent::size()
     return sum;
 }
 
-// FIXME aconway 2007-02-01: Remove version parameter.
 void InMemoryContent::send(ChannelAdapter& channel, uint32_t framesize)
 {
     for (content_iterator i = content.begin(); i != content.end(); i++) {

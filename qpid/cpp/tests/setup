@@ -16,12 +16,13 @@ cd $tmp || framework_failure=1
 gen_supp=--gen-suppressions=all
 # This option makes valgrind significantly slower.
 full_leak_check=--leak-check=full
+demangle=--demangle=yes
 
 vg_options="
   --suppressions=$abs_srcdir/.vg-supp
   --num-callers=25
-  --demangle=no
   --track-fds=yes
+  $demangle
   $full_leak_check
   $gen_supp
   "
