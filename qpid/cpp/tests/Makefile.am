@@ -89,6 +89,11 @@ DISTCLEANFILES=gen.mk
 
 include gen.mk
 
+check_LTLIBRARIES += libdlclose_noop.la
+libdlclose_noop_la_LDFLAGS = -module -rpath /home/aconway/svn/qpid/cpp/tests
+libdlclose_noop_la_SOURCES = dlclose_noop.c
+
+
 abs_builddir = @abs_builddir@
 extra_libs = $(CPPUNIT_LIBS)
 lib_client = $(abs_builddir)/../lib/client/libqpidclient.la
@@ -113,6 +118,5 @@ gen.mk: Makefile.am
 	)					\
 	> $@-t
 	mv $@-t $@
-
 
 check: $(check_LTLIBRARIES) $(lib_common) $(lib_client) $(lib_broker)
