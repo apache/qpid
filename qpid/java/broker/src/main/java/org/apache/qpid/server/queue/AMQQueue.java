@@ -118,7 +118,7 @@ public class AMQQueue implements Managable, Comparable
 
     /** max allowed number of messages on a queue. */
     @Configured(path = "maximumMessageCount", defaultValue = "0")
-    public int _maximumMessageCount;
+    public long _maximumMessageCount;
 
     /** max queue depth for the queue */
     @Configured(path = "maximumQueueDepth", defaultValue = "0")
@@ -350,12 +350,12 @@ public class AMQQueue implements Managable, Comparable
         return _totalMessagesReceived.get();
     }
 
-    public int getMaximumMessageCount()
+    public long getMaximumMessageCount()
     {
         return _maximumMessageCount;
     }
 
-    public void setMaximumMessageCount(int value)
+    public void setMaximumMessageCount(long value)
     {
         _maximumMessageCount = value;
     }

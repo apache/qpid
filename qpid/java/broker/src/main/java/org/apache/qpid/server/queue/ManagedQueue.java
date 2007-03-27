@@ -156,7 +156,7 @@ public interface ManagedQueue
      * @return maximum muber of message allowed to be stored in the queue.
      * @throws IOException
      */
-    Integer getMaximumMessageCount() throws IOException;
+    Long getMaximumMessageCount() throws IOException;
 
     /**
      * Sets the maximum number of messages allowed to be stored in the queue.
@@ -164,7 +164,7 @@ public interface ManagedQueue
      * @throws IOException
      */
     @MBeanAttribute(name="MaximumMessageCount", description="Threshold high value for number of undelivered messages in the queue")
-    void setMaximumMessageCount(Integer value) throws IOException;
+    void setMaximumMessageCount(Long value) throws IOException;
 
     /**
      * This is useful for setting notifications or taking required action if the size of messages

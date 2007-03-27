@@ -116,7 +116,7 @@ public class AMQQueueMBeanTest extends TestCase
     public void testGeneralProperties()
     {
         long maxQueueDepth = 1000; // in bytes
-        _queueMBean.setMaximumMessageCount(50000);
+        _queueMBean.setMaximumMessageCount(50000l);
         _queueMBean.setMaximumMessageSize(2000l);
         _queueMBean.setMaximumQueueDepth(maxQueueDepth);
 

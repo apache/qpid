@@ -83,7 +83,9 @@ public class JMXServerRegistry extends ServerRegistry
     {
         super(server);
         JMXServiceURL jmxUrl = new JMXServiceURL(server.getUrl());
-        Map<String, Object> env = null;
+        Map<String, Object> env = new HashMap<String, Object>();
+        String[] creds = {server.getUser(), server.getPassword()};
+        env.put(JMXConnector.CREDENTIALS, creds);
 
         _jmxc = JMXConnectorFactory.connect(jmxUrl, env);
         _mbsc = _jmxc.getMBeanServerConnection();

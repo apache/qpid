@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui;
 
+import static org.apache.qpid.management.ui.Constants.CONNECTION_PROTOCOLS;
+
 /**
  * Contains constants for the application
  * @author Bhupendra Bhardwaj
@@ -44,6 +46,11 @@ public class Constants
     public final static String RESULT = "Result";
     public final static String VIRTUAL_HOST = "VirtualHost";
     public final static String DEFAULT_VH = "Default";
+    public final static String DEFAULT_USERNAME = "guest";
+    public final static String DEFAULT_PASSWORD = "guest";
+    
+    public final static String USERNAME = "Username";
+    public final static String PASSWORD = "Password";
     
     // Attributes and operations are used to customize the GUI for Qpid. If these are changes in the
     // Qpid server, then these should be updated accordingly
@@ -65,9 +72,13 @@ public class Constants
     public final static String EXCHANGE_TYPE = "ExchangeType";
     public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "topic", "headers"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
-    public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};    
+    public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
+    public static final String[] CONNECTION_PROTOCOLS ={"RMI"};
+    public static final String DEFAULT_PROTOCOL = CONNECTION_PROTOCOLS[0];
     
     public final static String ACTION_ADDSERVER = "New Connection";
+    public final static String ACTION_RECONNECT = "Reconnect";
+    public final static String ACTION_LOGIN = "Login";
     
     public final static String QUEUE_SORT_BY_NAME = "Queue Name";
     public final static String QUEUE_SORT_BY_DEPTH = "Queue Depth";
@@ -105,4 +116,11 @@ public class Constants
     public final static int OPERATION_IMPACT_ACTION  = 1;
     public final static int OPERATION_IMPACT_ACTIONINFO  = 2;
     public final static int OPERATION_IMPACT_UNKNOWN = 3;
+    
+    public final static String ERROR_SERVER_CONNECTION = "Server could not be connected";
+    public final static String INFO_PROTOCOL = "Please select the protocol";
+    public final static String INFO_HOST_ADDRESS = "Please enter the host address";
+    public final static String INFO_HOST_PORT = "Please enter the port number";
+    public final static String INFO_USERNAME = "Please enter the " + USERNAME;
+    public final static String INFO_PASSWORD = "Please enter the " + PASSWORD;
 }

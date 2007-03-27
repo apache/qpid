@@ -21,6 +21,7 @@
 package org.apache.qpid.management.ui.jmx;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -65,6 +66,9 @@ public class MBeanUtility
         String debug = System.getProperty("debug");
         _debug = "true".equalsIgnoreCase(debug) ? true : false;
     }
+    
+    public static final BigInteger MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
+    public static final BigInteger MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
     /**
      * Retrieves the MBeanInfo from MBeanServer and stores in the application registry
      * @param mbean  managed bean
@@ -333,10 +337,19 @@ public class MBeanUtility
         Object newValue = value;
         if (attribute.getDataType().equals(Long.class.getName()))
         {
+            if (MAX_LONG.compareTo(new BigInteger(value)) == -1)
+            {
+                throw new ManagementConsoleException("Entered value is too big for \"" +
+                                                     ViewUtility.getDisplayText(attribute.getName()) + "\"");
+            }
             newValue = new Long(Long.parseLong(value));
         }
         else if (attribute.getDataType().equals(Integer.class.getName()))
         {
+            if (MAX_INT.compareTo(new BigInteger(value)) == -1)
+            {
+                throw new ManagementConsoleException("Entered value is too big for " + attribute.getName());
+            }
             newValue = new Integer(Integer.parseInt(value));
         }
         

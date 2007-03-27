@@ -20,6 +20,8 @@ package org.apache.qpid.server.queue;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Date;
+import java.text.SimpleDateFormat;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -44,6 +46,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.CommonContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanConstructor;
@@ -58,8 +61,8 @@ import org.apache.qpid.server.store.StoreContext;
 @MBeanDescription("Management Interface for AMQQueue")
 public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
-
     private static final Logger _logger = Logger.getLogger(AMQQueueMBean.class);
+    private static final SimpleDateFormat _dateFormat = new SimpleDateFormat("MM-dd-yy HH:mm:ss.SSS z");
 
     /**
      * Since the MBean is not associated with a real channel we can safely create our own store context
@@ -197,12 +200,12 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         return _queue.getReceivedMessageCount();
     }
 
-    public Integer getMaximumMessageCount()
+    public Long getMaximumMessageCount()
     {
         return _queue.getMaximumMessageCount();
     }
 
-    public void setMaximumMessageCount(Integer value)
+    public void setMaximumMessageCount(Long value)
     {
         _queue.setMaximumMessageCount(value);
     }
@@ -370,8 +373,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                 AMQMessage msg = list.get(i - 1);
                 ContentHeaderBody headerBody = msg.getContentHeaderBody();
                 // Create header attributes list
-                CommonContentHeaderProperties headerProperties = (CommonContentHeaderProperties) headerBody.properties;
-                String[] headerAttributes = headerProperties.toString().split(",");
+                String[] headerAttributes = getMessageHeaderProperties(headerBody);
                 Object[] itemValues = {msg.getMessageId(), headerAttributes, headerBody.bodySize, msg.isRedelivered()};
                 CompositeData messageData = new CompositeDataSupport(_messageDataType, _msgAttributeNames, itemValues);
                 _messageList.put(messageData);
@@ -383,6 +385,35 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
 
         return _messageList;
+    }
+
+    private String[] getMessageHeaderProperties(ContentHeaderBody headerBody)
+    {
+        List<String> list = new ArrayList<String>();
+        BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) headerBody.properties;
+        list.add("reply-to = " + headerProperties.getReplyToAsString());
+        list.add("propertyFlags = " + headerProperties.getPropertyFlags());
+        list.add("ApplicationID = " + headerProperties.getAppIdAsString());
+        list.add("ClusterID = " + headerProperties.getClusterIdAsString());
+        list.add("UserId = " + headerProperties.getUserIdAsString());
+        list.add("JMSMessageID = " + headerProperties.getMessageIdAsString());
+        list.add("JMSCorrelationID = " + headerProperties.getCorrelationIdAsString());
+
+        int delMode = headerProperties.getDeliveryMode();
+        list.add("JMSDeliveryMode = " + (delMode == 1 ? "Persistent" : "Non_Persistent"));
+
+        list.add("JMSPriority = " + headerProperties.getPriority());
+        list.add("JMSType = " + headerProperties.getType());
+        
+        long longDate = headerProperties.getExpiration();
+        String strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
+        list.add("JMSExpiration = " + strDate);
+
+        longDate = headerProperties.getTimestamp();
+        strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
+        list.add("JMSTimestamp = " + strDate);
+
+        return list.toArray(new String[list.size()]);
     }
 
     /**
