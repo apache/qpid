@@ -36,6 +36,9 @@ namespace broker {
 class MessageMessage;
 class ReferenceRegistry;
 
+// FIXME aconway 2007-03-27: Merge with client::IncomingMessage
+// to common reference handling code.
+
 /**
  * A reference is an accumulation point for data in a multi-frame
  * message. A reference can be used by multiple transfer commands to

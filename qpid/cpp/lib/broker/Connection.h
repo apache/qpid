@@ -81,7 +81,7 @@ class Connection : public sys::ConnectionInputHandler,
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame* frame);
-    void initiated(framing::ProtocolInitiation* header);
+    void initiated(const framing::ProtocolInitiation& header);
     void idleOut();
     void idleIn();
     void closed();

@@ -85,7 +85,7 @@ class InProcessBroker : public client::Connector {
     ~InProcessBroker() { broker->shutdown(); }
 
     void connect(const std::string& /*host*/, int /*port*/) {}
-    void init() { brokerConnection.initiated(&protocolInit); }
+    void init() { brokerConnection.initiated(protocolInit); }
     void close() {}
 
     /** Client's input handler. */
