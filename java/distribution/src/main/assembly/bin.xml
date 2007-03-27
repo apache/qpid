@@ -85,13 +85,13 @@
     <file>
       <source>../broker/etc/transient_config.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>config.xml</destName>
+      <destName>transient_config.xml</destName>
       <fileMode>420</fileMode>
     </file>
     <file>
       <source>../broker/etc/persistent_config.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>config.xml</destName>
+      <destName>persistent_config.xml</destName>
       <fileMode>420</fileMode>
     </file>
     <file>
