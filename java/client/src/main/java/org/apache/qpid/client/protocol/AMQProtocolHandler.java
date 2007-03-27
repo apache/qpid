@@ -34,6 +34,7 @@ import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
+import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.SSLConfiguration;
@@ -248,6 +249,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
                 sessionClosed(session);
             }
+
+            //FIXME Need to correctly handle other exceptions. Things like ...
+//            if (cause instanceof AMQChannelClosedException)
+            // which will cause the JMSSession to end due to a channel close and so that Session needs
+            // to be removed from the map so we can correctly still call close without an exception when trying to close
+            // the server closed session.  See also CloseChannelMethodHandler as the sessionClose is never called on exception
         }
         // we reach this point if failover was attempted and failed therefore we need to let the calling app
         // know since we cannot recover the situation

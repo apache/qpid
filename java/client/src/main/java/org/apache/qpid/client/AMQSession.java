@@ -1248,8 +1248,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 {
                     JMSException ex = new JMSException("Error registering consumer: " + e);
 
-                    //todo remove
-                    e.printStackTrace();
+                    if (_logger.isDebugEnabled())
+                    {
+                        e.printStackTrace();
+                    }
                     ex.setLinkedException(e);
                     throw ex;
                 }
@@ -2089,7 +2091,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         // Remove the consumer from the map
         BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(consumerTag);
         if (consumer != null)
-        {            
+        {
 //            fixme this isn't right.. needs to check if _queue contains data for this consumer
             if (consumer.isAutoClose())// && _queue.isEmpty())
             {
