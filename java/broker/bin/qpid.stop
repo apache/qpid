@@ -5,8 +5,8 @@
 # Script checks for a given pid running PROGRAM and attempts to quit it
 #
 
-MAX_ATTEMPTS=5
-SLEEP_DELAY=2
+MAX_ATTEMPTS=3
+SLEEP_DELAY=1
 PROGRAM="org.apache.qpid.server.Main"
 
 
@@ -42,6 +42,7 @@ kill $1
 #
 check()
 {
+echo "Waiting $SLEEP_DELAY second for $1 to exit" 
 sleep $SLEEP_DELAY
 lookup $1
 }
