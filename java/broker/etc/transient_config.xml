@@ -18,20 +18,16 @@
  - specific language governing permissions and limitations
  - under the License.
  -
+
+ This is an example config file that uses the MemoryMessageStore.
+  As a result it is aimed at brokers sending transient messages.
+
  -->
 <broker>
     <prefix>${QPID_HOME}</prefix>
     <work>${QPID_WORK}</work>
     <conf>${prefix}/etc</conf>
     <connector>
-        <!-- Uncomment out this block and edit the keystorePath and keystorePassword
-             to enable SSL support
-        <ssl>
-            <enabled>true</enabled>
-            <sslOnly>true</sslOnly>
-            <keystorePath>/path/to/keystore.ks</keystorePath>
-            <keystorePassword>keystorepass</keystorePassword>
-        </ssl>-->
         <qpidnio>true</qpidnio>
         <transport>nio</transport>
         <port>5672</port>
@@ -62,19 +58,7 @@
                     </attribute>
                 </attributes>
             </principal-database>
-
-            <!--principal-database>
-                <name>md5passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.database.MD5PasswordFilePrincipalDatabase</class>
-                <attributes>
-                    <attribute>
-                        <name>passwordFile</name>
-                        <value>${conf}/md5passwd</value>
-                    </attribute>
-                </attributes>
-            </principal-database-->
         </principal-databases>
-
         <access>
             <class>org.apache.qpid.server.security.access.AllowAll</class>
         </access>
@@ -85,19 +69,10 @@
             <name>localhost</name>
             <localhost>
                 <store>
-                    <!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                    <environment-path>${work}/localhost-store</environment-path> -->
-
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
 
                 <security>
-                    <!-- Need protocol changes to allow this-->
-                    <authentication>
-                        <name>passwordfile</name>
-                        <!-- Currently this can't be used as Vhost isn't specified at connection start only connection open -->
-                        <mechanism>PLAIN</mechanism>
-                    </authentication>
                     <access>
                         <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
                         <attributes>
@@ -121,11 +96,6 @@
                 <store>
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
-                <security>
-                    <name>passwordfile-notusedyet</name>
-                    <mechanism>PLAIN</mechanism>
-                    <mechanism>CRAM-MD5</mechanism>
-                </security>
             </development>
         </virtualhost>
 
@@ -135,21 +105,6 @@
                 <store>
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
-                <security>
-                    <name>passwordfile-notusedyet</name>
-                    <mechanism>PLAIN</mechanism>
-                    <mechanism>CRAM-MD5</mechanism>
-                </security>
-                <access>
-                    <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
-                    <attributes>
-                        <attribute>
-                            <name>principalDatabase</name>
-                            <value>rubbish-to-cause-default</value>
-                        </attribute>
-                    </attributes>
-                </access>
-
             </test>
         </virtualhost>
 
