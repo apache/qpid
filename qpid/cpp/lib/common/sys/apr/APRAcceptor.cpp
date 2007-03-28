@@ -82,9 +82,7 @@ void APRAcceptor::run(ConnectionInputHandlerFactory* factory) {
     std::cout << "Listening on port " << getPort() << "..." << std::endl;
     while(running) {
             apr_socket_t* client;
-            printf("== accept pre\n"); // FIXME aconway 2007-03-28: 
             apr_status_t status = apr_socket_accept(&client, socket, APRPool::get());
-            printf("== accept post %d %d\n", status, running); // FIXME aconway 2007-03-28: 
         if(status == APR_SUCCESS){
             //make this socket non-blocking:
             CHECK_APR_SUCCESS(apr_socket_timeout_set(client, 0));
@@ -115,9 +113,7 @@ void APRAcceptor::shutdown() {
 void APRAcceptor::shutdownImpl() {
     running = false;
     processor.stop();
-    printf("== shutdownImpl pre\n"); // FIXME aconway 2007-03-28: 
     CHECK_APR_SUCCESS(apr_socket_close(socket));
-    printf("== shutdownImpl post\n");
 }
 
 
