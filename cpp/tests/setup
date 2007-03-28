@@ -27,6 +27,7 @@ vg_options="
   $demangle
   $full_leak_check
   $gen_supp
+  $vg_log
   "
 # configure tests for the existence of valgrind.
 # If it's not available, then make $vg and vg_check no-ops.

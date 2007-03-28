@@ -30,9 +30,9 @@ struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
 
     ~MockConnectionInputHandler() {}
     
-    void initiated(qpid::framing::ProtocolInitiation* pi) {
+    void initiated(const qpid::framing::ProtocolInitiation& pi) {
         qpid::sys::Monitor::ScopedLock l(monitor);
-        init = *pi;
+        init = pi;
         setState(GOT_INIT);
     }
 

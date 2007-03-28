@@ -49,9 +49,10 @@ class AcceptorTest : public CppUnit::TestCase, private Runnable
     Acceptor::shared_ptr acceptor;
 
   public:
-
+    using TestCase::run;        // Avoid hiding TestCase::run.
+    
     void run() {
-        acceptor->run(factory);
+        acceptor->run(&factory);
     }
 
     void setUp() {
@@ -65,7 +66,7 @@ class AcceptorTest : public CppUnit::TestCase, private Runnable
     void testAccept()
     {
         int port = acceptor->getPort();
-        CPPUNIT_ASSERT(port > 0);
+        CPPUNIT_ASSERT(port != 0);
         Thread runThread(*this);
         // Connect to the acceptor
         Socket client = Socket::createTcp();
@@ -84,7 +85,9 @@ class AcceptorTest : public CppUnit::TestCase, private Runnable
         CPPUNIT_ASSERT_EQUAL(int(2), int(init.getMinor()));
 
         acceptor->shutdown();
-        runThread.join(); 
+        printf("== join\n");  // FIXME aconway 2007-03-28: 
+        runThread.join();
+        printf("== joined\n");  // FIXME aconway 2007-03-28: 
         factory.handler->waitForClosed();
     }
 };
