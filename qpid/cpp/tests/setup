@@ -3,6 +3,8 @@
 test "$VERBOSE" = yes && set -x
 
 pwd=`pwd`
+test -z "$abs_srcdir" && abs_srcdir=$pwd
+
 t0=`echo "$0"|sed 's,.*/,,'`.tmp; tmp=$t0/$$
 pid=0
 test -z "$TEST_DEBUG" &&
@@ -31,8 +33,11 @@ vg_options="
 if test x$VALGRIND = x; then
   vg=
 else
-  vg="libtool --mode=execute valgrind `echo $vg_options` --"
+  vg="libtool --mode=execute $VALGRIND `echo $vg_options` --"
+  # Suppress dlclose or valgrind traces wont have test library symbols.
+  vg="env LD_PRELOAD=$pwd/.libs/libdlclose_noop.so $vg"
 fi
+
 
 vg_leak_check()
 {
