@@ -1,9 +1,18 @@
 #!/bin/sh
+#
+# Test library names (without .so) can be specified on the command
+# line and/or in env var UNIT_TESTS.
+#
 
-. $srcdir/setup
+# Default VALGRIND from the path unless we were called by make.
+test -z "$VALGRIND" -a -z "$MAKEFLAGS" && VALGRIND=`which valgrind` 2>/dev/null
 
+test -z "$srcdir" && srcdir=.
+source $srcdir/setup
+for u in $* $UNIT_TESTS ; do TESTLIBS="$TESTLIBS $pwd/.libs/$u.so" ; done
+test -z "$TESTLIBS" && TESTLIBS="$pwd/.libs/*Test.so"
 fail=0
-LD_PRELOAD=$pwd/.libs/libdlclose_noop.so $vg DllPlugInTester -c -b $pwd/.libs/*Test.so 2> valgrind.out || fail=1
+$vg DllPlugInTester -c -b $TESTLIBS 2> valgrind.out || fail=1
 vg_check valgrind.out || fail=1
 
 exit $fail

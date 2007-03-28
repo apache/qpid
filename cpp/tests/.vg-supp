@@ -1,7 +1,7 @@
 {
    x17984_1
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker25SessionHandlerFactoryImplC1ERKSsmj
    fun:_ZN4qpid6broker6BrokerC1ERKNS0_13ConfigurationE
    fun:_ZN4qpid6broker6Broker6createERKNS0_13ConfigurationE
@@ -10,7 +10,7 @@
 {
    x17984_2
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid6broker6BrokerEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid6broker6BrokerEEC1IS3_EEPT_
    fun:_ZN4qpid6broker6Broker6createERKNS0_13ConfigurationE
@@ -19,7 +19,7 @@
 {
    x17984_3
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid6broker15HeadersExchangeEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid6broker8ExchangeEEC1INS2_15HeadersExchangeEEEPT_
    fun:_ZN4qpid6broker16ExchangeRegistry7declareERKSsS3_
@@ -31,7 +31,7 @@
 {
    x17984_4
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid6broker14FanOutExchangeEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid6broker8ExchangeEEC1INS2_14FanOutExchangeEEEPT_
    fun:_ZN4qpid6broker16ExchangeRegistry7declareERKSsS3_
@@ -43,7 +43,7 @@
 {
    x17984_5
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid6broker13TopicExchangeEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid6broker8ExchangeEEC1INS2_13TopicExchangeEEEPT_
    fun:_ZN4qpid6broker16ExchangeRegistry7declareERKSsS3_
@@ -55,7 +55,7 @@
 {
    x17984_6
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid3sys11APRAcceptorEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid3sys8AcceptorEEC1INS2_11APRAcceptorEEEPT_
    fun:_ZN4qpid3sys8Acceptor6createEsiib
@@ -64,26 +64,9 @@
    fun:main
 }
 {
-   x17984_7
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
-   fun:_ZN4qpid3sys7APRBase11getInstanceEv
-   fun:_ZN4qpid3sys7APRBase9incrementEv
-   fun:_ZN4qpid3sys7APRPoolC1Ev
-   fun:_ZN5boost7details4pool17singleton_defaultIN4qpid3sys7APRPoolEE8instanceEv
-   fun:_ZN4qpid3sys7APRPool3getEv
-   fun:_Z41__static_initialization_and_destruction_0ii
-   obj:/home_old/e/work/rh/rhn/messaging-clean/trunk/qpid-help2man/cpp/lib/common/.libs/libqpidcommon.so.0.1.0
-   obj:/home_old/e/work/rh/rhn/messaging-clean/trunk/qpid-help2man/cpp/lib/common/.libs/libqpidcommon.so.0.1.0
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-}
-{
    x17984_8
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znam
+   fun:_Znam
    fun:_ZN4qpid3sys11LFProcessorC1EP10apr_pool_tiii
    fun:_ZN4qpid3sys11APRAcceptorC1Esiib
    fun:_ZN4qpid3sys8Acceptor6createEsiib
@@ -92,37 +75,9 @@
    fun:main
 }
 {
-   x17984_9
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
-   fun:_ZN4qpid7framing5Value12decode_valueERNS0_6BufferE
-   fun:_ZN4qpid7framing10FieldTable6decodeERNS0_6BufferE
-   fun:_ZN4qpid7framing6Buffer13getFieldTableERNS0_10FieldTableE
-   fun:_ZN4qpid7framing13QueueBindBody13decodeContentERNS0_6BufferE
-   fun:_ZN4qpid7framing13AMQMethodBody6decodeERNS0_6BufferEj
-   fun:_ZN4qpid7framing8AMQFrame10decodeBodyERNS0_6BufferEj
-   fun:_ZN4qpid7framing8AMQFrame6decodeERNS0_6BufferE
-   fun:_ZN4qpid3sys16LFSessionContext4readEv
-   fun:_ZN4qpid3sys11LFProcessor3runEv
-   fun:_ZN4qpid3sys6Thread11runRunnableEP12apr_thread_tPv
-   fun:start_thread
-   fun:clone
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
-   fun:_ZN5boost6detail12shared_countC1IN4qpid7framing5ValueEEEPT_
-   fun:_ZN5boost10shared_ptrIN4qpid7framing5ValueEEC1IS3_EEPT_
-   fun:_ZN4qpid7framing10FieldTable6decodeERNS0_6BufferE
-   fun:_ZN4qpid7framing6Buffer13getFieldTableERNS0_10FieldTableE
-}
-{
    x17984_10
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid6broker14DirectExchangeEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid6broker8ExchangeEEC1INS2_14DirectExchangeEEEPT_
    fun:_ZN4qpid6broker16ExchangeRegistry7declareERKSsS3_
@@ -134,7 +89,7 @@
 {
    x17984_11
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISsE8allocateEmPKv
    fun:_ZNSt12_Vector_baseISsSaISsEE11_M_allocateEm
    fun:_ZNSt12_Vector_baseISsSaISsEEC2EmRKS0_
@@ -162,7 +117,7 @@
 {
    x17984_12
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker16ExchangeRegistry7declareERKSsS3_
    fun:_ZN4qpid6broker25SessionHandlerFactoryImplC1ERKSsmj
    fun:_ZN4qpid6broker6BrokerC1ERKNS0_13ConfigurationE
@@ -172,7 +127,7 @@
 {
    x17984_13
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPN5boost10shared_ptrIN4qpid6broker5QueueEEEE8allocateEmPKv
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EE15_M_allocate_mapEm
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EE17_M_initialize_mapEm
@@ -188,7 +143,7 @@
 {
    x17984_14
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid7framing5Value12decode_valueERNS0_6BufferE
    fun:_ZN4qpid7framing10FieldTable6decodeERNS0_6BufferE
    fun:_ZN4qpid7framing6Buffer13getFieldTableERNS0_10FieldTableE
@@ -207,7 +162,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
    fun:_ZNSs9_M_mutateEmmm
    fun:_ZNSs15_M_replace_safeEmmPKcm
@@ -216,7 +171,7 @@
 {
    x17984_15
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsN5boost10shared_ptrIN4qpid6broker5QueueEEEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid6broker5QueueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid6broker5QueueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE14_M_create_nodeERKS8_
@@ -239,12 +194,12 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
 }
 {
    x17984_16
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPN4qpid6broker13Configuration6OptionEE8allocateEmPKv
    fun:_ZNSt12_Vector_baseIPN4qpid6broker13Configuration6OptionESaIS4_EE11_M_allocateEm
    fun:_ZNSt6vectorIPN4qpid6broker13Configuration6OptionESaIS4_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS4_S6_EERKS4_
@@ -255,7 +210,7 @@
 {
    x17984_17
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid3sys8Acceptor6createEsiib
    fun:_ZN4qpid6broker6BrokerC1ERKNS0_13ConfigurationE
    fun:_ZN4qpid6broker6Broker6createERKNS0_13ConfigurationE
@@ -264,7 +219,7 @@
 {
    x17984_18
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker14FanOutExchange4bindEN5boost10shared_ptrINS0_5QueueEEERKSsPKNS_7framing10FieldTableE
    fun:_ZN4qpid6broker18SessionHandlerImpl16QueueHandlerImpl4bindEttRKSsS4_S4_bRKNS_7framing10FieldTableE
    fun:_ZN4qpid7framing13QueueBindBody6invokeERNS0_21AMQP_ServerOperationsEt
@@ -280,7 +235,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__ZdlPv
+   fun:_ZdlPv
    fun:_ZN9__gnu_cxx13new_allocatorIN5boost10shared_ptrIN4qpid6broker5QueueEEEE10deallocateEPS6_m
    fun:_ZNSt12_Vector_baseIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EE13_M_deallocateEPS5_m
    fun:_ZNSt6vectorIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS5_S7_EERKS5_
@@ -292,7 +247,7 @@
 {
    x17984_19
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker15HeadersExchange4bindEN5boost10shared_ptrINS0_5QueueEEERKSsPKNS_7framing10FieldTableE
    fun:_ZN4qpid6broker18SessionHandlerImpl16QueueHandlerImpl4bindEttRKSsS4_S4_bRKNS_7framing10FieldTableE
    fun:_ZN4qpid7framing13QueueBindBody6invokeERNS0_21AMQP_ServerOperationsEt
@@ -308,7 +263,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__ZdlPv
+   fun:_ZdlPv
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEEEE10deallocateEPSB_m
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE11_M_put_nodeEPSt13_Rb_tree_nodeIS8_E
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE12destroy_nodeEPSt13_Rb_tree_nodeIS8_E
@@ -341,7 +296,7 @@
 {
    x17984_21
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid7framing5ValueEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid7framing5ValueEEC1IS3_EEPT_
    fun:_ZN4qpid7framing10FieldTable6decodeERNS0_6BufferE
@@ -361,7 +316,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE14_M_create_nodeERKS8_
@@ -369,7 +324,7 @@
 {
    x17984_22
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker13TopicExchange4bindEN5boost10shared_ptrINS0_5QueueEEERKSsPKNS_7framing10FieldTableE
    fun:_ZN4qpid6broker18SessionHandlerImpl16QueueHandlerImpl4bindEttRKSsS4_S4_bRKNS_7framing10FieldTableE
    fun:_ZN4qpid7framing13QueueBindBody6invokeERNS0_21AMQP_ServerOperationsEt
@@ -385,7 +340,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__ZdlPv
+   fun:_ZdlPv
    fun:_ZN9__gnu_cxx13new_allocatorISsE10deallocateEPSsm
    fun:_ZNSt12_Vector_baseISsSaISsEE13_M_deallocateEPSsm
    fun:_ZNSt12_Vector_baseISsSaISsEED2Ev
@@ -397,7 +352,7 @@
 {
    x17984_23
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt4pairIN4qpid7framing10FieldTableEN5boost10shared_ptrINS2_6broker5QueueEEEEE8allocateEmPKv
    fun:_ZNSt12_Vector_baseISt4pairIN4qpid7framing10FieldTableEN5boost10shared_ptrINS1_6broker5QueueEEEESaIS9_EE11_M_allocateEm
    fun:_ZNSt6vectorISt4pairIN4qpid7framing10FieldTableEN5boost10shared_ptrINS1_6broker5QueueEEEESaIS9_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS9_SB_EERKS9_
@@ -417,7 +372,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE14_M_create_nodeERKS8_
@@ -425,7 +380,7 @@
 {
    x17984_24
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker7Channel8completeERN5boost10shared_ptrINS0_7MessageEEE
    fun:_ZN4qpid6broker14MessageBuilder5routeEv
    fun:_ZN4qpid6broker14MessageBuilder10addContentERN5boost10shared_ptrINS_7framing14AMQContentBodyEEE
@@ -443,7 +398,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPN4qpid6broker4TxOpEE8allocateEmPKv
    fun:_ZNSt12_Vector_baseIPN4qpid6broker4TxOpESaIS3_EE11_M_allocateEm
    fun:_ZNSt6vectorIPN4qpid6broker4TxOpESaIS3_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS3_S5_EERKS3_
@@ -453,14 +408,14 @@
 {
    x17984_25
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker6Broker6createERKNS0_13ConfigurationE
    fun:main
 }
 {
    x17984_26
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKN4qpid6broker12TopicPatternESt6vectorIN5boost10shared_ptrINS4_5QueueEEESaISB_EEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeIN4qpid6broker12TopicPatternESt4pairIKS2_St6vectorIN5boost10shared_ptrINS1_5QueueEEESaIS9_EEESt10_Select1stISC_ESt4lessIS2_ESaISC_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeIN4qpid6broker12TopicPatternESt4pairIKS2_St6vectorIN5boost10shared_ptrINS1_5QueueEEESaIS9_EEESt10_Select1stISC_ESt4lessIS2_ESaISC_EE14_M_create_nodeERKSC_
@@ -488,7 +443,7 @@
 {
    x17984_27
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPN4qpid6broker8ConsumerEE8allocateEmPKv
    fun:_ZNSt12_Vector_baseIPN4qpid6broker8ConsumerESaIS3_EE11_M_allocateEm
    fun:_ZNSt6vectorIPN4qpid6broker8ConsumerESaIS3_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS3_S5_EERKS3_
@@ -509,14 +464,14 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsPN4qpid6broker7Channel12ConsumerImplEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsPN4qpid6broker7Channel12ConsumerImplEESt10_Select1stIS7_ESt4lessISsESaIS7_EE11_M_get_nodeEv
 }
 {
    x17984_28
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsN5boost10shared_ptrIN4qpid6broker8ExchangeEEEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid6broker8ExchangeEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid6broker8ExchangeEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE14_M_create_nodeERKS8_
@@ -534,7 +489,7 @@
 {
    x17984_29
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid7framing5ValueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE14_M_create_nodeERKS8_
@@ -562,7 +517,7 @@
 {
    x17984_30
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPN4qpid3sys16LFSessionContextEE8allocateEmPKv
    fun:_ZNSt12_Vector_baseIPN4qpid3sys16LFSessionContextESaIS3_EE11_M_allocateEm
    fun:_ZNSt6vectorIPN4qpid3sys16LFSessionContextESaIS3_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS3_S5_EERKS3_
@@ -575,7 +530,7 @@
 {
    x17984_31
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
    obj:/usr/lib/libstdc++.so.6.0.8
    fun:_ZNSsC1EPKcRKSaIcE
@@ -594,7 +549,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid7framing16AMQP_ClientProxy7Channel6openOkEt
    fun:_ZN4qpid6broker18SessionHandlerImpl18ChannelHandlerImpl4openEtRKSs
    fun:_ZN4qpid7framing15ChannelOpenBody6invokeERNS0_21AMQP_ServerOperationsEt
@@ -603,7 +558,7 @@
 {
    x17984_32
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIN5boost10shared_ptrIN4qpid7framing14AMQContentBodyEEEE8allocateEmPKv
    fun:_ZNSt12_Vector_baseIN5boost10shared_ptrIN4qpid7framing14AMQContentBodyEEESaIS5_EE11_M_allocateEm
    fun:_ZNSt6vectorIN5boost10shared_ptrIN4qpid7framing14AMQContentBodyEEESaIS5_EE13_M_insert_auxEN9__gnu_cxx17__normal_iteratorIPS5_S7_EERKS5_
@@ -625,13 +580,13 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
 }
 {
    x17984_33
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid7framing8AMQFrame10decodeBodyERNS0_6BufferEj
    fun:_ZN4qpid7framing8AMQFrame6decodeERNS0_6BufferE
    fun:_ZN4qpid3sys16LFSessionContext4readEv
@@ -645,7 +600,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid7framing14AMQContentBodyEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid7framing7AMQBodyEEC1INS2_14AMQContentBodyEEEPT_
    fun:_ZN4qpid7framing8AMQFrame10decodeBodyERNS0_6BufferEj
@@ -672,7 +627,7 @@
 {
    x17984_35
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid7framing14AMQContentBodyEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid7framing7AMQBodyEEC1INS2_14AMQContentBodyEEEPT_
    fun:_ZN4qpid7framing8AMQFrame10decodeBodyERNS0_6BufferEj
@@ -688,7 +643,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
    fun:_ZNSs9_M_mutateEmmm
    fun:_ZNSs15_M_replace_safeEmmPKcm
@@ -700,7 +655,7 @@
 {
    x17984_36
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid7framing13AMQHeaderBodyEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid7framing7AMQBodyEEC1INS2_13AMQHeaderBodyEEEPT_
    fun:_ZN4qpid7framing8AMQFrame10decodeBodyERNS0_6BufferEj
@@ -716,7 +671,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__ZdlPv
+   fun:_ZdlPv
    fun:_ZN4qpid7framing16BasicPublishBodyD0Ev
    fun:_ZN5boost14checked_deleteIN4qpid7framing13AMQMethodBodyEEEvPT_
    fun:_ZN5boost6detail17sp_counted_impl_pIN4qpid7framing13AMQMethodBodyEE7disposeEv
@@ -728,7 +683,7 @@
 {
    x17984_37
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid6broker7MessageEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid6broker7MessageEEC1IS3_EEPT_
    fun:_ZN4qpid6broker7Channel13handlePublishEPNS0_7MessageEN5boost10shared_ptrINS0_8ExchangeEEE
@@ -748,7 +703,7 @@
 {
    x17984_38
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker14MessageBuilder9setHeaderERN5boost10shared_ptrINS_7framing13AMQHeaderBodyEEE
    fun:_ZN4qpid6broker7Channel12handleHeaderEN5boost10shared_ptrINS_7framing13AMQHeaderBodyEEE
    fun:_ZN4qpid6broker18SessionHandlerImpl12handleHeaderEtN5boost10shared_ptrINS_7framing13AMQHeaderBodyEEE
@@ -766,7 +721,7 @@
 {
    x17984_39
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid7framing8AMQFrame10decodeBodyERNS0_6BufferEj
    fun:_ZN4qpid7framing8AMQFrame6decodeERNS0_6BufferE
    fun:_ZN4qpid3sys16LFSessionContext4readEv
@@ -782,7 +737,7 @@
 {
    x17984_40
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN5boost6detail12shared_countC1IN4qpid6broker5QueueEEEPT_
    fun:_ZN5boost10shared_ptrIN4qpid6broker5QueueEEC1IS3_EEPT_
    fun:_ZN4qpid6broker13QueueRegistry7declareERKSsbjPKNS0_15ConnectionTokenE
@@ -800,7 +755,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsN5boost10shared_ptrIN4qpid6broker5QueueEEEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid6broker5QueueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsN5boost10shared_ptrIN4qpid6broker5QueueEEEESt10_Select1stIS8_ESt4lessISsESaIS8_EE14_M_create_nodeERKS8_
@@ -810,7 +765,7 @@
 {
    x17984_41
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker5Queue9configureERKNS_7framing10FieldTableE
    fun:_ZN4qpid6broker5Queue6createERKNS_7framing10FieldTableE
    fun:_ZN4qpid6broker18SessionHandlerImpl16QueueHandlerImpl7declareEttRKSsbbbbbRKNS_7framing10FieldTableE
@@ -827,7 +782,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIN5boost10shared_ptrIN4qpid6broker5QueueEEEE8allocateEmPKv
    fun:_ZNSt12_Vector_baseIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EE11_M_allocateEm
    fun:_ZNSt12_Vector_baseIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EEC2EmRKS6_
@@ -838,7 +793,7 @@
 {
    x17984_42
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIN5boost10shared_ptrIN4qpid6broker5QueueEEEE8allocateEmPKv
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EE16_M_allocate_nodeEv
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS5_EE15_M_create_nodesEPPS5_S9_
@@ -855,7 +810,7 @@
 {
    x17984_43
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKSsSt6vectorIN5boost10shared_ptrIN4qpid6broker5QueueEEESaISA_EEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsSt6vectorIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS8_EEESt10_Select1stISB_ESt4lessISsESaISB_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeISsSt4pairIKSsSt6vectorIN5boost10shared_ptrIN4qpid6broker5QueueEEESaIS8_EEESt10_Select1stISB_ESt4lessISsESaISB_EE14_M_create_nodeERKSB_
@@ -883,7 +838,7 @@
 {
    x17984_44
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker18SessionHandlerImpl16BasicHandlerImpl7publishEttRKSsS4_bb
    fun:_ZN4qpid7framing16BasicPublishBody6invokeERNS0_21AMQP_ServerOperationsEt
    fun:_ZN4qpid6broker18SessionHandlerImpl8receivedEPNS_7framing8AMQFrameE
@@ -900,7 +855,7 @@
 {
    x17984_45
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker14DirectExchange4bindEN5boost10shared_ptrINS0_5QueueEEERKSsPKNS_7framing10FieldTableE
    fun:_ZN4qpid6broker18SessionHandlerImpl16QueueHandlerImpl7declareEttRKSsbbbbbRKNS_7framing10FieldTableE
    fun:_ZN4qpid7framing16QueueDeclareBody6invokeERNS0_21AMQP_ServerOperationsEt
@@ -933,7 +888,7 @@
 {
    x17984_47
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPN5boost10shared_ptrIN4qpid6broker7MessageEEEE8allocateEmPKv
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker7MessageEEESaIS5_EE15_M_allocate_mapEm
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker7MessageEEESaIS5_EE17_M_initialize_mapEm
@@ -956,12 +911,12 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
 }
 {
    x17984_48
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPPN4qpid6broker7BindingEE8allocateEmPKv
    fun:_ZNSt11_Deque_baseIPN4qpid6broker7BindingESaIS3_EE15_M_allocate_mapEm
    fun:_ZNSt11_Deque_baseIPN4qpid6broker7BindingESaIS3_EE17_M_initialize_mapEm
@@ -984,12 +939,12 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
 }
 {
    x17984_49
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKmPFPN4qpid7framing13AMQMethodBodyEhhEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeImSt4pairIKmPFPN4qpid7framing13AMQMethodBodyEhhEESt10_Select1stIS8_ESt4lessImESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeImSt4pairIKmPFPN4qpid7framing13AMQMethodBodyEhhEESt10_Select1stIS8_ESt4lessImESaIS8_EE14_M_create_nodeERKS8_
@@ -1007,7 +962,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorISt13_Rb_tree_nodeISt4pairIKmPFPN4qpid7framing13AMQMethodBodyEhhEEEE8allocateEmPKv
    fun:_ZNSt8_Rb_treeImSt4pairIKmPFPN4qpid7framing13AMQMethodBodyEhhEESt10_Select1stIS8_ESt4lessImESaIS8_EE11_M_get_nodeEv
    fun:_ZNSt8_Rb_treeImSt4pairIKmPFPN4qpid7framing13AMQMethodBodyEhhEESt10_Select1stIS8_ESt4lessImESaIS8_EE14_M_create_nodeERKS8_
@@ -1017,7 +972,7 @@
 {
    x17984_50
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid7framing13AMQHeaderBody16createPropertiesEi
    fun:_ZN4qpid7framing13AMQHeaderBody6decodeERNS0_6BufferEj
    fun:_ZN4qpid7framing8AMQFrame10decodeBodyERNS0_6BufferEj
@@ -1035,7 +990,7 @@
 {
    x17984_51
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker18SessionHandlerImpl18ChannelHandlerImpl4openEtRKSs
    fun:_ZN4qpid7framing15ChannelOpenBody6invokeERNS0_21AMQP_ServerOperationsEt
    fun:_ZN4qpid6broker18SessionHandlerImpl8receivedEPNS_7framing8AMQFrameE
@@ -1050,7 +1005,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
    obj:/usr/lib/libstdc++.so.6.0.8
    fun:_ZNSsC1EPKcRKSaIcE
@@ -1063,7 +1018,7 @@
 {
    x17984_52
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZNSs4_Rep9_S_createEmmRKSaIcE
    obj:/usr/lib/libstdc++.so.6.0.8
    fun:_ZNSsC1EPKcRKSaIcE
@@ -1079,7 +1034,7 @@
 {
    x17984_53
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN4qpid6broker13QueueRegistry7declareERKSsbjPKNS0_15ConnectionTokenE
    fun:_ZN4qpid6broker18SessionHandlerImpl16QueueHandlerImpl7declareEttRKSsbbbbbRKNS_7framing10FieldTableE
    fun:_ZN4qpid7framing16QueueDeclareBody6invokeERNS0_21AMQP_ServerOperationsEt
@@ -1095,7 +1050,7 @@
    obj:*
    obj:*
    obj:*
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPPN4qpid6broker7BindingEE8allocateEmPKv
    fun:_ZNSt11_Deque_baseIPN4qpid6broker7BindingESaIS3_EE15_M_allocate_mapEm
    fun:_ZNSt11_Deque_baseIPN4qpid6broker7BindingESaIS3_EE17_M_initialize_mapEm
@@ -1107,7 +1062,7 @@
 {
    x17984_54
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIN5boost10shared_ptrIN4qpid6broker7MessageEEEE8allocateEmPKv
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker7MessageEEESaIS5_EE16_M_allocate_nodeEv
    fun:_ZNSt11_Deque_baseIN5boost10shared_ptrIN4qpid6broker7MessageEEESaIS5_EE15_M_create_nodesEPPS5_S9_
@@ -1135,7 +1090,7 @@
 {
    x17984_55
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwm
+   fun:_Znwm
    fun:_ZN9__gnu_cxx13new_allocatorIPN4qpid6broker7BindingEE8allocateEmPKv
    fun:_ZNSt11_Deque_baseIPN4qpid6broker7BindingESaIS3_EE16_M_allocate_nodeEv
    fun:_ZNSt11_Deque_baseIPN4qpid6broker7BindingESaIS3_EE15_M_create_nodesEPPS3_S7_
@@ -2482,7 +2437,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2507,7 +2462,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2535,32 +2490,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2585,61 +2515,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2664,7 +2540,58 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2692,35 +2619,10 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
    obj:*
    obj:*
    obj:*
@@ -2745,7 +2647,35 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2770,7 +2700,32 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
    obj:/usr/lib/libstdc++.so.6.0.8
    fun:_ZNSsC1EPKcRKSaIcE
@@ -2796,7 +2751,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2824,7 +2779,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2848,7 +2803,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2868,7 +2823,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2893,7 +2848,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2917,7 +2872,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2967,7 +2922,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -2995,7 +2950,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3023,7 +2978,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3051,7 +3006,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3075,7 +3030,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3103,7 +3058,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
@@ -3120,43 +3075,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3175,7 +3094,24 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3194,7 +3130,26 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
@@ -3265,7 +3220,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3289,7 +3244,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
@@ -3326,7 +3281,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3354,7 +3309,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3382,7 +3337,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3401,7 +3356,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3429,7 +3384,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3477,7 +3432,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3505,7 +3460,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3533,7 +3488,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3580,7 +3535,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3608,27 +3563,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3646,35 +3581,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3694,7 +3601,55 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
+   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3734,7 +3689,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3752,7 +3707,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3776,7 +3731,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3804,7 +3759,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3832,33 +3787,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3884,7 +3813,8 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
    obj:*
    obj:*
    obj:*
@@ -3909,7 +3839,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3934,7 +3864,9 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
    obj:*
    obj:*
    fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
@@ -3957,7 +3889,30 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -3985,7 +3940,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
@@ -4002,7 +3957,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
@@ -4019,7 +3974,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4043,7 +3998,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4067,7 +4022,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4091,7 +4046,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4119,59 +4074,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4195,7 +4098,35 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4219,7 +4150,31 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
+   obj:*
+   obj:*
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
@@ -4236,7 +4191,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
@@ -4253,7 +4208,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4279,7 +4234,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4307,7 +4262,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4351,7 +4306,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4373,7 +4328,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
    obj:/usr/lib/libstdc++.so.6.0.8
    fun:_ZNSsC1EPKcRKSaIcE
@@ -4401,7 +4356,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4422,7 +4377,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4450,7 +4405,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    obj:*
@@ -4476,7 +4431,7 @@
 {
    == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
+   fun:_Znwj
    obj:*
    obj:*
    fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
@@ -4498,213 +4453,6 @@
 }
 {
    == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   obj:/usr/bin/DllPlugInTester
-   obj:/usr/bin/DllPlugInTester
-   fun:__libc_start_main
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-}
-{
-   == NOT YET INVESTIGATED ==
-   Memcheck:Leak
-   fun:_vgrZU_libstdcZpZpZa__Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-}
-{
-   x26763_1
    Memcheck:Leak
    fun:_Znwj
    obj:*
@@ -4723,19 +4471,18 @@
    obj:*
    obj:*
    obj:*
-   obj:*
    fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
    fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
    fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
    fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
    fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
    fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
 }
 {
-   x26763_2
+   == NOT YET INVESTIGATED ==
    Memcheck:Leak
    fun:_Znwj
-   obj:*
    obj:*
    obj:*
    obj:*
@@ -4758,57 +4505,77 @@
    fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
    fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
    fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
 }
 {
-   x26763_3
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_4
+   == NOT YET INVESTIGATED ==
    Memcheck:Leak
    fun:_Znwj
    obj:*
    obj:*
    obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
 }
 {
-   x26763_5
+   == NOT YET INVESTIGATED ==
    Memcheck:Leak
-   fun:malloc
-   fun:_dl_map_object_deps
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:do_dlopen
-   fun:_dl_catch_error
-   fun:__libc_dlopen_mode
-   fun:pthread_cancel_init
-   fun:_Unwind_ForcedUnwind
-   fun:__pthread_unwind
-   fun:pthread_exit
-   fun:pthread_exit
+   fun:_Znwj
    obj:*
    obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
+}
+{
+   == NOT YET INVESTIGATED ==
+   Memcheck:Leak
+   fun:_Znwj
    obj:*
-   fun:start_thread
-   fun:clone
+   obj:*
+   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
+   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
+   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
+   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
+   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
+   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
+   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
+   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
+   obj:/usr/bin/DllPlugInTester
+   obj:/usr/bin/DllPlugInTester
+   fun:__libc_start_main
 }
 {
    x26763_6
@@ -4823,295 +4590,4 @@
    fun:_Z8runTestsRK17CommandLineParser
    fun:main
 }
-{
-   x26763_7
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_8
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_9
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_10
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_11
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-}
-{
-   x26763_12
-   Memcheck:Leak
-   fun:calloc
-   fun:_dl_allocate_tls
-   fun:pthread_create@@GLIBC_2.1
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_13
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_14
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-}
-{
-   x26763_15
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestResult7runTestEPNS_4TestE
-   fun:_ZN7CppUnit10TestRunner3runERNS_10TestResultERKSs
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_16
-   Memcheck:Leak
-   fun:_Znwj
-   fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
-   obj:/usr/lib/libstdc++.so.6.0.8
-   fun:_ZNSsC1EPKcRKSaIcE
-   obj:*
-   obj:*
-   obj:*
-   fun:call_init
-   fun:_dl_init
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-   fun:dlopen_doit
-   fun:_dl_catch_error
-   fun:_dlerror_run
-   fun:dlopen@GLIBC_2.0
-   fun:_ZN7CppUnit21DynamicLibraryManager13doLoadLibraryERKSs
-   fun:_ZN7CppUnit21DynamicLibraryManager11loadLibraryERKSs
-   fun:_ZN7CppUnit21DynamicLibraryManagerC1ERKSs
-   fun:_ZN7CppUnit13PlugInManager4loadERKSsRKNS_16PlugInParametersE
-   fun:_Z8runTestsRK17CommandLineParser
-   fun:main
-}
-{
-   x26763_17
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit21TestCaseMethodFunctorclEv
-   fun:_ZN7CppUnit16DefaultProtector7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZNK7CppUnit14ProtectorChain14ProtectFunctorclEv
-   fun:_ZN7CppUnit14ProtectorChain7protectERKNS_7FunctorERKNS_16ProtectorContextE
-   fun:_ZN7CppUnit10TestResult7protectERKNS_7FunctorEPNS_4TestERKSs
-   fun:_ZN7CppUnit8TestCase3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite15doRunChildTestsEPNS_10TestResultE
-   fun:_ZN7CppUnit13TestComposite3runEPNS_10TestResultE
-   fun:_ZN7CppUnit10TestRunner13WrappingSuite3runEPNS_10TestResultE
-}
-{
-   x26763_18
-   Memcheck:Leak
-   fun:_Znwj
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   obj:*
-   fun:_ZNK7CppUnit27TestSuiteBuilderContextBase15makeTestFixtureEv
-   obj:*
-   obj:*
-   fun:_ZN7CppUnit19TestFactoryRegistry14addTestToSuiteEPNS_9TestSuiteE
-   fun:_ZN7CppUnit19TestFactoryRegistry8makeTestEv
-}
+
