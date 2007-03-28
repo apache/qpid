@@ -119,3 +119,5 @@ gen.mk: Makefile.am
 	mv $@-t $@
 
 check: $(check_LTLIBRARIES) $(lib_common) $(lib_client) $(lib_broker)
+
+# Rule to run unit tests from an individual test module.
