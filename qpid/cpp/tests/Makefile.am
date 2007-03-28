@@ -12,6 +12,7 @@ INCLUDES =				\
 # Unit tests
 broker_tests =		\
   AccumulatedAckTest	\
+  AcceptorTest 		\
   BrokerChannelTest 	\
   ConfigurationTest	\
   ExchangeTest		\

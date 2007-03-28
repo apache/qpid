@@ -32,7 +32,7 @@ class APRAcceptor : public Acceptor
 {
   public:
     APRAcceptor(int16_t port, int backlog, int threads, bool trace);
-    virtual int16_t getPort() const;
+    virtual uint16_t getPort() const;
     virtual void run(qpid::sys::ConnectionInputHandlerFactory* factory);
     virtual void shutdown();
 
@@ -70,7 +70,7 @@ APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
     CHECK_APR_SUCCESS(apr_socket_listen(socket, backlog));
 }
 
-int16_t APRAcceptor::getPort() const {
+uint16_t APRAcceptor::getPort() const {
     apr_sockaddr_t* address;
     CHECK_APR_SUCCESS(apr_socket_addr_get(&address, APR_LOCAL, socket));
     return address->port;
@@ -80,9 +80,11 @@ void APRAcceptor::run(ConnectionInputHandlerFactory* factory) {
     running = true;
     processor.start();
     std::cout << "Listening on port " << getPort() << "..." << std::endl;
-    while(running){
-        apr_socket_t* client;
-        apr_status_t status = apr_socket_accept(&client, socket, APRPool::get());
+    while(running) {
+            apr_socket_t* client;
+            printf("== accept pre\n"); // FIXME aconway 2007-03-28: 
+            apr_status_t status = apr_socket_accept(&client, socket, APRPool::get());
+            printf("== accept post %d %d\n", status, running); // FIXME aconway 2007-03-28: 
         if(status == APR_SUCCESS){
             //make this socket non-blocking:
             CHECK_APR_SUCCESS(apr_socket_timeout_set(client, 0));
@@ -106,16 +108,16 @@ void APRAcceptor::run(ConnectionInputHandlerFactory* factory) {
 
 void APRAcceptor::shutdown() {
     Mutex::ScopedLock locker(shutdownLock);                
-    if (running) {
+    if (running) 
         shutdownImpl();
-    }
 }
 
 void APRAcceptor::shutdownImpl() {
-    Mutex::ScopedLock locker(shutdownLock);                
     running = false;
     processor.stop();
+    printf("== shutdownImpl pre\n"); // FIXME aconway 2007-03-28: 
     CHECK_APR_SUCCESS(apr_socket_close(socket));
+    printf("== shutdownImpl post\n");
 }
 
 

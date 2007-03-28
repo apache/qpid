@@ -8,11 +8,13 @@
 test -z "$VALGRIND" -a -z "$MAKEFLAGS" && VALGRIND=`which valgrind` 2>/dev/null
 
 test -z "$srcdir" && srcdir=.
+rm -f valgrind.out
+vg_log=--log-file-exactly=valgrind.out
 source $srcdir/setup
 for u in $* $UNIT_TESTS ; do TESTLIBS="$TESTLIBS $pwd/.libs/$u.so" ; done
 test -z "$TESTLIBS" && TESTLIBS="$pwd/.libs/*Test.so"
 fail=0
-$vg DllPlugInTester -c -b $TESTLIBS 2> valgrind.out || fail=1
+$vg DllPlugInTester -c -b $TESTLIBS || fail=1
 vg_check valgrind.out || fail=1
 
 exit $fail
