@@ -33,7 +33,7 @@ import org.apache.log4j.Logger;
  *
  * <p/>In order to test whether a class implements an interface or extends a class, the class must be loaded (unless
  * the class files were to be scanned directly). Using this collector can cause problems when it scans the classpath,
- * because loading classes will establishConnection their statics, which in turn may cause undesired side effects. For this
+ * because loading classes will initialize their statics, which in turn may cause undesired side effects. For this
  * reason, the collector should always be used with a regular expression, through which the class file names are
  * filtered, and only those that pass this filter will be tested. For example, if you define tests in classes that
  * end with the keyword "Test" then use the regular expression "Test$" to match this.
@@ -61,10 +61,10 @@ public class ClasspathScanner
      * @return All the classes that match this collector.
      */
     public static <T> Collection<Class<? extends T>> getMatches(Class<T> matchingClass, String matchingRegexp,
-                                                                boolean beanOnly)
+        boolean beanOnly)
     {
         log.debug("public static <T> Collection<Class<? extends T>> getMatches(Class<T> matchingClass = " + matchingClass
-                  + ", String matchingRegexp = " + matchingRegexp + ", boolean beanOnly = " + beanOnly + "): called");
+            + ", String matchingRegexp = " + matchingRegexp + ", boolean beanOnly = " + beanOnly + "): called");
 
         // Build a compiled regular expression from the pattern to match.
         Pattern matchPattern = Pattern.compile(matchingRegexp);
@@ -95,11 +95,11 @@ public class ClasspathScanner
      *       iteration.
      */
     private static <T> void gatherFiles(File classRoot, String classFileName, Map<String, Class<? extends T>> result,
-                                        Pattern matchPattern, Class<? extends T> matchClass)
+        Pattern matchPattern, Class<? extends T> matchClass)
     {
         log.debug("private static <T> void gatherFiles(File classRoot = " + classRoot + ", String classFileName = "
-                  + classFileName + ", Map<String, Class<? extends T>> result, Pattern matchPattern = " + matchPattern
-                  + ", Class<? extends T> matchClass = " + matchClass + "): called");
+            + classFileName + ", Map<String, Class<? extends T>> result, Pattern matchPattern = " + matchPattern
+            + ", Class<? extends T> matchClass = " + matchClass + "): called");
 
         File thisRoot = new File(classRoot, classFileName);
 
