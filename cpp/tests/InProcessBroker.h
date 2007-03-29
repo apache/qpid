@@ -18,10 +18,6 @@
  * limitations under the License.
  *
  */
-#include <vector>
-#include <iostream>
-#include <algorithm>
-
 #include "AMQP_HighestVersion.h"
 #include "framing/AMQFrame.h"
 #include "broker/Broker.h"
@@ -29,20 +25,13 @@
 #include "client/Connector.h"
 #include "client/Connection.h"
 
+#include <vector>
+#include <iostream>
+#include <algorithm>
+
+
 namespace qpid {
 namespace broker {
-
-/** Make a copy of a frame body. Inefficient, only intended for tests. */
-// TODO aconway 2007-01-29: from should be const, need to fix
-// AMQPFrame::encode as const.
-framing::AMQFrame copy(framing::AMQFrame& from) {
-    framing::Buffer buffer(from.size());
-    from.encode(buffer);
-    buffer.flip();
-    framing::AMQFrame result;
-    result.decode(buffer);
-    return result;
-}
 
 /**
  * A broker that implements client::Connector allowing direct
@@ -56,20 +45,22 @@ framing::AMQFrame copy(framing::AMQFrame& from) {
 class InProcessBroker : public client::Connector {
   public:
     enum Sender {CLIENT,BROKER};
-    
-    struct Frame : public framing::AMQFrame {
-        Frame(Sender e, const AMQFrame& f) : AMQFrame(f), from(e) {}
-        bool fromBroker() const { return from == BROKER; }
-        bool fromClient() const { return from == CLIENT; }
+
+    /** A frame tagged with the sender */
+    struct TaggedFrame {
+        TaggedFrame(Sender e, framing::AMQFrame* f) : frame(f), sender(e) {}
+        bool fromBroker() const { return sender == BROKER; }
+        bool fromClient() const { return sender == CLIENT; }
 
         template <class MethodType>
         MethodType* asMethod() {
-            return dynamic_cast<MethodType*>(getBody().get());
+            return dynamic_cast<MethodType*>(frame->getBody().get());
         }
-
-        Sender from;
+        shared_ptr<framing::AMQFrame> frame;
+        Sender sender;
     };
-    typedef std::vector<Frame> Conversation;
+    
+    typedef std::vector<TaggedFrame> Conversation;
 
     InProcessBroker(framing::ProtocolVersion ver=
                     framing::highestProtocolVersion
@@ -105,18 +96,18 @@ class InProcessBroker : public client::Connector {
     /** OutputHandler that forwards data to an InputHandler */
     struct OutputToInputHandler : public sys::ConnectionOutputHandler {
         OutputToInputHandler(
-            Sender from_, Conversation& conversation_,
+            Sender sender_, Conversation& conversation_,
             framing::InputHandler* ih=0
-        ) : from(from_), conversation(conversation_), in(ih) {}
+        ) : sender(sender_), conversation(conversation_), in(ih) {}
 
         void send(framing::AMQFrame* frame) {
-            conversation.push_back(Frame(from, copy(*frame)));
+            conversation.push_back(TaggedFrame(sender, frame));
             in->received(frame);
         }
 
         void close() {}
         
-        Sender from;
+        Sender sender;
         Conversation& conversation;
         framing::InputHandler* in;
     };
@@ -129,23 +120,21 @@ class InProcessBroker : public client::Connector {
 };
 
 std::ostream& operator<<(
-    std::ostream& out, const InProcessBroker::Frame& frame)
+    std::ostream& out, const InProcessBroker::TaggedFrame& frame)
 {
-    return out << (frame.fromBroker()? "BROKER: ":"CLIENT: ") <<
-        static_cast<const framing::AMQFrame&>(frame);
+    return out << (frame.fromBroker()? "BROKER: ":"CLIENT: ") << frame;
 }
+
 std::ostream& operator<<(
     std::ostream& out, const InProcessBroker::Conversation& conv)
-{
-    for (InProcessBroker::Conversation::const_iterator i = conv.begin();
-         i != conv.end(); ++i)
-    {
-        out << *i << std::endl;
-    }
+{    
+    copy(conv.begin(), conv.end(),
+         std::ostream_iterator<InProcessBroker::TaggedFrame>(out, "\n"));
     return out;
 }
 
 } // namespace broker
+
 
 namespace client {
 /** An in-process client+broker all in one. */
