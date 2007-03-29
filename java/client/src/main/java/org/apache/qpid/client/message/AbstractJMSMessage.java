@@ -23,6 +23,7 @@ package org.apache.qpid.client.message;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -123,7 +124,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     {
         if (getContentHeaderProperties().getMessageIdAsString() == null)
         {
-            getContentHeaderProperties().setMessageId("ID:" + _deliveryTag);
+            getContentHeaderProperties().setMessageId("ID:" + UUID.randomUUID());
         }
 
         return getContentHeaderProperties().getMessageIdAsString();
