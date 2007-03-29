@@ -31,6 +31,7 @@
 #include "MockChannel.h"
 #include "broker/Connection.h"
 #include "ProtocolInitiation.h"
+#include <boost/ptr_container/ptr_vector.hpp>
 
 using namespace boost;
 using namespace qpid::broker;
@@ -40,7 +41,7 @@ using std::string;
 using std::queue;
 
 struct MockHandler : ConnectionOutputHandler{
-    std::vector<AMQFrame*> frames; 
+    boost::ptr_vector<AMQFrame> frames; 
 
     void send(AMQFrame* frame){ frames.push_back(frame); }
 
@@ -190,18 +191,18 @@ class BrokerChannelTest : public CppUnit::TestCase
 
         queue->deliver(msg);
         CPPUNIT_ASSERT_EQUAL((size_t) 4, handler.frames.size());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(0), handler.frames[0]->getChannel());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[1]->getChannel());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[2]->getChannel());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[3]->getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(0), handler.frames[0].getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[1].getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[2].getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[3].getChannel());
         CPPUNIT_ASSERT(dynamic_cast<ConnectionStartBody*>(
-                           handler.frames[0]->getBody().get()));
+                           handler.frames[0].getBody().get()));
         CPPUNIT_ASSERT(dynamic_cast<BasicDeliverBody*>(
-                           handler.frames[1]->getBody().get()));
+                           handler.frames[1].getBody().get()));
         CPPUNIT_ASSERT(dynamic_cast<AMQHeaderBody*>(
-                           handler.frames[2]->getBody().get()));
+                           handler.frames[2].getBody().get()));
         AMQContentBody* contentBody = dynamic_cast<AMQContentBody*>(
-            handler.frames[3]->getBody().get());
+            handler.frames[3].getBody().get());
         CPPUNIT_ASSERT(contentBody);
         CPPUNIT_ASSERT_EQUAL(data, contentBody->getData());
     }
@@ -221,18 +222,18 @@ class BrokerChannelTest : public CppUnit::TestCase
 
         queue->deliver(msg);
         CPPUNIT_ASSERT_EQUAL((size_t) 4, handler.frames.size());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(0), handler.frames[0]->getChannel());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[1]->getChannel());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[2]->getChannel());
-        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[3]->getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(0), handler.frames[0].getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[1].getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[2].getChannel());
+        CPPUNIT_ASSERT_EQUAL(ChannelId(7), handler.frames[3].getChannel());
         CPPUNIT_ASSERT(dynamic_cast<ConnectionStartBody*>(
-                           handler.frames[0]->getBody().get()));
+                           handler.frames[0].getBody().get()));
         CPPUNIT_ASSERT(dynamic_cast<BasicDeliverBody*>(
-                           handler.frames[1]->getBody().get()));
+                           handler.frames[1].getBody().get()));
         CPPUNIT_ASSERT(dynamic_cast<AMQHeaderBody*>(
-                           handler.frames[2]->getBody().get()));
+                           handler.frames[2].getBody().get()));
         AMQContentBody* contentBody = dynamic_cast<AMQContentBody*>(
-            handler.frames[3]->getBody().get());
+            handler.frames[3].getBody().get());
         CPPUNIT_ASSERT(contentBody);
         CPPUNIT_ASSERT_EQUAL(data, contentBody->getData());
     }
