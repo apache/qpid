@@ -19,7 +19,6 @@
  *
  */
 #include <FanOutExchange.h>
-#include <ExchangeBinding.h>
 #include <algorithm>
 
 using namespace qpid::broker;
@@ -28,13 +27,12 @@ using namespace qpid::sys;
 
 FanOutExchange::FanOutExchange(const std::string& _name) : Exchange(_name) {}
 
-void FanOutExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
+void FanOutExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* /*args*/){
     Mutex::ScopedLock locker(lock);
     // Add if not already present.
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
     if (i == bindings.end()) {
         bindings.push_back(queue);
-        queue->bound(new ExchangeBinding(this, queue, routingKey, args));
     }
 }
 
@@ -43,8 +41,6 @@ void FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
     if (i != bindings.end()) {
         bindings.erase(i);
-        // TODO aconway 2006-09-14: What about the ExchangeBinding object?
-        // Don't we have to verify routingKey/args match?
     }
 }
 

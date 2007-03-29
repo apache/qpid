@@ -42,8 +42,6 @@ libqpidbroker_la_SOURCES =			\
   DeliveryRecord.h				\
   DirectExchange.cpp				\
   DirectExchange.h				\
-  ExchangeBinding.cpp				\
-  ExchangeBinding.h				\
   ExchangeRegistry.cpp				\
   ExchangeRegistry.h				\
   FanOutExchange.cpp				\

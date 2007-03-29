@@ -19,7 +19,6 @@
  *
  */
 #include <HeadersExchange.h>
-#include <ExchangeBinding.h>
 #include <Value.h>
 #include <QpidError.h>
 #include <algorithm>
@@ -43,14 +42,13 @@ namespace {
 
 HeadersExchange::HeadersExchange(const string& _name) : Exchange(_name) { }
 
-void HeadersExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
+void HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
     Mutex::ScopedLock locker(lock);
     std::string what = args->getString("x-match");
     if (what != all && what != any) {
         THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid x-match value binding to headers exchange.");
     }
     bindings.push_back(Binding(*args, queue));
-    queue->bound(new ExchangeBinding(this, queue, routingKey, args));
 }
 
 void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
