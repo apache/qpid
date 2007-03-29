@@ -50,16 +50,7 @@ Queue::Queue(const string& _name, uint32_t _autodelete,
     if(autodelete) lastUsed = now()/TIME_MSEC;
 }
 
-Queue::~Queue(){
-    for(Binding* b = bindings.front(); !bindings.empty(); b = bindings.front()){
-        b->cancel();
-        bindings.pop();
-    }
-}
-
-void Queue::bound(Binding* b){
-    bindings.push(b);
-}
+Queue::~Queue(){}
 
 void Queue::deliver(Message::shared_ptr& msg){
     enqueue(0, msg, 0);

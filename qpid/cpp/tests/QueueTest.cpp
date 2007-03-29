@@ -28,15 +28,6 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 
 
-class TestBinding : public virtual Binding{
-    bool cancelled;
-
-public:
-    TestBinding();
-    virtual void cancel();
-    bool isCancelled();
-};
-
 class TestConsumer : public virtual Consumer{
 public:
     Message::shared_ptr last;
@@ -49,7 +40,6 @@ class QueueTest : public CppUnit::TestCase
 {
     CPPUNIT_TEST_SUITE(QueueTest);
     CPPUNIT_TEST(testConsumers);
-    CPPUNIT_TEST(testBinding);
     CPPUNIT_TEST(testRegistry);
     CPPUNIT_TEST(testDequeue);
     CPPUNIT_TEST_SUITE_END();
@@ -91,20 +81,6 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(uint32_t(1), queue->getConsumerCount());
         queue->cancel(&c2);
         CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getConsumerCount());
-    }
-
-    void testBinding(){
-        Queue::shared_ptr queue(new Queue("my_queue", true));
-        //Test bindings:
-        TestBinding a;
-        TestBinding b;
-        queue->bound(&a);
-        queue->bound(&b);    
-    
-        queue.reset();
-
-        CPPUNIT_ASSERT(a.isCancelled());
-        CPPUNIT_ASSERT(b.isCancelled());
     }
 
     void testRegistry(){
@@ -164,18 +140,6 @@ class QueueTest : public CppUnit::TestCase
 // Make this test suite a plugin.
 CPPUNIT_PLUGIN_IMPLEMENT();
 CPPUNIT_TEST_SUITE_REGISTRATION(QueueTest);
-
-//TestBinding
-TestBinding::TestBinding() : cancelled(false) {}
-
-void TestBinding::cancel(){
-    CPPUNIT_ASSERT(!cancelled);
-    cancelled = true;
-}
-
-bool TestBinding::isCancelled(){
-    return cancelled;
-}
 
 //TestConsumer
 bool TestConsumer::deliver(Message::shared_ptr& msg){
