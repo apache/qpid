@@ -11,10 +11,16 @@ test -z "$srcdir" && srcdir=.
 rm -f valgrind.out
 vg_log=--log-file-exactly=valgrind.out
 source $srcdir/setup
-for u in $* $UNIT_TESTS ; do TESTLIBS="$TESTLIBS $pwd/.libs/$u.so" ; done
-test -z "$TESTLIBS" && TESTLIBS="$pwd/.libs/*Test.so"
+for u in $* $UNIT_TESTS ; do
+    case $u in
+	:*) TEST="$u" ;;	# A test path.
+	*) TEST="$pwd/.libs/$u.so" # A test library.
+    esac
+    TESTS="$TESTS $TEST" ;
+done
+test -z "$TESTS" && TESTS="$pwd/.libs/*Test.so"
 fail=0
-$vg DllPlugInTester -c -b $TESTLIBS || fail=1
+$vg DllPlugInTester -c -b $TESTS || fail=1
 vg_check valgrind.out || fail=1
 
 exit $fail
