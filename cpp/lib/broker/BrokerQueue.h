@@ -26,7 +26,6 @@
 #include <queue>
 #include <boost/shared_ptr.hpp>
 #include <amqp_types.h>
-#include <Binding.h>
 #include <ConnectionToken.h>
 #include <Consumer.h>
 #include <BrokerMessage.h>
@@ -54,7 +53,6 @@ namespace qpid {
          */
         class Queue{
             typedef std::vector<Consumer*> Consumers;
-            typedef std::queue<Binding*> Bindings;
             typedef std::queue<Message::shared_ptr> Messages;
             
             const string name;
@@ -62,7 +60,6 @@ namespace qpid {
             MessageStore* const store;
             const ConnectionToken* const owner;
             Consumers consumers;
-            Bindings bindings;
             Messages messages;
             bool queueing;
             bool dispatching;
@@ -93,11 +90,6 @@ namespace qpid {
             void create(const qpid::framing::FieldTable& settings);
             void configure(const qpid::framing::FieldTable& settings);
             void destroy();
-            /**
-             * Informs the queue of a binding that should be cancelled on
-             * destruction of the queue.
-             */
-            void bound(Binding* b);
             /**
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
