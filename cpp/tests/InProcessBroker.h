@@ -120,9 +120,9 @@ class InProcessBroker : public client::Connector {
 };
 
 std::ostream& operator<<(
-    std::ostream& out, const InProcessBroker::TaggedFrame& frame)
+    std::ostream& out, const InProcessBroker::TaggedFrame& tf)
 {
-    return out << (frame.fromBroker()? "BROKER: ":"CLIENT: ") << frame;
+    return out << (tf.fromBroker()? "BROKER: ":"CLIENT: ") << *tf.frame;
 }
 
 std::ostream& operator<<(
