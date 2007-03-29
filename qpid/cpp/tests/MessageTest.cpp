@@ -76,7 +76,7 @@ class MessageTest : public CppUnit::TestCase
         MockChannel channel(1);
         msg->deliver(channel, "ignore", 0, 100); 
         CPPUNIT_ASSERT_EQUAL((size_t) 3, channel.out.frames.size());
-        AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(channel.out.frames[2]->getBody()));
+        AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(channel.out.frames[2].getBody()));
         CPPUNIT_ASSERT(contentBody);
         CPPUNIT_ASSERT_EQUAL(data1 + data2, contentBody->getData());
     }
