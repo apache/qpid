@@ -62,11 +62,16 @@ public class CallbackHandlerRegistry
 
     private void parseProperties()
     {
-    	List<String> mechanisms = ClientConfiguration.get().getList(QpidConstants.AMQP_SECURITY_MECHANISMS);
-    	
-        for (String mechanism : mechanisms)
+	String key = QpidConstants.AMQP_SECURITY + "." + 
+        QpidConstants.AMQP_SECURITY_MECHANISMS + "." +
+        QpidConstants.AMQP_SECURITY_MECHANISM_HANDLER;
+        
+        int index = ClientConfiguration.get().getMaxIndex(key);                                       
+        	
+        for (int i=0; i<index+1;i++)
         {
-            String className = ClientConfiguration.get().getString(QpidConstants.AMQP_SECURITY_MECHANISM_HANDLER + "_" + mechanism);
+            String mechanism = ClientConfiguration.get().getString(key + "(" + i + ")[@type]");
+            String className = ClientConfiguration.get().getString(key + "(" + i + ")" );
             Class clazz = null;
             try
             {

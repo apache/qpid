@@ -31,10 +31,10 @@ import org.apache.qpid.framing.QueuePurgeBody;
 import org.apache.qpid.framing.QueuePurgeOkBody;
 import org.apache.qpid.framing.QueueUnbindBody;
 import org.apache.qpid.framing.QueueUnbindOkBody;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodListener;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.Phase;
-import org.apache.qpid.nclient.model.AMQPMethodEvent;
-import org.apache.qpid.nclient.model.AMQPMethodListener;
 
 /**
  * 
@@ -48,7 +48,7 @@ public class AMQPQueue extends AMQPCallBackSupport implements AMQPMethodListener
 {
 	private Phase _phase;
 
-	public AMQPQueue(int channelId,Phase phase)
+	protected AMQPQueue(int channelId,Phase phase)
 	{
 		super(channelId);
 		_phase = phase;

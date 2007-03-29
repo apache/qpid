@@ -25,6 +25,7 @@ import org.apache.qpid.framing.MessageAppendBody;
 import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.MessageCheckpointBody;
 import org.apache.qpid.framing.MessageCloseBody;
+import org.apache.qpid.framing.MessageConsumeBody;
 import org.apache.qpid.framing.MessageEmptyBody;
 import org.apache.qpid.framing.MessageGetBody;
 import org.apache.qpid.framing.MessageOffsetBody;
@@ -35,10 +36,10 @@ import org.apache.qpid.framing.MessageRecoverBody;
 import org.apache.qpid.framing.MessageRejectBody;
 import org.apache.qpid.framing.MessageResumeBody;
 import org.apache.qpid.framing.MessageTransferBody;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodListener;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.Phase;
-import org.apache.qpid.nclient.model.AMQPMethodEvent;
-import org.apache.qpid.nclient.model.AMQPMethodListener;
 
 /**
  * This class represents the AMQP Message class.
@@ -59,7 +60,7 @@ public class AMQPMessage extends AMQPCallBackSupport implements AMQPMethodListen
 	private Phase _phase;
 	private AMQPMessageCallBack _messageCb;
 	
-	public AMQPMessage(int channelId,Phase phase,AMQPMessageCallBack messageCb)
+	protected AMQPMessage(int channelId,Phase phase,AMQPMessageCallBack messageCb)
 	{
 		super(channelId);
 		_phase = phase;
@@ -78,9 +79,9 @@ public class AMQPMessage extends AMQPCallBackSupport implements AMQPMethodListen
 		_phase.messageSent(msg);
 	}
 
-	public void consume(MessageCancelBody messageCancelBody,AMQPCallBack cb) throws AMQPException 
+	public void consume(MessageConsumeBody messageConsumeBody,AMQPCallBack cb) throws AMQPException 
 	{
-		AMQPMethodEvent msg = handleAsynchronousCall(messageCancelBody,cb);
+		AMQPMethodEvent msg = handleAsynchronousCall(messageConsumeBody,cb);
 		_phase.messageSent(msg);
 	}
 	

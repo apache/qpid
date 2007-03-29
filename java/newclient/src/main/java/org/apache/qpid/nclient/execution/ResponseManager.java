@@ -31,9 +31,9 @@ import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQRequestBody;
 import org.apache.qpid.framing.AMQResponseBody;
 import org.apache.qpid.framing.RequestResponseMappingException;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
 import org.apache.qpid.nclient.config.ClientConfiguration;
 import org.apache.qpid.nclient.core.QpidConstants;
-import org.apache.qpid.nclient.model.AMQPMethodEvent;
 
 public class ResponseManager
 {

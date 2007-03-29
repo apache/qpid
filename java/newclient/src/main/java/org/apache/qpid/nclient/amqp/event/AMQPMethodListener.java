@@ -1,4 +1,4 @@
-package org.apache.qpid.nclient.model;
+package org.apache.qpid.nclient.amqp.event;
 
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.nclient.core.AMQPException;

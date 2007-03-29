@@ -1,13 +1,12 @@
 package org.apache.qpid.nclient.model;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.nclient.amqp.state.AMQPStateManager;
-import org.apache.qpid.nclient.config.ClientConfiguration;
+import org.apache.qpid.nclient.amqp.event.AMQPEventManager;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.AbstractPhase;
 import org.apache.qpid.nclient.core.Phase;
@@ -31,15 +30,7 @@ public class ModelPhase extends AbstractPhase {
 	 */    
 	public void init(PhaseContext ctx, Phase nextInFlowPhase, Phase nextOutFlowPhase) 
 	{
-		super.init(ctx, nextInFlowPhase, nextOutFlowPhase);
-		try
-		{
-			loadMethodListeners();
-		}
-		catch(Exception e)
-		{
-			_logger.fatal("Error loading method listeners", e);
-		}
+		super.init(ctx, nextInFlowPhase, nextOutFlowPhase);		
 	}
 
 	public void messageReceived(Object msg) throws AMQPException 
@@ -68,66 +59,13 @@ public class ModelPhase extends AbstractPhase {
 	
 	public void notifyMethodListerners(AMQPMethodEvent event) throws AMQPException
 	{
-		if (_methodListners.containsKey(event.getMethod().getClass()))
-		{
-			List<AMQPMethodListener> listeners = _methodListners.get(event.getMethod().getClass()); 
-		
-			if(listeners.size()>0)
-			{
-				throw new AMQPException("There are no registered listeners for this method");
-			}
-			
-			for(AMQPMethodListener l : listeners)
-			{
-				try 
-				{
-					l.methodReceived(event);
-				} 
-				catch (Exception e) 
-				{
-					_logger.error("Error handling method event " +  event, e);
-				}
-			}
-		}
+	    AMQPEventManager eventManager = (AMQPEventManager)_ctx.getProperty(QpidConstants.EVENT_MANAGER);
+	    eventManager.notifyEvent(event);	    
 	}
 	
 	/**
 	 * ------------------------------------------------
 	 *  Configuration 
 	 * ------------------------------------------------
-	 */    
-
-	/**
-	 * This method loads method listeners from the client.xml file
-	 * For each method class there is a list of listeners
-	 */
-	private void loadMethodListeners() throws Exception
-	{
-		int count = ClientConfiguration.get().getMaxIndex(QpidConstants.METHOD_LISTENERS + "." + QpidConstants.METHOD_LISTENER);
-		System.out.println(count);
-				
-		for(int i=0 ;i<count;i++)
-		{
-			String methodListener = QpidConstants.METHOD_LISTENERS + "." + QpidConstants.METHOD_LISTENER + "(" + i + ")";
-			String className =  ClientConfiguration.get().getString(methodListener + "." + QpidConstants.CLASS);
-			Class listenerClass = Class.forName(className);
-			List<String> list = ClientConfiguration.get().getList(methodListener + "." + QpidConstants.METHOD_CLASS);
-			for(String s:list)
-			{
-				List listeners;
-				Class methodClass = Class.forName(s);
-				if (_methodListners.containsKey(methodClass))
-				{
-					listeners = _methodListners.get(methodClass); 
-				}
-				else
-				{
-					listeners = new ArrayList();
-					_methodListners.put(methodClass,listeners);
-				}
-				listeners.add(listenerClass);
-			}
-		}		
-	}
-	
+	 */	
 }

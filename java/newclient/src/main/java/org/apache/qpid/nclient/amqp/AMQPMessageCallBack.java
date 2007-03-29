@@ -21,10 +21,8 @@
 package org.apache.qpid.nclient.amqp;
 
 import org.apache.qpid.framing.MessageAppendBody;
-import org.apache.qpid.framing.MessageCancelBody;
 import org.apache.qpid.framing.MessageCheckpointBody;
 import org.apache.qpid.framing.MessageCloseBody;
-import org.apache.qpid.framing.MessageGetBody;
 import org.apache.qpid.framing.MessageOpenBody;
 import org.apache.qpid.framing.MessageRecoverBody;
 import org.apache.qpid.framing.MessageResumeBody;

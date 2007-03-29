@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.MessageHeaders;
 
 public class TransientMessageStore implements MessageStore {
 

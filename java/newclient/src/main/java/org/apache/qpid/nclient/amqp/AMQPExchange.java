@@ -26,10 +26,10 @@ import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeclareOkBody;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
+import org.apache.qpid.nclient.amqp.event.AMQPMethodListener;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.Phase;
-import org.apache.qpid.nclient.model.AMQPMethodEvent;
-import org.apache.qpid.nclient.model.AMQPMethodListener;
 
 /**
  * 
@@ -43,7 +43,7 @@ public class AMQPExchange extends AMQPCallBackSupport implements AMQPMethodListe
 {
 	private Phase _phase;
 	
-	public AMQPExchange(int channelId,Phase phase)
+	protected AMQPExchange(int channelId,Phase phase)
 	{
 		super(channelId);
 		_phase = phase;

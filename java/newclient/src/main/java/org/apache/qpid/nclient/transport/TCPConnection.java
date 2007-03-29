@@ -22,10 +22,12 @@ public class TCPConnection implements TransportConnection
     private BrokerDetails _brokerDetails;
     private IoConnector _ioConnector;
     private Phase _phase;  
+    private PhaseContext _ctx;
     
-    protected TCPConnection(ConnectionURL url)
+    protected TCPConnection(ConnectionURL url, PhaseContext ctx)
     {
 	_brokerDetails = url.getBrokerDetails(0);
+	_ctx = ctx;
 	
 	ByteBuffer.setUseDirectBuffers(ClientConfiguration.get().getBoolean(QpidConstants.ENABLE_DIRECT_BUFFERS));
 
@@ -41,8 +43,8 @@ public class TCPConnection implements TransportConnection
             ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
         }
 
-        final IoConnector ioConnector = new SocketConnector();
-        SocketConnectorConfig cfg = (SocketConnectorConfig) ioConnector.getDefaultConfig();
+        _ioConnector = new SocketConnector();
+        SocketConnectorConfig cfg = (SocketConnectorConfig) _ioConnector.getDefaultConfig();
 
         // if we do not use our own thread model we get the MINA default which is to use
         // its own leader-follower model
@@ -59,12 +61,11 @@ public class TCPConnection implements TransportConnection
 
     // Returns the phase pipe
     public Phase connect() throws AMQPException
-    {	
-	PhaseContext ctx = new DefaultPhaseContext();
-	ctx.setProperty(QpidConstants.AMQP_BROKER_DETAILS,_brokerDetails);
-	ctx.setProperty(QpidConstants.MINA_IO_CONNECTOR,_ioConnector);
+    {		
+	_ctx.setProperty(QpidConstants.AMQP_BROKER_DETAILS,_brokerDetails);
+	_ctx.setProperty(QpidConstants.MINA_IO_CONNECTOR,_ioConnector);
 	
-	_phase = PhaseFactory.createPhasePipe(ctx);
+	_phase = PhaseFactory.createPhasePipe(_ctx);
 	_phase.start();
 	
 	return _phase;

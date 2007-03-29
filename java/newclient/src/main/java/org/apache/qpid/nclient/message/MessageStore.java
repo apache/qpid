@@ -1,7 +1,6 @@
 package org.apache.qpid.nclient.message;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.MessageHeaders;
 
 public interface MessageStore {
 	

@@ -1,86 +1,36 @@
 <?xml version="1.0" encoding="ISO-8859-1" ?>
 <qpidClientConfig>
 
-<security>
-	<saslClientFactoryTypes>
-		<saslClientFactory type="AMQPLAIN">org.apache.qpid.client.security.amqplain.AmqPlainSaslClientFactory</saslClientFactory>
-	</saslClientFactoryTypes>
-	<securityMechanisms>
-		<securityMechanismHandler type="PLAIN">org.apache.qpid.client.security.UsernamePasswordCallbackHandler</securityMechanismHandler>
-		<securityMechanismHandler type="CRAM_MD5">org.apache.qpid.client.security.UsernamePasswordCallbackHandler</securityMechanismHandler>
-	</securityMechanisms>
-</security>
-
-<!-- Transport Layer properties -->
-<useSharedReadWritePool>true</useSharedReadWritePool>
-<enableDirectBuffers>true</enableDirectBuffers>
-<enablePooledAllocator>false</enablePooledAllocator>
-<tcpNoDelay>true</tcpNoDelay>
-<sendBufferSizeInKb>32</sendBufferSizeInKb>
-<reciveBufferSizeInKb>32</reciveBufferSizeInKb>
-<qpidVMBrokerClass>org.apache.qpid.server.protocol.AMQPFastProtocolHandler</qpidVMBrokerClass>
-
-<!-- Execution Layer properties -->
-<maxAccumilatedResponses>20</maxAccumilatedResponses>
-
-<!-- Model Phase properties -->
-<serverTimeoutInMilliSeconds>1000</serverTimeoutInMilliSeconds>
-<maxAccumilatedResponses>20</maxAccumilatedResponses>
-<stateManager></stateManager>
-<stateListerners>
-	<stateType class="org.apache.qpid.nclient.model.state.AMQPStateType.CONNECTION_STATE">
-		<stateListerner></stateListerner>
-    </stateType>			
-   	<stateType class="org.apache.qpid.nclient.model.state.AMQPStateType.CHANNEL_STATE">
-		<stateListerner></stateListerner>
-    </stateType>			
-</stateListerners>
-
-<methodListeners>
-  <methodListener class="org.apache.qpid.nclient.amqp.AMQPConnection">
-  	<methodClass>org.apache.qpid.framing.ConnectionStartBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ConnectionSecureBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ConnectionTuneBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ConnectionOpenOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ConnectionCloseBody</methodClass>
-    <methodClass>org.apache.qpid.framing.ConnectionCloseOkBody</methodClass>  	
-    
-  	<methodClass>org.apache.qpid.framing.ChannelOpenOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ChannelCloseBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ChannelCloseOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ChannelFlowBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ChannelFlowOkBody</methodClass>
-    <methodClass>org.apache.qpid.framing.ChannelOkBody</methodClass>    	
-  
-  	<methodClass>org.apache.qpid.framing.ExchangeDeclareOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.ExchangeDeleteOkBody</methodClass>  	
-  
-	<methodClass>org.apache.qpid.framing.QueueDeclareOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.QueueBindOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.QueueUnbindOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.QueuePurgeOkBody</methodClass>
-  	<methodClass>org.apache.qpid.framing.QueueDeleteOkBody</methodClass>	
-
-  	<methodClass>org.apache.qpid.framing.MessageAppendBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageCancelBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageCheckpointBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageCloseBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageGetBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageOffsetBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageOkBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageOpenBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageQosBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageRecoverBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageRejectBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageResumeBody</methodClass>
-	<methodClass>org.apache.qpid.framing.MessageTransferBody</methodClass>
-  </methodListener>  
-</methodListeners>
-
-<phasePipe>
-	<phase index="0">org.apache.qpid.nclient.transport.TransportPhase<phase>
-	<phase index="1">org.apache.qpid.nclient.execution.ExecutionPhase<phase>
-	<phase index="2">org.apache.qpid.nclient.model.ModelPhase<phase>
-</phasePipe>
+	<security>
+		<saslClientFactoryTypes>
+			<saslClientFactory type="AMQPLAIN">org.apache.qpid.nclient.security.amqplain.AmqPlainSaslClientFactory</saslClientFactory>
+		</saslClientFactoryTypes>
+		<securityMechanisms>
+			<securityMechanismHandler type="PLAIN">org.apache.qpid.nclient.security.UsernamePasswordCallbackHandler</securityMechanismHandler>
+			<securityMechanismHandler type="CRAM_MD5">org.apache.qpid.nclient.security.UsernamePasswordCallbackHandler</securityMechanismHandler>
+		</securityMechanisms>
+	</security>
+	
+	<!-- Transport Layer properties -->
+	<useSharedReadWritePool>false</useSharedReadWritePool>
+	<enableDirectBuffers>true</enableDirectBuffers>
+	<enablePooledAllocator>false</enablePooledAllocator>
+	<tcpNoDelay>true</tcpNoDelay>
+	<sendBufferSizeInKb>32</sendBufferSizeInKb>
+	<reciveBufferSizeInKb>32</reciveBufferSizeInKb>
+	<qpidVMBrokerClass>org.apache.qpid.server.protocol.AMQPFastProtocolHandler</qpidVMBrokerClass>
+	
+	<!-- Execution Layer properties -->
+	<maxAccumilatedResponses>20</maxAccumilatedResponses>
+	
+	<!-- Model Phase properties -->
+	<serverTimeoutInMilliSeconds>60000</serverTimeoutInMilliSeconds>
+	<maxAccumilatedResponses>20</maxAccumilatedResponses>
+	
+	<phasePipe>
+		<phase index="0">org.apache.qpid.nclient.transport.TransportPhase</phase>
+		<phase index="1">org.apache.qpid.nclient.execution.ExecutionPhase</phase>
+		<phase index="2">org.apache.qpid.nclient.model.ModelPhase</phase>
+	</phasePipe>
 
 </qpidClientConfig>
