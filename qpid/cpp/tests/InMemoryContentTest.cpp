@@ -67,11 +67,11 @@ public:
         for (unsigned int i = 0; i < outCount; i++) {
             AMQContentBody::shared_ptr chunk(
                 dynamic_pointer_cast<AMQContentBody>(
-                    channel.out.frames[i]->getBody()));
+                    channel.out.frames[i].getBody()));
             CPPUNIT_ASSERT(chunk);
             CPPUNIT_ASSERT_EQUAL(out[i], chunk->getData());
             CPPUNIT_ASSERT_EQUAL(
-                ChannelId(3), channel.out.frames[i]->getChannel());
+                ChannelId(3), channel.out.frames[i].getChannel());
         }
     }
 

@@ -19,16 +19,17 @@
  *
  */
 
-#include <boost/shared_ptr.hpp>
 #include "framing/MethodContext.h"
 #include "framing/ChannelAdapter.h"
 #include "framing/OutputHandler.h"
 #include "framing/AMQFrame.h"
 #include "BasicGetBody.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
 
 /** Mock output handler to collect frames */
 struct MockOutputHandler : public qpid::framing::OutputHandler {
-    std::vector<qpid::framing::AMQFrame*> frames;
+    boost::ptr_vector<qpid::framing::AMQFrame> frames;
     void send(qpid::framing::AMQFrame* frame){ frames.push_back(frame); }
 };
 
