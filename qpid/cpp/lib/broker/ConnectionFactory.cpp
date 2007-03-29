@@ -19,7 +19,7 @@
  *
  */
 #include <ConnectionFactory.h>
-#include <Connection.h>
+#include "Connection.h"
 
 namespace qpid {
 namespace broker {
