@@ -24,19 +24,22 @@ public class PhaseFactory
      */
     public static Phase createPhasePipe(PhaseContext ctx) throws AMQPException
     {
+	String key = QpidConstants.PHASE_PIPE + "." + QpidConstants.PHASE;
 	Map<Integer,Phase> phaseMap = new HashMap<Integer,Phase>();
-	List<String> list = ClientConfiguration.get().getList(QpidConstants.PHASE_PIPE + "." + QpidConstants.PHASE);
+	List<String> list = ClientConfiguration.get().getList(key);
+	int index = 0;
 	for(String s:list)
 	{
 	    try
 	    {
-		Phase temp = (Phase)Class.forName(ClientConfiguration.get().getString(s)).newInstance();
-		phaseMap.put(ClientConfiguration.get().getInt(s + "." + QpidConstants.INDEX),temp) ;
+		Phase temp = (Phase)Class.forName(s).newInstance();
+		phaseMap.put(ClientConfiguration.get().getInt(key + "(" + index +  ")." + QpidConstants.INDEX),temp) ;
 	    }
 	    catch(Exception e)
 	    {
 		throw new AMQPException("Error loading phase " + ClientConfiguration.get().getString(s),e);
 	    }    
+	    index++;
 	}
 	
 	Phase current = null;
@@ -46,7 +49,7 @@ public class PhaseFactory
 	for (int i=0; i<phaseMap.size();i++)
 	{
 	   current = phaseMap.get(i);	   
-	   if (1+1 < phaseMap.size())
+	   if (i+1 < phaseMap.size())
 	   {
 	       next = phaseMap.get(i+1);
 	   }

@@ -10,13 +10,7 @@ public interface QpidConstants {
 	// Phase Context properties
 	public final static String AMQP_BROKER_DETAILS = "AMQP_BROKER_DETAILS";
 	public final static String MINA_IO_CONNECTOR = "MINA_IO_CONNECTOR";
-	//public final static String AMQP_MAJOR_VERSION = "AMQP_MAJOR_VERSION";
-	//public final static String AMQP_MINOR_VERSION = "AMQP_MINOR_VERSION";
-	//public final static String AMQP_SASL_CLIENT = "AMQP_SASL_CLIENT";
-	//public final static String AMQP_CLIENT_ID = "AMQP_CLIENT_ID";
-	//public final static String AMQP_CONNECTION_TUNE_PARAMETERS = "AMQP_CONNECTION_TUNE_PARAMETERS";
-	//public final static String AMQP_VIRTUAL_HOST = "AMQP_VIRTUAL_HOST";	
-	//public final static String AMQP_MESSAGE_STORE = "AMQP_MESSAGE_STORE";
+	public final static String EVENT_MANAGER = "EVENT_MANAGER";
 	
 	/**---------------------------------------------------------------
 	 * 	Configuration file properties
@@ -24,17 +18,7 @@ public interface QpidConstants {
 	*/
 	
 	// Model Layer properties
-	public final static String STATE_MANAGER = "stateManager";
-	public final static String METHOD_LISTENERS = "methodListeners";
-	public final static String METHOD_LISTENER = "methodListener";
-	public final static String CLASS = "[@class]";
-	public final static String METHOD_CLASS = "methodClass";
 	
-	public final static String STATE_LISTENERS = "stateListeners";
-	public final static String STATE_LISTENER = "stateListener";
-	public final static String STATE_TYPE = "stateType";
-	
-	public final static String AMQP_MESSAGE_STORE_CLASS = "AMQP_MESSAGE_STORE_CLASS";
 	public final static String SERVER_TIMEOUT_IN_MILLISECONDS = "serverTimeoutInMilliSeconds";
 
 	// MINA properties
@@ -50,6 +34,7 @@ public interface QpidConstants {
 	public final static String AMQP_SECURITY_SASL_CLIENT_FACTORY  = "saslClientFactory";
 	public final static String TYPE = "[@type]";
 	
+	public final static String AMQP_SECURITY = "security"; 
 	public final static String AMQP_SECURITY_MECHANISMS = "securityMechanisms";
 	public final static String AMQP_SECURITY_MECHANISM_HANDLER = "securityMechanismHandler";
 		

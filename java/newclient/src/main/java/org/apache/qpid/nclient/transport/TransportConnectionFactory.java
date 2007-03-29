@@ -2,6 +2,8 @@ package org.apache.qpid.nclient.transport;
 
 import java.net.URISyntaxException;
 
+import org.apache.qpid.nclient.core.PhaseContext;
+
 public class TransportConnectionFactory
 {
     public enum ConnectionType 
@@ -9,36 +11,26 @@ public class TransportConnectionFactory
 	TCP,VM
     }
     
-    public static TransportConnection createTransportConnection(String url,ConnectionType type) throws URISyntaxException
+    public static TransportConnection createTransportConnection(String url,ConnectionType type, PhaseContext ctx) throws URISyntaxException
     {
-	return createTransportConnection(new AMQPConnectionURL(url),type);
+	return createTransportConnection(new AMQPConnectionURL(url),type,ctx);
 	
     }
     
-    public static TransportConnection createTransportConnection(ConnectionURL url,ConnectionType type)
+    public static TransportConnection createTransportConnection(ConnectionURL url,ConnectionType type, PhaseContext ctx)
     {
 	switch (type)
 	{
 	    case TCP : default:
 	    {
-		return createTCPConnection(url);
+		return new TCPConnection(url,ctx);
 	    }
 	    
 	    case VM :
 	    {
-		return createVMConnection(url);
+		return new VMConnection(url,ctx);
 	    }
 	}
 	
-    }
-
-    private static TransportConnection createTCPConnection(ConnectionURL url)
-    {
-	return new TCPConnection(url);
-    }
-    
-    private static TransportConnection createVMConnection(ConnectionURL url)
-    {
-	return null;
     }
 }

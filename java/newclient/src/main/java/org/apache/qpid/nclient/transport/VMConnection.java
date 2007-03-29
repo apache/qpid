@@ -26,10 +26,13 @@ public class VMConnection implements TransportConnection
     private BrokerDetails _brokerDetails;
     private IoConnector _ioConnector;
     private Phase _phase;
+    private PhaseContext _ctx;
     
-    protected VMConnection(ConnectionURL url)
+    protected VMConnection(ConnectionURL url,PhaseContext ctx)
     {
 	_brokerDetails = url.getBrokerDetails(0);
+	_ctx = ctx;
+	
 	_ioConnector = new VmPipeConnector();
         final IoServiceConfig cfg = _ioConnector.getDefaultConfig();
         ReferenceCountingExecutorService executorService = ReferenceCountingExecutorService.getInstance();
@@ -45,11 +48,10 @@ public class VMConnection implements TransportConnection
     {		
 	createVMBroker();	      
         
-        PhaseContext ctx = new DefaultPhaseContext();
-	ctx.setProperty(QpidConstants.AMQP_BROKER_DETAILS,_brokerDetails);
-	ctx.setProperty(QpidConstants.MINA_IO_CONNECTOR,_ioConnector);
+        _ctx.setProperty(QpidConstants.AMQP_BROKER_DETAILS,_brokerDetails);
+        _ctx.setProperty(QpidConstants.MINA_IO_CONNECTOR,_ioConnector);
 	
-	_phase = PhaseFactory.createPhasePipe(ctx);
+	_phase = PhaseFactory.createPhasePipe(_ctx);
 	_phase.start();
 	
 	return _phase;

@@ -24,8 +24,6 @@ package org.apache.qpid.nclient.message;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.qpid.client.message.MessageHeaders;
-
 public class AMQPApplicationMessage {
 
 	private int bytesReceived = 0;
