@@ -19,7 +19,6 @@
  *
  */
 #include <DirectExchange.h>
-#include <ExchangeBinding.h>
 #include <iostream>
 
 using namespace qpid::broker;
@@ -30,13 +29,12 @@ DirectExchange::DirectExchange(const string& _name) : Exchange(_name) {
 
 }
 
-void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
+void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable*){
     Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
     if(i == queues.end()){
         bindings[routingKey].push_back(queue);
-        queue->bound(new ExchangeBinding(this, queue, routingKey, args));
     }
 }
 

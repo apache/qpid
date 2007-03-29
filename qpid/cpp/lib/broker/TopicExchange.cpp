@@ -19,7 +19,6 @@
  *
  */
 #include <TopicExchange.h>
-#include <ExchangeBinding.h>
 #include <algorithm>
 
 using namespace qpid::broker;
@@ -118,11 +117,10 @@ bool TopicPattern::match(const Tokens& target)  const
 
 TopicExchange::TopicExchange(const string& _name) : Exchange(_name) { }
 
-void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args){
+void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
     Monitor::ScopedLock l(lock);
     TopicPattern routingPattern(routingKey);
     bindings[routingPattern].push_back(queue);
-    queue->bound(new ExchangeBinding(this, queue, routingKey, args));
 }
 
 void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
