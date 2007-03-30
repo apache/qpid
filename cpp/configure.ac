@@ -16,7 +16,7 @@ AM_INIT_AUTOMAKE([dist-bzip2])
 AC_PREREQ(2.59)
 
 AC_CONFIG_HEADERS([config.h:config.in])
-AC_CONFIG_SRCDIR([lib/broker/ExchangeBinding.cpp])
+AC_CONFIG_SRCDIR([lib/broker/Broker.cpp])
 
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
