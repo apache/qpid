@@ -1,21 +1,30 @@
-html: doxygen.tstamp
+#
+# Run doxygen to generate HTML doc.
+# Generate dependency files so its rebuilt only when needed. 
+#
+
+EXTRA_DIST = html user.doxygen
 
 dist-hook: html
 
-EXTRA_DIST = \
-  html \
-  user.doxygen
+html: doxygen.mk
+	make -f doxygen.mk $@
 
-SOURCES = \
-  $(wildcard $(top_srcdir)/gen/*.h) \
-  $(wildcard $(top_srcdir)/lib/common/*.h) \
-  $(wildcard $(top_srcdir)/lib/common/sys/*.h) \
-  $(wildcard $(top_srcdir)/lib/common/framing/*.h) \
-  $(wildcard $(top_srcdir)/lib/client/*.h)
+html-dev: doxygen.mk
+	make -f doxygen.mk $@
 
-doxygen.tstamp: user.doxygen $(SOURCES)
-	doxygen $(srcdir)/user.doxygen
-	touch $@
+doxygen.mk: doxygen.deps
+
+doxygen.deps: force
+	echo "html: \\" >> $@-t
+	find $(top_srcdir) -name "*.h" -exec echo "  {} \\" \; >> $@-t
+	echo >> $@-t
+	echo "html-dev: html\\" >> $@-t
+	find $(top_srcdir) -name "*.cpp" -exec echo "  {} \\" \; >> $@-t
+	echo >> $@-t
+	mv $@-t $@
+
+force:
 
 clean-local:
-	rm -rf docs.tstamp html man latex doxygen.tstamp xml
+	rm -rf html html-dev *.deps
