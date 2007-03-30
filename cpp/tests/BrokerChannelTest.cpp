@@ -68,7 +68,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         struct MethodCall
         {
             const string name;
-            Message* const msg;
+            PersistableMessage* msg;
             const string data;//only needed for appendContent
 
             void check(const MethodCall& other) const
@@ -92,7 +92,7 @@ class BrokerChannelTest : public CppUnit::TestCase
             }
         }
 
-        void handle(const string& name, Message* msg, const string& data)
+        void handle(const string& name, PersistableMessage* msg, const string& data)
         {
             MethodCall call = {name, msg, data};
             handle(call);
@@ -102,25 +102,25 @@ class BrokerChannelTest : public CppUnit::TestCase
 
         MockMessageStore() : expectMode(false) {}
 
-        void stage(Message* const msg)
+        void stage(PersistableMessage& msg)
         {
-            if(!expectMode) msg->setPersistenceId(1);
-            MethodCall call = {"stage", msg, ""};
+            if(!expectMode) msg.setPersistenceId(1);
+            MethodCall call = {"stage", &msg, ""};
             handle(call);
         }
 
-        void appendContent(Message* msg, const string& data)
+        void appendContent(PersistableMessage& msg, const string& data)
         {
-            MethodCall call = {"appendContent", msg, data};
+            MethodCall call = {"appendContent", &msg, data};
             handle(call);
         }
 
         // Don't hide overloads.
         using NullMessageStore::destroy;
         
-        void destroy(Message* msg)
+        void destroy(PersistableMessage& msg)
         {
-            MethodCall call = {"destroy", msg, ""};
+            MethodCall call = {"destroy", &msg, ""};
             handle(call);
         }
         
@@ -249,11 +249,11 @@ class BrokerChannelTest : public CppUnit::TestCase
             MockChannel::basicGetBody());
 
         store.expect();
-        store.stage(msg);
+        store.stage(*msg);
         for (int i = 0; i < 3; i++) {
-            store.appendContent(msg, data[i]);
+            store.appendContent(*msg, data[i]);
         }
-        store.destroy(msg);
+        store.destroy(*msg);
         store.test();
 
         Exchange::shared_ptr exchange  =
@@ -304,8 +304,8 @@ class BrokerChannelTest : public CppUnit::TestCase
         policy.update(settings);
         
         store.expect();
-        store.stage(msg3.get());
-        store.destroy(msg3.get());
+        store.stage(*msg3);
+        store.destroy(*msg3);
         store.test();
 
         Queue::shared_ptr queue(new Queue("my_queue", false, &store, 0));

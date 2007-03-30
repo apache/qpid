@@ -26,6 +26,7 @@
 #include <sys/Monitor.h>
 #include <sys/Time.h>
 #include <iostream>
+#include "QueueRegistry.h"
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -53,7 +54,7 @@ Queue::Queue(const string& _name, uint32_t _autodelete,
 Queue::~Queue(){}
 
 void Queue::deliver(Message::shared_ptr& msg){
-    enqueue(0, msg, 0);
+    enqueue(0, msg);
     process(msg);
 }
 
@@ -195,17 +196,17 @@ bool Queue::canAutoDelete() const{
     return lastUsed && (now()*TIME_MSEC - lastUsed > autodelete);
 }
 
-void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid)
+void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg)
 {
     if (msg->isPersistent() && store) {
-        store->enqueue(ctxt, msg.get(), *this, xid);
+        store->enqueue(ctxt, *msg.get(), *this);
     }
 }
 
-void Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid)
+void Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg)
 {
     if (msg->isPersistent() && store) {
-        store->dequeue(ctxt, msg.get(), *this, xid);
+        store->dequeue(ctxt, *msg.get(), *this);
     }
 }
 
@@ -217,8 +218,10 @@ namespace
 
 void Queue::create(const FieldTable& settings)
 {
+    //TODO: hold onto settings and persist them as part of encode
+    //      in fact settings should be passed in on construction
     if (store) {
-        store->create(*this, settings);
+        store->create(*this);
     }
     configure(settings);
 }
@@ -246,3 +249,34 @@ const QueuePolicy* const Queue::getPolicy()
 {
     return policy.get();
 }
+
+uint64_t Queue::getPersistenceId() const 
+{ 
+    return persistenceId; 
+}
+
+void Queue::setPersistenceId(uint64_t _persistenceId)
+{ 
+    persistenceId = _persistenceId; 
+}
+
+void Queue::encode(framing::Buffer& buffer) const 
+{
+    buffer.putShortString(name);
+    //TODO store all required properties
+}
+
+uint32_t Queue::encodedSize() const
+{
+    //TODO, revise when storing full set of queue properties
+    return name.size() + 1/*short string size octet*/;
+}
+
+Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)
+{
+    string name;
+    buffer.getShortString(name);
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
+    return result.first;
+}
+

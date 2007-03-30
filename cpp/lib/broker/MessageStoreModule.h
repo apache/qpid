@@ -28,32 +28,39 @@
 #include <sys/Module.h>
 
 namespace qpid {
-    namespace broker {
-        /**
-         * A null implementation of the MessageStore interface
-         */
-        class MessageStoreModule : public MessageStore{
-            qpid::sys::Module<MessageStore> store;
-        public:
-            MessageStoreModule(const std::string& name);
-            void create(const Queue& queue, const qpid::framing::FieldTable& settings);
-            void destroy(const Queue& queue);
-            void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0);
-            void stage(Message* const msg);
-            void destroy(Message* const msg);
-            void appendContent(Message* const msg, const std::string& data);
-            void loadContent(Message* const msg, std::string& data, uint64_t offset, uint32_t length);
-            void enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
-            void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
-            void prepared(const std::string * const xid);
-            void committed(const std::string * const xid);
-            void aborted(const std::string * const xid);
-            std::auto_ptr<TransactionContext> begin();
-            void commit(TransactionContext* ctxt);
-            void abort(TransactionContext* ctxt);
-            ~MessageStoreModule(){}
-        };
-    }
+namespace broker {
+
+/**
+ * A null implementation of the MessageStore interface
+ */
+class MessageStoreModule : public MessageStore
+{
+    qpid::sys::Module<MessageStore> store;
+public:
+    MessageStoreModule(const std::string& name);
+
+    std::auto_ptr<TransactionContext> begin();
+    std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
+    void prepare(TPCTransactionContext& txn);
+    void commit(TransactionContext& txn);
+    void abort(TransactionContext& txn);
+
+    void create(const PersistableQueue& queue);
+    void destroy(const PersistableQueue& queue);
+    void create(const PersistableExchange& exchange);
+    void destroy(const PersistableExchange& exchange);
+    void recover(RecoveryManager& queues);
+    void stage(PersistableMessage& msg);
+    void destroy(PersistableMessage& msg);
+    void appendContent(PersistableMessage& msg, const std::string& data);
+    void loadContent(PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length);
+    void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
+    void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
+
+    ~MessageStoreModule(){}
+};
+
+}
 }
 
 

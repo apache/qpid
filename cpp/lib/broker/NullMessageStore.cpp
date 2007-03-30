@@ -21,7 +21,6 @@
 
 #include <NullMessageStore.h>
 
-#include <BrokerQueue.h>
 #include <RecoveryManager.h>
 
 #include <iostream>
@@ -30,64 +29,57 @@ using namespace qpid::broker;
 
 NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
 
-void NullMessageStore::create(const Queue& queue, const qpid::framing::FieldTable&)
+void NullMessageStore::create(const PersistableQueue& queue)
 {
     if (warn) std::cout << "WARNING: Can't create durable queue '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::destroy(const Queue& queue)
+void NullMessageStore::destroy(const PersistableQueue& queue)
 {
     if (warn) std::cout << "WARNING: Can't destroy durable queue '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::recover(RecoveryManager&, const MessageStoreSettings* const)
+void NullMessageStore::create(const PersistableExchange&)
+{
+}
+
+void NullMessageStore::destroy(const PersistableExchange&)
+{
+}
+
+void NullMessageStore::recover(RecoveryManager&)
 {
     if (warn) std::cout << "WARNING: Persistence not enabled, no recovery of queues or messages." << std::endl;
 }
 
-void NullMessageStore::stage(Message* const)
+void NullMessageStore::stage(PersistableMessage&)
 {
     if (warn) std::cout << "WARNING: Can't stage message. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::destroy(Message* const)
+void NullMessageStore::destroy(PersistableMessage&)
 {
     if (warn) std::cout << "WARNING: No need to destroy staged message. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::appendContent(Message* const, const string&)
+void NullMessageStore::appendContent(PersistableMessage&, const string&)
 {
     if (warn) std::cout << "WARNING: Can't append content. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::loadContent(Message* const, string&, uint64_t, uint32_t)
+void NullMessageStore::loadContent(PersistableMessage&, string&, uint64_t, uint32_t)
 {
     if (warn) std::cout << "WARNING: Can't load content. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::enqueue(TransactionContext*, Message* const, const Queue& queue, const string * const)
+void NullMessageStore::enqueue(TransactionContext*, PersistableMessage&, const PersistableQueue& queue)
 {
     if (warn) std::cout << "WARNING: Can't enqueue message onto '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::dequeue(TransactionContext*, Message* const, const Queue& queue, const string * const)
+void NullMessageStore::dequeue(TransactionContext*, PersistableMessage&, const PersistableQueue& queue)
 {
     if (warn) std::cout << "WARNING: Can't dequeue message from '" << queue.getName() << "'. Persistence not enabled." << std::endl;
-}
-
-void NullMessageStore::prepared(const string * const)
-{
-    if (warn) std::cout << "WARNING: Persistence not enabled." << std::endl;
-}
-
-void NullMessageStore::committed(const string * const)
-{
-    if (warn) std::cout << "WARNING: Persistence not enabled." << std::endl;
-}
-
-void NullMessageStore::aborted(const string * const)
-{
-    if (warn) std::cout << "WARNING: Persistence not enabled." << std::endl;
 }
 
 std::auto_ptr<TransactionContext> NullMessageStore::begin()
@@ -95,10 +87,19 @@ std::auto_ptr<TransactionContext> NullMessageStore::begin()
     return std::auto_ptr<TransactionContext>();
 }
 
-void NullMessageStore::commit(TransactionContext*)
+std::auto_ptr<TPCTransactionContext> NullMessageStore::begin(const std::string&)
+{
+    return std::auto_ptr<TPCTransactionContext>();
+}
+
+void NullMessageStore::prepare(TPCTransactionContext&)
 {
 }
 
-void NullMessageStore::abort(TransactionContext*)
+void NullMessageStore::commit(TransactionContext&)
+{
+}
+
+void NullMessageStore::abort(TransactionContext&)
 {
 }

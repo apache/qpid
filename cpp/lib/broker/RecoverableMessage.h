@@ -1,3 +1,6 @@
+#ifndef _broker_RecoverableMessage_h
+#define _broker_RecoverableMessage_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,28 +21,37 @@
  * under the License.
  *
  */
-#ifndef _RecoveryManager_
-#define _RecoveryManager_
 
-#include "RecoverableQueue.h"
-#include "RecoverableMessage.h"
+#include <boost/shared_ptr.hpp>
+#include "framing/amqp_types.h"
 #include "framing/Buffer.h"
 
 namespace qpid {
 namespace broker {
 
-    class RecoveryManager{
-    public:
-        virtual ~RecoveryManager(){}
-        virtual void recoverExchange(framing::Buffer& buffer) = 0;
-        virtual RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer) = 0;
-        virtual RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer) = 0;
-        virtual void recoveryComplete() = 0;
-    };
+/**
+ * The interface through which messages are reloaded on recovery.
+ */
+class RecoverableMessage
+{
+public:
+    typedef boost::shared_ptr<RecoverableMessage> shared_ptr;
+    /**
+     * Used by store to determine whether to load content on recovery
+     * or let message load its own content as and when it requires it.
+     * 
+     * @returns true if the content of the message should be loaded
+     */
+    virtual bool loadContent(uint64_t available) = 0;
+    /**
+     * Loads the content held in the supplied buffer (may do checking
+     * of length as necessary)
+     */
+    virtual void decodeContent(framing::Buffer& buffer) = 0;
+    virtual ~RecoverableMessage() {};
+};
 
-    
-}
-}
+}}
 
 
 #endif

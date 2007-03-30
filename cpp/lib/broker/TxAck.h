@@ -37,7 +37,6 @@ namespace qpid {
         class TxAck : public TxOp{
             AccumulatedAck& acked;
             std::list<DeliveryRecord>& unacked;
-            const std::string* const xid;
 
         public:
             /**
@@ -45,7 +44,7 @@ namespace qpid {
              * acks received
              * @param unacked the record of delivered messages
              */
-            TxAck(AccumulatedAck& acked, std::list<DeliveryRecord>& unacked, const std::string* const xid = 0);
+            TxAck(AccumulatedAck& acked, std::list<DeliveryRecord>& unacked);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

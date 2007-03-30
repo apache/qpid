@@ -27,7 +27,7 @@ using namespace qpid::framing;
 
 LazyLoadedContent::~LazyLoadedContent()
 {
-    store->destroy(msg);
+    store->destroy(*msg);
 }
 
 LazyLoadedContent::LazyLoadedContent(MessageStore* const _store, Message* const _msg, uint64_t _expectedSize) : 
@@ -35,7 +35,7 @@ LazyLoadedContent::LazyLoadedContent(MessageStore* const _store, Message* const 
 
 void LazyLoadedContent::add(AMQContentBody::shared_ptr data)
 {
-    store->appendContent(msg, data->getData());
+    store->appendContent(*msg, data->getData());
 }
 
 uint32_t LazyLoadedContent::size()
@@ -50,13 +50,13 @@ void LazyLoadedContent::send(ChannelAdapter& channel, uint32_t framesize)
         {            
             uint64_t remaining = expectedSize - offset;
             string data;
-            store->loadContent(msg, data, offset,
+            store->loadContent(*msg, data, offset,
                                remaining > framesize ? framesize : remaining);
             channel.send(new AMQContentBody(data));
         }
     } else {
         string data;
-        store->loadContent(msg, data, 0, expectedSize);  
+        store->loadContent(*msg, data, 0, expectedSize);  
         channel.send(new AMQContentBody(data));
     }
 }

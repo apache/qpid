@@ -22,25 +22,35 @@
 #define _TransactionalStore_
 
 #include <memory>
+#include <string>
 
 namespace qpid {
-    namespace broker {
-        struct InvalidTransactionContextException : public std::exception {};
+namespace broker {
 
-        class TransactionContext{
-        public:
-            virtual ~TransactionContext(){}
-        };
+struct InvalidTransactionContextException : public std::exception {};
 
-        class TransactionalStore{
-        public:
-            virtual std::auto_ptr<TransactionContext> begin() = 0;
-            virtual void commit(TransactionContext*) = 0;
-            virtual void abort(TransactionContext*) = 0;
+class TransactionContext {
+public:
+    virtual ~TransactionContext(){}
+};
 
-            virtual ~TransactionalStore(){}
-        };
-    }
+class TPCTransactionContext : public TransactionContext {
+public:
+    virtual ~TPCTransactionContext(){}
+};
+
+class TransactionalStore {
+public:
+    virtual std::auto_ptr<TransactionContext> begin() = 0;
+    virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid) = 0;
+    virtual void prepare(TPCTransactionContext& txn) = 0;
+    virtual void commit(TransactionContext& txn) = 0;
+    virtual void abort(TransactionContext& txn) = 0;
+    
+    virtual ~TransactionalStore(){}
+};
+
+}
 }
 
 

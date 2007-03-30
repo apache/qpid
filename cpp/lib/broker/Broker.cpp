@@ -29,6 +29,7 @@
 #include "MessageStoreModule.h"
 #include "NullMessageStore.h"
 #include "ProtocolInitiation.h"
+#include "RecoveryManagerImpl.h"
 #include "Connection.h"
 #include "sys/ConnectionInputHandler.h"
 #include "sys/ConnectionInputHandlerFactory.h"
@@ -61,9 +62,8 @@ Broker::Broker(const Configuration& conf) :
     exchanges.declare(amq_match, HeadersExchange::typeName);
 
     if(store.get()) {
-        RecoveryManager recoverer(queues, exchanges);
-        MessageStoreSettings storeSettings = { getStagingThreshold() };
-        store->recover(recoverer, &storeSettings);
+        RecoveryManagerImpl recoverer(queues, exchanges, conf.getStagingThreshold());
+        store->recover(recoverer);
     }
 
     cleaner.start();

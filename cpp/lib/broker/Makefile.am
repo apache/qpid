@@ -61,13 +61,20 @@ libqpidbroker_la_SOURCES =			\
   NameGenerator.h				\
   NullMessageStore.cpp				\
   NullMessageStore.h				\
+  Persistable.h					\
+  PersistableExchange.h				\
+  PersistableMessage.h				\
+  PersistableQueue.h				\
   Prefetch.h					\
   QueuePolicy.cpp				\
   QueuePolicy.h					\
   QueueRegistry.cpp				\
   QueueRegistry.h				\
-  RecoveryManager.cpp				\
+  RecoverableMessage.h                          \
+  RecoverableQueue.h                            \
   RecoveryManager.h				\
+  RecoveryManagerImpl.cpp			\
+  RecoveryManagerImpl.h				\
   Reference.cpp					\
   Reference.h					\
   ConnectionFactory.cpp				\
