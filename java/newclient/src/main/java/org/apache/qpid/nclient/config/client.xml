@@ -25,6 +25,7 @@
 	
 	<!-- Model Phase properties -->
 	<serverTimeoutInMilliSeconds>60000</serverTimeoutInMilliSeconds>
+	<amqpClassFactory>org.apache.qpid.nclient.amqp.qpid.QpidAMQPClassFactory</amqpClassFactory>
 	<maxAccumilatedResponses>20</maxAccumilatedResponses>
 	
 	<phasePipe>

@@ -18,22 +18,24 @@
  * under the License.
  *
  */
-package org.apache.qpid.nclient.amqp.sample;
+package org.apache.qpid.nclient.amqp;
 
-import org.apache.qpid.nclient.amqp.state.AMQPStateChangedEvent;
-import org.apache.qpid.nclient.amqp.state.AMQPStateListener;
+import org.apache.qpid.nclient.config.ClientConfiguration;
 import org.apache.qpid.nclient.core.AMQPException;
+import org.apache.qpid.nclient.core.QpidConstants;
 
-public class StateHelper implements AMQPStateListener
+public class AbstractAMQPClassFactory
 {
-
-	public void stateChanged(AMQPStateChangedEvent event) throws AMQPException
+	public static AMQPClassFactory getFactoryInstance() throws AMQPException
 	{
-		String s = event.getStateType() + " changed state from " +
-		           event.getOldState() + " to " + event.getNewState();
-		
-		System.out.println(s);
-
+		String className = ClientConfiguration.get().getString(QpidConstants.AMQP_CLASS_FACTORY);
+		try
+		{
+			return (AMQPClassFactory)Class.forName(className).newInstance();
+		}
+		catch(Exception e)
+		{
+			throw new AMQPException("Error creating AMQPClassFactory",e);
+		}
 	}
-
 }
