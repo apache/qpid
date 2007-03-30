@@ -25,16 +25,13 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public class AMQResponseBodyFactory implements BodyFactory
 {
-    private final AMQVersionAwareProtocolSession protocolSession;
-    
-    public AMQResponseBodyFactory(AMQVersionAwareProtocolSession protocolSession)
+    public AMQResponseBodyFactory()
     {
-        this.protocolSession = protocolSession;
     }
     
     public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
-        AMQResponseBody rb = new AMQResponseBody(protocolSession);
+        AMQResponseBody rb = new AMQResponseBody();
         rb.populateFromBuffer(in, bodySize);
         return rb;
     }

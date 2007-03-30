@@ -24,10 +24,6 @@ import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.codec.ProtocolDecoderOutput;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class AMQDataBlockDecoder
 {
@@ -68,13 +64,11 @@ public class AMQDataBlockDecoder
         BodyFactory bodyFactory;
         if (type == AMQRequestBody.TYPE)
         {
-            AMQVersionAwareProtocolSession protocolSession = (AMQVersionAwareProtocolSession) session.getAttachment();
-            bodyFactory = new AMQRequestBodyFactory(protocolSession);
+            bodyFactory = new AMQRequestBodyFactory();
         }
         else if (type == AMQResponseBody.TYPE)
         {
-            AMQVersionAwareProtocolSession protocolSession = (AMQVersionAwareProtocolSession) session.getAttachment();
-            bodyFactory = new AMQResponseBodyFactory(protocolSession);
+            bodyFactory = new AMQResponseBodyFactory();
         }
         else
         {

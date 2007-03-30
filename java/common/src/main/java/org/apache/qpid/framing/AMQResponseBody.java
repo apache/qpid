@@ -21,7 +21,6 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 public class AMQResponseBody extends AMQBody
 {
@@ -32,12 +31,10 @@ public class AMQResponseBody extends AMQBody
     protected long requestId;
     protected int batchOffset;
     protected AMQMethodBody methodPayload;
-    protected AMQVersionAwareProtocolSession protocolSession;
 
     // Constructor
-    public AMQResponseBody(AMQVersionAwareProtocolSession protocolSession)
+    public AMQResponseBody()
     {
-        this.protocolSession = protocolSession;
     }
     
     public AMQResponseBody(long responseId, long requestId,
@@ -47,7 +44,6 @@ public class AMQResponseBody extends AMQBody
         this.requestId = requestId;
         this.batchOffset = batchOffset;
         this.methodPayload = methodPayload;
-        protocolSession = null;
     }
 
     // Field methods
@@ -77,16 +73,13 @@ public class AMQResponseBody extends AMQBody
     
     protected void populateFromBuffer(ByteBuffer buffer, long size)
         throws AMQFrameDecodingException
-    {
-        if (protocolSession == null)
-            throw new AMQFrameDecodingException("Cannot call populateFromBuffer() without using correct constructor.");
-            
+    {            
         responseId = EncodingUtils.readLong(buffer);
         requestId = EncodingUtils.readLong(buffer);
         // XXX
         batchOffset = EncodingUtils.readInteger(buffer);
 
-        AMQMethodBodyFactory methodBodyFactory = new AMQMethodBodyFactory(protocolSession);
+        AMQMethodBodyFactory methodBodyFactory = new AMQMethodBodyFactory();
         methodPayload = methodBodyFactory.createBody(buffer, size);
     }
     

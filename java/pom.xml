@@ -130,6 +130,7 @@
         <module>common</module>
         <module>broker</module>
         <module>client</module>
+        <module>newclient</module>
         <module>cluster</module>
         <module>systests</module>
         <module>perftests</module>
@@ -382,7 +383,7 @@
             <dependency>
                 <groupId>commons-configuration</groupId>
                 <artifactId>commons-configuration</artifactId>
-                <version>1.2</version>
+                <version>1.3</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
@@ -471,6 +472,11 @@
             <dependency>
                 <groupId>org.apache.qpid</groupId>
                 <artifactId>qpid-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.qpid</groupId>
+                <artifactId>qpid-newclient</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

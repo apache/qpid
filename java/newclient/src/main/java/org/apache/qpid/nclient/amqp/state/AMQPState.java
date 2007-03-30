@@ -38,7 +38,8 @@ public class AMQPState
 
     public String toString()
     {
-        return "AMQState: id = " + _id + " name: " + _name;
+        //return "AMQState: id = " + _id + " name: " + _name;
+    	return _name; // looks better with loggin
     }
 
     // Connection state

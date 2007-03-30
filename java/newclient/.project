@@ -1,7 +1,10 @@
 <projectDescription>
   <name>qpid-newclient</name>
   <comment/>
-  <projects/>
+  <projects>
+    <project>qpid-broker</project>
+    <project>qpid-common</project>
+  </projects>
   <buildSpec>
     <buildCommand>
       <name>org.eclipse.jdt.core.javabuilder</name>

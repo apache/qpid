@@ -4,5 +4,5 @@ import org.apache.qpid.nclient.core.AMQPException;
 
 public interface AMQPStateListener 
 {
-	public void stateChanged(AMQPState oldState, AMQPState newState) throws AMQPException;
+	public void stateChanged(AMQPStateChangedEvent event) throws AMQPException;
 }

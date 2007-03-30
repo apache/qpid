@@ -20,23 +20,65 @@
  */
 package org.apache.qpid.nclient.amqp;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.nclient.amqp.state.AMQPStateChangedEvent;
 import org.apache.qpid.nclient.amqp.state.AMQPStateListener;
 import org.apache.qpid.nclient.amqp.state.AMQPStateManager;
+import org.apache.qpid.nclient.amqp.state.AMQPStateType;
+import org.apache.qpid.nclient.core.AMQPException;
 
 public class QpidStateManager implements AMQPStateManager
 {
 
-    public void addListener(AMQPStateListener l) throws AMQException
-    {
-	// TODO Auto-generated method stub
+	private static final Logger _logger = Logger.getLogger(QpidStateManager.class);
 
+    private Map<AMQPStateType, List<AMQPStateListener>> _listernerMap = new ConcurrentHashMap<AMQPStateType, List<AMQPStateListener>>();
+
+    public void addListener(AMQPStateType stateType, AMQPStateListener l) throws AMQException
+    {
+    	List<AMQPStateListener> list;
+    	if(_listernerMap.containsKey(stateType))
+    	{
+    		list = _listernerMap.get(stateType);
+    	}
+    	else
+    	{
+    		list = new ArrayList<AMQPStateListener>();
+    		_listernerMap.put(stateType, list);
+    	}
+    	list.add(l);
     }
 
-    public void removeListener(AMQPStateListener l) throws AMQException
+    public void removeListener(AMQPStateType stateType, AMQPStateListener l) throws AMQException
+    {    	
+    	if(_listernerMap.containsKey(stateType))
+    	{
+    		List<AMQPStateListener> list = _listernerMap.get(stateType);
+    		list.remove(l);
+    	}
+    }
+    
+    public void notifyStateChanged(AMQPStateChangedEvent event) throws AMQPException
     {
-	// TODO Auto-generated method stub
-
+     	
+    	if(_listernerMap.containsKey(event.getStateType()))
+    	{
+    		List<AMQPStateListener> list = _listernerMap.get(event.getStateType());
+    		for(AMQPStateListener l: list)
+    		{
+    			l.stateChanged(event);
+    		}
+    	}
+    	else
+    	{
+    		_logger.warn("There are no registered listerners for state type" + event.getStateType());
+    	}
     }
 
 }

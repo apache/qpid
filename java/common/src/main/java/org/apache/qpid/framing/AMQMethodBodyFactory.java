@@ -22,21 +22,19 @@ package org.apache.qpid.framing;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
-public class AMQMethodBodyFactory implements BodyFactory
+public class AMQMethodBodyFactory implements BodyFactory, ProtocolVersionList
 {
     private static final Logger _log = Logger.getLogger(AMQMethodBodyFactory.class);
 
-    private final AMQVersionAwareProtocolSession _protocolSession;
+    VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(pv[pv.length-1][PROTOCOL_MAJOR],pv[pv.length-1][PROTOCOL_MINOR]);
     
-    public AMQMethodBodyFactory(AMQVersionAwareProtocolSession protocolSession)
+    public AMQMethodBodyFactory()
     {
-        _protocolSession = protocolSession;
     }
 
     public AMQMethodBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
-        return _protocolSession.getRegistry().get((short)in.getUnsignedShort(), (short)in.getUnsignedShort(), in, bodySize);    
+        return _registry.get((short)in.getUnsignedShort(), (short)in.getUnsignedShort(), in, bodySize);    
     }
 }

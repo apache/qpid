@@ -40,7 +40,7 @@ public class AMQPStateType
 
     public String toString()
     {
-        return "AMQState: id = " + _typeId + " name: " + _typeName;
+        return _typeName;
     }
 
     // Connection state
