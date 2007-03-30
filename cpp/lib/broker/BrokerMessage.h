@@ -53,7 +53,7 @@ using framing::string;
 class BasicMessage : public Message {
     boost::shared_ptr<framing::AMQHeaderBody> header;
     std::auto_ptr<Content> content;
-    sys::Mutex contentLock;
+    mutable sys::Mutex contentLock;
     uint64_t size;
 
     void sendContent(framing::ChannelAdapter&, uint32_t framesize);
@@ -92,25 +92,25 @@ class BasicMessage : public Message {
     void decodeHeader(framing::Buffer& buffer);
     void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0);
 
-    void encode(framing::Buffer& buffer);
-    void encodeHeader(framing::Buffer& buffer);
-    void encodeContent(framing::Buffer& buffer);
+    void encode(framing::Buffer& buffer) const;
+    void encodeHeader(framing::Buffer& buffer) const;
+    void encodeContent(framing::Buffer& buffer) const;
     /**
      * @returns the size of the buffer needed to encode this
      * message in its entirety
      */
-    uint32_t encodedSize();
+    uint32_t encodedSize() const;
     /**
      * @returns the size of the buffer needed to encode the
      * 'header' of this message (not just the header frame,
      * but other meta data e.g.routing key and exchange)
      */
-    uint32_t encodedHeaderSize();
+    uint32_t encodedHeaderSize() const;
     /**
      * @returns the size of the buffer needed to encode the
      * (possibly partial) content held by this message
      */
-    uint32_t encodedContentSize();
+    uint32_t encodedContentSize() const;
     /**
      * Releases the in-memory content data held by this
      * message. Must pass in a store from which the data can

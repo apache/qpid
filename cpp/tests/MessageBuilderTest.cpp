@@ -51,33 +51,32 @@ class MessageBuilderTest : public CppUnit::TestCase
         
       public:
 
-        void stage(Message* const msg)
+        void stage(PersistableMessage& msg)
         {
-            if (msg->getPersistenceId() == 0) {
-                header = new Buffer(msg->encodedHeaderSize());
-                msg->encodeHeader(*header);                
+            if (msg.getPersistenceId() == 0) {
+                header = new Buffer(msg.encodedSize());
+                msg.encode(*header);                
                 content = new Buffer(contentBufferSize);
-                msg->setPersistenceId(1);
+                msg.setPersistenceId(1);
             } else {
                 throw qpid::Exception("Message already staged!");
             }
         }
 
-        void appendContent(Message* msg, const string& data)
+        void appendContent(PersistableMessage& msg, const string& data)
         {
-            if (msg) {
+            if (msg.getPersistenceId() == 1) {
                 content->putRawData(data);
             } else {
                 throw qpid::Exception("Invalid message id!");
             }
         }
 
-        // Don't hide overloads.
         using NullMessageStore::destroy;
 
-        void destroy(BasicMessage* msg)
+        void destroy(PersistableMessage& msg)
         {
-            CPPUNIT_ASSERT(msg->getPersistenceId());
+            CPPUNIT_ASSERT(msg.getPersistenceId());
         }
 
         BasicMessage::shared_ptr getRestoredMessage()

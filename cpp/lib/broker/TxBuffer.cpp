@@ -29,11 +29,11 @@ bool TxBuffer::prepare(TransactionalStore* const store)
     if(store) ctxt = store->begin();
     for(op_iterator i = ops.begin(); i < ops.end(); i++){
         if(!(*i)->prepare(ctxt.get())){
-            if(store) store->abort(ctxt.get());
+            if(store) store->abort(*ctxt);
             return false;
         }
     }
-    if(store) store->commit(ctxt.get());
+    if(store) store->commit(*ctxt);
     return true;
 }
 

@@ -35,22 +35,16 @@ using namespace qpid::framing;
 
 class TxPublishTest : public CppUnit::TestCase  
 {
-    struct Triple
-    {
-        string first;
-        Message* second;
-        const string* third;
-    };
+    typedef std::pair<string, PersistableMessage*> msg_queue_pair;
 
     class TestMessageStore : public NullMessageStore
     {
     public:
-        vector<Triple> enqueued;
+        vector<msg_queue_pair> enqueued;
         
-        void enqueue(TransactionContext*, Message* const msg, const Queue& queue, const string * const xid)
+        void enqueue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& queue)
         {
-            Triple args = {queue.getName(), msg, xid};
-            enqueued.push_back(args);
+            enqueued.push_back(msg_queue_pair(queue.getName(), &msg));
         }
         
         //dont care about any of the other methods:
@@ -60,7 +54,6 @@ class TxPublishTest : public CppUnit::TestCase
     
     CPPUNIT_TEST_SUITE(TxPublishTest);
     CPPUNIT_TEST(testPrepare);
-    CPPUNIT_TEST(testPrepare2pc);
     CPPUNIT_TEST(testCommit);
     CPPUNIT_TEST_SUITE_END();
     
@@ -70,7 +63,6 @@ class TxPublishTest : public CppUnit::TestCase
     Queue::shared_ptr queue2;
     Message::shared_ptr const msg;
     TxPublish op;
-    string xid;
     
 public:
     
@@ -79,7 +71,7 @@ public:
         queue2(new Queue("queue2", false, &store, 0)), 
         msg(new BasicMessage(0, "exchange", "routing_key", false, false,
                              MockChannel::basicGetBody())),
-        op(msg, &xid)
+        op(msg)
     {
         msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
         msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
@@ -93,18 +85,9 @@ public:
         op.prepare(0);
         CPPUNIT_ASSERT_EQUAL((size_t) 2, store.enqueued.size());
         CPPUNIT_ASSERT_EQUAL(string("queue1"), store.enqueued[0].first);
-        CPPUNIT_ASSERT_EQUAL(msg.get(), store.enqueued[0].second);
+        CPPUNIT_ASSERT_EQUAL((PersistableMessage*) msg.get(), store.enqueued[0].second);
         CPPUNIT_ASSERT_EQUAL(string("queue2"), store.enqueued[1].first);
-        CPPUNIT_ASSERT_EQUAL(msg.get(), store.enqueued[1].second);
-    }
-
-    void testPrepare2pc()
-    {
-        xid = "abcde";
-        const string expected(xid);
-        testPrepare();
-        CPPUNIT_ASSERT_EQUAL(expected, *store.enqueued[0].third);
-        CPPUNIT_ASSERT_EQUAL(expected, *store.enqueued[1].third);        
+        CPPUNIT_ASSERT_EQUAL((PersistableMessage*) msg.get(), store.enqueued[1].second);
     }
 
     void testCommit()

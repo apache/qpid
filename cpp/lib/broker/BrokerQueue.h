@@ -31,6 +31,7 @@
 #include <BrokerMessage.h>
 #include <FieldTable.h>
 #include <sys/Monitor.h>
+#include "PersistableQueue.h"
 #include <QueuePolicy.h>
 
 // TODO aconway 2007-02-06: Use auto_ptr and boost::ptr_vector to
@@ -39,6 +40,7 @@
 namespace qpid {
     namespace broker {
         class MessageStore;
+        class QueueRegistry;
 
         /**
          * Thrown when exclusive access would be violated.
@@ -51,7 +53,7 @@ namespace qpid {
          * registered consumers or be stored until dequeued or until one
          * or more consumers registers.
          */
-        class Queue{
+        class Queue : public PersistableQueue{
             typedef std::vector<Consumer*> Consumers;
             typedef std::queue<Message::shared_ptr> Messages;
             
@@ -119,22 +121,28 @@ namespace qpid {
             inline const string& getName() const { return name; }
             inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
             inline bool hasExclusiveConsumer() const { return exclusive; }
-            inline uint64_t getPersistenceId() const { return persistenceId; }
-            inline void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
 
             bool canAutoDelete() const;
 
-            void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid);
+            void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg);
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
-            void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg, const string * const xid);
+            void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg);
             /**
              * dequeues from memory only
              */
             Message::shared_ptr dequeue();
 
             const QueuePolicy* const getPolicy();
+
+            //PersistableQueue support:
+            uint64_t getPersistenceId() const;
+            void setPersistenceId(uint64_t persistenceId);
+            void encode(framing::Buffer& buffer) const;
+            uint32_t encodedSize() const;
+
+            static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer);
         };
     }
 }

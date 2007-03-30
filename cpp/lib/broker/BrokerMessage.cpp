@@ -33,6 +33,7 @@
 #include "AMQMethodBody.h"
 #include "AMQFrame.h"
 #include "framing/ChannelAdapter.h"
+#include "RecoveryManagerImpl.h"
 
 using namespace boost;
 using namespace qpid::broker;
@@ -134,6 +135,9 @@ void BasicMessage::decode(Buffer& buffer, bool headersOnly, uint32_t contentChun
 
 void BasicMessage::decodeHeader(Buffer& buffer)
 {
+    //don't care about the type here, but want encode/decode to be symmetric
+    RecoveryManagerImpl::decodeMessageType(buffer);    
+
     string exchange;
     string routingKey;
 
@@ -169,40 +173,42 @@ void BasicMessage::decodeContent(Buffer& buffer, uint32_t chunkSize)
     }
 }
 
-void BasicMessage::encode(Buffer& buffer)
+void BasicMessage::encode(Buffer& buffer) const
 {
     encodeHeader(buffer);
     encodeContent(buffer);
 }
 
-void BasicMessage::encodeHeader(Buffer& buffer)
+void BasicMessage::encodeHeader(Buffer& buffer) const
 {
+    RecoveryManagerImpl::encodeMessageType(*this, buffer);
     buffer.putShortString(getExchange());
     buffer.putShortString(getRoutingKey());    
     buffer.putLong(header->size());
     header->encode(buffer);
 }
 
-void BasicMessage::encodeContent(Buffer& buffer)
+void BasicMessage::encodeContent(Buffer& buffer) const
 {
     Mutex::ScopedLock locker(contentLock);
     if (content.get()) content->encode(buffer);
 }
 
-uint32_t BasicMessage::encodedSize()
+uint32_t BasicMessage::encodedSize() const
 {
     return  encodedHeaderSize() + encodedContentSize();
 }
 
-uint32_t BasicMessage::encodedContentSize()
+uint32_t BasicMessage::encodedContentSize() const
 {
     Mutex::ScopedLock locker(contentLock);
     return content.get() ? content->size() : 0;
 }
 
-uint32_t BasicMessage::encodedHeaderSize()
+uint32_t BasicMessage::encodedHeaderSize() const
 {
-    return getExchange().size() + 1
+    return RecoveryManagerImpl::encodedMessageTypeSize()
+        +getExchange().size() + 1
         + getRoutingKey().size() + 1
         + header->size() + 4;//4 extra bytes for size
 }
@@ -216,7 +222,7 @@ void BasicMessage::releaseContent(MessageStore* store)
 {
     Mutex::ScopedLock locker(contentLock);
     if (!isPersistent() && getPersistenceId() == 0) {
-        store->stage(this);
+        store->stage(*this);
     }
     if (!content.get() || content->size() > 0) {
         //set content to lazy loading mode (but only if there is

@@ -29,6 +29,7 @@
 #include "framing/AMQFrame.h"
 #include "framing/FieldTable.h"
 #include "framing/BasicHeaderProperties.h"
+#include "RecoveryManagerImpl.h"
 
 #include <algorithm>
 
@@ -217,17 +218,17 @@ bool MessageMessage::isPersistent()
     return transfer->getDeliveryMode() == PERSISTENT;
 }
 
-uint32_t MessageMessage::encodedSize()
+uint32_t MessageMessage::encodedSize() const
 {
     return encodedHeaderSize() + encodedContentSize();
 }
 
-uint32_t MessageMessage::encodedHeaderSize()
+uint32_t MessageMessage::encodedHeaderSize() const
 {
-    return transfer->size() - transfer->baseSize(); 
+    return RecoveryManagerImpl::encodedMessageTypeSize() + transfer->size() - transfer->baseSize(); 
 }
 
-uint32_t MessageMessage::encodedContentSize()
+uint32_t MessageMessage::encodedContentSize() const
 {
     return 0;
 }
@@ -237,13 +238,14 @@ uint64_t MessageMessage::expectedContentSize()
     return 0;
 }
 
-void MessageMessage::encode(Buffer& buffer)
+void MessageMessage::encode(Buffer& buffer) const
 {
     encodeHeader(buffer);
 }
 
-void MessageMessage::encodeHeader(Buffer& buffer)
+void MessageMessage::encodeHeader(Buffer& buffer) const
 {
+    RecoveryManagerImpl::encodeMessageType(*this, buffer);
     if (transfer->getBody().isInline()) {
         transfer->encodeContent(buffer);
     } else {
@@ -259,6 +261,9 @@ void MessageMessage::encodeHeader(Buffer& buffer)
 
 void MessageMessage::decodeHeader(Buffer& buffer)
 {
+    //don't care about the type here, but want encode/decode to be symmetric
+    RecoveryManagerImpl::decodeMessageType(buffer);    
+
     transfer->decodeContent(buffer);
 }
 
@@ -269,7 +274,7 @@ void MessageMessage::decodeContent(Buffer& /*buffer*/, uint32_t /*chunkSize*/)
 
 MessageTransferBody* MessageMessage::copyTransfer(const ProtocolVersion& version,
                                                   const string& destination, 
-                                                  const framing::Content& body)
+                                                  const framing::Content& body) const
 {
     return new MessageTransferBody(version, 
                                    transfer->getTicket(),
