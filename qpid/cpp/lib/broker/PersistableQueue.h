@@ -1,3 +1,6 @@
+#ifndef _broker_PersistableQueue_h
+#define _broker_PersistableQueue_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,29 +21,25 @@
  * under the License.
  *
  */
-#include <RecoveryManager.h>
 
-using namespace qpid::broker;
+#include <string>
+#include "Persistable.h"
 
-RecoveryManager::RecoveryManager(QueueRegistry& _queues, ExchangeRegistry& _exchanges) : queues(_queues), exchanges(_exchanges) {}
+namespace qpid {
+namespace broker {
 
-RecoveryManager::~RecoveryManager() {}
-
-Queue::shared_ptr RecoveryManager::recoverQueue(const string& name)
+/**
+ * The interface queues must expose to the MessageStore in order to be
+ * persistable.
+ */
+class PersistableQueue : public Persistable
 {
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
-    try {
-        Exchange::shared_ptr exchange = exchanges.getDefault();
-        if (exchange) {
-            exchange->bind(result.first, result.first->getName(), 0);
-        }
-    } catch (ChannelException& e) {
-        //assume no default exchange has been declared
-    }
-    return result.first;
-}
+public:
+    virtual const std::string& getName() const = 0;
+    virtual ~PersistableQueue() {};
+};
 
-Exchange::shared_ptr RecoveryManager::recoverExchange(const string& name, const string& type)
-{
-    return exchanges.declare(name, type).first;
-}
+}}
+
+
+#endif

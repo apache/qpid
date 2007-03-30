@@ -28,64 +28,59 @@ MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
 {
 }
 
-void MessageStoreModule::create(const Queue& queue, const qpid::framing::FieldTable& settings)
+void MessageStoreModule::create(const PersistableQueue& queue)
 {
-    store->create(queue, settings);
+    store->create(queue);
 }
 
-void MessageStoreModule::destroy(const Queue& queue)
+void MessageStoreModule::destroy(const PersistableQueue& queue)
 {
     store->destroy(queue);
 }
 
-void MessageStoreModule::recover(RecoveryManager& registry, const MessageStoreSettings* const settings)
+void MessageStoreModule::create(const PersistableExchange& exchange)
 {
-    store->recover(registry, settings);
+    store->create(exchange);
 }
 
-void MessageStoreModule::stage(Message* const msg)
+void MessageStoreModule::destroy(const PersistableExchange& exchange)
+{
+    store->destroy(exchange);
+}
+
+void MessageStoreModule::recover(RecoveryManager& registry)
+{
+    store->recover(registry);
+}
+
+void MessageStoreModule::stage(PersistableMessage& msg)
 {
     store->stage(msg);
 }
 
-void MessageStoreModule::destroy(Message* const msg)
+void MessageStoreModule::destroy(PersistableMessage& msg)
 {
     store->destroy(msg);
 }
 
-void MessageStoreModule::appendContent(Message* const msg, const std::string& data)
+void MessageStoreModule::appendContent(PersistableMessage& msg, const std::string& data)
 {
     store->appendContent(msg, data);
 }
 
-void MessageStoreModule::loadContent(Message* const msg, string& data, uint64_t offset, uint32_t length)
+void MessageStoreModule::loadContent(PersistableMessage& msg, string& data, uint64_t offset, uint32_t length)
 {
     store->loadContent(msg, data, offset, length);
 }
 
-void MessageStoreModule::enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid)
+void MessageStoreModule::enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue)
 {
-    store->enqueue(ctxt, msg, queue, xid);
+    store->enqueue(ctxt, msg, queue);
 }
 
-void MessageStoreModule::dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid)
+void MessageStoreModule::dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue)
 {
-    store->dequeue(ctxt, msg, queue, xid);
-}
-
-void MessageStoreModule::prepared(const string * const xid)
-{
-    store->prepared(xid);
-}
-
-void MessageStoreModule::committed(const string * const xid)
-{
-    store->committed(xid);
-}
-
-void MessageStoreModule::aborted(const string * const xid)
-{
-    store->aborted(xid);
+    store->dequeue(ctxt, msg, queue);
 }
 
 std::auto_ptr<TransactionContext> MessageStoreModule::begin()
@@ -93,12 +88,22 @@ std::auto_ptr<TransactionContext> MessageStoreModule::begin()
     return store->begin();
 }
 
-void MessageStoreModule::commit(TransactionContext* ctxt)
+std::auto_ptr<TPCTransactionContext> MessageStoreModule::begin(const std::string& xid)
+{
+    return store->begin(xid);
+}
+
+void MessageStoreModule::prepare(TPCTransactionContext& txn)
+{
+    store->prepare(txn);
+}
+
+void MessageStoreModule::commit(TransactionContext& ctxt)
 {
     store->commit(ctxt);
 }
 
-void MessageStoreModule::abort(TransactionContext* ctxt)
+void MessageStoreModule::abort(TransactionContext& ctxt)
 {
     store->abort(ctxt);
 }

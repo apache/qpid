@@ -71,11 +71,11 @@ class MessageMessage: public Message{
     const framing::FieldTable& getApplicationHeaders();
     bool isPersistent();
             
-    void encode(framing::Buffer& buffer);
-    void encodeHeader(framing::Buffer& buffer);
-    uint32_t encodedSize();
-    uint32_t encodedHeaderSize();
-    uint32_t encodedContentSize();
+    void encode(framing::Buffer& buffer) const;
+    void encodeHeader(framing::Buffer& buffer) const;
+    uint32_t encodedSize() const;
+    uint32_t encodedHeaderSize() const;
+    uint32_t encodedContentSize() const;
     uint64_t expectedContentSize();
     void decodeHeader(framing::Buffer& buffer);
     void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0);
@@ -86,7 +86,7 @@ class MessageMessage: public Message{
                          uint32_t framesize);
     framing::MessageTransferBody* copyTransfer(const framing::ProtocolVersion& version,
                                                const std::string& destination, 
-                                               const framing::Content& body);
+                                               const framing::Content& body) const;
   
     framing::RequestId requestId;
     const TransferPtr transfer;

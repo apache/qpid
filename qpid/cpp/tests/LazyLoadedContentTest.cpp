@@ -50,7 +50,7 @@ class LazyLoadedContentTest : public CppUnit::TestCase
     public:
         TestMessageStore(const string& _content) : content(_content) {}
 
-        void loadContent(Message* const, string& data, uint64_t offset, uint32_t length)
+        void loadContent(PersistableMessage&, string& data, uint64_t offset, uint32_t length)
         {
             if (offset + length <= content.size()) {
                 data = content.substr(offset, length);

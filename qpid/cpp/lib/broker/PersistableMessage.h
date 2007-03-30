@@ -1,3 +1,6 @@
+#ifndef _broker_PersistableMessage_h
+#define _broker_PersistableMessage_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,33 +21,33 @@
  * under the License.
  *
  */
-#ifndef _LazyLoadedContent_
-#define _LazyLoadedContent_
 
-#include <Content.h>
-#include <MessageStore.h>
-#include "BrokerMessageBase.h"
+#include <string>
+#include <boost/shared_ptr.hpp>
+#include "Persistable.h"
+#include "framing/amqp_types.h"
 
 namespace qpid {
-    namespace broker {
-        class LazyLoadedContent : public Content{
-            MessageStore* const store;
-            Message* const msg;
-            const uint64_t expectedSize;
-        public:
-            LazyLoadedContent(
-                MessageStore* const store, Message* const msg,
-                uint64_t expectedSize);
-            ~LazyLoadedContent();
-            void add(qpid::framing::AMQContentBody::shared_ptr data);
-            uint32_t size();
-            void send(
-                framing::ChannelAdapter&,
-                uint32_t framesize);
-            void encode(qpid::framing::Buffer& buffer);
-        };
-    }
-}
+namespace broker {
+
+/**
+ * The interface messages must expose to the MessageStore in order to
+ * be persistable.
+ */
+    class PersistableMessage : public Persistable
+{
+public:
+    typedef boost::shared_ptr<PersistableMessage> shared_ptr;
+
+    /**
+     * @returns the size of the headers when encoded
+     */
+    virtual uint32_t encodedHeaderSize() const = 0;
+
+    virtual ~PersistableMessage() {};
+};
+
+}}
 
 
 #endif

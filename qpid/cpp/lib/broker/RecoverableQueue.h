@@ -1,3 +1,6 @@
+#ifndef _broker_RecoverableQueue_h
+#define _broker_RecoverableQueue_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,33 +21,29 @@
  * under the License.
  *
  */
-#ifndef _LazyLoadedContent_
-#define _LazyLoadedContent_
 
-#include <Content.h>
-#include <MessageStore.h>
-#include "BrokerMessageBase.h"
+#include "RecoverableMessage.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
-    namespace broker {
-        class LazyLoadedContent : public Content{
-            MessageStore* const store;
-            Message* const msg;
-            const uint64_t expectedSize;
-        public:
-            LazyLoadedContent(
-                MessageStore* const store, Message* const msg,
-                uint64_t expectedSize);
-            ~LazyLoadedContent();
-            void add(qpid::framing::AMQContentBody::shared_ptr data);
-            uint32_t size();
-            void send(
-                framing::ChannelAdapter&,
-                uint32_t framesize);
-            void encode(qpid::framing::Buffer& buffer);
-        };
-    }
-}
+namespace broker {
+
+/**
+ * The interface through which messages are added back to queues on
+ * recovery.
+ */
+class RecoverableQueue
+{
+public:
+    typedef boost::shared_ptr<RecoverableQueue> shared_ptr;
+    /**
+     * Used during recovery to add stored messages back to the queue
+     */
+    virtual void recover(RecoverableMessage::shared_ptr msg) = 0;
+    virtual ~RecoverableQueue() {};
+};
+
+}}
 
 
 #endif

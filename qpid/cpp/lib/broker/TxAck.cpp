@@ -25,8 +25,8 @@ using std::bind2nd;
 using std::mem_fun_ref;
 using namespace qpid::broker;
 
-TxAck::TxAck(AccumulatedAck& _acked, std::list<DeliveryRecord>& _unacked, const std::string* const _xid) : 
-    acked(_acked), unacked(_unacked), xid(_xid){
+TxAck::TxAck(AccumulatedAck& _acked, std::list<DeliveryRecord>& _unacked) : 
+    acked(_acked), unacked(_unacked){
 
 }
 
@@ -35,7 +35,7 @@ bool TxAck::prepare(TransactionContext* ctxt) throw(){
         //dequeue all acked messages from their queues
         for (ack_iterator i = unacked.begin(); i != unacked.end(); i++) {
             if (i->coveredBy(&acked)) {
-                i->discard(ctxt, xid);
+                i->discard(ctxt);
             }
         }
         return true;
