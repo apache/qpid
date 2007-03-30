@@ -46,8 +46,7 @@ namespace qpid {
             DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const std::string consumerTag, const uint64_t deliveryTag);
             DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const uint64_t deliveryTag);
             
-            void discard() const;
-            void discard(TransactionContext* ctxt, const std::string* const xid) const;
+            void discard(TransactionContext* ctxt = 0) const;
             bool matches(uint64_t tag) const;
             bool coveredBy(const AccumulatedAck* const range) const;
             void requeue() const;

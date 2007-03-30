@@ -102,22 +102,25 @@ class TxBufferTest : public CppUnit::TestCase
     public:
         MockTransactionalStore() : state(OPEN){}
 
+        std::auto_ptr<TPCTransactionContext> begin(const std::string&){ 
+            throw "Operation not supported";
+        }
+        void prepare(TPCTransactionContext&){
+            throw "Operation not supported";
+        }
+
         std::auto_ptr<TransactionContext> begin(){ 
             actual.push_back(BEGIN);
             std::auto_ptr<TransactionContext> txn(new TestTransactionContext(this));
             return txn;
         }
-        void commit(TransactionContext* ctxt){
+        void commit(TransactionContext& ctxt){
             actual.push_back(COMMIT);
-            TestTransactionContext* txn(dynamic_cast<TestTransactionContext*>(ctxt));
-            CPPUNIT_ASSERT(txn);
-            txn->commit();
+            dynamic_cast<TestTransactionContext&>(ctxt).commit();
         }
-        void abort(TransactionContext* ctxt){
+        void abort(TransactionContext& ctxt){
             actual.push_back(ABORT);
-            TestTransactionContext* txn(dynamic_cast<TestTransactionContext*>(ctxt));
-            CPPUNIT_ASSERT(txn);
-            txn->abort();
+            dynamic_cast<TestTransactionContext&>(ctxt).abort();
         }        
         MockTransactionalStore& expectBegin(){
             expected.push_back(BEGIN);

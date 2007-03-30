@@ -38,11 +38,11 @@ class TxAckTest : public CppUnit::TestCase
     class TestMessageStore : public NullMessageStore
     {
     public:
-        vector< std::pair<Message*, const string*> > dequeued;
+        vector<PersistableMessage*> dequeued;
 
-        void dequeue(TransactionContext*, Message* const msg, const Queue& /*queue*/, const string * const xid)
+        void dequeue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& /*queue*/)
         {
-            dequeued.push_back(std::pair<Message*, const string*>(msg, xid));
+            dequeued.push_back(&msg);
         }
 
         TestMessageStore() : NullMessageStore() {}
@@ -50,7 +50,6 @@ class TxAckTest : public CppUnit::TestCase
     };
 
     CPPUNIT_TEST_SUITE(TxAckTest);
-    CPPUNIT_TEST(testPrepare2pc);
     CPPUNIT_TEST(testPrepare);
     CPPUNIT_TEST(testCommit);
     CPPUNIT_TEST_SUITE_END();
@@ -62,12 +61,11 @@ class TxAckTest : public CppUnit::TestCase
     vector<Message::shared_ptr> messages;
     list<DeliveryRecord> deliveries;
     TxAck op;
-    std::string xid;
 
 
 public:
 
-    TxAckTest() : acked(0), queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries, &xid)
+    TxAckTest() : acked(0), queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries)
     {
         for(int i = 0; i < 10; i++){
             Message::shared_ptr msg(
@@ -93,17 +91,7 @@ public:
         CPPUNIT_ASSERT_EQUAL((size_t) 10, deliveries.size());
         int dequeued[] = {0, 1, 2, 3, 4, 6, 8};
         for (int i = 0; i < 7; i++) {
-            CPPUNIT_ASSERT_EQUAL(messages[dequeued[i]].get(), store.dequeued[i].first);
-        }
-    }
-
-    void testPrepare2pc()
-    {
-        xid = "abcdefg";
-        testPrepare();
-        const string expected(xid);
-        for (int i = 0; i < 7; i++) {
-            CPPUNIT_ASSERT_EQUAL(expected, *store.dequeued[i].second);
+            CPPUNIT_ASSERT_EQUAL((PersistableMessage*) messages[dequeued[i]].get(), store.dequeued[i]);
         }
     }
 

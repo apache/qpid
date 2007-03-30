@@ -25,6 +25,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "Content.h"
+#include "PersistableMessage.h"
 #include "framing/amqp_types.h"
 
 namespace qpid {
@@ -49,7 +50,7 @@ class MessageStore;
  * abstracting away the operations
  * TODO; AMS: for the moment this is mostly a placeholder
  */
-class Message {
+class Message : public PersistableMessage{
   public:
     typedef boost::shared_ptr<Message> shared_ptr;
     typedef boost::shared_ptr<framing::AMQMethodBody> AMQMethodBodyPtr;
@@ -117,25 +118,25 @@ class Message {
         return publisher;
     }
 
-    virtual void encode(framing::Buffer& buffer) = 0;
-    virtual void encodeHeader(framing::Buffer& buffer) = 0;
+    virtual void encode(framing::Buffer& buffer) const = 0;
+    virtual void encodeHeader(framing::Buffer& buffer) const = 0;
 
     /**
      * @returns the size of the buffer needed to encode this
      * message in its entirety
      */
-    virtual uint32_t encodedSize() = 0;
+    virtual uint32_t encodedSize() const = 0;
     /**
      * @returns the size of the buffer needed to encode the
      * 'header' of this message (not just the header frame,
      * but other meta data e.g.routing key and exchange)
      */
-    virtual uint32_t encodedHeaderSize() = 0;
+    virtual uint32_t encodedHeaderSize() const = 0;
     /**
      * @returns the size of the buffer needed to encode the
      * (possibly partial) content held by this message
      */
-    virtual uint32_t encodedContentSize() = 0;
+    virtual uint32_t encodedContentSize() const = 0;
     /**
      * If headers have been received, returns the expected
      * content size else returns 0.
@@ -145,6 +146,7 @@ class Message {
     virtual void decodeHeader(framing::Buffer& buffer) = 0;
     virtual void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0) = 0;
 
+    static shared_ptr decode(framing::Buffer& buffer); 
             
     // TODO: AMS 29/1/2007 Don't think these are really part of base class
             

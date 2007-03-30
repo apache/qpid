@@ -1,3 +1,6 @@
+#ifndef _broker_Persistable_h
+#define _broker_Persistable_h
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,33 +21,42 @@
  * under the License.
  *
  */
-#ifndef _LazyLoadedContent_
-#define _LazyLoadedContent_
 
-#include <Content.h>
-#include <MessageStore.h>
-#include "BrokerMessageBase.h"
+#include "framing/amqp_types.h"
+#include "framing/Buffer.h"
 
 namespace qpid {
-    namespace broker {
-        class LazyLoadedContent : public Content{
-            MessageStore* const store;
-            Message* const msg;
-            const uint64_t expectedSize;
-        public:
-            LazyLoadedContent(
-                MessageStore* const store, Message* const msg,
-                uint64_t expectedSize);
-            ~LazyLoadedContent();
-            void add(qpid::framing::AMQContentBody::shared_ptr data);
-            uint32_t size();
-            void send(
-                framing::ChannelAdapter&,
-                uint32_t framesize);
-            void encode(qpid::framing::Buffer& buffer);
-        };
-    }
-}
+namespace broker {
+
+/**
+ * Base class for all persistable objects
+ */
+class Persistable 
+{
+public:
+    /**
+     * Allows the store to attach its own identifier to this object
+     */
+    virtual void setPersistenceId(uint64_t id) = 0;
+    /**
+     * Returns any identifier the store may have attached to this
+     * object
+     */
+    virtual uint64_t getPersistenceId() const = 0;
+    /**
+     * Encodes the persistable state of this object into the supplied
+     * buffer
+     */
+    virtual void encode(framing::Buffer& buffer) const = 0;
+    /**
+     * @returns the size of the buffer needed to encode this object
+     */
+    virtual uint32_t encodedSize() const = 0;
+
+    virtual ~Persistable() {};
+};
+
+}}
 
 
 #endif

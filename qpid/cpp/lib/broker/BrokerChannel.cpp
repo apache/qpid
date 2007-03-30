@@ -264,7 +264,7 @@ void Channel::ack(uint64_t firstTag, uint64_t lastTag){
             throw ConnectionException(530, "Received ack for unrecognised delivery tag");
         }else if(i!=j){
             ack_iterator end = ++i;
-            for_each(j, end, mem_fun_ref(&DeliveryRecord::discard));
+            for_each(j, end, bind2nd(mem_fun_ref(&DeliveryRecord::discard), 0));
             unacked.erase(unacked.begin(), end);
 
             //recalculate the prefetch:

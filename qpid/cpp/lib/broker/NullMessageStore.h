@@ -26,33 +26,38 @@
 #include <BrokerQueue.h>
 
 namespace qpid {
-    namespace broker {
+namespace broker {
 
-        /**
-         * A null implementation of the MessageStore interface
-         */
-        class NullMessageStore : public MessageStore{
-            const bool warn;
-        public:
-            NullMessageStore(bool warn = false);
-            virtual void create(const Queue& queue, const qpid::framing::FieldTable& settings);
-            virtual void destroy(const Queue& queue);
-            virtual void recover(RecoveryManager& queues, const MessageStoreSettings* const settings = 0);
-            virtual void stage(Message* const msg);
-            virtual void destroy(Message* const msg);
-            virtual void appendContent(Message* const msg, const std::string& data);
-            virtual void loadContent(Message* const msg, std::string& data, uint64_t offset, uint32_t length);
-            virtual void enqueue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
-            virtual void dequeue(TransactionContext* ctxt, Message* const msg, const Queue& queue, const string * const xid);
-            virtual void prepared(const std::string * const xid);
-            virtual void committed(const std::string * const xid);
-            virtual void aborted(const std::string * const xid);
-            virtual std::auto_ptr<TransactionContext> begin();
-            virtual void commit(TransactionContext* ctxt);
-            virtual void abort(TransactionContext* ctxt);
-            ~NullMessageStore(){}
-        };
-    }
+/**
+ * A null implementation of the MessageStore interface
+ */
+class NullMessageStore : public MessageStore
+{
+    const bool warn;
+public:
+    NullMessageStore(bool warn = false);
+
+    virtual std::auto_ptr<TransactionContext> begin();
+    virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
+    virtual void prepare(TPCTransactionContext& txn);
+    virtual void commit(TransactionContext& txn);
+    virtual void abort(TransactionContext& txn);
+
+    virtual void create(const PersistableQueue& queue);
+    virtual void destroy(const PersistableQueue& queue);
+    virtual void create(const PersistableExchange& exchange);
+    virtual void destroy(const PersistableExchange& exchange);
+    virtual void recover(RecoveryManager& queues);
+    virtual void stage(PersistableMessage& msg);
+    virtual void destroy(PersistableMessage& msg);
+    virtual void appendContent(PersistableMessage& msg, const std::string& data);
+    virtual void loadContent(PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length);
+    virtual void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
+    virtual void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
+    ~NullMessageStore(){}
+};
+
+}
 }
 
 
