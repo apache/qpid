@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.nclient.amqp;
+package org.apache.qpid.nclient.amqp.qpid;
 
 import java.util.ArrayList;
 import java.util.List;

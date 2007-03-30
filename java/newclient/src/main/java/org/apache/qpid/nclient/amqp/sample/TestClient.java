@@ -65,6 +65,7 @@ import org.apache.qpid.nclient.amqp.AMQPConnection;
 import org.apache.qpid.nclient.amqp.AMQPExchange;
 import org.apache.qpid.nclient.amqp.AMQPMessage;
 import org.apache.qpid.nclient.amqp.AMQPQueue;
+import org.apache.qpid.nclient.amqp.qpid.QpidAMQPClassFactory;
 import org.apache.qpid.nclient.amqp.state.AMQPStateType;
 import org.apache.qpid.nclient.transport.AMQPConnectionURL;
 import org.apache.qpid.nclient.transport.ConnectionURL;
@@ -90,7 +91,7 @@ public class TestClient
 	private static int _channel = 2;
 
 	// Need a Class factory per connection
-	private AMQPClassFactory _classFactory = new AMQPClassFactory();
+	private AMQPClassFactory _classFactory = new QpidAMQPClassFactory();
 
 	private int _ticket;
 
