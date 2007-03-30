@@ -284,6 +284,9 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         }
         catch (JMSException e)
         {
+            log.debug("There was an error whilst closing the connection: " + e, e);
+            System.out.println("There was an error whilst closing the connection.");
+
             // Ignore as did best could manage to clean up.
         }
 
@@ -326,6 +329,32 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
             {
                 System.out.println("Got all messages.");
                 endCondition = true;
+            }
+        }
+
+        // Ensure messages received are committed.
+        if (_transacted)
+        {
+            try
+            {
+                _consumerSession.commit();
+                System.out.println("Committed for all messages received.");
+            }
+            catch (JMSException e)
+            {
+                log.debug("Error during commit: " + e, e);
+                System.out.println("Error during commit.");
+                try
+                {
+                    _consumerSession.rollback();
+                    System.out.println("Rolled back on all messages received.");
+                }
+                catch (JMSException e2)
+                {
+                    log.debug("Error during rollback: " + e, e);
+                    System.out.println("Error on roll back of all messages received.");
+                }
+
             }
         }
 

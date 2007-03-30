@@ -246,9 +246,9 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                 // Extract the correlation id from the message.
                 String correlationId = message.getJMSCorrelationID();
 
-                _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount
+                /*_logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount
                     + "): called on batch boundary for message id: " + correlationId + " with thread id: "
-                    + Thread.currentThread().getId());
+                    + Thread.currentThread().getId());*/
 
                 // Get the details for the correlation id and check that they are not null. They can become null
                 // if a test times out.
