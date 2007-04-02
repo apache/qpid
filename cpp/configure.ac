@@ -16,7 +16,7 @@ AM_INIT_AUTOMAKE([dist-bzip2])
 AC_PREREQ(2.59)
 
 AC_CONFIG_HEADERS([config.h:config.in])
-AC_CONFIG_SRCDIR([lib/broker/Broker.cpp])
+AC_CONFIG_SRCDIR([src/broker/Broker.cpp])
 
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
@@ -138,13 +138,11 @@ test "$enable_VALGRIND" = no && VALGRIND=
 
 AC_CONFIG_FILES([
   Makefile
-  gen/Makefile
-  lib/Makefile
-  lib/common/Makefile
-  lib/client/Makefile
-  lib/broker/Makefile
+  src/gen/Makefile
+  src/client/Makefile
+  src/broker/Makefile
   src/Makefile
-  tests/Makefile
+  src/tests/Makefile
   docs/man/Makefile
   docs/api/Makefile
   rpm/Makefile
