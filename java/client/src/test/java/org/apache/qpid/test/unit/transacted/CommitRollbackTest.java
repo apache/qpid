@@ -53,12 +53,15 @@ public class CommitRollbackTest extends TestCase
     Queue _jmsQueue;
 
     private static final Logger _logger = Logger.getLogger(CommitRollbackTest.class);
+    private static final String BROKER = "vm://:1";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
-
+        if (BROKER.startsWith("vm"))
+        {
+            TransportConnection.createVMBroker(1);
+        }
         testMethod++;
         queue += testMethod;
 
@@ -68,7 +71,7 @@ public class CommitRollbackTest extends TestCase
 
     private void newConnection() throws AMQException, URLSyntaxException, JMSException
     {
-        conn = new AMQConnection("amqp://guest:guest@client/test?brokerlist='vm://:1'");
+        conn = new AMQConnection("amqp://guest:guest@client/test?brokerlist='" + BROKER + "'");
 
         _session = conn.createSession(true, Session.CLIENT_ACKNOWLEDGE);
 
@@ -87,7 +90,10 @@ public class CommitRollbackTest extends TestCase
         super.tearDown();
 
         conn.close();
-        TransportConnection.killVMBroker(1);
+        if (BROKER.startsWith("vm"))
+        {
+            TransportConnection.killVMBroker(1);
+        }
     }
 
     /**
