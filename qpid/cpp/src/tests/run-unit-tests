@@ -11,27 +11,16 @@
 # 
 # Build and run selected tests:
 # make check TESTS=run-unit-tests UNIT_TESTS=ClientChannelTest
-# 
+#
 
-# Default VALGRIND from the path and $srcdir to . but
-# don't override values set by make.
-test -z "$VALGRIND" -a -z "$MAKEFLAGS" && VALGRIND=`which valgrind` 2>/dev/null
-test -z "$srcdir" && srcdir=.
-
-rm -f valgrind.out
-vg_log=--log-file-exactly=valgrind.out
-source $srcdir/setup
 for u in $* $UNIT_TESTS ; do
     case $u in
 	:*) TEST_ARGS="$TEST_ARGS $u" ;; # A test path.
-	*) TEST_ARGS="$TEST_ARGS $pwd/.libs/$u.so" ;; # A test library.
+	*) TEST_ARGS="$TEST_ARGS .libs/$u.so" ;; # A test library.
     esac
 done
-# If none specified, run all tests in .libs
-test -z "$TEST_ARGS" && TEST_ARGS="$pwd/.libs/*Test.so"
-fail=0
+test -z "$TEST_ARGS" && TEST_ARGS=".libs/*Test.so"
 
-$vg DllPlugInTester -c -b $TEST_ARGS || fail=1
-vg_check valgrind.out || fail=1
+test -z "$srcdir" && srcdir=.
+exec $srcdir/test_env DllPlugInTester -c -b $TEST_ARGS
 
-exit $fail
