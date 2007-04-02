@@ -233,30 +233,9 @@ implementation sufficient for the client using the APR portability
 library. The implementations may change in future but the interface
 for qpid code outside the qpid/sys namespace should remain stable.
 
-=== Unit tests ===
+=== Tests ===
 
-Unit tests are built as .so files containing CppUnit plugins.
-
-DllPlugInTester is provided as part of cppunit. You can use it to run
-any subset of the unit tests. See Makefile for examples.
-
-NOTE: If foobar.so is a test plugin in the current directory then
-surprisingly this will fail with "can't load plugin":
- # DllPluginTester foobar.so
-
-Instead you need to say:
- # DllPluginTester ./foobar.so
-
-Reason: DllPluginTester uses dlopen() which only searches for shlibs
-in the standard places unless the filename contains a "/".  In that
-case it just tries to open the filename.
-
-=== System tests ===
-
-The Python test suite ../python/run_tests is the main set of broker
-system tests.
-
-There are some C++ client test executables built under client/test.
+See src/tests/README for details.
 
 == Doxygen ==
 
