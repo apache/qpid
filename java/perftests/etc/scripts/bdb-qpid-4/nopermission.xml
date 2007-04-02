@@ -58,7 +58,7 @@
                 <class>org.apache.qpid.server.security.auth.database.PlainPasswordVhostFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
-                        <name>passwordfile</name>
+                        <name>passwordFile</name>
                         <value>${conf}/passwdVhost</value>
                     </attribute>
                 </attributes>
