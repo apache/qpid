@@ -17,13 +17,13 @@ if test -d ../specs; then
   # contents of the sole automake-else clause (the warning), then
   # use the result to run the rules that create gen-src.mk, a file
   # that must be created before we run automake.
-  (cd gen && rm -f gen-src.mk
+  (cd src/gen && rm -f gen-src.mk
     perl -ne '/warning:|^(if|else|endif|include)\b/ or print' Makefile.am \
 	| make -f - srcdir=. gen-src.mk > /dev/null )
 fi
 
 # Generate (for automake) lots of repetitive parts of tests/Makefile.am.
-(cd tests && rm -f gen.mk
+(cd src/tests && rm -f gen.mk
   perl -ne '/^include / or print' Makefile.am \
       | make -f - abs_srcdir=`dirname $(pwd)` gen.mk > /dev/null )
 

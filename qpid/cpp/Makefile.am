@@ -7,7 +7,7 @@ EXTRA_DIST = \
   $(PACKAGE).spec \
   $(PACKAGE).spec.in
 
-SUBDIRS = gen lib src docs/api docs/man rpm tests
+SUBDIRS = src docs/api docs/man rpm 
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
