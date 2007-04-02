@@ -119,9 +119,38 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
+    public boolean verifyPassword(Principal principal, char[] password) throws AccountNotFoundException
+    {
+        try
+        {
+            char[] pwd = lookupPassword(principal.getName());
+            return compareCharArray(pwd, password);
+        }
+        catch (IOException e)
+        {
+            return false;
+        }
+    }
+
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
+    }
+
+    private boolean compareCharArray(char[] a, char[] b)
+    {
+        boolean equal = false;
+        if (a.length == b.length)
+        {
+            equal = true;
+            int index = 0;
+            while (equal && index < a.length)
+            {
+                equal = a[index] == b[index];
+                index++;
+            }
+        }
+        return equal;
     }
 
 

@@ -46,5 +46,19 @@ public interface PrincipalDatabase
     void setPassword(Principal principal, PasswordCallback callback)
             throws IOException, AccountNotFoundException;
 
+       /**
+     * Set the password for a given principal in the specified callback. This is used for certain SASL providers. The
+     * user database implementation should look up the password in any way it chooses and set it in the callback by
+     * calling its setPassword method.
+     *
+     * @param principal the principal
+     * @param password  the password to be verified
+     *
+     * @throws AccountNotFoundException if the account for specified principal could not be found
+     * @return true if the account is verified.
+     */
+    boolean verifyPassword(Principal principal, char[] password)
+            throws AccountNotFoundException;
+
     public Map<String, AuthenticationProviderInitialiser> getMechanisms();
 }

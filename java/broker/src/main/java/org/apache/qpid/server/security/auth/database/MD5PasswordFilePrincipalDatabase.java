@@ -67,7 +67,7 @@ public class MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         cram.initialise(this);
         // Accept Plain incomming and hash it for comparison to the file.
         CRAMMD5Initialiser plain = new CRAMMD5Initialiser();
-        plain.initialise(this,CRAMMD5Initialiser.HashDirection.INCOMMING);        
+        plain.initialise(this, CRAMMD5Initialiser.HashDirection.INCOMMING);
 
         _saslServers.put(plain.getMechanismName(), cram);
         _saslServers.put(cram.getMechanismName(), plain);
@@ -111,10 +111,40 @@ public class MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
+    public boolean verifyPassword(Principal principal, char[] password) throws AccountNotFoundException
+    {
+        try
+        {
+            char[] pwd = lookupPassword(principal.getName());
+            return compareCharArray(pwd, password);
+        }
+        catch (IOException e)
+        {
+            return false;
+        }
+    }
+
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
     }
+
+    private boolean compareCharArray(char[] a, char[] b)
+    {
+        boolean equal = false;
+        if (a.length == b.length)
+        {
+            equal = true;
+            int index = 0;
+            while (equal && index < a.length)
+            {
+                equal = a[index] == b[index];
+                index++;
+            }
+        }
+        return equal;
+    }
+
 
     /**
      * Looks up the password for a specified user in the password file. Note this code is <b>not</b> secure since it

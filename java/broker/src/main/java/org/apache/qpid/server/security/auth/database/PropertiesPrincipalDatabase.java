@@ -76,6 +76,29 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         }
     }
 
+    public boolean verifyPassword(Principal principal, char[] password) throws AccountNotFoundException
+    {
+        char[] pwd = _users.getProperty(principal.getName()).toCharArray();
+
+        return compareCharArray(pwd, password);
+    }
+
+    private boolean compareCharArray(char[] a, char[] b)
+    {
+        boolean equal = false;
+        if (a.length == b.length)
+        {
+            equal = true;
+            int index = 0;
+            while (equal && index < a.length)
+            {
+                equal = a[index] == b[index];
+                index++;
+            }
+        }
+        return equal;
+    }
+
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
