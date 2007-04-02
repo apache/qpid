@@ -1,10 +1,10 @@
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS)
-INCLUDES =				\
-  -I$(srcdir)/../gen			\
+INCLUDES =		\
+  -I$(srcdir)/../gen	\
   $(APR_CXXFLAGS)
 
 # Unit tests
-broker_tests =		\
+broker_unit_tests =	\
   AccumulatedAckTest	\
   BrokerChannelTest 	\
   ConfigurationTest	\
@@ -25,42 +25,38 @@ broker_tests =		\
   ValueTest		\
   MessageHandlerTest 	
 
-client_tests =		\
+client_unit_tests =	\
   ClientChannelTest
 
-framing_tests =		\
+framing_unit_tests =	\
   FieldTableTest	\
   FramingTest		\
   HeaderTest
 
-misc_tests =		\
+misc_unit_tests =	\
   ProducerConsumerTest
 
-posix_tests =		\
+posix_unit_tests =	\
   EventChannelTest	\
   EventChannelThreadsTest
 
 unit_tests =		\
-  $(broker_tests)	\
-  $(client_tests)	\
-  $(framing_tests)	\
-  $(misc_tests) 	
+  $(broker_unit_tests)	\
+  $(client_unit_tests)	\
+  $(framing_unit_tests)	\
+  $(misc_unit_tests) 	
 
-# Executable client tests
+# Executables for client tests
 
-client_exe_tests =	\
+client_test_exe =	\
   client_test		\
   echo_service		\
   topic_listener	\
   topic_publisher
 
-noinst_PROGRAMS = $(client_exe_tests)
+noinst_PROGRAMS = $(client_test_exe)
 
-TESTS_ENVIRONMENT =			\
-  VALGRIND=$(VALGRIND)			\
-  abs_builddir='$(abs_builddir)'	\
-  PATH="$(abs_builddir)/../src$(PATH_SEPARATOR)$$PATH" \
-  abs_srcdir='$(abs_srcdir)'
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) 
 
 CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
@@ -68,11 +64,12 @@ TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
 EXTRA_DIST =		\
   $(TESTS) 		\
   .vg-supp		\
+  .valgrindrc.default   \
   InProcessBroker.h	\
   MockChannel.h		\
   MockConnectionInputHandler.h \
   qpid_test_plugin.h	\
-  setup			\
+  test_env		\
   topicall		\
   topictest		\
   APRBaseTest.cpp
@@ -85,7 +82,6 @@ include gen.mk
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath /home/aconway/svn/qpid/cpp/tests
 libdlclose_noop_la_SOURCES = dlclose_noop.c
-
 
 abs_builddir = @abs_builddir@
 extra_libs = $(CPPUNIT_LIBS)
@@ -112,6 +108,9 @@ gen.mk: Makefile.am
 	> $@-t
 	mv $@-t $@
 
-check: $(check_LTLIBRARIES) $(lib_common) $(lib_client) $(lib_broker)
+check: .valgrindrc $(check_LTLIBRARIES) $(lib_common) $(lib_client) $(lib_broker) 
 
-# Rule to run unit tests from an individual test module.
+# Create a copy so user can modify without risk of checking in their mods.
+.valgrindrc: .valgrindrc-default
+	cp .valgrindrc-default .valgrindrc
+
