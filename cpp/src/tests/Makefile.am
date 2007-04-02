@@ -48,13 +48,13 @@ unit_tests =		\
 
 # Executables for client tests
 
-client_test_exe =	\
+testprogs =		\
   client_test		\
   echo_service		\
   topic_listener	\
   topic_publisher
 
-noinst_PROGRAMS = $(client_test_exe)
+noinst_PROGRAMS = $(testprogs)
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) 
 
@@ -91,7 +91,7 @@ lib_broker = $(abs_builddir)/../libqpidbroker.la
 
 gen.mk: Makefile.am
 	(					\
-	  for i in $(client_exe_tests); do		\
+	  for i in $(testprogs); do		\
 	    echo $${i}_SOURCES = $$i.cpp;	\
 	    echo $${i}_LDADD = '$$(lib_client) $$(lib_common) $$(extra_libs)'; \
 	  done;					\
