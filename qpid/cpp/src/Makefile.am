@@ -1,4 +1,9 @@
-SUBDIRS = broker . client tests gen
+include gen/gen-src.mk
+
+# This is gmake specific
+genBUILT_SOURCES = $(addprefix $(gen)/, $(generated_sources) $(generated_headers))
+
+SUBDIRS = . tests
 
 AM_CXXFLAGS = $(WARNING_CFLAGS)
 
@@ -7,7 +12,7 @@ INCLUDES =				\
   $(APR_CXXFLAGS)
 
 qpidd_LDADD =                         \
-  broker/libqpidbroker.la        \
+  libqpidbroker.la        \
   libqpidcommon.la
 
 sbin_PROGRAMS = qpidd
@@ -23,6 +28,7 @@ apr_src =			\
   $(apr)/LFSessionContext.cpp	\
   $(apr)/Socket.cpp		\
   $(apr)/Thread.cpp
+
 apr_hdr =			\
   $(apr)/APRBase.h		\
   $(apr)/APRPool.h		\
@@ -37,7 +43,8 @@ posix_src =				\
   $(posix)/Thread.cpp			\
   $(posix)/check.cpp			\
   $(posix)/EventChannel.cpp		\
-  $(posix)/EventChannelThreads.cpp		
+  $(posix)/EventChannelThreads.cpp
+
 posix_hdr = 				\
   $(posix)/check.h			\
   $(posix)/EventChannel.h		\
@@ -49,8 +56,11 @@ platform_hdr = $(apr_hdr)
 
 framing = framing
 gen     = gen
+broker = broker
+client = client
 
-lib_LTLIBRARIES = libqpidcommon.la
+lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
+
 libqpidcommon_la_LIBADD =		\
   $(APR_LIBS)			\
   $(LIB_DLOPEN)			\
@@ -96,6 +106,108 @@ libqpidcommon_la_SOURCES =			\
   sys/Time.cpp					\
   sys/ProducerConsumer.cpp
 
+libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
+libqpidbroker_la_SOURCES =			\
+  $(broker)/AccumulatedAck.cpp				\
+  $(broker)/AccumulatedAck.h				\
+  $(broker)/AutoDelete.cpp				\
+  $(broker)/AutoDelete.h					\
+  $(broker)/Binding.h					\
+  $(broker)/Broker.cpp					\
+  $(broker)/Broker.h					\
+  $(broker)/BrokerAdapter.cpp				\
+  $(broker)/BrokerAdapter.h				\
+  $(broker)/BrokerSingleton.cpp				\
+  $(broker)/BrokerSingleton.h				\
+  $(broker)/BrokerChannel.cpp				\
+  $(broker)/BrokerChannel.h				\
+  $(broker)/BrokerExchange.h				\
+  $(broker)/BrokerMessage.cpp				\
+  $(broker)/BrokerMessage.h				\
+  $(broker)/BrokerMessageMessage.cpp				\
+  $(broker)/BrokerMessageMessage.h				\
+  $(broker)/BrokerQueue.cpp				\
+  $(broker)/BrokerQueue.h					\
+  $(broker)/Configuration.cpp				\
+  $(broker)/Configuration.h				\
+  $(broker)/Connection.cpp				\
+  $(broker)/Connection.h					\
+  $(broker)/ConnectionFactory.cpp				\
+  $(broker)/ConnectionFactory.h				\
+  $(broker)/ConnectionToken.h				\
+  $(broker)/Consumer.h					\
+  $(broker)/Content.h					\
+  $(broker)/DeletingTxOp.cpp				\
+  $(broker)/DeletingTxOp.h				\
+  $(broker)/Deliverable.h					\
+  $(broker)/DeliverableMessage.cpp			\
+  $(broker)/DeliverableMessage.h				\
+  $(broker)/DeliveryRecord.cpp				\
+  $(broker)/DeliveryRecord.h				\
+  $(broker)/DirectExchange.cpp				\
+  $(broker)/DirectExchange.h				\
+  $(broker)/ExchangeRegistry.cpp				\
+  $(broker)/ExchangeRegistry.h				\
+  $(broker)/FanOutExchange.cpp				\
+  $(broker)/FanOutExchange.h				\
+  $(broker)/HeadersExchange.cpp				\
+  $(broker)/HeadersExchange.h				\
+  $(broker)/InMemoryContent.cpp				\
+  $(broker)/InMemoryContent.h				\
+  $(broker)/LazyLoadedContent.cpp				\
+  $(broker)/LazyLoadedContent.h				\
+  $(broker)/MessageBuilder.cpp				\
+  $(broker)/MessageBuilder.h				\
+  $(broker)/MessageHandlerImpl.cpp			\
+  $(broker)/MessageHandlerImpl.h				\
+  $(broker)/MessageStore.h				\
+  $(broker)/MessageStoreModule.cpp			\
+  $(broker)/MessageStoreModule.h				\
+  $(broker)/NameGenerator.cpp				\
+  $(broker)/NameGenerator.h				\
+  $(broker)/NullMessageStore.cpp				\
+  $(broker)/NullMessageStore.h				\
+  $(broker)/Persistable.h					\
+  $(broker)/PersistableExchange.h				\
+  $(broker)/PersistableMessage.h				\
+  $(broker)/PersistableQueue.h				\
+  $(broker)/Prefetch.h					\
+  $(broker)/QueuePolicy.cpp				\
+  $(broker)/QueuePolicy.h					\
+  $(broker)/QueueRegistry.cpp				\
+  $(broker)/QueueRegistry.h				\
+  $(broker)/RecoverableMessage.h                          \
+  $(broker)/RecoverableQueue.h                            \
+  $(broker)/RecoveryManager.h				\
+  $(broker)/RecoveryManagerImpl.cpp			\
+  $(broker)/RecoveryManagerImpl.h				\
+  $(broker)/Reference.cpp					\
+  $(broker)/Reference.h					\
+  $(broker)/TopicExchange.cpp				\
+  $(broker)/TopicExchange.h				\
+  $(broker)/TransactionalStore.h				\
+  $(broker)/TxAck.cpp					\
+  $(broker)/TxAck.h					\
+  $(broker)/TxBuffer.cpp					\
+  $(broker)/TxBuffer.h					\
+  $(broker)/TxOp.h					\
+  $(broker)/TxPublish.cpp					\
+  $(broker)/TxPublish.h
+
+libqpidclient_la_LIBADD = libqpidcommon.la
+libqpidclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
+libqpidclient_la_SOURCES =			\
+  $(client)/ClientConnection.cpp				\
+  $(client)/ClientChannel.cpp				\
+  $(client)/ClientExchange.cpp				\
+  $(client)/ClientQueue.cpp				\
+  $(client)/BasicMessageChannel.cpp			\
+  $(client)/Connector.cpp					\
+  $(client)/IncomingMessage.cpp				\
+  $(client)/MessageListener.cpp				\
+  $(client)/ResponseHandler.cpp				\
+  $(client)/ReturnedMessageHandler.cpp
+  
 nobase_pkginclude_HEADERS =			\
   $(gen)/AMQP_HighestVersion.h			\
   $(platform_hdr)				\
@@ -124,6 +236,20 @@ nobase_pkginclude_HEADERS =			\
   $(framing)/amqp_framing.h			\
   $(framing)/amqp_types.h			\
   $(framing)/Proxy.h				\
+  $(client)/AckMode.h					\
+  $(client)/ClientChannel.h				\
+  $(client)/ClientExchange.h				\
+  $(client)/ClientMessage.h				\
+  $(client)/ClientQueue.h					\
+  $(client)/Connection.h					\
+  $(client)/Connector.h					\
+  $(client)/IncomingMessage.h				\
+  $(client)/MessageChannel.h				\
+  $(client)/BasicMessageChannel.h				\
+  $(client)/MessageListener.h				\
+  $(client)/MethodBodyInstances.h				\
+  $(client)/ResponseHandler.h				\
+  $(client)/ReturnedMessageHandler.h	\
   shared_ptr.h					\
   Exception.h					\
   ExceptionHolder.h				\
@@ -145,6 +271,42 @@ nobase_pkginclude_HEADERS =			\
   sys/TimeoutHandler.h				\
   sys/ProducerConsumer.h
 
+# This is gmake specific
+nobase_pkginclude_HEADERS += $(addprefix $(gen)/, $(generated_headers))
+
+# Distribute the generated sources, at least for now, since
+# the generator code is in java.
+EXTRA_DIST += $(genBUILT_SOURCES)
+DISTCLEANFILES = $(genBUILT_SOURCES) $(gen)/timestamp $(gen)/gen-src.mk
+
+# Don't attempt to run the code generator unless configure has set
+# CAN_GENERATE_CODE, indicating that the amqp.xml and tools needed
+# to run the code generator are available.
+#
+if CAN_GENERATE_CODE
+
+gentools_dir = $(srcdir)/../gentools
+spec_dir = $(srcdir)/../../specs
+
+# FIXME aconway 2007-01-04: Enabling Basic class until
+# new messaging class is ready to replace it.
+# spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml $(spec_dir)/amqp-nogen.0-9.xml
+spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml
+
+gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
+
+$(BUILT_SOURCES) $(gen)/timestamp: $(spec) $(java_sources) $(cxx_templates) Makefile.am
+	rm -f $(genBUILT_SOURCES)
+	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
+	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
+	        -c -o $(gen) -t $(gentools_dir)/templ.cpp $(spec)
+	touch $(gen)/timestamp
+
+$(gen)/gen-src.mk: $(gen)/timestamp
+	cd $(gen)
+	$(gen)/make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) > $@-t
+	mv $@-t $@
+endif
 
 # Force build during dist phase so help2man will work.
 dist-hook: $(lib_LTLIBRARIES) $(sbin_PROGRAMS)
