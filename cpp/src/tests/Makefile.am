@@ -89,9 +89,9 @@ libdlclose_noop_la_SOURCES = dlclose_noop.c
 
 abs_builddir = @abs_builddir@
 extra_libs = $(CPPUNIT_LIBS)
-lib_client = $(abs_builddir)/../client/libqpidclient.la
+lib_client = $(abs_builddir)/../libqpidclient.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
-lib_broker = $(abs_builddir)/../broker/libqpidbroker.la
+lib_broker = $(abs_builddir)/../libqpidbroker.la
 
 gen.mk: Makefile.am
 	(					\
