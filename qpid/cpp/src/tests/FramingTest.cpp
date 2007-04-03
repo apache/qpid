@@ -249,12 +249,12 @@ class FramingTest : public CppUnit::TestCase
         AMQResponseBody::Data p;
 
         r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(1ULL, q.requestId);
-        CPPUNIT_ASSERT_EQUAL(0ULL, q.responseMark);
+        CPPUNIT_ASSERT_EQUAL(RequestId(1), q.requestId);
+        CPPUNIT_ASSERT_EQUAL(ResponseId(0), q.responseMark);
 
         r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(2ULL, q.requestId);
-        CPPUNIT_ASSERT_EQUAL(0ULL, q.responseMark);
+        CPPUNIT_ASSERT_EQUAL(RequestId(2), q.requestId);
+        CPPUNIT_ASSERT_EQUAL(ResponseId(0), q.responseMark);
 
         // Now process a response
         p.responseId = 1;
@@ -262,8 +262,8 @@ class FramingTest : public CppUnit::TestCase
         r.processed(AMQResponseBody::Data(1, 2));
 
         r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(3ULL, q.requestId);
-        CPPUNIT_ASSERT_EQUAL(1ULL, q.responseMark);
+        CPPUNIT_ASSERT_EQUAL(RequestId(3), q.requestId);
+        CPPUNIT_ASSERT_EQUAL(ResponseId(1), q.responseMark);
         
         try {
             r.processed(p);     // Already processed this response.
@@ -284,16 +284,16 @@ class FramingTest : public CppUnit::TestCase
         p.batchOffset = 2;
         r.processed(p);
         r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(7ULL, q.requestId);
-        CPPUNIT_ASSERT_EQUAL(2ULL, q.responseMark);
+        CPPUNIT_ASSERT_EQUAL(RequestId(7), q.requestId);
+        CPPUNIT_ASSERT_EQUAL(ResponseId(2), q.responseMark);
 
         p.responseId++;
         p.requestId = 1;        // Out of order
         p.batchOffset = 0;
         r.processed(p);
         r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(8ULL, q.requestId);
-        CPPUNIT_ASSERT_EQUAL(3ULL, q.responseMark);
+        CPPUNIT_ASSERT_EQUAL(RequestId(8), q.requestId);
+        CPPUNIT_ASSERT_EQUAL(ResponseId(3), q.responseMark);
     }
 
     void testResponder() {
@@ -306,18 +306,18 @@ class FramingTest : public CppUnit::TestCase
         r.received(q);
         p.requestId = q.requestId;
         r.sending(p);
-        CPPUNIT_ASSERT_EQUAL(1ULL, p.responseId);
-        CPPUNIT_ASSERT_EQUAL(1ULL, p.requestId);
+        CPPUNIT_ASSERT_EQUAL(ResponseId(1), p.responseId);
+        CPPUNIT_ASSERT_EQUAL(RequestId(1), p.requestId);
         CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
-        CPPUNIT_ASSERT_EQUAL(0ULL, r.getResponseMark());
+        CPPUNIT_ASSERT_EQUAL(ResponseId(0), r.getResponseMark());
 
         q.requestId++;
         q.responseMark = 1;
         r.received(q);
         r.sending(p);
-        CPPUNIT_ASSERT_EQUAL(2ULL, p.responseId);
+        CPPUNIT_ASSERT_EQUAL(ResponseId(2), p.responseId);
         CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
-        CPPUNIT_ASSERT_EQUAL(1ULL, r.getResponseMark());
+        CPPUNIT_ASSERT_EQUAL(ResponseId(1), r.getResponseMark());
 
         try {
             // Response mark higher any request ID sent.
