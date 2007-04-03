@@ -63,7 +63,6 @@ class BasicMessageChannel : public MessageChannel
 
   private:
 
-    class WaitableDestination;
     struct Consumer{
         MessageListener* listener;
         AckMode ackMode;
@@ -80,8 +79,8 @@ class BasicMessageChannel : public MessageChannel
     uint64_t incoming_size;
     ConsumerMap consumers ;
     ReturnedMessageHandler* returnsHandler;
-    boost::scoped_ptr<WaitableDestination> destGet;
-    boost::scoped_ptr<WaitableDestination> destDispatch;
+    IncomingMessage::WaitableDestination destGet;
+    IncomingMessage::WaitableDestination destDispatch;
 };
 
 }} // namespace qpid::client
