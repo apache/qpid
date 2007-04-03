@@ -21,10 +21,11 @@
  * under the License.
  *
  */
-#include "../sys/Mutex.h"
+#include "../sys/Monitor.h"
 #include <map>
+#include <queue>
 #include <vector>
-
+#include <boost/variant.hpp>
 
 namespace qpid {
 namespace client {
@@ -59,6 +60,27 @@ class IncomingMessage {
         /** Notify destination of queue-empty contition */
         virtual void empty() = 0;
     };
+
+
+    /** A destination that a thread can wait on till a message arrives. */
+    class WaitableDestination : public Destination
+    {
+      public:
+        WaitableDestination();
+        void message(const Message& msg);        
+        void empty();
+        /** Wait till message() or empty() is called. True for message() */
+        bool wait(Message& msgOut);
+        void shutdown();
+
+      private:
+        struct Empty {};
+        typedef boost::variant<Message,Empty> Item;
+        sys::Monitor monitor;
+        std::queue<Item> queue;
+        bool shutdownFlag;
+    };
+ 
 
 
     /** Add a reference. Throws if already open. */
