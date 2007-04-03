@@ -1,7 +1,6 @@
 include gen/gen-src.mk
 
-# This is gmake specific
-genBUILT_SOURCES = $(addprefix $(gen)/, $(generated_sources) $(generated_headers))
+BUILT_SOURCES = $(generated_sources) $(generated_headers)
 
 SUBDIRS = . tests
 
@@ -272,12 +271,12 @@ nobase_pkginclude_HEADERS =			\
   sys/ProducerConsumer.h
 
 # This is gmake specific
-nobase_pkginclude_HEADERS += $(addprefix $(gen)/, $(generated_headers))
+nobase_pkginclude_HEADERS += $(generated_headers)
 
 # Distribute the generated sources, at least for now, since
 # the generator code is in java.
-EXTRA_DIST += $(genBUILT_SOURCES)
-DISTCLEANFILES = $(genBUILT_SOURCES) $(gen)/timestamp $(gen)/gen-src.mk
+EXTRA_DIST += $(BUILT_SOURCES)
+DISTCLEANFILES = $(BUILT_SOURCES) $(gen)/timestamp $(gen)/gen-src.mk
 
 # Don't attempt to run the code generator unless configure has set
 # CAN_GENERATE_CODE, indicating that the amqp.xml and tools needed
@@ -296,15 +295,15 @@ spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 
 $(BUILT_SOURCES) $(gen)/timestamp: $(spec) $(java_sources) $(cxx_templates) Makefile.am
-	rm -f $(genBUILT_SOURCES)
+	rm -f $(BUILT_SOURCES)
 	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
 	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
 	        -c -o $(gen) -t $(gentools_dir)/templ.cpp $(spec)
 	touch $(gen)/timestamp
 
 $(gen)/gen-src.mk: $(gen)/timestamp
-	cd $(gen)
-	$(gen)/make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) > $@-t
+	mkdir -p $(gen)
+	./make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) > $@-t
 	mv $@-t $@
 endif
 

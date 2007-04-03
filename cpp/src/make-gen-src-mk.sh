@@ -1,5 +1,5 @@
 #!/bin/sh
-# Generate the gen-src.mk makefile fragment, to stdout.
+# Generates  the gen-src.mk makefile fragment, to stdout.
 # Usage: <gentools_dir> <gentools_srcdir>
 
 gentools_dir=$1
@@ -8,9 +8,9 @@ gentools_srcdir=$2
 wildcard() { echo `ls $* 2>/dev/null` ; }
 
 cat <<EOF
-generated_sources = `wildcard *.cpp`
+generated_sources = `wildcard gen/*.cpp`
 
-generated_headers = `wildcard *.h`
+generated_headers = `wildcard gen/*.h`
 
 if CAN_GENERATE_CODE
 
