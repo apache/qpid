@@ -28,6 +28,7 @@
 #include "../broker/CompletionHandler.h"
 
 using namespace boost;
+using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace std;
@@ -41,22 +42,8 @@ class ReferenceTest : public CppUnit::TestCase
 
     ProtocolVersion v;
     ReferenceRegistry registry;
-    Reference::shared_ptr r1;
-    MessageTransferBody::shared_ptr t1, t2;
-    MessageMessage::shared_ptr m1, m2;
-    MessageAppendBody::shared_ptr a1, a2;
+
   public:
-
-    ReferenceTest() :
-        r1(registry.open("bar")),
-        t1(new MessageTransferBody(v)),
-        t2(new MessageTransferBody(v)),
-        m1(new MessageMessage(0, 1, t1, r1)),
-        m2(new MessageMessage(0, 2, t2, r1)),
-        a1(new MessageAppendBody(v)),
-        a2(new MessageAppendBody(v))
-    {}
-
     void testRegistry() {
         Reference::shared_ptr ref = registry.open("foo");
         CPPUNIT_ASSERT_EQUAL(string("foo"), ref->getId());
@@ -69,32 +56,43 @@ class ReferenceTest : public CppUnit::TestCase
             registry.open("foo");
             CPPUNIT_FAIL("Expected exception");
         } catch(...) {}
+        ref->close();
+        try {
+            registry.get("foo");
+            CPPUNIT_FAIL("Expected exception");
+        } catch(...) {}
     }
 
     void testReference() {
+
+        Reference::shared_ptr r1(registry.open("bar"));
+
+        MessageTransferBody::shared_ptr t1(new MessageTransferBody(v));
+        // TODO aconway 2007-04-03: hack around lack of generated setters. Clean this up.
+        const_cast<framing::Content&>(t1->getBody()) = framing::Content(REFERENCE,"bar");
+        MessageMessage::shared_ptr m1(new MessageMessage(0, 1, t1, r1));
+
+        MessageTransferBody::shared_ptr  t2(new MessageTransferBody(v));
+        const_cast<framing::Content&>(t2->getBody()) = framing::Content(REFERENCE,"bar");
+        MessageMessage::shared_ptr m2(new MessageMessage(0, 2, t2, r1));
+        
+        MessageAppendBody::shared_ptr a1(new MessageAppendBody(v));
+        MessageAppendBody::shared_ptr a2(new MessageAppendBody(v));
+
         r1->addMessage(m1);
         r1->addMessage(m2);
         CPPUNIT_ASSERT_EQUAL(size_t(2), r1->getMessages().size());
         r1->append(a1);
         r1->append(a2);
         CPPUNIT_ASSERT_EQUAL(size_t(2), r1->getAppends().size());
-        const vector<MessageMessage::shared_ptr> messages = r1->getMessages();
         r1->close();
-        try {
-            registry.open("bar");
-            CPPUNIT_FAIL("Expected exception");
-        } catch(...) {}
 
-        CPPUNIT_ASSERT_EQUAL(messages[0], m1);
-        CPPUNIT_ASSERT_EQUAL(messages[0]->getReference()->getAppends()[0], a1);
-        CPPUNIT_ASSERT_EQUAL(messages[0]->getReference()->getAppends()[1], a2);
+        CPPUNIT_ASSERT_EQUAL(m1->getReference()->getAppends()[0], a1);
+        CPPUNIT_ASSERT_EQUAL(m1->getReference()->getAppends()[1], a2);
 
-        CPPUNIT_ASSERT_EQUAL(messages[1], m2);
-        CPPUNIT_ASSERT_EQUAL(messages[1]->getReference()->getAppends()[0], a1);
-        CPPUNIT_ASSERT_EQUAL(messages[1]->getReference()->getAppends()[1], a2);
+        CPPUNIT_ASSERT_EQUAL(m2->getReference()->getAppends()[0], a1);
+        CPPUNIT_ASSERT_EQUAL(m2->getReference()->getAppends()[1], a2);
     }
-                             
-    
 };
 
 // Make this test suite a plugin.
