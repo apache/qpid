@@ -24,7 +24,7 @@
 #include "BrokerMessageBase.h"
 #include "MessageTransferBody.h"
 #include "../framing/amqp_types.h"
-
+#include <boost/weak_ptr.hpp>
 #include <vector>
 
 namespace qpid {
@@ -42,16 +42,16 @@ class MessageMessage: public Message{
     typedef boost::shared_ptr<MessageMessage> shared_ptr;
     typedef boost::shared_ptr<framing::MessageTransferBody> TransferPtr;
     typedef boost::shared_ptr<Reference> ReferencePtr;
-
+    
     MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer);
     MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer, ReferencePtr reference);
     MessageMessage();
             
     // Default destructor okay
 
-    framing::RequestId getRequestId() {return requestId; }
-    TransferPtr getTransfer() { return transfer; }
-    ReferencePtr getReference() { return reference; }
+    framing::RequestId getRequestId() const {return requestId; }
+    TransferPtr getTransfer() const { return transfer; }
+    ReferencePtr getReference() const ;
     
     void deliver(framing::ChannelAdapter& channel, 
                  const std::string& consumerTag, 
@@ -81,16 +81,19 @@ class MessageMessage: public Message{
     void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0);
 
   private:
-    void transferMessage(framing::ChannelAdapter& channel, 
-                         const std::string& consumerTag, 
-                         uint32_t framesize);
-    framing::MessageTransferBody* copyTransfer(const framing::ProtocolVersion& version,
-                                               const std::string& destination, 
-                                               const framing::Content& body) const;
+    void transferMessage(
+        framing::ChannelAdapter& channel, 
+        const std::string& consumerTag, 
+        uint32_t framesize);
+    
+    framing::MessageTransferBody* copyTransfer(
+        const framing::ProtocolVersion& version,
+        const std::string& destination, 
+        const framing::Content& body) const;
   
     framing::RequestId requestId;
     const TransferPtr transfer;
-    const ReferencePtr reference;
+    const boost::weak_ptr<Reference> reference;
 };
 
 }}
