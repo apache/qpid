@@ -95,6 +95,7 @@ void Broker::run() {
 void Broker::shutdown() {
     if (acceptor)
         acceptor->shutdown();
+    cleaner.stop();
 }
 
 Broker::~Broker() {
