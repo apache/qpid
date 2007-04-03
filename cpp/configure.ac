@@ -138,9 +138,6 @@ test "$enable_VALGRIND" = no && VALGRIND=
 
 AC_CONFIG_FILES([
   Makefile
-  src/gen/Makefile
-  src/client/Makefile
-  src/broker/Makefile
   src/Makefile
   src/tests/Makefile
   docs/man/Makefile
