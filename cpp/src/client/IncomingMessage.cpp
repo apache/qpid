@@ -32,6 +32,44 @@ using sys::Mutex;
 
 IncomingMessage::Destination::~Destination() {}
 
+    
+IncomingMessage::WaitableDestination::WaitableDestination()
+    : shutdownFlag(false) {}
+
+void IncomingMessage::WaitableDestination::message(const Message& msg) {
+    Mutex::ScopedLock l(monitor);
+    queue.push(msg);
+    monitor.notify();   
+}
+        
+void IncomingMessage::WaitableDestination::empty() {
+    Mutex::ScopedLock l(monitor);
+    queue.push(Empty());
+    monitor.notify();
+}
+    
+bool IncomingMessage::WaitableDestination::wait(Message& msgOut) {
+    Mutex::ScopedLock l(monitor);
+    while (queue.empty() && !shutdownFlag)
+        monitor.wait();
+    if (shutdownFlag)
+        return false;
+    Message* msg = boost::get<Message>(&queue.front());
+    bool success = msg;
+    if (success) 
+        msgOut=*msg;
+    queue.pop();
+    if (!queue.empty())
+        monitor.notify();   // Wake another waiter.
+    return success;
+}
+
+void IncomingMessage::WaitableDestination::shutdown() {
+    Mutex::ScopedLock l(monitor);
+    shutdownFlag = true;
+    monitor.notifyAll();
+}
+
 void IncomingMessage::openReference(const std::string& name) {
     Mutex::ScopedLock l(lock);
     if (references.find(name) != references.end())
