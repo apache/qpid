@@ -35,6 +35,7 @@ import javax.jms.Message;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.requestreply.PingPongProducer;
+import org.apache.qpid.util.CommandLineParser;
 
 import uk.co.thebadgerset.junit.extensions.util.MathUtils;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
@@ -71,6 +72,7 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
  * <tr><td> uniqueDests      <td> false    <td> Prevents destination names being timestamped.
  * <tr><td> transacted       <td> true     <td> Only makes sense to test with transactions.
  * <tr><td> persistent       <td> true     <td> Only makes sense to test persistent.
+ * <tr><td> durableDests     <td> true     <td> Should use durable queues with persistent messages.
  * <tr><td> commitBatchSize  <td> 10
  * <tr><td> rate             <td> 20       <td> Total default test time is 5 seconds.
  * </table>
@@ -108,6 +110,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         defaults.setProperty(PERSISTENT_MODE_PROPNAME, "true");
         defaults.setProperty(TX_BATCH_SIZE_PROPNAME, "10");
         defaults.setProperty(RATE_PROPNAME, "20");
+        defaults.setProperty(DURABLE_DESTS_PROPNAME, "true");
     }
 
     /** Specifies the number of pings to send, if larger than 0. 0 means send until told to stop. */
@@ -150,7 +153,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         try
         {
             // Create a ping producer overriding its defaults with all options passed on the command line.
-            Properties options = processCommandLine(args);
+            Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}));
             PingDurableClient pingProducer = new PingDurableClient(options);
 
             // Create a shutdown hook to terminate the ping-pong producer.
