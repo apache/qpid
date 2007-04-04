@@ -26,8 +26,7 @@
 #include "MethodBodyInstances.h"
 #include "Connection.h"
 #include "BasicMessageChannel.h"
-// FIXME aconway 2007-03-21: 
-//#include "MessageMessageChannel.h"
+#include "MessageMessageChannel.h"
 
 // FIXME aconway 2007-01-26: Evaluate all throws, ensure consistent
 // handling of errors that should close the connection or the channel.
@@ -39,14 +38,15 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-Channel::Channel(bool _transactional, u_int16_t _prefetch,
-                  MessageChannel* impl) :
-    // FIXME aconway 2007-03-21: MessageMessageChannel
-    messaging(impl ? impl : new BasicMessageChannel(*this)),
-    connection(0), 
-    prefetch(_prefetch), 
-    transactional(_transactional)
-{ }
+Channel::Channel(bool _transactional, u_int16_t _prefetch, InteropMode mode) :
+    connection(0), prefetch(_prefetch), transactional(_transactional)
+{
+    switch (mode) {
+      case AMQP_08: messaging.reset(new BasicMessageChannel(*this)); break;
+      case AMQP_09: messaging.reset(new MessageMessageChannel(*this)); break;
+      default: assert(0); QPID_ERROR(INTERNAL_ERROR, "Invalid interop-mode.");
+    }
+}
 
 Channel::~Channel(){
     close();
