@@ -149,6 +149,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     /** Thread Pool for executing connection level processes. Such as returning bounced messages. */
     private final ExecutorService _taskPool = Executors.newCachedThreadPool();
+    private static final long DEFAULT_TIMEOUT = 1000 * 30;
 
     /**
      * @param broker      brokerdetails
@@ -732,7 +733,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close() throws JMSException
     {
-        close(-1);
+        close(DEFAULT_TIMEOUT);
     }
 
     public void close(long timeout) throws JMSException
