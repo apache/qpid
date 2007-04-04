@@ -112,6 +112,7 @@ class Channel : public framing::ChannelAdapter
   friend class MessageMessageChannel; // for sendAndReceive.
         
   public:
+    enum InteropMode { AMQP_08, AMQP_09 };
 
     /**
      * Creates a channel object.
@@ -130,7 +131,7 @@ class Channel : public framing::ChannelAdapter
      */
     Channel(
         bool transactional = false, u_int16_t prefetch = 500,
-        MessageChannel* messageImpl = 0);
+        InteropMode=AMQP_08);
      
     ~Channel();
 

@@ -201,7 +201,8 @@ libqpidclient_la_SOURCES =			\
   $(client)/ClientExchange.cpp				\
   $(client)/ClientQueue.cpp				\
   $(client)/BasicMessageChannel.cpp			\
-  $(client)/Connector.cpp					\
+  $(client)/MessageMessageChannel.cpp			\
+  $(client)/Connector.cpp				\
   $(client)/IncomingMessage.cpp				\
   $(client)/MessageListener.cpp				\
   $(client)/ResponseHandler.cpp				\
@@ -245,10 +246,11 @@ nobase_pkginclude_HEADERS =			\
   $(client)/IncomingMessage.h				\
   $(client)/MessageChannel.h				\
   $(client)/BasicMessageChannel.h				\
-  $(client)/MessageListener.h				\
-  $(client)/MethodBodyInstances.h				\
-  $(client)/ResponseHandler.h				\
-  $(client)/ReturnedMessageHandler.h	\
+  $(client)/MessageMessageChannel.h		\
+  $(client)/MessageListener.h			\
+  $(client)/MethodBodyInstances.h		\
+  $(client)/ResponseHandler.h			\
+  $(client)/ReturnedMessageHandler.h		\
   shared_ptr.h					\
   Exception.h					\
   ExceptionHolder.h				\
