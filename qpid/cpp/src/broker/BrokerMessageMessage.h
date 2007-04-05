@@ -93,7 +93,7 @@ class MessageMessage: public Message{
   
     framing::RequestId requestId;
     const TransferPtr transfer;
-    const boost::weak_ptr<Reference> reference;
+    const boost::shared_ptr<Reference> reference;
 };
 
 }}

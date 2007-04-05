@@ -207,6 +207,8 @@ class BasicClientChannelTest : public ClientChannelTestBase {
 class MessageClientChannelTest : public ClientChannelTestBase {
     CPPUNIT_TEST_SUITE(MessageClientChannelTest);
     CPPUNIT_TEST(testPublishGet);
+    CPPUNIT_TEST(testGetNoContent);
+    CPPUNIT_TEST(testGetFragmentedMessage);
     CPPUNIT_TEST_SUITE_END();
   public:
     MessageClientChannelTest() {
