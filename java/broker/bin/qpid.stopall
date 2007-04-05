@@ -6,8 +6,6 @@
 #  Utilises qpid.stop to perform the actual stopping
 #
 
-MAX_ATTEMPTS=5
-SLEEP_DELAY=2
 PROGRAM="org.apache.qpid.server.Main"
 
 #
@@ -15,7 +13,8 @@ PROGRAM="org.apache.qpid.server.Main"
 #
 lookup()
 {
-pids=`ps o pid,command  |grep -v grep | grep $PROGRAM | cut -d ' ' -f 1`
+#pids=`ps o pid,command  | grep $PROGRAM | grep -v grep | cut -d ' ' -f 1`
+pids=`ps ugxwww | grep $PROGRAM | grep -v grep | awk '{print $2}'`
 result=`echo -n $pids | wc -w`
 }
 
