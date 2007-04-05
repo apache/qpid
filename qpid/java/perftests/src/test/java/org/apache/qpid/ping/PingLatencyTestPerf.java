@@ -175,7 +175,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
-        int numReplies = pingClient.pingAndWaitForReply(msg, numPings, timeout);
+        int numReplies = pingClient.pingAndWaitForReply(msg, numPings, timeout, null);
 
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < numPings)

@@ -21,6 +21,7 @@
 package org.apache.qpid.ping;
 
 import java.util.List;
+import java.util.Properties;
 
 import javax.jms.Destination;
 
@@ -31,54 +32,36 @@ import org.apache.qpid.requestreply.PingPongProducer;
  * to send replies to its pings. It simply listens to its own ping destinations, rather than seperate reply queues.
  * It is an all in one ping client, that produces and consumes its own pings.
  *
+ * <p/>The constructor increments a count of the number of ping clients created. It is assumed that where many
+ * are created they will all be run in parallel and be active in sending and consuming pings at the same time.
+ * If the unique destinations flag is not set and a pub/sub ping cycle is being run, this means that they will all hear
+ * pings sent by each other. The expected number of pings received will therefore be multiplied up by the number of
+ * active ping clients. The {@link #getConsumersPerTopic()} method is used to supply this multiplier under these
+ * conditions.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Create a ping pong producer that listens to its own pings <td> {@link PingPongProducer}
+ * <tr><td> Create a ping producer that listens to its own pings <td> {@link PingPongProducer}
+ * <tr><td> Count the number of ping producers and produce multiplier for scaling up messages expected over topic pings.
  * </table>
  */
 public class PingClient extends PingPongProducer
 {
+    /** Used to count the number of ping clients created. */
     private static int _pingClientCount;
 
     /**
-     * Creates a ping producer with the specified parameters, of which there are many. See their individual comments
-     * for details. This constructor creates ping pong producer but de-registers its reply-to destination message
-     * listener, and replaces it by listening to all of its ping destinations.
+     * Creates a ping producer with the specified parameters, of which there are many. See the class level comments
+     * for {@link PingPongProducer} for details. This constructor creates a connection to the broker and creates
+     * producer and consumer sessions on it, to send and recieve its pings and replies on.
      *
-     * @param brokerDetails    The URL of the broker to send pings to.
-     * @param username         The username to log onto the broker with.
-     * @param password         The password to log onto the broker with.
-     * @param virtualpath      The virtual host name to use on the broker.
-     * @param destinationName  The name (or root where multiple destinations are used) of the desitination to send
-     *                         pings to.
-     * @param selector         The selector to filter replies with.
-     * @param transacted       Indicates whether or not pings are sent and received in transactions.
-     * @param persistent       Indicates whether pings are sent using peristent delivery.
-     * @param messageSize      Specifies the size of ping messages to send.
-     * @param verbose          Indicates that information should be printed to the console on every ping.
-     * @param afterCommit      Indicates that the user should be promted to terminate a broker after commits to test failover.
-     * @param beforeCommit     Indicates that the user should be promted to terminate a broker before commits to test failover.
-     * @param afterSend        Indicates that the user should be promted to terminate a broker after sends to test failover.
-     * @param beforeSend       Indicates that the user should be promted to terminate a broker before sends to test failover.
-     * @param failOnce         Indicates that the failover testing behaviour should only happen on the first commit, not all.
-     * @param txBatchSize      Specifies the number of pings to send in each transaction.
-     * @param noOfDestinations The number of destinations to ping. Must be 1 or more.
-     * @param rate             Specified the number of pings per second to send. Setting this to 0 means send as fast as
-     *                         possible, with no rate restriction.
-     * @param pubsub           True to ping topics, false to ping queues.
-     * @param unique           True to use unique destinations for each ping pong producer, false to share.
+     * @param  overrides Properties containing any desired overrides to the defaults.
      *
      * @throws Exception Any exceptions are allowed to fall through.
      */
-    public PingClient(String brokerDetails, String username, String password, String virtualpath, String destinationName,
-                      String selector, boolean transacted, boolean persistent, int messageSize, boolean verbose,
-                      boolean afterCommit, boolean beforeCommit, boolean afterSend, boolean beforeSend, boolean failOnce,
-                      int txBatchSize, int noOfDestinations, int rate, boolean pubsub, boolean unique,
-                      int ackMode, long pausetime) throws Exception
+    public PingClient(Properties overrides) throws Exception
     {
-        super(brokerDetails, username, password, virtualpath, destinationName, selector, transacted, persistent, messageSize,
-              verbose, afterCommit, beforeCommit, afterSend, beforeSend, failOnce, txBatchSize, noOfDestinations, rate,
-              pubsub, unique, ackMode, pausetime);
+        super(overrides);
 
         _pingClientCount++;
     }
@@ -94,6 +77,11 @@ public class PingClient extends PingPongProducer
         return _pingDestinations;
     }
 
+    /**
+     * Supplies the multiplier for the number of ping clients that will hear each ping when doing pub/sub pinging.
+     *
+     * @return The scaling up of the number of expected pub/sub pings.
+     */
     public int getConsumersPerTopic()
     {
         if (_isUnique)
