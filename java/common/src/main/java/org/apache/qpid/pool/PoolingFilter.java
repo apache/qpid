@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.pool;
 
+import org.apache.qpid.pool.Event.CloseEvent;
+
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -206,6 +208,10 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
             fireAsynchEvent(session, new Event.ReceivedEvent(nextFilter, message));
         }
 
+        public void sessionClosed(final NextFilter nextFilter, final IoSession session) throws Exception
+        {
+            fireAsynchEvent(session, new CloseEvent(nextFilter));
+        }
 
     }
 
@@ -223,6 +229,12 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
         {
             fireAsynchEvent(session, new Event.WriteEvent(nextFilter, writeRequest));
         }
+
+        public void sessionClosed(final NextFilter nextFilter, final IoSession session) throws Exception
+        {
+            fireAsynchEvent(session, new CloseEvent(nextFilter));
+        }
+        
 
     }
 

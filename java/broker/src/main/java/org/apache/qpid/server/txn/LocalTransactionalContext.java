@@ -89,6 +89,11 @@ public class LocalTransactionalContext implements TransactionalContext
     public void rollback() throws AMQException
     {
         _txnBuffer.rollback(_storeContext);
+        // Hack to deal with uncommitted non-transactional writes
+        if(_messageStore.inTran(_storeContext))
+        {
+            _messageStore.abortTran(_storeContext);
+        }
         _postCommitDeliveryList.clear();
     }
 
@@ -103,6 +108,7 @@ public class LocalTransactionalContext implements TransactionalContext
 //        message.incrementReference();
         _postCommitDeliveryList.add(new DeliveryDetails(message, queue, deliverFirst));
         _messageDelivered = true;
+        _txnBuffer.enlist(new CleanupMessageOperation(message, _returnMessages));
         /*_txnBuffer.enlist(new DeliverMessageOperation(message, queue));
         if (_log.isDebugEnabled())
         {
@@ -111,7 +117,7 @@ public class LocalTransactionalContext implements TransactionalContext
         }
         message.incrementReference();
         _messageDelivered = true;
-        _txnBuffer.enlist(new CleanupMessageOperation(message, _returnMessages));
+
         */
     }
 
