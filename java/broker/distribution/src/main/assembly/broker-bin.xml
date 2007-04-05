@@ -108,6 +108,12 @@
       <fileMode>473</fileMode>
     </file>
     <file>
+      <source>../bin/passwd</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>passwd</destName>
+      <fileMode>473</fileMode>
+    </file>
+    <file>
       <source>../bin/qpid-server</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-server</destName>

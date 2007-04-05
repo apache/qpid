@@ -20,27 +20,15 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
-import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 import org.apache.qpid.server.security.access.AccessManager;
 import org.apache.qpid.server.security.access.AccessResult;
 import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.log4j.Logger;
 
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.login.AccountNotFoundException;
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.util.regex.Pattern;
-import java.util.Map;
-import java.util.HashMap;
-import java.security.Principal;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.

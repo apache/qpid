@@ -18,30 +18,33 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security.auth.sasl;
+package org.apache.qpid.server.security.auth.sasl.crammd5;
 
-import java.security.Provider;
-import java.security.Security;
-import java.util.Map;
+import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 
 import javax.security.sasl.SaslServerFactory;
+import java.util.Map;
 
-public final class JCAProvider extends Provider
+public class CRAMMD5HashedInitialiser extends UsernamePasswordInitialiser
 {
-    public JCAProvider(Map<String, Class<? extends SaslServerFactory>> providerMap)
+    public String getMechanismName()
     {
-        super("AMQSASLProvider", 1.0, "A JCA provider that registers all " +
-              "AMQ SASL providers that want to be registered");
-        register(providerMap);
-        //Security.addProvider(this);
+        return CRAMMD5HashedSaslServer.MECHANISM;
     }
 
-    private void register(Map<String, Class<? extends SaslServerFactory>> providerMap)
+    public Class<? extends SaslServerFactory> getServerFactoryClassForJCARegistration()
     {
-        for (Map.Entry<String, Class<? extends SaslServerFactory>> me :
-             providerMap.entrySet())
-        {
-            put("SaslServerFactory." + me.getKey(), me.getValue().getName());
-        }
+        return CRAMMD5HashedServerFactory.class;
+    }
+
+    public void initialise(PrincipalDatabase passwordFile)
+    {
+        super.initialise(passwordFile);
+    }
+
+    public Map<String, ?> getProperties()
+    {
+        return null;
     }
 }

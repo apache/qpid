@@ -22,8 +22,8 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
-import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
+import org.apache.commons.codec.binary.Base64;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
@@ -44,9 +44,9 @@ import java.security.Principal;
  *
  * where a carriage return separates each username/password pair. Passwords are assumed to be in plain text.
  */
-public class MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
+public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 {
-    private static final Logger _logger = Logger.getLogger(MD5PasswordFilePrincipalDatabase.class);
+    private static final Logger _logger = Logger.getLogger(Base64MD5PasswordFilePrincipalDatabase.class);
 
     private File _passwordFile;
 
@@ -54,7 +54,7 @@ public class MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     private Map<String, AuthenticationProviderInitialiser> _saslServers;
 
-    public MD5PasswordFilePrincipalDatabase()
+    public Base64MD5PasswordFilePrincipalDatabase()
     {
         _saslServers = new HashMap<String, AuthenticationProviderInitialiser>();
 
@@ -62,15 +62,10 @@ public class MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
          *  Create Authenticators for MD5 Password file.
          */
 
-        //  Accept MD5 incomming and use plain comparison with the file
-        PlainInitialiser cram = new PlainInitialiser();
-        cram.initialise(this);
         // Accept Plain incomming and hash it for comparison to the file.
-        CRAMMD5Initialiser plain = new CRAMMD5Initialiser();
-        plain.initialise(this, CRAMMD5Initialiser.HashDirection.INCOMMING);
-
-        _saslServers.put(plain.getMechanismName(), cram);
-        _saslServers.put(cram.getMechanismName(), plain);
+        CRAMMD5HashedInitialiser cram = new CRAMMD5HashedInitialiser();
+        cram.initialise(this);
+        _saslServers.put(cram.getMechanismName(), cram);
     }
 
     public void setPasswordFile(String passwordFile) throws FileNotFoundException
@@ -159,6 +154,7 @@ public class MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
     private char[] lookupPassword(String name) throws IOException
     {
         BufferedReader reader = null;
+        byte[] passwd = null;
         try
         {
             reader = new BufferedReader(new FileReader(_passwordFile));
@@ -174,7 +170,33 @@ public class MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
                 if (name.equals(result[0]))
                 {
-                    return result[1].toCharArray();
+
+
+                    char[] raw = result[1].toCharArray();
+
+                    byte[] encoded = new byte[result[1].length() + 1];
+
+                    int index = 0;
+                    for (char c : raw)
+                    {
+                        index++;
+                        encoded[index] = (byte) c;
+                    }
+
+                    Base64 b64 = new Base64();
+                    byte[] decoded = b64.decode(encoded);
+
+
+                    char[] hashedPassword = new char[decoded.length + 1];
+
+                    index = 0;
+                    for (byte c : decoded)
+                    {
+                        index++;
+                        hashedPassword[index] = (char) c;
+                    }
+
+                    return hashedPassword;
                 }
             }
             return null;
