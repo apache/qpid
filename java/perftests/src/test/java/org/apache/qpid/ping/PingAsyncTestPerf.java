@@ -86,7 +86,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Sets up the test parameters with defaults.
         testParameters.setPropertyIfNull(TEST_RESULTS_BATCH_SIZE_PROPNAME,
-                                         Integer.toString(TEST_RESULTS_BATCH_SIZE_DEFAULT));
+            Integer.toString(TEST_RESULTS_BATCH_SIZE_DEFAULT));
     }
 
     /**
@@ -159,7 +159,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
-        int numReplies = pingClient.pingAndWaitForReply(numPings, timeout, perThreadSetup._correlationId);
+        int numReplies = pingClient.pingAndWaitForReply(null, numPings, timeout, perThreadSetup._correlationId);
 
         // Check that all the replies were received and log a fail if they were not.
         if (numReplies < perCorrelationId._expectedCount)
@@ -247,8 +247,8 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                 String correlationId = message.getJMSCorrelationID();
 
                 _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount
-                              + "): called on batch boundary for message id: " + correlationId + " with thread id: "
-                              + Thread.currentThread().getId());
+                    + "): called on batch boundary for message id: " + correlationId + " with thread id: "
+                    + Thread.currentThread().getId());
 
                 // Get the details for the correlation id and check that they are not null. They can become null
                 // if a test times out.
