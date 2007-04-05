@@ -7,7 +7,7 @@
 
 MAX_ATTEMPTS=1
 SLEEP_DELAY=1
-PROGRAM="org.apache.qpid.server.Main"
+PROGRAM="DQPID"
 
 
 #
@@ -15,7 +15,8 @@ PROGRAM="org.apache.qpid.server.Main"
 #
 printActions()
 {
-ps=`ps o command p $1|grep $PROGRAM`
+#ps=`ps o command p $1|grep $PROGRAM`
+ps=`ps -o args -p $1|grep $PROGRAM`
 echo "Attempting to kill: $ps"
 }
 
@@ -41,7 +42,7 @@ kill $1
 #
 lookup()
 {
-result=`ps p $1 |grep -v grep |grep $PROGRAM |wc -l`
+result=`ps -o args -p $1 |grep -v grep |grep $PROGRAM |wc -l`
 }
 
 #
@@ -62,7 +63,7 @@ lookup $1
 verifyPid()
 {
 lookup $1
-if [[ $result == 1 ]] ; then	
+if [[ $[$result] == 1 ]] ; then
  brokerspid=$1
 else
  echo "Unable to locate Qpid Process with PID $1"
@@ -87,21 +88,21 @@ printActions $brokerspid
 
 # Attempt to quit the process MAX_ATTEMPTS Times
 attempt=0
-while [[ $result > 0 && $attempt < $MAX_ATTEMPTS ]] ; do
+while [[ $[$result] > 0 && $[$attempt] < $[$MAX_ATTEMPTS] ]] ; do
  quit $brokerspid
  check $brokerspid
  attempt=$[$attempt + 1]
 done
 
 # Check that it has quit
-if [[ $results == 0 ]] ; then
+if [[ $[$result] == 0 ]] ; then
  echo "Process quit"
  exit 0
 else
 
  # Now attempt to force quit the process
  attempt=0
- while [[ $result > 0 && $attempt < $MAX_ATTEMPTS ]] ; do
+ while [[ $[$result] > 0 && $[$attempt] < $[$MAX_ATTEMPTS] ]] ; do
   forceQuit $brokerspid
   check $brokerspid
   attempt=$[$attempt + 1]
@@ -109,7 +110,7 @@ else
 
 
  # Output final status
- if [[ $result > 0 && $attempt == $MAX_ATTEMPTS ]] ; then
+ if [[ $[$result] > 0 && $[$attempt] == $[$MAX_ATTEMPTS] ]] ; then
 	echo "Stopped trying to kill process: $brokerspid"
 	echo "Attempted to stop $attempt times"
  else

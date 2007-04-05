@@ -6,7 +6,7 @@
 #  Utilises qpid.stop to perform the actual stopping
 #
 
-PROGRAM="org.apache.qpid.server.Main"
+PROGRAM="DQPID"
 
 #
 # grep ps for instances of $PROGRAM and collect PIDs
@@ -14,7 +14,7 @@ PROGRAM="org.apache.qpid.server.Main"
 lookup()
 {
 #pids=`ps o pid,command  | grep $PROGRAM | grep -v grep | cut -d ' ' -f 1`
-pids=`ps ugxwww | grep $PROGRAM | grep -v grep | awk '{print $2}'`
+pids=`ps -ef |grep $USER | grep $PROGRAM | grep -v grep | awk '{print $2}'`
 result=`echo -n $pids | wc -w`
 }
 
@@ -24,7 +24,7 @@ result=`echo -n $pids | wc -w`
 #
 showPids()
 {
-ps p $pids
+ps -o user,pid,args -p $pids
 }
 
 
@@ -34,7 +34,7 @@ ps p $pids
 
 lookup
 
-if [[ $result == 0 ]] ; then
+if [[ $[$result] == 0 ]] ; then
  echo "No Qpid Brokers found running under user '$USER'"
  exit 0
 fi
@@ -48,7 +48,7 @@ done
 # Check we have quit all
 lookup
 
-if [[ $result == 0 ]] ; then
+if [[ $[$result] == 0 ]] ; then
  echo "All Qpid brokers successfully quit"
 else
  echo "Some brokers were not quit"
