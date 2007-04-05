@@ -22,16 +22,14 @@ package org.apache.qpid.server.store;
 
 import org.apache.log4j.Logger;
 
-
 /**
  * A context that the store can use to associate with a transactional context. For example, it could store
  * some kind of txn id.
- * 
+ *
  * @author Apache Software Foundation
  */
 public class StoreContext
 {
-
     private static final Logger _logger = Logger.getLogger(StoreContext.class);
 
     private String _name;
@@ -54,7 +52,17 @@ public class StoreContext
 
     public void setPayload(Object payload)
     {
-        _logger.debug("["+_name+"] Setting payload: " + payload);
+        _logger.debug("public void setPayload(Object payload = " + payload + "): called");
         _payload = payload;
+    }
+
+    /**
+     * Prints out the transactional context as a string, mainly for debugging purposes.
+     *
+     * @return The transactional context as a string.
+     */
+    public String toString()
+    {
+        return "<_name = " + _name + ", _payload = " + _payload + ">";
     }
 }

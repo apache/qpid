@@ -143,8 +143,8 @@ public class CommandLineParser
             String[] nextOptionSpec = config[i];
 
             addOption(nextOptionSpec[0], nextOptionSpec[1], (nextOptionSpec.length > 2) ? nextOptionSpec[2] : null,
-                      (nextOptionSpec.length > 3) ? ("true".equals(nextOptionSpec[3]) ? true : false) : false,
-                      (nextOptionSpec.length > 4) ? nextOptionSpec[4] : null);
+                (nextOptionSpec.length > 3) ? ("true".equals(nextOptionSpec[3]) ? true : false) : false,
+                (nextOptionSpec.length > 4) ? nextOptionSpec[4] : null);
         }
     }
 
@@ -209,8 +209,9 @@ public class CommandLineParser
         // Print usage on each of the command line options.
         for (CommandLineOption optionInfo : optionMap.values())
         {
-            result += optionInfo.option + " " + ((optionInfo.argument != null) ? (optionInfo.argument + " ") : "")
-                      + optionInfo.comment + "\n";
+            result +=
+                optionInfo.option + " " + ((optionInfo.argument != null) ? (optionInfo.argument + " ") : "")
+                + optionInfo.comment + "\n";
         }
 
         return result;
@@ -604,6 +605,37 @@ public class CommandLineParser
     }
 
     /**
+     * Extracts all name=value pairs from the command line, sets them all as system properties and also returns
+     * a map of properties containing them.
+     *
+     * @param args The command line.
+     *
+     * @return A set of properties containing all name=value pairs from the command line.
+     */
+    public static Properties processCommandLine(String[] args, CommandLineParser commandLine)
+    {
+        // Capture the command line arguments or display errors and correct usage and then exit.
+        Properties options = null;
+
+        try
+        {
+            options = commandLine.parseCommandLine(args);
+
+            // Add all the trailing command line options (name=value pairs) to system properties. They may be picked up
+            // from there.
+            commandLine.addCommandLineToSysProperties();
+        }
+        catch (IllegalArgumentException e)
+        {
+            System.out.println(commandLine.getErrors());
+            System.out.println(commandLine.getUsage());
+            System.exit(1);
+        }
+
+        return options;
+    }
+
+    /**
      * Holds information about a command line options. This includes what its name is, whether or not it is a flag,
      * whether or not it is mandatory, what its user comment is, what its argument reminder text is and what its
      * regular expression format is.
@@ -646,7 +678,7 @@ public class CommandLineParser
          * @param formatRegexp The regular expression that the argument to this option must meet to be valid.
          */
         public CommandLineOption(String option, boolean expectsArgs, String comment, String argument, boolean mandatory,
-                                 String formatRegexp)
+            String formatRegexp)
         {
             this.option = option;
             this.expectsArgs = expectsArgs;
