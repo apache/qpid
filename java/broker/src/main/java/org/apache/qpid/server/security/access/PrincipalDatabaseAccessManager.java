@@ -75,7 +75,15 @@ public class PrincipalDatabaseAccessManager implements AccessManager
         }
         else
         {
-            result = ((AccessManager) _database).isAuthorized(accessObject, username);
+            if (!(_database instanceof AccessManager))
+            {
+                _logger.warn("Specified PrincipalDatabase is not an AccessManager so using default AccessManager");
+                result = _default.isAuthorized(accessObject, username);
+            }
+            else
+            {
+                result = ((AccessManager) _database).isAuthorized(accessObject, username);
+            }
         }
 
         result.addAuthorizer(this);
