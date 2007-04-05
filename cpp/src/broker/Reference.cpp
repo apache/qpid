@@ -46,6 +46,7 @@ void Reference::append(AppendPtr ptr) {
 }
 
 void Reference::close() {
+    messages.clear();
     registry->references.erase(getId());
 }
 

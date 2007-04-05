@@ -192,6 +192,17 @@ MessageTransferBody::shared_ptr makeTransfer(
         ));
 }
 
+// FIXME aconway 2007-04-05: Generated code should provide this.
+/**
+ * Calculate the size of a frame containing the given body type
+ * if all variable-lengths parts are empty.
+ */
+template <class T> size_t overhead() {
+    static AMQFrame frame(
+        ProtocolVersion(), 0, make_shared_ptr(new T(ProtocolVersion())));
+    return frame.size();
+}
+
 void MessageMessageChannel::publish(
     const Message& msg, const Exchange& exchange,
     const std::string& routingKey, bool mandatory, bool immediate)
@@ -201,11 +212,35 @@ void MessageMessageChannel::publish(
         msg, exchange.getName(), routingKey, mandatory, immediate);
     // Frame itself uses 8 bytes.
     u_int32_t frameMax = channel.connection->getMaxFrameSize() - 8;
-    if (transfer->size()  > frameMax) {
-        // FIXME aconway 2007-02-23: 
-        throw QPID_ERROR(INTERNAL_ERROR, "References not yet implemented");
+    if (transfer->size()  <= frameMax) {
+        channel.sendAndReceive<MessageOkBody>(transfer);
     }
-    channel.sendAndReceive<MessageOkBody>(transfer);
+    else {
+        std::string ref = newTag();
+        std::string data = transfer->getBody().getValue();
+        size_t chunk =
+            channel.connection->getMaxFrameSize() -
+            (overhead<MessageAppendBody>() + ref.size());
+        // TODO aconway 2007-04-05: cast around lack of generated setters
+        const_cast<Content&>(transfer->getBody()) = Content(REFERENCE,ref);
+        channel.send(
+            make_shared_ptr(new MessageOpenBody(channel.version, ref)));
+        channel.send(transfer);
+        const char* p = data.data();
+        const char* end = data.data()+data.size();
+        while (p+chunk <= end) {
+            channel.send(
+                make_shared_ptr(
+                    new MessageAppendBody(channel.version, ref, std::string(p, chunk))));
+            p += chunk;
+        }
+        if (p < end) {
+            channel.send(
+                make_shared_ptr(
+                    new MessageAppendBody(channel.version, ref, std::string(p, end-p))));
+        }
+        channel.send(make_shared_ptr(new MessageCloseBody(channel.version, ref)));
+    }
 }
         
 void copy(Message& msg, MessageTransferBody& transfer) {

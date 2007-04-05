@@ -312,7 +312,7 @@ MessageTransferBody* MessageMessage::copyTransfer(const ProtocolVersion& version
 }
 
 MessageMessage::ReferencePtr MessageMessage::getReference() const {
-    return reference.lock();
+    return reference;
 }
 
 
