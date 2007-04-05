@@ -158,4 +158,40 @@ public class FileUtils
 
         return is;
     }
+
+    /**
+     * Copies the specified source file to the specified destintaion file. If the destinationst file does not exist,
+     * it is created.
+     *
+     * @param src The source file name.
+     * @param dst The destination file name.
+     */
+    public static void copy(File src, File dst)
+    {
+        try
+        {
+            InputStream in = new FileInputStream(src);
+            if (!dst.exists())
+            {
+                dst.createNewFile();
+            }
+
+            OutputStream out = new FileOutputStream(dst);
+
+            // Transfer bytes from in to out
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0)
+            {
+                out.write(buf, 0, len);
+            }
+
+            in.close();
+            out.close();
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
 }
