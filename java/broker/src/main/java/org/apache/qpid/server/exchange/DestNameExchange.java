@@ -196,6 +196,7 @@ public class DestNameExchange extends AbstractExchange
             }
             else
             {
+                _logger.error("MESSAGE LOSS: Message should be sent on a Dead Letter Queue");                
                 _logger.warn(msg);
             }
         }

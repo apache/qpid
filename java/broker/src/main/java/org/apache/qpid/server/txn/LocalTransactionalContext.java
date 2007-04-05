@@ -195,6 +195,7 @@ public class LocalTransactionalContext implements TransactionalContext
         {
             _txnBuffer.enlist(new StoreMessageOperation(_messageStore));
         }
+        //fixme fail commit here ... QPID-440
         try
         {
             _txnBuffer.commit(_storeContext);
