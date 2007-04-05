@@ -36,6 +36,8 @@ class RecoverableQueue
 {
 public:
     typedef boost::shared_ptr<RecoverableQueue> shared_ptr;
+
+    virtual void setPersistenceId(uint64_t id) = 0;
     /**
      * Used during recovery to add stored messages back to the queue
      */

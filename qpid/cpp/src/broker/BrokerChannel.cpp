@@ -28,7 +28,6 @@
 #include <boost/bind.hpp>
 
 #include "BrokerChannel.h"
-#include "DeletingTxOp.h"
 #include "../framing/ChannelAdapter.h"
 #include "../QpidError.h"
 #include "DeliverableMessage.h"
@@ -110,8 +109,8 @@ void Channel::begin(){
 }
 
 void Channel::commit(){
-    TxAck txAck(accumulatedAck, unacked);
-    txBuffer.enlist(&txAck);
+    TxOp::shared_ptr txAck(new TxAck(accumulatedAck, unacked));
+    txBuffer.enlist(txAck);
     if(txBuffer.prepare(store)){
         txBuffer.commit();
     }
@@ -186,11 +185,12 @@ void Channel::handleInlineTransfer(Message::shared_ptr msg)
     Exchange::shared_ptr exchange =
         connection.broker.getExchanges().get(msg->getExchange());
     if(transactional){
-        TxPublish* deliverable = new TxPublish(msg);
+        TxPublish* deliverable(new TxPublish(msg));
+        TxOp::shared_ptr op(deliverable);
         exchange->route(
             *deliverable, msg->getRoutingKey(),
             &(msg->getApplicationHeaders()));
-        txBuffer.enlist(new DeletingTxOp(deliverable));
+        txBuffer.enlist(op);
     }else{
         DeliverableMessage deliverable(msg);
         exchange->route(
@@ -223,10 +223,11 @@ void Channel::complete(Message::shared_ptr msg) {
         connection.broker.getExchanges().get(msg->getExchange());
     assert(exchange.get());
     if(transactional) {
-        std::auto_ptr<TxPublish> deliverable(new TxPublish(msg));
+        TxPublish* deliverable(new TxPublish(msg));
+        TxOp::shared_ptr op(deliverable);
         exchange->route(*deliverable, msg->getRoutingKey(),
                         &(msg->getApplicationHeaders()));
-        txBuffer.enlist(new DeletingTxOp(deliverable.release()));
+        txBuffer.enlist(op);
     } else {
         DeliverableMessage deliverable(msg);
         exchange->route(deliverable, msg->getRoutingKey(),

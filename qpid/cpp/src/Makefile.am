@@ -136,8 +136,6 @@ libqpidbroker_la_SOURCES =			\
   $(broker)/ConnectionToken.h				\
   $(broker)/Consumer.h					\
   $(broker)/Content.h					\
-  $(broker)/DeletingTxOp.cpp				\
-  $(broker)/DeletingTxOp.h				\
   $(broker)/Deliverable.h					\
   $(broker)/DeliverableMessage.cpp			\
   $(broker)/DeliverableMessage.h				\
