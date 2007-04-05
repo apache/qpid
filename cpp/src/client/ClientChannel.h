@@ -56,6 +56,7 @@ class Channel : public framing::ChannelAdapter
 {
   private:
     struct UnknownMethod {};
+    typedef shared_ptr<framing::AMQMethodBody> MethodPtr;
         
     sys::Mutex lock;
     boost::scoped_ptr<MessageChannel> messaging;
@@ -82,21 +83,23 @@ class Channel : public framing::ChannelAdapter
         const std::string& vhost);
     
     framing::AMQMethodBody::shared_ptr sendAndReceive(
-        framing::AMQMethodBody*, framing::ClassId, framing::MethodId);
+        framing::AMQMethodBody::shared_ptr,
+        framing::ClassId, framing::MethodId);
 
     framing::AMQMethodBody::shared_ptr sendAndReceiveSync(
         bool sync,
-        framing::AMQMethodBody*, framing::ClassId, framing::MethodId);
+        framing::AMQMethodBody::shared_ptr,
+        framing::ClassId, framing::MethodId);
 
     template <class BodyType>
-    boost::shared_ptr<BodyType> sendAndReceive(framing::AMQMethodBody* body) {
+    boost::shared_ptr<BodyType> sendAndReceive(framing::AMQMethodBody::shared_ptr body) {
         return boost::shared_polymorphic_downcast<BodyType>(
             sendAndReceive(body, BodyType::CLASS_ID, BodyType::METHOD_ID));
     }
 
     template <class BodyType>
     boost::shared_ptr<BodyType> sendAndReceiveSync(
-        bool sync, framing::AMQMethodBody* body) {
+        bool sync, framing::AMQMethodBody::shared_ptr body) {
         return boost::shared_polymorphic_downcast<BodyType>(
             sendAndReceiveSync(
                 sync, body, BodyType::CLASS_ID, BodyType::METHOD_ID));

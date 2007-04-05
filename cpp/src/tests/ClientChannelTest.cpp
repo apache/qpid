@@ -27,6 +27,7 @@
 #include "../client/ClientExchange.h"
 #include "../client/MessageListener.h"
 #include "../client/BasicMessageChannel.h"
+#include "../client/MessageMessageChannel.h"
 
 using namespace std;
 using namespace boost;
@@ -203,7 +204,17 @@ class BasicClientChannelTest : public ClientChannelTestBase {
     }
 };
 
+class MessageClientChannelTest : public ClientChannelTestBase {
+    CPPUNIT_TEST_SUITE(MessageClientChannelTest);
+    CPPUNIT_TEST(testPublishGet);
+    CPPUNIT_TEST_SUITE_END();
+  public:
+    MessageClientChannelTest() {
+        channel.reset(new Channel(false, 500, Channel::AMQP_09));
+    }
+};
 
 // Make this test suite a plugin.
 CPPUNIT_PLUGIN_IMPLEMENT();
 CPPUNIT_TEST_SUITE_REGISTRATION(BasicClientChannelTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(MessageClientChannelTest);
