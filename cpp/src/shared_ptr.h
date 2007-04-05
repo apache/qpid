@@ -37,6 +37,11 @@ template <class T> shared_ptr<T> make_shared_ptr(T* ptr) {
     return shared_ptr<T>(ptr);
 }
 
+template <class T, class D>
+shared_ptr<T> make_shared_ptr(T* ptr, D deleter) {
+    return shared_ptr<T>(ptr, deleter);
+}
+
 } // namespace qpid
 
 
