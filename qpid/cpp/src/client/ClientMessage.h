@@ -33,6 +33,8 @@ namespace client {
  *
  * \ingroup clientapi
  */
+// FIXME aconway 2007-04-05: Should be based on MessageTransfer properties not
+// basic header properties.
 class Message : public framing::BasicHeaderProperties {
   public:
     Message(const std::string& data_=std::string()) : data(data_) {}

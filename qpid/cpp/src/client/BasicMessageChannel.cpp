@@ -81,10 +81,10 @@ void BasicMessageChannel::consume(
     BasicConsumeOkBody::shared_ptr ok =
         channel.sendAndReceiveSync<BasicConsumeOkBody>(
             synch,
-            new BasicConsumeBody(
+            make_shared_ptr(new BasicConsumeBody(
                 channel.version, 0, queue.getName(), tag, noLocal,
                 ackMode == NO_ACK, false, !synch,
-                fields ? *fields : FieldTable()));
+                fields ? *fields : FieldTable())));
     tag = ok->getConsumerTag();
 }
 
@@ -102,7 +102,7 @@ void BasicMessageChannel::cancel(const std::string& tag, bool synch) {
     if(c.ackMode == LAZY_ACK && c.lastDeliveryTag > 0) 
         channel.send(new BasicAckBody(channel.version, c.lastDeliveryTag, true));
     channel.sendAndReceiveSync<BasicCancelOkBody>(
-        synch, new BasicCancelBody(channel.version, tag, !synch));
+        synch, make_shared_ptr(new BasicCancelBody(channel.version, tag, !synch)));
 }
 
 void BasicMessageChannel::close(){
@@ -337,9 +337,9 @@ void BasicMessageChannel::setReturnedMessageHandler(ReturnedMessageHandler* hand
 
 void BasicMessageChannel::setQos(){
     channel.sendAndReceive<BasicQosOkBody>(
-        new BasicQosBody(channel.version, 0, channel.getPrefetch(), false));
+        make_shared_ptr(new BasicQosBody(channel.version, 0, channel.getPrefetch(), false)));
     if(channel.isTransactional())
-        channel.sendAndReceive<TxSelectOkBody>(new TxSelectBody(channel.version));
+        channel.sendAndReceive<TxSelectOkBody>(make_shared_ptr(new TxSelectBody(channel.version)));
 }
 
 }} // namespace qpid::client

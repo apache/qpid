@@ -87,8 +87,8 @@ void Connection::close(
         // partly closed with threads left unjoined.
         isOpen = false;
         channel0.sendAndReceive<ConnectionCloseOkBody>(
-            new ConnectionCloseBody(
-                getVersion(), code, msg, classId, methodId));
+            make_shared_ptr(new ConnectionCloseBody(
+                                getVersion(), code, msg, classId, methodId)));
 
         using boost::bind;
         for_each(channels.begin(), channels.end(),

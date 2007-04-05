@@ -32,8 +32,7 @@ class AMQResponseBody;
 /**
  * Manage request IDs and the response mark for locally initiated requests.
  *
- * THREAD UNSAFE: This class is called as frames are sent or received
- * sequentially on a connection, so it does not need to be thread safe.
+ * THREAD UNSAFE: must be locked externally.
  */
 class Requester
 {
@@ -46,12 +45,14 @@ class Requester
     /** Called after processing a response. */
     void processed(const AMQResponseBody::Data&);
 
-	/** Get the next request id to be used. */
-	RequestId getNextId() { return lastId + 1; }
-	/** Get the first request acked by this response */
-	RequestId getFirstAckRequest() { return firstAckRequest; }
-	/** Get the last request acked by this response */
-	RequestId getLastAckRequest() { return lastAckRequest; }
+    /** Get the next request id to be used. */
+    RequestId getNextId() { return lastId + 1; }
+
+    /** Get the first request acked by last response */
+    RequestId getFirstAckRequest() { return firstAckRequest; }
+
+    /** Get the last request acked by last response */
+    RequestId getLastAckRequest() { return lastAckRequest; }
 
   private:
     RequestId lastId;

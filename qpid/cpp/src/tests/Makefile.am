@@ -110,6 +110,9 @@ gen.mk: Makefile.am
 
 check: .valgrindrc $(check_LTLIBRARIES) $(lib_common) $(lib_client) $(lib_broker) 
 
+check-unit:
+	$(MAKE) check TESTS=run-unit-tests
+
 # Create a copy so user can modify without risk of checking in their mods.
 .valgrindrc: .valgrindrc-default
 	cp .valgrindrc-default .valgrindrc
