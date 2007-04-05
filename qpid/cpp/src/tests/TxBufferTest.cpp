@@ -24,6 +24,7 @@
 #include <vector>
 
 using namespace qpid::broker;
+using boost::static_pointer_cast;
 
 template <class T> void assertEqualVector(std::vector<T>& expected, std::vector<T>& actual){
     unsigned int i = 0;
@@ -43,6 +44,8 @@ class TxBufferTest : public CppUnit::TestCase
         std::vector<int> actual;
         bool failOnPrepare;
     public:
+        typedef boost::shared_ptr<MockTxOp> shared_ptr;
+
         MockTxOp() : failOnPrepare(false) {}
         MockTxOp(bool _failOnPrepare) : failOnPrepare(_failOnPrepare) {}
 
@@ -166,100 +169,100 @@ class TxBufferTest : public CppUnit::TestCase
         MockTransactionalStore store;
         store.expectBegin().expectCommit();
 
-        MockTxOp opA;
-        opA.expectPrepare().expectCommit();
-        MockTxOp opB;
-        opB.expectPrepare().expectPrepare().expectCommit().expectCommit();//opB enlisted twice to test reative order
-        MockTxOp opC;
-        opC.expectPrepare().expectCommit();
+        MockTxOp::shared_ptr opA(new MockTxOp());
+        opA->expectPrepare().expectCommit();
+        MockTxOp::shared_ptr opB(new MockTxOp());
+        opB->expectPrepare().expectPrepare().expectCommit().expectCommit();//opB enlisted twice to test reative order
+        MockTxOp::shared_ptr opC(new MockTxOp());
+        opC->expectPrepare().expectCommit();
 
         TxBuffer buffer;
-        buffer.enlist(&opA);
-        buffer.enlist(&opB);
-        buffer.enlist(&opB);//opB enlisted twice
-        buffer.enlist(&opC);
+        buffer.enlist(static_pointer_cast<TxOp>(opA));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));//opB enlisted twice
+        buffer.enlist(static_pointer_cast<TxOp>(opC));
 
         CPPUNIT_ASSERT(buffer.prepare(&store));
         buffer.commit();
         store.check();
         CPPUNIT_ASSERT(store.isCommitted());
-        opA.check();
-        opB.check();
-        opC.check();
+        opA->check();
+        opB->check();
+        opC->check();
     }
 
     void testFailOnPrepare(){
         MockTransactionalStore store;
         store.expectBegin().expectAbort();
 
-        MockTxOp opA;
-        opA.expectPrepare();
-        MockTxOp opB(true);
-        opB.expectPrepare();
-        MockTxOp opC;//will never get prepare as b will fail
+        MockTxOp::shared_ptr opA(new MockTxOp());
+        opA->expectPrepare();
+        MockTxOp::shared_ptr opB(new MockTxOp(true));
+        opB->expectPrepare();
+        MockTxOp::shared_ptr opC(new MockTxOp());//will never get prepare as b will fail
 
         TxBuffer buffer;
-        buffer.enlist(&opA);
-        buffer.enlist(&opB);
-        buffer.enlist(&opC);
+        buffer.enlist(static_pointer_cast<TxOp>(opA));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));
+        buffer.enlist(static_pointer_cast<TxOp>(opC));
 
         CPPUNIT_ASSERT(!buffer.prepare(&store));
         store.check();
         CPPUNIT_ASSERT(store.isAborted());
-        opA.check();
-        opB.check();
-        opC.check();
+        opA->check();
+        opB->check();
+        opC->check();
     }
 
     void testRollback(){
-        MockTxOp opA;
-        opA.expectRollback();
-        MockTxOp opB(true);
-        opB.expectRollback();
-        MockTxOp opC;
-        opC.expectRollback();
+        MockTxOp::shared_ptr opA(new MockTxOp());
+        opA->expectRollback();
+        MockTxOp::shared_ptr opB(new MockTxOp(true));
+        opB->expectRollback();
+        MockTxOp::shared_ptr opC(new MockTxOp());
+        opC->expectRollback();
 
         TxBuffer buffer;
-        buffer.enlist(&opA);
-        buffer.enlist(&opB);
-        buffer.enlist(&opC);
+        buffer.enlist(static_pointer_cast<TxOp>(opA));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));
+        buffer.enlist(static_pointer_cast<TxOp>(opC));
 
         buffer.rollback();
-        opA.check();
-        opB.check();
-        opC.check();
+        opA->check();
+        opB->check();
+        opC->check();
     }
 
     void testBufferIsClearedAfterRollback(){
-        MockTxOp opA;
-        opA.expectRollback();
-        MockTxOp opB;
-        opB.expectRollback();
+        MockTxOp::shared_ptr opA(new MockTxOp());
+        opA->expectRollback();
+        MockTxOp::shared_ptr opB(new MockTxOp());
+        opB->expectRollback();
 
         TxBuffer buffer;
-        buffer.enlist(&opA);
-        buffer.enlist(&opB);
+        buffer.enlist(static_pointer_cast<TxOp>(opA));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));
 
         buffer.rollback();
         buffer.commit();//second call should not reach ops
-        opA.check();
-        opB.check();
+        opA->check();
+        opB->check();
     }
 
     void testBufferIsClearedAfterCommit(){
-        MockTxOp opA;
-        opA.expectCommit();
-        MockTxOp opB;
-        opB.expectCommit();
+        MockTxOp::shared_ptr opA(new MockTxOp());
+        opA->expectCommit();
+        MockTxOp::shared_ptr opB(new MockTxOp());
+        opB->expectCommit();
 
         TxBuffer buffer;
-        buffer.enlist(&opA);
-        buffer.enlist(&opB);
+        buffer.enlist(static_pointer_cast<TxOp>(opA));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));
 
         buffer.commit();
         buffer.rollback();//second call should not reach ops
-        opA.check();
-        opB.check();
+        opA->check();
+        opB->check();
     }
 };
 

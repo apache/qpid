@@ -45,6 +45,7 @@ public:
     RecoverableMessageImpl(Message::shared_ptr& _msg, uint64_t _stagingThreshold) 
         : msg(_msg), stagingThreshold(_stagingThreshold) {}
     ~RecoverableMessageImpl() {};
+    void setPersistenceId(uint64_t id);
     bool loadContent(uint64_t available);
     void decodeContent(framing::Buffer& buffer);
     void recover(Queue::shared_ptr queue);
@@ -56,6 +57,7 @@ class RecoverableQueueImpl : public RecoverableQueue
 public:
     RecoverableQueueImpl(Queue::shared_ptr& _queue) : queue(_queue) {}
     ~RecoverableQueueImpl() {};
+    void setPersistenceId(uint64_t id);
     void recover(RecoverableMessage::shared_ptr msg);
 };
 
@@ -125,7 +127,17 @@ void RecoverableMessageImpl::recover(Queue::shared_ptr queue)
     queue->recover(msg);
 }
 
+void RecoverableMessageImpl::setPersistenceId(uint64_t id)
+{
+    msg->setPersistenceId(id);
+}
+
 void RecoverableQueueImpl::recover(RecoverableMessage::shared_ptr msg)
 {
     dynamic_pointer_cast<RecoverableMessageImpl>(msg)->recover(queue);
+}
+
+void RecoverableQueueImpl::setPersistenceId(uint64_t id)
+{
+    queue->setPersistenceId(id);
 }
