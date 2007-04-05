@@ -1,6 +1,3 @@
-#ifndef _common_shared_ptr_h
-#define _common_shared_ptr_h
-
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -19,26 +16,27 @@
  *
  */
 
-#include <boost/shared_ptr.hpp>
-#include <boost/cast.hpp>
+#include "Correlator.h"
 
 namespace qpid {
+namespace framing {
 
-// Import shared_ptr definitions into qpid namespace and define some
-// useful shared_ptr templates for convenience.
-
-using boost::shared_ptr;
-using boost::dynamic_pointer_cast;
-using boost::static_pointer_cast;
-using boost::const_pointer_cast;
-using boost::shared_polymorphic_downcast;
-
-template <class T> shared_ptr<T> make_shared_ptr(T* ptr) {
-    return shared_ptr<T>(ptr);
+void Correlator::request(RequestId id, Action action) {
+    actions[id] = action;
 }
 
-} // namespace qpid
+bool Correlator::response(shared_ptr<AMQResponseBody> r) {
+    Actions::iterator begin = actions.lower_bound(r->getRequestId());
+    Actions::iterator end =
+        actions.upper_bound(r->getRequestId()+r->getBatchOffset());
+    bool didAction = false;
+    for(Actions::iterator i=begin; i != end; ++i) {
+        // FIXME aconway 2007-04-04: Exception handling.
+        didAction = true;
+        i->second(r);
+        actions.erase(i);
+    }
+    return didAction;
+}
 
-
-
-#endif  /*!_common_shared_ptr_h*/
+}} // namespace qpid::framing

@@ -22,11 +22,11 @@
  *
  */
 
-#include <boost/shared_ptr.hpp>
-
+#include "../shared_ptr.h"
 #include "BodyHandler.h"
 #include "Requester.h"
 #include "Responder.h"
+#include "Correlator.h"
 #include "amqp_types.h"
 
 namespace qpid {
@@ -64,17 +64,24 @@ class ChannelAdapter : public BodyHandler {
 
     ChannelId getId() const { return id; }
     ProtocolVersion getVersion() const { return version; }
-    
+
     /**
-     * Wrap body in a frame and send the frame.
-     * Takes ownership of body.
+     * Send a frame.
+     *@param body Body of the frame.
+     *@param action optional action to execute when we receive a
+     *response to this frame.  Ignored if body is not a Request.
+     *@return If body is a request, the ID assigned else 0.
      */
-    RequestId send(AMQBody::shared_ptr body);
+    RequestId send(shared_ptr<AMQBody> body,
+                   Correlator::Action action=Correlator::Action());
+
+    // TODO aconway 2007-04-05:  remove and use make_shared_ptr at call sites.
+    /**@deprecated Use make_shared_ptr with the other send() override */
     RequestId send(AMQBody* body) { return send(AMQBody::shared_ptr(body)); }
 
-    void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody>);
-    void handleRequest(boost::shared_ptr<qpid::framing::AMQRequestBody>);
-    void handleResponse(boost::shared_ptr<qpid::framing::AMQResponseBody>);
+    void handleMethod(shared_ptr<AMQMethodBody>);
+    void handleRequest(shared_ptr<AMQRequestBody>);
+    void handleResponse(shared_ptr<AMQResponseBody>);
 
     virtual bool isOpen() const = 0;
     
@@ -84,7 +91,7 @@ class ChannelAdapter : public BodyHandler {
     void assertChannelNotOpen() const;
 
     virtual void handleMethodInContext(
-        boost::shared_ptr<qpid::framing::AMQMethodBody> method,
+        shared_ptr<AMQMethodBody> method,
         const MethodContext& context) = 0;
 
     RequestId getFirstAckRequest() { return requester.getFirstAckRequest(); }
@@ -97,6 +104,7 @@ class ChannelAdapter : public BodyHandler {
     ProtocolVersion version;
     Requester requester;
     Responder responder;
+    Correlator correlator;
 };
 
 }}

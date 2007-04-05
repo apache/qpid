@@ -18,9 +18,6 @@
  * under the License.
  *
  */
-#include <memory>
-#include <boost/lexical_cast.hpp>
-
 #include "ConnectionRedirectBody.h"
 #include "../framing/ProtocolVersion.h"
 #include "../framing/amqp_framing.h"
@@ -38,6 +35,11 @@
 #include "../client/Connection.h"
 #include "../client/ClientExchange.h"
 #include "../client/ClientQueue.h"
+#include "../framing/Correlator.h"
+#include "BasicGetOkBody.h"
+#include <memory>
+#include <boost/lexical_cast.hpp>
+#include <boost/bind.hpp>
 
 using namespace qpid;
 using namespace qpid::framing;
@@ -65,6 +67,7 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testResponseBodyFrame);
     CPPUNIT_TEST(testRequester);
     CPPUNIT_TEST(testResponder);
+    CPPUNIT_TEST(testCorrelator);
     CPPUNIT_TEST(testInlineContent);
     CPPUNIT_TEST(testContentReference);
     CPPUNIT_TEST(testContentValidation);
@@ -300,7 +303,7 @@ class FramingTest : public CppUnit::TestCase
         Responder r;
         AMQRequestBody::Data q;
         AMQResponseBody::Data p;
-
+        
         q.requestId = 1;
         q.responseMark = 0;
         r.received(q);
@@ -333,6 +336,48 @@ class FramingTest : public CppUnit::TestCase
 
         // TODO aconway 2007-01-14: Test for batching when supported.
         
+    }
+
+
+    std::vector<Correlator::ResponsePtr> correlations;
+
+    void correlatorCallback(Correlator::ResponsePtr r) {
+        correlations.push_back(r);
+    }
+
+    struct DummyResponse : public AMQResponseBody {
+        DummyResponse(ResponseId id=0, RequestId req=0, BatchOffset off=0)
+            : AMQResponseBody(version, id, req, off) {}
+        uint32_t size() const { return 0; }
+        void print(std::ostream&) const {}
+        MethodId amqpMethodId() const { return 0; }
+        ClassId  amqpClassId() const { return 0; }
+        void encodeContent(Buffer& ) const {}
+        void decodeContent(Buffer& ) {}
+    };
+
+    void testCorrelator() {
+        CPPUNIT_ASSERT(correlations.empty());
+        Correlator c;
+        Correlator::Action action = boost::bind(&FramingTest::correlatorCallback, this, _1);
+        c.request(5, action);
+        Correlator::ResponsePtr r1(new DummyResponse(3, 5, 0));
+        CPPUNIT_ASSERT(c.response(r1));
+        CPPUNIT_ASSERT_EQUAL(size_t(1), correlations.size());
+        CPPUNIT_ASSERT(correlations.front() == r1);
+        correlations.clear();
+
+        c.request(6, action);
+        c.request(7, action);
+        c.request(8, action);
+        Correlator::ResponsePtr r2(new DummyResponse(4, 6, 3));
+        CPPUNIT_ASSERT(c.response(r2));
+        CPPUNIT_ASSERT_EQUAL(size_t(3), correlations.size());
+        CPPUNIT_ASSERT(r2 == correlations[0]);
+        CPPUNIT_ASSERT(r2 == correlations[1]);
+        CPPUNIT_ASSERT(r2 == correlations[2]);
+        Correlator::ResponsePtr r3(new DummyResponse(5, 99, 0));
+        CPPUNIT_ASSERT(!c.response(r3));
     }
 
     // expect may contain null chars so use string(ptr,size) constructor
