@@ -59,8 +59,8 @@
 namespace qpid {
     namespace broker {
         class TxBuffer{
-            typedef std::vector<TxOp*>::iterator op_iterator;
-            std::vector<TxOp*> ops;
+            typedef std::vector<TxOp::shared_ptr>::iterator op_iterator;
+            std::vector<TxOp::shared_ptr> ops;
         public:
             /**
              * Requests that all ops are prepared. This should
@@ -98,7 +98,7 @@ namespace qpid {
             /**
              * Adds an operation to the transaction.
              */
-            void enlist(TxOp* const op);
+            void enlist(TxOp::shared_ptr op);
         };
     }
 }

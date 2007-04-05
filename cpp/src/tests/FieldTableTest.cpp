@@ -28,6 +28,7 @@ class FieldTableTest : public CppUnit::TestCase
 {
     CPPUNIT_TEST_SUITE(FieldTableTest);
     CPPUNIT_TEST(testMe);
+    CPPUNIT_TEST(testAssignment);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -45,6 +46,38 @@ class FieldTableTest : public CppUnit::TestCase
         buffer.getFieldTable(ft2);
         CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), ft2.getString("A"));
 
+    }
+
+    void testAssignment()
+    {
+        FieldTable a;
+        FieldTable b;
+
+        a.setString("A", "BBBB");
+        a.setInt("B", 1234);
+        b = a;
+        a.setString("A", "CCCC");
+        
+        CPPUNIT_ASSERT_EQUAL(std::string("CCCC"), a.getString("A"));
+        CPPUNIT_ASSERT_EQUAL(std::string("BBBB"), b.getString("A"));
+        CPPUNIT_ASSERT_EQUAL(1234, a.getInt("B"));
+        CPPUNIT_ASSERT_EQUAL(1234, b.getInt("B"));
+
+        FieldTable d;
+        {
+            FieldTable c;
+            c = a;
+            
+            Buffer buffer(c.size());
+            buffer.putFieldTable(c);
+            buffer.flip();     
+            buffer.getFieldTable(d);
+            CPPUNIT_ASSERT_EQUAL(c, d);
+            CPPUNIT_ASSERT_EQUAL(std::string("CCCC"), c.getString("A"));
+            CPPUNIT_ASSERT_EQUAL(1234, c.getInt("B"));
+        }
+        CPPUNIT_ASSERT_EQUAL(std::string("CCCC"), d.getString("A"));
+        CPPUNIT_ASSERT_EQUAL(1234, d.getInt("B"));
     }
 };
 

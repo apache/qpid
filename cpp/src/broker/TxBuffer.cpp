@@ -20,7 +20,8 @@
  */
 #include "TxBuffer.h"
 
-using std::mem_fun;
+#include <boost/mem_fn.hpp>
+using boost::mem_fn;
 using namespace qpid::broker;
 
 bool TxBuffer::prepare(TransactionalStore* const store)
@@ -39,17 +40,17 @@ bool TxBuffer::prepare(TransactionalStore* const store)
 
 void TxBuffer::commit()
 {
-    for_each(ops.begin(), ops.end(), mem_fun(&TxOp::commit));
+    for_each(ops.begin(), ops.end(), mem_fn(&TxOp::commit));
     ops.clear();
 }
 
 void TxBuffer::rollback()
 {
-    for_each(ops.begin(), ops.end(), mem_fun(&TxOp::rollback));
+    for_each(ops.begin(), ops.end(), mem_fn(&TxOp::rollback));
     ops.clear();
 }
 
-void TxBuffer::enlist(TxOp* const op)
+void TxBuffer::enlist(TxOp::shared_ptr op)
 {
     ops.push_back(op);
 }
