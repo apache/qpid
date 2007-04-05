@@ -89,7 +89,7 @@ class Message : public PersistableMessage{
     
     void setRouting(const std::string& _exchange, const std::string& _routingKey)
     { exchange = _exchange; routingKey = _routingKey; } 
-    void setPersistenceId(uint64_t _persistenceId) { persistenceId = _persistenceId; } // XXXX: Only used in tests?
+    void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
     void redeliver() { redelivered = true; }
 
     /**
@@ -171,7 +171,7 @@ class Message : public PersistableMessage{
     std::string routingKey;
     const bool mandatory;
     const bool immediate;
-    uint64_t persistenceId;
+    mutable uint64_t persistenceId;
     bool redelivered;
     AMQMethodBodyPtr respondTo;
 };

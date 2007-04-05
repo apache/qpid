@@ -216,19 +216,20 @@ namespace
     const std::string qpidMaxCount("qpid.max_count");
 }
 
-void Queue::create(const FieldTable& settings)
+void Queue::create(const FieldTable& _settings)
 {
+    settings = _settings;
     //TODO: hold onto settings and persist them as part of encode
     //      in fact settings should be passed in on construction
     if (store) {
         store->create(*this);
     }
-    configure(settings);
+    configure(_settings);
 }
 
-void Queue::configure(const FieldTable& settings)
+void Queue::configure(const FieldTable& _settings)
 {
-    std::auto_ptr<QueuePolicy> _policy(new QueuePolicy(settings));
+    std::auto_ptr<QueuePolicy> _policy(new QueuePolicy(_settings));
     if (_policy->getMaxCount() || _policy->getMaxSize()) 
         setPolicy(_policy);
 }
@@ -255,7 +256,7 @@ uint64_t Queue::getPersistenceId() const
     return persistenceId; 
 }
 
-void Queue::setPersistenceId(uint64_t _persistenceId)
+void Queue::setPersistenceId(uint64_t _persistenceId) const
 { 
     persistenceId = _persistenceId; 
 }
@@ -263,13 +264,12 @@ void Queue::setPersistenceId(uint64_t _persistenceId)
 void Queue::encode(framing::Buffer& buffer) const 
 {
     buffer.putShortString(name);
-    //TODO store all required properties
+    buffer.putFieldTable(settings);
 }
 
 uint32_t Queue::encodedSize() const
 {
-    //TODO, revise when storing full set of queue properties
-    return name.size() + 1/*short string size octet*/;
+    return name.size() + 1/*short string size octet*/ + settings.size();
 }
 
 Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)
@@ -277,6 +277,8 @@ Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)
     string name;
     buffer.getShortString(name);
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
+    buffer.getFieldTable(result.first->settings);
+    result.first->configure(result.first->settings);
     return result.first;
 }
 

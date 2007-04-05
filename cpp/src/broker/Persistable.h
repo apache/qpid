@@ -37,7 +37,7 @@ public:
     /**
      * Allows the store to attach its own identifier to this object
      */
-    virtual void setPersistenceId(uint64_t id) = 0;
+    virtual void setPersistenceId(uint64_t id) const = 0;
     /**
      * Returns any identifier the store may have attached to this
      * object

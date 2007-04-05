@@ -70,6 +70,7 @@ namespace qpid {
             int64_t lastUsed;
             Consumer* exclusive;
             mutable uint64_t persistenceId;
+            framing::FieldTable settings;
             std::auto_ptr<QueuePolicy> policy;            
 
             void pop();
@@ -138,7 +139,7 @@ namespace qpid {
 
             //PersistableQueue support:
             uint64_t getPersistenceId() const;
-            void setPersistenceId(uint64_t persistenceId);
+            void setPersistenceId(uint64_t persistenceId) const;
             void encode(framing::Buffer& buffer) const;
             uint32_t encodedSize() const;
 
