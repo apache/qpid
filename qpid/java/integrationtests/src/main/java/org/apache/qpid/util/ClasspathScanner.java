@@ -61,10 +61,10 @@ public class ClasspathScanner
      * @return All the classes that match this collector.
      */
     public static <T> Collection<Class<? extends T>> getMatches(Class<T> matchingClass, String matchingRegexp,
-                                                                boolean beanOnly)
+        boolean beanOnly)
     {
         log.debug("public static <T> Collection<Class<? extends T>> getMatches(Class<T> matchingClass = " + matchingClass
-                  + ", String matchingRegexp = " + matchingRegexp + ", boolean beanOnly = " + beanOnly + "): called");
+            + ", String matchingRegexp = " + matchingRegexp + ", boolean beanOnly = " + beanOnly + "): called");
 
         // Build a compiled regular expression from the pattern to match.
         Pattern matchPattern = Pattern.compile(matchingRegexp);
@@ -95,11 +95,11 @@ public class ClasspathScanner
      *       iteration.
      */
     private static <T> void gatherFiles(File classRoot, String classFileName, Map<String, Class<? extends T>> result,
-                                        Pattern matchPattern, Class<? extends T> matchClass)
+        Pattern matchPattern, Class<? extends T> matchClass)
     {
         log.debug("private static <T> void gatherFiles(File classRoot = " + classRoot + ", String classFileName = "
-                  + classFileName + ", Map<String, Class<? extends T>> result, Pattern matchPattern = " + matchPattern
-                  + ", Class<? extends T> matchClass = " + matchClass + "): called");
+            + classFileName + ", Map<String, Class<? extends T>> result, Pattern matchPattern = " + matchPattern
+            + ", Class<? extends T> matchClass = " + matchClass + "): called");
 
         File thisRoot = new File(classRoot, classFileName);
 
