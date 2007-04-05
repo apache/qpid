@@ -60,7 +60,7 @@ void Channel::open(ChannelId id, Connection& con)
     init(id, con, con.getVersion()); // ChannelAdapter initialization.
     string oob;
     if (id != 0) 
-        sendAndReceive<ChannelOpenOkBody>(new ChannelOpenBody(version, oob));
+        sendAndReceive<ChannelOpenOkBody>(make_shared_ptr(new ChannelOpenBody(version, oob)));
 }
 
 void Channel::protocolInit(
@@ -77,10 +77,10 @@ void Channel::protocolInit(
     string locale("en_US");
     ConnectionTuneBody::shared_ptr proposal =
         sendAndReceive<ConnectionTuneBody>(
-            new ConnectionStartOkBody(
+            make_shared_ptr(new ConnectionStartOkBody(
                 version, connectionStart->getRequestId(),
                 props, mechanism,
-                response, locale));
+                response, locale)));
 
     /**
      * Assume for now that further challenges will not be required
@@ -136,15 +136,15 @@ void Channel::declareExchange(Exchange& exchange, bool synch){
     FieldTable args;
     sendAndReceiveSync<ExchangeDeclareOkBody>(
         synch,
-        new ExchangeDeclareBody(
-            version, 0, name, type, false, false, false, false, !synch, args));
+        make_shared_ptr(new ExchangeDeclareBody(
+                            version, 0, name, type, false, false, false, false, !synch, args)));
 }
 
 void Channel::deleteExchange(Exchange& exchange, bool synch){
     string name = exchange.getName();
     sendAndReceiveSync<ExchangeDeleteOkBody>(
         synch,
-        new ExchangeDeleteBody(version, 0, name, false, !synch));
+        make_shared_ptr(new ExchangeDeleteBody(version, 0, name, false, !synch)));
 }
 
 void Channel::declareQueue(Queue& queue, bool synch){
@@ -153,9 +153,9 @@ void Channel::declareQueue(Queue& queue, bool synch){
     QueueDeclareOkBody::shared_ptr response =
         sendAndReceiveSync<QueueDeclareOkBody>(
             synch,
-            new QueueDeclareBody(
+            make_shared_ptr(new QueueDeclareBody(
                 version, 0, name, false/*passive*/, queue.isDurable(),
-                queue.isExclusive(), queue.isAutoDelete(), !synch, args));
+                queue.isExclusive(), queue.isAutoDelete(), !synch, args)));
     if(synch) {
         if(queue.getName().length() == 0)
             queue.setName(response->getQueue());
@@ -167,7 +167,7 @@ void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch)
     string name = queue.getName();
     sendAndReceiveSync<QueueDeleteOkBody>(
         synch,
-        new QueueDeleteBody(version, 0, name, ifunused, ifempty, !synch));
+        make_shared_ptr(new QueueDeleteBody(version, 0, name, ifunused, ifempty, !synch)));
 }
 
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){
@@ -175,15 +175,15 @@ void Channel::bind(const Exchange& exchange, const Queue& queue, const std::stri
     string q = queue.getName();
     sendAndReceiveSync<QueueBindOkBody>(
         synch,
-        new QueueBindBody(version, 0, q, e, key,!synch, args));
+        make_shared_ptr(new QueueBindBody(version, 0, q, e, key,!synch, args)));
 }
 
 void Channel::commit(){
-    sendAndReceive<TxCommitOkBody>(new TxCommitBody(version));
+    sendAndReceive<TxCommitOkBody>(make_shared_ptr(new TxCommitBody(version)));
 }
 
 void Channel::rollback(){
-    sendAndReceive<TxRollbackOkBody>(new TxRollbackBody(version));
+    sendAndReceive<TxRollbackOkBody>(make_shared_ptr(new TxRollbackBody(version)));
 }
 
 void Channel::handleMethodInContext(
@@ -203,7 +203,8 @@ void Channel::handleMethodInContext(
     }
     try {
         switch (method->amqpClassId()) {
-          case BasicDeliverBody::CLASS_ID: messaging->handle(method); break;
+          case MessageOkBody::CLASS_ID: 
+          case BasicGetOkBody::CLASS_ID: messaging->handle(method); break;
           case ChannelCloseBody::CLASS_ID: handleChannel(method); break;
           case ConnectionCloseBody::CLASS_ID: handleConnection(method); break;
           default: throw UnknownMethod();
@@ -261,8 +262,8 @@ void Channel::close(
         try {
             if (getId() != 0) {
                 sendAndReceive<ChannelCloseOkBody>(
-                    new ChannelCloseBody(
-                        version, code, text, classId, methodId));
+                    make_shared_ptr(new ChannelCloseBody(
+                                        version, code, text, classId, methodId)));
             }
             static_cast<ConnectionForChannel*>(connection)->erase(getId()); 
             closeInternal();
@@ -292,7 +293,7 @@ void Channel::closeInternal() {
 }
 
 AMQMethodBody::shared_ptr Channel::sendAndReceive(
-    AMQMethodBody* toSend, ClassId c, MethodId m)
+    AMQMethodBody::shared_ptr toSend, ClassId c, MethodId m)
 {
     responses.expect();
     send(toSend);
@@ -300,7 +301,7 @@ AMQMethodBody::shared_ptr Channel::sendAndReceive(
 }
 
 AMQMethodBody::shared_ptr Channel::sendAndReceiveSync(
-    bool sync, AMQMethodBody* body, ClassId c, MethodId m)
+    bool sync, AMQMethodBody::shared_ptr body, ClassId c, MethodId m)
 {
     if(sync)
         return sendAndReceive(body, c, m);
