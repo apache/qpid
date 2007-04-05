@@ -517,11 +517,6 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         _protocolSession.closeSession(session);
     }
 
-    public void closeConnection() throws AMQException
-    {
-        closeConnection(-1);
-    }
-
     public void closeConnection(long timeout) throws AMQException
     {
         getStateManager().changeState(AMQState.CONNECTION_CLOSING);
