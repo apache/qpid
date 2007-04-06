@@ -33,6 +33,7 @@ import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.security.access.AccessResult;
+import org.apache.qpid.server.security.access.AccessRights;
 import org.apache.log4j.Logger;
 
 public class ConnectionOpenMethodHandler implements StateAwareMethodListener<ConnectionOpenBody>
@@ -75,23 +76,26 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
 
         if (virtualHost == null)
         {
-            throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown virtual host: '" + virtualHostName+"'");
+            throw body.getConnectionException(AMQConstant.NOT_FOUND, "Unknown virtual host: '" + virtualHostName + "'");
         }
         else
         {
             session.setVirtualHost(virtualHost);
 
-            AccessResult result = virtualHost.getAccessManager().isAuthorized(virtualHost, session.getAuthorizedID());
+            AccessResult result = virtualHost.getAccessManager().isAuthorized(virtualHost, session.getAuthorizedID(), AccessRights.Rights.ANY);
 
             switch (result.getStatus())
             {
                 default:
                 case REFUSED:
-                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED,
-                                                      "Access denied to vHost '" + virtualHostName + "' by "
-                                                      + result.getAuthorizer());
+                    String error = "Any access denied to vHost '" + virtualHostName + "' by "
+                                   + result.getAuthorizer();
+                    
+                    _logger.warn(error);
+
+                    throw body.getConnectionException(AMQConstant.ACCESS_REFUSED, error);
                 case GRANTED:
-                    _logger.info("Granted access to vHost '" + virtualHostName + "' for " + session.getAuthorizedID()
+                    _logger.info("Granted any access to vHost '" + virtualHostName + "' for " + session.getAuthorizedID()
                                  + " by '" + result.getAuthorizer() + "'");
             }
 

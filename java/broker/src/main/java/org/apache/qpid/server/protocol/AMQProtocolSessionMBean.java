@@ -19,6 +19,7 @@ package org.apache.qpid.server.protocol;
 
 import java.util.Date;
 import java.util.List;
+import java.security.Principal;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -106,7 +107,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         return _session.getContextKey() == null ? null : _session.getContextKey().toString();
     }
 
-    public String getAuthorizedId()
+    public Principal getAuthorizedId()
     {
         return _session.getAuthorizedID();
     }

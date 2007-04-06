@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol;
 
 import java.io.IOException;
 import java.util.Date;
+import java.security.Principal;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -45,7 +46,7 @@ public interface ManagedConnection
     String getClientId();
 
     @MBeanAttribute(name = "AuthorizedId", description = "User Name")
-    String getAuthorizedId();
+    Principal getAuthorizedId();
 
     @MBeanAttribute(name = "Version", description = "Client Version")
     String getVersion();
