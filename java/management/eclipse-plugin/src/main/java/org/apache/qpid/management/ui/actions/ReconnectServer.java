@@ -168,9 +168,6 @@ public class ReconnectServer implements IWorkbenchWindowActionDelegate
             }
         }
         
-        //If you create it, you dispose it.
-        shell.dispose();
-        
         // enable the main shell
         _window.getShell().setEnabled(true);
         _window.getShell().open();
@@ -240,11 +237,7 @@ public class ReconnectServer implements IWorkbenchWindowActionDelegate
                 }
                 
                 _connect = true;
-
-                if (!connectButton.getShell().isDisposed())
-                {
-                    connectButton.getShell().dispose();
-                }
+                shell.dispose();
             }
         });
 

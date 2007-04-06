@@ -244,7 +244,8 @@ public class NavigationView extends ViewPart
             List<TreeObject> list = _serversRootNode.getChildren();
             for (TreeObject node : list)
             {
-                if (url.equals(node.getUrl()))
+                ManagedServer nodeServer = (ManagedServer)node.getManagedObject();
+                if (url.equals(nodeServer.getUrl()))
                 {
                     // Server is already in the list of added servers, so now connect it.
                     // Set the server node as selected and then connect it.
@@ -266,7 +267,6 @@ public class NavigationView extends ViewPart
 
         // Server connection is successful. Now add the server in the tree
         TreeObject serverNode = new TreeObject(serverAddress, NODE_TYPE_SERVER);
-        serverNode.setUrl(url);
         serverNode.setManagedObject(managedServer);
         _serversRootNode.addChild(serverNode);
 

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
+import java.lang.reflect.Constructor;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -36,6 +38,7 @@ import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
+import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
@@ -44,10 +47,13 @@ import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
+import org.apache.qpid.management.ui.sasl.SaslProvider;
+import org.apache.qpid.management.ui.sasl.UserPasswordCallbackHandler;
 
 
 public class JMXServerRegistry extends ServerRegistry
 {
+    private boolean _securityEnabled = false;
     private ObjectName _serverObjectName = null;
     private JMXConnector _jmxc = null;
     private MBeanServerConnection _mbsc = null;
@@ -83,11 +89,47 @@ public class JMXServerRegistry extends ServerRegistry
     {
         super(server);
         JMXServiceURL jmxUrl = new JMXServiceURL(server.getUrl());
-        Map<String, Object> env = new HashMap<String, Object>();
-        String[] creds = {server.getUser(), server.getPassword()};
-        env.put(JMXConnector.CREDENTIALS, creds);
-
-        _jmxc = JMXConnectorFactory.connect(jmxUrl, env);
+        Map<String, Object> env = null;
+        
+        //String[] creds = {server.getUser(), server.getPassword()};
+        //env.put(JMXConnector.CREDENTIALS, creds);
+       
+        if (ApplicationRegistry.enableSecurity)
+        {
+            Security.addProvider(new SaslProvider());
+            jmxUrl = new JMXServiceURL("jmxmp", null, server.getPort());
+            //jmxUrl = new JMXServiceURL("service:jmx:jmxmp://localhost:8999");
+            
+            env = new HashMap<String, Object>();
+            env.put("jmx.remote.profiles", "SASL/PLAIN");
+            //env.put("jmx.remote.profiles", "SASL/CRAM-MD5"); 
+            env.put("jmx.remote.sasl.callback.handler",
+                    new UserPasswordCallbackHandler(server.getUser(), server.getPassword()));                      
+            try
+            {
+                Class klass = Class.forName("javax.management.remote.jmxmp.JMXMPConnector");
+                Class[] paramTypes = {JMXServiceURL.class, Map.class};                           
+                Constructor cons = klass.getConstructor(paramTypes);
+                
+                Object[] args = {jmxUrl, env};           
+                Object theObject = cons.newInstance(args);
+                _jmxc = (JMXConnector)theObject;
+                //_jmxc = new JMXMPConnector(jmxUrl, env);
+                _jmxc.connect();
+            }
+            catch (Exception ex)
+            {
+                // When JMXMPConnector is not available
+                jmxUrl = new JMXServiceURL(server.getUrl());
+                _jmxc = JMXConnectorFactory.connect(jmxUrl, null);
+            }
+        }
+        else
+        {
+            jmxUrl = new JMXServiceURL(server.getUrl());
+            _jmxc = JMXConnectorFactory.connect(jmxUrl, null);
+        }
+        
         _mbsc = _jmxc.getMBeanServerConnection();
         
         _clientListener = new ClientListener(server);

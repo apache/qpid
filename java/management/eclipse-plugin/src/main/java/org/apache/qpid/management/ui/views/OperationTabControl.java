@@ -530,6 +530,8 @@ public class OperationTabControl extends TabControl
                 ((org.eclipse.swt.widgets.List)controls[i]).deselectAll();
             else if (controls[i] instanceof Text)
                 ((Text)controls[i]).setText("");
+            else if (controls[i] instanceof Button)
+                ((Button)controls[i]).setSelection(false);
             else if (controls[i] instanceof Composite)
                 clearParameterValues((Composite)controls[i]);
         }

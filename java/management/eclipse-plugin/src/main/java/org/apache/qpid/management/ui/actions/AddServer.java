@@ -194,9 +194,6 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
             }
         }
         
-        //If you create it, you dispose it.
-        shell.dispose();
-        
         // enable the main shell
         _window.getShell().setEnabled(true);
         _window.getShell().open();
@@ -327,11 +324,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
                 
                 _domain = comboDomain.getText();
                 _addServer = true;
-
-                if (!connectButton.getShell().isDisposed())
-                {
-                    connectButton.getShell().dispose();
-                }                                      
+                shell.dispose();                                     
             }
         });
         

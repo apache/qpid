@@ -149,27 +149,27 @@ public class MBeanUtility
      * @param mbean managed bean
      * @param ex   Exception
      */
-    public static void handleException(ManagedBean mbean, Exception ex)
+    public static void handleException(ManagedBean mbean, Throwable ex)
     {
         if (mbean == null)
         {
             ViewUtility.popupErrorMessage("Error", "Managed Object is null \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof IOException)
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), "IO Error occured \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof ReflectionException)
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), "Server has thrown error \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof InstanceNotFoundException)
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), "Managed Object Not Found \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof MBeanException)
         {
@@ -188,8 +188,20 @@ public class MBeanUtility
         }
         else 
         {
-            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
-            ex.printStackTrace();
+            if (ex.getCause() != null)
+            {
+                handleException(mbean, ex.getCause());
+            }
+            else
+            {
+                String msg = ex.getMessage();
+                if (msg == null)
+                {
+                    msg = ex.toString();
+                }
+                ViewUtility.popupErrorMessage(mbean.getInstanceName(), msg);
+                printStackTrace(ex);
+            }
         }
         
     }
@@ -456,5 +468,13 @@ public class MBeanUtility
     public static boolean isDebug()
     {
         return _debug;
+    }
+    
+    private static void printStackTrace(Throwable ex)
+    {
+        if (isDebug())
+        {
+            ex.printStackTrace();
+        }
     }
 }

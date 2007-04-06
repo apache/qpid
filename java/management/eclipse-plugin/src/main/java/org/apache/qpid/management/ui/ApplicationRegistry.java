@@ -41,6 +41,7 @@ public abstract class ApplicationRegistry
 {
     private static ImageRegistry imageRegistry = new ImageRegistry();
     private static FontRegistry fontRegistry = new FontRegistry();
+    public static final boolean enableSecurity = Boolean.getBoolean("security");
 
     static
     {
