@@ -58,10 +58,11 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
  * additionally accepts the following parameters:
  *
  * <p/><table><caption>Parameters</caption>
- * <tr><th> Parameter        <th> Default  <th> Comments
- * <tr><td> numMessages      <th> 100      <th> The total number of messages to send.
- * <tr><td> duration         <th> 30S      <th> The length of time to ping for. (Format dDhHmMsS, for d days, h hours,
- *                                              m minutes and s seconds).
+ * <tr><th> Parameter           <th> Default  <th> Comments
+ * <tr><td> numMessages         <td> 100      <td> The total number of messages to send.
+ * <tr><td> numMessagesToAction <td> -1       <td> The number of messages to send before taking a custom 'action'.
+ * <tr><td> duration            <td> 30S      <td> The length of time to ping for. (Format dDhHmMsS, for d days, h hours,
+ *                                                 m minutes and s seconds).
  * </table>
  *
  * <p/>This ping client also overrides some of the defaults of its parent class, to provide a reasonable set up
@@ -81,12 +82,18 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
  * is reached. Reaching the limit will be interpreted as the first signal to stop sending, and the ping client will
  * wait for the second signal before receiving its pings.
  *
+ * <p/>This class provides a mechanism for extensions to add arbitrary actions, after a particular number of messages
+ * have been sent. When the number of messages equal the value set in the 'numMessagesToAction' property is method,
+ * the {@link #takeAction} method is called. By default this does nothing, but extensions of this class can provide
+ * custom behaviour with alternative implementations of this method (for example taking a backup).
+ *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Send and receive pings.
  * <tr><td> Accept user input to signal stop sending.
  * <tr><td> Accept user input to signal start receiving.
  * <tr><td> Provide feedback on pings sent versus pings received.
+ * <tr><td> Provide extension point for arbitrary action on a particular message count.
  * </table>
  */
 public class PingDurableClient extends PingPongProducer implements ExceptionListener
@@ -97,6 +104,8 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
     public static final String NUM_MESSAGES_DEFAULT = "100";
     public static final String DURATION_PROPNAME = "duration";
     public static final String DURATION_DEFAULT = "30S";
+    public static final String NUM_MESSAGES_TO_ACTION_PROPNAME = "numMessagesToAction";
+    public static final String NUM_MESSAGES_TO_ACTION_DEFAULT = "-1";
 
     /** The maximum length of time to wait whilst receiving pings before assuming that no more are coming. */
     private static final long TIME_OUT = 3000;
@@ -111,10 +120,14 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         defaults.setProperty(TX_BATCH_SIZE_PROPNAME, "10");
         defaults.setProperty(RATE_PROPNAME, "20");
         defaults.setProperty(DURABLE_DESTS_PROPNAME, "true");
+        defaults.setProperty(NUM_MESSAGES_TO_ACTION_PROPNAME, NUM_MESSAGES_TO_ACTION_DEFAULT);
     }
 
     /** Specifies the number of pings to send, if larger than 0. 0 means send until told to stop. */
     private int numMessages;
+
+    /** Holds the number of messages to send before taking triggering the action. */
+    private int numMessagesToAction;
 
     /** Sepcifies how long to ping for, if larger than 0. 0 means send until told to stop. */
     private long duration;
@@ -136,6 +149,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
 
         numMessages = properties.getPropertyAsInteger(NUM_MESSAGES_PROPNAME);
         String durationSpec = properties.getProperty(DURATION_PROPNAME);
+        numMessagesToAction = properties.getPropertyAsInteger(NUM_MESSAGES_TO_ACTION_PROPNAME);
 
         if (durationSpec != null)
         {
@@ -180,7 +194,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
     /**
      * Performs the main test procedure implemented by this ping client. See the class level comment for details.
      */
-    public int send() throws Exception
+    protected int send() throws Exception
     {
         log.debug("public void sendWaitReceive(): called");
 
@@ -245,6 +259,14 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
                 _publish = false;
             }
 
+            // Perform the arbitrary action if the number of messages sent has reached the right number.
+            if (messagesSent == numMessagesToAction)
+            {
+                System.out.println("At action point, Messages sent = " + messagesSent + ", Messages Committed = "
+                    + messagesCommitted + ", Messages not Committed = " + messagesNotCommitted);
+                takeAction();
+            }
+
             // Determine if the end condition has been met, based on the number of messages, time passed, errors on
             // the connection or user input.
             long now = System.nanoTime();
@@ -296,7 +318,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         return messagesSent;
     }
 
-    private void receive(int messagesSent) throws Exception
+    protected void receive(int messagesSent) throws Exception
     {
         // Re-establish the connection and the message consumer.
         _queueJVMSequenceID = new AtomicInteger();
@@ -418,4 +440,11 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
                     }
                 });
     }
+
+    /**
+     * Performs an aribtrary action once the 'numMesagesToAction' count is reached on sending messages. This default
+     * implementation does nothing.
+     */
+    public void takeAction()
+    { }
 }
