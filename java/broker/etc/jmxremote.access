@@ -1,0 +1,4 @@
+#guest=admin
+guest=readonly
+#user=readwrite
+#admin=admin

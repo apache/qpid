@@ -42,6 +42,7 @@ import org.apache.qpid.server.security.access.AccessManager;
 import org.apache.qpid.server.security.access.AccessManagerImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.AMQException;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
@@ -102,7 +103,6 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
-        initialiseManagedObjectRegistry();
         _virtualHostRegistry = new VirtualHostRegistry();
 
         _accessManager = new AccessManagerImpl("default", _configuration);
@@ -111,7 +111,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
+        initialiseManagedObjectRegistry();
+        
         initialiseVirtualHosts();
+
     }
 
     private void initialiseVirtualHosts() throws Exception
@@ -123,7 +126,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         }
     }
 
-    private void initialiseManagedObjectRegistry()
+    private void initialiseManagedObjectRegistry() throws AMQException
     {
         ManagementConfiguration config = getConfiguredObject(ManagementConfiguration.class);
         if (config.enabled)

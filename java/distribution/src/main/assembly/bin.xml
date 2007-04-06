@@ -83,6 +83,12 @@
       <fileMode>420</fileMode>
     </file>
     <file>
+      <source>../broker/etc/jmxremote.access</source>
+      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
+      <destName>jmxremote.access</destName>
+      <fileMode>420</fileMode>
+    </file>
+    <file>
       <source>../broker/etc/transient_config.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>transient_config.xml</destName>

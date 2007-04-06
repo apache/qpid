@@ -168,6 +168,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         {
             virtualHost.close();
         }
+
+        // close the rmi registry(if any) started for management
+        if (getInstance().getManagedObjectRegistry() != null)
+        {
+            getInstance().getManagedObjectRegistry().close();
+        }
     }
 
     public Configuration getConfiguration()
