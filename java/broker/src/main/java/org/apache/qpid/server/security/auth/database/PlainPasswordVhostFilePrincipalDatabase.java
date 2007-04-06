@@ -23,12 +23,15 @@ package org.apache.qpid.server.security.auth.database;
 import org.apache.qpid.server.security.access.AccessManager;
 import org.apache.qpid.server.security.access.AccessResult;
 import org.apache.qpid.server.security.access.Accessable;
+import org.apache.qpid.server.security.access.AccessRights;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.security.Principal;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -91,9 +94,15 @@ public class PlainPasswordVhostFilePrincipalDatabase extends PlainPasswordFilePr
 
     public AccessResult isAuthorized(Accessable accessObject, String username)
     {
+        return isAuthorized(accessObject, new UsernamePrincipal(username), AccessRights.Rights.READ);
+    }
+
+    public AccessResult isAuthorized(Accessable accessObject, Principal user, AccessRights.Rights rights)
+    {
+
         if (accessObject instanceof VirtualHost)
         {
-            String[] hosts = lookupVirtualHost(username);
+            String[] hosts = lookupVirtualHost(user.getName());
 
             if (hosts != null)
             {
@@ -114,5 +123,5 @@ public class PlainPasswordVhostFilePrincipalDatabase extends PlainPasswordFilePr
     {
         return "PlainPasswordVhostFile";
     }
-    
+
 }

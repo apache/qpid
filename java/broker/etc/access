@@ -1,1 +1,1 @@
-guest:test
+guest:localhost(w),test(rw)

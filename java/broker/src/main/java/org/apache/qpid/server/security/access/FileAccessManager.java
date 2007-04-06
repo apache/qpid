@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.access;
 
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.File;
 import java.util.regex.Pattern;
+import java.security.Principal;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -71,9 +73,17 @@ public class FileAccessManager implements AccessManager
      *
      * @return a list of virtualhosts
      */
-    private String[] lookupVirtualHost(String user)
+    private VirtualHostAccess[] lookupVirtualHost(String user)
     {
-        return lookup(user, VIRTUALHOST_INDEX);
+        String[] results = lookup(user, VIRTUALHOST_INDEX);
+        VirtualHostAccess vhosts[] = new VirtualHostAccess[results.length];
+
+        for (int index = 0; index < results.length; index++)
+        {
+            vhosts[index] = new VirtualHostAccess(results[index]);
+        }
+
+        return vhosts;
     }
 
 
@@ -117,20 +127,31 @@ public class FileAccessManager implements AccessManager
         return null;
     }
 
-
     public AccessResult isAuthorized(Accessable accessObject, String username)
+    {
+        return isAuthorized(accessObject, new UsernamePrincipal(username), AccessRights.Rights.READ);
+    }
+
+    public AccessResult isAuthorized(Accessable accessObject, Principal user, AccessRights.Rights rights)
     {
         if (accessObject instanceof VirtualHost)
         {
-            String[] hosts = lookupVirtualHost(username);
+            VirtualHostAccess[] hosts = lookupVirtualHost(user.getName());
 
             if (hosts != null)
             {
-                for (String host : hosts)
+                for (VirtualHostAccess host : hosts)
                 {
-                    if (accessObject.getAccessableName().equals(host))
+                    if (accessObject.getAccessableName().equals(host.getVirtualHost()))
                     {
-                        return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+                        if (host.getAccessRights().allows(rights))
+                        {
+                            return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+                        }
+                        else
+                        {
+                            return new AccessResult(this, AccessResult.AccessStatus.REFUSED);
+                        }
                     }
                 }
             }

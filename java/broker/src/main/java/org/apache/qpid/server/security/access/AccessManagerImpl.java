@@ -23,13 +23,13 @@ package org.apache.qpid.server.security.access;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.configuration.PropertyUtils;
-import org.apache.qpid.configuration.PropertyException;
 import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
+import java.security.Principal;
 
 public class AccessManagerImpl implements AccessManager
 {
@@ -121,8 +121,12 @@ public class AccessManagerImpl implements AccessManager
         }
     }
 
-
     public AccessResult isAuthorized(Accessable accessObject, String username)
+    {
+        return isAuthorized(accessObject, new UsernamePrincipal(username), AccessRights.Rights.READ);
+    }
+
+    public AccessResult isAuthorized(Accessable accessObject, Principal user, AccessRights.Rights rights)
     {
         if (_accessManager == null)
         {
@@ -133,17 +137,16 @@ public class AccessManagerImpl implements AccessManager
             }
             else
             {
-                return ApplicationRegistry.getInstance().getAccessManager().isAuthorized(accessObject, username);
+                return ApplicationRegistry.getInstance().getAccessManager().isAuthorized(accessObject, user, rights);
             }
         }
         else
         {
-            return _accessManager.isAuthorized(accessObject, username);
+            return _accessManager.isAuthorized(accessObject, user, rights);
         }
     }
 
-    public String getName
-            ()
+    public String getName()
     {
         return "AccessManagerImpl";
     }

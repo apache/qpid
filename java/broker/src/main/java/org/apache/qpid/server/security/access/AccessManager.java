@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.server.security.access;
 
+import java.security.Principal;
+
 public interface AccessManager
 {
-    //AccessResult isAuthorized(Accessable accessObject, Principal username, AccessRights rights);
+    AccessResult isAuthorized(Accessable accessObject, Principal username, AccessRights.Rights rights);
+
+    @Deprecated
     AccessResult isAuthorized(Accessable accessObject, String username);
 
     String getName();

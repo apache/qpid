@@ -22,7 +22,10 @@ package org.apache.qpid.server.security.access;
 
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.log4j.Logger;
+
+import java.security.Principal;
 
 public class PrincipalDatabaseAccessManager implements AccessManager
 {
@@ -58,7 +61,13 @@ public class PrincipalDatabaseAccessManager implements AccessManager
         }
     }
 
+
     public AccessResult isAuthorized(Accessable accessObject, String username)
+    {
+        return isAuthorized(accessObject, new UsernamePrincipal(username), AccessRights.Rights.READ);
+    }
+
+    public AccessResult isAuthorized(Accessable accessObject, Principal username, AccessRights.Rights rights)
     {
         AccessResult result;
 
@@ -66,7 +75,7 @@ public class PrincipalDatabaseAccessManager implements AccessManager
         {
             if (_default != null)
             {
-                result = _default.isAuthorized(accessObject, username);
+                result = _default.isAuthorized(accessObject, username, rights);
             }
             else
             {
@@ -78,11 +87,11 @@ public class PrincipalDatabaseAccessManager implements AccessManager
             if (!(_database instanceof AccessManager))
             {
                 _logger.warn("Specified PrincipalDatabase is not an AccessManager so using default AccessManager");
-                result = _default.isAuthorized(accessObject, username);
+                result = _default.isAuthorized(accessObject, username, rights);
             }
             else
             {
-                result = ((AccessManager) _database).isAuthorized(accessObject, username);
+                result = ((AccessManager) _database).isAuthorized(accessObject, username, rights);
             }
         }
 
