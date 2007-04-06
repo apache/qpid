@@ -327,8 +327,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                    ") is closed rejecting(requeue)...");
                         }
                     }
-
-                    rejectMessage(message, true);
+                    // Don't reject if we're already closing
+                    if(!_closed.get())
+                    {
+                        rejectMessage(message, true);
+                    }
                 }
                 else
                 {
