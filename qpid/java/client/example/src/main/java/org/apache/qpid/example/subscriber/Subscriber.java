@@ -123,8 +123,8 @@ public class Subscriber
         {
              _connection = _connectionFactory.createConnection();
 
-             //create a transactional session
-            Session session =  _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            //Non transactional session using client acknowledgement
+            Session session =  _connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
             //Create a consumer with a destination of our queue which will use defaults for prefetch etc
             _consumer = session.createConsumer(_destination);
