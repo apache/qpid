@@ -959,16 +959,16 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             committed = false;
 
             // Re-timestamp the message.
-            message.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
+            // message.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
 
             // Send the message, passing in the message count.
             committed = sendMessage(i, message);
 
             // Spew out per message timings on every message sonly in verbose mode.
-            if (_verbose)
+            /*if (_verbose)
             {
                 log.info(timestampFormatter.format(new Date()) + ": Pinged at with correlation id, " + messageCorrelationId);
-            }
+            }*/
         }
 
         // Call commit if the send loop finished before reaching a batch size boundary so there may still be uncommitted messages.
@@ -1007,7 +1007,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                 _failBeforeSend = false;
             }
 
-            log.trace("Failing Before Send");
+            // log.trace("Failing Before Send");
             waitForUser(KILL_BROKER_PROMPT);
         }
 
