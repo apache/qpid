@@ -301,7 +301,7 @@
                         <LT-Qpid-3-5K>-n LT-Qpid-3-5K -d10M -s [1000] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=100 messageSize=5120 transacted=true -o $QPID_WORK/results</LT-Qpid-3-5K>
                         <LT-Qpid-4-5K>-n LT-Qpid-4-5K -d10M -s [1000] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=5120 -o $QPID_WORK/results</LT-Qpid-4-5K>
 
-                        <LT-Qpid-3-10K>-n LT-Qpid-3-10K -d10M -s [1000] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=10000 messageSize=10240 transacted=true -o $QPID_WORK/results</LT-Qpid-3-10K>
+                        <LT-Qpid-3-10K>-n LT-Qpid-3-10K -d10M -s [1000] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=100 messageSize=10240 transacted=true -o $QPID_WORK/results</LT-Qpid-3-10K>
                         <LT-Qpid-4-10K>-n LT-Qpid-4-10K -d10M -s [1000] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf messageSize=10240 -o $QPID_WORK/results</LT-Qpid-4-10K>
 
                         <LT-Qpid-3-50K>-n LT-Qpid-3-50K -d10M -s [1000] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=100 messageSize=51200 transacted=true -o $QPID_WORK/results</LT-Qpid-3-50K>
@@ -351,7 +351,7 @@
                         <PT-Qpid-8-P>-n PT-Qpid-8-P -d10M -s [1000] -c[10] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true pubsub=true destinationsCount=10 messageSize=256 -o $QPID_WORK/results</PT-Qpid-8-P>
 
                         <!-- 250 Msgs * 100 Brokers = 25,000 Total, 100P-100T-100C 100*(1P-1T-1C) -->
-                        <PT-Qpid-9-P>-n PT-Qpid-9-P -d10M -s [1000] -c[100] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true pubsub=true messageSize=256 commitBatchSize=100 transacted=true commitBatchSize=500 -o $QPID_WORK/results</PT-Qpid-9-P>
+                        <PT-Qpid-9-P>-n PT-Qpid-9-P -d10M -s [1000] -c[100] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true pubsub=true messageSize=256 commitBatchSize=100 transacted=true -o $QPID_WORK/results</PT-Qpid-9-P>
                         <PT-Qpid-10-P>-n PT-Qpid-10-P -d10M -s [1000] -c[100] -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true pubsub=true messageSize=256 batchSize=250 -o $QPID_WORK/results</PT-Qpid-10-P>
 
                         <!-- 25 Msgs * 100 Brokers * 10 Clients = 250,000 Total, 100P-1000T-100C 100*(1P-10T-1C)  -->
