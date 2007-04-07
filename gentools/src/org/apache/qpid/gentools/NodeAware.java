@@ -24,23 +24,24 @@ import org.w3c.dom.Node;
 
 /**
  * @author kpvdr
- * Interface allowing the addition of elements from a node in the
- * DOM of the AMQP specification. It is used by each of the model
- * elements in a recursive fashion to build the model.
+ *         Interface allowing the addition of elements from a node in the
+ *         DOM of the AMQP specification. It is used by each of the model
+ *         elements in a recursive fashion to build the model.
  */
 public interface NodeAware
 {
-	/**
-	 * Add a model element from the current DOM node. All model elements must implement
-	 * this interface. If the node contains children that are also a part of the model,
-	 * then this method is called on new instances of those model elements.
-	 * @param n Node from which the current model element is to be added.
-	 * @param o Ordinal value of the current model elemet.
-	 * @param v Verion of the DOM from which the node comes.
-	 * @throws AmqpParseException
-	 * @throws AmqpTypeMappingException
-	 * @returns true if a node was added, false if not
-	 */
-	public boolean addFromNode(Node n, int o, AmqpVersion v)
-		throws AmqpParseException, AmqpTypeMappingException;
+    /**
+     * Add a model element from the current DOM node. All model elements must implement
+     * this interface. If the node contains children that are also a part of the model,
+     * then this method is called on new instances of those model elements.
+     *
+     * @param n Node from which the current model element is to be added.
+     * @param o Ordinal value of the current model elemet.
+     * @param v Verion of the DOM from which the node comes.
+     * @throws AmqpParseException
+     * @throws AmqpTypeMappingException
+     * @returns true if a node was added, false if not
+     */
+    public boolean addFromNode(Node n, int o, AmqpVersion v)
+            throws AmqpParseException, AmqpTypeMappingException;
 }

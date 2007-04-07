@@ -26,46 +26,52 @@ import java.util.TreeMap;
 @SuppressWarnings("serial")
 public class AmqpFlagMap extends TreeMap<Boolean, AmqpVersionSet> implements VersionConsistencyCheck
 {
-	public boolean isSet()
-	{
-		return containsKey(true);
-	}
-	
-	public String toString()
-	{
-		AmqpVersionSet versionSet = get(true);
-		if (versionSet != null)
-			return versionSet.toString();
-		return "";
-	}
-	
-	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
-	{
-		if (size() != 1)
-			return false;
-		return get(firstKey()).equals(globalVersionSet);
-	}
-	
-	public boolean removeVersion(AmqpVersion version)
-	{
-		Boolean res = false;
-		ArrayList<Boolean> removeList = new ArrayList<Boolean>();
-		for (Boolean flag : keySet())
-		{
-			AmqpVersionSet versionSet = get(flag);
-			if (versionSet.contains(version))
-			{
-				versionSet.remove(version);
-				if (versionSet.isEmpty())
-					removeList.add(flag);
-				res = true;
-			}
-		}
-		// Get rid of flags no longer in use
-		for (Boolean flag : removeList)
-		{
-			remove(flag);
-		}
-		return res;
-	}
+    public boolean isSet()
+    {
+        return containsKey(true);
+    }
+
+    public String toString()
+    {
+        AmqpVersionSet versionSet = get(true);
+        if (versionSet != null)
+        {
+            return versionSet.toString();
+        }
+        return "";
+    }
+
+    public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
+    {
+        if (size() != 1)
+        {
+            return false;
+        }
+        return get(firstKey()).equals(globalVersionSet);
+    }
+
+    public boolean removeVersion(AmqpVersion version)
+    {
+        Boolean res = false;
+        ArrayList<Boolean> removeList = new ArrayList<Boolean>();
+        for (Boolean flag : keySet())
+        {
+            AmqpVersionSet versionSet = get(flag);
+            if (versionSet.contains(version))
+            {
+                versionSet.remove(version);
+                if (versionSet.isEmpty())
+                {
+                    removeList.add(flag);
+                }
+                res = true;
+            }
+        }
+        // Get rid of flags no longer in use
+        for (Boolean flag : removeList)
+        {
+            remove(flag);
+        }
+        return res;
+    }
 }
