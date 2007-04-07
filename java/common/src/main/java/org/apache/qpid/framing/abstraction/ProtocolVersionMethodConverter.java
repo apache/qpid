@@ -18,11 +18,12 @@
 
 package org.apache.qpid.framing.abstraction;
 
+import org.apache.qpid.framing.AMQBodyImpl;
 import org.apache.qpid.framing.AMQBody;
 
 public interface ProtocolVersionMethodConverter extends MessagePublishInfoConverter
 {
-    AMQBody convertToBody(ContentChunk contentBody);
+    AMQBodyImpl convertToBody(ContentChunk contentBody);
     ContentChunk convertToContentChunk(AMQBody body);
 
     void configure();

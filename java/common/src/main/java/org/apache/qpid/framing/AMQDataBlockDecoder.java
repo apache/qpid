@@ -72,7 +72,7 @@ public class AMQDataBlockDecoder
         final byte type = in.get();
 
         BodyFactory bodyFactory;
-        if(type == AMQMethodBody.TYPE)
+        if(type == AMQMethodBodyImpl.TYPE)
         {
             bodyFactory = (BodyFactory) session.getAttribute(SESSION_METHOD_BODY_FACTORY);
             if(bodyFactory == null)
