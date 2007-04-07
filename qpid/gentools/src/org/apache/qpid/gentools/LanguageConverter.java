@@ -22,18 +22,21 @@ package org.apache.qpid.gentools;
 
 public interface LanguageConverter
 {
-	public void setDomainMap(AmqpDomainMap domainMap);
-	public AmqpDomainMap getDomainMap();
 
-    public void setConstantSet(AmqpConstantSet constantSet);
-    public AmqpConstantSet getConstantSet();
-	
-	public void setModel(AmqpModel model);
-	public AmqpModel getModel();
-	
-	public String prepareClassName(String className);
-	public String prepareMethodName(String methodName);
-	public String prepareDomainName(String domainName);
-	public String getDomainType(String domainName, AmqpVersion version) throws AmqpTypeMappingException;
-	public String getGeneratedType(String domainName, AmqpVersion version) throws AmqpTypeMappingException;
+//	public AmqpDomainMap getDomainMap();
+//    public AmqpConstantSet getConstantSet();
+//	public AmqpModel getModel();
+
+    //
+    public String prepareClassName(String className);
+
+    public String prepareMethodName(String methodName);
+
+    public String prepareDomainName(String domainName);
+
+    public String getDomainType(String domainName, AmqpVersion version);
+
+    public String getGeneratedType(String domainName, AmqpVersion version);
+
+    public String prepareConstantName(String constantName);
 }
