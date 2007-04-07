@@ -20,10 +20,28 @@
  */
 package org.apache.qpid.common;
 
+import org.apache.qpid.framing.AMQShortString;
+
 public enum ClientProperties
 {
+
+
     instance,
     product,
     version,
-    platform
+    platform;
+
+
+    private final AMQShortString _name;
+
+    private ClientProperties()
+    {
+        _name = new AMQShortString(toString());
+    }
+
+    public AMQShortString getName()
+    {
+        return _name;
+    }
+
 }

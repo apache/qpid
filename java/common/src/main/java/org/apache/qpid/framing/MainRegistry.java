@@ -18,11 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.protocol;
+package org.apache.qpid.framing;
 
-import org.apache.qpid.framing.MethodRegistry;
-
-public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, ProtocolVersionAware
+public class MainRegistry
 {
-    public MethodRegistry getRegistry();
+
+    public static VersionSpecificRegistry getVersionSpecificRegistry(byte versionMajor, byte versionMinor)
+    {
+        return null;  //To change body of created methods use File | Settings | File Templates.
+    }
+
+    public static VersionSpecificRegistry getVersionSpecificRegistry(ProtocolVersion pv)
+    {
+        return null;  //To change body of created methods use File | Settings | File Templates.
+    }
 }

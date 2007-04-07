@@ -136,6 +136,7 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     public void exceptionCaught(final NextFilter nextFilter, final IoSession session,
                                 final Throwable cause) throws Exception
     {
+        cause.printStackTrace();
             nextFilter.exceptionCaught(session,cause);
     }
 
