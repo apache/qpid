@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
 
-public class HeartbeatBodyFactory implements BodyFactory
+public abstract class AMQBodyImpl implements AMQBody
 {
-    public AMQBodyImpl createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
-    {
-        return new HeartbeatBody();
-    }
+
 }

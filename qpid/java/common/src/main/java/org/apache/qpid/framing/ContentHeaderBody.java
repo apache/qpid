@@ -22,7 +22,7 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
-public class ContentHeaderBody extends AMQBody
+public class ContentHeaderBody extends AMQBodyImpl
 {
     public static final byte TYPE = 2;
 
@@ -110,7 +110,7 @@ public class ContentHeaderBody extends AMQBody
         properties.writePropertyListPayload(buffer);
     }
 
-    public static AMQFrame createAMQFrame(int channelId, int classId, int weight, BasicContentHeaderProperties properties,
+    public static AMQFrame createAMQFrame(int channelId, int classId, int weight, CommonContentHeaderProperties properties,
                                           long bodySize)
     {
         return new AMQFrame(channelId, new ContentHeaderBody(classId, weight, properties, bodySize));
