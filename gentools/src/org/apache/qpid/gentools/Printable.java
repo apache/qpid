@@ -24,5 +24,5 @@ import java.io.PrintStream;
 
 public interface Printable
 {
-	public void print(PrintStream out, int marginSize, int tabSize);
+    public void print(PrintStream out, int marginSize, int tabSize);
 }
