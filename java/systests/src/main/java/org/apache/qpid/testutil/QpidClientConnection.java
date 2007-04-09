@@ -3,6 +3,7 @@ package org.apache.qpid.testutil;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.JMSAMQException;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.log4j.Logger;
 
@@ -70,7 +71,7 @@ public class QpidClientConnection implements ExceptionListener
             }
             catch (URLSyntaxException e)
             {
-                throw new JMSException("URL syntax error in [" + brokerUrl + "]: " + e.getMessage());
+                throw new JMSAMQException("URL syntax error in [" + brokerUrl + "]: " + e.getMessage(), e);
             }
         }
     }

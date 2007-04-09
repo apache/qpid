@@ -60,9 +60,9 @@ public class MainRegistry
 		
         if (bodyFactory == null)
         {
-            throw new AMQFrameDecodingException(
+            throw new AMQFrameDecodingException(null,
                 "Unable to find a suitable decoder for class " + classID + " and method " +
-                methodID + " in AMQP version " + major + "-" + minor + ".");
+                methodID + " in AMQP version " + major + "-" + minor + ".", null);
         }
         return bodyFactory.newInstance(major, minor, in, size);
 

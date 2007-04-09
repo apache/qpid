@@ -31,14 +31,15 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.RealmCallback;
 
-import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.log4j.Logger;
 import com.sun.crypto.provider.HmacMD5;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
 {
     private static final Logger _logger = Logger.getLogger(UsernameHashedPasswordCallbackHandler.class);
-
 
     private AMQProtocolSession _protocolSession;
 
@@ -58,14 +59,15 @@ public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
             }
             else if (cb instanceof PasswordCallback)
             {
-
                 try
                 {
                     ((PasswordCallback) cb).setPassword(getHash(_protocolSession.getPassword()));
                 }
-                catch (Exception e)
+                catch (NoSuchAlgorithmException e)
                 {
-                    throw new UnsupportedCallbackException(cb);
+                    UnsupportedCallbackException uce = new UnsupportedCallbackException(cb);
+                    uce.initCause(e);
+                    throw uce;
                 }
             }
             else

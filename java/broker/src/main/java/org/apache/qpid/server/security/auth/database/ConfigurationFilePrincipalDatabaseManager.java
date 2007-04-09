@@ -1,38 +1,40 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.qpid.server.security.auth.database;
 
+import java.io.FileNotFoundException;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.configuration.PropertyUtils;
+
 import org.apache.log4j.Logger;
 
-import java.util.Map;
-import java.util.List;
-import java.util.HashMap;
-import java.lang.reflect.Method;
-import java.io.FileNotFoundException;
+import org.apache.qpid.configuration.PropertyUtils;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 
 public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatabaseManager
 {
@@ -80,23 +82,26 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             initialisePrincipalDatabase((PrincipalDatabase) o, config, i);
 
             String name = databaseNames.get(i);
-            if (name == null || name.length() == 0)
+            if ((name == null) || (name.length() == 0))
             {
                 throw new Exception("Principal database names must have length greater than or equal to one character");
             }
+
             PrincipalDatabase pd = databases.get(name);
             if (pd != null)
             {
                 throw new Exception("Duplicate principal database name not provided");
             }
+
             _logger.info("Initialised principal database '" + name + "' successfully");
             databases.put(name, (PrincipalDatabase) o);
         }
+
         return databases;
     }
 
     private void initialisePrincipalDatabase(PrincipalDatabase principalDatabase, Configuration config, int index)
-            throws FileNotFoundException, ConfigurationException
+        throws FileNotFoundException, ConfigurationException
     {
         String baseName = _base + "(" + index + ").attributes.attribute.";
         List<String> argumentNames = config.getList(baseName + "name");
@@ -104,14 +109,16 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
         for (int i = 0; i < argumentNames.size(); i++)
         {
             String argName = argumentNames.get(i);
-            if (argName == null || argName.length() == 0)
+            if ((argName == null) || (argName.length() == 0))
             {
                 throw new ConfigurationException("Argument names must have length >= 1 character");
             }
+
             if (Character.isLowerCase(argName.charAt(0)))
             {
                 argName = Character.toUpperCase(argName.charAt(0)) + argName.substring(1);
             }
+
             String methodName = "set" + argName;
             Method method = null;
             try
@@ -125,9 +132,10 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 
             if (method == null)
             {
-                throw new ConfigurationException("No method " + methodName + " found in class " + principalDatabase.getClass() +
-                                                 " hence unable to configure principal database. The method must be public and " +
-                                                 "have a single String argument with a void return type");
+                throw new ConfigurationException("No method " + methodName + " found in class "
+                    + principalDatabase.getClass()
+                    + " hence unable to configure principal database. The method must be public and "
+                    + "have a single String argument with a void return type");
             }
 
             try
@@ -138,11 +146,11 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             {
                 if (ite instanceof ConfigurationException)
                 {
-                    throw(ConfigurationException) ite;
+                    throw (ConfigurationException) ite;
                 }
                 else
                 {
-                    throw new ConfigurationException(ite.getMessage(), ite.getCause());
+                    throw new ConfigurationException(ite.getMessage(), ite);
                 }
             }
         }

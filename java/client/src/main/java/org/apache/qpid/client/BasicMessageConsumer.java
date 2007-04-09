@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +34,7 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
@@ -138,10 +139,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     private boolean _noConsume;
     private List<StackTraceElement> _closedStack = null;
 
-    protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination, String messageSelector,
-                                   boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
-                                   AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable,
-                                   int prefetchHigh, int prefetchLow, boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
+    protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
+        String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
+        AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable, int prefetchHigh, int prefetchLow,
+        boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
     {
         _channelId = channelId;
         _connection = connection;
@@ -160,7 +161,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         _autoClose = autoClose;
         _noConsume = noConsume;
 
-        //Force queue browsers not to use acknowledge modes.
+        // Force queue browsers not to use acknowledge modes.
         if (_noConsume)
         {
             _acknowledgeMode = Session.NO_ACKNOWLEDGE;
@@ -175,12 +176,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     public String getMessageSelector() throws JMSException
     {
         checkPreConditions();
+
         return _messageSelector;
     }
 
     public MessageListener getMessageListener() throws JMSException
     {
         checkPreConditions();
+
         return _messageListener.get();
     }
 
@@ -198,14 +201,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         checkPreConditions();
 
-        //if the current listener is non-null and the session is not stopped, then
-        //it is an error to call this method.
+        // if the current listener is non-null and the session is not stopped, then
+        // it is an error to call this method.
 
-        //i.e. it is only valid to call this method if
+        // i.e. it is only valid to call this method if
         //
-        //    (a) the connection is stopped, in which case the dispatcher is not running
-        //    OR
-        //    (b) the listener is null AND we are not receiving synchronously at present
+        // (a) the connection is stopped, in which case the dispatcher is not running
+        // OR
+        // (b) the listener is null AND we are not receiving synchronously at present
         //
 
         if (!_session.getAMQConnection().started())
@@ -215,7 +218,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Session stopped : Message listener(" + messageListener + ") set for destination " + _destination);
+                _logger.debug("Session stopped : Message listener(" + messageListener + ") set for destination "
+                    + _destination);
             }
         }
         else
@@ -224,6 +228,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 throw new javax.jms.IllegalStateException("Another thread is already receiving synchronously.");
             }
+
             if (!_messageListener.compareAndSet(null, messageListener))
             {
                 throw new javax.jms.IllegalStateException("Attempt to alter listener while session is started.");
@@ -233,7 +238,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             if (messageListener != null)
             {
-                //handle case where connection has already been started, and the dispatcher has alreaded started
+                // handle case where connection has already been started, and the dispatcher has alreaded started
                 // putting values on the _synchronousQueue
 
                 synchronized (_session)
@@ -263,10 +268,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             throw new javax.jms.IllegalStateException("Another thread is already receiving.");
         }
+
         if (isMessageListenerSet())
         {
             throw new javax.jms.IllegalStateException("A listener has already been set.");
         }
+
         _receivingThread = Thread.currentThread();
     }
 
@@ -331,6 +338,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 return null;
             }
+
             Object o = null;
             if (l > 0)
             {
@@ -340,6 +348,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 o = _synchronousQueue.take();
             }
+
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
@@ -352,6 +361,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         catch (InterruptedException e)
         {
             _logger.warn("Interrupted: " + e);
+
             return null;
         }
         finally
@@ -365,6 +375,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         if (isAutoClose() && _closeWhenNoMessages && _synchronousQueue.isEmpty())
         {
             close(false);
+
             return true;
         }
         else
@@ -387,6 +398,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 return null;
             }
+
             Object o = _synchronousQueue.poll();
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
@@ -414,8 +426,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      * @throws JMSException if the argument is a throwable. If it is a JMSException it is rethrown as is, but if not a
      *                      JMSException is created with the linked exception set appropriately
      */
-    private AbstractJMSMessage returnMessageOrThrow(Object o)
-            throws JMSException
+    private AbstractJMSMessage returnMessageOrThrow(Object o) throws JMSException
     {
         // errors are passed via the queue too since there is no way of interrupting the poll() via the API.
         if (o instanceof Throwable)
@@ -425,6 +436,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 e.setLinkedException((Exception) o);
             }
+
             throw e;
         }
         else
@@ -433,7 +445,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-
     public void close() throws JMSException
     {
         close(true);
@@ -441,7 +452,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     public void close(boolean sendClose) throws JMSException
     {
-        //synchronized (_closed)
+        // synchronized (_closed)
 
         if (_logger.isInfoEnabled())
         {
@@ -456,7 +467,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 {
                     if (_closedStack != null)
                     {
-                        _logger.trace(_consumerTag + " close():" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+                        _logger.trace(_consumerTag + " close():"
+                            + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
                         _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
                     }
                     else
@@ -464,14 +476,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                         _closedStack = Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6);
                     }
                 }
+
                 if (sendClose)
                 {
                     // TODO: Be aware of possible changes to parameter order as versions change.
-                    final AMQFrame cancelFrame = BasicCancelBody.createAMQFrame(_channelId,
-                                                                                _protocolHandler.getProtocolMajorVersion(),
-                                                                                _protocolHandler.getProtocolMinorVersion(),
-                                                                                _consumerTag,    // consumerTag
-                                                                                false);    // nowait
+                    final AMQFrame cancelFrame =
+                        BasicCancelBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
+                            _protocolHandler.getProtocolMinorVersion(), _consumerTag, // consumerTag
+                            false); // nowait
 
                     try
                     {
@@ -485,25 +497,28 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     }
                     catch (AMQException e)
                     {
-                        _logger.error("Error closing consumer: " + e, e);
-                        throw new JMSException("Error closing consumer: " + e);
+                        // _logger.error("Error closing consumer: " + e, e);
+                        JMSException jmse = new JMSException("Error closing consumer: " + e);
+                        jmse.setLinkedException(e);
+                        throw jmse;
                     }
                 }
                 else
                 {
-//                    //fixme this probably is not right
-//                    if (!isNoConsume())
-                    {   //done in BasicCancelOK Handler but not sending one so just deregister.
+                    // //fixme this probably is not right
+                    // if (!isNoConsume())
+                    { // done in BasicCancelOK Handler but not sending one so just deregister.
                         deregisterConsumer();
                     }
                 }
 
-                if (_messageListener != null && _receiving.get())
+                if ((_messageListener != null) && _receiving.get())
                 {
                     if (_logger.isInfoEnabled())
                     {
                         _logger.info("Interrupting thread: " + _receivingThread);
                     }
+
                     _receivingThread.interrupt();
                 }
             }
@@ -516,7 +531,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
      */
     void markClosed()
     {
-//        synchronized (_closed)
+        // synchronized (_closed)
         {
             _closed.set(true);
 
@@ -524,7 +539,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 if (_closedStack != null)
                 {
-                    _logger.trace(_consumerTag + " markClosed():" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
+                    _logger.trace(_consumerTag + " markClosed():"
+                        + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
                     _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
                 }
                 else
@@ -533,6 +549,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
             }
         }
+
         deregisterConsumer();
     }
 
@@ -551,22 +568,22 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             _logger.debug("notifyMessage called with message number " + messageFrame.getDeliverBody().deliveryTag);
         }
+
         try
         {
-            AbstractJMSMessage jmsMessage = _messageFactory.createMessage(messageFrame.getDeliverBody().deliveryTag,
-                                                                          messageFrame.getDeliverBody().redelivered,
-                                                                          messageFrame.getDeliverBody().exchange,
-                                                                          messageFrame.getDeliverBody().routingKey,
-                                                                          messageFrame.getContentHeader(),
-                                                                          messageFrame.getBodies());
+            AbstractJMSMessage jmsMessage =
+                _messageFactory.createMessage(messageFrame.getDeliverBody().deliveryTag,
+                    messageFrame.getDeliverBody().redelivered, messageFrame.getDeliverBody().exchange,
+                    messageFrame.getDeliverBody().routingKey, messageFrame.getContentHeader(), messageFrame.getBodies());
 
             if (debug)
             {
                 _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
             }
-//            synchronized (_closed)
+            // synchronized (_closed)
+
             {
-//                if (!_closed.get())
+                // if (!_closed.get())
                 {
 
                     jmsMessage.setConsumer(this);
@@ -575,12 +592,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                     notifyMessage(jmsMessage, channelId);
                 }
-//                else
-//                {
-//                    _logger.error("MESSAGE REJECTING!");
-//                    _session.rejectMessage(jmsMessage, true);
-//                    //_logger.error("MESSAGE JUST DROPPED!");
-//                }
+                // else
+                // {
+                // _logger.error("MESSAGE REJECTING!");
+                // _session.rejectMessage(jmsMessage, true);
+                // //_logger.error("MESSAGE JUST DROPPED!");
+                // }
             }
         }
         catch (Exception e)
@@ -606,11 +623,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         {
             if (isMessageListenerSet())
             {
-                //we do not need a lock around the test above, and the dispatch below as it is invalid
-                //for an application to alter an installed listener while the session is started
-//                synchronized (_closed)
+                // we do not need a lock around the test above, and the dispatch below as it is invalid
+                // for an application to alter an installed listener while the session is started
+                // synchronized (_closed)
                 {
-//                    if (!_closed.get())
+                    // if (!_closed.get())
                     {
 
                         preApplicationProcessing(jmsMessage);
@@ -641,14 +658,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         switch (_acknowledgeMode)
         {
-            case Session.PRE_ACKNOWLEDGE:
-                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                break;
-            case Session.CLIENT_ACKNOWLEDGE:
-                // we set the session so that when the user calls acknowledge() it can call the method on session
-                // to send out the appropriate frame
-                msg.setAMQSession(_session);
-                break;
+
+        case Session.PRE_ACKNOWLEDGE:
+            _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+            break;
+
+        case Session.CLIENT_ACKNOWLEDGE:
+            // we set the session so that when the user calls acknowledge() it can call the method on session
+            // to send out the appropriate frame
+            msg.setAMQSession(_session);
+            break;
         }
     }
 
@@ -657,47 +676,56 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
-            case Session.CLIENT_ACKNOWLEDGE:
-                if (isNoConsume())
-                {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                }
-                break;
-            case Session.DUPS_OK_ACKNOWLEDGE:
-                if (++_outstanding >= _prefetchHigh)
-                {
-                    _dups_ok_acknowledge_send = true;
-                }
-                if (_outstanding <= _prefetchLow)
-                {
-                    _dups_ok_acknowledge_send = false;
-                }
 
-                if (_dups_ok_acknowledge_send)
-                {
-                    if (!_session.isInRecovery())
-                    {
-                        _session.acknowledgeMessage(msg.getDeliveryTag(), true);
-                    }
-                }
-                break;
-            case Session.AUTO_ACKNOWLEDGE:
-                // we do not auto ack a message if the application code called recover()
+        case Session.CLIENT_ACKNOWLEDGE:
+            if (isNoConsume())
+            {
+                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+            }
+
+            break;
+
+        case Session.DUPS_OK_ACKNOWLEDGE:
+            if (++_outstanding >= _prefetchHigh)
+            {
+                _dups_ok_acknowledge_send = true;
+            }
+
+            if (_outstanding <= _prefetchLow)
+            {
+                _dups_ok_acknowledge_send = false;
+            }
+
+            if (_dups_ok_acknowledge_send)
+            {
                 if (!_session.isInRecovery())
                 {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), true);
                 }
-                break;
-            case Session.SESSION_TRANSACTED:
-                if (isNoConsume())
-                {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                }
-                else
-                {
-                    _receivedDeliveryTags.add(msg.getDeliveryTag());
-                }
-                break;
+            }
+
+            break;
+
+        case Session.AUTO_ACKNOWLEDGE:
+            // we do not auto ack a message if the application code called recover()
+            if (!_session.isInRecovery())
+            {
+                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+            }
+
+            break;
+
+        case Session.SESSION_TRANSACTED:
+            if (isNoConsume())
+            {
+                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+            }
+            else
+            {
+                _receivedDeliveryTags.add(msg.getDeliveryTag());
+            }
+
+            break;
         }
     }
 
@@ -721,14 +749,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     void notifyError(Throwable cause)
     {
-//        synchronized (_closed)
+        // synchronized (_closed)
         {
             _closed.set(true);
             if (_logger.isTraceEnabled())
             {
                 if (_closedStack != null)
                 {
-                    _logger.trace(_consumerTag + " notifyError():" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
+                    _logger.trace(_consumerTag + " notifyError():"
+                        + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
                     _logger.trace(_consumerTag + " previously" + _closedStack.toString());
                 }
                 else
@@ -737,7 +766,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
             }
         }
-        //QPID-293 can "request redelivery of this error through dispatcher"
+        // QPID-293 can "request redelivery of this error through dispatcher"
 
         // we have no way of propagating the exception to a message listener - a JMS limitation - so we
         // deal with the case where we have a synchronous receive() waiting for a message to arrive
@@ -749,9 +778,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 _logger.debug("Passed exception to synchronous queue for propagation to receive()");
             }
         }
+
         deregisterConsumer();
     }
-
 
     /**
      * Perform cleanup to deregister this consumer. This occurs when closing the consumer in both the clean case and in
@@ -782,7 +811,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         this.checkNotClosed();
 
-        if (_session == null || _session.isClosed())
+        if ((_session == null) || _session.isClosed())
         {
             throw new javax.jms.IllegalStateException("Invalid Session");
         }
@@ -817,7 +846,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         return _autoClose;
     }
 
-
     public boolean isNoConsume()
     {
         return _noConsume;
@@ -827,10 +855,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         _closeWhenNoMessages = b;
 
-        if (_closeWhenNoMessages
-            && _synchronousQueue.isEmpty()
-            && _receiving.get()
-            && _messageListener != null)
+        if (_closeWhenNoMessages && _synchronousQueue.isEmpty() && _receiving.get() && (_messageListener != null))
         {
             _receivingThread.interrupt();
         }
@@ -846,13 +871,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             _logger.debug("Rejecting received messages in _receivedDTs (RQ)");
         }
 
-        //rollback received but not committed messages
+        // rollback received but not committed messages
         while (!_receivedDeliveryTags.isEmpty())
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags.size() + ") in _receivedDTs (RQ)" +
-                              "for consumer with tag:" + _consumerTag);
+                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags.size() + ") in _receivedDTs (RQ)"
+                    + "for consumer with tag:" + _consumerTag);
             }
 
             Long tag = _receivedDeliveryTags.poll();
@@ -876,14 +901,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             }
         }
 
-        //rollback pending messages
+        // rollback pending messages
         if (_synchronousQueue.size() > 0)
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Rejecting the messages(" + _synchronousQueue.size() + ") in _syncQueue (PRQ)" +
-                              "for consumer with tag:" + _consumerTag);
+                _logger.debug("Rejecting the messages(" + _synchronousQueue.size() + ") in _syncQueue (PRQ)"
+                    + "for consumer with tag:" + _consumerTag);
             }
+
             Iterator iterator = _synchronousQueue.iterator();
 
             while (iterator.hasNext())
@@ -898,13 +924,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     {
                         _logger.trace("Rejected message:" + ((AbstractJMSMessage) o).getDeliveryTag());
                     }
+
                     iterator.remove();
 
                 }
                 else
                 {
-                    _logger.error("Queue contained a :" + o.getClass() +
-                                  " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
+                    _logger.error("Queue contained a :" + o.getClass()
+                        + " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
                     iterator.remove();
                 }
             }
@@ -918,7 +945,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             clearReceiveQueue();
         }
     }
-
 
     public String debugIdentity()
     {

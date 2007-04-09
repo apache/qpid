@@ -347,7 +347,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
         catch (AMQException e)
         {
-            throw new JMException("Error creating header attributes list: " + e);
+            JMException jme = new JMException("Error creating header attributes list: " + e);
+            jme.initCause(e);
+            throw jme;
         }
     }
 
@@ -381,7 +383,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         }
         catch (AMQException e)
         {
-            throw new JMException("Error creating message contents: " + e);
+            JMException jme = new JMException("Error creating message contents: " + e);
+            jme.initCause(e);
+            throw jme;
         }
 
         return _messageList;

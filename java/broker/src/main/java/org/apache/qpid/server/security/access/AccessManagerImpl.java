@@ -116,7 +116,9 @@ public class AccessManagerImpl implements AccessManager
             }
             catch (Exception e)
             {
-                throw new ConfigurationException(e.getMessage(), e.getCause());
+                ConfigurationException ce = new ConfigurationException(e.getMessage(), e.getCause());
+                ce.initCause(e);
+                throw ce;
             }
         }
     }

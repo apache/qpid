@@ -21,16 +21,17 @@
 package org.apache.qpid.framing;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 
 public class AMQFrameDecodingException extends AMQException
 {
-    public AMQFrameDecodingException(String message)
+    /*public AMQFrameDecodingException(String message)
     {
         super(message);
-    }
+    }*/
 
-    public AMQFrameDecodingException(String message, Throwable t)
+    public AMQFrameDecodingException(AMQConstant errorCode, String message, Throwable t)
     {
-        super(message, t);
+        super(errorCode, message, t);
     }
 }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,36 +20,37 @@
  */
 package org.apache.qpid.server.management;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.Map;
-import java.util.HashMap;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
-import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
-import javax.management.remote.JMXServiceURL;
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXConnectorServerFactory;
+import javax.management.remote.JMXServiceURL;
 import javax.management.remote.MBeanServerForwarder;
+import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.AuthorizeCallback;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent is being used then there are no security features
@@ -76,13 +77,15 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", true);
         int port = appRegistry.getConfiguration().getInt("management.jmxport", 8999);
 
-        _mbeanServer = platformServer ? ManagementFactory.getPlatformMBeanServer()
-                                      : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);        
+        _mbeanServer =
+            platformServer ? ManagementFactory.getPlatformMBeanServer()
+                           : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
 
         // Check if the "QPID_OPTS" is set to use Out of the Box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
         {
             _log.info("JMX: Using the out of the box JMX Agent");
+
             return;
         }
 
@@ -95,18 +98,18 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
                 Map env = new HashMap();
                 env.put("jmx.remote.profiles", "SASL/PLAIN");
-                //env.put("jmx.remote.profiles", "SASL/CRAM-MD5");
+                // env.put("jmx.remote.profiles", "SASL/CRAM-MD5");
 
                 Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();
                 Map.Entry<String, PrincipalDatabase> entry = map.entrySet().iterator().next();
-                
+
                 // Callback handler used by the PLAIN SASL server mechanism to perform user authentication
                 /*
                  PlainInitialiser plainInitialiser = new PlainInitialiser();
                  plainInitialiser.initialise(entry.getValue());
                  env.put("jmx.remote.sasl.callback.handler", plainInitialiser.getCallbackHandler());
-                */
-                
+                 */
+
                 env.put("jmx.remote.sasl.callback.handler", new UserCallbackHandler(entry.getValue()));
 
                 // Enable the SSL security and server authentication
@@ -115,7 +118,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 SslRMIServerSocketFactory ssf = new SslRMIServerSocketFactory();
                 env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE, csf);
                 env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE, ssf);
-                */
+                 */
 
                 try
                 {
@@ -162,7 +165,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     public void registerObject(ManagedObject managedObject) throws JMException
     {
-         _mbeanServer.registerMBean(managedObject, managedObject.getObjectName());
+        _mbeanServer.registerMBean(managedObject, managedObject.getObjectName());
     }
 
     public void unregisterObject(ManagedObject managedObject) throws JMException
@@ -180,9 +183,10 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         {
             return true;
         }
+
         if (System.getProperty("com.sun.management.jmxremote.port") != null)
         {
-            return true;            
+            return true;
         }
 
         return false;
@@ -248,21 +252,24 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
             boolean authorized = false;
             // Process retrieval of password; can get password if username is available in NameCallback
-            if (ncb != null && pcb != null)
+            if ((ncb != null) && (pcb != null))
             {
                 String username = ncb.getDefaultName();
                 try
                 {
-                    authorized =_principalDatabase.verifyPassword(new UsernamePrincipal(username), pcb.getPassword());
+                    authorized = _principalDatabase.verifyPassword(new UsernamePrincipal(username), pcb.getPassword());
                 }
                 catch (AccountNotFoundException e)
                 {
-                    throw new IOException("User not authorized.  " + e);
+                    IOException ioe = new IOException("User not authorized.  " + e);
+                    ioe.initCause(e);
+                    throw ioe;
                 }
             }
+
             if (!authorized)
             {
-                throw new IOException("User not authorized.");  
+                throw new IOException("User not authorized.");
             }
         }
     }

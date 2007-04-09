@@ -33,6 +33,7 @@ import javax.jms.MessageFormatException;
 import javax.jms.ObjectMessage;
 
 import org.apache.mina.common.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -61,14 +62,15 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             _data = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
             _data.setAutoExpand(true);
         }
+
         getContentHeaderProperties().setContentType(MIME_TYPE_SHORT_STRING);
     }
 
     /**
      * Creates read only message for delivery to consumers
      */
-    JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
-                     AMQShortString routingKey, ByteBuffer data) throws AMQException
+    JMSObjectMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange, AMQShortString routingKey,
+        ByteBuffer data) throws AMQException
     {
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, exchange, routingKey, data);
     }
@@ -79,6 +81,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             _data.release();
         }
+
         _data = null;
 
     }
@@ -116,11 +119,13 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         }
         catch (IOException e)
         {
-            throw new MessageFormatException("Message not serializable: " + e);
+            MessageFormatException mfe = new MessageFormatException("Message not serializable: " + e);
+            mfe.setLinkedException(e);
+            throw mfe;
         }
 
     }
-  
+
     public Serializable getObject() throws JMSException
     {
         ObjectInputStream in = null;
@@ -133,17 +138,20 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             _data.rewind();
             in = new ObjectInputStream(_data.asInputStream());
+
             return (Serializable) in.readObject();
         }
         catch (IOException e)
         {
-            e.printStackTrace();
-            throw new MessageFormatException("Could not deserialize message: " + e);
+            MessageFormatException mfe = new MessageFormatException("Could not deserialize message: " + e);
+            mfe.setLinkedException(e);
+            throw mfe;
         }
         catch (ClassNotFoundException e)
         {
-            e.printStackTrace();
-            throw new MessageFormatException("Could not deserialize message: " + e);
+            MessageFormatException mfe = new MessageFormatException("Could not deserialize message: " + e);
+            mfe.setLinkedException(e);
+            throw mfe;
         }
         finally
         {
@@ -162,8 +170,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             }
         }
         catch (IOException ignore)
-        {
-        }
+        { }
     }
 
     private static String toString(ByteBuffer data)
@@ -172,6 +179,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         {
             return null;
         }
+
         int pos = data.position();
         try
         {

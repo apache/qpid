@@ -22,11 +22,41 @@ package org.apache.qpid;
 
 import org.apache.qpid.protocol.AMQConstant;
 
-/** Generic AMQ exception. */
+/**
+ * AMQException forms the root exception of all exceptions relating to the AMQ protocol. It provides space to associate
+ * an AMQ error code with the exception, which is a numberic value, with a meaning defined by the protocol.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents an exception condition associated with an AMQ protocol error code.
+ * </table>
+ *
+ * @todo This exception class is also used as a generic exception throughout Qpid code. This usage may not be strictly
+ *       correct if this is to signify a protocol exception. Should review.
+ */
 public class AMQException extends Exception
 {
+    /** Holds the AMQ error code constant associated with this exception. */
     private AMQConstant _errorCode;
 
+    /**
+     * Creates an exception with an optional error code, optional message and optional underlying cause.
+     *
+     * @param errorCode The error code. May be null if not to be set.
+     * @param msg       The exception message. May be null if not to be set.
+     * @param t         The underlying cause of the exception. May be null if not to be set.
+     */
+    public AMQException(AMQConstant errorCode, String msg, Throwable t)
+    {
+        super(((msg == null) ? "" : msg) + ((errorCode == null) ? "" : (" [error code " + errorCode + "]")), t);
+        _errorCode = errorCode;
+    }
+
+    /**
+     * @param message
+     *
+     * @deprecated Use {@link #AMQException(org.apache.qpid.protocol.AMQConstant, String, Throwable)} instead.
+     */
     public AMQException(String message)
     {
         super(message);
@@ -34,6 +64,12 @@ public class AMQException extends Exception
         _errorCode = AMQConstant.getConstant(-1);
     }
 
+    /**
+     * @param msg
+     * @param t
+     *
+     * @deprecated Use {@link #AMQException(org.apache.qpid.protocol.AMQConstant, String, Throwable)} instead.
+     */
     public AMQException(String msg, Throwable t)
     {
         super(msg, t);
@@ -41,21 +77,25 @@ public class AMQException extends Exception
         _errorCode = AMQConstant.getConstant(-1);
     }
 
-    public AMQException(AMQConstant errorCode, String msg, Throwable t)
-    {
-        super(msg + " [error code " + errorCode + ']', t);
-        _errorCode = errorCode;
-    }
-
+    /**
+     * @param errorCode
+     * @param msg
+     *
+     * @deprecated Use {@link #AMQException(org.apache.qpid.protocol.AMQConstant, String, Throwable)} instead.
+     */
     public AMQException(AMQConstant errorCode, String msg)
     {
         super(msg + " [error code " + errorCode + ']');
         _errorCode = errorCode;
     }
 
+    /**
+     * Gets the AMQ protocol exception code associated with this exception.
+     *
+     * @return The AMQ protocol exception code associated with this exception.
+     */
     public AMQConstant getErrorCode()
     {
         return _errorCode;
     }
-
 }
