@@ -37,6 +37,7 @@
     </connector>
     <management>
         <enabled>true</enabled>
+        <jmxport>8999</jmxport>
     </management>
     <advanced>
         <filterchain enableExecutorPool="true"/>

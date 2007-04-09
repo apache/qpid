@@ -140,8 +140,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param autoDelete
      * @throws JMException
      */
-    public void createNewQueue(String queueName, String owner, boolean durable,boolean autoDelete)
-            throws JMException
+    public void createNewQueue(String queueName, String owner, boolean durable) throws JMException
     {
         AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue != null)
@@ -156,7 +155,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             {
                 ownerShortString = new AMQShortString(owner);
             }
-            queue = new AMQQueue(new AMQShortString(queueName), durable, ownerShortString, autoDelete, getVirtualHost());
+            queue = new AMQQueue(new AMQShortString(queueName), durable, ownerShortString, false, getVirtualHost());
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _messageStore.createQueue(queue);

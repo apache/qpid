@@ -124,11 +124,13 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                     MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
                     cs.setMBeanServerForwarder(mbsf);
                     cs.start();
+                    _log.info("JMX: Starting JMXConnector server with SASL");
                 }
                 catch (java.net.MalformedURLException urlException)
                 {
                     // When JMXMPConnector is not available
                     // java.net.MalformedURLException: Unsupported protocol: jmxmp
+                    _log.info("JMX: Starting JMXConnector server");
                     startJMXConnectorServer(port);
                 }
             }
