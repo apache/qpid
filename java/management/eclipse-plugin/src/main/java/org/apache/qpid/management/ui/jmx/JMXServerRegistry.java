@@ -99,7 +99,7 @@ public class JMXServerRegistry extends ServerRegistry
                 
                 // Now create the instance of JMXMPConnector
                 Security.addProvider(new SaslProvider());
-                jmxUrl = new JMXServiceURL("jmxmp", null, server.getPort());
+                jmxUrl = new JMXServiceURL("jmxmp", server.getHost(), server.getPort());
                 
                 env = new HashMap<String, Object>();
                 env.put("jmx.remote.profiles", "SASL/PLAIN");
@@ -114,12 +114,12 @@ public class JMXServerRegistry extends ServerRegistry
                 Object theObject = cons.newInstance(args);
                 _jmxc = (JMXConnector)theObject;
                 _jmxc.connect();
-                System.out.println("Starting JMXConnector with SASL");
+                System.out.println("Starting JMXConnector with SASL. Server=" + server.getName());
             }
             catch (Exception ex)
             {
                 // When JMXMPConnector is not available
-                System.out.println("Starting JMXConnector");                
+                System.out.println("Starting JMXConnector. Server=" + server.getName());                
                 jmxUrl = new JMXServiceURL(server.getUrl());
                 _jmxc = JMXConnectorFactory.connect(jmxUrl, null);
             }
