@@ -170,7 +170,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             }
             catch (UnsupportedEncodingException e)
             {
-                throw new AMQException(_log, "Unable to decode data: " + e, e);
+                throw new AMQException("Unable to decode data: " + e, e);
             }
         }
         else

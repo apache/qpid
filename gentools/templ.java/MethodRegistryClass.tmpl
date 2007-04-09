@@ -60,7 +60,7 @@ public class MainRegistry
 		
         if (bodyFactory == null)
         {
-            throw new AMQFrameDecodingException(_log,
+            throw new AMQFrameDecodingException(
                 "Unable to find a suitable decoder for class " + classID + " and method " +
                 methodID + " in AMQP version " + major + "-" + minor + ".");
         }
