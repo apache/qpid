@@ -179,7 +179,7 @@
       <fileMode>493</fileMode>
     </file>
     <file>
-      <source>../bdbstore/bin/bdbbackup</source>
+      <source>../broker/bin/bdbbackup</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>bdbbackup</destName>
       <fileMode>493</fileMode>
