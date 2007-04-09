@@ -769,7 +769,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             else
             {
-                amqe = new AMQException(_logger, "Closing session forcibly", e);
+                amqe = new AMQException("Closing session forcibly", e);
             }
             _connection.deregisterSession(_channelId);
             closeProducersAndConsumers(amqe);
