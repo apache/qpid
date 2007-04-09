@@ -65,11 +65,11 @@ public class DefaultExchangeFactory implements ExchangeFactory
         }
         catch (InstantiationException e)
         {
-            throw new AMQException(_logger, "Unable to create exchange: " + e, e);
+            throw new AMQException("Unable to create exchange: " + e, e);
         }
         catch (IllegalAccessException e)
         {
-            throw new AMQException(_logger, "Unable to create exchange: " + e, e);
+            throw new AMQException("Unable to create exchange: " + e, e);
         }
     }
 }
