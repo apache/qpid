@@ -142,6 +142,8 @@ AC_CONFIG_FILES([
   src/tests/Makefile
   docs/man/Makefile
   docs/api/Makefile
+  docs/api/user.doxygen
+  docs/api/developer.doxygen
   rpm/Makefile
   ])
 

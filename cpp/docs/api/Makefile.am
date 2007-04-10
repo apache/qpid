@@ -3,28 +3,20 @@
 # Generate dependency files so its rebuilt only when needed. 
 #
 
-EXTRA_DIST = html user.doxygen
+EXTRA_DIST = html user.doxygen developer.doxygen
 
 dist-hook: html
 
-html: doxygen.mk
-	make -f doxygen.mk $@
+src=$(top_srcdir)/src
 
-html-dev: doxygen.mk
-	make -f doxygen.mk $@
+headers: $(src)/*.h $(src)/*/*.h $(src)/*/*/*.h
+sources: $(src)/*.cpp $(src)/*/*.cpp $(src)/*/*/*.cpp
 
-doxygen.mk: doxygen.deps
+html: headers user.doxygen
+	doxygen $(srcdir)/user.doxygen
 
-doxygen.deps: force
-	echo "html: \\" >> $@-t
-	find $(top_srcdir) -name "*.h" -exec echo "  {} \\" \; >> $@-t
-	echo >> $@-t
-	echo "html-dev: html\\" >> $@-t
-	find $(top_srcdir) -name "*.cpp" -exec echo "  {} \\" \; >> $@-t
-	echo >> $@-t
-	mv $@-t $@
-
-force:
+html-dev: headers sources developer.doxygen
+	doxygen $(srcdir)/developer.doxygen
 
 clean-local:
-	rm -rf html html-dev *.deps
+	rm -rf html html-dev 

@@ -62,20 +62,19 @@ CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
 
 EXTRA_DIST =		\
-  $(TESTS) 		\
-  .vg-supp		\
-  .valgrindrc.default   \
+  run-unit-tests start_broker python_tests kill_broker \
+  .valgrind.supp	\
+  .valgrindrc-default   \
   InProcessBroker.h	\
   MockChannel.h		\
   MockConnectionInputHandler.h \
   qpid_test_plugin.h	\
   test_env		\
-  topicall		\
   topictest		\
   APRBaseTest.cpp
 
 CLEANFILES=qpidd.log
-DISTCLEANFILES=gen.mk
+MAINTAINERCLEANFILES=gen.mk
 
 include gen.mk
 
@@ -115,5 +114,5 @@ check-unit:
 
 # Create a copy so user can modify without risk of checking in their mods.
 .valgrindrc: .valgrindrc-default
-	cp .valgrindrc-default .valgrindrc
+	cp $(srcdir)/.valgrindrc-default .valgrindrc
 
