@@ -16,11 +16,11 @@ libtool: $(LIBTOOL_DEPS)
 # This cannot be done by AC_CONFIG_FILES, because automake's
 # make distcheck target does not like auto-generated files
 # being included in the distributed archive.
-qpidc.spec: %: %.in
+$(PACKAGE).spec: %: %.in
 	sed 's/@''PACKAGE@/@PACKAGE@/;s/@''VERSION@/@VERSION@/' $< > $@-tmp
 	mv $@-tmp $@
 MAINTAINERCLEANFILES = $(PACKAGE).spec
 
 .PHONY: rpm srpm
-rpm srpm:
+rpm srpm: dist
 	cd rpm && $(MAKE) $(MAKEFLAGS_AM) $@
