@@ -54,10 +54,9 @@ import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent is being used then there are no security features
- * implemented.
- * To use the security features like user authentication, turn off the jmx options in the "QPID_OPTS" env variable and
- * use JMXMP connector server. If JMXMP connector is not available, then the standard JMXConnector will be used, which
- * again doesn't have user authentication.
+ * implemented. To use the security features like user authentication, turn off the jmx options in the "QPID_OPTS" env
+ * variable and use JMXMP connector server. If JMXMP connector is not available, then the standard JMXConnector will be
+ * used, which again doesn't have user authentication.
  */
 public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {
@@ -78,8 +77,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         int port = appRegistry.getConfiguration().getInt("management.jmxport", 8999);
 
         _mbeanServer =
-            platformServer ? ManagementFactory.getPlatformMBeanServer()
-                           : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
+                platformServer ? ManagementFactory.getPlatformMBeanServer()
+                : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
 
         // Check if the "QPID_OPTS" is set to use Out of the Box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
@@ -152,7 +151,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     /**
      * Starts up an RMIRegistry at configured port and attaches a JMXConnectorServer to it.
+     *
      * @param port
+     *
      * @throws IOException
      */
     private void startJMXConnectorServer(int port) throws IOException
@@ -175,6 +176,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     /**
      * Checks is the "QPID_OPTS" env variable is set to use the out of the box JMXAgent.
+     *
      * @return
      */
     private boolean areOutOfTheBoxJMXOptionsSet()
@@ -194,7 +196,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     /**
      * Starts the rmi registry at given port
+     *
      * @param port
+     *
      * @throws RemoteException
      */
     private void startRMIRegistry(int port) throws RemoteException
@@ -213,9 +217,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
     }
 
-    /**
-     * This class is used for SASL enabled JMXConnector for performing user authentication.
-     */
+    /** This class is used for SASL enabled JMXConnector for performing user authentication. */
     private class UserCallbackHandler implements CallbackHandler
     {
         private final PrincipalDatabase _principalDatabase;
@@ -257,7 +259,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 String username = ncb.getDefaultName();
                 try
                 {
-                    authorized = _principalDatabase.verifyPassword(new UsernamePrincipal(username), pcb.getPassword());
+                    authorized = _principalDatabase.verifyPassword(new UsernamePrincipal(username), new String(pcb.getPassword()));
                 }
                 catch (AccountNotFoundException e)
                 {
