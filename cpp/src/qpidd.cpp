@@ -24,7 +24,7 @@
 #include <iostream>
 #include <memory>
 #include <cerrno>
-#include "../config.h"
+#include "config.h"
 #include <unistd.h>
 
 static char const* programName = "qpidd";
