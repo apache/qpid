@@ -143,8 +143,8 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         int index = 0;
 
         for (byte b : passwdBytes)
-        {
-            passwd[index] = (char) b;
+        {            
+            passwd[index++] = (char) b;
         }
 
         return passwd;
