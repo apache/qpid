@@ -61,16 +61,20 @@ TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
 CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
 
-EXTRA_DIST =		\
-  run-unit-tests start_broker python_tests kill_broker \
-  .valgrind.supp	\
-  .valgrindrc-default   \
-  InProcessBroker.h	\
-  MockChannel.h		\
-  MockConnectionInputHandler.h \
-  qpid_test_plugin.h	\
-  test_env		\
-  topictest		\
+EXTRA_DIST =					\
+  test_env					\
+  topictest					\
+  quick_topictest				\
+  run-unit-tests				\
+  start_broker					\
+  python_tests					\
+  kill_broker					\
+  .valgrind.supp				\
+  .valgrindrc-default				\
+  InProcessBroker.h				\
+  MockChannel.h					\
+  MockConnectionInputHandler.h			\
+  qpid_test_plugin.h				\
   APRBaseTest.cpp
 
 CLEANFILES=qpidd.log

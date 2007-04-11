@@ -1,0 +1,11 @@
+
+This package provides header files needed to implement extensions to
+the Qpid broker daemon. It is not require for normal use of Qpid.
+
+Support for broker extensions is still a work-in-progress. We will be
+providing API documentation soon, in the meantime go to:
+
+	http://cwiki.apache.org/qpid/
+
+for more information.
+

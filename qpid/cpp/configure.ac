@@ -16,7 +16,7 @@ AM_INIT_AUTOMAKE([dist-bzip2])
 AC_PREREQ(2.59)
 
 AC_CONFIG_HEADERS([config.h:config.in])
-AC_CONFIG_SRCDIR([src/broker/Broker.cpp])
+AC_CONFIG_SRCDIR([qpidc.spec.in])
 
 AC_PROG_CC_STDC
 #AM_PROG_CC_C_O
@@ -41,7 +41,7 @@ AC_CHECK_PROGS([JAVAC], [javac], [no])
 build=yes
 test x$JAVA  = xno && build=no
 test x$JAVAC = xno && build=no
-test -d $srcdir/../gentools || build=no
+test -d $srcdir/gentools || build=no
 test -d $srcdir/../specs    || build=no
 AM_CONDITIONAL([CAN_GENERATE_CODE], [test x$build = xyes])
 
@@ -136,6 +136,10 @@ AC_ARG_ENABLE(valgrind,
 AC_CHECK_PROG([VALGRIND], [valgrind], [valgrind])
 test "$enable_VALGRIND" = no && VALGRIND=
 
+# If rpmlint is availalbe we'll run it when building RPMs.
+AC_CHECK_PROG([RPMLINT], [rpmlint], [rpmlint])
+AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
+	
 AC_CONFIG_FILES([
   Makefile
   src/Makefile
@@ -144,7 +148,6 @@ AC_CONFIG_FILES([
   docs/api/Makefile
   docs/api/user.doxygen
   docs/api/developer.doxygen
-  rpm/Makefile
   ])
 
 AC_OUTPUT

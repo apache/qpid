@@ -13,10 +13,12 @@ headers: $(src)/*.h $(src)/*/*.h $(src)/*/*/*.h
 sources: $(src)/*.cpp $(src)/*/*.cpp $(src)/*/*/*.cpp
 
 html: headers user.doxygen
-	doxygen $(srcdir)/user.doxygen
+	doxygen user.doxygen
+	touch $@
 
 html-dev: headers sources developer.doxygen
-	doxygen $(srcdir)/developer.doxygen
+	doxygen developer.doxygen
+	touch $@
 
 clean-local:
 	rm -rf html html-dev 

@@ -1103,8 +1103,8 @@ public class CppGenerator extends Generator
         for (String thisMethodName : thisClass.methodMap.keySet())
             {
                 AmqpMethod method = thisClass.methodMap.get(thisMethodName);
-                sb.append(indent + "#include <" + thisClass.name +
-                          Utils.firstUpper(method.name) + "Body.h>" + cr);
+                sb.append(indent + "#include \"" + thisClass.name +
+                          Utils.firstUpper(method.name) + "Body.h\"" + cr);
             }
         return sb.toString();       
     }
