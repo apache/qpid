@@ -103,3 +103,8 @@ void NullMessageStore::commit(TransactionContext&)
 void NullMessageStore::abort(TransactionContext&)
 {
 }
+
+void NullMessageStore::collectPreparedXids(std::set<string>&)
+{
+
+}
