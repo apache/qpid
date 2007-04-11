@@ -23,8 +23,8 @@
 #include "Connection.h"
 #include "Broker.h"
 #include "BrokerMessageMessage.h"
-#include "MessageAppendBody.h"
-#include "MessageTransferBody.h"
+#include "../gen/MessageAppendBody.h"
+#include "../gen/MessageTransferBody.h"
 #include "BrokerAdapter.h"
 
 namespace qpid {

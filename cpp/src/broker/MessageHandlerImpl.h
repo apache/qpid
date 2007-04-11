@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include "AMQP_ServerOperations.h"
-#include "AMQP_ClientProxy.h"
+#include "../gen/AMQP_ServerOperations.h"
+#include "../gen/AMQP_ClientProxy.h"
 #include "Reference.h"
 #include "HandlerImpl.h"
 

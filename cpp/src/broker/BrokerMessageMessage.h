@@ -22,7 +22,7 @@
  *
  */
 #include "BrokerMessageBase.h"
-#include "MessageTransferBody.h"
+#include "../gen/MessageTransferBody.h"
 #include "../framing/amqp_types.h"
 #include <boost/weak_ptr.hpp>
 #include <vector>

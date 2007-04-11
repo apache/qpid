@@ -20,7 +20,7 @@
  */
 
 #include "BrokerChannel.h"
-#include "AMQP_ClientProxy.h"
+#include "../gen/AMQP_ClientProxy.h"
 
 namespace qpid {
 

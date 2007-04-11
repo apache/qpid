@@ -26,7 +26,7 @@
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include <memory>
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include "../framing/AMQFrame.h"
 #include "MockChannel.h"
 #include "../broker/Connection.h"

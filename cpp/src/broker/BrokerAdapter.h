@@ -18,7 +18,7 @@
  * limitations under the License.
  *
  */
-#include "AMQP_ServerOperations.h"
+#include "../gen/AMQP_ServerOperations.h"
 #include "HandlerImpl.h"
 #include "MessageHandlerImpl.h"
 #include "../Exception.h"

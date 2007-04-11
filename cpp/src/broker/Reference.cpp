@@ -20,7 +20,7 @@
 #include "Reference.h"
 #include "BrokerMessageMessage.h"
 #include "../QpidError.h"
-#include "MessageAppendBody.h"
+#include "../gen/MessageAppendBody.h"
 #include "CompletionHandler.h"
 
 namespace qpid {

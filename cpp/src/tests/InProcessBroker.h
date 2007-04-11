@@ -18,7 +18,7 @@
  * limitations under the License.
  *
  */
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include "../framing/AMQFrame.h"
 #include "../broker/Broker.h"
 #include "../broker/Connection.h"

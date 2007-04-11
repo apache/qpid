@@ -19,7 +19,7 @@
  *
  */
 //#include <iostream>
-//#include <AMQP_HighestVersion.h>
+//#include "../gen/AMQP_HighestVersion.h>
 #include "../framing/amqp_framing.h"
 #include "qpid_test_plugin.h"
 

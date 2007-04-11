@@ -23,7 +23,7 @@
 #include "../framing/ChannelAdapter.h"
 #include "../framing/OutputHandler.h"
 #include "../framing/AMQFrame.h"
-#include "BasicGetBody.h"
+#include "../gen/BasicGetBody.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 

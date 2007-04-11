@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "AMQP_ClientOperations.h"
+#include "../gen/AMQP_ClientOperations.h"
 #include "ClientAdapter.h"
 #include "Connection.h"
 #include "../Exception.h"

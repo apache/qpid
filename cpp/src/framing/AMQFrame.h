@@ -30,8 +30,8 @@
 #include "AMQHeaderBody.h"
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
-#include "AMQP_MethodVersionMap.h"
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_MethodVersionMap.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include "Buffer.h"
 
 namespace qpid {
