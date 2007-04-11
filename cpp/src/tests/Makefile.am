@@ -121,3 +121,7 @@ check-unit:
 .valgrindrc: .valgrindrc-default
 	cp $(srcdir)/.valgrindrc-default .valgrindrc
 
+# Tell GNU make not to build targets in this directory in parallel.
+# This is necessary because with two or more identical and simultaneous
+# ltmain invocations, one may corrupt the temporaries of the other.
+.NOTPARALLEL:
