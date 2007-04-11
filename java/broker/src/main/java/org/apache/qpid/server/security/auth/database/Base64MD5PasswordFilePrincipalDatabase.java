@@ -201,7 +201,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
         for (byte b : passwdBytes)
         {
-            passwd[index] = (char) b;
+            passwd[index++] = (char) b;
         }
 
         return passwd;
@@ -311,6 +311,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 }
 
                 User user = new User(result);
+                _logger.info("Created user:" + user);
                 _users.put(user.getName(), user);
             }
         }
@@ -328,6 +329,10 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         BufferedReader reader = null;
         PrintStream writer = null;
         File tmp = new File(_passwordFile.getAbsolutePath() + ".tmp");
+        if (tmp.exists())
+        {
+            tmp.delete();
+        }
         try
         {
             writer = new PrintStream(tmp);
@@ -348,12 +353,14 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 if (user == null)
                 {
                     writer.write(line.getBytes(DEFAULT_ENCODING));
+                    writer.println();
                 }
                 else if (!user.isDeleted())
                 {
                     if (!user.isModified())
                     {
                         writer.write(line.getBytes(DEFAULT_ENCODING));
+                        writer.println();
                     }
                     else
                     {
@@ -363,16 +370,38 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
                             writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
                             writer.write(encodedPassword);
+                            writer.println();
+
+                            user.saved();
                         }
                         catch (EncoderException e)
                         {
                             _logger.warn("Unable to encode new password reverting to old password.");
                             writer.write(line.getBytes(DEFAULT_ENCODING));
+                            writer.println();
                         }
                     }
                 }
+            }
 
-
+            for (User user : _users.values())
+            {
+                if (user.isModified())
+                {
+                    byte[] encodedPassword;
+                    try
+                    {
+                        encodedPassword = user.getEncodePassword();
+                        writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
+                        writer.write(encodedPassword);
+                        writer.println();
+                        user.saved();
+                    }
+                    catch (EncoderException e)
+                    {
+                        _logger.warn("Unable to get Encoded password for user'" + user.getName() + "' password not saved");
+                    }
+                }
             }
         }
         finally
@@ -388,7 +417,14 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             }
 
             // Swap temp file to main password file.
+            File old = new File(_passwordFile.getAbsoluteFile() + ".old");
+            if (old.exists())
+            {
+                old.delete();
+            }
+            _passwordFile.renameTo(old);
             tmp.renameTo(_passwordFile);
+            tmp.delete();
         }
     }
 
@@ -436,6 +472,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return _name;
         }
 
+        public String toString()
+        {
+            return getName() + ((_encodedPassword == null) ? "" : ":" + _encodedPassword);
+        }
+
         char[] getPassword()
         {
             return _password;
@@ -477,6 +518,11 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         public void delete()
         {
             _deleted = true;
+        }
+
+        public void saved()
+        {
+            _modified = false;
         }
     }
 }
