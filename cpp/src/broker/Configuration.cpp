@@ -20,7 +20,7 @@
  */
 #include "Configuration.h"
 #include <string.h>
-#include "../../config.h"
+#include "config.h"
 
 using namespace qpid::broker;
 using namespace std;

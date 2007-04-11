@@ -6,7 +6,7 @@ MAINTAINERCLEANFILES = $(dist_man_MANS)
 
 dist-hook: $(man_aux)
 
-qpidd.1: $(srcdir)/qpidd.x $(top_srcdir)/src/qpidd
+qpidd.1: $(srcdir)/qpidd.x $(top_builddir)/src/qpidd
 
 # Depend on configure.ac to get version number changes.
 $(dist_man_MANS): $(top_srcdir)/configure.ac
