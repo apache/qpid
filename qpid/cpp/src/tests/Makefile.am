@@ -23,7 +23,7 @@ broker_unit_tests =	\
   TxBufferTest		\
   TxPublishTest		\
   ValueTest		\
-  MessageHandlerTest 	
+  MessageHandlerTest
 
 client_unit_tests =	\
   ClientChannelTest
@@ -44,7 +44,7 @@ unit_tests =		\
   $(broker_unit_tests)	\
   $(client_unit_tests)	\
   $(framing_unit_tests)	\
-  $(misc_unit_tests) 	
+  $(misc_unit_tests)
 
 # Executables for client tests
 
@@ -56,7 +56,7 @@ testprogs =		\
 
 noinst_PROGRAMS = $(testprogs)
 
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) 
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
 
 CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
