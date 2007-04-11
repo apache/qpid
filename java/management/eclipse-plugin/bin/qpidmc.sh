@@ -61,4 +61,4 @@ elif [ $os = "Linux" ]; then
     os="linux"
 fi
 
-"$JAVA_HOME/bin/java" -Xms40m -Xmx256m -Declipse.consoleLog=false -Dsecurity=true -jar $QPIDMC_HOME/eclipse/startup.jar org.eclipse.core.launcher.Main -launcher $QPIDMC_HOME/eclipse/eclipse -name "Qpid Management Console" -showsplash 600 -configuration "file:$QPIDMC_HOME/configuration" -os $os -ws $ws -arch $arch
+"$JAVA_HOME/bin/java" -Xms40m -Xmx256m -Declipse.consoleLog=false -Dsecurity=PLAIN -jar $QPIDMC_HOME/eclipse/startup.jar org.eclipse.core.launcher.Main -launcher $QPIDMC_HOME/eclipse/eclipse -name "Qpid Management Console" -showsplash 600 -configuration "file:$QPIDMC_HOME/configuration" -os $os -ws $ws -arch $arch

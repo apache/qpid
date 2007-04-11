@@ -50,7 +50,10 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent is being used then there are no security features
@@ -96,20 +99,34 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 _jmxURL = new JMXServiceURL("jmxmp", null, port);
 
                 Map env = new HashMap();
-                env.put("jmx.remote.profiles", "SASL/PLAIN");
-                // env.put("jmx.remote.profiles", "SASL/CRAM-MD5");
-
                 Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();
-                Map.Entry<String, PrincipalDatabase> entry = map.entrySet().iterator().next();
+                PrincipalDatabase db = null;
+                
+                for (Map.Entry<String, PrincipalDatabase> entry : map.entrySet())
+                {
+                    if (entry.getValue() instanceof Base64MD5PasswordFilePrincipalDatabase)
+                    {
+                        db = entry.getValue();
+                        break;
+                    }
+                    else if (entry.getValue() instanceof PlainPasswordFilePrincipalDatabase)
+                    {
+                        db = entry.getValue();
+                    }
+                }
 
-                // Callback handler used by the PLAIN SASL server mechanism to perform user authentication
-                /*
-                 PlainInitialiser plainInitialiser = new PlainInitialiser();
-                 plainInitialiser.initialise(entry.getValue());
-                 env.put("jmx.remote.sasl.callback.handler", plainInitialiser.getCallbackHandler());
-                 */
-
-                env.put("jmx.remote.sasl.callback.handler", new UserCallbackHandler(entry.getValue()));
+                if (db instanceof Base64MD5PasswordFilePrincipalDatabase)
+                {
+                    env.put("jmx.remote.profiles", "SASL/CRAM-MD5");
+                    CRAMMD5HashedInitialiser initialiser = new CRAMMD5HashedInitialiser();
+                    initialiser.initialise(db);
+                    env.put("jmx.remote.sasl.callback.handler", initialiser.getCallbackHandler());
+                }
+                else if (db instanceof PlainPasswordFilePrincipalDatabase)
+                {
+                    env.put("jmx.remote.profiles", "SASL/PLAIN");
+                    env.put("jmx.remote.sasl.callback.handler", new UserCallbackHandler(db));
+                }
 
                 // Enable the SSL security and server authentication
                 /*
@@ -146,7 +163,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             _log.error("Error in initialising Managed Object Registry." + ex.getMessage());
             ex.printStackTrace();
         }
-
     }
 
     /**

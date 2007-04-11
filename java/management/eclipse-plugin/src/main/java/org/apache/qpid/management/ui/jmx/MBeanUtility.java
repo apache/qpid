@@ -60,13 +60,6 @@ import org.apache.qpid.management.ui.views.ViewUtility;
  */
 public class MBeanUtility
 {
-    private static boolean _debug;
-    static
-    {
-        String debug = System.getProperty("debug");
-        _debug = "true".equalsIgnoreCase(debug) ? true : false;
-    }
-    
     public static final BigInteger MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
     /**
@@ -461,18 +454,17 @@ public class MBeanUtility
         return Arrays.asList(domains);
     }
     
-    /**
-     * return true if System property is set to true -Ddebug=true
-     * @return
-     */
-    public static boolean isDebug()
+    public static void printOutput(String statement)
     {
-        return _debug;
+        if (ApplicationRegistry.debug)
+        {
+            System.out.println(statement);
+        }
     }
     
     private static void printStackTrace(Throwable ex)
     {
-        if (isDebug())
+        if (ApplicationRegistry.debug)
         {
             ex.printStackTrace();
         }

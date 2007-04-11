@@ -41,8 +41,9 @@ public abstract class ApplicationRegistry
 {
     private static ImageRegistry imageRegistry = new ImageRegistry();
     private static FontRegistry fontRegistry = new FontRegistry();
-    public static final boolean enableSecurity = Boolean.getBoolean("security");
-
+    public static final boolean debug = Boolean.getBoolean("debug");
+    public static final String securityMechanism = System.getProperty("security", null);    
+    
     static
     {
         imageRegistry.put(Constants.CONSOLE_IMAGE, 
@@ -130,5 +131,10 @@ public abstract class ApplicationRegistry
         List<ManagedServer> list = new CopyOnWriteArrayList<ManagedServer>(_closedServerList);
         _closedServerList.clear();
         return list;
+    }
+    
+    public static String getSecurityMechanism()
+    {
+        return securityMechanism;
     }
 }

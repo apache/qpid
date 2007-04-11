@@ -46,7 +46,7 @@ public interface ManagedConnection
     String getClientId();
 
     @MBeanAttribute(name = "AuthorizedId", description = "User Name")
-    Principal getAuthorizedId();
+    String getAuthorizedId();
 
     @MBeanAttribute(name = "Version", description = "Client Version")
     String getVersion();
@@ -68,16 +68,17 @@ public interface ManagedConnection
     /**
      * Tells the total number of bytes written till now.
      * @return number of bytes written.
-     */
+     *
     @MBeanAttribute(name="WrittenBytes", description="The total number of bytes written till now")
     Long getWrittenBytes();
-
+    */
     /**
      * Tells the total number of bytes read till now.
      * @return number of bytes read.
-     */
+     *
     @MBeanAttribute(name="ReadBytes", description="The total number of bytes read till now")
     Long getReadBytes();
+    */
 
     /**
      * Threshold high value for no of channels.  This is useful in setting notifications or

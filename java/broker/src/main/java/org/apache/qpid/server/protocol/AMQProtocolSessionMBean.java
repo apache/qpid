@@ -129,9 +129,9 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         return (_session.getContextKey() == null) ? null : _session.getContextKey().toString();
     }
 
-    public Principal getAuthorizedId()
+    public String getAuthorizedId()
     {
-        return _session.getAuthorizedID();
+        return (_session.getAuthorizedID() != null ) ? _session.getAuthorizedID().getName() : null;
     }
 
     public String getVersion()

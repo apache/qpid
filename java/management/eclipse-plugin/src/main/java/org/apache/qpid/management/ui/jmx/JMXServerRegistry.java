@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
+import static org.apache.qpid.management.ui.Constants.*;
+
 import java.lang.reflect.Constructor;
 import java.security.Security;
 import java.util.ArrayList;
@@ -37,9 +39,9 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.security.sasl.SaslClientFactory;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
@@ -47,8 +49,10 @@ import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
+import org.apache.qpid.management.ui.sasl.JCAProvider;
 import org.apache.qpid.management.ui.sasl.SaslProvider;
 import org.apache.qpid.management.ui.sasl.UserPasswordCallbackHandler;
+import org.apache.qpid.management.ui.sasl.UsernameHashedPasswordCallbackHandler;
 
 
 public class JMXServerRegistry extends ServerRegistry
@@ -89,37 +93,58 @@ public class JMXServerRegistry extends ServerRegistry
         super(server);
         JMXServiceURL jmxUrl = new JMXServiceURL(server.getUrl());
         Map<String, Object> env = null;
+        String securityMechanism = ApplicationRegistry.getSecurityMechanism();
        
-        if (ApplicationRegistry.enableSecurity)
+        if (securityMechanism != null)
         {                                
             try
             {
                 // Check if the JMXMP connector is available
                 Class klass = Class.forName("javax.management.remote.jmxmp.JMXMPConnector");
                 
-                // Now create the instance of JMXMPConnector
-                Security.addProvider(new SaslProvider());
                 jmxUrl = new JMXServiceURL("jmxmp", server.getHost(), server.getPort());
-                
                 env = new HashMap<String, Object>();
-                env.put("jmx.remote.profiles", "SASL/PLAIN");
-                //env.put("jmx.remote.profiles", "SASL/CRAM-MD5"); 
-                env.put("jmx.remote.sasl.callback.handler",
-                        new UserPasswordCallbackHandler(server.getUser(), server.getPassword())); 
                 
+                if (MECH_CRAMMD5.equals(securityMechanism))
+                {
+                    // For SASL/CRAM-MD5
+                    Map<String, Class<? extends SaslClientFactory>> map = new HashMap<String, Class<? extends SaslClientFactory>>();
+                    Class<?> clazz = Class.forName("org.apache.qpid.management.ui.sasl.CRAMMD5HashedSaslClientFactory");
+                    map.put("CRAM-MD5-HASHED", (Class<? extends SaslClientFactory>) clazz);
+                    
+                    Security.addProvider(new JCAProvider(map));
+                    env.put("jmx.remote.profiles", SASL_CRAMMD5); 
+                    env.put("jmx.remote.sasl.callback.handler",
+                            new UsernameHashedPasswordCallbackHandler(server.getUser(), server.getPassword()));
+                }
+                else if (MECH_PLAIN.equals(securityMechanism))
+                {
+                    // For SASL/PLAIN
+                    Security.addProvider(new SaslProvider());
+                    env.put("jmx.remote.profiles", SASL_PLAIN);
+                    env.put("jmx.remote.sasl.callback.handler",
+                            new UserPasswordCallbackHandler(server.getUser(), server.getPassword())); 
+                }
+                else
+                {
+                    MBeanUtility.printOutput("Security mechanism " + securityMechanism + " is not supported.");
+                }
+                
+                // Now create the instance of JMXMPConnector                                               
                 Class[] paramTypes = {JMXServiceURL.class, Map.class};                           
                 Constructor cons = klass.getConstructor(paramTypes);
                 
                 Object[] args = {jmxUrl, env};           
                 Object theObject = cons.newInstance(args);
+                
                 _jmxc = (JMXConnector)theObject;
                 _jmxc.connect();
-                System.out.println("Starting JMXConnector with SASL. Server=" + server.getName());
+                MBeanUtility.printOutput("Starting JMXConnector with SASL. Server=" + server.getName());
             }
             catch (Exception ex)
             {
                 // When JMXMPConnector is not available
-                System.out.println("Starting JMXConnector. Server=" + server.getName());                
+                MBeanUtility.printOutput("Starting JMXConnector. Server=" + server.getName());                
                 jmxUrl = new JMXServiceURL(server.getUrl());
                 _jmxc = JMXConnectorFactory.connect(jmxUrl, null);
             }
@@ -197,10 +222,7 @@ public class JMXServerRegistry extends ServerRegistry
 
     public void removeManagedObject(ManagedBean mbean)
     {
-        if (MBeanUtility.isDebug())
-        {
-            System.out.println("Removing MBean:" + mbean.getUniqueName());
-        }
+        MBeanUtility.printOutput("Removing MBean:" + mbean.getUniqueName());
         
         if (mbean.isQueue())
         {
@@ -296,7 +318,7 @@ public class JMXServerRegistry extends ServerRegistry
             map.put(name, list);
         }
         // Now add the notification type to the list
-        if (Constants.ALL.equals(type))
+        if (ALL.equals(type))
         {
             List<NotificationInfoModel> infoList = _notificationInfoMap.get(mbean.getUniqueName());
             for (NotificationInfoModel model : infoList)
@@ -355,7 +377,7 @@ public class JMXServerRegistry extends ServerRegistry
             HashMap<String, List<String>> map = _subscribedNotificationMap.get(mbean.getUniqueName());
             if (map.containsKey(name))
             {
-                if (Constants.ALL.equals(type))
+                if (ALL.equals(type))
                 {
                     map.remove(name);
                 }
