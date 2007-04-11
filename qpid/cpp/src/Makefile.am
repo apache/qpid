@@ -4,11 +4,10 @@ BUILT_SOURCES = $(generated_sources) $(generated_headers)
 
 SUBDIRS = . tests
 
-AM_CXXFLAGS = $(WARNING_CFLAGS)
+AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 
-INCLUDES = \
-  -I$(srcdir)/gen \
-  $(APR_CXXFLAGS)
+# -I top_builddir for config.h
+INCLUDES = -I$(top_builddir)  -I$(srcdir)/gen 
 
 qpidd_LDADD = \
   libqpidbroker.la \
