@@ -103,6 +103,8 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
     public void initialise() throws Exception
     {
+        initialiseManagedObjectRegistry();
+
         _virtualHostRegistry = new VirtualHostRegistry();
 
         _accessManager = new AccessManagerImpl("default", _configuration);
@@ -111,8 +113,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
 
-        initialiseManagedObjectRegistry();
-        
+        _databaseManager.initialiseManagement(_configuration);
+
+        _managedObjectRegistry.start();
+
         initialiseVirtualHosts();
 
     }

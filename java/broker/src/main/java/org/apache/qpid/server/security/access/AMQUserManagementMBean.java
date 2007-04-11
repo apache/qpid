@@ -24,9 +24,11 @@ import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.MBeanOperationParameter;
 import org.apache.qpid.server.management.MBeanOperation;
+import org.apache.qpid.server.management.MBeanInvocationHandlerImpl;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.log4j.Logger;
+import org.apache.commons.configuration.ConfigurationException;
 
 import javax.management.JMException;
 import javax.management.openmbean.TabularData;
@@ -47,7 +49,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     private static final Logger _logger = Logger.getLogger(AMQUserManagementMBean.class);
 
     private PrincipalDatabase _principalDatabase;
-    private File _accessFile;
+    private String _accessFile;
 
     Map<String, Principal> _users = new HashMap<String, Principal>();
 
@@ -128,7 +130,15 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     {
         try
         {
-            loadAccessFile();
+            try
+            {
+                loadAccessFile();
+            }
+            catch (ConfigurationException e)
+            {
+                _logger.info("Reload failed due to:" + e);
+                return false;
+            }
 
             // Reload successful
             return true;
@@ -144,7 +154,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     @MBeanOperation(name = "viewUsers", description = "All users with access rights to the system.")
     public TabularData viewUsers()
     {
-        return null;
+        return null;       //todo
     }
 
     /*** Broker Methods **/
@@ -152,9 +162,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     /**
      * setPrincipalDatabase
      *
-     * @param database
-     *
-     * @throws java.io.IOException If the file cannot be read
+     * @param database set The Database to use for user lookup
      */
     public void setPrincipalDatabase(PrincipalDatabase database)
     {
@@ -166,9 +174,11 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
      *
      * @param accessFile the file to use for updating.
      *
-     * @throws java.io.IOException If the file cannot be read
+     * @throws java.io.IOException If the file cannot be accessed
+     * @throws org.apache.commons.configuration.ConfigurationException
+     *                             if checks on the file fail.
      */
-    public void setAccessFile(File accessFile) throws IOException
+    public void setAccessFile(String accessFile) throws IOException, ConfigurationException
     {
         _accessFile = accessFile;
 
@@ -182,12 +192,29 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
     }
 
-    private void loadAccessFile() throws IOException
+    private void loadAccessFile() throws IOException, ConfigurationException
     {
         Properties accessRights = new Properties();
-        accessRights.load(new FileInputStream(_accessFile));
-        processAccessRights(accessRights);
 
+        File access = new File(_accessFile);
+
+        if (!access.exists())
+        {
+            throw new ConfigurationException("'" + _accessFile + "' does not exist");
+        }
+
+        if (!access.canRead())
+        {
+            throw new ConfigurationException("Cannot read '" + _accessFile + "'.");
+        }
+
+        if (!access.canWrite())
+        {
+            _logger.warn("Unable to write to access file '" + _accessFile + "' changes will not be preserved.");
+        }
+
+        accessRights.load(new FileInputStream(access));
+        processAccessRights(accessRights);
     }
 
     /**
@@ -197,6 +224,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
      */
     private void processAccessRights(Properties accessRights)
     {
-        //To change body of created methods use File | Settings | File Templates.
+        _logger.info("Processing Access Rights:" + accessRights);
+        MBeanInvocationHandlerImpl.setAccessRights(accessRights);       
     }
 }

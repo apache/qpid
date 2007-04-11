@@ -37,6 +37,8 @@ import java.rmi.RemoteException;
  */
 public interface ManagedObjectRegistry
 {
+    void start();
+
     void registerObject(ManagedObject managedObject) throws JMException;
 
     void unregisterObject(ManagedObject managedObject) throws JMException;

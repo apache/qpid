@@ -76,20 +76,26 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         // Retrieve the config parameters
         boolean platformServer = appRegistry.getConfiguration().getBoolean("management.platform-mbeanserver", true);
-        boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", true);
-        int port = appRegistry.getConfiguration().getInt("management.jmxport", 8999);
 
         _mbeanServer =
                 platformServer ? ManagementFactory.getPlatformMBeanServer()
                 : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
+    }
 
+
+    public void start()
+    {
         // Check if the "QPID_OPTS" is set to use Out of the Box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
         {
             _log.info("JMX: Using the out of the box JMX Agent");
-
             return;
         }
+
+        IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
+
+        boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", true);
+        int port = appRegistry.getConfiguration().getInt("management.jmxport", 8999);
 
         try
         {
@@ -139,7 +145,6 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 try
                 {
                     JMXConnectorServer cs = JMXConnectorServerFactory.newJMXConnectorServer(_jmxURL, env, _mbeanServer);
-                    MBeanInvocationHandlerImpl.initialise();
                     MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
                     cs.setMBeanServerForwarder(mbsf);
                     cs.start();

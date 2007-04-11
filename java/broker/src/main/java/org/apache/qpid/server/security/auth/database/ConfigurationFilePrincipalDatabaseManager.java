@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.auth.database;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
@@ -32,9 +33,14 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.configuration.PropertyUtils;
+import org.apache.qpid.configuration.PropertyException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.access.AMQUserManagementMBean;
+import org.apache.qpid.AMQException;
+
+import javax.management.JMException;
 
 public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatabaseManager
 {
@@ -101,7 +107,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
     }
 
     private void initialisePrincipalDatabase(PrincipalDatabase principalDatabase, Configuration config, int index)
-        throws FileNotFoundException, ConfigurationException
+            throws FileNotFoundException, ConfigurationException
     {
         String baseName = _base + "(" + index + ").attributes.attribute.";
         List<String> argumentNames = config.getList(baseName + "name");
@@ -133,9 +139,9 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             if (method == null)
             {
                 throw new ConfigurationException("No method " + methodName + " found in class "
-                    + principalDatabase.getClass()
-                    + " hence unable to configure principal database. The method must be public and "
-                    + "have a single String argument with a void return type");
+                                                 + principalDatabase.getClass()
+                                                 + " hence unable to configure principal database. The method must be public and "
+                                                 + "have a single String argument with a void return type");
             }
 
             try
@@ -146,7 +152,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             {
                 if (ite instanceof ConfigurationException)
                 {
-                    throw (ConfigurationException) ite;
+                    throw(ConfigurationException) ite;
                 }
                 else
                 {
@@ -159,5 +165,72 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
     public Map<String, PrincipalDatabase> getDatabases()
     {
         return _databases;
+    }
+
+    public void initialiseManagement(Configuration config) throws ConfigurationException
+    {
+        try
+        {
+            AMQUserManagementMBean _mbean = new AMQUserManagementMBean();
+
+            String baseSecurity = "security.jmx";
+            List<String> principalDBs = config.getList(baseSecurity + ".principal-database");
+
+            if (principalDBs.size() == 0)
+            {
+                throw new ConfigurationException("No principal-database specified for jmx security(" + baseSecurity + ".principal-database)");
+            }
+
+            String databaseName = principalDBs.get(0);
+
+            PrincipalDatabase database = getDatabases().get(databaseName);
+
+            if (database == null)
+            {
+                throw new ConfigurationException("Principal-database '" + databaseName + "' not found");
+            }
+
+            _mbean.setPrincipalDatabase(database);
+
+            List<String> jmxaccesslist = config.getList(baseSecurity + ".access");
+
+            if (jmxaccesslist.size() == 0)
+            {
+                throw new ConfigurationException("No access control files specified for jmx security(" + baseSecurity + ".access)");
+            }
+
+            String jmxaccesssFile = null;
+            
+            try
+            {
+                jmxaccesssFile = PropertyUtils.replaceProperties(jmxaccesslist.get(0));
+            }
+            catch (PropertyException e)
+            {
+                throw new ConfigurationException("Unable to parse access control filename '" + jmxaccesssFile + "'");
+            }
+
+            try
+            {
+                _mbean.setAccessFile(jmxaccesssFile);
+            }
+            catch (IOException e)
+            {
+                _logger.warn("Unable to load access file:" + jmxaccesssFile);
+            }
+
+            try
+            {
+                _mbean.register();
+            }
+            catch (AMQException e)
+            {
+                _logger.warn("Unable to register user management MBean");
+            }
+        }
+        catch (JMException e)
+        {
+            _logger.warn("User management disabled as unable to create MBean:" + e);
+        }
     }
 }

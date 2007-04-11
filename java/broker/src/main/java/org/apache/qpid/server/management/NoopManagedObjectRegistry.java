@@ -40,6 +40,11 @@ public class NoopManagedObjectRegistry implements ManagedObjectRegistry
         _log.info("Management is disabled");
     }
 
+    public void start()
+    {
+        //no-op
+    }
+
     public void registerObject(ManagedObject managedObject) throws JMException
     {
     }

@@ -44,21 +44,20 @@ import java.io.IOException;
 import java.io.FileInputStream;
 
 /**
- * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations.
- * This implements the logic for allowing the users to invoke MBean operations and implements the
- * restrictions for readOnly, readWrite and admin users.
+ * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. This implements
+ * the logic for allowing the users to invoke MBean operations and implements the restrictions for readOnly, readWrite
+ * and admin users.
  */
 public class MBeanInvocationHandlerImpl implements InvocationHandler
 {
     private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
-    
+
     private final static String ADMIN = "admin";
-    private final static String READWRITE="readwrite";
+    private final static String READWRITE = "readwrite";
     private final static String READONLY = "readonly";
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
-    private static final String DEFAULT_PERMISSIONS_FILE = "etc" + File.separator + "jmxremote.access";
     private MBeanServer mbs;
-    private final static Properties _userRoles = new Properties();
+    private static Properties _userRoles = new Properties();
 
     public static MBeanServerForwarder newProxyInstance()
     {
@@ -119,7 +118,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         {
             throw new SecurityException("Access denied");
         }
-        
+
         Principal principal = principals.iterator().next();
         String identity = principal.getName();
 
@@ -140,21 +139,9 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     }
 
     // Initialises the user roles
-    protected static void initialise() throws AMQException
+    public static void setAccessRights(Properties accessRights)
     {
-        final String QpidHome = System.getProperty("QPID_HOME");
-        String fileName = QpidHome + File.separator + DEFAULT_PERMISSIONS_FILE;
-        try
-        {
-            FileInputStream in = new FileInputStream(fileName);
-            _userRoles.load(in);
-            in.close();
-        }
-        catch (IOException ex)
-        {
-            _logger.error("Error in loading JMX User permissions." + ex.getMessage());
-            //throw new AMQException("Error in loading JMX User permissions", ex);
-        }
+        _userRoles = accessRights;
     }
 
     private boolean isAdmin(String userName)
@@ -200,11 +187,13 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         {
             String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
             if (mbeanMethod == null)
+            {
                 return false;
-            
+            }
+
             try
             {
-                MBeanInfo mbeanInfo = mbs.getMBeanInfo((ObjectName)args[0]);
+                MBeanInfo mbeanInfo = mbs.getMBeanInfo((ObjectName) args[0]);
                 if (mbeanInfo != null)
                 {
                     MBeanOperationInfo[] opInfos = mbeanInfo.getOperations();
@@ -219,7 +208,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
             }
             catch (JMException ex)
             {
-                ex.printStackTrace();   
+                ex.printStackTrace();
             }
         }
 
