@@ -111,7 +111,8 @@ gen.mk: Makefile.am
 	> $@-t
 	mv $@-t $@
 
-check: .valgrindrc $(check_LTLIBRARIES) $(lib_common) $(lib_client) $(lib_broker) 
+check: .valgrindrc $(check_LTLIBRARIES) \
+  $(lib_common) $(lib_client) $(lib_broker) ../qpidd
 
 check-unit:
 	$(MAKE) check TESTS=run-unit-tests
