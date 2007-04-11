@@ -23,6 +23,7 @@
 
 #include <memory>
 #include <string>
+#include <set>
 
 namespace qpid {
 namespace broker {
@@ -46,6 +47,8 @@ public:
     virtual void prepare(TPCTransactionContext& txn) = 0;
     virtual void commit(TransactionContext& txn) = 0;
     virtual void abort(TransactionContext& txn) = 0;
+
+    virtual void collectPreparedXids(std::set<std::string>& xids) = 0;
     
     virtual ~TransactionalStore(){}
 };
