@@ -72,6 +72,7 @@ if test "${enableval}" = yes; then
   COMPILER_FLAGS=
 fi
 
+AC_DISABLE_STATIC
 AC_PROG_LIBTOOL
 AC_SUBST([LIBTOOL_DEPS])
 
@@ -100,35 +101,26 @@ CPPUNIT_CXXFLAGS=$CPPUNIT_CFLAGS
 AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(CPPUNIT_CXXFLAGS)
 
-AC_ARG_ENABLE(apr,
-[  --enable-apr   use the Apache Portable Runtime library (default)
-   --disable-apr  do not use the Apache Portable Runtime library],
-[case $enableval in
-   yes|no) ;;
-   *)      AC_MSG_ERROR([invalid APR enable/disable value: $enableval]) ;;
-  esac],
-[enableval=yes])
-
+# Removed --enable-apr option as we currently don't build without APR.
+  
 APR_MINIMUM_VERSION=1.2.2
 AC_SUBST(APR_MINIMUM_VERSION)
 AC_SUBST(APR_CXXFLAGS)
 AC_SUBST(USE_APR)
 
-if test "$enableval" = yes; then
-  PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
-  APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
-  USE_APR=1
-fi
+PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
+APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
+USE_APR=1
 
-AC_ARG_ENABLE(valgrind,
-  [  --enable-valgrind   enable testing via valgrind, if available (recommended)
-     --disable-valgrind  do not use valgrind],
+AC_ARG_ENABLE([valgrind],
+  [AS_HELP_STRING([--enable-valgrind],
+    [run valgrind memory checker on tests, if available (default yes)])],
   [case $enableval in
-     yes|no) enable_VALGRIND=$enableval;;
-     *) AC_MSG_ERROR([invalid valgrind enable/disable value: $enableval]);;
-    esac],
-  [enable_VALGRIND=yes]  # no option given, default
-  )
+    yes|no) enable_VALGRIND=$enableval;;
+    *) AC_MSG_ERROR([Invalid value for --enable-valgrind: $enableval]);;
+   esac],
+  [enable_VALGRIND=yes]
+)
 
 # We use valgrind for the tests.  See if it's available.
 # Check for it unconditionally, so we don't have to duplicate its

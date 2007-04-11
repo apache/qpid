@@ -312,5 +312,9 @@ $(gen)/gen-src.mk: $(gen)/timestamp
 	mv $@-t $@
 endif
 
+maintainer-clean:
+	rm -f  $(gentools_srcdir)/*.class
+	rm -f $(BUILT_SOURCES)
+
 # Force build during dist phase so help2man will work.
 dist-hook: $(lib_LTLIBRARIES) $(sbin_PROGRAMS)

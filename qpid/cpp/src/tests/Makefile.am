@@ -111,13 +111,12 @@ gen.mk: Makefile.am
 	> $@-t
 	mv $@-t $@
 
-check: .valgrindrc $(check_LTLIBRARIES) \
-  $(lib_common) $(lib_client) $(lib_broker) ../qpidd
+check: .valgrindrc ../qpidd
 
 check-unit:
 	$(MAKE) check TESTS=run-unit-tests
 
-# Create a copy so user can modify without risk of checking in their mods.
+# Create a copy so that can be modified without risk of committing the changes.
 .valgrindrc: .valgrindrc-default
 	cp $(srcdir)/.valgrindrc-default .valgrindrc
 
