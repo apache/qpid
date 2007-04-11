@@ -91,13 +91,12 @@ public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
 
         byte[] digest = md.digest();
 
-        char[] hash = new char[digest.length + 1];
+        char[] hash = new char[digest.length ];
 
         int index = 0;
         for (byte b : digest)
-        {
-            index++;
-            hash[index] = (char) b;
+        {            
+            hash[index++] = (char) b;
         }
 
         return hash;

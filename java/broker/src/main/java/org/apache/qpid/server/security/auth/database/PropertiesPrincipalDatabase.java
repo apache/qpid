@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.security.Principal;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 public class PropertiesPrincipalDatabase implements PrincipalDatabase
 {
@@ -76,11 +77,33 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean verifyPassword(Principal principal, char[] password) throws AccountNotFoundException
+    public boolean verifyPassword(Principal principal, String password) throws AccountNotFoundException
     {
         char[] pwd = _users.getProperty(principal.getName()).toCharArray();
 
-        return compareCharArray(pwd, password);
+        try
+        {
+            return compareCharArray(pwd, convertPassword(password));
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            return false;
+        }
+    }
+
+    public boolean updatePassword(Principal principal, String password) throws AccountNotFoundException
+    {
+        return false; // updates denied
+    }
+
+    public boolean createPrincipal(Principal principal, String password) throws AccountNotFoundException
+    {
+        return false; // updates denied
+    }
+
+    public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
+    {
+        return false; // updates denied
     }
 
     private boolean compareCharArray(char[] a, char[] b)
@@ -98,6 +121,23 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         }
         return equal;
     }
+
+    private char[] convertPassword(String password) throws UnsupportedEncodingException
+    {
+        byte[] passwdBytes = password.getBytes("utf-8");
+
+        char[] passwd = new char[passwdBytes.length];
+
+        int index = 0;
+
+        for (byte b : passwdBytes)
+        {
+            passwd[index] = (char) b;
+        }
+
+        return passwd;
+    }
+
 
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {

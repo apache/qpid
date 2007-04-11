@@ -35,8 +35,6 @@ public interface UserManagement
     String TYPE = "UserManagement";
 
     //********** Operations *****************//
-
-
     /**
      * set password for user
      *
@@ -45,6 +43,7 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
+    @MBeanOperation(name = "setPassword", description = "Set password for user.")              
     boolean setPassword(@MBeanOperationParameter(name = "username", description = "Username")String username,
                         @MBeanOperationParameter(name = "password", description = "Password")String password);
 
@@ -58,6 +57,7 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
+    @MBeanOperation(name = "setRights", description = "Set access rights for user.")
     boolean setRights(@MBeanOperationParameter(name = "username", description = "Username")String username,
                       @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
                       @MBeanOperationParameter(name = "write", description = "Administration write")boolean write,
@@ -74,6 +74,7 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
+    @MBeanOperation(name = "createUser", description = "Create new user from system.")
     boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
                        @MBeanOperationParameter(name = "password", description = "Password")String password,
                        @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
@@ -87,7 +88,17 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
+    @MBeanOperation(name = "deleteUser", description = "Delete user from system.")
     boolean deleteUser(@MBeanOperationParameter(name = "username", description = "Username")String username);
+
+
+    /**
+     * Reload the date from disk
+     *
+     * @return The result of the operation
+     */
+    @MBeanOperation(name = "reloadData", description = "Reload the authentication file from disk.")
+    boolean reloadData();
 
     /**
      * View users returns all the users that are currently available to the system.

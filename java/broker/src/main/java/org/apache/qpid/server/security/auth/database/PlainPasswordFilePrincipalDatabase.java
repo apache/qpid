@@ -34,6 +34,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.HashMap;
@@ -119,17 +120,49 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean verifyPassword(Principal principal, char[] password) throws AccountNotFoundException
+    public boolean verifyPassword(Principal principal, String password) throws AccountNotFoundException
     {
         try
         {
             char[] pwd = lookupPassword(principal.getName());
-            return compareCharArray(pwd, password);
+
+            return compareCharArray(pwd, convertPassword(password));
         }
         catch (IOException e)
         {
             return false;
         }
+    }
+
+    private char[] convertPassword(String password) throws UnsupportedEncodingException
+    {
+        byte[] passwdBytes = password.getBytes("utf-8");
+
+        char[] passwd = new char[passwdBytes.length];
+
+        int index = 0;
+
+        for (byte b : passwdBytes)
+        {
+            passwd[index] = (char) b;
+        }
+
+        return passwd;
+    }
+
+    public boolean updatePassword(Principal principal, String password) throws AccountNotFoundException
+    {
+        return false; // updates denied
+    }
+
+    public boolean createPrincipal(Principal principal, String password) throws AccountNotFoundException
+    {
+        return false; // updates denied
+    }
+
+    public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
+    {
+        return false; // updates denied
     }
 
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
