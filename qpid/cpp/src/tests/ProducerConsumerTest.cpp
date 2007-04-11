@@ -27,7 +27,7 @@
 #include "InProcessBroker.h"
 #include "../sys/ProducerConsumer.h"
 #include "../sys/Thread.h"
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include "../sys/AtomicCount.h"
 
 using namespace qpid;

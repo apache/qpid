@@ -20,7 +20,7 @@
  */
 #include "../broker/InMemoryContent.h"
 #include "qpid_test_plugin.h"
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include <iostream>
 #include <list>
 #include "../framing/AMQFrame.h"

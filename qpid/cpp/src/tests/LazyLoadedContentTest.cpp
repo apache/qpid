@@ -19,7 +19,7 @@
  *
  */
 #include "../broker/LazyLoadedContent.h"
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include "../broker/NullMessageStore.h"
 #include "qpid_test_plugin.h"
 #include <iostream>

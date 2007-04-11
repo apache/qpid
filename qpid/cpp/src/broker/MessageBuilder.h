@@ -28,7 +28,7 @@
 #include "MessageStore.h"
 #include "../framing/AMQContentBody.h"
 #include "../framing/AMQHeaderBody.h"
-#include "BasicPublishBody.h"
+#include "../gen/BasicPublishBody.h"
 #include "CompletionHandler.h"
 
 namespace qpid {

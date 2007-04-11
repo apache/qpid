@@ -23,7 +23,7 @@
 
 #include "Connection.h"
 #include "BrokerChannel.h"
-#include "AMQP_ClientProxy.h"
+#include "../gen/AMQP_ClientProxy.h"
 #include "BrokerAdapter.h"
 
 using namespace boost;

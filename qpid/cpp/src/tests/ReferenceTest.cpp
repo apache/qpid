@@ -23,8 +23,8 @@
 #include "qpid_test_plugin.h"
 #include "../broker/Reference.h"
 #include "../broker/BrokerMessageMessage.h"
-#include "MessageTransferBody.h"
-#include "MessageAppendBody.h"
+#include "../gen/MessageTransferBody.h"
+#include "../gen/MessageAppendBody.h"
 #include "../broker/CompletionHandler.h"
 
 using namespace boost;
