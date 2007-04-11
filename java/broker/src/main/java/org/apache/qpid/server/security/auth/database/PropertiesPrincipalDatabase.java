@@ -132,7 +132,7 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
 
         for (byte b : passwdBytes)
         {
-            passwd[index] = (char) b;
+            passwd[index++] = (char) b;
         }
 
         return passwd;
