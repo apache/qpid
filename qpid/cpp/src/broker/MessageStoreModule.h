@@ -44,6 +44,7 @@ public:
     void prepare(TPCTransactionContext& txn);
     void commit(TransactionContext& txn);
     void abort(TransactionContext& txn);
+    void collectPreparedXids(std::set<std::string>& xids);
 
     void create(const PersistableQueue& queue);
     void destroy(const PersistableQueue& queue);

@@ -107,3 +107,8 @@ void MessageStoreModule::abort(TransactionContext& ctxt)
 {
     store->abort(ctxt);
 }
+
+void MessageStoreModule::collectPreparedXids(std::set<std::string>& xids)
+{
+    store->collectPreparedXids(xids);
+}

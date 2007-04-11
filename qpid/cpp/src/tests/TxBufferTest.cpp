@@ -111,6 +111,11 @@ class TxBufferTest : public CppUnit::TestCase
         void prepare(TPCTransactionContext&){
             throw "Operation not supported";
         }
+        void collectPreparedXids(std::set<std::string>&)
+        {
+            throw "Operation not supported";            
+        }
+
 
         std::auto_ptr<TransactionContext> begin(){ 
             actual.push_back(BEGIN);
