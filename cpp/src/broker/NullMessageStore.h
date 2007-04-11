@@ -42,6 +42,7 @@ public:
     virtual void prepare(TPCTransactionContext& txn);
     virtual void commit(TransactionContext& txn);
     virtual void abort(TransactionContext& txn);
+    virtual void collectPreparedXids(std::set<std::string>& xids);
 
     virtual void create(const PersistableQueue& queue);
     virtual void destroy(const PersistableQueue& queue);
