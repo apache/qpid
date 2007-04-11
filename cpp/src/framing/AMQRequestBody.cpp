@@ -17,7 +17,7 @@
  */
 
 #include "AMQRequestBody.h"
-#include "AMQP_MethodVersionMap.h"
+#include "../gen/AMQP_MethodVersionMap.h"
 
 namespace qpid {
 namespace framing {

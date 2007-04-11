@@ -26,7 +26,7 @@
 #include "../broker/TopicExchange.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
-#include "BasicGetBody.h"
+#include "../gen/BasicGetBody.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;

@@ -21,7 +21,7 @@
 #include "../broker/BrokerMessage.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include "../framing/AMQFrame.h"
 #include "MockChannel.h"
 

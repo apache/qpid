@@ -27,8 +27,8 @@
 #include <boost/ptr_container/ptr_map.hpp>
 
 #include "../framing/AMQFrame.h"
-#include "AMQP_ServerOperations.h"
-#include "AMQP_ClientProxy.h"
+#include "../gen/AMQP_ServerOperations.h"
+#include "../gen/AMQP_ClientProxy.h"
 #include "../sys/ConnectionOutputHandler.h"
 #include "../sys/ConnectionInputHandler.h"
 #include "../sys/TimeoutHandler.h"

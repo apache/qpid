@@ -7,7 +7,7 @@ SUBDIRS = . tests
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 
 # -I top_builddir for config.h
-INCLUDES = -I$(top_builddir)  -I$(srcdir)/gen 
+INCLUDES = -I$(top_builddir)  -I$(srcdir)
 
 qpidd_LDADD = \
   libqpidbroker.la \
@@ -156,7 +156,9 @@ libqpidclient_la_SOURCES =			\
   $(client)/ResponseHandler.cpp				\
   $(client)/ReturnedMessageHandler.cpp
 
-nobase_pkginclude_HEADERS = \
+# Install into include/qpid rather than include/qpidc.
+qpidincludedir=$(includedir)/qpid
+nobase_qpidinclude_HEADERS = \
   $(generated_headers) \
   $(platform_hdr) \
   $(broker)/AccumulatedAck.h \
@@ -280,14 +282,11 @@ nobase_pkginclude_HEADERS = \
   ExceptionHolder.h \
   QpidError.h \
   SharedObject.h \
-  doxygen_mainpage.h \
   shared_ptr.h 
 
 # Distribute the generated sources, at least for now, since
 # the generator code is in java.
 EXTRA_DIST += $(BUILT_SOURCES)
-maintainer-clean-local:
-	rm -rf $(gen)
 
 # Don't attempt to run the code generator unless configure has set
 # CAN_GENERATE_CODE, indicating that the amqp.xml and tools needed
@@ -297,12 +296,7 @@ if CAN_GENERATE_CODE
 
 gentools_dir = $(srcdir)/../gentools
 spec_dir = $(srcdir)/../../specs
-
-# FIXME aconway 2007-01-04: Enabling Basic class until
-# new messaging class is ready to replace it.
-# spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml $(spec_dir)/amqp-nogen.0-9.xml
 spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml
-
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 
 $(BUILT_SOURCES) $(gen)/timestamp: $(spec) $(java_sources) $(cxx_templates) Makefile.am

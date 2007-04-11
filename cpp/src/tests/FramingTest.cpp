@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "ConnectionRedirectBody.h"
+#include "../gen/ConnectionRedirectBody.h"
 #include "../framing/ProtocolVersion.h"
 #include "../framing/amqp_framing.h"
 #include <iostream>
@@ -26,7 +26,7 @@
 #include <sstream>
 #include <typeinfo>
 #include "../QpidError.h"
-#include "AMQP_HighestVersion.h"
+#include "../gen/AMQP_HighestVersion.h"
 #include "../framing/AMQRequestBody.h"
 #include "../framing/AMQResponseBody.h"
 #include "../framing/Requester.h"
@@ -36,7 +36,7 @@
 #include "../client/ClientExchange.h"
 #include "../client/ClientQueue.h"
 #include "../framing/Correlator.h"
-#include "BasicGetOkBody.h"
+#include "../gen/BasicGetOkBody.h"
 #include <memory>
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>

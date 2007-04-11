@@ -1,11 +1,11 @@
 #
-# Spec file for Qpid C++ packages: qpidc qpidc-devel, qpidd
+# Spec file for Qpid C++ packages: qpidc qpidc-devel, qpidd, qpidd-devel
 #
-%define daemon qpidd
+%define qpidd qpidd
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -48,14 +48,24 @@ Requires: cppunit-devel
 Libraries, header files and documentation for developing AMQP clients
 in C++ using Qpid.  Qpid implements the AMQP messaging specification.
 
-%package -n %{daemon}
+%package -n %{qpidd}
 Summary: An AMQP message broker daemon
 Group: System Environment/Daemons
 Requires: %name = %version-%release
 
-%description -n %{daemon}
+%description -n %{qpidd}
 A message broker daemon that receives stores and routes messages using
 the open AMQP messaging protocol.
+
+%package -n %{qpidd}-devel
+Summary: Libraries and header files for developing Qpid broker extensions
+Group: Development/System
+Requires: %name-devel = %version-%release
+Requires: %{qpidd} = %version-%release
+
+%description -n %{qpidd}-devel
+Libraries and header files for developing extensions to the
+Qpid broker daemon.
 
 %prep
 %setup -q
@@ -72,9 +82,6 @@ make install DESTDIR=%{buildroot}
 install  -Dp -m0755 etc/qpidd %{buildroot}%{_initrddir}/qpidd
 rm -f %{buildroot}%_libdir/*.a
 rm -f %{buildroot}%_libdir/*.la
-# There's no qpidd-devel package so no .so for the broker needed.
-rm -f %{buildroot}%_libdir/libqpidbroker.so
-
 
 %clean
 rm -rf %{buildroot}
@@ -92,43 +99,55 @@ make check
 
 %files devel
 %defattr(-,root,root,-)
-%_includedir/qpidc
+%_includedir/qpid/*.h
+%_includedir/qpid/client
+%_includedir/qpid/framing
+%_includedir/qpid/gen
+%_includedir/qpid/sys
 %_libdir/libqpidcommon.so
 %_libdir/libqpidclient.so
 %doc docs/api/html
-# We don't need this perl script and it causes rpmlint to complain.
-# There is probably a more polite way of calculating the devel docdir.
 
-%files -n %{daemon}
+%files -n %{qpidd}
+%defattr(-,root,root,-)
 %_libdir/libqpidbroker.so.0
 %_libdir/libqpidbroker.so.0.1.0
-%_sbindir/%{daemon}
-%{_initrddir}/qpidd
-%doc %_mandir/man1/%{daemon}.*
+%_sbindir/%{qpidd}
+%{_initrddir}/%{qpidd}
+%doc %_mandir/man1/%{qpidd}.*
+
+%files -n %{qpidd}-devel
+%doc rpm/README.qpidd-devel 
+%defattr(-,root,root,-)
+%_libdir/libqpidbroker.so
+%_includedir/qpid/broker
 
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
-%post -n %{daemon}
+%post -n %{qpidd}
 # This adds the proper /etc/rc*.d links for the script
 /sbin/chkconfig --add qpidd
 /sbin/ldconfig
 
-%preun -n %{daemon}
+%preun -n %{qpidd}
 # Check that this is actual deinstallation, not just removing for upgrade.
 if [ $1 = 0 ]; then
         /sbin/service qpidd stop >/dev/null 2>&1 || :
         /sbin/chkconfig --del qpidd
 fi
 
-%postun -n %{daemon}
+%postun -n %{qpidd}
 if [ "$1" -ge "1" ]; then
         /sbin/service qpidd condrestart >/dev/null 2>&1 || :
 fi
 /sbin/ldconfig
 
 %changelog
+
+* Wed Apr 11 2007 Alan Conway <aconway@redhat.com> - 0.1-5
+- Add qpidd-devel sub-package.
 
 * Mon Feb 19 2007 Jim Meyering <meyering@redhat.com> - 0.1-4
 - Address http://bugzilla.redhat.com/220630:
@@ -145,3 +164,4 @@ fi
 * Fri Dec  8 2006 David Lutterkort <dlutter@redhat.com> - 0.1-1
 - Initial version based on Jim Meyering's sketch and discussions with Alan
   Conway
+
