@@ -65,7 +65,6 @@ public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
 
     private char[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
     {
-
         byte[] data = text.getBytes("utf-8");
 
         MessageDigest md = MessageDigest.getInstance("MD5");
@@ -77,13 +76,12 @@ public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
 
         byte[] digest = md.digest();
 
-        char[] hash = new char[digest.length + 1];
+        char[] hash = new char[digest.length ];
 
         int index = 0;
         for (byte b : digest)
-        {
-            index++;
-            hash[index] = (char) b;
+        {            
+            hash[index++] = (char) b;
         }
 
         return hash;
