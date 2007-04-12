@@ -8,7 +8,7 @@ dnl This program is distributed in the hope that it will be useful, but
 dnl WITHOUT ANY WARRANTY, to the extent permitted by law; without even the
 dnl implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-AC_INIT([qpidc], [0.1], [qpid-dev@incubator.apache.org])
+AC_INIT([qpidc], [0.2], [qpid-dev@incubator.apache.org])
 AC_CONFIG_AUX_DIR([build-aux])
 AM_INIT_AUTOMAKE([dist-bzip2])
 
@@ -131,9 +131,16 @@ test "$enable_VALGRIND" = no && VALGRIND=
 # If rpmlint is availalbe we'll run it when building RPMs.
 AC_CHECK_PROG([RPMLINT], [rpmlint], [rpmlint])
 AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
+
+# URL and download URL for the package.
+URL=http://rhm.et.redhat.com/qpidc
+AC_SUBST(URL)
+DOWNLOAD_URL=http://rhm.et.redhat.com/download
+AC_SUBST(DOWNLOAD_URL)
 	
 AC_CONFIG_FILES([
-  qpid-config	
+  qpidc.pc
+  qpidc.spec
   Makefile
   src/Makefile
   src/tests/Makefile
@@ -143,3 +150,4 @@ AC_CONFIG_FILES([
   docs/api/developer.doxygen
   ])
 AC_OUTPUT
+

@@ -5,12 +5,12 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        5%{?dist}
+Release:        1%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
-URL:            http://rhm.et.redhat.com/qpidc/
-Source0:        http://rhm.et.redhat.com/download/%{name}-%{version}.tar.gz
+URL:            @URL@
+Source0:        @DOWNLOAD_URL@/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: libtool
@@ -145,6 +145,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* THU Apr 12 2007 Alan Conway <aconway@redhat.com> - 0.2-1
+- Bumped version number for rhm dependencies. 
 
 * Wed Apr 11 2007 Alan Conway <aconway@redhat.com> - 0.1-5
 - Add qpidd-devel sub-package.
