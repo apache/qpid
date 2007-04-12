@@ -599,7 +599,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         private void encodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
         {
             Base64 b64 = new Base64();
-            _encodedPassword = b64.encode(getHash(new String(_password)));
+            _encodedPassword = b64.encode(new String(_password).getBytes(DEFAULT_ENCODING));
         }
 
         public boolean isModified()
@@ -622,18 +622,5 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             _modified = false;
         }
 
-        private byte[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
-        {
-            byte[] data = text.getBytes(DEFAULT_ENCODING);
-
-            MessageDigest md = MessageDigest.getInstance("MD5");
-
-            for (byte b : data)
-            {
-                md.update(b);
-            }
-
-            return md.digest();
-        }
     }
 }
