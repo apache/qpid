@@ -37,6 +37,6 @@ public class AMQMethodBodyFactory implements BodyFactory
 
     public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
-        return _protocolSession.getRegistry().convertToBody(in, bodySize);
+        return _protocolSession.getRegistry().get((short)in.getUnsignedShort(), (short)in.getUnsignedShort(), in, bodySize);
     }
 }
