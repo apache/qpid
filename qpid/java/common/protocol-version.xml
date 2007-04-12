@@ -33,9 +33,12 @@
   <target name="generate" depends="compile_generator,check_generate_deps" unless="generation.notRequired">
     <mkdir dir="${generated.dir}"/>
     <java classname="org.apache.qpid.gentools.Main" fork="true" dir="${gentools.home}/src" failonerror="true">
-    	<arg line="-j -o ${generated.dir} -t ${gentools.home}/templ.java ${xml.spec.list}" />
+    	<arg line="-j -o ${generated.dir} -t ${topDirectoryLocation}/common/templates ${xml.spec.list}" />
         <classpath>
           <pathelement path="${gentools.home}/src" />
+			    <fileset dir="${gentools.home}/lib">
+					<include name="**/*.jar"/>
+				</fileset>
         </classpath>
     </java>
     <touch file="${generated.timestamp}" />
