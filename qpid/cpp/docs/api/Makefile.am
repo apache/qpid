@@ -3,21 +3,15 @@
 # Generate dependency files so its rebuilt only when needed. 
 #
 
+# TODO aconway 2007-04-12: html should have a
+# dependency on source/header files.
+
 EXTRA_DIST = html user.doxygen developer.doxygen
 
-dist-hook: html
+html: html.timestamp
 
-src=$(top_srcdir)/src
-
-headers: $(src)/*.h $(src)/*/*.h $(src)/*/*/*.h
-sources: $(src)/*.cpp $(src)/*/*.cpp $(src)/*/*/*.cpp
-
-html: headers user.doxygen
+html.timestamp:
 	doxygen user.doxygen
-	touch $@
-
-html-dev: headers sources developer.doxygen
-	doxygen developer.doxygen
 	touch $@
 
 clean-local:
