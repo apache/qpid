@@ -36,10 +36,8 @@ import javax.security.auth.login.AccountNotFoundException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.FileOutputStream;
 import java.util.Properties;
-import java.util.Map;
-import java.util.HashMap;
-import java.security.Principal;
 
 /** MBean class for AMQUserManagementMBean. It implements all the management features exposed for managing users. */
 @MBeanDescription("User Management Interface")
@@ -49,9 +47,9 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     private static final Logger _logger = Logger.getLogger(AMQUserManagementMBean.class);
 
     private PrincipalDatabase _principalDatabase;
-    private String _accessFile;
-
-    Map<String, Principal> _users = new HashMap<String, Principal>();
+    private String _accessFileName;
+    private Properties _accessRights;
+    private File _accessFile;
 
     public AMQUserManagementMBean() throws JMException
     {
@@ -82,6 +80,40 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                              @MBeanOperationParameter(name = "write", description = "Administration write")boolean write,
                              @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin)
     {
+
+        if (_accessRights.get(username) == null)
+        {
+            if (_principalDatabase.getUser(username) == null)
+            {
+                return false;
+            }
+        }
+
+        if (admin)
+        {
+            _accessRights.put(username, MBeanInvocationHandlerImpl.ADMIN);
+        }
+        else
+        {
+            if (read | write)
+            {
+                if (read)
+                {
+                    _accessRights.put(username, MBeanInvocationHandlerImpl.READONLY);
+                }
+                if (write)
+                {
+                    _accessRights.put(username, MBeanInvocationHandlerImpl.READWRITE);
+                }
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        saveAccessFile();
+
         return true;
     }
 
@@ -95,8 +127,9 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         {
             if (_principalDatabase.createPrincipal(new UsernamePrincipal(username), password))
             {
-                _users.remove(username);
-                return true;
+                _accessRights.put(username, "");
+
+                return setRights(username, read, write, admin);
             }
         }
         catch (AccountNotFoundException e)
@@ -114,7 +147,8 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         {
             if (_principalDatabase.deletePrincipal(new UsernamePrincipal(username)))
             {
-                _users.remove(username);
+                _accessRights.remove(username);
+
                 return true;
             }
         }
@@ -180,9 +214,9 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
      */
     public void setAccessFile(String accessFile) throws IOException, ConfigurationException
     {
-        _accessFile = accessFile;
+        _accessFileName = accessFile;
 
-        if (_accessFile != null)
+        if (_accessFileName != null)
         {
             loadAccessFile();
         }
@@ -196,25 +230,37 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     {
         Properties accessRights = new Properties();
 
-        File access = new File(_accessFile);
+        _accessFile = new File(_accessFileName);
 
-        if (!access.exists())
+        if (!_accessFile.exists())
         {
-            throw new ConfigurationException("'" + _accessFile + "' does not exist");
+            throw new ConfigurationException("'" + _accessFileName + "' does not exist");
         }
 
-        if (!access.canRead())
+        if (!_accessFile.canRead())
         {
-            throw new ConfigurationException("Cannot read '" + _accessFile + "'.");
+            throw new ConfigurationException("Cannot read '" + _accessFileName + "'.");
         }
 
-        if (!access.canWrite())
+        if (!_accessFile.canWrite())
         {
-            _logger.warn("Unable to write to access file '" + _accessFile + "' changes will not be preserved.");
+            _logger.warn("Unable to write to access file '" + _accessFileName + "' changes will not be preserved.");
         }
 
-        accessRights.load(new FileInputStream(access));
+        accessRights.load(new FileInputStream(_accessFileName));
         processAccessRights(accessRights);
+    }
+
+    private void saveAccessFile()
+    {
+        try
+        {
+            _accessRights.store(new FileOutputStream(_accessFile), "");
+        }
+        catch (IOException e)
+        {
+            _logger.warn("Unable to write to access file '" + _accessFileName + "' changes will not be preserved.");
+        }
     }
 
     /**
@@ -225,6 +271,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     private void processAccessRights(Properties accessRights)
     {
         _logger.info("Processing Access Rights:" + accessRights);
-        MBeanInvocationHandlerImpl.setAccessRights(accessRights);       
+        _accessRights = accessRights;
+        MBeanInvocationHandlerImpl.setAccessRights(_accessRights);
     }
 }

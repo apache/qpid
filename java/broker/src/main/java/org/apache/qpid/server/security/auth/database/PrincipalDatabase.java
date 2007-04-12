@@ -72,4 +72,6 @@ public interface PrincipalDatabase
             throws AccountNotFoundException;
 
     public Map<String, AuthenticationProviderInitialiser> getMechanisms();
+
+    Principal getUser(String username);
 }

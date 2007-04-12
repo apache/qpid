@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security.auth.database;
 
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
@@ -142,5 +143,17 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
+    }
+
+    public Principal getUser(String username)
+    {
+        if (_users.getProperty(username) != null)
+        {
+            return new UsernamePrincipal(username);
+        }
+        else
+        {
+            return null;
+        }
     }
 }

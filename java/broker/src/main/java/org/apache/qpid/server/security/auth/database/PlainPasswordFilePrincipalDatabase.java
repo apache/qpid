@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.auth.database;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
@@ -143,7 +144,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         int index = 0;
 
         for (byte b : passwdBytes)
-        {            
+        {
             passwd[index++] = (char) b;
         }
 
@@ -168,6 +169,22 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
+    }
+
+    public Principal getUser(String username)
+    {
+        try
+        {
+            if (lookupPassword(username) != null)
+            {
+                return new UsernamePrincipal(username);
+            }
+        }
+        catch (IOException e)
+        {
+            //fall through to null return
+        }
+        return null;
     }
 
     private boolean compareCharArray(char[] a, char[] b)

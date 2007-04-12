@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 import org.apache.qpid.server.security.access.AMQUserManagementMBean;
 import org.apache.qpid.server.security.Passwd;
@@ -46,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.security.Principal;
 import java.security.NoSuchAlgorithmException;
+import java.security.MessageDigest;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -270,6 +272,15 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         return _saslServers;
     }
 
+    public Principal getUser(String username)
+    {
+        if (_users.containsKey(username))
+        {
+            return new UsernamePrincipal(username);
+        }
+        return null;
+    }
+
     /**
      * Looks up the password for a specified user in the password file. Note this code is <b>not</b> secure since it
      * creates strings of passwords. It should be modified to create only char arrays which get nulled out.
@@ -374,7 +385,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
                             user.saved();
                         }
-                        catch (EncoderException e)
+                        catch (Exception e)
                         {
                             _logger.warn("Unable to encode new password reverting to old password.");
                             writer.write(line.getBytes(DEFAULT_ENCODING));
@@ -397,7 +408,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                         writer.println();
                         user.saved();
                     }
-                    catch (EncoderException e)
+                    catch (Exception e)
                     {
                         _logger.warn("Unable to get Encoded password for user'" + user.getName() + "' password not saved");
                     }
@@ -490,7 +501,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
 
 
-        byte[] getEncodePassword() throws EncoderException, UnsupportedEncodingException
+        byte[] getEncodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
         {
             if (_encodedPassword == null)
             {
@@ -499,10 +510,10 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return _encodedPassword;
         }
 
-        private void encodePassword() throws EncoderException, UnsupportedEncodingException
+        private void encodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
         {
             Base64 b64 = new Base64();
-            _encodedPassword = b64.encode(new String(_password).getBytes(DEFAULT_ENCODING));
+            _encodedPassword = b64.encode(getHash(new String(_password)));
         }
 
         public boolean isModified()
@@ -523,6 +534,20 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         public void saved()
         {
             _modified = false;
+        }
+
+        private byte[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
+        {
+            byte[] data = text.getBytes(DEFAULT_ENCODING);
+
+            MessageDigest md = MessageDigest.getInstance("MD5");
+
+            for (byte b : data)
+            {
+                md.update(b);
+            }
+
+            return  md.digest();
         }
     }
 }

@@ -52,9 +52,9 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 {
     private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
 
-    private final static String ADMIN = "admin";
-    private final static String READWRITE = "readwrite";
-    private final static String READONLY = "readonly";
+    public final static String ADMIN = "admin";
+    public final static String READWRITE = "readwrite";
+    public final static String READONLY = "readonly";
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer mbs;
     private static Properties _userRoles = new Properties();
