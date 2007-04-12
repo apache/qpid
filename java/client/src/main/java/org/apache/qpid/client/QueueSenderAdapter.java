@@ -7,14 +7,15 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueSender;
+import javax.jms.InvalidDestinationException;
 
 public class QueueSenderAdapter implements QueueSender {
 
-	private MessageProducer _delegate;
+	private BasicMessageProducer _delegate;
 	private Queue _queue;
 	private boolean closed = false;
 	
-	public QueueSenderAdapter(MessageProducer msgProducer, Queue queue){
+	public QueueSenderAdapter(BasicMessageProducer msgProducer, Queue queue){
 		_delegate = msgProducer;
 		_queue = queue;
 	}
@@ -122,12 +123,13 @@ public class QueueSenderAdapter implements QueueSender {
 		_delegate.setTimeToLive(timeToLive);
 	}
 
-    private void checkPreConditions() throws IllegalStateException, IllegalStateException
+    private void checkPreConditions() throws JMSException
     {
         checkPreConditions(_queue);
     }
 
-    private void checkPreConditions(Queue queue) throws IllegalStateException, IllegalStateException {
+    private void checkPreConditions(Queue queue) throws JMSException
+    {
 		if (closed){
 			throw new javax.jms.IllegalStateException("Publisher is closed");
 		}
@@ -137,5 +139,28 @@ public class QueueSenderAdapter implements QueueSender {
 		if(session == null || session.isClosed()){
 			throw new javax.jms.IllegalStateException("Invalid Session");
 		}
-	}
+
+        if(!(queue instanceof AMQDestination))
+        {
+            throw new InvalidDestinationException("Queue: " + queue + " is not a valid Qpid queue");
+        }
+        AMQDestination destination = (AMQDestination) queue;
+        if(!destination.isValidated() && checkQueueBeforePublish())
+        {
+
+            if (_delegate.isBound(destination))
+            {
+                destination.setValidated(true);
+            }
+            else
+            {
+                throw new InvalidDestinationException("Queue: " + queue + " is not a valid destination (no bindings on server");
+            }
+        }
+    }
+
+    private boolean checkQueueBeforePublish()
+    {
+        return "true".equalsIgnoreCase(System.getProperty("org.apache.qpid.client.verifyQueueBindingBeforePublish", "true"));
+    }
 }

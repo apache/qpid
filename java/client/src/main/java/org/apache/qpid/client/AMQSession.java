@@ -998,42 +998,42 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         throw new java.lang.UnsupportedOperationException();
     }
 
-    public MessageProducer createProducer(Destination destination, boolean mandatory,
+    public BasicMessageProducer createProducer(Destination destination, boolean mandatory,
                                           boolean immediate, boolean waitUntilSent)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate, waitUntilSent);
     }
 
-    public MessageProducer createProducer(Destination destination, boolean mandatory, boolean immediate)
+    public BasicMessageProducer createProducer(Destination destination, boolean mandatory, boolean immediate)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate);
     }
 
-    public MessageProducer createProducer(Destination destination, boolean immediate)
+    public BasicMessageProducer createProducer(Destination destination, boolean immediate)
             throws JMSException
     {
         return createProducerImpl(destination, DEFAULT_MANDATORY, immediate);
     }
 
-    public MessageProducer createProducer(Destination destination) throws JMSException
+    public BasicMessageProducer createProducer(Destination destination) throws JMSException
     {
         return createProducerImpl(destination, DEFAULT_MANDATORY, DEFAULT_IMMEDIATE);
     }
 
-    private org.apache.qpid.jms.MessageProducer createProducerImpl(Destination destination, boolean mandatory,
+    private BasicMessageProducer createProducerImpl(Destination destination, boolean mandatory,
                                                                    boolean immediate)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate, false);
     }
 
-    private org.apache.qpid.jms.MessageProducer createProducerImpl(final Destination destination, final boolean mandatory,
+    private BasicMessageProducer createProducerImpl(final Destination destination, final boolean mandatory,
                                                                    final boolean immediate, final boolean waitUntilSent)
             throws JMSException
     {
-        return (org.apache.qpid.jms.MessageProducer) new FailoverSupport()
+        return (BasicMessageProducer) new FailoverSupport()
         {
             public Object operation() throws JMSException
             {

@@ -682,4 +682,9 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     {
         return _session;
     }
+
+    public boolean isBound(AMQDestination destination) throws JMSException
+    {
+        return _session.isQueueBound(destination.getExchangeName(),null,destination.getRoutingKey());
+    }
 }
