@@ -39,7 +39,7 @@ public class ContentBodyFactory implements BodyFactory
         _log.debug("Creating content body factory");
     }
 
-    public AMQBodyImpl createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
+    public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
         return new ContentBody(in, bodySize);
     }

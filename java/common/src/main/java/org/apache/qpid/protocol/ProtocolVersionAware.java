@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.framing.ProtocolVersion;
-
 public interface ProtocolVersionAware
 {
-    public ProtocolVersion getProtocolVersion();
+    public byte getProtocolMinorVersion();
 
+    public byte getProtocolMajorVersion();
 }
