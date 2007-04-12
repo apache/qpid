@@ -103,7 +103,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param autoDelete
      * @throws JMException
      */
-    public void createNewExchange(String exchangeName, String type, boolean durable, boolean autoDelete) throws JMException
+    public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException
     {
         try
         {
@@ -112,9 +112,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 Exchange exchange = _exchangeRegistry.getExchange(new AMQShortString(exchangeName));
                 if (exchange == null)
                 {
-                    exchange =
-                        _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type), durable,
-                            autoDelete, 0);
+                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type),
+                                                               durable, false, 0);
                     _exchangeRegistry.registerExchange(exchange);
                 }
                 else

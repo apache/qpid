@@ -52,8 +52,7 @@ public interface ManagedBroker
     @MBeanOperation(name="createNewExchange", description="Creates a new Exchange", impact= MBeanOperationInfo.ACTION)
     void createNewExchange(@MBeanOperationParameter(name="name", description="Name of the new exchange")String name,
                            @MBeanOperationParameter(name="ExchangeType", description="Type of the exchange")String type,
-                           @MBeanOperationParameter(name="durable", description="true if the Exchang should be durable")boolean durable,
-                           @MBeanOperationParameter(name="passive", description="true of the Exchange should be passive")boolean passive)
+                           @MBeanOperationParameter(name="durable", description="true if the Exchang should be durable")boolean durable)
         throws IOException, JMException;
 
     /**

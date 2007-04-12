@@ -44,9 +44,9 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         VirtualHost vHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
 
         ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean)vHost.getManagedObject());
-        mbean.createNewExchange(exchange1,"direct",false, false);
-        mbean.createNewExchange(exchange2,"topic",false, false);
-        mbean.createNewExchange(exchange3,"headers",false, false);
+        mbean.createNewExchange(exchange1,"direct",false);
+        mbean.createNewExchange(exchange2,"topic",false);
+        mbean.createNewExchange(exchange3,"headers",false);
 
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange1)) != null);
         assertTrue(_exchangeRegistry.getExchange(new AMQShortString(exchange2)) != null);
