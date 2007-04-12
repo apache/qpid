@@ -274,20 +274,25 @@ public abstract class Generator implements LanguageConverter
                 versionTemplateFiles = versionTemplateDirectory.listFiles(_tmplFileFilter);
             }
 
-            for (File templateFile : templateFiles)
-            {
-                System.out.println(type.getName() + " template file(s):");
-                System.out.println("  " + templateFile.getCanonicalPath());
-                typeTemplates.add(new NamedTemplate(type.getName(), templateFile));
-            }
+			if(templateFiles != null)
+			{
+	            for (File templateFile : templateFiles)
+	            {
+	                System.out.println(type.getName() + " template file(s):");
+	                System.out.println("  " + templateFile.getCanonicalPath());
+	                typeTemplates.add(new NamedTemplate(type.getName(), templateFile));
+	            }
+			}
 
-
-            for (File versionTemplateFile : versionTemplateFiles)
-            {
-                System.out.println(type.getName() + " template file(s):");
-                System.out.println("  " + versionTemplateFile.getCanonicalPath());
-                versionSpecificTypeTemplates.add(new NamedTemplate(type.getName() + Utils.FILE_SEPARATOR + "version", versionTemplateFile));
-            }
+            if(versionTemplateFiles != null)
+			{
+				for (File versionTemplateFile : versionTemplateFiles)
+	            {
+	                System.out.println(type.getName() + " template file(s):");
+	                System.out.println("  " + versionTemplateFile.getCanonicalPath());
+	                versionSpecificTypeTemplates.add(new NamedTemplate(type.getName() + Utils.FILE_SEPARATOR + "version", versionTemplateFile));
+	            }
+			}
 
         }
     }
