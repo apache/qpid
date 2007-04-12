@@ -133,6 +133,7 @@ AC_CHECK_PROG([RPMLINT], [rpmlint], [rpmlint])
 AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 	
 AC_CONFIG_FILES([
+  qpid-config	
   Makefile
   src/Makefile
   src/tests/Makefile
@@ -141,5 +142,4 @@ AC_CONFIG_FILES([
   docs/api/user.doxygen
   docs/api/developer.doxygen
   ])
-
 AC_OUTPUT

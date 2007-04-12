@@ -1,6 +1,8 @@
 AUTOMAKE_OPTIONS = 1.9.2 foreign
 ACLOCAL_AMFLAGS = -I m4
 
+bin_SCRIPTS = qpid-config
+
 SPEC=$(PACKAGE).spec
 
 EXTRA_DIST = \
