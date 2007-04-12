@@ -280,7 +280,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 String username = ncb.getDefaultName();
                 try
                 {
-                    authorized = _principalDatabase.verifyPassword(new UsernamePrincipal(username), new String(pcb.getPassword()));
+                    authorized = _principalDatabase.verifyPassword(username, new String(pcb.getPassword()));
                 }
                 catch (AccountNotFoundException e)
                 {

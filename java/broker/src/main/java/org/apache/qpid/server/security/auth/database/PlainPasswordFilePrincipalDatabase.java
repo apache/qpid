@@ -21,7 +21,6 @@
 package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
@@ -39,6 +38,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.security.Principal;
 
 /**
@@ -121,11 +121,11 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean verifyPassword(Principal principal, String password) throws AccountNotFoundException
+    public boolean verifyPassword(String principal, String password) throws AccountNotFoundException
     {
         try
         {
-            char[] pwd = lookupPassword(principal.getName());
+            char[] pwd = lookupPassword(principal);
 
             return compareCharArray(pwd, convertPassword(password));
         }
@@ -156,7 +156,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         return false; // updates denied
     }
 
-    public boolean createPrincipal(Principal principal, String password) throws AccountNotFoundException
+    public boolean createPrincipal(Principal principal, String password)
     {
         return false; // updates denied
     }
@@ -169,6 +169,11 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
+    }
+
+    public List<Principal> getUsers()
+    {
+        return null; //todo
     }
 
     public Principal getUser(String username)
@@ -208,11 +213,11 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
      * Looks up the password for a specified user in the password file. Note this code is <b>not</b> secure since it
      * creates strings of passwords. It should be modified to create only char arrays which get nulled out.
      *
-     * @param name
+     * @param name the name of the principal to lookup
      *
-     * @return
+     * @return char[] of the password
      *
-     * @throws java.io.IOException
+     * @throws java.io.IOException whilst accessing the file
      */
     private char[] lookupPassword(String name) throws IOException
     {

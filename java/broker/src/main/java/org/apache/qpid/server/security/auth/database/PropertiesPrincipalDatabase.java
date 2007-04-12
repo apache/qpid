@@ -30,6 +30,7 @@ import javax.security.auth.login.AccountNotFoundException;
 import java.util.Properties;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.security.Principal;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -78,9 +79,9 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean verifyPassword(Principal principal, String password) throws AccountNotFoundException
+    public boolean verifyPassword(String principal, String password) throws AccountNotFoundException
     {
-        char[] pwd = _users.getProperty(principal.getName()).toCharArray();
+        char[] pwd = _users.getProperty(principal).toCharArray();
 
         try
         {
@@ -97,7 +98,7 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         return false; // updates denied
     }
 
-    public boolean createPrincipal(Principal principal, String password) throws AccountNotFoundException
+    public boolean createPrincipal(Principal principal, String password)
     {
         return false; // updates denied
     }
@@ -143,6 +144,11 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
+    }
+
+    public List<Principal> getUsers()
+    {
+        return null; //todo
     }
 
     public Principal getUser(String username)

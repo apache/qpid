@@ -25,26 +25,24 @@ import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialis
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 import org.apache.qpid.server.security.access.AMQUserManagementMBean;
-import org.apache.qpid.server.security.Passwd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.EncoderException;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
-import javax.management.JMException;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.UnsupportedEncodingException;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
 import java.io.PrintStream;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.LinkedList;
+import java.util.concurrent.locks.ReentrantLock;
 import java.security.Principal;
 import java.security.NoSuchAlgorithmException;
 import java.security.MessageDigest;
@@ -69,6 +67,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
     AMQUserManagementMBean _mbean;
     private static final String DEFAULT_ENCODING = "utf-8";
     private Map<String, User> _users = new HashMap<String, User>();
+    private ReentrantLock _userUpdate = new ReentrantLock();
 
     public Base64MD5PasswordFilePrincipalDatabase()
     {
@@ -113,6 +112,14 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         loadPasswordFile();
     }
 
+    /**
+     * SASL Callback Mechanism - sets the Password in the PasswordCallback based on the value in the PasswordFile
+     *
+     * @param principal The Principal to set the password for
+     * @param callback  The PasswordCallback to call setPassword on
+     *
+     * @throws AccountNotFoundException If the Principal cannont be found in this Database
+     */
     public void setPassword(Principal principal, PasswordCallback callback) throws AccountNotFoundException
     {
         if (_passwordFile == null)
@@ -136,11 +143,21 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean verifyPassword(Principal principal, String password) throws AccountNotFoundException
+    /**
+     * Used to verify that the presented Password is correct. Currently only used by Management Console
+     *
+     * @param principal The principal to authenticate
+     * @param password  The password to check
+     *
+     * @return true if password is correct
+     *
+     * @throws AccountNotFoundException if the principal cannot be found
+     */
+    public boolean verifyPassword(String principal, String password) throws AccountNotFoundException
     {
         try
         {
-            char[] pwd = lookupPassword(principal.getName());
+            char[] pwd = lookupPassword(principal);
             byte[] passwordBytes = password.getBytes(DEFAULT_ENCODING);
 
             int index = 0;
@@ -173,19 +190,30 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
             char[] passwd = convertPassword(password);
 
-            user.setPassword(passwd);
-
             try
             {
-                savePasswordFile();
+                _userUpdate.lock();
+                user.setPassword(passwd);
+
+                try
+                {
+                    savePasswordFile();
+                }
+                catch (IOException e)
+                {
+                    _logger.error("Unable to save password file, password change for user'"
+                                  + principal + "' will revert at restart");
+                    return false;
+                }
+                return true;
             }
-            catch (IOException e)
+            finally
             {
-                _logger.error("Unable to save password file, password change for user'"
-                              + principal + "' will revert at restart");
-                return false;
+                if (_userUpdate.isHeldByCurrentThread())
+                {
+                    _userUpdate.unlock();
+                }
             }
-            return true;
         }
         catch (UnsupportedEncodingException e)
         {
@@ -209,14 +237,14 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         return passwd;
     }
 
-    public boolean createPrincipal(Principal principal, String password) throws AccountNotFoundException
+    public boolean createPrincipal(Principal principal, String password)
     {
         if (_users.get(principal.getName()) != null)
         {
             return false;
         }
 
-        User user = null;
+        User user;
         try
         {
             user = new User(principal.getName(), convertPassword(password));
@@ -227,18 +255,29 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             return false;
         }
 
-        _users.put(user.getName(), user);
-
         try
         {
-            savePasswordFile();
-            return true;
-        }
-        catch (IOException e)
-        {
-            return false;
-        }
+            _userUpdate.lock();
+            _users.put(user.getName(), user);
 
+            try
+            {
+                savePasswordFile();
+                return true;
+            }
+            catch (IOException e)
+            {
+                return false;
+            }
+
+        }
+        finally
+        {
+            if (_userUpdate.isHeldByCurrentThread())
+            {
+                _userUpdate.unlock();
+            }
+        }
     }
 
     public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
@@ -250,26 +289,43 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             throw new AccountNotFoundException(principal.getName());
         }
 
-        user.delete();
-
         try
         {
-            savePasswordFile();
-        }
-        catch (IOException e)
-        {
-            _logger.warn("Unable to remove user '" + user.getName() + "' from password file.");
-            return false;
-        }
+            _userUpdate.lock();
+            user.delete();
 
-        _users.remove(user.getName());
+            try
+            {
+                savePasswordFile();
+            }
+            catch (IOException e)
+            {
+                _logger.warn("Unable to remove user '" + user.getName() + "' from password file.");
+                return false;
+            }
+
+            _users.remove(user.getName());
+        }
+        finally
+        {
+            if (_userUpdate.isHeldByCurrentThread())
+            {
+                _userUpdate.unlock();
+            }
+        }
 
         return true;
     }
 
+
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
+    }
+
+    public List<Principal> getUsers()
+    {
+        return new LinkedList<Principal>(_users.values());
     }
 
     public Principal getUser(String username)
@@ -305,141 +361,164 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     private void loadPasswordFile() throws IOException
     {
-        _users.clear();
-
-        BufferedReader reader = null;
         try
         {
-            reader = new BufferedReader(new FileReader(_passwordFile));
-            String line;
+            _userUpdate.lock();
+            _users.clear();
 
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = null;
+            try
             {
-                String[] result = _regexp.split(line);
-                if (result == null || result.length < 2 || result[0].startsWith("#"))
-                {
-                    continue;
-                }
+                reader = new BufferedReader(new FileReader(_passwordFile));
+                String line;
 
-                User user = new User(result);
-                _logger.info("Created user:" + user);
-                _users.put(user.getName(), user);
+                while ((line = reader.readLine()) != null)
+                {
+                    String[] result = _regexp.split(line);
+                    if (result == null || result.length < 2 || result[0].startsWith("#"))
+                    {
+                        continue;
+                    }
+
+                    User user = new User(result);
+                    _logger.info("Created user:" + user);
+                    _users.put(user.getName(), user);
+                }
+            }
+            finally
+            {
+                if (reader != null)
+                {
+                    reader.close();
+                }
             }
         }
         finally
         {
-            if (reader != null)
+            if (_userUpdate.isHeldByCurrentThread())
             {
-                reader.close();
+                _userUpdate.unlock();
             }
         }
     }
 
     private void savePasswordFile() throws IOException
     {
-        BufferedReader reader = null;
-        PrintStream writer = null;
-        File tmp = new File(_passwordFile.getAbsolutePath() + ".tmp");
-        if (tmp.exists())
-        {
-            tmp.delete();
-        }
         try
         {
-            writer = new PrintStream(tmp);
-            reader = new BufferedReader(new FileReader(_passwordFile));
-            String line;
+            _userUpdate.lock();
 
-            while ((line = reader.readLine()) != null)
+            BufferedReader reader = null;
+            PrintStream writer = null;
+            File tmp = new File(_passwordFile.getAbsolutePath() + ".tmp");
+            if (tmp.exists())
             {
-                String[] result = _regexp.split(line);
-                if (result == null || result.length < 2 || result[0].startsWith("#"))
-                {
-                    writer.write(line.getBytes(DEFAULT_ENCODING));
-                    continue;
-                }
+                tmp.delete();
+            }
+            try
+            {
+                writer = new PrintStream(tmp);
+                reader = new BufferedReader(new FileReader(_passwordFile));
+                String line;
 
-                User user = _users.get(result[0]);
+                while ((line = reader.readLine()) != null)
+                {
+                    String[] result = _regexp.split(line);
+                    if (result == null || result.length < 2 || result[0].startsWith("#"))
+                    {
+                        writer.write(line.getBytes(DEFAULT_ENCODING));
+                        continue;
+                    }
 
-                if (user == null)
-                {
-                    writer.write(line.getBytes(DEFAULT_ENCODING));
-                    writer.println();
-                }
-                else if (!user.isDeleted())
-                {
-                    if (!user.isModified())
+                    User user = _users.get(result[0]);
+
+                    if (user == null)
                     {
                         writer.write(line.getBytes(DEFAULT_ENCODING));
                         writer.println();
                     }
-                    else
+                    else if (!user.isDeleted())
                     {
+                        if (!user.isModified())
+                        {
+                            writer.write(line.getBytes(DEFAULT_ENCODING));
+                            writer.println();
+                        }
+                        else
+                        {
+                            try
+                            {
+                                byte[] encodedPassword = user.getEncodePassword();
+
+                                writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
+                                writer.write(encodedPassword);
+                                writer.println();
+
+                                user.saved();
+                            }
+                            catch (Exception e)
+                            {
+                                _logger.warn("Unable to encode new password reverting to old password.");
+                                writer.write(line.getBytes(DEFAULT_ENCODING));
+                                writer.println();
+                            }
+                        }
+                    }
+                }
+
+                for (User user : _users.values())
+                {
+                    if (user.isModified())
+                    {
+                        byte[] encodedPassword;
                         try
                         {
-                            byte[] encodedPassword = user.getEncodePassword();
-
+                            encodedPassword = user.getEncodePassword();
                             writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
                             writer.write(encodedPassword);
                             writer.println();
-
                             user.saved();
                         }
                         catch (Exception e)
                         {
-                            _logger.warn("Unable to encode new password reverting to old password.");
-                            writer.write(line.getBytes(DEFAULT_ENCODING));
-                            writer.println();
+                            _logger.warn("Unable to get Encoded password for user'" + user.getName() + "' password not saved");
                         }
                     }
                 }
             }
-
-            for (User user : _users.values())
+            finally
             {
-                if (user.isModified())
+                if (reader != null)
                 {
-                    byte[] encodedPassword;
-                    try
-                    {
-                        encodedPassword = user.getEncodePassword();
-                        writer.write((user.getName() + ":").getBytes(DEFAULT_ENCODING));
-                        writer.write(encodedPassword);
-                        writer.println();
-                        user.saved();
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.warn("Unable to get Encoded password for user'" + user.getName() + "' password not saved");
-                    }
+                    reader.close();
                 }
+
+                if (writer != null)
+                {
+                    writer.close();
+                }
+
+                // Swap temp file to main password file.
+                File old = new File(_passwordFile.getAbsoluteFile() + ".old");
+                if (old.exists())
+                {
+                    old.delete();
+                }
+                _passwordFile.renameTo(old);
+                tmp.renameTo(_passwordFile);
+                tmp.delete();
             }
         }
         finally
         {
-            if (reader != null)
+            if (_userUpdate.isHeldByCurrentThread())
             {
-                reader.close();
+                _userUpdate.unlock();
             }
-
-            if (writer != null)
-            {
-                writer.close();
-            }
-
-            // Swap temp file to main password file.
-            File old = new File(_passwordFile.getAbsoluteFile() + ".old");
-            if (old.exists())
-            {
-                old.delete();
-            }
-            _passwordFile.renameTo(old);
-            tmp.renameTo(_passwordFile);
-            tmp.delete();
         }
     }
 
-    private class User
+    private class User implements Principal
     {
         String _name;
         char[] _password;
@@ -478,14 +557,21 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             setPassword(password);
         }
 
-        String getName()
+        public String getName()
         {
             return _name;
         }
 
         public String toString()
         {
-            return getName() + ((_encodedPassword == null) ? "" : ":" + _encodedPassword);
+            if (_logger.isDebugEnabled())
+            {
+                return getName() + ((_encodedPassword == null) ? "" : ":" + new String(_encodedPassword));
+            }
+            else
+            {
+                return _name;
+            }
         }
 
         char[] getPassword()
@@ -547,7 +633,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 md.update(b);
             }
 
-            return  md.digest();
+            return md.digest();
         }
     }
 }
