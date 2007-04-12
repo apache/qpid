@@ -4,7 +4,6 @@ import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
-import org.apache.qpid.framing.amqp_8_0.BasicPublishBodyImpl;
 
 import org.apache.mina.common.ByteBuffer;
 
@@ -20,7 +19,7 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
 
     }
 
-    public AMQBodyImpl convertToBody(ContentChunk contentChunk)
+    public AMQBody convertToBody(ContentChunk contentChunk)
     {
         return new ContentBody(contentChunk.getData());
     }
@@ -53,8 +52,8 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
     public void configure()
     {
 
-        _basicPublishClassId = BasicPublishBodyImpl.CLASS_ID;
-        _basicPublishMethodId = BasicPublishBodyImpl.METHOD_ID;
+        _basicPublishClassId = BasicPublishBody.getClazz(getProtocolMajorVersion(),getProtocolMinorVersion());
+        _basicPublishMethodId = BasicPublishBody.getMethod(getProtocolMajorVersion(),getProtocolMinorVersion());
                 
     }
 
@@ -88,15 +87,18 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
 
     }
 
-    public AMQMethodBodyImpl convertToBody(MessagePublishInfo info)
+    public AMQMethodBody convertToBody(MessagePublishInfo info)
     {
 
-        return new BasicPublishBodyImpl(0, // ticket
-                                        info.getExchange(),
-                                        info.getRoutingKey(),
+        return new BasicPublishBody(getProtocolMajorVersion(),
+                                    getProtocolMinorVersion(),
+                                    _basicPublishClassId,
+                                    _basicPublishMethodId,
+                                    info.getExchange(),
+                                    info.isImmediate(),
                                     info.isMandatory(),
-                                    info.isImmediate()
-                                    ) ;
+                                    info.getRoutingKey(),
+                                    0) ; // ticket
 
     }
 }
