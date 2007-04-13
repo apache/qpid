@@ -146,7 +146,7 @@ fi
 
 %changelog
 
-* THU Apr 12 2007 Alan Conway <aconway@redhat.com> - 0.2-1
+* Thu Apr 12 2007 Alan Conway <aconway@redhat.com> - 0.2-1
 - Bumped version number for rhm dependencies. 
 
 * Wed Apr 11 2007 Alan Conway <aconway@redhat.com> - 0.1-5
