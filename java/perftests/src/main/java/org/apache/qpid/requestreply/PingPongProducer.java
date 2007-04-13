@@ -1301,7 +1301,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      *
      * @param prompt The prompt to display on the console.
      */
-    protected void waitForUser(String prompt)
+    public void waitForUser(String prompt)
     {
         System.out.println(prompt);
 
