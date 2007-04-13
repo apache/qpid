@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "../sys/apr/APRBase.h"
+#include "qpid/sys/apr/APRBase.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 

@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-#include "../broker/NullMessageStore.h"
-#include "../broker/RecoveryManager.h"
-#include "../broker/TxAck.h"
+#include "qpid/broker/NullMessageStore.h"
+#include "qpid/broker/RecoveryManager.h"
+#include "qpid/broker/TxAck.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include <list>

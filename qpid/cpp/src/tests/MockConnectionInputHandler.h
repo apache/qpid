@@ -19,10 +19,10 @@
  *
  */
 
-#include "../sys/ConnectionInputHandler.h"
-#include "../sys/ConnectionInputHandlerFactory.h"
-#include "../sys/Monitor.h"
-#include "../framing/ProtocolInitiation.h"
+#include "qpid/sys/ConnectionInputHandler.h"
+#include "qpid/sys/ConnectionInputHandlerFactory.h"
+#include "qpid/sys/Monitor.h"
+#include "qpid/framing/ProtocolInitiation.h"
 
 struct MockConnectionInputHandler : public qpid::sys::ConnectionInputHandler {
 

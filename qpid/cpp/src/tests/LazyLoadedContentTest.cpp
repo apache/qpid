@@ -18,14 +18,14 @@
  * under the License.
  *
  */
-#include "../broker/LazyLoadedContent.h"
-#include "../gen/AMQP_HighestVersion.h"
-#include "../broker/NullMessageStore.h"
+#include "qpid/broker/LazyLoadedContent.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
+#include "qpid/broker/NullMessageStore.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include <list>
 #include <sstream>
-#include "../framing/AMQFrame.h"
+#include "qpid/framing/AMQFrame.h"
 #include "MockChannel.h"
 using std::list;
 using std::string;

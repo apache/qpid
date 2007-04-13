@@ -17,7 +17,7 @@
  * under the License.
  */
 
-#include "../broker/QueueRegistry.h"
+#include "qpid/broker/QueueRegistry.h"
 #include "qpid_test_plugin.h"
 #include <string>
 

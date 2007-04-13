@@ -32,13 +32,13 @@
  * listening).
  */
 
-#include "../QpidError.h"
-#include "../client/ClientChannel.h"
-#include "../client/Connection.h"
-#include "../client/ClientExchange.h"
-#include "../client/MessageListener.h"
-#include "../client/ClientQueue.h"
-#include "../sys/Time.h"
+#include "qpid/QpidError.h"
+#include "qpid/client/ClientChannel.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/ClientExchange.h"
+#include "qpid/client/MessageListener.h"
+#include "qpid/client/ClientQueue.h"
+#include "qpid/sys/Time.h"
 #include <iostream>
 #include <sstream>
 

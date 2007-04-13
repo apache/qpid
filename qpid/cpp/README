@@ -5,14 +5,17 @@ Qpid C++ is a C++ implementation of the AMQP protcol described at
 
 The Qpid project also provides Java, Ruby and Python implementations.
 
+NOTE: This release of Qpid C++ implements the AMQP 0-9 WIP. 
+It will not inter-operate with AMQP 0-8 implementations.
+We will be moving to 0-10 as soon as it is available.
+
 For additional software or information on the Qpid project go to:
 	http://cwiki.apache.org/qpid/
-
 
 Available documentation:
   qpidd(1) man page - how to run the broker daemon.
   html/index.html - C++ client API.
-
+  NEWS - release notes.
 Note the daemon and client API can be installed separately. 
 
 This README describes how to build the Qpid C++ broker and client, either

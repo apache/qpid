@@ -28,13 +28,13 @@
 
 #include <iostream>
 
-#include "../QpidError.h"
-#include "../client/ClientChannel.h"
-#include "../client/Connection.h"
-#include "../client/ClientMessage.h"
-#include "../client/MessageListener.h"
-#include "../sys/Monitor.h"
-#include "../framing/FieldTable.h"
+#include "qpid/QpidError.h"
+#include "qpid/client/ClientChannel.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/ClientMessage.h"
+#include "qpid/client/MessageListener.h"
+#include "qpid/sys/Monitor.h"
+#include "qpid/framing/FieldTable.h"
 
 using namespace qpid::client;
 using namespace qpid::sys;

@@ -21,13 +21,13 @@
 #include <vector>
 #include "qpid_test_plugin.h"
 #include "InProcessBroker.h"
-#include "../client/ClientChannel.h"
-#include "../client/ClientMessage.h"
-#include "../client/ClientQueue.h"
-#include "../client/ClientExchange.h"
-#include "../client/MessageListener.h"
-#include "../client/BasicMessageChannel.h"
-#include "../client/MessageMessageChannel.h"
+#include "qpid/client/ClientChannel.h"
+#include "qpid/client/ClientMessage.h"
+#include "qpid/client/ClientQueue.h"
+#include "qpid/client/ClientExchange.h"
+#include "qpid/client/MessageListener.h"
+#include "qpid/client/BasicMessageChannel.h"
+#include "qpid/client/MessageMessageChannel.h"
 
 using namespace std;
 using namespace boost;
