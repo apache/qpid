@@ -21,8 +21,8 @@
 #include <iostream>
 #include <boost/bind.hpp>
 
-#include "../sys/Socket.h"
-#include "../sys/posix/EventChannelThreads.h"
+#include "qpid/sys/Socket.h"
+#include "qpid/sys/posix/EventChannelThreads.h"
 #include "qpid_test_plugin.h"
 
 

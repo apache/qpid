@@ -18,12 +18,12 @@
  * under the License.
  *
  */
-#include "../broker/InMemoryContent.h"
+#include "qpid/broker/InMemoryContent.h"
 #include "qpid_test_plugin.h"
-#include "../gen/AMQP_HighestVersion.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
 #include <iostream>
 #include <list>
-#include "../framing/AMQFrame.h"
+#include "qpid/framing/AMQFrame.h"
 #include "MockChannel.h"
 
 using std::list;

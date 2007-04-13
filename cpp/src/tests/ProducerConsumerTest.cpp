@@ -25,10 +25,10 @@
 
 #include "qpid_test_plugin.h"
 #include "InProcessBroker.h"
-#include "../sys/ProducerConsumer.h"
-#include "../sys/Thread.h"
-#include "../gen/AMQP_HighestVersion.h"
-#include "../sys/AtomicCount.h"
+#include "qpid/sys/ProducerConsumer.h"
+#include "qpid/sys/Thread.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
+#include "qpid/sys/AtomicCount.h"
 
 using namespace qpid;
 using namespace sys;

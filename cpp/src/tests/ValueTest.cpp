@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-#include "../framing/Value.h"
+#include "qpid/framing/Value.h"
 #include "qpid_test_plugin.h"
 
 using namespace qpid::framing;

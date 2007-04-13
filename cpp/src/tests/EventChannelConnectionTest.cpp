@@ -21,12 +21,12 @@
 
 #include <iostream>
 #include <boost/bind.hpp>
-#include "../framing/AMQHeartbeatBody.h"
-#include "../framing/AMQFrame.h"
-#include "../sys/posix/EventChannelConnection.h"
-#include "../sys/ConnectionInputHandler.h"
-#include "../sys/ConnectionInputHandlerFactory.h"
-#include "../sys/Socket.h"
+#include "qpid/framing/AMQHeartbeatBody.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/sys/posix/EventChannelConnection.h"
+#include "qpid/sys/ConnectionInputHandler.h"
+#include "qpid/sys/ConnectionInputHandlerFactory.h"
+#include "qpid/sys/Socket.h"
 #include "qpid_test_plugin.h"
 #include "MockConnectionInputHandler.h"
 

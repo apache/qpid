@@ -19,7 +19,7 @@
  *
  */
 #include <iostream>
-#include "../framing/amqp_framing.h"
+#include "qpid/framing/amqp_framing.h"
 #include "qpid_test_plugin.h"
 
 using namespace qpid::framing;

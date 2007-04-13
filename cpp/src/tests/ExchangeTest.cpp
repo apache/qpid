@@ -19,14 +19,14 @@
  *
  */
 
-#include "../broker/DeliverableMessage.h"
-#include "../broker/DirectExchange.h"
-#include "../broker/BrokerExchange.h"
-#include "../broker/BrokerQueue.h"
-#include "../broker/TopicExchange.h"
+#include "qpid/broker/DeliverableMessage.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/BrokerExchange.h"
+#include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/TopicExchange.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
-#include "../gen/BasicGetBody.h"
+#include "qpid/framing/BasicGetBody.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;

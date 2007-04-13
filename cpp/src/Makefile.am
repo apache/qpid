@@ -6,8 +6,16 @@ SUBDIRS = . tests
 
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 
+gen    = gen/qpid/framing
+framing= qpid/framing
+broker = qpid/broker
+client = qpid/client
+apr = qpid/sys/apr
+posix = qpid/sys/posix
+
+
 # -I top_builddir for config.h
-INCLUDES = -I$(top_builddir)  -I$(srcdir)
+INCLUDES = -I$(top_builddir)  -I$(srcdir)/qpid -Igen
 
 qpidd_LDADD = \
   libqpidbroker.la \
@@ -16,7 +24,6 @@ qpidd_LDADD = \
 sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
 
-apr = sys/apr
 apr_src = \
   $(apr)/APRAcceptor.cpp \
   $(apr)/APRBase.cpp \
@@ -34,7 +41,6 @@ apr_hdr = \
   $(apr)/LFProcessor.h \
   $(apr)/LFSessionContext.h	
 
-posix = sys/posix
 posix_src = \
   $(posix)/PosixAcceptor.cpp \
   $(posix)/Socket.cpp \
@@ -51,11 +57,6 @@ posix_hdr = \
 EXTRA_DIST=$(posix_src) $(posix_hdr)
 platform_src = $(apr_src)
 platform_hdr = $(apr_hdr)
-
-framing = framing
-gen     = gen
-broker = broker
-client = client
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
@@ -98,13 +99,14 @@ libqpidcommon_la_SOURCES = \
   $(gen)/AMQP_HighestVersion.h \
   $(gen)/AMQP_MethodVersionMap.cpp \
   $(gen)/AMQP_ServerProxy.cpp \
-  Exception.cpp \
-  ExceptionHolder.cpp \
-  QpidError.cpp \
-  sys/Runnable.cpp \
-  sys/Time.cpp \
-  sys/ProducerConsumer.cpp
+  qpid/Exception.cpp \
+  qpid/ExceptionHolder.cpp \
+  qpid/QpidError.cpp \
+  qpid/sys/Runnable.cpp \
+  qpid/sys/Time.cpp \
+  qpid/sys/ProducerConsumer.cpp
 
+libqpidbroker_la_LIBADD = libqpidcommon.la
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidbroker_la_SOURCES = \
   $(broker)/AccumulatedAck.cpp \
@@ -260,29 +262,29 @@ nobase_qpidinclude_HEADERS = \
   $(framing)/amqp_framing.h \
   $(framing)/amqp_types.h \
   $(framing)/amqp_types_full.h \
-  sys/Acceptor.h \
-  sys/AtomicCount.h \
-  sys/Condition.h \
-  sys/ConnectionInputHandler.h \
-  sys/ConnectionInputHandlerFactory.h \
-  sys/ConnectionOutputHandler.h \
-  sys/Module.h \
-  sys/Monitor.h \
-  sys/Mutex.h \
-  sys/ProducerConsumer.h \
-  sys/Runnable.h \
-  sys/ScopedIncrement.h \
-  sys/ShutdownHandler.h \
-  sys/Socket.h \
-  sys/Thread.h \
-  sys/ThreadSafeQueue.h \
-  sys/Time.h \
-  sys/TimeoutHandler.h \
-  Exception.h \
-  ExceptionHolder.h \
-  QpidError.h \
-  SharedObject.h \
-  shared_ptr.h 
+  qpid/sys/Acceptor.h \
+  qpid/sys/AtomicCount.h \
+  qpid/sys/Condition.h \
+  qpid/sys/ConnectionInputHandler.h \
+  qpid/sys/ConnectionInputHandlerFactory.h \
+  qpid/sys/ConnectionOutputHandler.h \
+  qpid/sys/Module.h \
+  qpid/sys/Monitor.h \
+  qpid/sys/Mutex.h \
+  qpid/sys/ProducerConsumer.h \
+  qpid/sys/Runnable.h \
+  qpid/sys/ScopedIncrement.h \
+  qpid/sys/ShutdownHandler.h \
+  qpid/sys/Socket.h \
+  qpid/sys/Thread.h \
+  qpid/sys/ThreadSafeQueue.h \
+  qpid/sys/Time.h \
+  qpid/sys/TimeoutHandler.h \
+  qpid/Exception.h \
+  qpid/ExceptionHolder.h \
+  qpid/QpidError.h \
+  qpid/SharedObject.h \
+  qpid/shared_ptr.h 
 
 # Distribute the generated sources, at least for now, since
 # the generator code is in java.
@@ -299,22 +301,23 @@ spec_dir = $(srcdir)/../../specs
 spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml
 gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
 
-$(BUILT_SOURCES) $(gen)/timestamp: $(spec) $(java_sources) $(cxx_templates) Makefile.am
-	rm -f $(BUILT_SOURCES)
+$(BUILT_SOURCES) $(gen): $(spec) $(java_sources) $(cxx_templates) Makefile.am
+	rm -rf $(gen)
+	mkdir -p $(gen)
 	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
 	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
 	        -c -o $(gen) -t $(gentools_dir)/templ.cpp $(spec)
-	touch $(gen)/timestamp
+	touch $(gen)
 
-$(gen)/gen-src.mk: $(gen)/timestamp
-	mkdir -p $(gen)
-	./make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) > $@-t
+gen/gen-src.mk: $(gen)
+	./make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) $(gen) > $@-t
 	mv $@-t $@
+
 endif
 
 maintainer-clean:
 	rm -f  $(gentools_srcdir)/*.class
-	rm -f $(BUILT_SOURCES)
+	rm -f $(gen)
 
 # Force build during dist phase so help2man will work.
 dist-hook: $(lib_LTLIBRARIES) $(sbin_PROGRAMS)

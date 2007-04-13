@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "../broker/QueuePolicy.h"
+#include "qpid/broker/QueuePolicy.h"
 #include "qpid_test_plugin.h"
 
 using namespace qpid::broker;

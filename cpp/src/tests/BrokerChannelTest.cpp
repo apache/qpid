@@ -18,19 +18,19 @@
  * under the License.
  *
  */
-#include "../broker/BrokerChannel.h"
-#include "../broker/BrokerMessage.h"
-#include "../broker/BrokerQueue.h"
-#include "../broker/FanOutExchange.h"
-#include "../broker/NullMessageStore.h"
+#include "qpid/broker/BrokerChannel.h"
+#include "qpid/broker/BrokerMessage.h"
+#include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/NullMessageStore.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include <memory>
-#include "../gen/AMQP_HighestVersion.h"
-#include "../framing/AMQFrame.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
+#include "qpid/framing/AMQFrame.h"
 #include "MockChannel.h"
-#include "../broker/Connection.h"
-#include "../framing/ProtocolInitiation.h"
+#include "qpid/broker/Connection.h"
+#include "qpid/framing/ProtocolInitiation.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 
 using namespace boost;
