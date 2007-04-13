@@ -19,9 +19,9 @@
  *
  */
 
-#include "../broker/HeadersExchange.h"
-#include "../framing/FieldTable.h"
-#include "../framing/Value.h"
+#include "qpid/broker/HeadersExchange.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/Value.h"
 #include "qpid_test_plugin.h"
 
 using namespace qpid::broker;

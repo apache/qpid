@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "../broker/AccumulatedAck.h"
+#include "qpid/broker/AccumulatedAck.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include <list>

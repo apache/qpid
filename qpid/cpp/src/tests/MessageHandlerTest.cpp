@@ -19,11 +19,11 @@
  *
  */
 //#include <iostream>
-//#include "../gen/AMQP_HighestVersion.h>
-#include "../framing/amqp_framing.h"
+//#include "qpid/framing/AMQP_HighestVersion.h>
+#include "qpid/framing/amqp_framing.h"
 #include "qpid_test_plugin.h"
 
-#include "../broker/BrokerAdapter.h"
+#include "qpid/broker/BrokerAdapter.h"
 
 using namespace qpid::framing;
 using namespace qpid::broker;

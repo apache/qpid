@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-#include "../sys/posix/EventChannel.h"
-#include "../sys/posix/check.h"
-#include "../sys/Runnable.h"
-#include "../sys/Socket.h"
-#include "../sys/Thread.h"
+#include "qpid/sys/posix/EventChannel.h"
+#include "qpid/sys/posix/check.h"
+#include "qpid/sys/Runnable.h"
+#include "qpid/sys/Socket.h"
+#include "qpid/sys/Thread.h"
 #include "qpid_test_plugin.h"
 
 #include <sys/socket.h>

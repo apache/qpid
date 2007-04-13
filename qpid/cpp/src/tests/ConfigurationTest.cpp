@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "../broker/Configuration.h"
+#include "qpid/broker/Configuration.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 

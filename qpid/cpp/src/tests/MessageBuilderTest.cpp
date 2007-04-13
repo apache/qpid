@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-#include "../Exception.h"
-#include "../broker/BrokerMessage.h"
-#include "../broker/MessageBuilder.h"
-#include "../broker/NullMessageStore.h"
-#include "../framing/Buffer.h"
+#include "qpid/Exception.h"
+#include "qpid/broker/BrokerMessage.h"
+#include "qpid/broker/MessageBuilder.h"
+#include "qpid/broker/NullMessageStore.h"
+#include "qpid/framing/Buffer.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include <memory>

@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-#include "../broker/BrokerMessage.h"
+#include "qpid/broker/BrokerMessage.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
-#include "../gen/AMQP_HighestVersion.h"
-#include "../framing/AMQFrame.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
+#include "qpid/framing/AMQFrame.h"
 #include "MockChannel.h"
 
 using namespace boost;
