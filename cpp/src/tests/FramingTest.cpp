@@ -18,25 +18,25 @@
  * under the License.
  *
  */
-#include "../gen/ConnectionRedirectBody.h"
-#include "../framing/ProtocolVersion.h"
-#include "../framing/amqp_framing.h"
+#include "qpid/framing/ConnectionRedirectBody.h"
+#include "qpid/framing/ProtocolVersion.h"
+#include "qpid/framing/amqp_framing.h"
 #include <iostream>
 #include "qpid_test_plugin.h"
 #include <sstream>
 #include <typeinfo>
-#include "../QpidError.h"
-#include "../gen/AMQP_HighestVersion.h"
-#include "../framing/AMQRequestBody.h"
-#include "../framing/AMQResponseBody.h"
-#include "../framing/Requester.h"
-#include "../framing/Responder.h"
+#include "qpid/QpidError.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
+#include "qpid/framing/AMQRequestBody.h"
+#include "qpid/framing/AMQResponseBody.h"
+#include "qpid/framing/Requester.h"
+#include "qpid/framing/Responder.h"
 #include "InProcessBroker.h"
-#include "../client/Connection.h"
-#include "../client/ClientExchange.h"
-#include "../client/ClientQueue.h"
-#include "../framing/Correlator.h"
-#include "../gen/BasicGetOkBody.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/ClientExchange.h"
+#include "qpid/client/ClientQueue.h"
+#include "qpid/framing/Correlator.h"
+#include "qpid/framing/BasicGetOkBody.h"
 #include <memory>
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>

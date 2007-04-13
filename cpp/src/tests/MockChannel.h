@@ -19,11 +19,11 @@
  *
  */
 
-#include "../framing/MethodContext.h"
-#include "../framing/ChannelAdapter.h"
-#include "../framing/OutputHandler.h"
-#include "../framing/AMQFrame.h"
-#include "../gen/BasicGetBody.h"
+#include "qpid/framing/MethodContext.h"
+#include "qpid/framing/ChannelAdapter.h"
+#include "qpid/framing/OutputHandler.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/BasicGetBody.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/ptr_container/ptr_vector.hpp>
 

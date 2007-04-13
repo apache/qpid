@@ -18,12 +18,12 @@
  * limitations under the License.
  *
  */
-#include "../gen/AMQP_HighestVersion.h"
-#include "../framing/AMQFrame.h"
-#include "../broker/Broker.h"
-#include "../broker/Connection.h"
-#include "../client/Connector.h"
-#include "../client/Connection.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/Connection.h"
+#include "qpid/client/Connector.h"
+#include "qpid/client/Connection.h"
 
 #include <vector>
 #include <iostream>

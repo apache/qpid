@@ -4,13 +4,14 @@
 
 gentools_dir=$1
 gentools_srcdir=$2
+gen=$3
 
 wildcard() { echo `ls $* 2>/dev/null` ; }
 
 cat <<EOF
-generated_sources = `wildcard gen/*.cpp`
+generated_sources = `wildcard $gen/*.cpp`
 
-generated_headers = `wildcard gen/*.h`
+generated_headers = `wildcard $gen/*.h`
 
 if CAN_GENERATE_CODE
 

@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "../broker/BrokerQueue.h"
-#include "../broker/QueueRegistry.h"
+#include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/QueueRegistry.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include "MockChannel.h"

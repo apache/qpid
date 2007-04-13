@@ -21,11 +21,11 @@
 #include <iostream>
 #include <memory>
 #include "qpid_test_plugin.h"
-#include "../broker/Reference.h"
-#include "../broker/BrokerMessageMessage.h"
-#include "../gen/MessageTransferBody.h"
-#include "../gen/MessageAppendBody.h"
-#include "../broker/CompletionHandler.h"
+#include "qpid/broker/Reference.h"
+#include "qpid/broker/BrokerMessageMessage.h"
+#include "qpid/framing/MessageTransferBody.h"
+#include "qpid/framing/MessageAppendBody.h"
+#include "qpid/broker/CompletionHandler.h"
 
 using namespace boost;
 using namespace qpid;
