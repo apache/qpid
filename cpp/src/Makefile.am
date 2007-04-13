@@ -158,10 +158,8 @@ libqpidclient_la_SOURCES =			\
   $(client)/ResponseHandler.cpp				\
   $(client)/ReturnedMessageHandler.cpp
 
-# Install into include/qpid rather than include/qpidc.
-qpidincludedir=$(includedir)/qpid
-nobase_qpidinclude_HEADERS = \
-  $(generated_headers) \
+include_HEADERS = gen/qpid
+nobase_include_HEADERS = \
   $(platform_hdr) \
   $(broker)/AccumulatedAck.h \
   $(broker)/AutoDelete.h \
