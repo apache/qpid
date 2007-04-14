@@ -1,5 +1,5 @@
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS)   $(APR_CXXFLAGS)
-INCLUDES =  -I$(srcdir)/.. -I$(srcdir)/../gen
+INCLUDES =  -I$(srcdir)/.. -I$(top_builddir)/gen
 
 # Unit tests
 broker_unit_tests =	\

@@ -142,6 +142,7 @@ AC_CONFIG_FILES([
   qpidc.pc
   qpidc.spec
   Makefile
+  gen/Makefile
   src/Makefile
   src/tests/Makefile
   docs/man/Makefile
