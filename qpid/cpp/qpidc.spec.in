@@ -102,7 +102,6 @@ make check
 %_includedir/qpid/*.h
 %_includedir/qpid/client
 %_includedir/qpid/framing
-%_includedir/qpid/gen
 %_includedir/qpid/sys
 %_libdir/libqpidcommon.so
 %_libdir/libqpidclient.so

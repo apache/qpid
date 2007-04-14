@@ -1,21 +1,16 @@
-include gen/gen-src.mk
-
-BUILT_SOURCES = $(generated_sources) $(generated_headers)
-
 SUBDIRS = . tests
 
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 
-gen    = gen/qpid/framing
+gen_framing    = $(top_builddir)/gen/qpid/framing
 framing= qpid/framing
 broker = qpid/broker
 client = qpid/client
 apr = qpid/sys/apr
 posix = qpid/sys/posix
 
-
 # -I top_builddir for config.h
-INCLUDES = -I$(top_builddir)  -I$(srcdir)/qpid -Igen
+INCLUDES = -I$(top_builddir)  -I$(top_builddir)/gen 
 
 qpidd_LDADD = \
   libqpidbroker.la \
@@ -95,10 +90,10 @@ libqpidcommon_la_SOURCES = \
   $(framing)/Correlator.cpp \
   $(framing)/Value.cpp \
   $(framing)/Proxy.cpp \
-  $(gen)/AMQP_ClientProxy.cpp \
-  $(gen)/AMQP_HighestVersion.h \
-  $(gen)/AMQP_MethodVersionMap.cpp \
-  $(gen)/AMQP_ServerProxy.cpp \
+  $(gen_framing)/AMQP_ClientProxy.cpp \
+  $(gen_framing)/AMQP_HighestVersion.h \
+  $(gen_framing)/AMQP_MethodVersionMap.cpp \
+  $(gen_framing)/AMQP_ServerProxy.cpp \
   qpid/Exception.cpp \
   qpid/ExceptionHolder.cpp \
   qpid/QpidError.cpp \
@@ -158,7 +153,6 @@ libqpidclient_la_SOURCES =			\
   $(client)/ResponseHandler.cpp				\
   $(client)/ReturnedMessageHandler.cpp
 
-include_HEADERS = gen/qpid
 nobase_include_HEADERS = \
   $(platform_hdr) \
   $(broker)/AccumulatedAck.h \
@@ -284,38 +278,5 @@ nobase_include_HEADERS = \
   qpid/SharedObject.h \
   qpid/shared_ptr.h 
 
-# Distribute the generated sources, at least for now, since
-# the generator code is in java.
-EXTRA_DIST += $(BUILT_SOURCES)
-
-# Don't attempt to run the code generator unless configure has set
-# CAN_GENERATE_CODE, indicating that the amqp.xml and tools needed
-# to run the code generator are available.
-#
-if CAN_GENERATE_CODE
-
-gentools_dir = $(srcdir)/../gentools
-spec_dir = $(srcdir)/../../specs
-spec = $(spec_dir)/amqp.0-9.xml $(spec_dir)/amqp-errata.0-9.xml
-gentools_srcdir = $(gentools_dir)/src/org/apache/qpid/gentools
-
-$(BUILT_SOURCES) $(gen): $(spec) $(java_sources) $(cxx_templates) Makefile.am
-	rm -rf $(gen)
-	mkdir -p $(gen)
-	cd $(gentools_srcdir) && rm -f *.class && $(JAVAC) *.java
-	$(JAVA) -cp $(gentools_dir)/src org.apache.qpid.gentools.Main \
-	        -c -o $(gen) -t $(gentools_dir)/templ.cpp $(spec)
-	touch $(gen)
-
-gen/gen-src.mk: $(gen)
-	./make-gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) $(gen) > $@-t
-	mv $@-t $@
-
-endif
-
-maintainer-clean:
-	rm -f  $(gentools_srcdir)/*.class
-	rm -f $(gen)
-
-# Force build during dist phase so help2man will work.
-dist-hook: $(lib_LTLIBRARIES) $(sbin_PROGRAMS)
+# Force build of qpidd during dist phase so help2man will work.
+dist-hook: qpidd

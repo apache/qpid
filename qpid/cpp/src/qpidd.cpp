@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include "broker/Broker.h"
-#include "broker/Configuration.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/Configuration.h"
 #include <signal.h>
 #include <iostream>
 #include <memory>
