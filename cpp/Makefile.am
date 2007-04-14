@@ -1,19 +1,12 @@
 AUTOMAKE_OPTIONS = 1.9.2 foreign
 ACLOCAL_AMFLAGS = -I m4
 
-# pkg-config data file.
-pkgconfigdir = $(libdir)/pkgconfig
-PC=$(PACKAGE).pc
-pkgconfig_DATA = $(PC)
-
-BUILT_SOURCES=$(PACKAGE).pc
-
 SPEC=$(PACKAGE).spec
 
 EXTRA_DIST = \
   LICENSE NOTICE README \
   etc/qpidd \
-  $(SPEC) $(SPEC).in $(PC) $(PC).in\
+  $(SPEC) $(SPEC).in \
   rpm/README.qpidd-devel 
 
 SUBDIRS = gen src docs/api docs/man
