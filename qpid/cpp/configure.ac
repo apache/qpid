@@ -139,7 +139,6 @@ DOWNLOAD_URL=http://rhm.et.redhat.com/download
 AC_SUBST(DOWNLOAD_URL)
 	
 AC_CONFIG_FILES([
-  qpidc.pc
   qpidc.spec
   Makefile
   gen/Makefile
