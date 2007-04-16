@@ -191,7 +191,7 @@ public class ReconnectServer implements IWorkbenchWindowActionDelegate
         user.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         final Text textUser = new Text(composite, SWT.BORDER);
-        textUser.setText(DEFAULT_USERNAME);
+        textUser.setText("");
         textUser.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         // Put cursor on this field
         textUser.setFocus();
@@ -201,7 +201,7 @@ public class ReconnectServer implements IWorkbenchWindowActionDelegate
         password.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         final Text textPwd = new Text(composite, SWT.BORDER | SWT.SINGLE | SWT.PASSWORD);
-        textPwd.setText(DEFAULT_PASSWORD);
+        textPwd.setText("");
         textPwd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
         Composite buttonsComposite  = new Composite(composite, SWT.NONE);

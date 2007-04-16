@@ -21,15 +21,14 @@
 package org.apache.qpid.management.ui.sasl;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
+
+import org.apache.qpid.management.ui.views.ViewUtility;
 
 public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
 {
@@ -39,7 +38,7 @@ public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
     public UsernameHashedPasswordCallbackHandler(String user, String password) throws Exception
     {
         this.user = user;
-        this.pwchars = getHash(password);
+        this.pwchars = ViewUtility.getHash(password);
     }
 
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
@@ -63,29 +62,6 @@ public class UsernameHashedPasswordCallbackHandler implements CallbackHandler
         }
     }
 
-    private char[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
-    {
-        byte[] data = text.getBytes("utf-8");
-
-        MessageDigest md = MessageDigest.getInstance("MD5");
-
-        for (byte b : data)
-        {
-            md.update(b);
-        }
-
-        byte[] digest = md.digest();
-
-        char[] hash = new char[digest.length ];
-
-        int index = 0;
-        for (byte b : digest)
-        {            
-            hash[index++] = (char) b;
-        }
-
-        return hash;
-    }
     
     private void clearPassword()
     {

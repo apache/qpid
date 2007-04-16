@@ -249,6 +249,8 @@ public class OperationTabControl extends TabControl
             formData.top = new FormAttachment(0, parameterPositionOffset);
             formData.left = new FormAttachment(label, 5);
             formData.right = new FormAttachment(valueWidth);
+            // this will contain the list of items, if the list is to be made available to choose from
+            // e.g. the list of exchanges
             String[] items = null;
             if (param.getName().equals(QUEUE))
             {
@@ -300,7 +302,12 @@ public class OperationTabControl extends TabControl
             }
             else
             {
-                Text text = _toolkit.createText(_paramsComposite, "", SWT.NONE);
+                int style = SWT.NONE;
+                if (PASSWORD.equalsIgnoreCase(param.getName()))
+                {
+                    style = SWT.PASSWORD;
+                }
+                Text text = _toolkit.createText(_paramsComposite, "", style);
                 formData = new FormData();
                 formData.top = new FormAttachment(0, parameterPositionOffset);
                 formData.left = new FormAttachment(label, 5);
@@ -559,6 +566,21 @@ public class OperationTabControl extends TabControl
                         }
                         // End of custom code
                         
+                        
+                        // customized for passwords
+                        if (PASSWORD.equalsIgnoreCase(param.getName()))
+                        {
+                            try
+                            {
+                                param.setValueFromString(ViewUtility.getHashedString(param.getValue()));
+                            }
+                            catch (Exception ex)
+                            {
+                                MBeanUtility.handleException(_mbean, ex);
+                                return;
+                            }
+                        }
+                        // end of customization
                         ViewUtility.popupInfoMessage(_form.getText(),
                                 "Please select the " + ViewUtility.getDisplayText(param.getName()));
                         
@@ -620,7 +642,13 @@ public class OperationTabControl extends TabControl
         
         if (_opData.getReturnType().equals("void") || _opData.getReturnType().equals("java.lang.Void"))
         {
-            ViewUtility.popupInfoMessage(title, "Operation successful");
+            ViewUtility.popupInfoMessage(title, OPERATION_SUCCESSFUL);
+        }
+        else if (_opData.getReturnType().equals("boolean") || _opData.getReturnType().equals("java.lang.Boolean"))
+        {
+            boolean success = Boolean.parseBoolean(result.toString());
+            String message = success ? OPERATION_SUCCESSFUL : OPERATION_UNSUCCESSFUL;
+            ViewUtility.popupInfoMessage(title, message);
         }
         else if (_opData.getParameters() != null && !_opData.getParameters().isEmpty())
         {

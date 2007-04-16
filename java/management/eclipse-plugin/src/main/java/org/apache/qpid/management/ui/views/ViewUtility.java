@@ -20,7 +20,10 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -548,5 +551,35 @@ public class ViewUtility
         {
             oldControls[i].dispose();
         }
+    }
+    
+    public static String getHashedString(Object text) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    {
+        char[] chars = getHash((String)text);
+        return new String(chars);
+    }
+    
+    public static char[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    {
+        byte[] data = text.getBytes("utf-8");
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+
+        for (byte b : data)
+        {
+            md.update(b);
+        }
+
+        byte[] digest = md.digest();
+
+        char[] hash = new char[digest.length ];
+
+        int index = 0;
+        for (byte b : digest)
+        {            
+            hash[index++] = (char) b;
+        }
+
+        return hash;
     }
 }

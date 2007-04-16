@@ -61,6 +61,9 @@ public class Constants
     public final static String OPERATION_CREATE_BINDING = "createNewBinding";
     public final static String OPERATION_MOVE_MESSAGES = "moveMessages";
     
+    public final static String OPERATION_SUCCESSFUL = "Operation successful";
+    public final static String OPERATION_UNSUCCESSFUL = "Operation unsuccessful";
+    
     public final static String ALL = "All";
     
     public final static String NAVIGATION_ROOT = "Qpid Connections";
@@ -70,7 +73,7 @@ public class Constants
     public final static String CONNECTION ="Connection";
     public final static String EXCHANGE = "Exchange";
     public final static String EXCHANGE_TYPE = "ExchangeType";
-    public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "topic", "headers"};
+    public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
     public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
     public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
     public static final String[] CONNECTION_PROTOCOLS ={"RMI"};

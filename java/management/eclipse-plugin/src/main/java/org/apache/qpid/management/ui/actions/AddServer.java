@@ -260,7 +260,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
         user.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         final Text textUser = new Text(composite, SWT.BORDER);
-        textUser.setText(DEFAULT_USERNAME);
+        textUser.setText("");
         textUser.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
         Label password = new Label(composite, SWT.NONE);
@@ -268,7 +268,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
         password.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         final Text textPwd = new Text(composite, SWT.BORDER | SWT.SINGLE | SWT.PASSWORD);
-        textPwd.setText(DEFAULT_PASSWORD);
+        textPwd.setText("");
         //textPwd.setEchoChar('*');
         textPwd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
