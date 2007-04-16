@@ -67,6 +67,10 @@ public class Main
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
     private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
+    
+    private static final int IPV4_ADDRESS_LENGTH = 4;
+    
+    private static final char IPV4_LITERAL_SEPARATOR = '.';    
 
     protected static class InitException extends Exception
     {
@@ -376,26 +380,30 @@ public class Main
 
     private byte[] parseIP(String address) throws Exception
     {
-        StringTokenizer tokenizer = new StringTokenizer(address, ".");
-        byte[] ip = new byte[4];
-        int index = 0;
-        while (tokenizer.hasMoreTokens())
+        char[] literalBuffer = address.toCharArray();    
+        int byteCount = 0;
+        int currByte = 0;
+        byte[] ip = new byte[IPV4_ADDRESS_LENGTH];
+        for (int i = 0 ; i < literalBuffer.length ; i++) 
         {
-            String token = tokenizer.nextToken();
-            try
+            char currChar = literalBuffer[i];
+            if ((currChar >= '0') && (currChar <= '9')) 
             {
-                ip[index++] = Byte.parseByte(token);
-            }
-            catch (NumberFormatException e)
+            	currByte = (currByte * 10) + (Character.digit(currChar, 10) & 0xFF);
+            } 
+
+            if (currChar == IPV4_LITERAL_SEPARATOR || (i + 1 == literalBuffer.length)) 
             {
-                throw new Exception("Error parsing IP address: " + address, e);
-            }
+                ip[byteCount++] = (byte)currByte;
+                currByte = 0;
+            } 
         }
-        if (index != 4)
+
+        if (byteCount != 4)
         {
             throw new Exception("Invalid IP address: " + address);
-        }
-        return ip;
+        }     
+        return ip;        
     }
 
     private void configureLogging(File logConfigFile, String logWatchConfig)
