@@ -26,6 +26,7 @@
 #include "qpid/QpidError.h"
 #include "ClientChannel.h"
 #include "Connector.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 
@@ -81,13 +82,16 @@ class Connection : public ConnectionForChannel
     Connector defaultConnector;
     Connector* connector;
     framing::OutputHandler* out;
-    volatile bool isOpen;
+    bool isOpen;
+    sys::Mutex shutdownLock;
     Channel channel0;
     bool debug;
         
     void erase(framing::ChannelId);
     void channelException(
         Channel&, framing::AMQMethodBody*, const QpidError&);
+    void closeChannels();
+    bool markClosed();
 
     // TODO aconway 2007-01-26: too many friendships, untagle these classes.
   friend class Channel;

@@ -61,9 +61,10 @@ void Connector::init(){
 }
 
 void Connector::close(){
-    closed = true;
-    socket.close();
-    receiver.join();
+    if (markClosed()) {
+        socket.close();
+        receiver.join();
+    }
 }
 
 void Connector::setInputHandler(InputHandler* handler){
@@ -106,9 +107,19 @@ void Connector::writeToSocket(char* data, size_t available){
 }
 
 void Connector::handleClosed(){
-    closed = true;
-    socket.close();
-    if(shutdownHandler) shutdownHandler->shutdown();
+    if (markClosed()) {
+        socket.close();
+        if(shutdownHandler) shutdownHandler->shutdown();
+    }
+}
+
+bool Connector::markClosed(){
+    if (closed) {
+        return false;
+    } else {
+        closed = true;
+        return true;
+    }
 }
 
 void Connector::checkIdle(ssize_t status){
