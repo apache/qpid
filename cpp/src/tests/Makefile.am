@@ -23,8 +23,8 @@ broker_unit_tests =	\
   ValueTest		\
   MessageHandlerTest
 
-client_unit_tests =	\
-  ClientChannelTest
+#client_unit_tests =	\
+#  ClientChannelTest
 
 framing_unit_tests =	\
   FieldTableTest	\
