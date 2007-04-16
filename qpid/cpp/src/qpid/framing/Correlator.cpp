@@ -27,16 +27,17 @@ void Correlator::request(RequestId id, Action action) {
 
 bool Correlator::response(shared_ptr<AMQResponseBody> r) {
     Actions::iterator begin = actions.lower_bound(r->getRequestId());
-    Actions::iterator end =
-        actions.upper_bound(r->getRequestId()+r->getBatchOffset());
+    RequestId last = r->getRequestId()+r->getBatchOffset();
+    Actions::iterator i = begin;
     bool didAction = false;
-    for(Actions::iterator i=begin; i != end; ++i) {
-        // FIXME aconway 2007-04-04: Exception handling.
+    for( ;  i != actions.end() && i->first <= last; ++i) {
         didAction = true;
+        // FIXME aconway 2007-04-04: handle exceptions thrown by action.
         i->second(r);
-        actions.erase(i);
     }
+    actions.erase(begin, i);
     return didAction;
 }
+
 
 }} // namespace qpid::framing
