@@ -46,6 +46,7 @@ class Connector : public framing::OutputHandler,
     framing::ProtocolVersion version;
 
     bool closed;
+    sys::Mutex closedLock;
 
     int64_t lastIn;
     int64_t lastOut;
@@ -74,6 +75,7 @@ class Connector : public framing::OutputHandler,
 
     void run();
     void handleClosed();
+    bool markClosed();
 
   friend class Channel;
   public:
