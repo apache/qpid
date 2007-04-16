@@ -24,7 +24,7 @@ broker_unit_tests =	\
   MessageHandlerTest
 
 #client_unit_tests =	\
-#  ClientChannelTest
+  ClientChannelTest
 
 framing_unit_tests =	\
   FieldTableTest	\
