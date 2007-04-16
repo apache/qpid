@@ -75,28 +75,47 @@ void Connection::open(
 }
 
 void Connection::shutdown() {
-    close();
+    //this indicates that the socket to the server has closed we do
+    //not want to send a close request (or any other requests)
+    if(markClosed()) {
+        std::cout << "Connection to peer closed!" << std::endl;
+        closeChannels();
+    }
 }
         
 void Connection::close(
     ReplyCode code, const string& msg, ClassId classId, MethodId methodId
 )
 {
-    if(isOpen) {
+    if(markClosed()) {
         // TODO aconway 2007-01-29: Exception handling - could end up
         // partly closed with threads left unjoined.
-        isOpen = false;
         channel0.sendAndReceive<ConnectionCloseOkBody>(
             make_shared_ptr(new ConnectionCloseBody(
-                                getVersion(), code, msg, classId, methodId)));
-
-        using boost::bind;
-        for_each(channels.begin(), channels.end(),
-                 bind(&Channel::closeInternal,
-                             bind(&ChannelMap::value_type::second, _1)));
-        channels.clear();
+                getVersion(), code, msg, classId, methodId)));
+        closeChannels();
         connector->close();
     }
+}
+
+bool Connection::markClosed()
+{
+    Mutex::ScopedLock locker(shutdownLock);
+    if (isOpen) {
+        isOpen = false;
+        return true;
+    } else {
+        return false; 
+    }
+}
+
+void Connection::closeChannels()
+{
+    using boost::bind;
+    for_each(channels.begin(), channels.end(),
+             bind(&Channel::closeInternal,
+                  bind(&ChannelMap::value_type::second, _1)));
+    channels.clear();
 }
 
 void Connection::openChannel(Channel& channel) {
