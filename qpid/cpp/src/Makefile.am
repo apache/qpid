@@ -2,15 +2,8 @@ SUBDIRS = . tests
 
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 
-gen_framing    = $(top_builddir)/gen/qpid/framing
-framing= qpid/framing
-broker = qpid/broker
-client = qpid/client
-apr = qpid/sys/apr
-posix = qpid/sys/posix
-
 # -I top_builddir for config.h
-INCLUDES = -I$(top_builddir)  -I$(top_builddir)/gen 
+INCLUDES = -I$(top_builddir)  -I$(top_srcdir)/gen 
 
 qpidd_LDADD = \
   libqpidbroker.la \
@@ -20,34 +13,34 @@ sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
 
 apr_src = \
-  $(apr)/APRAcceptor.cpp \
-  $(apr)/APRBase.cpp \
-  $(apr)/APRPool.cpp \
-  $(apr)/APRSocket.cpp \
-  $(apr)/LFProcessor.cpp \
-  $(apr)/LFSessionContext.cpp \
-  $(apr)/Socket.cpp \
-  $(apr)/Thread.cpp
+  qpid/sys/apr/APRAcceptor.cpp \
+  qpid/sys/apr/APRBase.cpp \
+  qpid/sys/apr/APRPool.cpp \
+  qpid/sys/apr/APRSocket.cpp \
+  qpid/sys/apr/LFProcessor.cpp \
+  qpid/sys/apr/LFSessionContext.cpp \
+  qpid/sys/apr/Socket.cpp \
+  qpid/sys/apr/Thread.cpp
 
 apr_hdr = \
-  $(apr)/APRBase.h \
-  $(apr)/APRPool.h \
-  $(apr)/APRSocket.h \
-  $(apr)/LFProcessor.h \
-  $(apr)/LFSessionContext.h	
+  qpid/sys/apr/APRBase.h \
+  qpid/sys/apr/APRPool.h \
+  qpid/sys/apr/APRSocket.h \
+  qpid/sys/apr/LFProcessor.h \
+  qpid/sys/apr/LFSessionContext.h	
 
 posix_src = \
-  $(posix)/PosixAcceptor.cpp \
-  $(posix)/Socket.cpp \
-  $(posix)/Thread.cpp \
-  $(posix)/check.cpp \
-  $(posix)/EventChannel.cpp \
-  $(posix)/EventChannelThreads.cpp
+  qpid/sys/posix/PosixAcceptor.cpp \
+  qpid/sys/posix/Socket.cpp \
+  qpid/sys/posix/Thread.cpp \
+  qpid/sys/posix/check.cpp \
+  qpid/sys/posix/EventChannel.cpp \
+  qpid/sys/posix/EventChannelThreads.cpp
 
 posix_hdr = \
-  $(posix)/check.h \
-  $(posix)/EventChannel.h \
-  $(posix)/EventChannelThreads.h
+  qpid/sys/posix/check.h \
+  qpid/sys/posix/EventChannel.h \
+  qpid/sys/posix/EventChannelThreads.h
 
 EXTRA_DIST=$(posix_src) $(posix_hdr)
 platform_src = $(apr_src)
@@ -66,34 +59,34 @@ libqpidcommon_la_LDFLAGS = \
 
 libqpidcommon_la_SOURCES = \
   $(platform_src) \
-  $(framing)/AMQBody.cpp \
-  $(framing)/AMQRequestBody.cpp \
-  $(framing)/AMQResponseBody.cpp \
-  $(framing)/AMQContentBody.cpp \
-  $(framing)/AMQFrame.cpp \
-  $(framing)/AMQHeaderBody.cpp \
-  $(framing)/AMQHeartbeatBody.cpp \
-  $(framing)/AMQMethodBody.cpp \
-  $(framing)/MethodContext.cpp \
-  $(framing)/BasicHeaderProperties.cpp \
-  $(framing)/BodyHandler.cpp \
-  $(framing)/ChannelAdapter.cpp \
-  $(framing)/Buffer.cpp \
-  $(framing)/FieldTable.cpp \
-  $(framing)/FramingContent.cpp \
-  $(framing)/InitiationHandler.cpp \
-  $(framing)/ProtocolInitiation.cpp \
-  $(framing)/ProtocolVersion.cpp \
-  $(framing)/ProtocolVersionException.cpp \
-  $(framing)/Requester.cpp \
-  $(framing)/Responder.cpp \
-  $(framing)/Correlator.cpp \
-  $(framing)/Value.cpp \
-  $(framing)/Proxy.cpp \
-  $(gen_framing)/AMQP_ClientProxy.cpp \
-  $(gen_framing)/AMQP_HighestVersion.h \
-  $(gen_framing)/AMQP_MethodVersionMap.cpp \
-  $(gen_framing)/AMQP_ServerProxy.cpp \
+  qpid/framing/AMQBody.cpp \
+  qpid/framing/AMQRequestBody.cpp \
+  qpid/framing/AMQResponseBody.cpp \
+  qpid/framing/AMQContentBody.cpp \
+  qpid/framing/AMQFrame.cpp \
+  qpid/framing/AMQHeaderBody.cpp \
+  qpid/framing/AMQHeartbeatBody.cpp \
+  qpid/framing/AMQMethodBody.cpp \
+  qpid/framing/MethodContext.cpp \
+  qpid/framing/BasicHeaderProperties.cpp \
+  qpid/framing/BodyHandler.cpp \
+  qpid/framing/ChannelAdapter.cpp \
+  qpid/framing/Buffer.cpp \
+  qpid/framing/FieldTable.cpp \
+  qpid/framing/FramingContent.cpp \
+  qpid/framing/InitiationHandler.cpp \
+  qpid/framing/ProtocolInitiation.cpp \
+  qpid/framing/ProtocolVersion.cpp \
+  qpid/framing/ProtocolVersionException.cpp \
+  qpid/framing/Requester.cpp \
+  qpid/framing/Responder.cpp \
+  qpid/framing/Correlator.cpp \
+  qpid/framing/Value.cpp \
+  qpid/framing/Proxy.cpp \
+  ../gen/qpid/framing/AMQP_ClientProxy.cpp \
+  ../gen/qpid/framing/AMQP_HighestVersion.h \
+  ../gen/qpid/framing/AMQP_MethodVersionMap.cpp \
+  ../gen/qpid/framing/AMQP_ServerProxy.cpp \
   qpid/Exception.cpp \
   qpid/ExceptionHolder.cpp \
   qpid/QpidError.cpp \
@@ -104,156 +97,156 @@ libqpidcommon_la_SOURCES = \
 libqpidbroker_la_LIBADD = libqpidcommon.la
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidbroker_la_SOURCES = \
-  $(broker)/AccumulatedAck.cpp \
-  $(broker)/AutoDelete.cpp \
-  $(broker)/Broker.cpp \
-  $(broker)/BrokerAdapter.cpp \
-  $(broker)/BrokerSingleton.cpp \
-  $(broker)/BrokerChannel.cpp \
-  $(broker)/BrokerMessage.cpp \
-  $(broker)/BrokerMessageMessage.cpp \
-  $(broker)/BrokerQueue.cpp \
-  $(broker)/Configuration.cpp \
-  $(broker)/Connection.cpp \
-  $(broker)/ConnectionFactory.cpp \
-  $(broker)/DeliverableMessage.cpp \
-  $(broker)/DeliveryRecord.cpp \
-  $(broker)/DirectExchange.cpp \
-  $(broker)/ExchangeRegistry.cpp \
-  $(broker)/FanOutExchange.cpp \
-  $(broker)/HeadersExchange.cpp \
-  $(broker)/InMemoryContent.cpp \
-  $(broker)/LazyLoadedContent.cpp \
-  $(broker)/MessageBuilder.cpp \
-  $(broker)/MessageHandlerImpl.cpp \
-  $(broker)/MessageStoreModule.cpp \
-  $(broker)/NameGenerator.cpp \
-  $(broker)/NullMessageStore.cpp \
-  $(broker)/QueuePolicy.cpp \
-  $(broker)/QueueRegistry.cpp \
-  $(broker)/RecoveryManagerImpl.cpp \
-  $(broker)/Reference.cpp \
-  $(broker)/TopicExchange.cpp \
-  $(broker)/TxAck.cpp \
-  $(broker)/TxBuffer.cpp \
-  $(broker)/TxPublish.cpp
+  qpid/broker/AccumulatedAck.cpp \
+  qpid/broker/AutoDelete.cpp \
+  qpid/broker/Broker.cpp \
+  qpid/broker/BrokerAdapter.cpp \
+  qpid/broker/BrokerSingleton.cpp \
+  qpid/broker/BrokerChannel.cpp \
+  qpid/broker/BrokerMessage.cpp \
+  qpid/broker/BrokerMessageMessage.cpp \
+  qpid/broker/BrokerQueue.cpp \
+  qpid/broker/Configuration.cpp \
+  qpid/broker/Connection.cpp \
+  qpid/broker/ConnectionFactory.cpp \
+  qpid/broker/DeliverableMessage.cpp \
+  qpid/broker/DeliveryRecord.cpp \
+  qpid/broker/DirectExchange.cpp \
+  qpid/broker/ExchangeRegistry.cpp \
+  qpid/broker/FanOutExchange.cpp \
+  qpid/broker/HeadersExchange.cpp \
+  qpid/broker/InMemoryContent.cpp \
+  qpid/broker/LazyLoadedContent.cpp \
+  qpid/broker/MessageBuilder.cpp \
+  qpid/broker/MessageHandlerImpl.cpp \
+  qpid/broker/MessageStoreModule.cpp \
+  qpid/broker/NameGenerator.cpp \
+  qpid/broker/NullMessageStore.cpp \
+  qpid/broker/QueuePolicy.cpp \
+  qpid/broker/QueueRegistry.cpp \
+  qpid/broker/RecoveryManagerImpl.cpp \
+  qpid/broker/Reference.cpp \
+  qpid/broker/TopicExchange.cpp \
+  qpid/broker/TxAck.cpp \
+  qpid/broker/TxBuffer.cpp \
+  qpid/broker/TxPublish.cpp
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidclient_la_SOURCES =			\
-  $(client)/ClientConnection.cpp				\
-  $(client)/ClientChannel.cpp				\
-  $(client)/ClientExchange.cpp				\
-  $(client)/ClientQueue.cpp				\
-  $(client)/BasicMessageChannel.cpp			\
-  $(client)/MessageMessageChannel.cpp			\
-  $(client)/Connector.cpp				\
-  $(client)/IncomingMessage.cpp				\
-  $(client)/MessageListener.cpp				\
-  $(client)/ResponseHandler.cpp				\
-  $(client)/ReturnedMessageHandler.cpp
+  qpid/client/ClientConnection.cpp				\
+  qpid/client/ClientChannel.cpp				\
+  qpid/client/ClientExchange.cpp				\
+  qpid/client/ClientQueue.cpp				\
+  qpid/client/BasicMessageChannel.cpp			\
+  qpid/client/MessageMessageChannel.cpp			\
+  qpid/client/Connector.cpp				\
+  qpid/client/IncomingMessage.cpp				\
+  qpid/client/MessageListener.cpp				\
+  qpid/client/ResponseHandler.cpp				\
+  qpid/client/ReturnedMessageHandler.cpp
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
-  $(broker)/AccumulatedAck.h \
-  $(broker)/AutoDelete.h \
-  $(broker)/BrokerChannel.h \
-  $(broker)/BrokerExchange.h \
-  $(broker)/BrokerMessage.h \
-  $(broker)/BrokerMessageBase.h \
-  $(broker)/BrokerQueue.h \
-  $(broker)/CompletionHandler.h \
-  $(broker)/Configuration.h \
-  $(broker)/Consumer.h \
-  $(broker)/Deliverable.h \
-  $(broker)/DeliverableMessage.h \
-  $(broker)/DirectExchange.h \
-  $(broker)/ExchangeRegistry.h \
-  $(broker)/FanOutExchange.h \
-  $(broker)/HandlerImpl.h \
-  $(broker)/InMemoryContent.h \
-  $(broker)/MessageBuilder.h \
-  $(broker)/MessageHandlerImpl.h \
-  $(broker)/MessageStoreModule.h \
-  $(broker)/NameGenerator.h \
-  $(broker)/NullMessageStore.h \
-  $(broker)/Persistable.h \
-  $(broker)/Prefetch.h \
-  $(broker)/QueueRegistry.h \
-  $(broker)/RecoverableMessage.h \
-  $(broker)/RecoverableQueue.h \
-  $(broker)/RecoveryManager.h \
-  $(broker)/Reference.h \
-  $(broker)/TxBuffer.h \
-  $(broker)/TxOp.h \
-  $(broker)/TxPublish.h \
-  $(broker)/Broker.h \
-  $(broker)/BrokerAdapter.h \
-  $(broker)/BrokerMessageMessage.h \
-  $(broker)/BrokerSingleton.h \
-  $(broker)/Connection.h \
-  $(broker)/ConnectionFactory.h \
-  $(broker)/ConnectionToken.h \
-  $(broker)/Content.h \
-  $(broker)/DeliveryRecord.h \
-  $(broker)/HeadersExchange.h \
-  $(broker)/LazyLoadedContent.h \
-  $(broker)/MessageStore.h \
-  $(broker)/PersistableExchange.h \
-  $(broker)/PersistableMessage.h \
-  $(broker)/PersistableQueue.h \
-  $(broker)/QueuePolicy.h \
-  $(broker)/RecoveryManagerImpl.h \
-  $(broker)/TopicExchange.h \
-  $(broker)/TransactionalStore.h \
-  $(broker)/TxAck.h \
-  $(client)/AckMode.h \
-  $(client)/BasicMessageChannel.h \
-  $(client)/ClientAdapter.h \
-  $(client)/ClientChannel.h \
-  $(client)/ClientExchange.h \
-  $(client)/ClientMessage.h \
-  $(client)/ClientQueue.h \
-  $(client)/Connection.h \
-  $(client)/Connector.h \
-  $(client)/IncomingMessage.h \
-  $(client)/MessageChannel.h \
-  $(client)/MessageListener.h \
-  $(client)/MessageMessageChannel.h \
-  $(client)/MethodBodyInstances.h \
-  $(client)/ResponseHandler.h \
-  $(client)/ReturnedMessageHandler.h \
-  $(framing)/AMQBody.h \
-  $(framing)/AMQContentBody.h \
-  $(framing)/AMQDataBlock.h \
-  $(framing)/AMQFrame.h \
-  $(framing)/AMQHeaderBody.h \
-  $(framing)/AMQHeartbeatBody.h \
-  $(framing)/AMQMethodBody.h \
-  $(framing)/AMQRequestBody.h \
-  $(framing)/AMQResponseBody.h \
-  $(framing)/BasicHeaderProperties.h \
-  $(framing)/BodyHandler.h \
-  $(framing)/Buffer.h \
-  $(framing)/ChannelAdapter.h \
-  $(framing)/Correlator.h \
-  $(framing)/FieldTable.h \
-  $(framing)/FramingContent.h \
-  $(framing)/HeaderProperties.h \
-  $(framing)/InitiationHandler.h \
-  $(framing)/InputHandler.h \
-  $(framing)/MethodContext.h \
-  $(framing)/OutputHandler.h \
-  $(framing)/ProtocolInitiation.h \
-  $(framing)/ProtocolVersion.h \
-  $(framing)/ProtocolVersionException.h \
-  $(framing)/Proxy.h \
-  $(framing)/Requester.h \
-  $(framing)/Responder.h \
-  $(framing)/Value.h \
-  $(framing)/amqp_framing.h \
-  $(framing)/amqp_types.h \
-  $(framing)/amqp_types_full.h \
+  qpid/broker/AccumulatedAck.h \
+  qpid/broker/AutoDelete.h \
+  qpid/broker/BrokerChannel.h \
+  qpid/broker/BrokerExchange.h \
+  qpid/broker/BrokerMessage.h \
+  qpid/broker/BrokerMessageBase.h \
+  qpid/broker/BrokerQueue.h \
+  qpid/broker/CompletionHandler.h \
+  qpid/broker/Configuration.h \
+  qpid/broker/Consumer.h \
+  qpid/broker/Deliverable.h \
+  qpid/broker/DeliverableMessage.h \
+  qpid/broker/DirectExchange.h \
+  qpid/broker/ExchangeRegistry.h \
+  qpid/broker/FanOutExchange.h \
+  qpid/broker/HandlerImpl.h \
+  qpid/broker/InMemoryContent.h \
+  qpid/broker/MessageBuilder.h \
+  qpid/broker/MessageHandlerImpl.h \
+  qpid/broker/MessageStoreModule.h \
+  qpid/broker/NameGenerator.h \
+  qpid/broker/NullMessageStore.h \
+  qpid/broker/Persistable.h \
+  qpid/broker/Prefetch.h \
+  qpid/broker/QueueRegistry.h \
+  qpid/broker/RecoverableMessage.h \
+  qpid/broker/RecoverableQueue.h \
+  qpid/broker/RecoveryManager.h \
+  qpid/broker/Reference.h \
+  qpid/broker/TxBuffer.h \
+  qpid/broker/TxOp.h \
+  qpid/broker/TxPublish.h \
+  qpid/broker/Broker.h \
+  qpid/broker/BrokerAdapter.h \
+  qpid/broker/BrokerMessageMessage.h \
+  qpid/broker/BrokerSingleton.h \
+  qpid/broker/Connection.h \
+  qpid/broker/ConnectionFactory.h \
+  qpid/broker/ConnectionToken.h \
+  qpid/broker/Content.h \
+  qpid/broker/DeliveryRecord.h \
+  qpid/broker/HeadersExchange.h \
+  qpid/broker/LazyLoadedContent.h \
+  qpid/broker/MessageStore.h \
+  qpid/broker/PersistableExchange.h \
+  qpid/broker/PersistableMessage.h \
+  qpid/broker/PersistableQueue.h \
+  qpid/broker/QueuePolicy.h \
+  qpid/broker/RecoveryManagerImpl.h \
+  qpid/broker/TopicExchange.h \
+  qpid/broker/TransactionalStore.h \
+  qpid/broker/TxAck.h \
+  qpid/client/AckMode.h \
+  qpid/client/BasicMessageChannel.h \
+  qpid/client/ClientAdapter.h \
+  qpid/client/ClientChannel.h \
+  qpid/client/ClientExchange.h \
+  qpid/client/ClientMessage.h \
+  qpid/client/ClientQueue.h \
+  qpid/client/Connection.h \
+  qpid/client/Connector.h \
+  qpid/client/IncomingMessage.h \
+  qpid/client/MessageChannel.h \
+  qpid/client/MessageListener.h \
+  qpid/client/MessageMessageChannel.h \
+  qpid/client/MethodBodyInstances.h \
+  qpid/client/ResponseHandler.h \
+  qpid/client/ReturnedMessageHandler.h \
+  qpid/framing/AMQBody.h \
+  qpid/framing/AMQContentBody.h \
+  qpid/framing/AMQDataBlock.h \
+  qpid/framing/AMQFrame.h \
+  qpid/framing/AMQHeaderBody.h \
+  qpid/framing/AMQHeartbeatBody.h \
+  qpid/framing/AMQMethodBody.h \
+  qpid/framing/AMQRequestBody.h \
+  qpid/framing/AMQResponseBody.h \
+  qpid/framing/BasicHeaderProperties.h \
+  qpid/framing/BodyHandler.h \
+  qpid/framing/Buffer.h \
+  qpid/framing/ChannelAdapter.h \
+  qpid/framing/Correlator.h \
+  qpid/framing/FieldTable.h \
+  qpid/framing/FramingContent.h \
+  qpid/framing/HeaderProperties.h \
+  qpid/framing/InitiationHandler.h \
+  qpid/framing/InputHandler.h \
+  qpid/framing/MethodContext.h \
+  qpid/framing/OutputHandler.h \
+  qpid/framing/ProtocolInitiation.h \
+  qpid/framing/ProtocolVersion.h \
+  qpid/framing/ProtocolVersionException.h \
+  qpid/framing/Proxy.h \
+  qpid/framing/Requester.h \
+  qpid/framing/Responder.h \
+  qpid/framing/Value.h \
+  qpid/framing/amqp_framing.h \
+  qpid/framing/amqp_types.h \
+  qpid/framing/amqp_types_full.h \
   qpid/sys/Acceptor.h \
   qpid/sys/AtomicCount.h \
   qpid/sys/Condition.h \
