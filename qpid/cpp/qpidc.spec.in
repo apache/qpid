@@ -117,6 +117,7 @@ make check
 %doc %_mandir/man1/%{qpidd}.*
 
 %files -n %{qpidd}-devel
+%defattr(-,root,root,-)
 %doc rpm/README.qpidd-devel 
 %defattr(-,root,root,-)
 %_libdir/libqpidbroker.so
