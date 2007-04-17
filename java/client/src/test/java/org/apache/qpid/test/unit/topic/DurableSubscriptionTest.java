@@ -100,7 +100,9 @@ public class DurableSubscriptionTest extends TestCase
         AMQTopic topic = new AMQTopic(con,"MyTopic");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
-        MessageProducer producer = session1.createProducer(topic);
+
+        Session sessionProd = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        MessageProducer producer = sessionProd.createProducer(topic);
 
         Session session2 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber consumer2 = session2.createDurableSubscriber(topic, "MySubscription");
@@ -112,12 +114,12 @@ public class DurableSubscriptionTest extends TestCase
         Message msg;
         msg = consumer1.receive();
         assertEquals("A", ((TextMessage) msg).getText());
-        msg = consumer1.receive(1000);
+        msg = consumer1.receive(100);
         assertEquals(null, msg);
 
         msg = consumer2.receive();
         assertEquals("A", ((TextMessage) msg).getText());
-        msg = consumer2.receive(1000);
+        msg = consumer2.receive(100);
         assertEquals(null, msg);
 
         consumer2.close();
@@ -127,14 +129,14 @@ public class DurableSubscriptionTest extends TestCase
 
         producer.send(session1.createTextMessage("B"));
 
-        msg = consumer1.receive();
+        msg = consumer1.receive(100);
         assertEquals("B", ((TextMessage) msg).getText());
-        msg = consumer1.receive(1000);
+        msg = consumer1.receive(100);
         assertEquals(null, msg);
 
-        msg = consumer3.receive();
+        msg = consumer3.receive(100);
         assertEquals("B", ((TextMessage) msg).getText());
-        msg = consumer3.receive(1000);
+        msg = consumer3.receive(100);
         assertEquals(null, msg);
 
         con.close();

@@ -202,6 +202,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
 
     private static final Logger _dispatcherLogger = Logger.getLogger(Dispatcher.class);
+    private AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
 
     private class Dispatcher extends Thread
     {
@@ -328,7 +329,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                         }
                     }
                     // Don't reject if we're already closing
-                    if(!_closed.get())
+                    if (!_closed.get())
                     {
                         rejectMessage(message, true);
                     }
@@ -999,7 +1000,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     }
 
     public BasicMessageProducer createProducer(Destination destination, boolean mandatory,
-                                          boolean immediate, boolean waitUntilSent)
+                                               boolean immediate, boolean waitUntilSent)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate, waitUntilSent);
@@ -1023,14 +1024,14 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     }
 
     private BasicMessageProducer createProducerImpl(Destination destination, boolean mandatory,
-                                                                   boolean immediate)
+                                                    boolean immediate)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate, false);
     }
 
     private BasicMessageProducer createProducerImpl(final Destination destination, final boolean mandatory,
-                                                                   final boolean immediate, final boolean waitUntilSent)
+                                                    final boolean immediate, final boolean waitUntilSent)
             throws JMSException
     {
         return (BasicMessageProducer) new FailoverSupport()
@@ -1947,6 +1948,24 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             _dispatcher.setConnectionStopped(initiallyStopped);
         }
+
+        if (!AMQSession.this._closed.get()
+            && AMQSession.this._startedAtLeastOnce.get()
+            && _firstDispatcher.getAndSet(false))
+        {
+            if (isSuspended())
+            {
+                try
+                {
+                    suspendChannel(false);
+                }
+                catch (AMQException e)
+                {
+                    _logger.info("Suspending channel threw an exception:" + e);
+                }
+            }
+        }
+
     }
 
     void stop() throws AMQException
@@ -1978,6 +1997,21 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         AMQShortString queueName = declareQueue(amqd, protocolHandler);
 
         bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
+
+        if (_dispatcher == null)
+        {
+            if (!isSuspended())
+            {
+                try
+                {
+                    suspendChannel(true);
+                }
+                catch (AMQException e)
+                {
+                    _logger.info("Suspending channel threw an exception:" + e);
+                }
+            }
+        }
 
         try
         {

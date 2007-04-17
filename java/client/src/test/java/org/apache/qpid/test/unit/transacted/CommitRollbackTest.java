@@ -267,7 +267,7 @@ public class CommitRollbackTest extends TestCase
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
         _logger.info("sending test message");
-        String MESSAGE_TEXT = "testGetThenDisconnect";
+        String MESSAGE_TEXT = "testGetThenRollback";
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
         _pubSession.commit();

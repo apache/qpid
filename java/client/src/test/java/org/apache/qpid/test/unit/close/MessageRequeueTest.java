@@ -330,7 +330,7 @@ public class MessageRequeueTest extends TestCase
     public void testRequeue() throws JMSException, AMQException, URLSyntaxException
     {
         int run = 0;
-        while (run < 10)
+//        while (run < 10)
         {
             run++;
 
@@ -350,17 +350,10 @@ public class MessageRequeueTest extends TestCase
             _logger.debug("Create Consumer");
             MessageConsumer consumer = session.createConsumer(q);
 
-            try
-            {
-                Thread.sleep(2000);
-            }
-            catch (InterruptedException e)
-            {
-                //
-            }
+            conn.start();
 
             _logger.debug("Receiving msg");
-            Message msg = consumer.receive(1000);
+            Message msg = consumer.receive(2000);
 
             assertNotNull("Message should not be null", msg);
 
