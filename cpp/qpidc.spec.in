@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        2%{?dist}
+Release:        4%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -24,6 +24,7 @@ BuildRequires: e2fsprogs-devel
 BuildRequires: apr-devel
 
 Requires: boost
+Requires: apr
 
 Requires(post):/sbin/chkconfig
 Requires(preun):/sbin/chkconfig
@@ -144,6 +145,12 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Tue Apr 17 2007 Alan Conway <aconway@redhat.com> - 0.2-4
+- longer broker_start timeout to avoid failures in plague builds.
+
+* Tue Apr 17 2007 Alan Conway <aconway@redhat.com> - 0.2-3
+- Add missing Requires: apr in qpidc.
 
 * Mon Apr 16 2007 Alan Conway <aconway@redhat.com> - 0.2-2
 - Bugfix for memory errors on x86_64.
