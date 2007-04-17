@@ -11,4 +11,4 @@ rm -rf $LOG $PID
 
 # FIXME aconway 2007-01-18: qpidd should not return till it is accepting
 # connections, remove arbitrary sleep.
-sleep 5
+sleep 30
