@@ -20,29 +20,28 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import java.util.ArrayList;
+import static org.apache.qpid.management.ui.Constants.BUTTON_CLEAR;
+import static org.apache.qpid.management.ui.Constants.BUTTON_REFRESH;
+import static org.apache.qpid.management.ui.Constants.DESCRIPTION;
+import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
+import static org.apache.qpid.management.ui.Constants.FONT_BUTTON;
+import static org.apache.qpid.management.ui.Constants.FONT_ITALIC;
+import static org.apache.qpid.management.ui.Constants.SUBSCRIBE_BUTTON;
+import static org.apache.qpid.management.ui.Constants.UNSUBSCRIBE_BUTTON;
+
 import java.util.List;
 
-import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
-import org.eclipse.jface.viewers.DoubleClickEvent;
-import org.eclipse.jface.viewers.IDoubleClickListener;
-import org.eclipse.jface.viewers.ILabelProviderListener;
-import org.eclipse.jface.viewers.IStructuredContentProvider;
-import org.eclipse.jface.viewers.ITableLabelProvider;
-import org.eclipse.jface.viewers.StructuredSelection;
-import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.FormAttachment;
 import org.eclipse.swt.layout.FormData;
 import org.eclipse.swt.layout.FormLayout;
@@ -52,83 +51,39 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.TabFolder;
-import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.forms.widgets.Form;
-import org.eclipse.ui.forms.widgets.FormToolkit;
 
 /**
  * Creates control composite for Notifications tab
  * @author Bhupendra Bhardwaj
  */
-public class NotificationsTabControl extends TabControl
-{
-    private FormToolkit  _toolkit;
-    private Form _form;
-    private Table table = null;
-    private TableViewer _tableViewer  = null;
-    
-    private IStructuredContentProvider contentProvider = new ContentProviderImpl();
-    private SelectionListener selectionListener = new SelectionListenerImpl();
-    private SelectionListener comboListener = new ComboSelectionListener();
-    
-    private Thread worker = null;
-    
-    private List<NotificationObject> _notifications = null;
-    private static final String COLUMN_SEQ  = "Sequence No";
-    private static final String COLUMN_TIME = "TimeStamp";
-    private static final String COLUMN_TYPE  = "Type";
-    private static final String COLUMN_MSG  = "Notification Message";
-    private static final String[] _tableTitles = new String [] {
-            COLUMN_SEQ,
-            COLUMN_TIME,
-            COLUMN_TYPE,
-            COLUMN_MSG
-         };
+public class NotificationsTabControl extends VHNotificationsTabControl
+{    
+    private static final String SELECT_NOTIFICATIONNAME = "Select Notification";
+    private static final String SELECT_NOTIFICATIONTYPE = "Select Type";
+    private SelectionListener selectionListener;
+    private SelectionListener comboListener;    
     
     private Combo notificationNameCombo = null;
     private Combo typesCombo = null;
     private Label descriptionLabel = null;
     private Button _subscribeButton   = null;
     private Button _unsubscribeButton = null;
-    private Button _clearButton       = null;
-    private Button _refreshButton       = null;
-    
     
     public NotificationsTabControl(TabFolder tabFolder)
     {
         super(tabFolder);
-        _toolkit = new FormToolkit(_tabFolder.getDisplay());
-        _form = _toolkit.createForm(_tabFolder);
-        GridLayout gridLayout = new GridLayout();      
-        gridLayout.marginWidth = 0;
-        gridLayout.marginHeight = 0;       
-        _form.getBody().setLayout(gridLayout);
-        
-        createWidgets();
-        worker = new Thread(new Worker()); 
-        worker.start();
     }
     
-    private void createWidgets()
+    protected void createWidgets()
     {       
+        selectionListener = new SelectionListenerImpl();
+        comboListener = new ComboSelectionListener();
         createNotificationInfoComposite();
         //addFilterComposite();
         addButtons();  
         createTableViewer();
-    }
-    
-    /**
-     * @see TabControl#getControl()
-     */
-    public Control getControl()
-    {
-        return _form;
     }
     
     /**
@@ -205,7 +160,7 @@ public class NotificationsTabControl extends TabControl
     /**
      * Creates clear buttin and refresh button
      */
-    private void addButtons()
+    protected void addButtons()
     {    
         Composite composite = _toolkit.createComposite(_form.getBody(), SWT.NONE);
         composite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
@@ -224,8 +179,9 @@ public class NotificationsTabControl extends TabControl
                     if (_mbean == null)
                         return;
                     
+                    IStructuredSelection ss = (IStructuredSelection)_tableViewer.getSelection();
                     ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
-                    serverRegistry.clearNotifications(_mbean);
+                    serverRegistry.clearNotifications(_mbean, ss.toList());
                     refresh();
                 }
             });
@@ -247,155 +203,13 @@ public class NotificationsTabControl extends TabControl
                 }
             });
     }
-    
-    /**
-     * Creates table to display notifications
-     */
-    private void createTable()
-    {
-        table = _toolkit.createTable(_form.getBody(),  SWT.FULL_SELECTION);
-        table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        
-        TableColumn column = new TableColumn(table, SWT.NONE);
-        column.setText(_tableTitles[0]);
-        column.pack();        //column.setWidth(200);
-
-        column = new TableColumn(table, SWT.NONE);
-        column.setText(_tableTitles[1]);
-        column.setWidth(150);
-        
-        column = new TableColumn(table, SWT.NONE);
-        column.setText(_tableTitles[2]);
-        column.setWidth(100);
-        
-        column = new TableColumn(table, SWT.NONE);
-        column.setText(_tableTitles[3]);
-        column.setWidth(500);
-        
-        table.setHeaderVisible(true);
-        table.setLinesVisible(true);
-    }
-    
-    /**
-     * Creates JFace viewer for the notifications table
-     */
-    protected void createTableViewer()
-    {
-        createTable();
-        _tableViewer = new TableViewer(table);
-        //_tableViewer.getControl().setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-        _tableViewer.setUseHashlookup(true);
-        _tableViewer.setContentProvider(contentProvider);
-        _tableViewer.setLabelProvider(new LabelProviderImpl());
-        _tableViewer.setColumnProperties(_tableTitles);
-        /*
-        CellEditor[] cellEditors = new CellEditor[_tableTitles.length];
-        TextCellEditor textEditor = new TextCellEditor(table);
-        cellEditors[0] = textEditor;
-        textEditor = new TextCellEditor(table);
-        cellEditors[1] = textEditor;
-        textEditor = new TextCellEditor(table);
-        cellEditors[2] = textEditor;
-        textEditor = new TextCellEditor(table);
-        cellEditors[3] = textEditor;
-        
-        // Assign the cell editors to the viewer 
-        _tableViewer.setCellEditors(cellEditors);
-        _tableViewer.setCellModifier(new TableCellModifier());
-        */
-        
-        addTableListeners();
-        
-        //_tableViewer.addSelectionChangedListener(new );
-        
-        //_notificationDetails = new Composite(_tabControl, SWT.BORDER);
-        //_notificationDetails.setLayoutData(new GridData(GridData.FILL_BOTH));
-        
-        //_tabControl.layout();
-        //viewerComposite.layout();
-    }
-    
-    /**
-     * Adds listeners to the viewer for displaying notification details 
-     */
-    private void addTableListeners()
-    {
-        _tableViewer.addDoubleClickListener(new IDoubleClickListener()
-            {
-                Display display = null;
-                Shell   shell = null;
-                public void doubleClick(DoubleClickEvent event)
-                {
-                    display = Display.getCurrent();
-                    shell = new Shell(display, SWT.BORDER | SWT.CLOSE | SWT.MIN |
-                            SWT.MAX | SWT.RESIZE);
-                    shell.setText("Notification");
-
-                    int x = display.getBounds().width;
-                    int y = display.getBounds().height;
-                    shell.setBounds(x/4, y/4, x/2, y/3);
-                    StructuredSelection selection = (StructuredSelection)event.getSelection();
-                    createPopupContents((NotificationObject)selection.getFirstElement());
-                    shell.open();
-                    while (!shell.isDisposed()) {
-                        if (!display.readAndDispatch()) {
-                            display.sleep();
-                        }
-                    }
-                    
-                    //If you create it, you dispose it.
-                    shell.dispose();
-                }
-
-                private void createPopupContents(NotificationObject obj)
-                {                    
-                    shell.setLayout(new GridLayout());
-                    
-                    Composite parent = new Composite(shell, SWT.NONE);
-                    parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
-                    GridLayout layout = new GridLayout(4, true);
-                    parent.setLayout(layout);
-
-                    Label key = new Label(parent, SWT.TRAIL);               
-                    key.setText(COLUMN_SEQ);
-                    GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false,1,1);
-                    key.setLayoutData(layoutData);
-                    Text  value = new Text(parent, SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY);
-                    value.setText(""+obj.getSequenceNo());
-                    value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false,3,1));
-
-                    // Time row
-                    key = new Label(parent, SWT.TRAIL);
-                    key.setText(COLUMN_TIME);
-                    key.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, true, false,1,1));
-                    value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
-                    value.setText(""+obj.getTimeStamp());
-                    value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false,3,1));
-
-                    key = new Label(parent, SWT.TRAIL);
-                    key.setText(COLUMN_TYPE);
-                    key.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, true, false,1,1));
-                    value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
-                    value.setText(""+obj.getType());
-                    value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false,3,1));
-
-                    key = new Label(parent, SWT.TRAIL);
-                    key.setText(COLUMN_MSG);
-                    key.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, true, false,1,1));
-                    value = new Text(parent, SWT.MULTI | SWT.WRAP| SWT.BORDER | SWT.V_SCROLL | SWT.READ_ONLY);
-                    value.setText(""+obj.getMessage());
-                    GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true, 3, 1);
-                    gridData.heightHint = 100;
-                    value.setLayoutData(gridData);
-                }
-            });
-    }
-    
+  
     @Override
     public void refresh(ManagedBean mbean)
     {
         _mbean = mbean;
         _notifications = null;
+        _table.deselectAll();
         _tableViewer.getTable().clearAll();
         
         if (_mbean == null)
@@ -431,9 +245,10 @@ public class NotificationsTabControl extends TabControl
         _form.getBody().layout(true, true);
     }
     
-    private void refresh()
+    public void refresh()
     {
         _notifications = null;
+        _table.deselectAll();
         _tableViewer.getTable().clearAll();
     }
     
@@ -444,7 +259,11 @@ public class NotificationsTabControl extends TabControl
     {
         notificationNameCombo.removeAll();
         NotificationInfoModel[] items = MBeanUtility.getNotificationInfo(_mbean);
-        notificationNameCombo.add("Select Notification");
+        if (items.length > 1)
+        {
+            notificationNameCombo.add(SELECT_NOTIFICATIONNAME);
+        }
+        
         for (int i = 0; i < items.length; i++)
         {
             notificationNameCombo.add(items[i].getName());
@@ -457,6 +276,7 @@ public class NotificationsTabControl extends TabControl
         typesCombo.select(0);
         typesCombo.setEnabled(false);
         
+        populateNotificationType(notificationNameCombo.getItem(0));
         checkForEnablingButtons();
     }
     
@@ -466,7 +286,8 @@ public class NotificationsTabControl extends TabControl
     private void checkForEnablingButtons()
     {
         int nameIndex = notificationNameCombo.getSelectionIndex();
-        if (nameIndex == 0)
+        int itemCount = notificationNameCombo.getItems().length;
+        if ((itemCount > 1) && (nameIndex == 0))
         {
             _subscribeButton.setEnabled(false);
             _unsubscribeButton.setEnabled(false);
@@ -475,7 +296,8 @@ public class NotificationsTabControl extends TabControl
         }
         
         int typeIndex = typesCombo.getSelectionIndex();
-        if (typeIndex == 0)
+        itemCount = typesCombo.getItems().length;
+        if ((itemCount > 1) && (typeIndex == 0))
         {
             _subscribeButton.setEnabled(false);
             _unsubscribeButton.setEnabled(false);
@@ -560,164 +382,38 @@ public class NotificationsTabControl extends TabControl
             Combo combo = (Combo)e.getSource();
             if (combo == notificationNameCombo)
             {
-                if (combo.getSelectionIndex() == 0)
-                {
-                    descriptionLabel.setText("");
-                    typesCombo.select(0);
-                    typesCombo.setEnabled(false);
-                    return;
-                }
-                String index = combo.getItem(combo.getSelectionIndex());                
-                NotificationInfoModel data = (NotificationInfoModel)combo.getData(index);
-                descriptionLabel.setText(data.getDescription());
-                typesCombo.removeAll();       
-                typesCombo.setItems(data.getTypes());
-                typesCombo.add("Select Type", 0);
-                typesCombo.select(0);
-                typesCombo.setEnabled(true);
+                String selectedItem = combo.getItem(combo.getSelectionIndex());                
+                populateNotificationType(selectedItem);
             }
             checkForEnablingButtons();
         }
     }
     
-    /**
-     * Content provider class for the table viewer
-     */
-    private class ContentProviderImpl implements IStructuredContentProvider, INotificationViewer
+    private void populateNotificationType(String notificationName)
     {
-        public void inputChanged(Viewer v, Object oldInput, Object newInput)
+        NotificationInfoModel data = (NotificationInfoModel)notificationNameCombo.getData(notificationName);
+        if (data == null)
         {
-            
+            descriptionLabel.setText("");
+            typesCombo.select(0);
+            typesCombo.setEnabled(false);
+            return;
         }
-        public void dispose()
+        descriptionLabel.setText(data.getDescription());
+        typesCombo.removeAll();       
+        typesCombo.setItems(data.getTypes());
+        if (typesCombo.getItemCount() > 1)
         {
-            
+            typesCombo.add(SELECT_NOTIFICATIONTYPE, 0);
         }
-        public Object[] getElements(Object parent) 
-        {
-            return _notifications.toArray(new NotificationObject[0]);
-        }
-        public void addNotification(NotificationObject notification)
-        {
-            _tableViewer.add(notification);
-        }
-        
-        public void addNotification(List<NotificationObject> notificationList)
-        {
-            _tableViewer.add(notificationList.toArray(new NotificationObject[0]));
-        }
-    }
-    
-    /**
-     * Label provider for the table viewer
-     */
-    private class LabelProviderImpl implements ITableLabelProvider
-    {
-        List<ILabelProviderListener> listeners = new ArrayList<ILabelProviderListener>();       
-        public void addListener(ILabelProviderListener listener)
-        {
-            listeners.add(listener);
-        }
-        
-        public void dispose(){
-            
-        }
-        
-        public Image getColumnImage(Object element, int columnIndex)
-        {
-            return null;
-        }
-        
-        public String getColumnText(Object element, int columnIndex)
-        {
-            String result = null;
-            NotificationObject t = (NotificationObject)element;
-            switch(columnIndex)
-            {
-            case 0 : 
-                result = String.valueOf(t.getSequenceNo());
-                break;
-            case 1 :
-                result = String.valueOf(t.getTimeStamp());
-                break;
-            case 2 : 
-                result = t.getType();
-                break;
-            case 3 : 
-                result = t.getMessage();
-                break;
-            default : 
-                result = "";
-            }
-            
-            return result;
-        }
-        
-        public boolean isLabelProperty(Object element, String property)
-        {
-            return false;
-        }
-        
-        public void removeListener(ILabelProviderListener listener)
-        {
-            listeners.remove(listener);
-        }
-    } // end of LabelProviderImpl
-    
-    private boolean workerRunning = false;
-    private void setWorkerRunning(boolean running)
-    {
-        workerRunning = running;
-    }
-    
-    /**
-     * Worker class which keeps looking if there are new notifications coming from server for the selected mbean
-     */
-    private class Worker implements Runnable
-    {
-        public void run()
-        {
-            Display display = _tabFolder.getDisplay();
-            while(true)
-            {
-                if (!workerRunning || _mbean == null || display == null)
-                {
-                    sleep();
-                    continue;
-                }
-                
-                display.syncExec(new Runnable()
-                {
-                    public void run()
-                    {
-                        setWorkerRunning(_form.isVisible());
-                        if (!workerRunning) return;
-                        
-                        updateTableViewer();
-                    }
-                });     
-            
-                sleep();
-            }
-        }
-        
-        private void sleep()
-        {
-            try
-            {
-                Thread.sleep(2000);
-            }
-            catch(Exception ex)
-            {
-
-            }  
-        }
+        typesCombo.select(0);
+        typesCombo.setEnabled(true);
     }
     
     /**
      * Updates the table with new notifications received from mbean server for the selected mbean
      */
-    private void updateTableViewer()
+    protected void updateTableViewer()
     {
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);        
         List<NotificationObject> newList = serverRegistry.getNotifications(_mbean);

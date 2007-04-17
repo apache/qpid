@@ -65,7 +65,7 @@ public class JMXServerRegistry extends ServerRegistry
     // will add that mbean in this list.
     private List<ManagedBean> _mbeansToBeRemoved = new ArrayList<ManagedBean>();
     
-    // Map containing all managed beans and ampped with unique mbean name
+    // Map containing all managed beans and mapped with unique mbean name
     private HashMap<String, ManagedBean>   _mbeansMap    = new HashMap<String, ManagedBean>();
     // Map containing MBeanInfo for all mbeans and mapped with unique mbean name 
     private HashMap<String, MBeanInfo>     _mbeanInfoMap = new HashMap<String, MBeanInfo>();
@@ -282,16 +282,77 @@ public class JMXServerRegistry extends ServerRegistry
         list.add(obj);
     }
     
+    /**
+     * Returns all the notification objects for a given mbean. If mbean is null, it returns
+     * notification objects for all the mbeans.
+     */
     public List<NotificationObject> getNotifications(ManagedBean mbean)
     {
-        return _notificationsMap.get(mbean.getUniqueName());
+        if (mbean == null)
+        {
+            List<NotificationObject> totalList = new ArrayList<NotificationObject>();
+            for (List<NotificationObject> list : _notificationsMap.values())
+            {
+                totalList.addAll(list);
+            }
+            return totalList;
+        }
+        else
+        {
+            return _notificationsMap.get(mbean.getUniqueName());
+        }
     }
     
-    public void clearNotifications(ManagedBean mbean)
+    public void clearNotifications(ManagedBean mbean, List<NotificationObject> list)
     {
-        if (_notificationsMap.containsKey(mbean.getUniqueName()))
-            _notificationsMap.get(mbean.getUniqueName()).clear();
+        if (mbean == null)
+        {
+            if (list == null || list.isEmpty())
+            {
+                // All notifications of all mbeans to be cleared
+                _notificationsMap.clear();
+            }
+            else
+            {
+                // Clear the selected notifications
+                for (NotificationObject obj : list)
+                {
+                    mbean = _mbeansMap.get(obj.getSource().toString());
+                    List<NotificationObject> nList = _notificationsMap.get(mbean.getUniqueName());
+                    if (nList != null && !nList.isEmpty())
+                    {
+                        nList.remove(obj);
+                    }
+                }
+            }
+        }
+        else 
+        {
+            if (list == null || list.isEmpty())
+            {
+                // All notifications of this mbean to be cleared
+                List<NotificationObject> nList = _notificationsMap.get(mbean.getUniqueName());
+                if (nList != null && !nList.isEmpty())
+                {
+                    nList.clear();
+                }
+            }
+            else
+            {
+                // Clear the selected notifications
+                for (NotificationObject obj : list)
+                {
+                    List<NotificationObject> nList = _notificationsMap.get(mbean.getUniqueName());
+                    if (nList != null && !nList.isEmpty())
+                    {
+                        nList.remove(obj);
+                    }
+                }
+            }
+        }
     }
+    
+    
     
     /**
      * Adds notification name and type to the map. The map contains all the notification names,

@@ -154,7 +154,7 @@ public abstract class ServerRegistry
     
     public abstract boolean hasSubscribedForNotifications(ManagedBean mbean, String name, String type);
     
-    public abstract void clearNotifications(ManagedBean mbean);
+    public abstract void clearNotifications(ManagedBean mbean, List<NotificationObject> list);
     
     public ClientListener getNotificationListener()
     {

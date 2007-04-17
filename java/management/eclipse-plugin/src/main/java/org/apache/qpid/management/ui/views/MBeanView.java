@@ -62,6 +62,7 @@ public class MBeanView extends ViewPart
     
     private FormToolkit  _toolkit = null;
     private Form _form = null;
+    private String _formText = APPLICATION_NAME;
     private static ManagedServer _server = null;
     private TreeObject _selectedNode = null;
     private ManagedBean _mbean = null;
@@ -73,6 +74,8 @@ public class MBeanView extends ViewPart
 
     // TabFolder to list all the mbeans for a given mbeantype(eg Connection, Queue, Exchange)
     private TabFolder typeTabFolder = null;
+    
+    private TabFolder notificationTabFolder = null;
     /*
      * Listener for the selection events in the navigation view
      */ 
@@ -91,16 +94,41 @@ public class MBeanView extends ViewPart
             // an mbeantype. For mbeantype selection(eg Connection, Queue, Exchange) _mbean will remain null.
             _mbean = null;
             setInvisible();
-            _form.setText(APPLICATION_NAME);
             
-            // If a selected node(mbean) gets unregistered from mbena server, mbenaview should should 
+            // If a selected node(mbean) gets unregistered from mbean server, mbeanview should 
             // make the tabfolber for that mbean invisible
             if (_selectedNode == null)            
                 return;
             
             setServer();
             refreshMBeanView();
+            setFormTitle();            
         }
+    }
+    
+    private void setFormTitle()
+    {
+        if (_mbean != null)
+        {
+            _formText = _mbean.getType();
+            if ((_mbean.getVirtualHostName() != null) && (!DEFAULT_VH.equals(_mbean.getVirtualHostName())) )
+            {
+                _formText = _formText.replaceFirst(VIRTUAL_HOST, _mbean.getVirtualHostName());
+                if (_mbean.getName() != null && _mbean.getName().length() != 0)
+                {
+                    _formText = _formText + ": " + _mbean.getName();
+                }
+            }
+        }
+        else if ((_selectedNode.getVirtualHost() != null) && (!DEFAULT_VH.equals(_selectedNode.getVirtualHost())))
+        {
+            _formText = _selectedNode.getVirtualHost();
+        }
+        else
+        {
+            _formText = APPLICATION_NAME;
+        }
+        _form.setText(_formText);
     }
     
     public void refreshMBeanView()
@@ -121,10 +149,16 @@ public class MBeanView extends ViewPart
             {
                 refreshTypeTabFolder(_selectedNode.getName());
             } 
-            else
+            else if (NOTIFICATIONS.equals(_selectedNode.getType()))
             {
+                refreshNotificationPage();
+            }
+            else if (MBEAN.equals(_selectedNode.getType()))
+            {
+                _mbean = (ManagedBean)_selectedNode.getManagedObject(); 
                 showSelectedMBean();
             }
+            
             _form.layout(true);
             _form.getBody().layout(true, true);
         }
@@ -174,20 +208,7 @@ public class MBeanView extends ViewPart
     }
     
     private void showSelectedMBean() throws Exception
-    {     
-        if (NOTIFICATION.equals(_selectedNode.getType()))
-        {
-            _mbean = (ManagedBean)_selectedNode.getParent().getManagedObject();                
-        }
-        else if (MBEAN.equals(_selectedNode.getType()))
-        {
-            _mbean = (ManagedBean)_selectedNode.getManagedObject();                
-        }
-        else
-        {
-            return;
-        }
-        
+    {           
         try
         {                
             MBeanUtility.getMBeanInfo(_mbean);     
@@ -213,14 +234,8 @@ public class MBeanView extends ViewPart
             tabFolder = createMBeanTabFolder();
         }
         
-        String text = _mbean.getType();
-        if (_mbean.getName() != null && _mbean.getName().length() != 0)
-        {
-            text = text + ": " + _mbean.getName();
-        }
-        _form.setText(text);
         int tabIndex = 0;
-        if (NOTIFICATION.equals(_selectedNode.getType()))
+        if (NOTIFICATIONS.equals(_selectedNode.getType()))
         {
             tabIndex = tabFolder.getItemCount() -1;
         }
@@ -247,6 +262,8 @@ public class MBeanView extends ViewPart
         // Add mbeantype TabFolder. This will list all the mbeans under a mbeantype (eg Queue, Exchange).
         // Using this list mbeans will be added in the navigation view
         createMBeanTypeTabFolder();
+        
+        createNotificationsTabFolder();
     }
     
     private TabFolder createMBeanTabFolder()
@@ -345,7 +362,7 @@ public class MBeanView extends ViewPart
         NotificationsTabControl controller = new NotificationsTabControl(tabFolder);
         
         TabItem tab = new TabItem(tabFolder, SWT.NONE);
-        tab.setText(NOTIFICATION);
+        tab.setText(NOTIFICATIONS);
         tab.setData(CONTROLLER, controller);
         tab.setControl(controller.getControl());
     }
@@ -432,6 +449,32 @@ public class MBeanView extends ViewPart
         });
     }
     
+    private void createNotificationsTabFolder()
+    {
+        notificationTabFolder = new TabFolder(_form.getBody(), SWT.NONE);
+        FormData layoutData = new FormData();
+        layoutData.left = new FormAttachment(0);
+        layoutData.top = new FormAttachment(0);
+        layoutData.right = new FormAttachment(100);
+        layoutData.bottom = new FormAttachment(100);
+        notificationTabFolder.setLayoutData(layoutData);
+        notificationTabFolder.setVisible(false);
+        
+        VHNotificationsTabControl controller = new VHNotificationsTabControl(notificationTabFolder);       
+        TabItem tab = new TabItem(notificationTabFolder, SWT.NONE);
+        tab.setText(NOTIFICATIONS);
+        tab.setData(CONTROLLER, controller);
+        tab.setControl(controller.getControl());
+    }
+    
+    private void refreshNotificationPage()
+    {        
+        TabItem tab = notificationTabFolder.getItem(0);
+        VHNotificationsTabControl controller = (VHNotificationsTabControl)tab.getData(CONTROLLER);
+        controller.refresh();
+        notificationTabFolder.setVisible(true);
+    }
+    
     /**
      * Refreshes the Selected mbeantype tab. The control lists all the available mbeans
      * for an mbeantype(eg Queue, Exchange etc)
@@ -491,6 +534,11 @@ public class MBeanView extends ViewPart
         if (typeTabFolder != null)
         {
             typeTabFolder.setVisible(false);
+        }
+        
+        if (notificationTabFolder != null)
+        {
+            notificationTabFolder.setVisible(false);
         }
     }
     

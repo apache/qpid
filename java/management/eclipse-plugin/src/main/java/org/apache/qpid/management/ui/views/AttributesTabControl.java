@@ -596,7 +596,7 @@ public class AttributesTabControl extends TabControl
     }    
 
     // Refresh from the server registry
-    private void refresh()
+    public void refresh()
     {
         JMXServerRegistry serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(_mbean);
         ManagedAttributeModel attributesList = serverRegistry.getAttributeModel(_mbean);

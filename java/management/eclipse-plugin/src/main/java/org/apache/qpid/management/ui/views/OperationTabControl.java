@@ -76,7 +76,7 @@ public class OperationTabControl extends TabControl
     private SelectionListener operationExecutionListener = new OperationExecutionListener(); 
     private SelectionListener refreshListener = new RefreshListener(); 
     private SelectionListener parameterSelectionListener = new ParameterSelectionListener();
-    private SelectionListener bolleanSelectionListener = new BooleanSelectionListener();
+    private SelectionListener booleanSelectionListener = new BooleanSelectionListener();
     private VerifyListener    verifyListener = new VerifyListenerImpl();
     private KeyListener       keyListener = new KeyListenerImpl();
     private KeyListener       headerBindingListener = new HeaderBindingKeyListener();
@@ -297,7 +297,7 @@ public class OperationTabControl extends TabControl
                 Button booleanButton = _toolkit.createButton(_paramsComposite, "", SWT.CHECK);
                 booleanButton.setLayoutData(formData);
                 booleanButton.setData(param);
-                booleanButton.addSelectionListener(bolleanSelectionListener);
+                booleanButton.addSelectionListener(booleanSelectionListener);
                 valueInCombo = true;                
             }
             else
