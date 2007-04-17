@@ -25,6 +25,7 @@ import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
@@ -42,6 +43,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -77,20 +80,19 @@ public class AMQMessage
      */
     private boolean _immediate;
 
-    private AtomicBoolean _taken = new AtomicBoolean(false);
-
     private TransientMessageData _transientMessageData = new TransientMessageData();
 
-    private Subscription _takenBySubcription;
-
     private Set<Subscription> _rejectedBy = null;
+    private Map<AMQQueue, AtomicBoolean> _takenMap;
+    private Map<AMQQueue, Subscription> _takenBySubcriptionMap;
 
-    public boolean isTaken()
+    public boolean isTaken(AMQQueue queue)
     {
-        return _taken.get();
+        return _takenMap.get(queue).get();
     }
 
     private final int hashcode = System.identityHashCode(this);
+
     public String debugIdentity()
     {
         return "(HC:" + hashcode + " ID:" + _messageId + " Ref:" + _referenceCount.get() + ")";
@@ -202,10 +204,12 @@ public class AMQMessage
         _immediate = info.isImmediate();
         _transientMessageData.setMessagePublishInfo(info);
 
-        _taken = new AtomicBoolean(false);
+        _takenMap = null;
+        _takenBySubcriptionMap = null;
+
         if (_log.isDebugEnabled())
         {
-            _log.debug("Message(" + System.identityHashCode(this) + ") created (" + debugIdentity()+")");
+            _log.debug("Message(" + System.identityHashCode(this) + ") created (" + debugIdentity() + ")");
         }
     }
 
@@ -318,8 +322,15 @@ public class AMQMessage
 
         // enqueuing the messages ensure that if required the destinations are recorded to a
         // persistent store
+
+        int mapSize = _transientMessageData.getDestinationQueues().size();
+
+        _takenMap = new HashMap<AMQQueue, AtomicBoolean>(mapSize);
+        _takenBySubcriptionMap = new HashMap<AMQQueue, Subscription>(mapSize);
+
         for (AMQQueue q : _transientMessageData.getDestinationQueues())
         {
+            _takenMap.put(q, new AtomicBoolean(false));
             _messageHandle.enqueue(storeContext, _messageId, q);
         }
 
@@ -356,12 +367,13 @@ public class AMQMessage
     }
 
     /**
-     * Creates a long-lived reference to this message, and increments the count of such references, as an atomic operation.
+     * Creates a long-lived reference to this message, and increments the count of such references, as an atomic
+     * operation.
      */
     public AMQMessage takeReference()
     {
         _referenceCount.incrementAndGet();
-	return this;
+        return this;
     }
 
     /** Threadsafe. Increment the reference count on the message. */
@@ -378,9 +390,10 @@ public class AMQMessage
      * Threadsafe. This will decrement the reference count and when it reaches zero will remove the message from the
      * message store.
      *
+     * @param storeContext
+     *
      * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
      *                                 failed
-     * @param storeContext
      */
     public void decrementReference(StoreContext storeContext) throws MessageCleanupException
     {
@@ -451,27 +464,33 @@ public class AMQMessage
     }
 
 
-    public boolean taken(Subscription sub)
+    public boolean taken(AMQQueue queue, Subscription sub)
     {
-        if (_taken.getAndSet(true))
+        synchronized (queue)
         {
-            return true;
-        }
-        else
-        {
-            _takenBySubcription = sub;
-            return false;
+            if (_takenMap.get(queue).getAndSet(true))
+            {
+                return true;
+            }
+            else
+            {
+                _takenBySubcriptionMap.put(queue, sub);
+                return false;
+            }
         }
     }
 
-    public void release()
+    public void release(AMQQueue queue)
     {
         if (_log.isTraceEnabled())
         {
             _log.trace("Releasing Message:" + debugIdentity());
         }
-        _taken.set(false);
-        _takenBySubcription = null;
+        synchronized (queue)
+        {
+            _takenMap.get(queue).set(false);
+            _takenBySubcriptionMap.put(queue, null);
+        }
     }
 
     public boolean checkToken(Object token)
@@ -600,7 +619,7 @@ public class AMQMessage
             for (AMQQueue q : destinationQueues)
             {
                 //Increment the references to this message for each queue delivery.
-                incrementReference();                
+                incrementReference();
                 //normal deliver so add this message at the end.
                 _txnContext.deliver(this, q, false);
             }
@@ -824,13 +843,13 @@ public class AMQMessage
 
     public String toString()
     {
-        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken: " +
-               _taken + " by:" + _takenBySubcription;
+        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: " +
+               _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
     }
 
-    public Subscription getDeliveredSubscription()
+    public Subscription getDeliveredSubscription(AMQQueue queue)
     {
-        return _takenBySubcription;
+        return _takenBySubcriptionMap.get(queue);
     }
 
     public void reject(Subscription subscription)
