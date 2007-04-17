@@ -25,6 +25,8 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -72,6 +74,8 @@ public class ViewUtility
     public static final String NEXT  = "Next";
     public static final String PREV  = "Previous";
     public static final String INDEX = "Index";
+    
+    private static final Comparator tabularDataComparator = new TabularDataComparator();
     
     private static List<String> SUPPORTED_ARRAY_DATATYPES = new ArrayList<String>();
     static
@@ -124,6 +128,9 @@ public class ViewUtility
             text.setLayoutData(layoutData);
             return;
         }  
+        
+        Collections.sort(list, tabularDataComparator);
+     
         // Attach the tabular record to be retrieved and shown later when record is traversed
         // using first/next/previous/last buttons
         composite.setData(list);
@@ -581,5 +588,28 @@ public class ViewUtility
         }
 
         return hash;
+    }
+    
+    private static class TabularDataComparator implements java.util.Comparator<Map.Entry>
+    {
+        public int compare(Map.Entry data1, Map.Entry data2)
+        {
+            if (data1.getKey() instanceof List)
+            {
+                String str1 = ((List)data1.getKey()).get(0).toString();                
+                String str2 = ((List)data2.getKey()).get(0).toString();
+                
+                try
+                {
+                    return Long.valueOf(str1).compareTo(Long.valueOf(str2));
+                }
+                catch (Exception ex)
+                {
+                    return -1;
+                }
+            }
+           
+            return -1;
+        }
     }
 }
