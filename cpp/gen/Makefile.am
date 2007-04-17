@@ -31,11 +31,10 @@ qpid $(generated_cpp) $(generated_h): $(spec) $(java_sources) $(cxx_templates)
 	touch qpid
 
 gen-src.mk: qpid gen-src-mk.sh
-	./gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) > $@-t
+	$(srcdir)/gen-src-mk.sh $(gentools_dir) $(gentools_srcdir) > $@-t
 	mv $@-t $@
 
 endif
 
 maintainer-clean-local:
 	rm -rf qpid gen-src.mk $(gentools_srcdir)/*.class
-
