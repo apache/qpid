@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -13,15 +13,15 @@ URL:            @URL@
 Source0:        @DOWNLOAD_URL@/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires: libtool
+BuildRequires: apr-devel
 BuildRequires: boost-devel
 BuildRequires: cppunit-devel
 BuildRequires: doxygen
+BuildRequires: e2fsprogs-devel
 BuildRequires: graphviz
 BuildRequires: help2man
+BuildRequires: libtool
 BuildRequires: pkgconfig
-BuildRequires: e2fsprogs-devel
-BuildRequires: apr-devel
 
 Requires: boost
 Requires: apr
@@ -40,10 +40,9 @@ the AMQP protocol.
 Summary: Header files and documentation for developing Qpid C++ clients
 Group: Development/System
 Requires: %name = %version-%release
-Requires: libtool
 Requires: apr-devel
 Requires: boost-devel
-Requires: cppunit-devel
+Requires: e2fsprogs-devel
 
 %description devel
 Libraries, header files and documentation for developing AMQP clients
@@ -146,6 +145,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Tue Apr 17 2007 Alan Conway <aconway@redhat.com> - 0.2-5
+- Add missing Requires: e2fsprogs-devel for qpidc-devel.
 
 * Tue Apr 17 2007 Alan Conway <aconway@redhat.com> - 0.2-4
 - longer broker_start timeout to avoid failures in plague builds.
