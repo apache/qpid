@@ -57,4 +57,10 @@ public class AMQPState
     public static final AMQPState CHANNEL_OPENED = new AMQPState(11, "CHANNEL_OPENED");    
     public static final AMQPState CHANNEL_CLOSED = new AMQPState(11, "CHANNEL_CLOSED");
     public static final AMQPState CHANNEL_SUSPEND = new AMQPState(11, "CHANNEL_SUSPEND");
+    
+    // Distributed Transaction state
+    public static final AMQPState DTX_CHANNEL_NOT_SELECTED = new AMQPState(10, "DTX_CHANNEL_NOT_SELECTED");
+    public static final AMQPState DTX_NOT_STARTED = new AMQPState(10, "DTX_NOT_STARTED");
+    public static final AMQPState DTX_STARTED = new AMQPState(10, "DTX_STARTED");
+    public static final AMQPState DTX_END = new AMQPState(10, "DTX_END");
 }

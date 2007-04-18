@@ -130,7 +130,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 
 			//_channelNotOpend.await(_serverTimeOut, TimeUnit.MILLISECONDS);
 			_channelNotOpend.await();
-			checkIfConnectionClosed();
+			checkIfChannelClosed();
 			AMQPValidator.throwExceptionOnNull(_channelOpenOkBody, "The broker didn't send the ChannelOpenOkBody in time");
 			notifyState(AMQPState.CHANNEL_OPENED);
 			_currentState = AMQPState.CHANNEL_OPENED;
@@ -198,7 +198,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 
 			//_channelFlowNotResponded.await(_serverTimeOut, TimeUnit.MILLISECONDS);
 			_channelFlowNotResponded.await();
-			checkIfConnectionClosed();
+			checkIfChannelClosed();
 			AMQPValidator.throwExceptionOnNull(_channelFlowOkBody, "The broker didn't send the ChannelFlowOkBody in time");
 			handleChannelFlowState(_channelFlowOkBody.active);
 			return _channelFlowOkBody;
@@ -228,7 +228,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 
 			//_channelNotResumed.await(_serverTimeOut, TimeUnit.MILLISECONDS);
 			_channelNotResumed.await();
-			checkIfConnectionClosed();
+			checkIfChannelClosed();
 			AMQPValidator.throwExceptionOnNull(_channelOkBody,
 					"The broker didn't send the ChannelOkBody in response to the ChannelResumeBody in time");
 			notifyState(AMQPState.CHANNEL_OPENED);
@@ -330,7 +330,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 		}
 	}
 
-	private void checkIfConnectionClosed() throws AMQPException
+	private void checkIfChannelClosed() throws AMQPException
 	{
 		if (_channelCloseBody != null)
 		{
