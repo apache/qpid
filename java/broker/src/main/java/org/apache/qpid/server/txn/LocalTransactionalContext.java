@@ -93,6 +93,7 @@ public class LocalTransactionalContext implements TransactionalContext
         if(_messageStore.inTran(_storeContext))
         {
             _messageStore.abortTran(_storeContext);
+            _inTran = false;
         }
         _postCommitDeliveryList.clear();
     }
