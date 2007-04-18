@@ -445,8 +445,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     {
         AMQMessage message = messages.peek();
 
-        //while (we have a message) && (The subscriber is not a browser or we are clearing) && (Check message is taken.)
-        while (message != null && (sub != null && !sub.isBrowser() || sub == null) && message.taken(_queue, sub))
+        //while (we have a message) && ((The subscriber is not a browser or message is taken ) or we are clearing) && (Check message is taken.)
+        while (message != null
+               && (
+                ((sub != null && !sub.isBrowser()) || message.isTaken(_queue))
+                || sub == null)
+               && message.taken(_queue, sub))
         {
             //remove the already taken message
             AMQMessage removed = messages.poll();
@@ -507,7 +511,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 }
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(debugIdentity() + "Async Delivery Message " + message.getMessageId() + "(" + System.identityHashCode(message) +
+                    _log.debug(debugIdentity() + "Async Delivery Message :" + message + "(" + System.identityHashCode(message) +
                                ") by :" + System.identityHashCode(this) +
                                ") to :" + System.identityHashCode(sub));
                 }
@@ -527,7 +531,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             if (_log.isDebugEnabled())
             {
-                _log.debug(debugIdentity() + "Async Delivered Message r:" + removed.debugIdentity() + "d:" + message.debugIdentity() +
+                _log.debug(debugIdentity() + "Async Delivered Message r:" + removed.debugIdentity() + "d:" + message +
                            ") by :" + System.identityHashCode(this) +
                            ") to :" + System.identityHashCode(sub));
             }
