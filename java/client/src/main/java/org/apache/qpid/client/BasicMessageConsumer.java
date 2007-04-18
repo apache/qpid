@@ -497,8 +497,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     }
                     catch (AMQException e)
                     {
-                        // _logger.error("Error closing consumer: " + e, e);
-                        e.printStackTrace();
+                        // _logger.error("Error closing consumer: " + e, e);            
                         JMSException jmse = new JMSException("Error closing consumer: " + e);
                         jmse.setLinkedException(e);
                         throw jmse;
