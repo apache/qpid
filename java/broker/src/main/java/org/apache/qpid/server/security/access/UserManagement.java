@@ -97,8 +97,8 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
-    @MBeanOperation(name = "reloadData", description = "Reload the authentication file from disk.")
-    boolean reloadData();
+//    @MBeanOperation(name = "reloadData", description = "Reload the authentication file from disk.")
+//    boolean reloadData();
 
     /**
      * View users returns all the users that are currently available to the system.

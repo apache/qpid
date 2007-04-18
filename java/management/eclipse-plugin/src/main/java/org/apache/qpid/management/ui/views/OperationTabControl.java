@@ -20,9 +20,15 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularDataSupport;
 
 import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
@@ -270,6 +276,15 @@ public class OperationTabControl extends TabControl
             else if (param.getName().equals(EXCHANGE_TYPE))
             {
                 items = EXCHANGE_TYPE_VALUES;
+            }
+            else if (_mbean.isAdmin() && param.getName().equals(OPERATION_PARAM_USERNAME)
+                                      && !_opData.getName().equals(OPERATION_CREATEUSER))
+            {
+                List<String> list = ApplicationRegistry.getServerRegistry(_mbean).getUsernames();
+                if (list != null && !list.isEmpty())
+                {
+                    items = list.toArray(new String[0]);
+                }
             }
             
             if (items != null)
@@ -633,6 +648,17 @@ public class OperationTabControl extends TabControl
             return;
         }
         
+        // Custom code for Admin mbean operation
+        /* These custome codes here are to make the GUI look more user friendly. 
+         * Here we are adding the users to a list, which will be used to list username to be selected on
+         * pages like "delete user", "set password" instead of typing the username
+        */
+        if (_mbean.isAdmin() && _opData.getName().equals(OPERATION_VIEWUSERS))
+        {
+            ApplicationRegistry.getServerRegistry(_mbean).setUserList(extractUserList(result));
+        }
+        // end of custom code
+        
         // Some mbeans have only "type" and no "name".
         String title = _mbean.getType();
         if (_mbean.getName() != null && _mbean.getName().length() != 0)
@@ -640,11 +666,11 @@ public class OperationTabControl extends TabControl
             title = _mbean.getName();
         }
         
-        if (_opData.getReturnType().equals("void") || _opData.getReturnType().equals("java.lang.Void"))
+        if (_opData.isReturnTypeVoid())
         {
             ViewUtility.popupInfoMessage(title, OPERATION_SUCCESSFUL);
         }
-        else if (_opData.getReturnType().equals("boolean") || _opData.getReturnType().equals("java.lang.Boolean"))
+        else if (_opData.isReturnTypeBoolean())
         {
             boolean success = Boolean.parseBoolean(result.toString());
             String message = success ? OPERATION_SUCCESSFUL : OPERATION_UNSUCCESSFUL;
@@ -662,6 +688,24 @@ public class OperationTabControl extends TabControl
             _form.layout();
         }
 
+    }
+    
+    private List<String> extractUserList(Object result)
+    {
+        if (!(result instanceof TabularDataSupport))
+        {
+            return null;
+        }
+        
+        TabularDataSupport tabularData = (TabularDataSupport)result;
+        Collection<CompositeData> records = tabularData.values();
+        List<String> list = new ArrayList<String>();
+        for (CompositeData data : records)
+        {
+            list.add(data.get(USERNAME).toString());
+        }
+        Collections.sort(list);
+        return list;
     }
     
     /**

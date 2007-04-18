@@ -596,8 +596,14 @@ public class ViewUtility
         {
             if (data1.getKey() instanceof List)
             {
-                String str1 = ((List)data1.getKey()).get(0).toString();                
-                String str2 = ((List)data2.getKey()).get(0).toString();
+                Object obj1 = ((List)data1.getKey()).get(0);                
+                Object obj2 = ((List)data2.getKey()).get(0);
+                String str1 = obj1.toString();
+                String str2 = obj2.toString();
+                if (obj1 instanceof String)
+                {
+                    return str1.compareTo(str2);
+                }
                 
                 try
                 {

@@ -128,6 +128,10 @@ public abstract class ServerRegistry
         return _virtualHosts;
     }
     
+    public abstract void setUserList(List<String> list);
+    
+    public abstract List<String> getUsernames();
+    
     public abstract void addManagedObject(ManagedBean key);
     
     public abstract List<ManagedBean> getMBeans();

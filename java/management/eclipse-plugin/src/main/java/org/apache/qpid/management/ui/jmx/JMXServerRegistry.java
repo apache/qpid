@@ -61,6 +61,7 @@ public class JMXServerRegistry extends ServerRegistry
     private JMXConnector _jmxc = null;
     private MBeanServerConnection _mbsc = null;
     
+    private List<String> _usersList;
     // When an mbean gets removed from mbean server, then the notification listener
     // will add that mbean in this list.
     private List<ManagedBean> _mbeansToBeRemoved = new ArrayList<ManagedBean>();
@@ -565,6 +566,16 @@ public class JMXServerRegistry extends ServerRegistry
             connections[i++] = mbean.getName();
         }
         return connections;
+    }
+    
+    public void setUserList(List<String> list)
+    {
+        _usersList = list;
+    }
+    
+    public List<String> getUsernames()
+    {
+        return _usersList;
     }
 
     public ClientNotificationListener getNotificationListener()

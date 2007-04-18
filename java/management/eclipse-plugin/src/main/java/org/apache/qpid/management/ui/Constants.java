@@ -61,6 +61,10 @@ public class Constants
     public final static String OPERATION_CREATE_BINDING = "createNewBinding";
     public final static String OPERATION_MOVE_MESSAGES = "moveMessages";
     
+    public final static String OPERATION_CREATEUSER = "createUser";
+    public final static String OPERATION_VIEWUSERS = "viewUsers";
+    public final static String OPERATION_PARAM_USERNAME = "username";
+    
     public final static String OPERATION_SUCCESSFUL = "Operation successful";
     public final static String OPERATION_UNSUCCESSFUL = "Operation unsuccessful";
     
@@ -69,6 +73,7 @@ public class Constants
     public final static String NAVIGATION_ROOT = "Qpid Connections";
     public final static String DESCRIPTION = " Description";
     
+    public final static String ADMIN_MBEAN_TYPE = "UserManagement";
     public final static String QUEUE  = "Queue";
     public final static String CONNECTION ="Connection";
     public final static String EXCHANGE = "Exchange";

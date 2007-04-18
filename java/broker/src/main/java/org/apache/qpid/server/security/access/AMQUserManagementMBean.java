@@ -259,6 +259,8 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         // Table of users
         // Username(string), Access rights Read,Write,Admin(bool,bool,bool)
 
+        reloadData();
+        
         if (_userlistDataType == null)
         {
             _logger.warn("TabluarData not setup correctly");
