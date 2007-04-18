@@ -80,15 +80,17 @@ public class AMQMessage
      */
     private boolean _immediate;
 
+    private AtomicBoolean _taken = new AtomicBoolean(false);
     private TransientMessageData _transientMessageData = new TransientMessageData();
 
+    private Subscription _takenBySubcription;
     private Set<Subscription> _rejectedBy = null;
-    private Map<AMQQueue, AtomicBoolean> _takenMap;
-    private Map<AMQQueue, Subscription> _takenBySubcriptionMap;
+    private Map<AMQQueue, AtomicBoolean> _takenMap = new HashMap<AMQQueue, AtomicBoolean>();
+    private Map<AMQQueue, Subscription> _takenBySubcriptionMap = new HashMap<AMQQueue, Subscription>();
 
     public boolean isTaken(AMQQueue queue)
     {
-        return _takenMap.get(queue).get();
+        return _taken.get();
     }
 
     private final int hashcode = System.identityHashCode(this);
@@ -204,8 +206,7 @@ public class AMQMessage
         _immediate = info.isImmediate();
         _transientMessageData.setMessagePublishInfo(info);
 
-        _takenMap = null;
-        _takenBySubcriptionMap = null;
+        _taken = new AtomicBoolean(false);
 
         if (_log.isDebugEnabled())
         {
@@ -322,11 +323,6 @@ public class AMQMessage
 
         // enqueuing the messages ensure that if required the destinations are recorded to a
         // persistent store
-
-        int mapSize = _transientMessageData.getDestinationQueues().size();
-
-        _takenMap = new HashMap<AMQQueue, AtomicBoolean>(mapSize);
-        _takenBySubcriptionMap = new HashMap<AMQQueue, Subscription>(mapSize);
 
         for (AMQQueue q : _transientMessageData.getDestinationQueues())
         {
@@ -466,17 +462,14 @@ public class AMQMessage
 
     public boolean taken(AMQQueue queue, Subscription sub)
     {
-        synchronized (queue)
+        if (_taken.getAndSet(true))
         {
-            if (_takenMap.get(queue).getAndSet(true))
-            {
-                return true;
-            }
-            else
-            {
-                _takenBySubcriptionMap.put(queue, sub);
-                return false;
-            }
+            return true;
+        }
+        else
+        {
+            _takenBySubcription = sub;
+            return false;
         }
     }
 
@@ -486,11 +479,8 @@ public class AMQMessage
         {
             _log.trace("Releasing Message:" + debugIdentity());
         }
-        synchronized (queue)
-        {
-            _takenMap.get(queue).set(false);
-            _takenBySubcriptionMap.put(queue, null);
-        }
+        _taken.set(false);
+        _takenBySubcription = null;
     }
 
     public boolean checkToken(Object token)
@@ -843,13 +833,16 @@ public class AMQMessage
 
     public String toString()
     {
-        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: " +
-               _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
+        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken : " +
+               _taken + " by :" + _takenBySubcription;
+
+//        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: " +
+//               _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
     }
 
     public Subscription getDeliveredSubscription(AMQQueue queue)
     {
-        return _takenBySubcriptionMap.get(queue);
+        return _takenBySubcription;
     }
 
     public void reject(Subscription subscription)
