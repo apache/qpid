@@ -41,7 +41,7 @@ public class TxnBuffer
     {
         if (_log.isDebugEnabled())
         {
-            _log.debug("Committing " + _ops.size() + " ops to commit.:" + _ops.toArray());
+            _log.debug("Committing " + _ops.size() + " ops to commit.:" + _ops);
         }
 
         if (prepare(context))

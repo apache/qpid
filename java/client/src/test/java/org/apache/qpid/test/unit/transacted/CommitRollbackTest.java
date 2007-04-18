@@ -412,4 +412,35 @@ public class CommitRollbackTest extends TestCase
         assertNull("test message should be null:" + result, result);
     }
 
+
+    public void testPutThenRollbackThenGet() throws Exception
+    {
+        assertTrue("session is not transacted", _session.getTransacted());
+        assertTrue("session is not transacted", _pubSession.getTransacted());
+
+        _logger.info("sending test message");
+        String MESSAGE_TEXT = "testPutThenRollbackThenGet";
+
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+        _pubSession.commit();
+
+        assertNotNull(_consumer.receive(100));
+
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+
+        _logger.info("rolling back");
+        _pubSession.rollback();
+
+        _logger.info("receiving result");
+        Message result = _consumer.receive(1000);
+        assertNull("test message was put and rolled back, but is still present", result);
+
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+
+        _pubSession.commit();
+
+        assertNotNull(_consumer.receive(100));
+
+    }
+
 }
