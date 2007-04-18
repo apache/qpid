@@ -206,12 +206,15 @@ public class MessageListenerMultiConsumerTest extends TestCase
         assertEquals(MSG_COUNT, receivedCount1 + receivedCount2);
     }
 
-    public void testRecieveC2Only() throws Exception
+    public void testRecieveC2Only_OnlyRunWith_REGISTER_CONSUMERS_FLOWED() throws Exception
     {
-        for (int msg = 0; msg < MSG_COUNT; msg++)
+        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
         {
-            assertTrue(MSG_COUNT + " msg should be received. Only received:" + msg,
-                       _consumer2.receive(1000) != null);
+            for (int msg = 0; msg < MSG_COUNT; msg++)
+            {
+                assertTrue(MSG_COUNT + " msg should be received. Only received:" + msg,
+                           _consumer2.receive(1000) != null);
+            }
         }
     }
 
