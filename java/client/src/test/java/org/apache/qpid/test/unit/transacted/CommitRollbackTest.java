@@ -400,16 +400,29 @@ public class CommitRollbackTest extends TestCase
         _logger.info("receiving result");
         result = _consumer.receive(1000);
         assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertEquals("1", ((TextMessage) result).getText());
-        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+        if (result.getJMSRedelivered())
+        {
+            assertEquals("1", ((TextMessage) result).getText());
 
-        result = _consumer.receive(1000);
-        assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertEquals("2", ((TextMessage) result).getText());
-        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+            result = _consumer.receive(1000);
+            assertNotNull("test message was consumed and rolled back, but is gone", result);
+            assertEquals("2", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+        }
+        else
+        {
+            assertEquals("2", ((TextMessage) result).getText());
+            assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
 
+            result = _consumer.receive(1000);
+            assertNotNull("test message was consumed and rolled back, but is gone", result);
+            assertEquals("1", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+
+        }
         result = _consumer.receive(1000);
         assertNull("test message should be null:" + result, result);
+
     }
 
 
