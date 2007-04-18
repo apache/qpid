@@ -1932,6 +1932,24 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     synchronized void startDistpatcherIfNecessary()
     {
+        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
+        {
+//            if (!connectionStopped)
+            {
+                if (isSuspended() && _firstDispatcher.getAndSet(false))
+                {
+                    try
+                    {
+                        suspendChannel(false);
+                    }
+                    catch (AMQException e)
+                    {
+                        _logger.info("Suspending channel threw an exception:" + e);
+                    }
+                }
+            }
+        }
+
         startDistpatcherIfNecessary(false);
     }
 
@@ -1948,24 +1966,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         {
             _dispatcher.setConnectionStopped(initiallyStopped);
         }
-
-        if (!AMQSession.this._closed.get()
-            && AMQSession.this._startedAtLeastOnce.get()
-            && _firstDispatcher.getAndSet(false))
-        {
-            if (isSuspended())
-            {
-                try
-                {
-                    suspendChannel(false);
-                }
-                catch (AMQException e)
-                {
-                    _logger.info("Suspending channel threw an exception:" + e);
-                }
-            }
-        }
-
     }
 
     void stop() throws AMQException
@@ -1998,17 +1998,23 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
 
-        if (_dispatcher == null)
+        // The dispatcher will be null if we have just created this session
+        // so suspend the channel before we register our consumer so that we don't
+        // start prefetching until a receive/mListener is set.
+        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
         {
-            if (!isSuspended())
+            if (_dispatcher == null)
             {
-                try
+                if (!isSuspended())
                 {
-                    suspendChannel(true);
-                }
-                catch (AMQException e)
-                {
-                    _logger.info("Suspending channel threw an exception:" + e);
+                    try
+                    {
+                        suspendChannel(true);
+                    }
+                    catch (AMQException e)
+                    {
+                        _logger.info("Suspending channel threw an exception:" + e);
+                    }
                 }
             }
         }
