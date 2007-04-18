@@ -21,7 +21,6 @@
 
 package org.apache.qpid.nclient.amqp.qpid;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -36,7 +35,6 @@ import org.apache.qpid.framing.ChannelOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
 import org.apache.qpid.framing.ChannelOpenOkBody;
 import org.apache.qpid.framing.ChannelResumeBody;
-import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.nclient.amqp.AMQPChannel;
 import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
 import org.apache.qpid.nclient.amqp.event.AMQPMethodListener;
