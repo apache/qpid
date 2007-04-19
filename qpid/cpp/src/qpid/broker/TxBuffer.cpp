@@ -24,17 +24,13 @@
 using boost::mem_fn;
 using namespace qpid::broker;
 
-bool TxBuffer::prepare(TransactionalStore* const store)
+bool TxBuffer::prepare(TransactionContext* const ctxt)
 {
-    std::auto_ptr<TransactionContext> ctxt;
-    if(store) ctxt = store->begin();
     for(op_iterator i = ops.begin(); i < ops.end(); i++){
-        if(!(*i)->prepare(ctxt.get())){
-            if(store) store->abort(*ctxt);
+        if(!(*i)->prepare(ctxt)){
             return false;
         }
     }
-    if(store) store->commit(*ctxt);
     return true;
 }
 
@@ -53,4 +49,19 @@ void TxBuffer::rollback()
 void TxBuffer::enlist(TxOp::shared_ptr op)
 {
     ops.push_back(op);
+}
+
+bool TxBuffer::commitLocal(TransactionalStore* const store)
+{
+    std::auto_ptr<TransactionContext> ctxt;
+    if(store) ctxt = store->begin();
+    if (prepare(ctxt.get())) {
+        if(store) store->commit(*ctxt);
+        commit();
+        return true;
+    } else {
+        if(store) store->abort(*ctxt);
+        rollback();
+        return false;
+    }
 }

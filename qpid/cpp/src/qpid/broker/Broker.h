@@ -32,6 +32,7 @@
 #include "ExchangeRegistry.h"
 #include "ConnectionToken.h"
 #include "DirectExchange.h"
+#include "DtxManager.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "QueueRegistry.h"
@@ -83,6 +84,7 @@ class Broker : public sys::Runnable,
     uint32_t getTimeout() { return timeout; }
     uint64_t getStagingThreshold() { return stagingThreshold; }
     AutoDelete& getCleaner() { return cleaner; }
+    DtxManager& getDtxManager() { return dtxManager; }
     
   private:
     Broker(const Configuration& config);
@@ -97,6 +99,7 @@ class Broker : public sys::Runnable,
     uint64_t stagingThreshold;
     AutoDelete cleaner;
     ConnectionFactory factory;
+    DtxManager dtxManager;
 
     static MessageStore* createStore(const Configuration& config);
 };

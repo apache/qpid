@@ -42,7 +42,8 @@ BrokerAdapter::BrokerAdapter(Channel& ch, Connection& c, Broker& b) :
     exchangeHandler(*this),
     messageHandler(*this),
     queueHandler(*this),
-    txHandler(*this)    
+    txHandler(*this),
+    dtxHandler(*this)
 {}
 
 
@@ -336,7 +337,7 @@ void BrokerAdapter::BasicHandlerImpl::recover(const MethodContext&, bool requeue
 } 
 
 void BrokerAdapter::TxHandlerImpl::select(const MethodContext& context){
-    channel.begin();
+    channel.startTx();
     client.selectOk(context.getRequestId());
 }
 
