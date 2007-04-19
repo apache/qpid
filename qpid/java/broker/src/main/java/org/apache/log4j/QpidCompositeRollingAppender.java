@@ -24,687 +24,976 @@ import org.apache.log4j.helpers.OptionConverter;
 import org.apache.log4j.helpers.CountingQuietWriter;
 import org.apache.log4j.helpers.LogLog;
 import org.apache.log4j.spi.LoggingEvent;
+import org.apache.qpid.framing.FieldTable;
 
 import java.util.Date;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.GZIPOutputStream;
 import java.text.SimpleDateFormat;
 import java.io.IOException;
 import java.io.Writer;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 
 /**
- *  <p>CompositeRollingAppender combines RollingFileAppender and DailyRollingFileAppender<br>
- *  It can function as either or do both at the same time (making size
- *  based rolling files like RollingFileAppender until a data/time boundary
- *  is crossed at which time it rolls all of those files as per the DailyRollingFileAppender)
- *  based on the setting for <code>rollingStyle</code>.<br>
- *  <br>
- *  To use CompositeRollingAppender to roll log files as they reach a certain
- *  size (like RollingFileAppender), set rollingStyle=1 (@see config.size)<br>
- *  To use CompositeRollingAppender to roll log files at certain time intervals
- *  (daily for example), set rollingStyle=2 and a datePattern (@see config.time)<br>
- *  To have CompositeRollingAppender roll log files at a certain size AND rename those
- *  according to time intervals, set rollingStyle=3 (@see config.composite)<br>
+ * <p>CompositeRollingAppender combines RollingFileAppender and DailyRollingFileAppender<br> It can function as either
+ * or do both at the same time (making size based rolling files like RollingFileAppender until a data/time boundary is
+ * crossed at which time it rolls all of those files as per the DailyRollingFileAppender) based on the setting for
+ * <code>rollingStyle</code>.<br> <br> To use CompositeRollingAppender to roll log files as they reach a certain size
+ * (like RollingFileAppender), set rollingStyle=1 (@see config.size)<br> To use CompositeRollingAppender to roll log
+ * files at certain time intervals (daily for example), set rollingStyle=2 and a datePattern (@see config.time)<br> To
+ * have CompositeRollingAppender roll log files at a certain size AND rename those according to time intervals, set
+ * rollingStyle=3 (@see config.composite)<br>
  *
- *  <p>A of few additional optional features have been added:<br>
- *  -- Attach date pattern for current log file (@see staticLogFileName)<br>
- *  -- Backup number increments for newer files (@see countDirection)<br>
- *  -- Infinite number of backups by file size (@see maxSizeRollBackups)<br>
- *  <br>
- *  <p>A few notes and warnings:  For large or infinite number of backups
- *  countDirection > 0 is highly recommended, with staticLogFileName = false if
- *  time based rolling is also used -- this will reduce the number of file renamings
- *  to few or none.  Changing staticLogFileName or countDirection without clearing
- *  the directory could have nasty side effects.  If Date/Time based rolling
- *  is enabled, CompositeRollingAppender will attempt to roll existing files
- *  in the directory without a date/time tag based on the last modified date
- *  of the base log files last modification.<br>
- *  <br>
- *  <p>A maximum number of backups based on date/time boundries would be nice
- *  but is not yet implemented.<br>
+ * <p>A of few additional optional features have been added:<br> -- Attach date pattern for current log file (@see
+ * staticLogFileName)<br> -- Backup number increments for newer files (@see countDirection)<br> -- Infinite number of
+ * backups by file size (@see maxSizeRollBackups)<br> <br> <p>A few notes and warnings:  For large or infinite number of
+ * backups countDirection > 0 is highly recommended, with staticLogFileName = false if time based rolling is also used
+ * -- this will reduce the number of file renamings to few or none.  Changing staticLogFileName or countDirection
+ * without clearing the directory could have nasty side effects.  If Date/Time based rolling is enabled,
+ * CompositeRollingAppender will attempt to roll existing files in the directory without a date/time tag based on the
+ * last modified date of the base log files last modification.<br> <br> <p>A maximum number of backups based on
+ * date/time boundries would be nice but is not yet implemented.<br>
  *
- *  @author Kevin Steppe
- *  @author Heinz Richter
- *  @author Eirik Lygre
- *  @author Ceki G&uuml;lc&uuml;
- *  @author Martin Ritchie 
+ * @author Kevin Steppe
+ * @author Heinz Richter
+ * @author Eirik Lygre
+ * @author Ceki G&uuml;lc&uuml;
+ * @author Martin Ritchie
  */
 public class QpidCompositeRollingAppender extends FileAppender
 {
-	// The code assumes that the following 'time' constants are in a increasing
-	// sequence.
-	static final int TOP_OF_TROUBLE=-1;
-	static final int TOP_OF_MINUTE = 0;
-	static final int TOP_OF_HOUR   = 1;
-	static final int HALF_DAY      = 2;
-	static final int TOP_OF_DAY    = 3;
-	static final int TOP_OF_WEEK   = 4;
-	static final int TOP_OF_MONTH  = 5;
+    // The code assumes that the following 'time' constants are in a increasing
+    // sequence.
+    static final int TOP_OF_TROUBLE = -1;
+    static final int TOP_OF_MINUTE = 0;
+    static final int TOP_OF_HOUR = 1;
+    static final int HALF_DAY = 2;
+    static final int TOP_OF_DAY = 3;
+    static final int TOP_OF_WEEK = 4;
+    static final int TOP_OF_MONTH = 5;
 
-	/** Style of rolling to use */
-	static final int BY_SIZE = 1;
-	static final int BY_DATE = 2;
-	static final int BY_COMPOSITE = 3;
+    /** Style of rolling to use */
+    static final int BY_SIZE = 1;
+    static final int BY_DATE = 2;
+    static final int BY_COMPOSITE = 3;
 
-	//Not currently used
-	static final String S_BY_SIZE = "Size";
-	static final String S_BY_DATE = "Date";
-	static final String S_BY_COMPOSITE = "Composite";
+    //Not currently used
+    static final String S_BY_SIZE = "Size";
+    static final String S_BY_DATE = "Date";
+    static final String S_BY_COMPOSITE = "Composite";
 
-	/**
-	 The date pattern. By default, the pattern is set to
-	 "'.'yyyy-MM-dd" meaning daily rollover.
-	*/
-	private String datePattern = "'.'yyyy-MM-dd";
+    /** The date pattern. By default, the pattern is set to "'.'yyyy-MM-dd" meaning daily rollover. */
+    private String datePattern = "'.'yyyy-MM-dd";
 
-	/**	 The actual formatted filename that is currently being written to
-	     or will be the file transferred to on roll over
-		 (based on staticLogFileName). */
-	private String scheduledFilename = null;
+    /**
+     * The actual formatted filename that is currently being written to or will be the file transferred to on roll over
+     * (based on staticLogFileName).
+     */
+    private String scheduledFilename = null;
 
-	/** The timestamp when we shall next recompute the filename. */
-	private long nextCheck = System.currentTimeMillis () - 1;
+    /** The timestamp when we shall next recompute the filename. */
+    private long nextCheck = System.currentTimeMillis() - 1;
 
-	/** Holds date of last roll over */
-	Date now = new Date();
+    /** Holds date of last roll over */
+    Date now = new Date();
 
-	SimpleDateFormat sdf;
+    SimpleDateFormat sdf;
 
-	/** Helper class to determine next rollover time */
-	RollingCalendar rc = new RollingCalendar();
+    /** Helper class to determine next rollover time */
+    RollingCalendar rc = new RollingCalendar();
 
-	/** Current period for roll overs */
-	int checkPeriod = TOP_OF_TROUBLE;
+    /** Current period for roll overs */
+    int checkPeriod = TOP_OF_TROUBLE;
 
-	/**	 The default maximum file size is 10MB. */
-	protected long maxFileSize = 10*1024*1024;
+    /** The default maximum file size is 10MB. */
+    protected long maxFileSize = 10 * 1024 * 1024;
 
-	/**	 There is zero backup files by default. */
-	protected int maxSizeRollBackups = 0;
-	/** How many sized based backups have been made so far */
-	protected int curSizeRollBackups = 0;
+    /** There is zero backup files by default. */
+    protected int maxSizeRollBackups = 0;
+    /** How many sized based backups have been made so far */
+    protected int curSizeRollBackups = 0;
 
-	/** not yet implemented */
-	protected int maxTimeRollBackups = -1;
-	protected int curTimeRollBackups = 0;
+    /** not yet implemented */
+    protected int maxTimeRollBackups = -1;
+    protected int curTimeRollBackups = 0;
 
-	/** By default newer files have lower numbers. (countDirection < 0)
-	 *  ie. log.1 is most recent, log.5 is the 5th backup, etc...
-	 *  countDirection > 0 does the opposite ie.
-	 *  log.1 is the first backup made, log.5 is the 5th backup made, etc.
-	 *  For infinite backups use countDirection > 0 to reduce rollOver costs.
-	 */
-	protected int countDirection = -1;
+    /**
+     * By default newer files have lower numbers. (countDirection < 0) ie. log.1 is most recent, log.5 is the 5th
+     * backup, etc... countDirection > 0 does the opposite ie. log.1 is the first backup made, log.5 is the 5th backup
+     * made, etc. For infinite backups use countDirection > 0 to reduce rollOver costs.
+     */
+    protected int countDirection = -1;
 
-	/** Style of rolling to Use.  BY_SIZE (1), BY_DATE(2), BY COMPOSITE(3) */
-	protected int rollingStyle = BY_COMPOSITE;
-	protected boolean rollDate = true;
-	protected boolean rollSize = true;
+    /** Style of rolling to Use.  BY_SIZE (1), BY_DATE(2), BY COMPOSITE(3) */
+    protected int rollingStyle = BY_COMPOSITE;
+    protected boolean rollDate = true;
+    protected boolean rollSize = true;
 
-	/** By default file.log is always the current file.  Optionally
-	 *  file.log.yyyy-mm-dd for current formated datePattern can by the currently
-	 *  logging file (or file.log.curSizeRollBackup or even
-	 *  file.log.yyyy-mm-dd.curSizeRollBackup) This will make time based roll
-	 *  overs with a large number of backups much faster -- it won't have to
-	 *  rename all the backups!
-	 */
-	protected boolean staticLogFileName = true;
+    /**
+     * By default file.log is always the current file.  Optionally file.log.yyyy-mm-dd for current formated datePattern
+     * can by the currently logging file (or file.log.curSizeRollBackup or even file.log.yyyy-mm-dd.curSizeRollBackup)
+     * This will make time based roll overs with a large number of backups much faster -- it won't have to rename all
+     * the backups!
+     */
+    protected boolean staticLogFileName = true;
 
-	/** FileName provided in configuration.  Used for rolling properly */
-	protected String baseFileName;
+    /** FileName provided in configuration.  Used for rolling properly */
+    protected String baseFileName;
+
+
+    /** Do we want to .gz our backup files. */
+    protected boolean compress = false;
+
+    /** Do we want to use a second thread when compressing our backup files. */
+    protected boolean compressAsync = false;
+
+    /** Do we want to start numbering files at zero. */
+    protected boolean zeroBased = false;
+
+    /** Path provided in configuration.  Used for moving backup files to */
+    protected String backupFilesToPath = null;
+    private final ConcurrentLinkedQueue<CompressJob> _compress = new ConcurrentLinkedQueue<CompressJob>();
+    private AtomicBoolean _compressing = new AtomicBoolean(false);
 
     /** The default constructor does nothing. */
-	public QpidCompositeRollingAppender()  {
+    public QpidCompositeRollingAppender()
+    {
     }
 
-	/**
-	 Instantiate a <code>CompositeRollingAppender</code> and open the
-	 file designated by <code>filename</code>. The opened filename will
-	 become the ouput destination for this appender.
-	*/
-	public QpidCompositeRollingAppender(Layout layout, String filename,
-				   String datePattern) throws IOException
+    /**
+     * Instantiate a <code>CompositeRollingAppender</code> and open the file designated by <code>filename</code>. The
+     * opened filename will become the ouput destination for this appender.
+     */
+    public QpidCompositeRollingAppender(Layout layout, String filename,
+                                        String datePattern) throws IOException
     {
-	    this(layout, filename, datePattern, true);
-	}
+        this(layout, filename, datePattern, true);
+    }
 
-	/**
-	 Instantiate a CompositeRollingAppender and open the file designated by
-	 <code>filename</code>. The opened filename will become the ouput
-	 destination for this appender.
+    /**
+     * Instantiate a CompositeRollingAppender and open the file designated by <code>filename</code>. The opened filename
+     * will become the ouput destination for this appender.
+     *
+     * <p>If the <code>append</code> parameter is true, the file will be appended to. Otherwise, the file desginated by
+     * <code>filename</code> will be truncated before being opened.
+     */
+    public QpidCompositeRollingAppender(Layout layout, String filename, boolean append)
+            throws IOException
+    {
+        super(layout, filename, append);
+    }
 
-	 <p>If the <code>append</code> parameter is true, the file will be
-	 appended to. Otherwise, the file desginated by
-	 <code>filename</code> will be truncated before being opened.
-	*/
-	public QpidCompositeRollingAppender(Layout layout, String filename, boolean append)
-									  throws IOException {
-	    super(layout, filename, append);
-	}
+    /**
+     * Instantiate a CompositeRollingAppender and open the file designated by <code>filename</code>. The opened filename
+     * will become the ouput destination for this appender.
+     */
+    public QpidCompositeRollingAppender(Layout layout, String filename,
+                                        String datePattern, boolean append) throws IOException
+    {
+        super(layout, filename, append);
+        this.datePattern = datePattern;
+        activateOptions();
+    }
 
-	/**
-	 Instantiate a CompositeRollingAppender and open the file designated by
-	 <code>filename</code>. The opened filename will become the ouput
-	 destination for this appender.
-	*/
-	public QpidCompositeRollingAppender(Layout layout, String filename,
-				   String datePattern, boolean append) throws IOException {
-	    super(layout, filename, append);
-	    this.datePattern = datePattern;
-		activateOptions();
-	}
-	/**
-	 Instantiate a CompositeRollingAppender and open the file designated by
-	 <code>filename</code>. The opened filename will become the output
-	 destination for this appender.
+    /**
+     * Instantiate a CompositeRollingAppender and open the file designated by <code>filename</code>. The opened filename
+     * will become the output destination for this appender.
+     *
+     * <p>The file will be appended to.  DatePattern is default.
+     */
+    public QpidCompositeRollingAppender(Layout layout, String filename) throws IOException
+    {
+        super(layout, filename);
+    }
 
-	 <p>The file will be appended to.  DatePattern is default.
-	*/
-	public QpidCompositeRollingAppender(Layout layout, String filename) throws IOException {
-	    super(layout, filename);
-	}
+    /**
+     * The <b>DatePattern</b> takes a string in the same format as expected by {@link java.text.SimpleDateFormat}. This
+     * options determines the rollover schedule.
+     */
+    public void setDatePattern(String pattern)
+    {
+        datePattern = pattern;
+    }
 
-	/**
-	 The <b>DatePattern</b> takes a string in the same format as
-	 expected by {@link java.text.SimpleDateFormat}. This options determines the
-	 rollover schedule.
-	*/
-	public void setDatePattern(String pattern) {
-	    datePattern = pattern;
-	}
+    /** Returns the value of the <b>DatePattern</b> option. */
+    public String getDatePattern()
+    {
+        return datePattern;
+    }
 
-	/** Returns the value of the <b>DatePattern</b> option. */
-	public String getDatePattern() {
-	    return datePattern;
-	}
+    /** Returns the value of the <b>maxSizeRollBackups</b> option. */
+    public int getMaxSizeRollBackups()
+    {
+        return maxSizeRollBackups;
+    }
 
-	/**
-	 Returns the value of the <b>maxSizeRollBackups</b> option.
-	*/
-	public int getMaxSizeRollBackups() {
-	    return maxSizeRollBackups;
-	}
+    /**
+     * Get the maximum size that the output file is allowed to reach before being rolled over to backup files.
+     *
+     * @since 1.1
+     */
+    public long getMaximumFileSize()
+    {
+        return maxFileSize;
+    }
 
-	/**
-	 Get the maximum size that the output file is allowed to reach
-	 before being rolled over to backup files.
+    /**
+     * <p>Set the maximum number of backup files to keep around based on file size.
+     *
+     * <p>The <b>MaxSizeRollBackups</b> option determines how many backup files are kept before the oldest is erased.
+     * This option takes an integer value. If set to zero, then there will be no backup files and the log file will be
+     * truncated when it reaches <code>MaxFileSize</code>.  If a negative number is supplied then no deletions will be
+     * made.  Note that this could result in very slow performance as a large number of files are rolled over unless
+     * {@link #setCountDirection} up is used.
+     *
+     * <p>The maximum applys to -each- time based group of files and -not- the total. Using a daily roll the maximum
+     * total files would be (#days run) * (maxSizeRollBackups)
+     */
+    public void setMaxSizeRollBackups(int maxBackups)
+    {
+        maxSizeRollBackups = maxBackups;
+    }
 
-	 @since 1.1
-	*/
-	public long getMaximumFileSize() {
-		return maxFileSize;
-	}
+    /**
+     * Set the maximum size that the output file is allowed to reach before being rolled over to backup files.
+     *
+     * <p>This method is equivalent to {@link #setMaxFileSize} except that it is required for differentiating the setter
+     * taking a <code>long</code> argument from the setter taking a <code>String</code> argument by the JavaBeans {@link
+     * java.beans.Introspector Introspector}.
+     *
+     * @see #setMaxFileSize(String)
+     */
+    public void setMaxFileSize(long maxFileSize)
+    {
+        this.maxFileSize = maxFileSize;
+    }
 
-	/**
-	 <p>Set the maximum number of backup files to keep around based on file size.
+    /**
+     * Set the maximum size that the output file is allowed to reach before being rolled over to backup files.
+     *
+     * <p>This method is equivalent to {@link #setMaxFileSize} except that it is required for differentiating the setter
+     * taking a <code>long</code> argument from the setter taking a <code>String</code> argument by the JavaBeans {@link
+     * java.beans.Introspector Introspector}.
+     *
+     * @see #setMaxFileSize(String)
+     */
+    public void setMaximumFileSize(long maxFileSize)
+    {
+        this.maxFileSize = maxFileSize;
+    }
 
-	 <p>The <b>MaxSizeRollBackups</b> option determines how many backup
-	 files are kept before the oldest is erased. This option takes
-	 an integer value. If set to zero, then there will be no
-	 backup files and the log file will be truncated when it reaches
-	 <code>MaxFileSize</code>.  If a negative number is supplied then
-	 no deletions will be made.  Note that this could result in
-	 very slow performance as a large number of files are rolled over unless
-	 {@link #setCountDirection} up is used.
+    /**
+     * Set the maximum size that the output file is allowed to reach before being rolled over to backup files.
+     *
+     * <p>In configuration files, the <b>MaxFileSize</b> option takes an long integer in the range 0 - 2^63. You can
+     * specify the value with the suffixes "KB", "MB" or "GB" so that the integer is interpreted being expressed
+     * respectively in kilobytes, megabytes or gigabytes. For example, the value "10KB" will be interpreted as 10240.
+     */
+    public void setMaxFileSize(String value)
+    {
+        maxFileSize = OptionConverter.toFileSize(value, maxFileSize + 1);
+    }
 
-	 <p>The maximum applys to -each- time based group of files and -not- the total.
-	 Using a daily roll the maximum total files would be (#days run) * (maxSizeRollBackups)
+    protected void setQWForFiles(Writer writer)
+    {
+        qw = new CountingQuietWriter(writer, errorHandler);
+    }
 
-	*/
-	public void setMaxSizeRollBackups(int maxBackups) {
-	    maxSizeRollBackups = maxBackups;
-	}
+    //Taken verbatum from DailyRollingFileAppender
+    int computeCheckPeriod()
+    {
+        RollingCalendar c = new RollingCalendar();
+        // set sate to 1970-01-01 00:00:00 GMT
+        Date epoch = new Date(0);
+        if (datePattern != null)
+        {
+            for (int i = TOP_OF_MINUTE; i <= TOP_OF_MONTH; i++)
+            {
+                String r0 = sdf.format(epoch);
+                c.setType(i);
+                Date next = new Date(c.getNextCheckMillis(epoch));
+                String r1 = sdf.format(next);
+                //LogLog.debug("Type = "+i+", r0 = "+r0+", r1 = "+r1);
+                if (r0 != null && r1 != null && !r0.equals(r1))
+                {
+                    return i;
+                }
+            }
+        }
+        return TOP_OF_TROUBLE; // Deliberately head for trouble...
+    }
 
-	/**
-	 Set the maximum size that the output file is allowed to reach
-	 before being rolled over to backup files.
+    //Now for the new stuff
+    /**
+     * Handles append time behavior for CompositeRollingAppender.  This checks if a roll over either by date (checked
+     * first) or time (checked second) is need and then appends to the file last.
+     */
+    protected void subAppend(LoggingEvent event)
+    {
 
-	 <p>This method is equivalent to {@link #setMaxFileSize} except
-	 that it is required for differentiating the setter taking a
-	 <code>long</code> argument from the setter taking a
-	 <code>String</code> argument by the JavaBeans {@link
-	 java.beans.Introspector Introspector}.
+        if (rollDate)
+        {
+            long n = System.currentTimeMillis();
+            if (n >= nextCheck)
+            {
+                now.setTime(n);
+                nextCheck = rc.getNextCheckMillis(now);
 
-	 @see #setMaxFileSize(String)
-	*/
-	public void setMaxFileSize(long maxFileSize) {
-	   this.maxFileSize = maxFileSize;
-	}
+                rollOverTime();
+            }
+        }
 
-	/**
-	 Set the maximum size that the output file is allowed to reach
-	 before being rolled over to backup files.
+        if (rollSize)
+        {
+            if ((fileName != null) && ((CountingQuietWriter) qw).getCount() >= maxFileSize)
+            {
+                rollOverSize();
+            }
+        }
 
-	 <p>This method is equivalent to {@link #setMaxFileSize} except
-	 that it is required for differentiating the setter taking a
-	 <code>long</code> argument from the setter taking a
-	 <code>String</code> argument by the JavaBeans {@link
-	 java.beans.Introspector Introspector}.
+        super.subAppend(event);
+    }
 
-	 @see #setMaxFileSize(String)
-	*/
-	public void setMaximumFileSize(long maxFileSize) {
-		this.maxFileSize = maxFileSize;
-	}
+    public void setFile(String file)
+    {
+        baseFileName = file.trim();
+        fileName = file.trim();
+    }
 
-	/**
-	 Set the maximum size that the output file is allowed to reach
-	 before being rolled over to backup files.
-
-	 <p>In configuration files, the <b>MaxFileSize</b> option takes an
-	 long integer in the range 0 - 2^63. You can specify the value
-	 with the suffixes "KB", "MB" or "GB" so that the integer is
-	 interpreted being expressed respectively in kilobytes, megabytes
-	 or gigabytes. For example, the value "10KB" will be interpreted
-	 as 10240.
-	*/
-	public void setMaxFileSize(String value) {
-	    maxFileSize = OptionConverter.toFileSize(value, maxFileSize + 1);
-	}
-
-	protected void setQWForFiles(Writer writer) {
-	    qw = new CountingQuietWriter(writer, errorHandler);
-	}
-
-	//Taken verbatum from DailyRollingFileAppender
-	int computeCheckPeriod() {
-		RollingCalendar c = new RollingCalendar();
-		// set sate to 1970-01-01 00:00:00 GMT
-		Date epoch = new Date(0);
-		if(datePattern != null) {
-			for(int i = TOP_OF_MINUTE; i <= TOP_OF_MONTH; i++) {
-				String r0 = sdf.format(epoch);
-				c.setType(i);
-				Date next = new Date(c.getNextCheckMillis(epoch));
-				String r1 = sdf.format(next);
-				//LogLog.debug("Type = "+i+", r0 = "+r0+", r1 = "+r1);
-				if(r0 != null && r1 != null && !r0.equals(r1)) {
-					return i;
-				}
-			}
-		}
-		return TOP_OF_TROUBLE; // Deliberately head for trouble...
-	}
-
-	//Now for the new stuff
-	/**
-	 * Handles append time behavior for CompositeRollingAppender.  This checks
-	 * if a roll over either by date (checked first) or time (checked second)
-	 * is need and then appends to the file last.
-	*/
-	protected void subAppend(LoggingEvent event) {
-
-		if (rollDate) {
-			long n = System.currentTimeMillis();
-			if (n >= nextCheck) {
-				now.setTime(n);
-				nextCheck = rc.getNextCheckMillis(now);
-
-				rollOverTime();
-			}
-		}
-
-		if (rollSize) {
-			if ((fileName != null) && ((CountingQuietWriter) qw).getCount() >= maxFileSize) {
-			    rollOverSize();
-			}
-		}
-
-		super.subAppend(event);
-	}
-
-	public void setFile(String file)
-	{
-		baseFileName = file.trim();
-		fileName = file.trim();
-	}
-
-	/**
-	 * Creates and opens the file for logging.  If <code>staticLogFileName</code>
-	 * is false then the fully qualified name is determined and used.
-	 */
-	public synchronized void setFile(String fileName, boolean append) throws IOException {
-		if (!staticLogFileName) {
-		    scheduledFilename = fileName = fileName.trim() + sdf.format(now);
-			if (countDirection > 0) {
-				scheduledFilename = fileName = fileName + '.' + (++curSizeRollBackups);
-			}
-		}
+    /**
+     * Creates and opens the file for logging.  If <code>staticLogFileName</code> is false then the fully qualified name
+     * is determined and used.
+     */
+    public synchronized void setFile(String fileName, boolean append) throws IOException
+    {
+        if (!staticLogFileName)
+        {
+            scheduledFilename = fileName = fileName.trim() + sdf.format(now);
+            if (countDirection > 0)
+            {
+                scheduledFilename = fileName = fileName + '.' + (++curSizeRollBackups);
+            }
+        }
 
         super.setFile(fileName, append, bufferedIO, bufferSize);
 
-        if(append) {
-		  File f = new File(fileName);
-		  ((CountingQuietWriter) qw).setCount(f.length());
-		}
-	}
+        if (append)
+        {
+            File f = new File(fileName);
+            ((CountingQuietWriter) qw).setCount(f.length());
+        }
+    }
 
-	public int getCountDirection() {
-		return countDirection;
-	}
+    public int getCountDirection()
+    {
+        return countDirection;
+    }
 
-	public void setCountDirection(int direction) {
-		countDirection = direction;
-	}
+    public void setCountDirection(int direction)
+    {
+        countDirection = direction;
+    }
 
-	public int getRollingStyle () {
+    public int getRollingStyle()
+    {
         return rollingStyle;
-	}
+    }
 
-	public void setRollingStyle(int style) {
-	    rollingStyle = style;
-		switch (rollingStyle) {
-			case BY_SIZE:
-				 rollDate = false;
-				 rollSize = true;
-				 break;
-			case BY_DATE:
-				 rollDate = true;
-				 rollSize = false;
-				 break;
-			case BY_COMPOSITE:
-				 rollDate = true;
-				 rollSize = true;
-				 break;
-			default:
-				errorHandler.error("Invalid rolling Style, use 1 (by size only), 2 (by date only) or 3 (both)");
-		}
-	}
+    public void setRollingStyle(int style)
+    {
+        rollingStyle = style;
+        switch (rollingStyle)
+        {
+            case BY_SIZE:
+                rollDate = false;
+                rollSize = true;
+                break;
+            case BY_DATE:
+                rollDate = true;
+                rollSize = false;
+                break;
+            case BY_COMPOSITE:
+                rollDate = true;
+                rollSize = true;
+                break;
+            default:
+                errorHandler.error("Invalid rolling Style, use 1 (by size only), 2 (by date only) or 3 (both)");
+        }
+    }
 
-/*
-	public void setRollingStyle(String style) {
-		if (style == S_BY_SIZE) {
-		    rollingStyle = BY_SIZE;
-		}
-		else if (style == S_BY_DATE) {
-		    rollingStyle = BY_DATE;
-		}
-		else if (style == S_BY_COMPOSITE) {
-			rollingStyle = BY_COMPOSITE;
-		}
-	}
-*/
-	public boolean getStaticLogFileName() {
-	    return staticLogFileName;
-	}
+    /*
+        public void setRollingStyle(String style) {
+            if (style == S_BY_SIZE) {
+                rollingStyle = BY_SIZE;
+            }
+            else if (style == S_BY_DATE) {
+                rollingStyle = BY_DATE;
+            }
+            else if (style == S_BY_COMPOSITE) {
+                rollingStyle = BY_COMPOSITE;
+            }
+        }
+    */
+    public boolean getStaticLogFileName()
+    {
+        return staticLogFileName;
+    }
 
-	public void setStaticLogFileName(boolean s) {
-		staticLogFileName = s;
-	}
+    public void setStaticLogFileName(boolean s)
+    {
+        staticLogFileName = s;
+    }
 
-	public void setStaticLogFileName(String value) {
-		setStaticLogFileName(OptionConverter.toBoolean(value, true));
-	}
+    public void setStaticLogFileName(String value)
+    {
+        setStaticLogFileName(OptionConverter.toBoolean(value, true));
+    }
 
-	/**
-	 *  Initializes based on exisiting conditions at time of <code>
-	 *  activateOptions</code>.  The following is done:<br>
-	 *  <br>
-	 *	A) determine curSizeRollBackups<br>
-	 *	B) determine curTimeRollBackups (not implemented)<br>
-	 *	C) initiates a roll over if needed for crossing a date boundary since
-	 *  the last run.
-	 */
-	protected void existingInit() {
+    public boolean getCompressBackupFiles()
+    {
+        return compress;
+    }
 
-		curSizeRollBackups = 0;
-		curTimeRollBackups = 0;
+    public void setCompressBackupFiles(boolean c)
+    {
+        compress = c;
+    }
 
-		//part A starts here
-		String filter;
-		if (staticLogFileName || !rollDate) {
-			filter = baseFileName + ".*";
-		}
-		else {
-			filter = scheduledFilename + ".*";
-		}
+    public boolean getCompressAsync()
+    {
+        return compressAsync;
+    }
 
-		File f = new File(baseFileName);
-		f = f.getParentFile();
-		if (f == null)
-		   f = new File(".");
+    public void setCompressAsync(boolean c)
+    {
+        compressAsync = c;
+        if (compressAsync)
+        {
+            executor = Executors.newFixedThreadPool(1);
 
-		LogLog.debug("Searching for existing files in: " + f);
-		String[] files = f.list();
+            compressor = new Compressor();            
+        }
+    }
 
-		if (files != null) {
-			for (int i = 0; i < files.length; i++) {
-				if (!files[i].startsWith(baseFileName))
-				   continue;
 
-				int index = files[i].lastIndexOf(".");
+    public boolean getZeroBased()
+    {
+        return zeroBased;
+    }
 
-				if (staticLogFileName) {
-				   int endLength = files[i].length() - index;
-				   if (baseFileName.length() + endLength != files[i].length()) {
-					   //file is probably scheduledFilename + .x so I don't care
-					   continue;
-				   }
-				}
+    public void setZeroBased(boolean z)
+    {
+        zeroBased = z;
+    }
 
-				try {
-					int backup = Integer.parseInt(files[i].substring(index + 1, files[i].length()));
-					LogLog.debug("From file: " + files[i] + " -> " + backup);
-					if (backup > curSizeRollBackups)
-					   curSizeRollBackups = backup;
-				}
-				catch (Exception e) {
-					//this happens when file.log -> file.log.yyyy-mm-dd which is normal
-					//when staticLogFileName == false
-					LogLog.debug("Encountered a backup file not ending in .x " + files[i]);
-				}
-			}
-		}
-		LogLog.debug("curSizeRollBackups starts at: " + curSizeRollBackups);
-		//part A ends here
+    public String getBackupFilesToPath()
+    {
+        return backupFilesToPath;
+    }
 
-		//part B not yet implemented
+    public void setbackupFilesToPath(String path)
+    {
+        File td = new File(path);
+        if (!td.exists())
+        {
+            td.mkdirs();
+        }
+        backupFilesToPath = path;
+    }
 
-		//part C
-		if (staticLogFileName && rollDate) {
-			File old = new File(baseFileName);
-			if (old.exists()) {
-				Date last = new Date(old.lastModified());
-				if (!(sdf.format(last).equals(sdf.format(now)))) {
-					scheduledFilename = baseFileName + sdf.format(last);
-					LogLog.debug("Initial roll over to: " + scheduledFilename);
-					rollOverTime();
-				}
-			}
-		}
-		LogLog.debug("curSizeRollBackups after rollOver at: " + curSizeRollBackups);
-		//part C ends here
+    /**
+     * Initializes based on exisiting conditions at time of <code> activateOptions</code>.  The following is done:<br>
+     * <br> A) determine curSizeRollBackups<br> B) determine curTimeRollBackups (not implemented)<br> C) initiates a
+     * roll over if needed for crossing a date boundary since the last run.
+     */
+    protected void existingInit()
+    {
 
-	}
+        if (zeroBased)
+        {
+            curSizeRollBackups = -1;
+        }
+        curTimeRollBackups = 0;
 
-	/**
-	 * Sets initial conditions including date/time roll over information, first check,
-	 * scheduledFilename, and calls <code>existingInit</code> to initialize
-	 * the current # of backups.
-	 */
-	public void activateOptions() {
+        //part A starts here
+        String filter;
+        if (staticLogFileName || !rollDate)
+        {
+            filter = baseFileName + ".*";
+        }
+        else
+        {
+            filter = scheduledFilename + ".*";
+        }
 
-	    //REMOVE removed rollDate from boolean to enable Alex's change
-		if(datePattern != null) {
-			now.setTime(System.currentTimeMillis());
-			sdf = new SimpleDateFormat(datePattern);
-			int type = computeCheckPeriod();
-			//printPeriodicity(type);
-			rc.setType(type);
-			//next line added as this removes the name check in rollOver
-			nextCheck = rc.getNextCheckMillis(now);
-		} else {
-			if (rollDate)
-			    LogLog.error("Either DatePattern or rollingStyle options are not set for ["+
-			      name+"].");
-		}
+        File f = new File(baseFileName);
+        f = f.getParentFile();
+        if (f == null)
+        {
+            f = new File(".");
+        }
 
-		existingInit();
+        LogLog.debug("Searching for existing files in: " + f);
+        String[] files = f.list();
 
-		super.activateOptions();
+        if (files != null)
+        {
+            for (int i = 0; i < files.length; i++)
+            {
+                if (!files[i].startsWith(baseFileName))
+                {
+                    continue;
+                }
 
-		if (rollDate && fileName != null && scheduledFilename == null)
-			scheduledFilename = fileName + sdf.format(now);
-	}
+                int index = files[i].lastIndexOf(".");
 
-	/**
-	 Rollover the file(s) to date/time tagged file(s).
-	 Opens the new file (through setFile) and resets curSizeRollBackups.
-	*/
-	protected void rollOverTime() {
+                if (staticLogFileName)
+                {
+                    int endLength = files[i].length() - index;
+                    if (baseFileName.length() + endLength != files[i].length())
+                    {
+                        //file is probably scheduledFilename + .x so I don't care
+                        continue;
+                    }
+                }
 
-	    curTimeRollBackups++;
+                try
+                {
+                    int backup = Integer.parseInt(files[i].substring(index + 1, files[i].length()));
+                    LogLog.debug("From file: " + files[i] + " -> " + backup);
+                    if (backup > curSizeRollBackups)
+                    {
+                        curSizeRollBackups = backup;
+                    }
+                }
+                catch (Exception e)
+                {
+                    //this happens when file.log -> file.log.yyyy-mm-dd which is normal
+                    //when staticLogFileName == false
+                    LogLog.debug("Encountered a backup file not ending in .x " + files[i]);
+                }
+            }
+        }
+        LogLog.debug("curSizeRollBackups starts at: " + curSizeRollBackups);
+        //part A ends here
 
-		//delete the old stuff here
+        //part B not yet implemented
 
-		if (staticLogFileName) {
-			/* Compute filename, but only if datePattern is specified */
-			if (datePattern == null) {
-				errorHandler.error("Missing DatePattern option in rollOver().");
-				return;
-			}
+        //part C
+        if (staticLogFileName && rollDate)
+        {
+            File old = new File(baseFileName);
+            if (old.exists())
+            {
+                Date last = new Date(old.lastModified());
+                if (!(sdf.format(last).equals(sdf.format(now))))
+                {
+                    scheduledFilename = baseFileName + sdf.format(last);
+                    LogLog.debug("Initial roll over to: " + scheduledFilename);
+                    rollOverTime();
+                }
+            }
+        }
+        LogLog.debug("curSizeRollBackups after rollOver at: " + curSizeRollBackups);
+        //part C ends here
 
-			//is the new file name equivalent to the 'current' one
-			//something has gone wrong if we hit this -- we should only
-			//roll over if the new file will be different from the old
-			String dateFormat = sdf.format(now);
-			if (scheduledFilename.equals(fileName + dateFormat)) {
-				errorHandler.error("Compare " + scheduledFilename + " : " + fileName + dateFormat);
-				return;
-			}
+    }
 
-			// close current file, and rename it to datedFilename
-			this.closeFile();
+    /**
+     * Sets initial conditions including date/time roll over information, first check, scheduledFilename, and calls
+     * <code>existingInit</code> to initialize the current # of backups.
+     */
+    public void activateOptions()
+    {
 
-			//we may have to roll over a large number of backups here
-	        String from, to;
-			for (int i = 1; i <= curSizeRollBackups; i++) {
-				from = fileName + '.' + i;
-				to = scheduledFilename + '.' + i;
-				rollFile(from, to);
-	        }
+        //REMOVE removed rollDate from boolean to enable Alex's change
+        if (datePattern != null)
+        {
+            now.setTime(System.currentTimeMillis());
+            sdf = new SimpleDateFormat(datePattern);
+            int type = computeCheckPeriod();
+            //printPeriodicity(type);
+            rc.setType(type);
+            //next line added as this removes the name check in rollOver
+            nextCheck = rc.getNextCheckMillis(now);
+        }
+        else
+        {
+            if (rollDate)
+            {
+                LogLog.error("Either DatePattern or rollingStyle options are not set for [" +
+                             name + "].");
+            }
+        }
 
-			rollFile(fileName, scheduledFilename);
-		}
+        existingInit();
 
-		try {
-			// This will also close the file. This is OK since multiple
-			// close operations are safe.
-			curSizeRollBackups = 0; //We're cleared out the old date and are ready for the new
+        if (rollDate && fileName != null && scheduledFilename == null)
+        {
+            scheduledFilename = fileName + sdf.format(now);
+        }
 
-			//new scheduled name
-			scheduledFilename = fileName + sdf.format(now);
-			this.setFile(baseFileName, false);
-		}
-		catch(IOException e) {
-			errorHandler.error("setFile("+fileName+", false) call failed.");
-		}
+        try
+        {
+            this.setFile(fileName, true);
+        }
+        catch (IOException e)
+        {
+            errorHandler.error("Cannot set file name:" + fileName);
+        }
 
-	}
+        super.activateOptions();
+    }
 
-	/** Renames file <code>from</code> to file <code>to</code>.  It
-	 *  also checks for existence of target file and deletes if it does.
-	 */
-	protected static void rollFile(String from, String to) {
-		File target = new File(to);
-		if (target.exists()) {
-			LogLog.debug("deleting existing target file: " + target);
-			target.delete();
-		}
+    /**
+     * Rollover the file(s) to date/time tagged file(s). Opens the new file (through setFile) and resets
+     * curSizeRollBackups.
+     */
+    protected void rollOverTime()
+    {
 
-		File file = new File(from);
-		file.renameTo(target);
-		LogLog.debug(from +" -> "+ to);
-	}
+        curTimeRollBackups++;
 
-	/** Delete's the specified file if it exists */
-	protected static void deleteFile(String fileName) {
-		File file = new File(fileName);
-		if (file.exists()) {
-		   file.delete();
-		}
-	}
+        this.closeFile(); // keep windows happy.
 
-	/**
-	 Implements roll overs base on file size.
+        //delete the old stuff here
 
-	 <p>If the maximum number of size based backups is reached
-	 (<code>curSizeRollBackups == maxSizeRollBackups</code) then the oldest
-	 file is deleted -- it's index determined by the sign of countDirection.<br>
-	 If <code>countDirection</code> < 0, then files
-	 {<code>File.1</code>, ..., <code>File.curSizeRollBackups -1</code>}
-	 are renamed to {<code>File.2</code>, ...,
-	 <code>File.curSizeRollBackups</code>}.	 Moreover, <code>File</code> is
-	 renamed <code>File.1</code> and closed.<br>
+        if (staticLogFileName)
+        {
+            /* Compute filename, but only if datePattern is specified */
+            if (datePattern == null)
+            {
+                errorHandler.error("Missing DatePattern option in rollOver().");
+                return;
+            }
 
-	 A new file is created to receive further log output.
+            //is the new file name equivalent to the 'current' one
+            //something has gone wrong if we hit this -- we should only
+            //roll over if the new file will be different from the old
+            String dateFormat = sdf.format(now);
+            if (scheduledFilename.equals(fileName + dateFormat))
+            {
+                errorHandler.error("Compare " + scheduledFilename + " : " + fileName + dateFormat);
+                return;
+            }
 
-	 <p>If <code>maxSizeRollBackups</code> is equal to zero, then the
-	 <code>File</code> is truncated with no backup files created.
+            // close current file, and rename it to datedFilename
+            this.closeFile();
 
-	 <p>If <code>maxSizeRollBackups</code> < 0, then <code>File</code> is
-	 renamed if needed and no files are deleted.
-	*/
+            //we may have to roll over a large number of backups here
+            String from, to;
+            for (int i = 1; i <= curSizeRollBackups; i++)
+            {
+                from = fileName + '.' + i;
+                to = scheduledFilename + '.' + i;
+                rollFile(from, to, false);
+            }
 
-	// synchronization not necessary since doAppend is alreasy synched
-	protected void rollOverSize() {
-		File file;
+            rollFile(fileName, scheduledFilename, compress);
+        }
+        else
+        {
+            if (compress)
+            {
+                compress(fileName);
+            }
+        }
 
-		this.closeFile(); // keep windows happy.
+        try
+        {
+            // This will also close the file. This is OK since multiple
+            // close operations are safe.
+            curSizeRollBackups = 0; //We're cleared out the old date and are ready for the new
 
-		LogLog.debug("rolling over count=" + ((CountingQuietWriter) qw).getCount());
-		LogLog.debug("maxSizeRollBackups = " + maxSizeRollBackups);
-		LogLog.debug("curSizeRollBackups = " + curSizeRollBackups);
-		LogLog.debug("countDirection = " + countDirection);
+            //new scheduled name
+            scheduledFilename = fileName + sdf.format(now);
+            this.setFile(baseFileName, false);
+        }
+        catch (IOException e)
+        {
+            errorHandler.error("setFile(" + fileName + ", false) call failed.");
+        }
 
-		// If maxBackups <= 0, then there is no file renaming to be done.
-		if (maxSizeRollBackups != 0) {
+    }
 
-			if (countDirection < 0) {
-				// Delete the oldest file, to keep Windows happy.
-				if (curSizeRollBackups == maxSizeRollBackups) {
-				    deleteFile(fileName + '.' + maxSizeRollBackups);
-					curSizeRollBackups--;
-				}
+    /**
+     * Renames file <code>from</code> to file <code>to</code>.  It also checks for existence of target file and deletes
+     * if it does.
+     */
+    protected void rollFile(String from, String to, boolean compress)
+    {
+        if (from.equals(to))
+        {
+            if (compress)
+            {
+                LogLog.debug("Attempting to compress file with same output name.");
+            }
+            return;
+        }
+        File target = new File(to);
+        if (target.exists())
+        {
+            LogLog.debug("deleting existing target file: " + target);
+            target.delete();
+        }
 
-				// Map {(maxBackupIndex - 1), ..., 2, 1} to {maxBackupIndex, ..., 3, 2}
-				for (int i = curSizeRollBackups; i >= 1; i--) {
-					rollFile((fileName + "." + i), (fileName + '.' + (i + 1)));
-				}
+        File file = new File(from);
+        if (compress)
+        {
+            compress(file, target);
+        }
+        else
+        {
+            if (!file.getPath().equals(target.getPath()))
+            {
+                file.renameTo(target);
+            }
+        }
+        LogLog.debug(from + " -> " + to);
+    }
 
-				curSizeRollBackups++;
-				// Rename fileName to fileName.1
-				rollFile(fileName, fileName + ".1");
 
-			} //REMOVE This code branching for Alexander Cerna's request
-			else if (countDirection == 0) {
-				//rollFile based on date pattern
-				curSizeRollBackups++;
-				now.setTime(System.currentTimeMillis());
-				scheduledFilename = fileName + sdf.format(now);
-				rollFile(fileName, scheduledFilename);
-			}
-			else { //countDirection > 0
-				if (curSizeRollBackups >= maxSizeRollBackups && maxSizeRollBackups > 0) {
-					//delete the first and keep counting up.
-					int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
-					deleteFile(fileName + '.' + oldestFileIndex);
-				}
+    protected void compress(String file)
+    {
+        File f = new File(file);
+        compress(f, f);
+    }
 
-				if (staticLogFileName) {
-					curSizeRollBackups++;
-					rollFile(fileName, fileName + '.' + curSizeRollBackups);
-				}
-			}
-		}
+    private void compress(File from, File target)
+    {
+        if (compressAsync)
+        {
+            synchronized (_compress)
+            {
+                _compress.offer(new CompressJob(from, target));
+            }
+            startCompression();
+        }
+        else
+        {
+            doCompress(from, target);
+        }
+    }
 
-		try {
-			// This will also close the file. This is OK since multiple
-			// close operations are safe.
-			this.setFile(baseFileName, false);
-		}
-		catch(IOException e) {
-			LogLog.error("setFile("+fileName+", false) call failed.", e);
-		}
-	}
+    private void startCompression()
+    {
+        if (_compressing.compareAndSet(false, true))
+        {
+            executor.execute(compressor);
+        }
+    }
 
+    /** Delete's the specified file if it exists */
+    protected static void deleteFile(String fileName)
+    {
+        File file = new File(fileName);
+        if (file.exists())
+        {
+            file.delete();
+        }
+    }
+
+    /**
+     * Implements roll overs base on file size.
+     *
+     * <p>If the maximum number of size based backups is reached (<code>curSizeRollBackups == maxSizeRollBackups</code)
+     * then the oldest file is deleted -- it's index determined by the sign of countDirection.<br> If
+     * <code>countDirection</code> < 0, then files {<code>File.1</code>, ..., <code>File.curSizeRollBackups -1</code>}
+     * are renamed to {<code>File.2</code>, ..., <code>File.curSizeRollBackups</code>}.	 Moreover, <code>File</code> is
+     * renamed <code>File.1</code> and closed.<br>
+     *
+     * A new file is created to receive further log output.
+     *
+     * <p>If <code>maxSizeRollBackups</code> is equal to zero, then the <code>File</code> is truncated with no backup
+     * files created.
+     *
+     * <p>If <code>maxSizeRollBackups</code> < 0, then <code>File</code> is renamed if needed and no files are deleted.
+     */
+
+    // synchronization not necessary since doAppend is alreasy synched
+    protected void rollOverSize()
+    {
+        File file;
+
+        this.closeFile(); // keep windows happy.
+
+        LogLog.debug("rolling over count=" + ((CountingQuietWriter) qw).getCount());
+        LogLog.debug("maxSizeRollBackups = " + maxSizeRollBackups);
+        LogLog.debug("curSizeRollBackups = " + curSizeRollBackups);
+        LogLog.debug("countDirection = " + countDirection);
+
+        // If maxBackups <= 0, then there is no file renaming to be done.
+        if (maxSizeRollBackups != 0)
+        {
+
+            if (countDirection < 0)
+            {
+                // Delete the oldest file, to keep Windows happy.
+                if (curSizeRollBackups == maxSizeRollBackups)
+                {
+                    deleteFile(fileName + '.' + maxSizeRollBackups);
+                    curSizeRollBackups--;
+                }
+
+                // Map {(maxBackupIndex - 1), ..., 2, 1} to {maxBackupIndex, ..., 3, 2}
+                for (int i = curSizeRollBackups; i >= 1; i--)
+                {
+                    rollFile((fileName + "." + i), (fileName + '.' + (i + 1)), false);
+                }
+
+                curSizeRollBackups++;
+                // Rename fileName to fileName.1
+                rollFile(fileName, fileName + ".1", compress);
+
+            } //REMOVE This code branching for Alexander Cerna's request
+            else if (countDirection == 0)
+            {
+                //rollFile based on date pattern
+                curSizeRollBackups++;
+                now.setTime(System.currentTimeMillis());
+                scheduledFilename = fileName + sdf.format(now);
+                rollFile(fileName, scheduledFilename, compress);
+            }
+            else
+            { //countDirection > 0
+                if (curSizeRollBackups >= maxSizeRollBackups && maxSizeRollBackups > 0)
+                {
+                    //delete the first and keep counting up.
+                    int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
+                    deleteFile(fileName + '.' + oldestFileIndex);
+                }
+
+                if (staticLogFileName)
+                {
+                    curSizeRollBackups++;
+                    rollFile(fileName, fileName + '.' + curSizeRollBackups, compress);
+                }
+                else
+                {
+                    if (compress)
+                    {
+                        compress(fileName);
+                    }
+                }
+            }
+        }
+
+        try
+        {
+            // This will also close the file. This is OK since multiple
+            // close operations are safe.
+            this.setFile(baseFileName, false);
+        }
+        catch (IOException e)
+        {
+            LogLog.error("setFile(" + fileName + ", false) call failed.", e);
+        }
+    }
+
+    protected synchronized void doCompress(File from, File to)
+    {
+        String toFile;
+        if (backupFilesToPath == null)
+        {
+            toFile = to.getPath() + ".gz";
+        }
+        else
+        {
+            toFile = backupFilesToPath + System.getProperty("file.separator") + to.getName() + ".gz";
+        }
+
+        File target = new File(toFile);
+        if (target.exists())
+        {
+            LogLog.debug("deleting existing target file: " + target);
+            target.delete();
+        }
+
+        try
+        {
+            // Create the GZIP output stream
+            GZIPOutputStream out = new GZIPOutputStream(new FileOutputStream(target));
+
+            // Open the input file
+            FileInputStream in = new FileInputStream(from);
+
+            // Transfer bytes from the input file to the GZIP output stream
+            byte[] buf = new byte[1024];
+            int len;
+            while ((len = in.read(buf)) > 0)
+            {
+                out.write(buf, 0, len);
+            }
+            in.close();
+
+            // Complete the GZIP file
+            out.finish();
+            out.close();
+            // Remove old file.
+            from.delete();
+        }
+        catch (IOException e)
+        {
+            if (target.exists())
+            {
+                target.delete();
+            }
+            rollFile(from.getPath(), to.getPath(), false);
+        }
+    }
+
+    private class CompressJob
+    {
+        File _from, _to;
+
+        CompressJob(File from, File to)
+        {
+            _from = from;
+            _to = to;
+        }
+
+        File getFrom()
+        {
+            return _from;
+        }
+
+        File getTo()
+        {
+            return _to;
+        }
+    }
+
+    Compressor compressor = null;
+
+    Executor executor;
+
+    private class Compressor implements Runnable
+    {
+        public void run()
+        {
+            boolean running = true;
+            while (running)
+            {
+                CompressJob job = _compress.poll();
+
+                doCompress(job.getFrom(), job.getTo());
+
+                synchronized (_compress)
+                {
+                    if (_compress.isEmpty())
+                    {
+                        running = false;
+                        _compressing.set(false);
+                    }
+                }
+            }
+
+        }
+    }
 }
