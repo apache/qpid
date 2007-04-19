@@ -161,7 +161,9 @@ class TxBufferTest : public CppUnit::TestCase
     };
 
     CPPUNIT_TEST_SUITE(TxBufferTest);
-    CPPUNIT_TEST(testPrepareAndCommit);
+    CPPUNIT_TEST(testCommitLocal);
+    CPPUNIT_TEST(testFailOnCommitLocal);
+    CPPUNIT_TEST(testPrepare);
     CPPUNIT_TEST(testFailOnPrepare);
     CPPUNIT_TEST(testRollback);
     CPPUNIT_TEST(testBufferIsClearedAfterRollback);
@@ -170,14 +172,14 @@ class TxBufferTest : public CppUnit::TestCase
 
   public:
 
-    void testPrepareAndCommit(){
+    void testCommitLocal(){
         MockTransactionalStore store;
         store.expectBegin().expectCommit();
 
         MockTxOp::shared_ptr opA(new MockTxOp());
         opA->expectPrepare().expectCommit();
         MockTxOp::shared_ptr opB(new MockTxOp());
-        opB->expectPrepare().expectPrepare().expectCommit().expectCommit();//opB enlisted twice to test reative order
+        opB->expectPrepare().expectPrepare().expectCommit().expectCommit();//opB enlisted twice to test relative order
         MockTxOp::shared_ptr opC(new MockTxOp());
         opC->expectPrepare().expectCommit();
 
@@ -187,8 +189,7 @@ class TxBufferTest : public CppUnit::TestCase
         buffer.enlist(static_pointer_cast<TxOp>(opB));//opB enlisted twice
         buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-        CPPUNIT_ASSERT(buffer.prepare(&store));
-        buffer.commit();
+        CPPUNIT_ASSERT(buffer.commitLocal(&store));
         store.check();
         CPPUNIT_ASSERT(store.isCommitted());
         opA->check();
@@ -196,10 +197,50 @@ class TxBufferTest : public CppUnit::TestCase
         opC->check();
     }
 
-    void testFailOnPrepare(){
+    void testFailOnCommitLocal(){
         MockTransactionalStore store;
         store.expectBegin().expectAbort();
 
+        MockTxOp::shared_ptr opA(new MockTxOp());
+        opA->expectPrepare().expectRollback();
+        MockTxOp::shared_ptr opB(new MockTxOp(true));
+        opB->expectPrepare().expectRollback();
+        MockTxOp::shared_ptr opC(new MockTxOp());//will never get prepare as b will fail
+        opC->expectRollback();
+
+        TxBuffer buffer;
+        buffer.enlist(static_pointer_cast<TxOp>(opA));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));
+        buffer.enlist(static_pointer_cast<TxOp>(opC));
+
+        CPPUNIT_ASSERT(!buffer.commitLocal(&store));
+        CPPUNIT_ASSERT(store.isAborted());
+        store.check();
+        opA->check();
+        opB->check();
+        opC->check();
+    }
+
+    void testPrepare(){
+        MockTxOp::shared_ptr opA(new MockTxOp());
+        opA->expectPrepare();
+        MockTxOp::shared_ptr opB(new MockTxOp());
+        opB->expectPrepare();
+        MockTxOp::shared_ptr opC(new MockTxOp());
+        opC->expectPrepare();
+
+        TxBuffer buffer;
+        buffer.enlist(static_pointer_cast<TxOp>(opA));
+        buffer.enlist(static_pointer_cast<TxOp>(opB));
+        buffer.enlist(static_pointer_cast<TxOp>(opC));
+
+        CPPUNIT_ASSERT(buffer.prepare(0));
+        opA->check();
+        opB->check();
+        opC->check();
+    }
+
+    void testFailOnPrepare(){
         MockTxOp::shared_ptr opA(new MockTxOp());
         opA->expectPrepare();
         MockTxOp::shared_ptr opB(new MockTxOp(true));
@@ -211,9 +252,7 @@ class TxBufferTest : public CppUnit::TestCase
         buffer.enlist(static_pointer_cast<TxOp>(opB));
         buffer.enlist(static_pointer_cast<TxOp>(opC));
 
-        CPPUNIT_ASSERT(!buffer.prepare(&store));
-        store.check();
-        CPPUNIT_ASSERT(store.isAborted());
+        CPPUNIT_ASSERT(!buffer.prepare(0));
         opA->check();
         opB->check();
         opC->check();

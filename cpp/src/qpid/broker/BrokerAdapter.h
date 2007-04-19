@@ -21,6 +21,7 @@
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "HandlerImpl.h"
 #include "MessageHandlerImpl.h"
+#include "DtxHandlerImpl.h"
 #include "qpid/Exception.h"
 
 namespace qpid {
@@ -75,6 +76,9 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
         throw ConnectionException(540, "Dtx class not implemented");  }
     TunnelHandler* getTunnelHandler() {
         throw ConnectionException(540, "Tunnel class not implemented"); }
+
+    DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
+    DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
 
@@ -213,7 +217,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     MessageHandlerImpl messageHandler;
     QueueHandlerImpl queueHandler;
     TxHandlerImpl txHandler;
-        
+    DtxHandlerImpl dtxHandler;        
 };
 }} // namespace qpid::broker
 
