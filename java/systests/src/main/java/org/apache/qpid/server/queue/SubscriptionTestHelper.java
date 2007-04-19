@@ -87,7 +87,7 @@ public class SubscriptionTestHelper implements Subscription
     {
     }
 
-    public boolean hasFilters()
+    public boolean filtersMessages()
     {
         return false;
     }
