@@ -172,7 +172,7 @@ public class Config
             }
             catch(NumberFormatException e)
             {
-                throw new RuntimeException("Bad port number: " + value);
+                throw new RuntimeException("Bad port number: " + value, e);
             }
         }
         else if("-name".equalsIgnoreCase(key))

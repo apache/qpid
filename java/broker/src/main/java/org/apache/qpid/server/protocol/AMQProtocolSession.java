@@ -31,6 +31,8 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.security.Principal;
+
 
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 {
@@ -165,9 +167,9 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 
     public ProtocolOutputConverter getProtocolOutputConverter();
 
-    void setAuthorizedID(String authorizedID);
+    void setAuthorizedID(Principal authorizedID);
 
-    /** @return a username string that was used to authorized this session */    
-    String getAuthorizedID();
+    /** @return a Principal that was used to authorized this session */
+    Principal getAuthorizedID();
 
 }

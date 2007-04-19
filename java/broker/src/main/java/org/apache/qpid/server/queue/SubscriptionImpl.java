@@ -558,7 +558,7 @@ public class SubscriptionImpl implements Subscription
                     _logger.trace("Removed for resending:" + resent.debugIdentity());
                 }
 
-                resent.release();
+                resent.release(_queue);
                 _queue.subscriberHasPendingResend(false, this, resent);
 
                 try

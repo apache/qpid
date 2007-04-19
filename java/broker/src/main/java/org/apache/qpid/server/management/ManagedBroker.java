@@ -52,8 +52,7 @@ public interface ManagedBroker
     @MBeanOperation(name="createNewExchange", description="Creates a new Exchange", impact= MBeanOperationInfo.ACTION)
     void createNewExchange(@MBeanOperationParameter(name="name", description="Name of the new exchange")String name,
                            @MBeanOperationParameter(name="ExchangeType", description="Type of the exchange")String type,
-                           @MBeanOperationParameter(name="durable", description="true if the Exchang should be durable")boolean durable,
-                           @MBeanOperationParameter(name="passive", description="true of the Exchange should be passive")boolean passive)
+                           @MBeanOperationParameter(name="durable", description="true if the Exchang should be durable")boolean durable)
         throws IOException, JMException;
 
     /**
@@ -81,8 +80,7 @@ public interface ManagedBroker
     @MBeanOperation(name="createNewQueue", description="Create a new Queue on the Broker server", impact= MBeanOperationInfo.ACTION)
     void createNewQueue(@MBeanOperationParameter(name="queue name", description="Name of the new queue")String queueName,
                         @MBeanOperationParameter(name="owner", description="Owner name")String owner,
-                        @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable,
-                        @MBeanOperationParameter(name="autoDelete", description="true if the queue should be auto delete") boolean autoDelete)
+                        @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable)
         throws IOException, JMException;
 
     /**

@@ -1,5 +1,25 @@
 /*
  *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+/*
+ *
  * Copyright (c) 2006 The Apache Software Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +37,15 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.security.Principal;
 import java.util.Date;
 import java.util.List;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
-import javax.management.Notification;
 import javax.management.NotCompliantMBeanException;
+import javax.management.Notification;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -56,15 +77,17 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 {
     private AMQMinaProtocolSession _session = null;
     private String _name = null;
-    
-    //openmbean data types for representing the channel attributes
-    private final static String[] _channelAtttibuteNames = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count"};
-    private final static String[] _indexNames = {_channelAtttibuteNames[0]};
-    private final static OpenType[] _channelAttributeTypes = {SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER};
-    private static CompositeType _channelType = null;      // represents the data type for channel data
-    private static TabularType _channelsType = null;       // Data type for list of channels type
+
+    // openmbean data types for representing the channel attributes
+    private static final String[] _channelAtttibuteNames =
+        { "Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count" };
+    private static final String[] _indexNames = { _channelAtttibuteNames[0] };
+    private static final OpenType[] _channelAttributeTypes =
+        { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER };
+    private static CompositeType _channelType = null; // represents the data type for channel data
+    private static TabularType _channelsType = null; // Data type for list of channels type
     private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION =
-            new AMQShortString("Broker Management Console has closed the connection.");
+        new AMQShortString("Broker Management Console has closed the connection.");
 
     @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
     public AMQProtocolSessionMBean(AMQMinaProtocolSession session) throws NotCompliantMBeanException, OpenDataException
@@ -72,11 +95,10 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         super(ManagedConnection.class, ManagedConnection.TYPE);
         _session = session;
         String remote = getRemoteAddress();
-        remote = "anonymous".equals(remote) ? remote + hashCode() : remote;
+        remote = "anonymous".equals(remote) ? (remote + hashCode()) : remote;
         _name = jmxEncode(new StringBuffer(remote), 0).toString();
         init();
     }
-
 
     static
     {
@@ -84,10 +106,10 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         {
             init();
         }
-        catch(JMException ex)
+        catch (JMException ex)
         {
-            // It should never occur
-            System.out.println(ex.getMessage());
+            // This is not expected to ever occur.
+            throw new RuntimeException("Got JMException in static initializer.", ex);
         }
     }
 
@@ -96,26 +118,27 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      */
     private static void init() throws OpenDataException
     {
-        _channelType = new CompositeType("Channel", "Channel Details", _channelAtttibuteNames,
-                                         _channelAtttibuteNames, _channelAttributeTypes);
+        _channelType =
+            new CompositeType("Channel", "Channel Details", _channelAtttibuteNames, _channelAtttibuteNames,
+                _channelAttributeTypes);
         _channelsType = new TabularType("Channels", "Channels", _channelType, _indexNames);
     }
 
     public String getClientId()
     {
-        return _session.getContextKey() == null ? null : _session.getContextKey().toString();
+        return (_session.getContextKey() == null) ? null : _session.getContextKey().toString();
     }
 
     public String getAuthorizedId()
     {
-        return _session.getAuthorizedID();
+        return (_session.getAuthorizedID() != null ) ? _session.getAuthorizedID().getName() : null;
     }
 
     public String getVersion()
     {
-        return _session.getClientVersion() == null ? null : _session.getClientVersion().toString();
+        return (_session.getClientVersion() == null) ? null : _session.getClientVersion().toString();
     }
-    
+
     public Date getLastIoTime()
     {
         return new Date(_session.getIOSession().getLastIoTime());
@@ -171,6 +194,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
             {
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
+
             _session.commitTransactions(channel);
         }
         catch (AMQException ex)
@@ -194,6 +218,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
             {
                 throw new JMException("The channel (channel Id = " + channelId + ") does not exist");
             }
+
             _session.rollbackTransactions(channel);
         }
         catch (AMQException ex)
@@ -215,9 +240,12 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
         for (AMQChannel channel : list)
         {
-            Object[] itemValues = {channel.getChannelId(), channel.isTransactional(),
+            Object[] itemValues =
+                {
+                    channel.getChannelId(), channel.isTransactional(),
                     (channel.getDefaultQueue() != null) ? channel.getDefaultQueue().getName().asString() : null,
-                    channel.getUnacknowledgedMessageMap().size()};
+                    channel.getUnacknowledgedMessageMap().size()
+                };
 
             CompositeData channelData = new CompositeDataSupport(_channelType, _channelAtttibuteNames, itemValues);
             channelsList.put(channelData);
@@ -232,17 +260,16 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
      * @throws JMException
      */
     public void closeConnection() throws JMException
-    {        
+    {
         // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame response = ConnectionCloseBody.createAMQFrame(0,
-            _session.getProtocolMajorVersion(),
-            _session.getProtocolMinorVersion(),	// AMQP version (major, minor)
-            0,	// classId
-            0,	// methodId
-        	AMQConstant.REPLY_SUCCESS.getCode(),	// replyCode
-            BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION    // replyText
+        final AMQFrame response =
+            ConnectionCloseBody.createAMQFrame(0, _session.getProtocolMajorVersion(), _session.getProtocolMinorVersion(), // AMQP version (major, minor)
+                0, // classId
+                0, // methodId
+                AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
+                BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION // replyText
             );
         _session.writeFrame(response);
 
@@ -259,18 +286,19 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     @Override
     public MBeanNotificationInfo[] getNotificationInfo()
     {
-        String[] notificationTypes = new String[]{MonitorNotification.THRESHOLD_VALUE_EXCEEDED};
+        String[] notificationTypes = new String[] { MonitorNotification.THRESHOLD_VALUE_EXCEEDED };
         String name = MonitorNotification.class.getName();
         String description = "Channel count has reached threshold value";
         MBeanNotificationInfo info1 = new MBeanNotificationInfo(notificationTypes, name, description);
 
-        return new MBeanNotificationInfo[]{info1};
+        return new MBeanNotificationInfo[] { info1 };
     }
 
     public void notifyClients(String notificationMsg)
     {
-        Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this,
-                ++_notificationSequenceNumber, System.currentTimeMillis(), notificationMsg);
+        Notification n =
+            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, ++_notificationSequenceNumber,
+                System.currentTimeMillis(), notificationMsg);
         _broadcaster.sendNotification(n);
     }
 

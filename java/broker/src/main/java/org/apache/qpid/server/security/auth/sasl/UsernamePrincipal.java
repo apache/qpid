@@ -22,10 +22,7 @@ package org.apache.qpid.server.security.auth.sasl;
 
 import java.security.Principal;
 
-/**
- * A principal that is just a wrapper for a simple username.
- *
- */
+/** A principal that is just a wrapper for a simple username. */
 public class UsernamePrincipal implements Principal
 {
     private String _name;
@@ -36,6 +33,11 @@ public class UsernamePrincipal implements Principal
     }
 
     public String getName()
+    {
+        return _name;
+    }
+
+    public String toString()
     {
         return _name;
     }

@@ -22,6 +22,7 @@ package org.apache.qpid.config;
 
 import org.apache.qpid.config.ConnectionFactoryInitialiser;
 import org.apache.qpid.config.ConnectorConfig;
+import org.apache.qpid.client.JMSAMQException;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
@@ -63,11 +64,11 @@ public class JBossConnectionFactoryInitialiser implements ConnectionFactoryIniti
         }
         catch (NamingException e)
         {
-            throw new JMSException("Unable to lookup object: " + e);
+            throw new JMSAMQException("Unable to lookup object: " + e, e);
         }
         catch (Exception e)
         {
-            throw new JMSException("Error creating topic: " + e);
+            throw new JMSAMQException("Error creating topic: " + e, e);
         }
     }
 

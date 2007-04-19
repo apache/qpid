@@ -181,7 +181,7 @@ public class VirtualHost implements Accessable
         catch (Exception e)
         {
             _logger.error("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
-            throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
+            throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor", e);
         }
         Configurator.configure(instance);
 

@@ -49,7 +49,7 @@ public abstract class AbstractConfig
         }
         catch(NumberFormatException e)
         {
-            throw new RuntimeException(msg + ": " + i);
+            throw new RuntimeException(msg + ": " + i, e);
         }
     }
 
@@ -61,7 +61,7 @@ public abstract class AbstractConfig
         }
         catch(NumberFormatException e)
         {
-            throw new RuntimeException(msg + ": " + i);
+            throw new RuntimeException(msg + ": " + i, e);
         }
     }
 

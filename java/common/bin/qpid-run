@@ -106,15 +106,20 @@ usage() {
 export EXTERNAL_CLASSPATH=$CLASSPATH
 unset CLASSPATH
 
-conf=$QPID_HOME/etc/$program.conf
-if [ ! -e $conf ]; then
-  conf=$QPID_HOME/etc/$(basename ${sourced}).conf
+#Use QPID_CLASSPATH if set
+if [ -n "$QPID_CLASSPATH" ]; then
+    export CLASSPATH=$QPID_CLASSPATH
+    echo "Using QPID_CLASSPATH" $QPID_CLASSPATH
+else
+    echo "Warning: Qpid classpath not set. CLASSPATH must include qpid jars."
 fi
 
-if [ -r $conf ]; then
-  . $conf
+#Use QPID_JAVA_MEM if set
+if [ -n "$QPID_JAVA_MEM" ]; then
+    export JAVA_MEM=$QPID_JAVA_MEM
+    echo "Using QPID_JAVA_MEM setting" $QPID_JAVA_MEM
 else
-  die "unable to source $conf"
+    echo "Info: QPID_JAVA_MEM not set. Defaulting to JAVA_MEM" $JAVA_MEM
 fi
 
 declare -a RUN_ARGS JAVA_ARGS

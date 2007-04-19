@@ -21,8 +21,8 @@
 package org.apache.qpid.server.security.auth.database;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
@@ -34,9 +34,11 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
 import java.security.Principal;
 
 /**
@@ -119,9 +121,91 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
+    public boolean verifyPassword(String principal, String password) throws AccountNotFoundException
+    {
+        try
+        {
+            char[] pwd = lookupPassword(principal);
+
+            return compareCharArray(pwd, convertPassword(password));
+        }
+        catch (IOException e)
+        {
+            return false;
+        }
+    }
+
+    private char[] convertPassword(String password) throws UnsupportedEncodingException
+    {
+        byte[] passwdBytes = password.getBytes("utf-8");
+
+        char[] passwd = new char[passwdBytes.length];
+
+        int index = 0;
+
+        for (byte b : passwdBytes)
+        {
+            passwd[index++] = (char) b;
+        }
+
+        return passwd;
+    }
+
+    public boolean updatePassword(Principal principal, String password) throws AccountNotFoundException
+    {
+        return false; // updates denied
+    }
+
+    public boolean createPrincipal(Principal principal, String password)
+    {
+        return false; // updates denied
+    }
+
+    public boolean deletePrincipal(Principal principal) throws AccountNotFoundException
+    {
+        return false; // updates denied
+    }
+
     public Map<String, AuthenticationProviderInitialiser> getMechanisms()
     {
         return _saslServers;
+    }
+
+    public List<Principal> getUsers()
+    {
+        return null; //todo
+    }
+
+    public Principal getUser(String username)
+    {
+        try
+        {
+            if (lookupPassword(username) != null)
+            {
+                return new UsernamePrincipal(username);
+            }
+        }
+        catch (IOException e)
+        {
+            //fall through to null return
+        }
+        return null;
+    }
+
+    private boolean compareCharArray(char[] a, char[] b)
+    {
+        boolean equal = false;
+        if (a.length == b.length)
+        {
+            equal = true;
+            int index = 0;
+            while (equal && index < a.length)
+            {
+                equal = a[index] == b[index];
+                index++;
+            }
+        }
+        return equal;
     }
 
 
@@ -129,11 +213,11 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
      * Looks up the password for a specified user in the password file. Note this code is <b>not</b> secure since it
      * creates strings of passwords. It should be modified to create only char arrays which get nulled out.
      *
-     * @param name
+     * @param name the name of the principal to lookup
      *
-     * @return
+     * @return char[] of the password
      *
-     * @throws java.io.IOException
+     * @throws java.io.IOException whilst accessing the file
      */
     private char[] lookupPassword(String name) throws IOException
     {

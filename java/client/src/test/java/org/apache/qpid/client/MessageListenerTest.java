@@ -144,6 +144,36 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
     }
 
+    public void testRecieveTheUseMessageListener() throws Exception
+     {
+
+         _logger.error("Test disabled as initial receive is not called first");
+         // Perform initial receive to start connection
+//         assertTrue(_consumer.receive(2000) != null);
+//         receivedCount++;
+
+         // Sleep to ensure remaining 4 msgs end up on _synchronousQueue
+//         Thread.sleep(1000);
+
+         // Set the message listener and wait for the messages to come in.
+         _consumer.setMessageListener(this);
+
+         _logger.info("Waiting 3 seconds for messages");
+
+         try
+         {
+             _awaitMessages.await(3000, TimeUnit.MILLISECONDS);
+         }
+         catch (InterruptedException e)
+         {
+             //do nothing
+         }
+         //Should have recieved all async messages
+         assertEquals(MSG_COUNT, receivedCount);
+
+     }
+    
+
     public void onMessage(Message message)
     {
         _logger.info("Received Message(" + receivedCount + "):" + message);

@@ -7,6 +7,7 @@ Bundle-Activator: org.apache.qpid.management.ui.Activator
 Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
- org.eclipse.ui.forms
+ org.eclipse.ui.forms,
+ jmxremote.optional
 Eclipse-LazyStart: true
 Bundle-Vendor: Apache Software Foundation

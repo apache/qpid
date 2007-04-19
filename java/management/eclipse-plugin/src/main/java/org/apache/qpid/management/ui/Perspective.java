@@ -37,8 +37,8 @@ public class Perspective implements IPerspectiveFactory
 		layout.setEditorAreaVisible(false);
         
 		// standalone view meaning it can't be docked or stacked with other views, and it doesn't have a title bar.        
-		layout.addStandaloneView(NavigationView.ID, true, IPageLayout.LEFT, 0.25f, editorArea);
-        layout.addStandaloneView(MBeanView.ID, true, IPageLayout.RIGHT, 0.75f, editorArea);
+		layout.addStandaloneView(NavigationView.ID, true, IPageLayout.LEFT, 0.30f, editorArea);
+        layout.addStandaloneView(MBeanView.ID, true, IPageLayout.RIGHT, 0.70f, editorArea);
 		
 		layout.getViewLayout(NavigationView.ID).setCloseable(false);
         layout.getViewLayout(MBeanView.ID).setCloseable(false);       

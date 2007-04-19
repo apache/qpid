@@ -23,6 +23,7 @@ package org.apache.qpid.server.protocol;
 
 import java.io.IOException;
 import java.util.Date;
+import java.security.Principal;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -67,16 +68,17 @@ public interface ManagedConnection
     /**
      * Tells the total number of bytes written till now.
      * @return number of bytes written.
-     */
+     *
     @MBeanAttribute(name="WrittenBytes", description="The total number of bytes written till now")
     Long getWrittenBytes();
-
+    */
     /**
      * Tells the total number of bytes read till now.
      * @return number of bytes read.
-     */
+     *
     @MBeanAttribute(name="ReadBytes", description="The total number of bytes read till now")
     Long getReadBytes();
+    */
 
     /**
      * Threshold high value for no of channels.  This is useful in setting notifications or

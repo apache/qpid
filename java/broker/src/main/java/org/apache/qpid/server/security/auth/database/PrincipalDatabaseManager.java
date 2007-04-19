@@ -21,10 +21,14 @@
 package org.apache.qpid.server.security.auth.database;
 
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 
 import java.util.Map;
 
 public interface PrincipalDatabaseManager
 {
     public Map<String, PrincipalDatabase> getDatabases();
+
+    public void initialiseManagement(Configuration config) throws ConfigurationException;
 }

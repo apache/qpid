@@ -384,7 +384,9 @@ public final class JMSHeaderAdapter
         }
         catch (AMQPInvalidClassException aice)
         {
-            throw new MessageFormatException("Only primatives are allowed object is:" + object.getClass());
+            MessageFormatException mfe = new MessageFormatException("Only primatives are allowed object is:" + object.getClass());
+            mfe.setLinkedException(aice);
+            throw mfe;
         }
     }
 

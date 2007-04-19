@@ -128,6 +128,10 @@ public abstract class ServerRegistry
         return _virtualHosts;
     }
     
+    public abstract void setUserList(List<String> list);
+    
+    public abstract List<String> getUsernames();
+    
     public abstract void addManagedObject(ManagedBean key);
     
     public abstract List<ManagedBean> getMBeans();
@@ -154,7 +158,7 @@ public abstract class ServerRegistry
     
     public abstract boolean hasSubscribedForNotifications(ManagedBean mbean, String name, String type);
     
-    public abstract void clearNotifications(ManagedBean mbean);
+    public abstract void clearNotifications(ManagedBean mbean, List<NotificationObject> list);
     
     public ClientListener getNotificationListener()
     {

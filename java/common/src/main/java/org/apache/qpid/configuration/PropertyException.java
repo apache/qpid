@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -7,9 +8,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,6 +22,7 @@
 package org.apache.qpid.configuration;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
@@ -49,7 +51,7 @@ public class PropertyException extends AMQException
         super(errorCode, msg);
     }
 
-    public PropertyException(Logger logger, String msg, Throwable t)
+    /*public PropertyException(Logger logger, String msg, Throwable t)
     {
         super(logger, msg, t);
     }
@@ -62,5 +64,5 @@ public class PropertyException extends AMQException
     public PropertyException(Logger logger, AMQConstant errorCode, String msg)
     {
         super(logger, errorCode, msg);
-    }
+    }*/
 }

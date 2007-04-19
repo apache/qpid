@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.client.security;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Security;
@@ -33,6 +29,7 @@ import java.util.Properties;
 import java.util.TreeMap;
 
 import javax.security.sasl.SaslClientFactory;
+
 
 import org.apache.log4j.Logger;
 
@@ -50,14 +47,11 @@ import org.apache.qpid.util.FileUtils;
  * mechanism=fully.qualified.class.name
  * </pre>
  *
- * <p/>Where mechanism is an IANA-registered mechanism name and the fully qualified class name refers to a
- * class that implements javax.security.sasl.SaslClientFactory and provides the specified mechanism.
+ * <p/>Where mechanism is an IANA-registered mechanism name and the fully qualified class name refers to a class that
+ * implements javax.security.sasl.SaslClientFactory and provides the specified mechanism.
  *
- * <p><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Parse SASL mechanism properties.
- * <tr><td> Create and register security provider for SASL mechanisms.
- * </table>
+ * <p><table id="crc"><caption>CRC Card</caption> <tr><th> Responsibilities <th> Collaborations <tr><td> Parse SASL
+ * mechanism properties. <tr><td> Create and register security provider for SASL mechanisms. </table>
  */
 public class DynamicSaslRegistrar
 {
@@ -69,10 +63,7 @@ public class DynamicSaslRegistrar
     /** The default name of the SASL properties file resource. */
     public static final String DEFAULT_RESOURCE_NAME = "org/apache/qpid/client/security/DynamicSaslRegistrar.properties";
 
-    /**
-     * Reads the properties file, and creates a dynamic security provider to register the SASL implementations
-     * with.
-     */
+    /** Reads the properties file, and creates a dynamic security provider to register the SASL implementations with. */
     public static void registerSaslProviders()
     {
         _logger.debug("public static void registerSaslProviders(): called");
@@ -80,8 +71,8 @@ public class DynamicSaslRegistrar
         // Open the SASL properties file, using the default name is one is not specified.
         String filename = System.getProperty(FILE_PROPERTY);
         InputStream is =
-            FileUtils.openFileOrDefaultResource(filename, DEFAULT_RESOURCE_NAME,
-                                                DynamicSaslRegistrar.class.getClassLoader());
+                FileUtils.openFileOrDefaultResource(filename, DEFAULT_RESOURCE_NAME,
+                                                    DynamicSaslRegistrar.class.getClassLoader());
 
         try
         {
@@ -94,7 +85,7 @@ public class DynamicSaslRegistrar
 
             if (factories.size() > 0)
             {
-                Security.addProvider(new JCAProvider(factories));
+                Security.insertProviderAt(new JCAProvider(factories), 0);
                 _logger.debug("Dynamic SASL provider added as a security provider");
             }
         }
@@ -170,15 +161,15 @@ public class DynamicSaslRegistrar
      * @return A map from SASL mechanism names to implementing client factory classes.
      *
      * @todo Why tree map here? Do really want mechanisms in alphabetical order? Seems more likely that the declared
-     *       order of the mechanisms is intended to be preserved, so that they are registered in the declared order
-     *       of preference. Consider LinkedHashMap instead.
+     * order of the mechanisms is intended to be preserved, so that they are registered in the declared order of
+     * preference. Consider LinkedHashMap instead.
      */
     private static Map<String, Class<? extends SaslClientFactory>> parseProperties(Properties props)
     {
         Enumeration e = props.propertyNames();
 
         TreeMap<String, Class<? extends SaslClientFactory>> factoriesToRegister =
-            new TreeMap<String, Class<? extends SaslClientFactory>>();
+                new TreeMap<String, Class<? extends SaslClientFactory>>();
 
         while (e.hasMoreElements())
         {
