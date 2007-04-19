@@ -21,32 +21,27 @@
 package org.apache.qpid.nclient.amqp;
 
 import org.apache.qpid.framing.DtxCoordinationCommitBody;
-import org.apache.qpid.framing.DtxCoordinationCommitOkBody;
 import org.apache.qpid.framing.DtxCoordinationForgetBody;
-import org.apache.qpid.framing.DtxCoordinationForgetOkBody;
 import org.apache.qpid.framing.DtxCoordinationGetTimeoutBody;
-import org.apache.qpid.framing.DtxCoordinationGetTimeoutOkBody;
 import org.apache.qpid.framing.DtxCoordinationPrepareBody;
-import org.apache.qpid.framing.DtxCoordinationPrepareOkBody;
 import org.apache.qpid.framing.DtxCoordinationRecoverBody;
-import org.apache.qpid.framing.DtxCoordinationRecoverOkBody;
 import org.apache.qpid.framing.DtxCoordinationRollbackBody;
-import org.apache.qpid.framing.DtxCoordinationRollbackOkBody;
+import org.apache.qpid.framing.DtxCoordinationSetTimeoutBody;
 import org.apache.qpid.nclient.core.AMQPException;
 
 public interface AMQPDtxCoordination
 {
-	public DtxCoordinationCommitOkBody commit(DtxCoordinationCommitBody dtxCoordinationCommitBody) throws AMQPException;
+	public void commit(DtxCoordinationCommitBody dtxCoordinationCommitBody,AMQPCallBack cb) throws AMQPException;
 	
-	public DtxCoordinationForgetOkBody forget(DtxCoordinationForgetBody dtxCoordinationForgetBody) throws AMQPException;
+	public void forget(DtxCoordinationForgetBody dtxCoordinationForgetBody,AMQPCallBack cb) throws AMQPException;
 	
-	public DtxCoordinationGetTimeoutOkBody getTimeOut(DtxCoordinationGetTimeoutBody dtxCoordinationGetTimeoutBody) throws AMQPException;
+	public void getTimeOut(DtxCoordinationGetTimeoutBody dtxCoordinationGetTimeoutBody,AMQPCallBack cb) throws AMQPException;
 	
-	public DtxCoordinationPrepareOkBody prepare(DtxCoordinationPrepareBody dtxCoordinationPrepareBody) throws AMQPException;
+	public void prepare(DtxCoordinationPrepareBody dtxCoordinationPrepareBody,AMQPCallBack cb) throws AMQPException;
 	
-	public DtxCoordinationRecoverOkBody recover(DtxCoordinationRecoverBody dtxCoordinationRecoverBody) throws AMQPException;
+	public void recover(DtxCoordinationRecoverBody dtxCoordinationRecoverBody,AMQPCallBack cb) throws AMQPException;
 	
-	public DtxCoordinationRollbackOkBody getTimeOut(DtxCoordinationRollbackBody dtxCoordinationRollbackBody) throws AMQPException;
+	public void rollback(DtxCoordinationRollbackBody dtxCoordinationRollbackBody,AMQPCallBack cb) throws AMQPException;
 	
-	//public DtxCoordinationSetTimeoutOkBody getTimeOut(DtxCoordinationSetTimeoutBody dtxCoordinationSetTimeoutBody) throws AMQPException;
+	public void setTimeOut(DtxCoordinationSetTimeoutBody dtxCoordinationSetTimeoutBody,AMQPCallBack cb) throws AMQPException;
 }
