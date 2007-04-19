@@ -199,11 +199,18 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     private final Object _suspensionLock = new Object();
 
-    /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
+    /** Boolean to control immediate prefetch . Records the first call to the dispatcher to prevent further flow(true) */
+    private final AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
+
+    /** System property to enable immediate message prefetching */
+    private static final String IMMEDIATE_PREFETCH = "IMMEDIATE_PREFETCH";
+    /** Immediate message prefetch default */
+    private static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
+
 
     private static final Logger _dispatcherLogger = Logger.getLogger(Dispatcher.class);
-    private AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
 
+    /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
     private class Dispatcher extends Thread
     {
 
@@ -1932,20 +1939,19 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     synchronized void startDistpatcherIfNecessary()
     {
-        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
+        // If IMMEDIATE_PREFETCH is not set then we need to start fetching          
+        if (!Boolean.parseBoolean(System.getProperties().getProperty(IMMEDIATE_PREFETCH, IMMEDIATE_PREFETCH_DEFAULT)))
         {
-//            if (!connectionStopped)
+            // We do this now if this is the first call on a started connection
+            if (isSuspended() && _startedAtLeastOnce.get() && _firstDispatcher.getAndSet(false))
             {
-                if (isSuspended() && _firstDispatcher.getAndSet(false))
+                try
                 {
-                    try
-                    {
-                        suspendChannel(false);
-                    }
-                    catch (AMQException e)
-                    {
-                        _logger.info("Suspending channel threw an exception:" + e);
-                    }
+                    suspendChannel(false);
+                }
+                catch (AMQException e)
+                {
+                    _logger.info("Suspending channel threw an exception:" + e);
                 }
             }
         }
@@ -1998,11 +2004,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
 
-        // The dispatcher will be null if we have just created this session
-        // so suspend the channel before we register our consumer so that we don't
-        // start prefetching until a receive/mListener is set.
-        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
+        // If IMMEDIATE_PREFETCH is not required then suspsend the channel to delay prefetch
+        if (!Boolean.parseBoolean(System.getProperties().getProperty(IMMEDIATE_PREFETCH, IMMEDIATE_PREFETCH_DEFAULT)))
         {
+            // The dispatcher will be null if we have just created this session
+            // so suspend the channel before we register our consumer so that we don't
+            // start prefetching until a receive/mListener is set.
             if (_dispatcher == null)
             {
                 if (!isSuspended())
@@ -2010,6 +2017,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     try
                     {
                         suspendChannel(true);
+                        _logger.info("Prefetching delayed existing messages will not flow until requested via receive*() or setML().");
                     }
                     catch (AMQException e)
                     {
@@ -2017,6 +2025,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     }
                 }
             }
+        }
+        else
+        {
+            _logger.info("Immediately prefetching existing messages to new consumer.");
         }
 
         try
