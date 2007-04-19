@@ -31,6 +31,8 @@
 #include "AccumulatedAck.h"
 #include "Consumer.h"
 #include "DeliveryRecord.h"
+#include "DtxBuffer.h"
+#include "DtxManager.h"
 #include "MessageBuilder.h"
 #include "NameGenerator.h"
 #include "Prefetch.h"
@@ -80,7 +82,6 @@ class Channel : public framing::ChannelAdapter,
     Connection& connection;
     uint64_t currentDeliveryTag;
     Queue::shared_ptr defaultQueue;
-    bool transactional;
     ConsumerImplMap consumers;
     uint32_t prefetchSize;    
     uint16_t prefetchCount;    
@@ -89,7 +90,8 @@ class Channel : public framing::ChannelAdapter,
     NameGenerator tagGenerator;
     std::list<DeliveryRecord> unacked;
     sys::Mutex deliveryLock;
-    TxBuffer txBuffer;
+    TxBuffer::shared_ptr txBuffer;
+    DtxBuffer::shared_ptr dtxBuffer;
     AccumulatedAck accumulatedAck;
     MessageStore* const store;
     MessageBuilder messageBuilder;//builder for in-progress message
@@ -113,7 +115,7 @@ class Channel : public framing::ChannelAdapter,
     ~Channel();
 
     bool isOpen() const { return opened; }
-    BrokerAdapter& getAdatper() { return *adapter; }
+    BrokerAdapter& getAdapter() { return *adapter; }
     
     void open() { opened = true; }
     void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }
@@ -131,10 +133,12 @@ class Channel : public framing::ChannelAdapter,
                  const framing::FieldTable* = 0);
     void cancel(const string& tag);
     bool get(Queue::shared_ptr queue, const std::string& destination, bool ackExpected);
-    void begin();
     void close();
+    void startTx();
     void commit();
     void rollback();
+    void startDtx(const std::string& xid, DtxManager& mgr);
+    void endDtx();
     void ack();
     void ack(uint64_t deliveryTag, bool multiple);
     void ack(uint64_t deliveryTag, uint64_t endTag);
