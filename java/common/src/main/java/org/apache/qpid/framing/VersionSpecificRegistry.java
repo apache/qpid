@@ -148,34 +148,30 @@ public class VersionSpecificRegistry
         }
         catch(NullPointerException e)
         {
-            throw new AMQFrameDecodingException(_log,
-                "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion + "-" + _protocolMinorVersion
-                 + " (while trying to decode class " + classID + " method " + methodID + ".");
+            throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion
+                + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID + ".", e);
         }
         catch(IndexOutOfBoundsException e)
         {
             if(classID >= _registry.length)
             {
-                throw new AMQFrameDecodingException(_log,
-                    "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion + "-" + _protocolMinorVersion
-                     + " (while trying to decode class " + classID + " method " + methodID + ".");
-
+                throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion
+                    + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID
+                    + ".", e);
             }
             else
             {
-                throw new AMQFrameDecodingException(_log,
-                    "Method " + methodID + " unknown in AMQP version " + _protocolMajorVersion + "-" + _protocolMinorVersion
-                     + " (while trying to decode class " + classID + " method " + methodID + ".");
-
+                throw new AMQFrameDecodingException(null, "Method " + methodID + " unknown in AMQP version "
+                    + _protocolMajorVersion + "-" + _protocolMinorVersion + " (while trying to decode class " + classID
+                    + " method " + methodID + ".", e);
             }
         }
 
 
         if (bodyFactory == null)
         {
-            throw new AMQFrameDecodingException(_log,
-                "Method " + methodID + " unknown in AMQP version " + _protocolMajorVersion + "-" + _protocolMinorVersion
-                 + " (while trying to decode class " + classID + " method " + methodID + ".");
+            throw new AMQFrameDecodingException(null, "Method " + methodID + " unknown in AMQP version " + _protocolMajorVersion
+                + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID + ".", null);
         }
 
 

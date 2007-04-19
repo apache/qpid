@@ -23,13 +23,13 @@ package org.apache.qpid.server.security.access;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.configuration.PropertyUtils;
-import org.apache.qpid.configuration.PropertyException;
 import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
+import java.security.Principal;
 
 public class AccessManagerImpl implements AccessManager
 {
@@ -39,8 +39,13 @@ public class AccessManagerImpl implements AccessManager
 
     public AccessManagerImpl(String name, Configuration hostConfig) throws ConfigurationException
     {
-        String accessClass = hostConfig.getString("security.access.class");
+        if (hostConfig == null)
+        {
+            _logger.warn("No Configuration specified. Using default access controls for VirtualHost:'" + name + "'");
+            return;
+        }
 
+        String accessClass = hostConfig.getString("security.access.class");
         if (accessClass == null)
         {
             _logger.warn("No access control specified. Using default access controls for VirtualHost:'" + name + "'");
@@ -111,21 +116,35 @@ public class AccessManagerImpl implements AccessManager
             }
             catch (Exception e)
             {
-                throw new ConfigurationException(e.getCause());
+                ConfigurationException ce = new ConfigurationException(e.getMessage(), e.getCause());
+                ce.initCause(e);
+                throw ce;
             }
         }
     }
 
-
     public AccessResult isAuthorized(Accessable accessObject, String username)
+    {
+        return isAuthorized(accessObject, new UsernamePrincipal(username), AccessRights.Rights.READ);
+    }
+
+    public AccessResult isAuthorized(Accessable accessObject, Principal user, AccessRights.Rights rights)
     {
         if (_accessManager == null)
         {
-            return ApplicationRegistry.getInstance().getAccessManager().isAuthorized(accessObject, username);
+            if (ApplicationRegistry.getInstance().getAccessManager() == this)
+            {
+                _logger.warn("No Default access manager specified DENYING ALL ACCESS");
+                return new AccessResult(this, AccessResult.AccessStatus.REFUSED);
+            }
+            else
+            {
+                return ApplicationRegistry.getInstance().getAccessManager().isAuthorized(accessObject, user, rights);
+            }
         }
         else
         {
-            return _accessManager.isAuthorized(accessObject, username);
+            return _accessManager.isAuthorized(accessObject, user, rights);
         }
     }
 

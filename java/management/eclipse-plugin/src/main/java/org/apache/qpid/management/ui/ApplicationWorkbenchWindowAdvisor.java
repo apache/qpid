@@ -49,7 +49,7 @@ public class ApplicationWorkbenchWindowAdvisor extends WorkbenchWindowAdvisor
         IWorkbenchWindowConfigurer configurer = getWindowConfigurer();
         int x = Display.getDefault().getBounds().width;
         int y = Display.getDefault().getBounds().height;
-        configurer.setInitialSize(new Point(4*x/5, 3*y/4));
+        configurer.setInitialSize(new Point(9*x/10, 8*y/10));
         configurer.setShowCoolBar(true);
         configurer.setShowStatusLine(false);
         

@@ -60,13 +60,6 @@ import org.apache.qpid.management.ui.views.ViewUtility;
  */
 public class MBeanUtility
 {
-    private static boolean _debug;
-    static
-    {
-        String debug = System.getProperty("debug");
-        _debug = "true".equalsIgnoreCase(debug) ? true : false;
-    }
-    
     public static final BigInteger MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
     public static final BigInteger MAX_INT = BigInteger.valueOf(Integer.MAX_VALUE);
     /**
@@ -149,27 +142,27 @@ public class MBeanUtility
      * @param mbean managed bean
      * @param ex   Exception
      */
-    public static void handleException(ManagedBean mbean, Exception ex)
+    public static void handleException(ManagedBean mbean, Throwable ex)
     {
         if (mbean == null)
         {
             ViewUtility.popupErrorMessage("Error", "Managed Object is null \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof IOException)
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), "IO Error occured \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof ReflectionException)
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), "Server has thrown error \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof InstanceNotFoundException)
         {
             ViewUtility.popupErrorMessage(mbean.getInstanceName(), "Managed Object Not Found \n" + ex.toString());
-            ex.printStackTrace();
+            printStackTrace(ex);
         }
         else if (ex instanceof MBeanException)
         {
@@ -188,8 +181,20 @@ public class MBeanUtility
         }
         else 
         {
-            ViewUtility.popupErrorMessage(mbean.getInstanceName(), ex.getMessage());
-            ex.printStackTrace();
+            if (ex.getCause() != null)
+            {
+                handleException(mbean, ex.getCause());
+            }
+            else
+            {
+                String msg = ex.getMessage();
+                if (msg == null)
+                {
+                    msg = ex.toString();
+                }
+                ViewUtility.popupErrorMessage(mbean.getInstanceName(), msg);
+                printStackTrace(ex);
+            }
         }
         
     }
@@ -449,12 +454,19 @@ public class MBeanUtility
         return Arrays.asList(domains);
     }
     
-    /**
-     * return true if System property is set to true -Ddebug=true
-     * @return
-     */
-    public static boolean isDebug()
+    public static void printOutput(String statement)
     {
-        return _debug;
+        if (ApplicationRegistry.debug)
+        {
+            System.out.println(statement);
+        }
+    }
+    
+    private static void printStackTrace(Throwable ex)
+    {
+        if (ApplicationRegistry.debug)
+        {
+            ex.printStackTrace();
+        }
     }
 }

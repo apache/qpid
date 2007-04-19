@@ -175,5 +175,10 @@ public class TopicPublisherAdapter implements TopicPublisher
         {
             throw new InvalidDestinationException("Destination " + topic + " is not a topic");
         }
+        if(!(topic instanceof AMQDestination))
+        {
+            throw new InvalidDestinationException("Destination " + topic + " is not a Qpid topic");
+        }
+
     }
 }

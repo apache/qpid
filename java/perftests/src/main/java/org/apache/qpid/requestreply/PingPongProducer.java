@@ -116,7 +116,7 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
  *       by the PPP that it is atteched to.
  *
  * @todo Use read/write lock in the onmessage, not for reading writing but to make use of a shared and exlcusive lock pair.
- *       Obtian read lock on all messages, before decrementing the message count. At the end of the on message method add a
+ *       Obtain read lock on all messages, before decrementing the message count. At the end of the on message method add a
  *       block that obtains the write lock for the very last message, releases any waiting producer. Means that the last
  *       message waits until all other messages have been handled before releasing producers but allows messages to be
  *       processed concurrently, unlike the current synchronized block.
@@ -725,6 +725,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         log.debug("public void createReplyConsumers(Collection<Destination> destinations = " + destinations
             + ", String selector = " + selector + "): called");
 
+        log.debug("Creating " + destinations.size() + " reply consumers.");
+
         for (Destination destination : destinations)
         {
             // Create a consumer for the destination and set this pinger to listen to its messages.
@@ -732,6 +734,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                 _consumerSession.createConsumer(destination, PREFETCH_DEFAULT, NO_LOCAL_DEFAULT, EXCLUSIVE_DEFAULT,
                     selector);
             _consumer.setMessageListener(this);
+
+            log.debug("Set this to listen to replies sent to destination: " + destination);
         }
     }
 
@@ -743,13 +747,13 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      */
     public void onMessage(Message message)
     {
-        log.debug("public void onMessage(Message message): called");
+        // log.debug("public void onMessage(Message message): called");
 
         try
         {
             // Extract the messages correlation id.
             String correlationID = message.getJMSCorrelationID();
-            log.debug("correlationID = " + correlationID);
+            // log.debug("correlationID = " + correlationID);
 
             // Countdown on the traffic light if there is one for the matching correlation id.
             PerCorrelationId perCorrelationId = perCorrelationIds.get(correlationID);
@@ -761,7 +765,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                 // Restart the timeout timer on every message.
                 perCorrelationId.timeOutStart = System.nanoTime();
 
-                log.debug("Reply was expected, decrementing the latch for the id, " + correlationID);
+                // log.debug("Reply was expected, decrementing the latch for the id, " + correlationID);
 
                 // Decrement the countdown latch. Before this point, it is possible that two threads might enter this
                 // method simultanesouly with the same correlation id. Decrementing the latch in a synchronized block
@@ -776,8 +780,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                     trueCount = trafficLight.getCount();
                     remainingCount = trueCount - 1;
 
-                    log.debug("remainingCount = " + remainingCount);
-                    log.debug("trueCount = " + trueCount);
+                    // log.debug("remainingCount = " + remainingCount);
+                    // log.debug("trueCount = " + trueCount);
 
                     // Commit on transaction batch size boundaries. At this point in time the waiting producer remains
                     // blocked, even on the last message.
@@ -806,23 +810,23 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             }
 
             // Print out ping times for every message in verbose mode only.
-            if (_verbose)
+            /*if (_verbose)
             {
                 Long timestamp = message.getLongProperty(MESSAGE_TIMESTAMP_PROPNAME);
 
                 if (timestamp != null)
                 {
                     long diff = System.nanoTime() - timestamp;
-                    log.trace("Time for round trip (nanos): " + diff);
+                    //log.trace("Time for round trip (nanos): " + diff);
                 }
-            }
+            }*/
         }
         catch (JMSException e)
         {
             log.warn("There was a JMSException: " + e.getMessage(), e);
         }
 
-        log.debug("public void onMessage(Message message): ending");
+        // log.debug("public void onMessage(Message message): ending");
     }
 
     /**
@@ -955,16 +959,16 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             committed = false;
 
             // Re-timestamp the message.
-            message.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
+            // message.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
 
             // Send the message, passing in the message count.
             committed = sendMessage(i, message);
 
             // Spew out per message timings on every message sonly in verbose mode.
-            if (_verbose)
+            /*if (_verbose)
             {
                 log.info(timestampFormatter.format(new Date()) + ": Pinged at with correlation id, " + messageCorrelationId);
-            }
+            }*/
         }
 
         // Call commit if the send loop finished before reaching a batch size boundary so there may still be uncommitted messages.
@@ -1003,7 +1007,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                 _failBeforeSend = false;
             }
 
-            log.trace("Failing Before Send");
+            // log.trace("Failing Before Send");
             waitForUser(KILL_BROKER_PROMPT);
         }
 
@@ -1176,6 +1180,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             if (_connection != null)
             {
                 _connection.close();
+                log.debug("Close connection.");
             }
         }
         finally
@@ -1213,20 +1218,20 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      */
     protected boolean commitTx(Session session) throws JMSException
     {
-        log.debug("protected void commitTx(Session session): called");
+        // log.debug("protected void commitTx(Session session): called");
 
         boolean committed = false;
 
-        log.trace("Batch time reached");
+        // log.trace("Batch time reached");
         if (_failAfterSend)
         {
-            log.trace("Batch size reached");
+            // log.trace("Batch size reached");
             if (_failOnce)
             {
                 _failAfterSend = false;
             }
 
-            log.trace("Failing After Send");
+            // log.trace("Failing After Send");
             waitForUser(KILL_BROKER_PROMPT);
         }
 
@@ -1241,14 +1246,14 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                         _failBeforeCommit = false;
                     }
 
-                    log.trace("Failing Before Commit");
+                    // log.trace("Failing Before Commit");
                     waitForUser(KILL_BROKER_PROMPT);
                 }
 
-                long l = System.nanoTime();
+                // long l = System.nanoTime();
                 session.commit();
                 committed = true;
-                log.debug("Time taken to commit :" + ((System.nanoTime() - l) / 1000000f) + " ms");
+                // log.debug("Time taken to commit :" + ((System.nanoTime() - l) / 1000000f) + " ms");
 
                 if (_failAfterCommit)
                 {
@@ -1257,15 +1262,15 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                         _failAfterCommit = false;
                     }
 
-                    log.trace("Failing After Commit");
+                    // log.trace("Failing After Commit");
                     waitForUser(KILL_BROKER_PROMPT);
                 }
 
-                log.trace("Session Commited.");
+                // log.trace("Session Commited.");
             }
             catch (JMSException e)
             {
-                log.trace("JMSException on commit:" + e.getMessage(), e);
+                log.debug("JMSException on commit:" + e.getMessage(), e);
 
                 // Warn that the bounce back client is not available.
                 if (e.getLinkedException() instanceof AMQNoConsumersException)
@@ -1276,11 +1281,11 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                 try
                 {
                     session.rollback();
-                    log.trace("Message rolled back.");
+                    log.debug("Message rolled back.");
                 }
                 catch (JMSException jmse)
                 {
-                    log.trace("JMSE on rollback:" + jmse.getMessage(), jmse);
+                    log.debug("JMSE on rollback:" + jmse.getMessage(), jmse);
 
                     // Both commit and rollback failed. Throw the rollback exception.
                     throw jmse;
@@ -1296,7 +1301,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      *
      * @param prompt The prompt to display on the console.
      */
-    protected void waitForUser(String prompt)
+    public void waitForUser(String prompt)
     {
         System.out.println(prompt);
 

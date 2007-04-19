@@ -98,7 +98,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
             // If we haven't requested message to be resent to this consumer then reject it from ever getting it.
 //            if (!evt.getMethod().resend)
             {
-                message.message.reject(message.message.getDeliveredSubscription());
+                message.message.reject(message.message.getDeliveredSubscription(message.queue));
             }
 
             if (evt.getMethod().requeue)

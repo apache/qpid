@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -178,6 +179,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
 
             // Run the test procedure.
             int sent = pingProducer.send();
+            pingProducer.closeConnection();
             pingProducer.waitForUser("Press return to begin receiving the pings.");
             pingProducer.receive(sent);
 
@@ -302,6 +304,13 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         System.out.println("Messages sent: " + messagesSent + ", Messages Committed = " + messagesCommitted
             + ", Messages not Committed = " + messagesNotCommitted);
 
+
+
+        return messagesSent;
+    }
+
+    protected void closeConnection()
+    {
         // Clean up the connection.
         try
         {
@@ -309,10 +318,11 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         }
         catch (JMSException e)
         {
+            log.debug("There was an error whilst closing the connection: " + e, e);
+            System.out.println("There was an error whilst closing the connection.");
+
             // Ignore as did best could manage to clean up.
         }
-
-        return messagesSent;
     }
 
     protected void receive(int messagesSent) throws Exception
@@ -351,6 +361,32 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
             {
                 System.out.println("Got all messages.");
                 endCondition = true;
+            }
+        }
+
+        // Ensure messages received are committed.
+        if (_transacted)
+        {
+            try
+            {
+                _consumerSession.commit();
+                System.out.println("Committed for all messages received.");
+            }
+            catch (JMSException e)
+            {
+                log.debug("Error during commit: " + e, e);
+                System.out.println("Error during commit.");
+                try
+                {
+                    _consumerSession.rollback();
+                    System.out.println("Rolled back on all messages received.");
+                }
+                catch (JMSException e2)
+                {
+                    log.debug("Error during rollback: " + e, e);
+                    System.out.println("Error on roll back of all messages received.");
+                }
+
             }
         }
 

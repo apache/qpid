@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.management.ui;
 
+import static org.apache.qpid.management.ui.Constants.*;
 import java.util.HashMap;
 
 /**
@@ -50,7 +51,7 @@ public abstract class ManagedBean extends ManagedObject
         this._properties = properties;
         setName(getProperty("name"));
         setType(getProperty("type"));
-        _virtualHostName = getProperty(Constants.VIRTUAL_HOST);
+        _virtualHostName = getProperty(VIRTUAL_HOST);
     }
     public String getDomain()
     {
@@ -89,7 +90,7 @@ public abstract class ManagedBean extends ManagedObject
     public String getVirtualHostName()
     {
         // To make it work with the broker with no virtual host implementation
-        return _virtualHostName == null ? Constants.DEFAULT_VH : _virtualHostName;
+        return _virtualHostName == null ? DEFAULT_VH : _virtualHostName;
     }
     
     /**
@@ -106,21 +107,26 @@ public abstract class ManagedBean extends ManagedObject
     
     public boolean isQueue()
     {
-        return _type.endsWith(Constants.QUEUE);
+        return _type.endsWith(QUEUE);
     }
     
     public boolean isConnection()
     {
-        return _type.endsWith(Constants.CONNECTION);
+        return _type.endsWith(CONNECTION);
     }
     
     public boolean isExchange()
     {
-        return _type.endsWith(Constants.EXCHANGE);
+        return _type.endsWith(EXCHANGE);
     }
     
     public boolean isTempQueue()
     {
         return (isQueue() && getName().startsWith("tmp_"));
+    }
+    
+    public boolean isAdmin()
+    {
+        return _type.endsWith(ADMIN_MBEAN_TYPE);
     }
 }

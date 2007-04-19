@@ -35,6 +35,7 @@ import org.apache.qpid.server.store.MessageStore;
 import javax.security.sasl.SaslServer;
 import java.util.HashMap;
 import java.util.Map;
+import java.security.Principal;
 
 /**
  * A protocol session that can be used for testing purposes.
@@ -177,12 +178,12 @@ public class MockProtocolSession implements AMQProtocolSession
         return ProtocolOutputConverterRegistry.getConverter(this);
     }
 
-    public void setAuthorizedID(String authorizedID)
+    public void setAuthorizedID(Principal authorizedID)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public String getAuthorizedID()
+    public Principal getAuthorizedID()
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }

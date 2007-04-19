@@ -1,4 +1,5 @@
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,33 +7,35 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
 package org.apache.qpid.example.publisher;
 
-import org.apache.log4j.Logger;
-
 import java.io.File;
+
+import javax.jms.JMSException;
+
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.example.shared.FileUtils;
 import org.apache.qpid.example.shared.Statics;
-
-import javax.jms.JMSException;
 
 /**
  * Class that sends message files to the Publisher to distribute
  * using files as input
  * Must set properties for host in properties file or uses in vm broker
  */
-public class FileMessageDispatcher {
+public class FileMessageDispatcher
+{
 
     protected static final Logger _logger = Logger.getLogger(FileMessageDispatcher.class);
 
@@ -48,30 +51,30 @@ public class FileMessageDispatcher {
     public static void main(String[] args)
     {
 
-        //Check command line args ok - must provide a path or file for us to dispatch
+        // Check command line args ok - must provide a path or file for us to dispatch
         if (args.length == 0)
         {
-            System.err.println("Usage: FileMessageDispatcher <filesToDispatch>" + "");
+            System.out.println("Usage: FileMessageDispatcher <filesToDispatch>" + "");
         }
         else
         {
             try
             {
-                //publish message(s) from file(s) to configured queue
+                // publish message(s) from file(s) to configured queue
                 publish(args[0]);
 
-                //Move payload file(s) to archive location as no error
+                // Move payload file(s) to archive location as no error
                 FileUtils.moveFileToNewDir(args[0], System.getProperties().getProperty(Statics.ARCHIVE_PATH));
             }
-            catch(Exception e)
+            catch (Exception e)
             {
-                //log error and exit
+                // log error and exit
                 _logger.error("Error trying to dispatch message: " + e);
                 System.exit(1);
             }
             finally
             {
-                //clean up before exiting
+                // clean up before exiting
                 if (getPublisher() != null)
                 {
                     getPublisher().cleanup();
@@ -98,10 +101,10 @@ public class FileMessageDispatcher {
         File tempFile = new File(path);
         if (tempFile.isDirectory())
         {
-            //while more files in dir publish them
+            // while more files in dir publish them
             File[] files = tempFile.listFiles();
 
-            if (files == null || files.length == 0)
+            if ((files == null) || (files.length == 0))
             {
                 _logger.info("FileMessageDispatcher - No files to publish in input directory: " + tempFile);
             }
@@ -109,10 +112,10 @@ public class FileMessageDispatcher {
             {
                 for (File file : files)
                 {
-                    //Create message factory passing in payload path
+                    // Create message factory passing in payload path
                     FileMessageFactory factory = new FileMessageFactory(getPublisher().getSession(), file.toString());
 
-                    //Send the message generated from the payload using the _publisher
+                    // Send the message generated from the payload using the _publisher
                     getPublisher().sendMessage(factory.createEventMessage());
 
                 }
@@ -120,11 +123,11 @@ public class FileMessageDispatcher {
         }
         else
         {
-            //handle a single file
-            //Create message factory passing in payload path
-            FileMessageFactory factory = new FileMessageFactory(getPublisher().getSession(),tempFile.toString());
+            // handle a single file
+            // Create message factory passing in payload path
+            FileMessageFactory factory = new FileMessageFactory(getPublisher().getSession(), tempFile.toString());
 
-            //Send the message generated from the payload using the _publisher
+            // Send the message generated from the payload using the _publisher
             getPublisher().sendMessage(factory.createEventMessage());
         }
     }
@@ -145,15 +148,15 @@ public class FileMessageDispatcher {
      */
     private static Publisher getPublisher()
     {
-       if (_publisher != null)
-       {
-           return _publisher;
-       }
+        if (_publisher != null)
+        {
+            return _publisher;
+        }
 
-       //Create a _publisher
-       _publisher = new Publisher();
+        // Create a _publisher
+        _publisher = new Publisher();
 
-       return _publisher;
+        return _publisher;
     }
 
 }

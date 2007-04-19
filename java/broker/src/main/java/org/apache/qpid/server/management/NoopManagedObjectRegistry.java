@@ -24,6 +24,8 @@ import javax.management.JMException;
 
 import org.apache.log4j.Logger;
 
+import java.rmi.RemoteException;
+
 /**
  * This managed object registry does not actually register MBeans. This can be used in tests when management is
  * not required or when management has been disabled.
@@ -38,11 +40,21 @@ public class NoopManagedObjectRegistry implements ManagedObjectRegistry
         _log.info("Management is disabled");
     }
 
+    public void start()
+    {
+        //no-op
+    }
+
     public void registerObject(ManagedObject managedObject) throws JMException
     {
     }
 
     public void unregisterObject(ManagedObject managedObject) throws JMException
     {
+    }
+
+    public void close() throws RemoteException
+    {
+        
     }
 }

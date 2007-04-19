@@ -69,7 +69,18 @@ public abstract class TabControl
         return null;
     }
     
-    public abstract void refresh(ManagedBean mbean);
+    public void refresh(ManagedBean mbean)
+    {
+        if (mbean == null)
+        {
+            refresh();
+        }
+    }
+    
+    public void refresh()
+    {
+        
+    }
     
     public void refresh(ManagedBean mbean, OperationData opData)
     {

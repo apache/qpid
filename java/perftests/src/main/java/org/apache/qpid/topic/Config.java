@@ -221,7 +221,7 @@ public class Config extends AbstractConfig implements ConnectorConfig
             }
             catch(NumberFormatException e)
             {
-                throw new RuntimeException("Bad port number: " + value);
+                throw new RuntimeException("Bad port number: " + value, e);
             }
         }
         else if("-payload".equalsIgnoreCase(key))

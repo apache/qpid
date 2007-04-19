@@ -64,7 +64,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     private final AtomicInteger _counter = new AtomicInteger();
 
 
-
     protected QueueDeclareHandler()
     {
         Configurator.configure(this);
@@ -92,12 +91,12 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         synchronized (queueRegistry)
         {
 
-            if (((queue = queueRegistry.getQueue(body.queue)) == null) )
+            if (((queue = queueRegistry.getQueue(body.queue)) == null))
             {
-                if(body.passive)
+                if (body.passive)
                 {
-                    String msg = "Queue: " + body.queue + " not found.";
-                    throw body.getChannelException(AMQConstant.NOT_FOUND,msg );
+                    String msg = "Queue: " + body.queue + " not found on VirtualHost(" + virtualHost + ").";
+                    throw body.getChannelException(AMQConstant.NOT_FOUND, msg);
                 }
                 else
                 {
@@ -112,13 +111,16 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                         Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
                         queue.bind(body.queue, null, defaultExchange);
-                        _log.info("Queue " + body.queue + " bound to default exchange");
+                        _log.info("Queue " + body.queue + " bound to default exchange(" + defaultExchange.getName() + ")");
                     }
                 }
             }
-            else if(queue.getOwner() != null && !session.getContextKey().equals(queue.getOwner()))
+            else if (queue.getOwner() != null && !session.getContextKey().equals(queue.getOwner()))
             {
-                throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue, as exclusive queue with same name declared on another connection");        
+                throw body.getChannelException(AMQConstant.ALREADY_EXISTS, "Cannot declare queue('" + body.queue + "'),"
+                                                                           + " as exclusive queue with same name "
+                                                                           + "declared on another client ID('"
+                                                                           + queue.getOwner() + "')");
             }
 
             AMQChannel channel = session.getChannel(evt.getChannelId());
@@ -138,10 +140,10 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
             // Be aware of possible changes to parameter order as versions change.
             AMQFrame response = QueueDeclareOkBody.createAMQFrame(evt.getChannelId(),
-                (byte)8, (byte)0,	// AMQP version (major, minor)
-                queue.getConsumerCount(), // consumerCount
-                queue.getMessageCount(), // messageCount
-                body.queue); // queue
+                                                                  (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                  queue.getConsumerCount(), // consumerCount
+                                                                  queue.getMessageCount(), // messageCount
+                                                                  body.queue); // queue
             _log.info("Queue " + body.queue + " declared successfully");
             session.writeFrame(response);
         }
@@ -162,24 +164,22 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
     {
         final QueueRegistry registry = virtualHost.getQueueRegistry();
         AMQShortString owner = body.exclusive ? session.getContextKey() : null;
-        final AMQQueue queue =  new AMQQueue(body.queue, body.durable, owner, body.autoDelete, virtualHost);
+        final AMQQueue queue = new AMQQueue(body.queue, body.durable, owner, body.autoDelete, virtualHost);
         final AMQShortString queueName = queue.getName();
 
-        if(body.exclusive && !body.durable)
+        if (body.exclusive && !body.durable)
         {
             final AMQProtocolSession.Task deleteQueueTask =
-                new AMQProtocolSession.Task()
-                {
-
-                    public void doTask(AMQProtocolSession session) throws AMQException
+                    new AMQProtocolSession.Task()
                     {
-                        if(registry.getQueue(queueName) == queue)
+                        public void doTask(AMQProtocolSession session) throws AMQException
                         {
-                            queue.delete();
+                            if (registry.getQueue(queueName) == queue)
+                            {
+                                queue.delete();
+                            }
                         }
-
-                    }
-                };
+                    };
 
             session.addSessionCloseTask(deleteQueueTask);
 
@@ -190,16 +190,14 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     session.removeSessionCloseTask(deleteQueueTask);
                 }
             });
-
-
-        }
+        }// if exclusive and not durable
 
         Configuration virtualHostDefaultQueueConfiguration = VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
         if (virtualHostDefaultQueueConfiguration != null)
         {
             Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
         }
-        
+
         return queue;
     }
 }

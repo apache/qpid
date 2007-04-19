@@ -202,6 +202,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
 
     private static final Logger _dispatcherLogger = Logger.getLogger(Dispatcher.class);
+    private AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
 
     private class Dispatcher extends Thread
     {
@@ -327,8 +328,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                    ") is closed rejecting(requeue)...");
                         }
                     }
-
-                    rejectMessage(message, true);
+                    // Don't reject if we're already closing
+                    if (!_closed.get())
+                    {
+                        rejectMessage(message, true);
+                    }
                 }
                 else
                 {
@@ -995,42 +999,42 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         throw new java.lang.UnsupportedOperationException();
     }
 
-    public MessageProducer createProducer(Destination destination, boolean mandatory,
-                                          boolean immediate, boolean waitUntilSent)
+    public BasicMessageProducer createProducer(Destination destination, boolean mandatory,
+                                               boolean immediate, boolean waitUntilSent)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate, waitUntilSent);
     }
 
-    public MessageProducer createProducer(Destination destination, boolean mandatory, boolean immediate)
+    public BasicMessageProducer createProducer(Destination destination, boolean mandatory, boolean immediate)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate);
     }
 
-    public MessageProducer createProducer(Destination destination, boolean immediate)
+    public BasicMessageProducer createProducer(Destination destination, boolean immediate)
             throws JMSException
     {
         return createProducerImpl(destination, DEFAULT_MANDATORY, immediate);
     }
 
-    public MessageProducer createProducer(Destination destination) throws JMSException
+    public BasicMessageProducer createProducer(Destination destination) throws JMSException
     {
         return createProducerImpl(destination, DEFAULT_MANDATORY, DEFAULT_IMMEDIATE);
     }
 
-    private org.apache.qpid.jms.MessageProducer createProducerImpl(Destination destination, boolean mandatory,
-                                                                   boolean immediate)
+    private BasicMessageProducer createProducerImpl(Destination destination, boolean mandatory,
+                                                    boolean immediate)
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate, false);
     }
 
-    private org.apache.qpid.jms.MessageProducer createProducerImpl(final Destination destination, final boolean mandatory,
-                                                                   final boolean immediate, final boolean waitUntilSent)
+    private BasicMessageProducer createProducerImpl(final Destination destination, final boolean mandatory,
+                                                    final boolean immediate, final boolean waitUntilSent)
             throws JMSException
     {
-        return (org.apache.qpid.jms.MessageProducer) new FailoverSupport()
+        return (BasicMessageProducer) new FailoverSupport()
         {
             public Object operation() throws JMSException
             {
@@ -1248,8 +1252,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 {
                     JMSException ex = new JMSException("Error registering consumer: " + e);
 
-                    //todo remove
-                    e.printStackTrace();
+                    if (_logger.isDebugEnabled())
+                    {
+                        e.printStackTrace();
+                    }
                     ex.setLinkedException(e);
                     throw ex;
                 }
@@ -1926,6 +1932,24 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     synchronized void startDistpatcherIfNecessary()
     {
+        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
+        {
+//            if (!connectionStopped)
+            {
+                if (isSuspended() && _firstDispatcher.getAndSet(false))
+                {
+                    try
+                    {
+                        suspendChannel(false);
+                    }
+                    catch (AMQException e)
+                    {
+                        _logger.info("Suspending channel threw an exception:" + e);
+                    }
+                }
+            }
+        }
+
         startDistpatcherIfNecessary(false);
     }
 
@@ -1973,6 +1997,27 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         AMQShortString queueName = declareQueue(amqd, protocolHandler);
 
         bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
+
+        // The dispatcher will be null if we have just created this session
+        // so suspend the channel before we register our consumer so that we don't
+        // start prefetching until a receive/mListener is set.
+        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
+        {
+            if (_dispatcher == null)
+            {
+                if (!isSuspended())
+                {
+                    try
+                    {
+                        suspendChannel(true);
+                    }
+                    catch (AMQException e)
+                    {
+                        _logger.info("Suspending channel threw an exception:" + e);
+                    }
+                }
+            }
+        }
 
         try
         {
@@ -2089,7 +2134,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         // Remove the consumer from the map
         BasicMessageConsumer consumer = (BasicMessageConsumer) _consumers.get(consumerTag);
         if (consumer != null)
-        {            
+        {
 //            fixme this isn't right.. needs to check if _queue contains data for this consumer
             if (consumer.isAutoClose())// && _queue.isEmpty())
             {

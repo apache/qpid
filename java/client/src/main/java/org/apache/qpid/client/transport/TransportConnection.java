@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,12 +26,14 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
+
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.jms.BrokerDetails;
@@ -64,13 +66,11 @@ public class TransportConnection
         int transport = getTransport(details.getTransport());
 
         if (transport == -1)
-
         {
             throw new AMQNoTransportForProtocolException(details);
         }
 
         if (transport == _currentInstance)
-
         {
             if (transport == VM)
             {
@@ -88,40 +88,42 @@ public class TransportConnection
         _currentInstance = transport;
 
         switch (transport)
-
         {
-            case TCP:
-                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
-                {
-                    public IoConnector newSocketConnector()
+
+        case TCP:
+            _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
                     {
-                        SocketConnector result;
-                        //FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                        if (Boolean.getBoolean("qpidnio"))
+                        public IoConnector newSocketConnector()
                         {
-                            _logger.fatal("Using Qpid NIO - sysproperty 'qpidnio' is set.");
-//                            result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
-                        }
-//                        else
-                        {
-                            _logger.info("Using Mina NIO");
-                            result = new SocketConnector(); // non-blocking connector
-                        }
+                            SocketConnector result;
+                            // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
+                            if (Boolean.getBoolean("qpidnio"))
+                            {
+                                _logger.fatal("Using Qpid NIO - sysproperty 'qpidnio' is set.");
+                                // result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
+                            }
+                            // else
 
-                        // Don't have the connector's worker thread wait around for other connections (we only use
-                        // one SocketConnector per connection at the moment anyway). This allows short-running
-                        // clients (like unit tests) to complete quickly.
-                        result.setWorkerTimeout(0);
+                            {
+                                _logger.info("Using Mina NIO");
+                                result = new SocketConnector(); // non-blocking connector
+                            }
 
-                        return result;
-                    }
-                });
-                break;
-            case VM:
-            {
-                _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
-                break;
-            }
+                            // Don't have the connector's worker thread wait around for other connections (we only use
+                            // one SocketConnector per connection at the moment anyway). This allows short-running
+                            // clients (like unit tests) to complete quickly.
+                            result.setWorkerTimeout(0);
+
+                            return result;
+                        }
+                    });
+            break;
+
+        case VM:
+        {
+            _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
+            break;
+        }
         }
 
         return _instance;
@@ -142,7 +144,8 @@ public class TransportConnection
         return -1;
     }
 
-    private static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate) throws AMQVMBrokerCreationException
+    private static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate)
+        throws AMQVMBrokerCreationException
     {
         int port = details.getPort();
 
@@ -154,13 +157,13 @@ public class TransportConnection
             }
             else
             {
-                throw new AMQVMBrokerCreationException(port, "VM Broker on port " + port + " does not exist. Auto create disabled.");
+                throw new AMQVMBrokerCreationException(null, port, "VM Broker on port " + port
+                    + " does not exist. Auto create disabled.", null);
             }
         }
 
         return new VmPipeTransportConnection(port);
     }
-
 
     public static void createVMBroker(int port) throws AMQVMBrokerCreationException
     {
@@ -192,7 +195,7 @@ public class TransportConnection
             {
                 _logger.error(e);
 
-                //Try and unbind provider
+                // Try and unbind provider
                 try
                 {
                     VmPipeAddress pipe = new VmPipeAddress(port);
@@ -203,7 +206,7 @@ public class TransportConnection
                     }
                     catch (Exception ignore)
                     {
-                        //ignore
+                        // ignore
                     }
 
                     if (provider == null)
@@ -227,7 +230,7 @@ public class TransportConnection
                         because = e.getCause().toString();
                     }
 
-                    throw new AMQVMBrokerCreationException(port, because + " Stopped binding of InVM Qpid.AMQP");
+                    throw new AMQVMBrokerCreationException(null, port, because + " Stopped binding of InVM Qpid.AMQP", e);
                 }
             }
         }
@@ -246,14 +249,14 @@ public class TransportConnection
         // can't use introspection to get Provider as it is a server class.
         // need to go straight to IoHandlerAdapter but that requries the queues and exchange from the ApplicationRegistry which we can't access.
 
-        //get right constructor and pass in instancec ID - "port"
+        // get right constructor and pass in instancec ID - "port"
         IoHandlerAdapter provider;
         try
         {
-            Class[] cnstr = {Integer.class};
-            Object[] params = {port};
+            Class[] cnstr = { Integer.class };
+            Object[] params = { port };
             provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
-            //Give the broker a second to create
+            // Give the broker a second to create
             _logger.info("Created VMBroker Instance:" + port);
         }
         catch (Exception e)
@@ -270,8 +273,10 @@ public class TransportConnection
                 because = e.getCause().toString();
             }
 
-
-            throw new AMQVMBrokerCreationException(port, because + " Stopped InVM Qpid.AMQP creation");
+            AMQVMBrokerCreationException amqbce =
+                new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", null);
+            amqbce.initCause(e);
+            throw amqbce;
         }
 
         return provider;

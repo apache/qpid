@@ -153,7 +153,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             {
                 _logger.error("Error configuring application: " + e, e);
                 //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
-                throw new RuntimeException("Unable to create Application Registry");
+                throw new RuntimeException("Unable to create Application Registry", e);
             }
         }
         else
@@ -167,6 +167,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         for(VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
         {
             virtualHost.close();
+        }
+
+        // close the rmi registry(if any) started for management
+        if (getInstance().getManagedObjectRegistry() != null)
+        {
+            getInstance().getManagedObjectRegistry().close();
         }
     }
 
@@ -187,7 +193,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             catch (Exception e)
             {
                 _logger.error("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
-                throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor");
+                throw new IllegalArgumentException("Unable to instantiate configuration class " + instanceType + " - ensure it has a public default constructor", e);
             }
             Configurator.configure(instance);
             _configuredObjects.put(instanceType, instance);

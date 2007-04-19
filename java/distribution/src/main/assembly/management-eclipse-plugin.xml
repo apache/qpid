@@ -88,6 +88,13 @@
       </includes>
       <fileMode>777</fileMode>
     </fileSet>
+    <fileSet>
+      <directory>../management/eclipse-plugin/src/main/resources/sasl</directory>
+      <outputDirectory>qpidmc/eclipse/plugins/jmxremote.optional_1.0.1/META-INF</outputDirectory>
+      <includes>
+        <include>MANIFEST.MF</include>
+      </includes>
+    </fileSet>
   </fileSets>
 
   <dependencySets>

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,10 +30,10 @@ public class URLHelper
 
     public static void parseOptions(HashMap<String, String> optionMap, String options) throws URLSyntaxException
     {
-        //options looks like this
-        //brokerlist='tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'',failover='method?option='value',option='value''
+        // options looks like this
+        // brokerlist='tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'',failover='method?option='value',option='value''
 
-        if (options == null || options.indexOf('=') == -1)
+        if ((options == null) || (options.indexOf('=') == -1))
         {
             return;
         }
@@ -49,8 +49,8 @@ public class URLHelper
         // to store index of final "'"
         int valueIndex = optionIndex;
 
-        //Walk remainder of url.
-        while (nestedQuotes > 0 || valueIndex < length)
+        // Walk remainder of url.
+        while ((nestedQuotes > 0) || (valueIndex < length))
         {
             valueIndex++;
 
@@ -61,27 +61,24 @@ public class URLHelper
 
             if (options.charAt(valueIndex) == '\'')
             {
-                if (valueIndex + 1 < options.length())
+                if ((valueIndex + 1) < options.length())
                 {
-                    if (options.charAt(valueIndex + 1) == DEFAULT_OPTION_SEPERATOR ||
-                            options.charAt(valueIndex + 1) == ALTERNATIVE_OPTION_SEPARATOR ||
-                            options.charAt(valueIndex + 1) == BROKER_SEPARATOR ||
-                            options.charAt(valueIndex + 1) == '\'')
+                    if ((options.charAt(valueIndex + 1) == DEFAULT_OPTION_SEPERATOR)
+                            || (options.charAt(valueIndex + 1) == ALTERNATIVE_OPTION_SEPARATOR)
+                            || (options.charAt(valueIndex + 1) == BROKER_SEPARATOR)
+                            || (options.charAt(valueIndex + 1) == '\''))
                     {
                         nestedQuotes--;
-//                        System.out.println(
-//                                options + "\n" + "-" + nestedQuotes + ":" + getPositionString(valueIndex - 2, 1));
+
                         if (nestedQuotes == 0)
                         {
-                            //We've found the value of an option
+                            // We've found the value of an option
                             break;
                         }
                     }
                     else
                     {
                         nestedQuotes++;
-//                        System.out.println(
-//                                options + "\n" + "+" + nestedQuotes + ":" + getPositionString(valueIndex - 2, 1));
                     }
                 }
                 else
@@ -98,11 +95,11 @@ public class URLHelper
             }
         }
 
-        if (nestedQuotes != 0 || valueIndex < (optionIndex + 2))
+        if ((nestedQuotes != 0) || (valueIndex < (optionIndex + 2)))
         {
             int sepIndex = 0;
 
-            //Try and identify illegal separator character
+            // Try and identify illegal separator character
             if (nestedQuotes > 1)
             {
                 for (int i = 0; i < nestedQuotes; i++)
@@ -112,14 +109,14 @@ public class URLHelper
                 }
             }
 
-            if (sepIndex >= options.length() || sepIndex == 0)
+            if ((sepIndex >= options.length()) || (sepIndex == 0))
             {
                 throw parseError(valueIndex, "Unterminated option", options);
             }
             else
             {
-                throw parseError(sepIndex, "Unterminated option. Possible illegal option separator:'" +
-                        options.charAt(sepIndex) + "'", options);
+                throw parseError(sepIndex, "Unterminated option. Possible illegal option separator:'"
+                    + options.charAt(sepIndex) + "'", options);
             }
         }
 
@@ -130,11 +127,10 @@ public class URLHelper
 
         if (valueIndex < (options.length() - 1))
         {
-            //Recurse to get remaining options
+            // Recurse to get remaining options
             parseOptions(optionMap, options.substring(valueIndex + 2));
         }
     }
-
 
     public static URLSyntaxException parseError(int index, String error, String url)
     {

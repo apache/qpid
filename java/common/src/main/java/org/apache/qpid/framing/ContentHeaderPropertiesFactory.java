@@ -49,7 +49,7 @@ public class ContentHeaderPropertiesFactory
         }
         else
         {
-        	throw new AMQFrameDecodingException("Unsupport content header class id: " + classId);
+        	throw new AMQFrameDecodingException(null, "Unsupport content header class id: " + classId, null);
         }
         properties.populatePropertiesFromBuffer(buffer, propertyFlags, size);
         return properties;
