@@ -24,10 +24,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
+import javax.management.ObjectName;
+
 public class NotificationObject
 {
 
-    private long     _sequenceNo;
+    private long    _sequenceNo;
     private Date    _timeStamp;
     private String  _message;
     private Object  _source;       
@@ -52,6 +54,17 @@ public class NotificationObject
     {
         this._source = _source;
     }
+    
+    public String getSourceName()
+    {
+        if (_source instanceof ObjectName)
+        {
+            return ((ObjectName)_source).getKeyProperty("name");
+        }
+        
+        return null;
+    }
+    
     public String getMessage()
     {
         return _message;

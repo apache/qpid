@@ -94,6 +94,8 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             }
 
         }
+        //fixme why is this only done when the close is expected...
+        // should the above forced closes not also cause a close?
         protocolSession.channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
     }
 }

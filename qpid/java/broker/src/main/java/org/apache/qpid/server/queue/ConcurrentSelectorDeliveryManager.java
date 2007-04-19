@@ -210,6 +210,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     /**
      * Returns all the messages in the Queue
+     *
      * @return List of messages
      */
     public List<AMQMessage> getMessages()
@@ -222,14 +223,16 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             list.add(message);
         }
         _lock.unlock();
-        
+
         return list;
     }
 
     /**
      * Returns messages within the range of given messageIds
+     *
      * @param fromMessageId
      * @param toMessageId
+     *
      * @return
      */
     public List<AMQMessage> getMessages(long fromMessageId, long toMessageId)
@@ -242,7 +245,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         long maxMessageCount = toMessageId - fromMessageId + 1;
 
         _lock.lock();
-        
+
         List<AMQMessage> foundMessagesList = new ArrayList<AMQMessage>();
 
         for (AMQMessage message : _messages)
@@ -399,7 +402,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     public void removeAMessageFromTop(StoreContext storeContext) throws AMQException
     {
         _lock.lock();
-        
+
         AMQMessage message = _messages.poll();
         if (message != null)
         {
@@ -432,9 +435,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return count;
     }
 
-    /**
-        This can only be used to clear the _messages queue. Any subscriber resend queue will not be purged. 
-     */
+    /** This can only be used to clear the _messages queue. Any subscriber resend queue will not be purged. */
     private AMQMessage getNextMessage() throws AMQException
     {
         return getNextMessage(_messages, null);
@@ -444,8 +445,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     {
         AMQMessage message = messages.peek();
 
-        //while (we have a message) && (The subscriber is not a browser or we are clearing) && (Check message is taken.)
-        while (message != null && (sub != null && !sub.isBrowser() || sub == null) && message.taken(sub))
+        //while (we have a message) && ((The subscriber is not a browser or message is taken ) or we are clearing) && (Check message is taken.)
+        while (message != null
+               && (
+                ((sub != null && !sub.isBrowser()) || message.isTaken(_queue))
+                || sub == null)
+               && message.taken(_queue, sub))
         {
             //remove the already taken message
             AMQMessage removed = messages.poll();
@@ -506,7 +511,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 }
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(debugIdentity() + "Async Delivery Message " + message.getMessageId() + "(" + System.identityHashCode(message) +
+                    _log.debug(debugIdentity() + "Async Delivery Message :" + message + "(" + System.identityHashCode(message) +
                                ") by :" + System.identityHashCode(this) +
                                ") to :" + System.identityHashCode(sub));
                 }
@@ -526,7 +531,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             if (_log.isDebugEnabled())
             {
-                _log.debug(debugIdentity() + "Async Delivered Message r:" + removed.debugIdentity() + "d:" + message.debugIdentity() +
+                _log.debug(debugIdentity() + "Async Delivered Message r:" + removed.debugIdentity() + "d:" + message +
                            ") by :" + System.identityHashCode(this) +
                            ") to :" + System.identityHashCode(sub));
             }
@@ -562,7 +567,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
         catch (AMQException e)
         {
-            message.release();
+            message.release(_queue);
             _log.error(debugIdentity() + "Unable to deliver message as dequeue failed: " + e, e);
         }
     }
@@ -723,7 +728,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                             _log.trace(debugIdentity() + "Delivering Message:" + msg.debugIdentity() + " to(" +
                                        System.identityHashCode(s) + ") :" + s);
                         }
-                        msg.taken(s);
+                        msg.taken(_queue, s);
                         //Deliver the message
                         s.send(msg, _queue);
                     }
@@ -737,7 +742,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     }
                 }
 
-                if (!msg.isTaken())
+                if (!msg.isTaken(_queue))
                 {
                     if (_log.isInfoEnabled())
                     {

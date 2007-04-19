@@ -31,7 +31,6 @@ public class TreeObject
 {
     private String _name;
     private String _type;
-    private String _url;
     private String _virtualHost;
     private TreeObject _parent;
     private List<TreeObject> _children = new ArrayList<TreeObject>();
@@ -88,16 +87,6 @@ public class TreeObject
     {
         return _type;
     }
-
-    public String getUrl()
-    {
-        return _url;
-    }
-
-    public void setUrl(String url)
-    {
-        this._url = url;
-    }
     
     public String getVirtualHost()
     {
@@ -131,7 +120,6 @@ public class TreeObject
         
         if (parent != null)
         {
-            this._url = parent.getUrl();
             parent.addChild(this);
         }
     }

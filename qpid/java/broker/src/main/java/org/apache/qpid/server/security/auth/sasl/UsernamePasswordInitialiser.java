@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -33,14 +33,16 @@ import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.AuthorizeCallback;
 
 import org.apache.commons.configuration.Configuration;
+
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 public abstract class UsernamePasswordInitialiser implements AuthenticationProviderInitialiser
 {
-    protected static final Logger _logger = Logger.getLogger(UsernamePasswordInitialiser.class);    
+    protected static final Logger _logger = Logger.getLogger(UsernamePasswordInitialiser.class);
 
     private ServerCallbackHandler _callbackHandler;
 
@@ -72,7 +74,9 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
                     {
                         // very annoyingly the callback handler does not throw anything more appropriate than
                         // IOException
-                        throw new IOException("Error looking up user " + e);
+                        IOException ioe = new IOException("Error looking up user " + e);
+                        ioe.initCause(e);
+                        throw ioe;
                     }
                 }
                 else if (callback instanceof AuthorizeCallback)
@@ -88,7 +92,7 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
     }
 
     public void initialise(String baseConfigPath, Configuration configuration,
-                           Map<String, PrincipalDatabase> principalDatabases) throws Exception
+        Map<String, PrincipalDatabase> principalDatabases) throws Exception
     {
         String principalDatabaseName = configuration.getString(baseConfigPath + ".principal-database");
         PrincipalDatabase db = principalDatabases.get(principalDatabaseName);
@@ -102,6 +106,7 @@ public abstract class UsernamePasswordInitialiser implements AuthenticationProvi
         {
             throw new NullPointerException("Cannot initialise with a null Principal database.");
         }
+
         _callbackHandler = new ServerCallbackHandler(db);
     }
 

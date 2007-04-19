@@ -133,12 +133,13 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
      */
     public void testAsyncPingOk(int numPings) throws Exception
     {
-        _logger.debug("public void testAsyncPingOk(int numPings): called");
+        // _logger.debug("public void testAsyncPingOk(int numPings): called");
 
         // Ensure that at least one ping was requeusted.
         if (numPings == 0)
         {
             _logger.error("Number of pings requested was zero.");
+            fail("Number of pings requested was zero.");
         }
 
         // Get the per thread test setup to run the test through.
@@ -147,8 +148,8 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
 
         // Advance the correlation id of messages to send, to make it unique for this run.
         perThreadSetup._correlationId = Long.toString(corellationIdGenerator.incrementAndGet());
-        String messageCorrelationId = perThreadSetup._correlationId;
-        _logger.debug("messageCorrelationId = " + messageCorrelationId);
+        // String messageCorrelationId = perThreadSetup._correlationId;
+        // _logger.debug("messageCorrelationId = " + messageCorrelationId);
 
         // Initialize the count and timing controller for the new correlation id.
         PerCorrelationId perCorrelationId = new PerCorrelationId();
@@ -246,9 +247,9 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
                 // Extract the correlation id from the message.
                 String correlationId = message.getJMSCorrelationID();
 
-                _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount
+                /*_logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount
                     + "): called on batch boundary for message id: " + correlationId + " with thread id: "
-                    + Thread.currentThread().getId());
+                    + Thread.currentThread().getId());*/
 
                 // Get the details for the correlation id and check that they are not null. They can become null
                 // if a test times out.

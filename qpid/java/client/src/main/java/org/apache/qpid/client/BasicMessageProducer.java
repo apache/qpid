@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
@@ -118,6 +119,9 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     private final boolean _mandatory;
 
     private final boolean _waitUntilSent;
+    
+    private boolean _disableMessageId;
+        
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
@@ -172,15 +176,14 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     {
         checkPreConditions();
         checkNotClosed();
-        // IGNORED
+        _disableMessageId = b;
     }
 
     public boolean getDisableMessageID() throws JMSException
     {
         checkNotClosed();
 
-        // Always false for AMQP
-        return false;
+        return _disableMessageId;
     }
 
     public void setDisableMessageTimestamp(boolean b) throws JMSException
@@ -450,6 +453,18 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         origMessage.setJMSDestination(destination);
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
+        
+        if(_disableMessageId)
+        {
+        	message.setJMSMessageID(null);
+        }
+        else
+        {
+        	if (message.getJMSMessageID() == null)
+        	{
+        		message.setJMSMessageID(UUID.randomUUID().toString());
+        	}
+        }
 
         int type;
         if (destination instanceof Topic)
@@ -666,5 +681,10 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     public AMQSession getSession()
     {
         return _session;
+    }
+
+    public boolean isBound(AMQDestination destination) throws JMSException
+    {
+        return _session.isQueueBound(destination.getExchangeName(),null,destination.getRoutingKey());
     }
 }

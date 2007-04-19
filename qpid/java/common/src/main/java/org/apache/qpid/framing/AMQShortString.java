@@ -9,7 +9,7 @@ import org.apache.mina.common.ByteBuffer;
  * and thus can be held more effectively in a byte buffer.
  *
  */
-public final class AMQShortString implements CharSequence
+public final class AMQShortString implements CharSequence, Comparable<AMQShortString>
 {
     private static final Logger _logger = Logger.getLogger(AMQShortString.class);
 

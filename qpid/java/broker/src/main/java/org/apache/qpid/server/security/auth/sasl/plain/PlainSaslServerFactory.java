@@ -29,7 +29,7 @@ import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslServerFactory;
 
 public class PlainSaslServerFactory implements SaslServerFactory
-{    
+{
     public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map props,
                                        CallbackHandler cbh) throws SaslException
     {

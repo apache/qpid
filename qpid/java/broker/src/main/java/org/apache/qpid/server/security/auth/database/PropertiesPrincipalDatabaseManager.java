@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
+import org.apache.commons.configuration.Configuration;
+
 import java.util.Map;
 import java.util.Properties;
 import java.util.HashMap;
@@ -37,5 +39,10 @@ public class PropertiesPrincipalDatabaseManager implements PrincipalDatabaseMana
     public Map<String, PrincipalDatabase> getDatabases()
     {
         return _databases;
+    }
+
+    public void initialiseManagement(Configuration config)
+    {
+        //todo
     }
 }

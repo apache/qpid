@@ -53,6 +53,8 @@ public abstract class AMQDestination implements Destination, Referenceable
     private String _url;
     private AMQShortString _urlAsShortString;
 
+    private boolean _validated;
+
     private byte[] _byteEncoding;
     private static final int IS_DURABLE_MASK = 0x1;
     private static final int IS_EXCLUSIVE_MASK = 0x2;
@@ -198,12 +200,16 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         return toURL();
 
-        /*
-        return "Destination: " + _destinationName + ", " +
-               "Queue Name: " + _queueName + ", Exchange: " + _exchangeName +
-               ", Exchange class: " + _exchangeClass + ", Exclusive: " + _isExclusive +
-               ", AutoDelete: " + _isAutoDelete + ", Routing  Key: " + getRoutingKey();
-         */
+    }
+
+    public boolean isValidated()
+    {
+        return _validated;
+    }
+
+    public void setValidated(boolean validated)
+    {
+        _validated = validated;
     }
 
     public String toURL()
@@ -348,15 +354,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             return false;
         }
-  /*      if (_isExclusive != that._isExclusive)
-        {
-            return false;
-        }
-        if (_isAutoDelete != that._isAutoDelete)
-        {
-            return false;
-        }
-        */
+
         return true;
     }
 
@@ -370,8 +368,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             result = 29 * result + _queueName.hashCode();
         }
-//        result = result * (_isExclusive ? 13 : 7);
-//        result = result * (_isAutoDelete ? 13 : 7);
+
         return result;
     }
 

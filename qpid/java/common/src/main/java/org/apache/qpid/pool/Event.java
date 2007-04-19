@@ -85,4 +85,27 @@ abstract public class Event
     }
 
 
+
+    public static final class CloseEvent extends Event
+    {
+        private final IoFilter.NextFilter _nextFilter;
+
+        public CloseEvent(final IoFilter.NextFilter nextFilter)
+        {
+            super();
+            _nextFilter = nextFilter;
+        }
+
+
+        public void process(IoSession session)
+        {
+            _nextFilter.sessionClosed(session);
+        }
+
+        public IoFilter.NextFilter getNextFilter()
+        {
+            return _nextFilter;
+        }
+    }
+
 }

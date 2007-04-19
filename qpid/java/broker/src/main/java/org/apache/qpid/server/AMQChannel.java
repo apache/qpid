@@ -472,7 +472,7 @@ public class AMQChannel
             if (unacked.queue != null)
             {
                 // Ensure message is released for redelivery
-                unacked.message.release();
+                unacked.message.release(unacked.queue);
 
                 // Mark message redelivered
                 unacked.message.setRedelivered(true);
@@ -503,7 +503,10 @@ public class AMQChannel
         {
 
             // Ensure message is released for redelivery
-            unacked.message.release();
+            if (unacked.queue != null)
+            {
+                unacked.message.release(unacked.queue);
+            }
 
             // Mark message redelivered
             unacked.message.setRedelivered(true);
@@ -672,14 +675,14 @@ public class AMQChannel
 //            else
 //            {
             //release to allow it to be delivered
-            msg.release();
+            msg.release(message.queue);
 
             // Without any details from the client about what has been processed we have to mark
             // all messages in the unacked map as redelivered.
             msg.setRedelivered(true);
 
 
-            Subscription sub = msg.getDeliveredSubscription();
+            Subscription sub = msg.getDeliveredSubscription(message.queue);
 
             if (sub != null)
             {
@@ -753,7 +756,7 @@ public class AMQChannel
         // Process Messages to Requeue at the front of the queue
         for (UnacknowledgedMessage message : msgToRequeue)
         {
-            message.message.release();
+            message.message.release(message.queue);
             message.message.setRedelivered(true);
 
             deliveryContext.deliver(message.message, message.queue, true);

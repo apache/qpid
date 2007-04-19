@@ -37,6 +37,7 @@ import org.apache.qpid.server.protocol.HeartbeatConfig;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -106,7 +107,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                     ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
                     HeartbeatConfig.getInstance().getDelay());	// heartbeat
                 session.writeFrame(tune);
-                session.setAuthorizedID(ss.getAuthorizationID());                
+                session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));                
                 disposeSaslServer(session);
                 break;
             case CONTINUE:

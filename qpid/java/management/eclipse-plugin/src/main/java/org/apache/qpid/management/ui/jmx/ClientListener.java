@@ -45,10 +45,7 @@ public class ClientListener implements NotificationListener
     {
         ObjectName objName = null;
         String     type = notification.getType();
-        if (MBeanUtility.isDebug())
-        {
-            System.out.println(type + ":" + objName);
-        }
+        MBeanUtility.printOutput(type + ":" + objName);
         
         if (MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(type))
         {

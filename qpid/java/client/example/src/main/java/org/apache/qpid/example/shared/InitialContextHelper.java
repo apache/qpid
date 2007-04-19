@@ -59,11 +59,11 @@ public class InitialContextHelper
         }
         catch (IOException e)
         {
-            throw new ContextException(e.toString());
+            throw new ContextException(e.toString(), e);
         }
         catch (NamingException n)
         {
-            throw new ContextException(n.toString());
+            throw new ContextException(n.toString(), n);
         }
     }
 

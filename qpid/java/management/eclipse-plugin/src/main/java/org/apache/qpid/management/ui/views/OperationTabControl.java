@@ -20,9 +20,15 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularDataSupport;
 
 import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
@@ -76,7 +82,7 @@ public class OperationTabControl extends TabControl
     private SelectionListener operationExecutionListener = new OperationExecutionListener(); 
     private SelectionListener refreshListener = new RefreshListener(); 
     private SelectionListener parameterSelectionListener = new ParameterSelectionListener();
-    private SelectionListener bolleanSelectionListener = new BooleanSelectionListener();
+    private SelectionListener booleanSelectionListener = new BooleanSelectionListener();
     private VerifyListener    verifyListener = new VerifyListenerImpl();
     private KeyListener       keyListener = new KeyListenerImpl();
     private KeyListener       headerBindingListener = new HeaderBindingKeyListener();
@@ -249,6 +255,8 @@ public class OperationTabControl extends TabControl
             formData.top = new FormAttachment(0, parameterPositionOffset);
             formData.left = new FormAttachment(label, 5);
             formData.right = new FormAttachment(valueWidth);
+            // this will contain the list of items, if the list is to be made available to choose from
+            // e.g. the list of exchanges
             String[] items = null;
             if (param.getName().equals(QUEUE))
             {
@@ -268,6 +276,15 @@ public class OperationTabControl extends TabControl
             else if (param.getName().equals(EXCHANGE_TYPE))
             {
                 items = EXCHANGE_TYPE_VALUES;
+            }
+            else if (_mbean.isAdmin() && param.getName().equals(OPERATION_PARAM_USERNAME)
+                                      && !_opData.getName().equals(OPERATION_CREATEUSER))
+            {
+                List<String> list = ApplicationRegistry.getServerRegistry(_mbean).getUsernames();
+                if (list != null && !list.isEmpty())
+                {
+                    items = list.toArray(new String[0]);
+                }
             }
             
             if (items != null)
@@ -295,12 +312,17 @@ public class OperationTabControl extends TabControl
                 Button booleanButton = _toolkit.createButton(_paramsComposite, "", SWT.CHECK);
                 booleanButton.setLayoutData(formData);
                 booleanButton.setData(param);
-                booleanButton.addSelectionListener(bolleanSelectionListener);
+                booleanButton.addSelectionListener(booleanSelectionListener);
                 valueInCombo = true;                
             }
             else
             {
-                Text text = _toolkit.createText(_paramsComposite, "", SWT.NONE);
+                int style = SWT.NONE;
+                if (PASSWORD.equalsIgnoreCase(param.getName()))
+                {
+                    style = SWT.PASSWORD;
+                }
+                Text text = _toolkit.createText(_paramsComposite, "", style);
                 formData = new FormData();
                 formData.top = new FormAttachment(0, parameterPositionOffset);
                 formData.left = new FormAttachment(label, 5);
@@ -530,6 +552,8 @@ public class OperationTabControl extends TabControl
                 ((org.eclipse.swt.widgets.List)controls[i]).deselectAll();
             else if (controls[i] instanceof Text)
                 ((Text)controls[i]).setText("");
+            else if (controls[i] instanceof Button)
+                ((Button)controls[i]).setSelection(false);
             else if (controls[i] instanceof Composite)
                 clearParameterValues((Composite)controls[i]);
         }
@@ -557,6 +581,21 @@ public class OperationTabControl extends TabControl
                         }
                         // End of custom code
                         
+                        
+                        // customized for passwords
+                        if (PASSWORD.equalsIgnoreCase(param.getName()))
+                        {
+                            try
+                            {
+                                param.setValueFromString(ViewUtility.getHashedString(param.getValue()));
+                            }
+                            catch (Exception ex)
+                            {
+                                MBeanUtility.handleException(_mbean, ex);
+                                return;
+                            }
+                        }
+                        // end of customization
                         ViewUtility.popupInfoMessage(_form.getText(),
                                 "Please select the " + ViewUtility.getDisplayText(param.getName()));
                         
@@ -609,6 +648,17 @@ public class OperationTabControl extends TabControl
             return;
         }
         
+        // Custom code for Admin mbean operation
+        /* These custome codes here are to make the GUI look more user friendly. 
+         * Here we are adding the users to a list, which will be used to list username to be selected on
+         * pages like "delete user", "set password" instead of typing the username
+        */
+        if (_mbean.isAdmin() && _opData.getName().equals(OPERATION_VIEWUSERS))
+        {
+            ApplicationRegistry.getServerRegistry(_mbean).setUserList(extractUserList(result));
+        }
+        // end of custom code
+        
         // Some mbeans have only "type" and no "name".
         String title = _mbean.getType();
         if (_mbean.getName() != null && _mbean.getName().length() != 0)
@@ -616,9 +666,15 @@ public class OperationTabControl extends TabControl
             title = _mbean.getName();
         }
         
-        if (_opData.getReturnType().equals("void") || _opData.getReturnType().equals("java.lang.Void"))
+        if (_opData.isReturnTypeVoid())
         {
-            ViewUtility.popupInfoMessage(title, "Operation successful");
+            ViewUtility.popupInfoMessage(title, OPERATION_SUCCESSFUL);
+        }
+        else if (_opData.isReturnTypeBoolean())
+        {
+            boolean success = Boolean.parseBoolean(result.toString());
+            String message = success ? OPERATION_SUCCESSFUL : OPERATION_UNSUCCESSFUL;
+            ViewUtility.popupInfoMessage(title, message);
         }
         else if (_opData.getParameters() != null && !_opData.getParameters().isEmpty())
         {
@@ -632,6 +688,24 @@ public class OperationTabControl extends TabControl
             _form.layout();
         }
 
+    }
+    
+    private List<String> extractUserList(Object result)
+    {
+        if (!(result instanceof TabularDataSupport))
+        {
+            return null;
+        }
+        
+        TabularDataSupport tabularData = (TabularDataSupport)result;
+        Collection<CompositeData> records = tabularData.values();
+        List<String> list = new ArrayList<String>();
+        for (CompositeData data : records)
+        {
+            list.add(data.get(USERNAME).toString());
+        }
+        Collections.sort(list);
+        return list;
     }
     
     /**
