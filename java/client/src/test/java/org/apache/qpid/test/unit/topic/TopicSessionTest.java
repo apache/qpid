@@ -41,26 +41,25 @@ import org.apache.qpid.client.transport.TransportConnection;
 /** @author Apache Software Foundation */
 public class TopicSessionTest extends TestCase
 {
-    private static final String BROKER = "localhost";
+    private static final String BROKER = "vm://:1";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-//        TransportConnection.createVMBroker(1);
+        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-//        TransportConnection.killAllVMBrokers();
-        //Thread.sleep(2000);
+        TransportConnection.killAllVMBrokers();
     }
 
 
     public void testTopicSubscriptionUnsubscription() throws Exception
     {
 
-        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection con = new AMQConnection(BROKER+"?retries='0'", "guest", "guest", "test", "test");
         AMQTopic topic = new AMQTopic(con.getDefaultTopicExchangeName(), "MyTopic");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic, "subscription0");
