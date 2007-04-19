@@ -1,0 +1,121 @@
+#!/bin/bash
+
+# qpid.stop Script
+# 
+# Script checks for a given pid running PROGRAM and attempts to quit it
+#
+
+MAX_ATTEMPTS=5
+SLEEP_DELAY=2
+PROGRAM="org.apache.qpid.server.Main"
+
+
+#
+# Print what is going to be done
+#
+printActions()
+{
+ps=`ps o command p $1|grep $PROGRAM`
+echo "Attempting to kill: $ps"
+}
+
+#
+# Forcably Quit the specified PID($1)
+#
+forceQuit()
+{
+kill -9 $1
+}
+
+
+#
+# Gracefully ask the PID($1) to quit
+#
+quit()
+{
+kill $1
+}
+
+
+#
+# Sleep and then check then lookup the PID($1) to ensure it has quit
+#
+check()
+{
+sleep $SLEEP_DELAY
+lookup $1
+}
+
+
+#
+# Grep the ps log for the PID ($1) to ensure that it has quit
+#
+lookup()
+{
+result=`ps p $1 |grep -v grep |grep $PROGRAM |wc -l`
+}
+
+
+#
+# Verify the PID($1) is available
+#
+verifyPid()
+{
+lookup $1
+if [[ $result == 1 ]] ; then	
+ brokerspid=$1
+else
+ echo "Unable to locate Qpid Process with PID $1"
+ exit -1
+fi
+}
+
+
+
+#
+# Main Run
+#
+
+# Check if we are killing all qpid pids or just one.
+if [[ $# == 0 ]] ; then
+	echo "Killing All Qpid Brokers for user: '$USER'"
+	qpid.stopall
+	exit $?
+else	
+	verifyPid $1
+fi
+
+printActions $brokerspid
+
+# Attempt to quit the process MAX_ATTEMPTS Times
+attempt=0
+while [[ $result > 0 && $attempt < $MAX_ATTEMPTS ]] ; do
+ quit $brokerspid
+ check $brokerspid
+ attempt=$[$attempt + 1]
+done
+
+
+# Check that it has quit
+if [[ $results == 0 ]] ; then
+ echo "Process quit"
+ exit 0
+else
+
+ # Now attempt to force quit the process
+ attempt=0
+ while [[ $result > 0 && $attempt < $MAX_ATTEMPTS ]] ; do
+  forceQuit $brokerspid
+  check $brokerspid
+  attempt=$[$attempt + 1]
+ done
+
+
+ # Output final status
+ if [[ $attempt == $MAX_ATTEMPTS ]] ; then
+	echo "Stopped trying to kill process: $brokerspid"
+	echo "Attempted to stop $attempt times"
+ else
+	echo "Done "
+ fi
+fi
