@@ -21,6 +21,7 @@
 package org.apache.qpid.server.management;
 
 import javax.management.JMException;
+import java.rmi.RemoteException;
 
 /**
  * Handles the registration (and unregistration and so on) of managed objects.
@@ -36,7 +37,11 @@ import javax.management.JMException;
  */
 public interface ManagedObjectRegistry
 {
+    void start();
+
     void registerObject(ManagedObject managedObject) throws JMException;
 
     void unregisterObject(ManagedObject managedObject) throws JMException;
+
+    void close() throws RemoteException;
 }

@@ -71,7 +71,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         Map<String, Class<? extends SaslServerFactory>> providerMap = new TreeMap<String, Class<? extends SaslServerFactory>>();
 
 
-        if (name == null)
+        if (name == null || hostConfig == null)
         {
             initialiseAuthenticationMechanisms(providerMap, ApplicationRegistry.getInstance().getDatabaseManager().getDatabases());
         }
@@ -108,11 +108,15 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
         if (providerMap.size() > 0)
         {
-            Security.addProvider(new JCAProvider(providerMap));
+            // Ensure we are used before the defaults
+            if (Security.insertProviderAt(new JCAProvider(providerMap), 1) == -1)
+            {
+                _logger.warn("Unable to set order of providers.");
+            }
         }
         else
         {
-            _logger.warn("No SASL providers availble.");
+            _logger.warn("No additional SASL providers registered.");
         }
 
     }
@@ -148,21 +152,20 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     {
         if (database == null || database.getMechanisms().size() == 0)
         {
-            _logger.warn("");
+            _logger.warn("No Database or no mechanisms to initialise authentication");
             return;
         }
 
-        for (AuthenticationProviderInitialiser mechanism : database.getMechanisms().values())
+        for (Map.Entry<String, AuthenticationProviderInitialiser> mechanism : database.getMechanisms().entrySet())
         {
-            initialiseAuthenticationMechanism(mechanism, providerMap);
+            initialiseAuthenticationMechanism(mechanism.getKey(), mechanism.getValue(), providerMap);
         }
     }
 
-    private void initialiseAuthenticationMechanism(AuthenticationProviderInitialiser initialiser,
+    private void initialiseAuthenticationMechanism(String mechanism, AuthenticationProviderInitialiser initialiser,
                                                    Map<String, Class<? extends SaslServerFactory>> providerMap)
             throws Exception
     {
-        String mechanism = initialiser.getMechanismName();
         if (_mechanisms == null)
         {
             _mechanisms = mechanism;

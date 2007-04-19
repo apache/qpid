@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.security.Principal;
 
 import javax.management.JMException;
 import javax.security.sasl.SaslServer;
@@ -108,7 +109,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     private VersionSpecificRegistry _registry = MainRegistry.getVersionSpecificRegistry(_protocolVersion);
     private List<Integer> _closingChannelsList = new ArrayList<Integer>();
     private ProtocolOutputConverter _protocolOutputConverter;
-    private String _authorizedID;
+    private Principal _authorizedID;
 
 
     public ManagedObject getManagedObject()
@@ -745,12 +746,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         return _protocolOutputConverter;
     }
 
-    public void setAuthorizedID(String authorizedID)
+    public void setAuthorizedID(Principal authorizedID)
     {
         _authorizedID = authorizedID;
     }
 
-    public String getAuthorizedID()
+    public Principal getAuthorizedID()
     {
         return _authorizedID;
     }

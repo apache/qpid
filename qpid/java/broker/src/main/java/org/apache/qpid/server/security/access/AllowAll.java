@@ -20,8 +20,15 @@
  */
 package org.apache.qpid.server.security.access;
 
+import java.security.Principal;
+
 public class AllowAll implements AccessManager
 {
+
+    public AccessResult isAuthorized(Accessable accessObject, Principal username, AccessRights.Rights rights)
+    {
+        return new AccessResult(this, AccessResult.AccessStatus.GRANTED);
+    }
 
     public AccessResult isAuthorized(Accessable accessObject, String username)
     {

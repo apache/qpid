@@ -80,5 +80,13 @@ public class OperationData
         this._returnType = returnType;
     }
     
+    public boolean isReturnTypeBoolean()
+    {
+        return (_returnType.equals("boolean") || _returnType.equals("java.lang.Boolean"));
+    }
     
+    public boolean isReturnTypeVoid()
+    {
+        return (_returnType.equals("void") || _returnType.equals("java.lang.Void"));
+    }
 }

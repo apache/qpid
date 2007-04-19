@@ -341,7 +341,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         }
         catch (AMQFrameDecodingException e)
         {
-            throw new RuntimeException("Error in content header data: " + e);
+            throw new RuntimeException("Error in content header data: " + e, e);
         }
 
         final int endPos = buffer.position();
@@ -381,7 +381,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         }
         catch (AMQFrameDecodingException e)
         {
-            throw new RuntimeException("Error in content header data: " + e);
+            throw new RuntimeException("Error in content header data: " + e, e);
         }
     }
 

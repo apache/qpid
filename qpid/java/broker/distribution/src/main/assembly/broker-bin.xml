@@ -78,6 +78,12 @@
       <fileMode>420</fileMode>
     </file>
     <file>
+      <source>../etc/jmxremote.access</source>
+      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
+      <destName>jmxremote.access</destName>
+      <fileMode>420</fileMode>
+    </file>
+    <file>
       <source>../etc/log4j.xml</source>
       <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
       <destName>log4j.xml</destName>
@@ -105,6 +111,12 @@
       <source>../../common/bin/qpid-run</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-run</destName>
+      <fileMode>473</fileMode>
+    </file>
+    <file>
+      <source>../bin/passwd</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>passwd</destName>
       <fileMode>473</fileMode>
     </file>
     <file>

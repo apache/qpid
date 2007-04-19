@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.url.URLHelper;
-import org.apache.qpid.url.URLSyntaxException;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.URLHelper;
+import org.apache.qpid.url.URLSyntaxException;
 
 public class AMQConnectionURL implements ConnectionURL
 {
@@ -49,7 +49,6 @@ public class AMQConnectionURL implements ConnectionURL
     private AMQShortString _temporaryTopicExchangeName;
     private AMQShortString _temporaryQueueExchangeName;
 
-
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
         _url = fullURL;
@@ -58,18 +57,18 @@ public class AMQConnectionURL implements ConnectionURL
         _failoverOptions = new HashMap<String, String>();
 
         // Connection URL format
-        //amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\',option=\'value\';vm://:3/virtualpath?option=\'value\'',failover='method?option=\'value\',option='value''"
+        // amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\',option=\'value\';vm://:3/virtualpath?option=\'value\'',failover='method?option=\'value\',option='value''"
         // Options are of course optional except for requiring a single broker in the broker list.
         try
         {
             URI connection = new URI(fullURL);
 
-            if (connection.getScheme() == null || !(connection.getScheme().equalsIgnoreCase(AMQ_PROTOCOL)))
+            if ((connection.getScheme() == null) || !(connection.getScheme().equalsIgnoreCase(AMQ_PROTOCOL)))
             {
                 throw new URISyntaxException(fullURL, "Not an AMQP URL");
             }
 
-            if (connection.getHost() == null || connection.getHost().equals(""))
+            if ((connection.getHost() == null) || connection.getHost().equals(""))
             {
                 String uid = AMQConnectionFactory.getUniqueClientID();
                 if (uid == null)
@@ -91,7 +90,7 @@ public class AMQConnectionURL implements ConnectionURL
 
             if (userInfo == null)
             {
-                //Fix for Java 1.5 which doesn't parse UserInfo for non http URIs
+                // Fix for Java 1.5 which doesn't parse UserInfo for non http URIs
                 userInfo = connection.getAuthority();
 
                 if (userInfo != null)
@@ -112,16 +111,16 @@ public class AMQConnectionURL implements ConnectionURL
 
             if (userInfo == null)
             {
-                throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3,
-                                           "User information not found on url", fullURL);
+                throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, "User information not found on url", fullURL);
             }
             else
             {
                 parseUserInfo(userInfo);
             }
+
             String virtualHost = connection.getPath();
 
-            if (virtualHost != null && (!virtualHost.equals("")))
+            if ((virtualHost != null) && (!virtualHost.equals("")))
             {
                 setVirtualHost(virtualHost);
             }
@@ -130,7 +129,7 @@ public class AMQConnectionURL implements ConnectionURL
                 int authLength = connection.getAuthority().length();
                 int start = AMQ_PROTOCOL.length() + 3;
                 int testIndex = start + authLength;
-                if (testIndex < fullURL.length() && fullURL.charAt(testIndex) == '?')
+                if ((testIndex < fullURL.length()) && (fullURL.charAt(testIndex) == '?'))
                 {
                     throw URLHelper.parseError(start, testIndex - start, "Virtual host found", fullURL);
                 }
@@ -141,14 +140,9 @@ public class AMQConnectionURL implements ConnectionURL
 
             }
 
-
             URLHelper.parseOptions(_options, connection.getQuery());
 
             processOptions();
-
-            //Fragment is #string (not used)
-            //System.out.println(connection.getFragment());
-
         }
         catch (URISyntaxException uris)
         {
@@ -165,11 +159,10 @@ public class AMQConnectionURL implements ConnectionURL
             }
             else
             {
-                if (slash != 0 && fullURL.charAt(slash - 1) == ':')
+                if ((slash != 0) && (fullURL.charAt(slash - 1) == ':'))
                 {
                     throw URLHelper.parseError(slash - 2, fullURL.indexOf('?') - slash + 2,
-                                               "Virtual host looks like a windows path, forward slash not allowed in URL",
-                                               fullURL);
+                        "Virtual host looks like a windows path, forward slash not allowed in URL", fullURL);
                 }
                 else
                 {
@@ -182,14 +175,14 @@ public class AMQConnectionURL implements ConnectionURL
 
     private void parseUserInfo(String userinfo) throws URLSyntaxException
     {
-        //user info = user:pass
+        // user info = user:pass
 
         int colonIndex = userinfo.indexOf(':');
 
         if (colonIndex == -1)
         {
             throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, userinfo.length(),
-                                       "Null password in user information not allowed.", _url);
+                "Null password in user information not allowed.", _url);
         }
         else
         {
@@ -205,7 +198,7 @@ public class AMQConnectionURL implements ConnectionURL
         {
             String brokerlist = _options.get(OPTIONS_BROKERLIST);
 
-            //brokerlist tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'
+            // brokerlist tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'
             StringTokenizer st = new StringTokenizer(brokerlist, "" + URLHelper.BROKER_SEPARATOR);
 
             while (st.hasMoreTokens())
@@ -244,18 +237,15 @@ public class AMQConnectionURL implements ConnectionURL
             _defaultTopicExchangeName = new AMQShortString(_options.get(OPTIONS_DEFAULT_TOPIC_EXCHANGE));
         }
 
-
         if (_options.containsKey(OPTIONS_DEFAULT_QUEUE_EXCHANGE))
         {
             _defaultQueueExchangeName = new AMQShortString(_options.get(OPTIONS_DEFAULT_QUEUE_EXCHANGE));
         }
 
-
         if (_options.containsKey(OPTIONS_TEMPORARY_QUEUE_EXCHANGE))
         {
             _temporaryQueueExchangeName = new AMQShortString(_options.get(OPTIONS_TEMPORARY_QUEUE_EXCHANGE));
         }
-
 
         if (_options.containsKey(OPTIONS_TEMPORARY_TOPIC_EXCHANGE))
         {
@@ -439,12 +429,11 @@ public class AMQConnectionURL implements ConnectionURL
         return sb.toString();
     }
 
-
     public static void main(String[] args) throws URLSyntaxException
     {
-
-        String url2 = "amqp://ritchiem:bob@temp?brokerlist='tcp://localhost:5672;jcp://fancyserver:3000/',failover='roundrobin'";
-        //"amqp://user:pass@clientid/virtualhost?brokerlist='tcp://host:1?option1=\'value\',option2=\'value\';vm://:3?option1=\'value\'',failover='method?option1=\'value\',option2='value''";
+        String url2 =
+            "amqp://ritchiem:bob@temp?brokerlist='tcp://localhost:5672;jcp://fancyserver:3000/',failover='roundrobin'";
+        // "amqp://user:pass@clientid/virtualhost?brokerlist='tcp://host:1?option1=\'value\',option2=\'value\';vm://:3?option1=\'value\'',failover='method?option1=\'value\',option2='value''";
 
         ConnectionURL connectionurl2 = new AMQConnectionURL(url2);
 
@@ -452,5 +441,4 @@ public class AMQConnectionURL implements ConnectionURL
         System.out.println(connectionurl2);
 
     }
-
 }

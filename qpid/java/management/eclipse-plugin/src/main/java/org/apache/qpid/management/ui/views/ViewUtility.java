@@ -20,8 +20,13 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,6 +74,8 @@ public class ViewUtility
     public static final String NEXT  = "Next";
     public static final String PREV  = "Previous";
     public static final String INDEX = "Index";
+    
+    private static final Comparator tabularDataComparator = new TabularDataComparator();
     
     private static List<String> SUPPORTED_ARRAY_DATATYPES = new ArrayList<String>();
     static
@@ -121,6 +128,9 @@ public class ViewUtility
             text.setLayoutData(layoutData);
             return;
         }  
+        
+        Collections.sort(list, tabularDataComparator);
+     
         // Attach the tabular record to be retrieved and shown later when record is traversed
         // using first/next/previous/last buttons
         composite.setData(list);
@@ -547,6 +557,65 @@ public class ViewUtility
         for (int i = 0; i < oldControls.length; i++)
         {
             oldControls[i].dispose();
+        }
+    }
+    
+    public static String getHashedString(Object text) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    {
+        char[] chars = getHash((String)text);
+        return new String(chars);
+    }
+    
+    public static char[] getHash(String text) throws NoSuchAlgorithmException, UnsupportedEncodingException
+    {
+        byte[] data = text.getBytes("utf-8");
+
+        MessageDigest md = MessageDigest.getInstance("MD5");
+
+        for (byte b : data)
+        {
+            md.update(b);
+        }
+
+        byte[] digest = md.digest();
+
+        char[] hash = new char[digest.length ];
+
+        int index = 0;
+        for (byte b : digest)
+        {            
+            hash[index++] = (char) b;
+        }
+
+        return hash;
+    }
+    
+    private static class TabularDataComparator implements java.util.Comparator<Map.Entry>
+    {
+        public int compare(Map.Entry data1, Map.Entry data2)
+        {
+            if (data1.getKey() instanceof List)
+            {
+                Object obj1 = ((List)data1.getKey()).get(0);                
+                Object obj2 = ((List)data2.getKey()).get(0);
+                String str1 = obj1.toString();
+                String str2 = obj2.toString();
+                if (obj1 instanceof String)
+                {
+                    return str1.compareTo(str2);
+                }
+                
+                try
+                {
+                    return Long.valueOf(str1).compareTo(Long.valueOf(str2));
+                }
+                catch (Exception ex)
+                {
+                    return -1;
+                }
+            }
+           
+            return -1;
         }
     }
 }

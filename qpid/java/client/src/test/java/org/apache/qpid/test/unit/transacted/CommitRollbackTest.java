@@ -53,12 +53,15 @@ public class CommitRollbackTest extends TestCase
     Queue _jmsQueue;
 
     private static final Logger _logger = Logger.getLogger(CommitRollbackTest.class);
+    private static final String BROKER = "vm://:1";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
-
+        if (BROKER.startsWith("vm"))
+        {
+            TransportConnection.createVMBroker(1);
+        }
         testMethod++;
         queue += testMethod;
 
@@ -68,7 +71,7 @@ public class CommitRollbackTest extends TestCase
 
     private void newConnection() throws AMQException, URLSyntaxException, JMSException
     {
-        conn = new AMQConnection("amqp://guest:guest@client/test?brokerlist='vm://:1'");
+        conn = new AMQConnection("amqp://guest:guest@client/test?brokerlist='" + BROKER + "'");
 
         _session = conn.createSession(true, Session.CLIENT_ACKNOWLEDGE);
 
@@ -87,7 +90,10 @@ public class CommitRollbackTest extends TestCase
         super.tearDown();
 
         conn.close();
-        TransportConnection.killVMBroker(1);
+        if (BROKER.startsWith("vm"))
+        {
+            TransportConnection.killVMBroker(1);
+        }
     }
 
     /**
@@ -261,7 +267,7 @@ public class CommitRollbackTest extends TestCase
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
         _logger.info("sending test message");
-        String MESSAGE_TEXT = "testGetThenDisconnect";
+        String MESSAGE_TEXT = "testGetThenRollback";
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
         _pubSession.commit();
@@ -394,16 +400,60 @@ public class CommitRollbackTest extends TestCase
         _logger.info("receiving result");
         result = _consumer.receive(1000);
         assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertEquals("1", ((TextMessage) result).getText());
-        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+        if (result.getJMSRedelivered())
+        {
+            assertEquals("1", ((TextMessage) result).getText());
 
-        result = _consumer.receive(1000);
-        assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertEquals("2", ((TextMessage) result).getText());
-        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+            result = _consumer.receive(1000);
+            assertNotNull("test message was consumed and rolled back, but is gone", result);
+            assertEquals("2", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+        }
+        else
+        {
+            assertEquals("2", ((TextMessage) result).getText());
+            assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
 
+            result = _consumer.receive(1000);
+            assertNotNull("test message was consumed and rolled back, but is gone", result);
+            assertEquals("1", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+
+        }
         result = _consumer.receive(1000);
         assertNull("test message should be null:" + result, result);
+
+    }
+
+
+    public void testPutThenRollbackThenGet() throws Exception
+    {
+        assertTrue("session is not transacted", _session.getTransacted());
+        assertTrue("session is not transacted", _pubSession.getTransacted());
+
+        _logger.info("sending test message");
+        String MESSAGE_TEXT = "testPutThenRollbackThenGet";
+
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+        _pubSession.commit();
+
+        assertNotNull(_consumer.receive(100));
+
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+
+        _logger.info("rolling back");
+        _pubSession.rollback();
+
+        _logger.info("receiving result");
+        Message result = _consumer.receive(1000);
+        assertNull("test message was put and rolled back, but is still present", result);
+
+        _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
+
+        _pubSession.commit();
+
+        assertNotNull(_consumer.receive(100));
+
     }
 
 }

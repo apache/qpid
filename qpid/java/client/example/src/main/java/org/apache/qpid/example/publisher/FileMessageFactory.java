@@ -47,7 +47,9 @@ public class FileMessageFactory
         }
         catch (IOException e)
         {
-            throw new MessageFactoryException(e.toString());
+            MessageFactoryException mfe = new MessageFactoryException(e.toString());
+            mfe.initCause(e);
+            throw mfe;
         }
     }
 

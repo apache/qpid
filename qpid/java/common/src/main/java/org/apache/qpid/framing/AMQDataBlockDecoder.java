@@ -94,7 +94,7 @@ public class AMQDataBlockDecoder
 
         if(bodyFactory == null)
         {
-            throw new AMQFrameDecodingException("Unsupported frame type: " + type);
+            throw new AMQFrameDecodingException(null, "Unsupported frame type: " + type, null);
         }
 
         final int channel = in.getUnsignedShort();
@@ -103,8 +103,8 @@ public class AMQDataBlockDecoder
         // bodySize can be zero
         if (channel < 0 || bodySize < 0)
         {
-            throw new AMQFrameDecodingException("Undecodable frame: type = " + type + " channel = " + channel +
-                                                " bodySize = " + bodySize);
+            throw new AMQFrameDecodingException(null, "Undecodable frame: type = " + type + " channel = " + channel +
+                                                " bodySize = " + bodySize, null);
         }
 
         AMQFrame frame = new AMQFrame(in, channel, bodySize, bodyFactory);
@@ -113,7 +113,7 @@ public class AMQDataBlockDecoder
         byte marker = in.get();
         if ((marker & 0xFF) != 0xCE)
         {
-            throw new AMQFrameDecodingException("End of frame marker not found. Read " + marker + " length=" + bodySize + " type=" + type);
+            throw new AMQFrameDecodingException(null, "End of frame marker not found. Read " + marker + " length=" + bodySize + " type=" + type, null);
         }
         return frame;
     }

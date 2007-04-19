@@ -41,6 +41,8 @@
     </connector>
     <management>
         <enabled>true</enabled>
+        <jmxport>8999</jmxport>
+        <security-enabled>true</security-enabled>
     </management>
     <advanced>
         <filterchain enableExecutorPool="true"/>
@@ -63,13 +65,14 @@
                 </attributes>
             </principal-database>
 
-            <!--principal-database>
-                <name>md5passwordfile</name>
-                <class>org.apache.qpid.server.security.auth.database.MD5PasswordFilePrincipalDatabase</class>
+            <!-- Example use of Base64 encoded MD5 hashes for authentication via CRAM-MD5-Hashed
+            <principal-database>
+                <name>passwordfile</name>
+                <class>org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
                         <name>passwordFile</name>
-                        <value>${conf}/md5passwd</value>
+                        <value>${conf}/qpid.passwd</value>
                     </attribute>
                 </attributes>
             </principal-database-->
@@ -78,6 +81,10 @@
         <access>
             <class>org.apache.qpid.server.security.access.AllowAll</class>
         </access>
+        <jmx>
+            <access>${conf}/jmxremote.access</access>
+            <principal-database>passwordfile</principal-database>
+        </jmx>        
     </security>
 
     <virtualhosts>
@@ -85,9 +92,10 @@
             <name>localhost</name>
             <localhost>
                 <store>
-                    <!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>  -->
+                    <!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+                    <environment-path>${work}/localhost-store</environment-path> -->
+
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                    <environment-path>localhost-store</environment-path>
                 </store>
 
                 <security>

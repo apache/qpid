@@ -37,6 +37,7 @@ import org.apache.qpid.server.protocol.HeartbeatConfig;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
@@ -95,7 +96,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     throw new AMQException("Authentication failed");
                 case SUCCESS:
                     _logger.info("Connected as: " + ss.getAuthorizationID());
-                    session.setAuthorizedID(ss.getAuthorizationID());
+                    session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));                
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
                     // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)

@@ -101,7 +101,7 @@ public class FailoverPolicy
                     }
                     catch (Exception cnfe)
                     {
-                        throw new IllegalArgumentException("Unknown failover method:" + failoverMethod);
+                        throw new IllegalArgumentException("Unknown failover method:" + failoverMethod, cnfe);
                     }
                 }
             }

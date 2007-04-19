@@ -27,6 +27,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 
 import org.apache.mina.common.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -72,7 +73,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
     }
 
     AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
-                         AMQShortString routingKey, ByteBuffer data) throws AMQException
+        AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
         super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, exchange, routingKey, data);
@@ -93,7 +94,9 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         }
         catch (IOException e)
         {
-            throw new JMSException(e.toString());
+            JMSException jmse = new JMSException(e.toString());
+            jmse.setLinkedException(e);
+            throw jmse;
         }
     }
 
@@ -112,6 +115,7 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         {
             return null;
         }
+
         int pos = _data.position();
         _data.rewind();
         // one byte left is for the end of frame marker
@@ -119,12 +123,14 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         {
             // this is really redundant since pos must be zero
             _data.position(pos);
+
             return null;
         }
         else
         {
             String data = _data.getString(Charset.forName("UTF8").newDecoder());
             _data.position(pos);
+
             return data;
         }
     }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,9 +24,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
+
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoFilterAdapter;
 import org.apache.mina.common.IoSession;
+
+import org.apache.qpid.pool.Event.CloseEvent;
 
 public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionHandler
 {
@@ -47,12 +50,12 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     void fireAsynchEvent(IoSession session, Event event)
     {
         Job job = getJobForSession(session);
- //       job.acquire(); //prevents this job being removed from _jobs
+        // job.acquire(); //prevents this job being removed from _jobs
         job.add(event);
 
-        //Additional checks on pool to check that it hasn't shutdown.
+        // Additional checks on pool to check that it hasn't shutdown.
         // The alternative is to catch the RejectedExecutionException that will result from executing on a shutdown pool
-        if (job.activate() && _poolReference.getPool() != null && !_poolReference.getPool().isShutdown())
+        if (job.activate() && (_poolReference.getPool() != null) && !_poolReference.getPool().isShutdown())
         {
             _poolReference.getPool().execute(job);
         }
@@ -68,16 +71,6 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
     private Job getJobForSession(IoSession session)
     {
         return (Job) session.getAttribute(_name);
-
-/*        if(job == null)
-        {
-            System.err.println("Error in " + _name);
-            Thread.dumpStack();
-        }
-
-
-        job = _jobs.get(session);
-        return job == null ? createJobForSession(session) : job;*/
     }
 
     private Job createJobForSession(IoSession session)
@@ -87,35 +80,36 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
 
     private Job addJobForSession(IoSession session, Job job)
     {
-        //atomic so ensures all threads agree on the same job
+        // atomic so ensures all threads agree on the same job
         Job existing = _jobs.putIfAbsent(session, job);
-        return existing == null ? job : existing;
+
+        return (existing == null) ? job : existing;
     }
 
-    //Job.JobCompletionHandler
+    // Job.JobCompletionHandler
     public void completed(IoSession session, Job job)
     {
-//        if (job.isComplete())
-//        {
-//            job.release();
-//            if (!job.isReferenced())
-//            {
-//                _jobs.remove(session);
-//            }
-//        }
-//        else
-        if(!job.isComplete())
+        // if (job.isComplete())
+        // {
+        // job.release();
+        // if (!job.isReferenced())
+        // {
+        // _jobs.remove(session);
+        // }
+        // }
+        // else
+        if (!job.isComplete())
         {
             // ritchiem : 2006-12-13 Do we need to perform the additional checks here?
-            //                       Can the pool be shutdown at this point?
-            if (job.activate() && _poolReference.getPool() != null && !_poolReference.getPool().isShutdown())
+            // Can the pool be shutdown at this point?
+            if (job.activate() && (_poolReference.getPool() != null) && !_poolReference.getPool().isShutdown())
             {
                 _poolReference.getPool().execute(job);
             }
         }
     }
 
-    //IoFilter methods that are processed by threads on the pool
+    // IoFilter methods that are processed by threads on the pool
 
     public void sessionOpened(final NextFilter nextFilter, final IoSession session) throws Exception
     {
@@ -127,37 +121,33 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
         nextFilter.sessionClosed(session);
     }
 
-    public void sessionIdle(final NextFilter nextFilter, final IoSession session,
-                            final IdleStatus status) throws Exception
+    public void sessionIdle(final NextFilter nextFilter, final IoSession session, final IdleStatus status) throws Exception
     {
         nextFilter.sessionIdle(session, status);
     }
 
-    public void exceptionCaught(final NextFilter nextFilter, final IoSession session,
-                                final Throwable cause) throws Exception
+    public void exceptionCaught(final NextFilter nextFilter, final IoSession session, final Throwable cause) throws Exception
     {
-            nextFilter.exceptionCaught(session,cause);
+        nextFilter.exceptionCaught(session, cause);
     }
 
-    public void messageReceived(final NextFilter nextFilter, final IoSession session,
-                                final Object message) throws Exception
+    public void messageReceived(final NextFilter nextFilter, final IoSession session, final Object message) throws Exception
     {
-        nextFilter.messageReceived(session,message);
+        nextFilter.messageReceived(session, message);
     }
 
-    public void messageSent(final NextFilter nextFilter, final IoSession session,
-                            final Object message) throws Exception
+    public void messageSent(final NextFilter nextFilter, final IoSession session, final Object message) throws Exception
     {
         nextFilter.messageSent(session, message);
     }
 
-    public void filterWrite(final NextFilter nextFilter, final IoSession session,
-                            final WriteRequest writeRequest) throws Exception
+    public void filterWrite(final NextFilter nextFilter, final IoSession session, final WriteRequest writeRequest)
+        throws Exception
     {
         nextFilter.filterWrite(session, writeRequest);
     }
 
-    //IoFilter methods that are processed on current thread (NOT on pooled thread)
+    // IoFilter methods that are processed on current thread (NOT on pooled thread)
 
     public void filterClose(NextFilter nextFilter, IoSession session) throws Exception
     {
@@ -199,13 +189,17 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
             super(refCountingPool, name);
         }
 
-        public void messageReceived(final NextFilter nextFilter, final IoSession session,
-                                final Object message) throws Exception
+        public void messageReceived(final NextFilter nextFilter, final IoSession session, final Object message)
+            throws Exception
         {
 
             fireAsynchEvent(session, new Event.ReceivedEvent(nextFilter, message));
         }
 
+        public void sessionClosed(final NextFilter nextFilter, final IoSession session) throws Exception
+        {
+            fireAsynchEvent(session, new CloseEvent(nextFilter));
+        }
 
     }
 
@@ -217,26 +211,27 @@ public class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionH
             super(refCountingPool, name);
         }
 
-
-        public void filterWrite(final NextFilter nextFilter, final IoSession session,
-                                final WriteRequest writeRequest) throws Exception
+        public void filterWrite(final NextFilter nextFilter, final IoSession session, final WriteRequest writeRequest)
+            throws Exception
         {
             fireAsynchEvent(session, new Event.WriteEvent(nextFilter, writeRequest));
         }
 
+        public void sessionClosed(final NextFilter nextFilter, final IoSession session) throws Exception
+        {
+            fireAsynchEvent(session, new CloseEvent(nextFilter));
+        }
+
     }
 
-    public static PoolingFilter createAynschReadPoolingFilter(ReferenceCountingExecutorService refCountingPool,String name)
+    public static PoolingFilter createAynschReadPoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
     {
-        return new AsynchReadPoolingFilter(refCountingPool,name);
+        return new AsynchReadPoolingFilter(refCountingPool, name);
     }
 
-
-    public static PoolingFilter createAynschWritePoolingFilter(ReferenceCountingExecutorService refCountingPool,String name)
+    public static PoolingFilter createAynschWritePoolingFilter(ReferenceCountingExecutorService refCountingPool, String name)
     {
-        return new AsynchWritePoolingFilter(refCountingPool,name);
+        return new AsynchWritePoolingFilter(refCountingPool, name);
     }
 
 }
-
-

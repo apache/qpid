@@ -106,6 +106,8 @@ public class AMQQueueAlertTest extends TestCase
     /**
      * Tests if Queue Depth alert is thrown when queue depth reaches the threshold value
      *
+     * Based on FT402 subbmitted by client
+     *
      * @throws Exception
      */
     public void testQueueDepthAlertNoSubscriber() throws Exception

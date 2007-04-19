@@ -1,5 +1,25 @@
 /*
  *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+/*
+ *
  * Copyright (c) 2006 The Apache Software Foundation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,8 +42,12 @@ import javax.management.MBeanException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.Configurator;
+import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -36,9 +60,6 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.configuration.Configurator;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.commons.configuration.Configuration;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -82,8 +103,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param autoDelete
      * @throws JMException
      */
-    public void createNewExchange(String exchangeName, String type, boolean durable, boolean autoDelete)
-            throws JMException
+    public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException
     {
         try
         {
@@ -92,7 +112,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 Exchange exchange = _exchangeRegistry.getExchange(new AMQShortString(exchangeName));
                 if (exchange == null)
                 {
-                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type), durable, autoDelete, 0);
+                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type),
+                                                               durable, false, 0);
                     _exchangeRegistry.registerExchange(exchange);
                 }
                 else
@@ -140,8 +161,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param autoDelete
      * @throws JMException
      */
-    public void createNewQueue(String queueName, String owner, boolean durable,boolean autoDelete)
-            throws JMException
+    public void createNewQueue(String queueName, String owner, boolean durable) throws JMException
     {
         AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
         if (queue != null)
@@ -156,22 +176,27 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             {
                 ownerShortString = new AMQShortString(owner);
             }
-            queue = new AMQQueue(new AMQShortString(queueName), durable, ownerShortString, autoDelete, getVirtualHost());
+
+            queue = new AMQQueue(new AMQShortString(queueName), durable, ownerShortString, false, getVirtualHost());
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _messageStore.createQueue(queue);
             }
 
-            Configuration virtualHostDefaultQueueConfiguration = VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
+            Configuration virtualHostDefaultQueueConfiguration =
+                VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
             if (virtualHostDefaultQueueConfiguration != null)
             {
                 Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
             }
+
             _queueRegistry.registerQueue(queue);
         }
         catch (AMQException ex)
         {
-            throw new MBeanException(new JMException(ex.getMessage()),"Error in creating queue " + queueName);
+            JMException jme = new JMException(ex.getMessage());
+            jme.initCause(ex);
+            throw new MBeanException(jme, "Error in creating queue " + queueName);
         }
     }
 
@@ -202,7 +227,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            throw new MBeanException(new JMException(ex.getMessage()), "Error in deleting queue " + queueName);
+            JMException jme = new JMException(ex.getMessage());
+            jme.initCause(ex);
+            throw new MBeanException(jme, "Error in deleting queue " + queueName);
         }
     }
 
@@ -213,7 +240,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
     // This will have a single instance for a virtual host, so not having the name property in the ObjectName
     public ObjectName getObjectName() throws MalformedObjectNameException
-    {        
+    {
         return getObjectNameForSingleInstanceMBean();
     }
 } // End of MBean class

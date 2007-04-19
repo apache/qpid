@@ -56,18 +56,7 @@ public class CleanupMessageOperation implements TxnOp
 
     public void commit(StoreContext context)
     {
-        //The routers reference can now be released.  This is done
-        //here to ensure that it happens after the queues that
-        //enqueue it have incremented their counts (which as a
-        //memory only operation is done in the commit phase).
-        try
-        {
-            _msg.decrementReference(context);
-        }
-        catch (AMQException e)
-        {
-            _log.error("On commiting transaction, failed to cleanup unused message: " + e, e);
-        }
+
         try
         {
             _msg.checkDeliveredToConsumer();

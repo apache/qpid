@@ -244,7 +244,8 @@ public class NavigationView extends ViewPart
             List<TreeObject> list = _serversRootNode.getChildren();
             for (TreeObject node : list)
             {
-                if (url.equals(node.getUrl()))
+                ManagedServer nodeServer = (ManagedServer)node.getManagedObject();
+                if (url.equals(nodeServer.getUrl()))
                 {
                     // Server is already in the list of added servers, so now connect it.
                     // Set the server node as selected and then connect it.
@@ -266,7 +267,6 @@ public class NavigationView extends ViewPart
 
         // Server connection is successful. Now add the server in the tree
         TreeObject serverNode = new TreeObject(serverAddress, NODE_TYPE_SERVER);
-        serverNode.setUrl(url);
         serverNode.setManagedObject(managedServer);
         _serversRootNode.addChild(serverNode);
 
@@ -504,6 +504,11 @@ public class NavigationView extends ViewPart
         typeChild = new TreeObject(QUEUE, NODE_TYPE_MBEANTYPE);
         typeChild.setParent(parent);
         typeChild.setVirtualHost(parent.getVirtualHost());
+        
+        // Add common notification node for virtual host
+        TreeObject notificationNode = new TreeObject(NOTIFICATIONS, NOTIFICATIONS);
+        notificationNode.setParent(parent);
+        notificationNode.setVirtualHost(parent.getVirtualHost());
     }
 
     /**
@@ -585,7 +590,10 @@ public class NavigationView extends ViewPart
 
                 // create a node for "type"
                 typeNode = createTypeNode(parentNode, type);
-                typeNode.setVirtualHost(mbean.getVirtualHostName());
+                if (!type.equals(VIRTUAL_HOST))
+                {
+                    typeNode.setVirtualHost(mbean.getVirtualHostName());
+                }
             }
 
             // now type node create becomes the parent node for next node in hierarchy
@@ -641,8 +649,8 @@ public class NavigationView extends ViewPart
 
         // Add notification node
         // TODO: show this only if the mbean sends any notification
-        TreeObject notificationNode = new TreeObject(NOTIFICATION, NOTIFICATION);
-        notificationNode.setParent(mbeanNode);
+        //TreeObject notificationNode = new TreeObject(NOTIFICATION, NOTIFICATION);
+        //notificationNode.setParent(mbeanNode);
     }
 
     private TreeObject createTypeNode(TreeObject parent, String name)
@@ -1044,7 +1052,7 @@ public class NavigationView extends ViewPart
         public Image getImage(Object element)
         {
             TreeObject node = (TreeObject) element;
-            if (node.getType().equals(NOTIFICATION))
+            if (node.getType().equals(NOTIFICATIONS))
             {
                 return ApplicationRegistry.getImage(NOTIFICATION_IMAGE);
             }
@@ -1107,8 +1115,11 @@ public class NavigationView extends ViewPart
             {
                 return 1;
             }
-
-            return 2;
+            if (node.getType().equals(NOTIFICATIONS))
+            {
+                return 2;
+            }
+            return 3;
         }
     }
 
