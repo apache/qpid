@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# qpid.stopall script
+# 
+# Script attempts to stop all PROGRAMs running under the current user 
+#  Utilises qpid.stop to perform the actual stopping
+#
+
+MAX_ATTEMPTS=5
+SLEEP_DELAY=2
+PROGRAM="org.apache.qpid.server.Main"
+
+#
+# grep ps for instances of $PROGRAM and collect PIDs
+#
+lookup()
+{
+pids=`ps o pid,command  |grep -v grep | grep $PROGRAM | cut -d ' ' -f 1`
+result=`echo -n $pids | wc -l`
+}
+
+
+#
+# Show the PS output for given set of pids
+#
+showPids()
+{
+ps p $pids
+}
+
+
+#
+# Main Run
+#
+
+lookup
+
+if [[ $result == 0 ]] ; then
+ echo "No Qpid Brokers found running under user '$USER'"
+ exit 0
+fi
+
+for pid in $pids ; do
+
+qpid.stop $pid
+
+done
+
+# Check we have quit all
+lookup
+
+if [[ $result == 0 ]] ; then
+ echo "All Qpid brokers successfully quit"
+else
+ echo "Some brokers were not quit"
+ showPids $pids
+fi
