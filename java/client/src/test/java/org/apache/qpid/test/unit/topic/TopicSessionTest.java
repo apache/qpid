@@ -38,21 +38,21 @@ import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
 
 
-/**
- * @author Apache Software Foundation
- */
+/** @author Apache Software Foundation */
 public class TopicSessionTest extends TestCase
 {
+    private static final String BROKER = "localhost";
+
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
+//        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
+//        TransportConnection.killAllVMBrokers();
         //Thread.sleep(2000);
     }
 
@@ -61,9 +61,9 @@ public class TopicSessionTest extends TestCase
     {
 
         AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
-        AMQTopic topic = new AMQTopic(con.getDefaultTopicExchangeName(),"MyTopic");
+        AMQTopic topic = new AMQTopic(con.getDefaultTopicExchangeName(), "MyTopic");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
-        TopicSubscriber sub = session1.createDurableSubscriber(topic,"subscription0");
+        TopicSubscriber sub = session1.createDurableSubscriber(topic, "subscription0");
         TopicPublisher publisher = session1.createPublisher(topic);
 
         con.start();
@@ -81,11 +81,11 @@ public class TopicSessionTest extends TestCase
             session1.unsubscribe("not a subscription");
             fail("expected InvalidDestinationException when unsubscribing from unknown subscription");
         }
-        catch(InvalidDestinationException e)
+        catch (InvalidDestinationException e)
         {
             ; // PASS
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             fail("expected InvalidDestinationException when unsubscribing from unknown subscription, got: " + e);
         }
@@ -106,8 +106,8 @@ public class TopicSessionTest extends TestCase
     private void subscriptionNameReuseForDifferentTopic(boolean shutdown) throws Exception
     {
         AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
-        AMQTopic topic = new AMQTopic(con,"MyTopic1" + String.valueOf(shutdown));
-        AMQTopic topic2 = new AMQTopic(con,"MyOtherTopic1" + String.valueOf(shutdown));
+        AMQTopic topic = new AMQTopic(con, "MyTopic1" + String.valueOf(shutdown));
+        AMQTopic topic2 = new AMQTopic(con, "MyOtherTopic1" + String.valueOf(shutdown));
 
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic, "subscription0");
@@ -145,7 +145,7 @@ public class TopicSessionTest extends TestCase
     public void testUnsubscriptionAfterConnectionClose() throws Exception
     {
         AMQConnection con1 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
-        AMQTopic topic = new AMQTopic(con1,"MyTopic3");
+        AMQTopic topic = new AMQTopic(con1, "MyTopic3");
 
         TopicSession session1 = con1.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
@@ -176,7 +176,7 @@ public class TopicSessionTest extends TestCase
     {
 
         AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
-        AMQTopic topic = new AMQTopic(con,"MyTopic4");
+        AMQTopic topic = new AMQTopic(con, "MyTopic4");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
         MessageConsumer consumer1 = session1.createConsumer(topic);
@@ -226,11 +226,11 @@ public class TopicSessionTest extends TestCase
         producer.send(sentMessage);
         TextMessage receivedMessage = (TextMessage) consumer.receive(2000);
         assertNotNull(receivedMessage);
-        assertEquals(sentMessage.getText(),receivedMessage.getText());
+        assertEquals(sentMessage.getText(), receivedMessage.getText());
         producer.send(sentMessage);
         receivedMessage = (TextMessage) consumer.receive(2000);
         assertNotNull(receivedMessage);
-        assertEquals(sentMessage.getText(),receivedMessage.getText());
+        assertEquals(sentMessage.getText(), receivedMessage.getText());
 
         conn.close();
 
@@ -248,14 +248,14 @@ public class TopicSessionTest extends TestCase
         producer.send(session.createTextMessage("hello"));
         TextMessage tm = (TextMessage) consumer.receive(2000);
         assertNotNull(tm);
-        assertEquals("hello",tm.getText());
+        assertEquals("hello", tm.getText());
 
         try
         {
             topic.delete();
             fail("Expected JMSException : should not be able to delete while there are active consumers");
         }
-        catch(JMSException je)
+        catch (JMSException je)
         {
             ; //pass
         }
@@ -266,7 +266,7 @@ public class TopicSessionTest extends TestCase
         {
             topic.delete();
         }
-        catch(JMSException je)
+        catch (JMSException je)
         {
             fail("Unexpected Exception: " + je.getMessage());
         }
@@ -283,10 +283,91 @@ public class TopicSessionTest extends TestCase
         }
 
 
-
         conn.close();
     }
 
+
+    public void testNoLocal() throws Exception
+    {
+
+        AMQConnection con = new AMQConnection(BROKER + "?retries='0'", "guest", "guest", "test", "test");
+
+        AMQTopic topic = new AMQTopic(con, "testNoLocal");
+
+        TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+        TopicSubscriber noLocal = session1.createDurableSubscriber(topic, "noLocal", "", true);
+        TopicSubscriber select = session1.createDurableSubscriber(topic, "select", "Selector = 'select'", false);
+        TopicSubscriber normal = session1.createDurableSubscriber(topic, "normal");
+
+        TopicPublisher publisher = session1.createPublisher(topic);
+
+        con.start();
+        TextMessage m;
+        TextMessage message;
+
+        //send message to all consumers
+        publisher.publish(session1.createTextMessage("hello-new2"));
+
+        //test normal subscriber gets message
+        m = (TextMessage) normal.receive(1000);
+        assertNotNull(m);
+
+        //test selector subscriber doesn't message
+        m = (TextMessage) select.receive(1000);
+        assertNull(m);
+
+        //test nolocal subscriber doesn't message
+        m = (TextMessage) noLocal.receive(1000);
+        if (m != null)
+        {
+            System.out.println("Message:" + m.getText());
+        }
+        assertNull(m);
+
+        //send message to all consumers
+         message = session1.createTextMessage("hello2");
+        message.setStringProperty("Selector", "select");
+
+        publisher.publish(message);
+
+        //test normal subscriber gets message
+        m = (TextMessage) normal.receive(1000);
+        assertNotNull(m);
+
+        //test selector subscriber does get message
+        m = (TextMessage) select.receive(100);
+        assertNotNull(m);
+
+        //test nolocal subscriber doesn't message
+        m = (TextMessage) noLocal.receive(100);
+        assertNull(m);
+
+        AMQConnection con2 = new AMQConnection(BROKER + "?retries='0'", "guest", "guest", "test2", "test");
+        TopicSession session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
+        TopicPublisher publisher2 = session2.createPublisher(topic);
+
+
+        message = session2.createTextMessage("hello2");
+        message.setStringProperty("Selector", "select");
+
+        publisher2.publish(message);
+
+        //test normal subscriber gets message
+        m = (TextMessage) normal.receive(1000);
+        assertNotNull(m);
+
+        //test selector subscriber does get message
+        m = (TextMessage) select.receive(100);
+        assertNotNull(m);
+
+        //test nolocal subscriber does message
+        m = (TextMessage) noLocal.receive(100);
+        assertNotNull(m);
+
+
+        con.close();
+        con2.close();
+    }
 
     public static junit.framework.Test suite()
     {
