@@ -53,7 +53,8 @@ Broker::Broker(const Configuration& conf) :
     timeout(30000),
     stagingThreshold(0),
     cleaner(&queues, timeout/10),
-    factory(*this)
+    factory(*this),
+    dtxManager(store.get())
 {
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     exchanges.declare(amq_direct, DirectExchange::typeName);

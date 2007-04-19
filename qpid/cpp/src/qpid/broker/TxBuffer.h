@@ -61,44 +61,52 @@ namespace qpid {
         class TxBuffer{
             typedef std::vector<TxOp::shared_ptr>::iterator op_iterator;
             std::vector<TxOp::shared_ptr> ops;
+        protected:
+
         public:
+            typedef boost::shared_ptr<TxBuffer> shared_ptr;
+            /**
+             * Adds an operation to the transaction.
+             */
+            void enlist(TxOp::shared_ptr op);
+
             /**
              * Requests that all ops are prepared. This should
              * primarily involve making sure that a persistent record
              * of the operations is stored where necessary.
-             * 
-             * All ops will be prepared under a transaction on the
-             * specified store. If any operation fails on prepare,
-             * this transaction will be rolled back. 
-             * 
+             *
              * Once prepared, a transaction can be committed (or in
              * the 2pc case, rolled back).
              * 
              * @returns true if all the operations prepared
              * successfully, false if not.
              */
-            bool prepare(TransactionalStore* const store);
+            bool prepare(TransactionContext* const ctxt);
+
             /**
-             * Signals that the ops all prepared all completed
-             * successfully and can now commit, i.e. the operation can
-             * now be fully carried out.
+             * Signals that the ops all prepared successfully and can
+             * now commit, i.e. the operation can now be fully carried
+             * out.
              * 
              * Should only be called after a call to prepare() returns
              * true.
              */
             void commit();
+
             /**
-             * Rolls back all the operations.
+             * Signals that all ops can be rolled back.
              * 
              * Should only be called either after a call to prepare()
              * returns true (2pc) or instead of a prepare call
              * ('server-local')
              */
             void rollback();
+
             /**
-             * Adds an operation to the transaction.
+             * Helper method for managing the process of server local
+             * commit
              */
-            void enlist(TxOp::shared_ptr op);
+            bool commitLocal(TransactionalStore* const store);
         };
     }
 }

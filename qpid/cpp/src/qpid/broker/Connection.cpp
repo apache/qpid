@@ -82,7 +82,7 @@ void Connection::initiated(const framing::ProtocolInitiation& header) {
     string mechanisms("PLAIN");
     string locales("en_US");
     getChannel(0).init(0, *out, getVersion());
-    client = &getChannel(0).getAdatper().getProxy().getConnection();
+    client = &getChannel(0).getAdapter().getProxy().getConnection();
     client->start(
         header.getMajor(), header.getMinor(),
         properties, mechanisms, locales);

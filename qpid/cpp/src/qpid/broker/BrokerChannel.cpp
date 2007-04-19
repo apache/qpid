@@ -54,7 +54,6 @@ Channel::Channel(
     ChannelAdapter(id, &con.getOutput(), con.getVersion()),
     connection(con),
     currentDeliveryTag(1),
-    transactional(false),
     prefetchSize(0),
     prefetchCount(0),
     framesize(_framesize),
@@ -104,22 +103,36 @@ void Channel::close(){
     recover(true);
 }
 
-void Channel::begin(){
-    transactional = true;
+void Channel::startTx(){
+    txBuffer = TxBuffer::shared_ptr(new TxBuffer());
 }
 
 void Channel::commit(){
     TxOp::shared_ptr txAck(new TxAck(accumulatedAck, unacked));
-    txBuffer.enlist(txAck);
-    if(txBuffer.prepare(store)){
-        txBuffer.commit();
+    txBuffer->enlist(txAck);
+    if (txBuffer->commitLocal(store)) {
+        accumulatedAck.clear();
     }
-    accumulatedAck.clear();
 }
 
 void Channel::rollback(){
-    txBuffer.rollback();
+    txBuffer->rollback();
     accumulatedAck.clear();
+}
+
+void Channel::startDtx(const std::string& xid, DtxManager& mgr){
+    dtxBuffer = DtxBuffer::shared_ptr(new DtxBuffer());
+    txBuffer = static_pointer_cast<TxBuffer>(dtxBuffer);
+    mgr.start(xid, dtxBuffer);
+}
+
+void Channel::endDtx(){
+    TxOp::shared_ptr txAck(new TxAck(accumulatedAck, unacked));
+    dtxBuffer->enlist(txAck);    
+    dtxBuffer->markEnded();
+    
+    dtxBuffer.reset();
+    txBuffer.reset();
 }
 
 void Channel::deliver(
@@ -180,23 +193,8 @@ void Channel::ConsumerImpl::requestDispatch(){
         queue->dispatch();
 }
 
-void Channel::handleInlineTransfer(Message::shared_ptr msg)
-{
-    Exchange::shared_ptr exchange =
-        connection.broker.getExchanges().get(msg->getExchange());
-    if(transactional){
-        TxPublish* deliverable(new TxPublish(msg));
-        TxOp::shared_ptr op(deliverable);
-        exchange->route(
-            *deliverable, msg->getRoutingKey(),
-            &(msg->getApplicationHeaders()));
-        txBuffer.enlist(op);
-    }else{
-        DeliverableMessage deliverable(msg);
-        exchange->route(
-            deliverable, msg->getRoutingKey(),
-            &(msg->getApplicationHeaders()));
-    }
+void Channel::handleInlineTransfer(Message::shared_ptr msg){
+    complete(msg);
 }
 
 void Channel::handlePublish(Message* _message){
@@ -222,12 +220,12 @@ void Channel::complete(Message::shared_ptr msg) {
     Exchange::shared_ptr exchange =
         connection.broker.getExchanges().get(msg->getExchange());
     assert(exchange.get());
-    if(transactional) {
+    if (txBuffer) {
         TxPublish* deliverable(new TxPublish(msg));
         TxOp::shared_ptr op(deliverable);
         exchange->route(*deliverable, msg->getRoutingKey(),
                         &(msg->getApplicationHeaders()));
-        txBuffer.enlist(op);
+        txBuffer->enlist(op);
     } else {
         DeliverableMessage deliverable(msg);
         exchange->route(deliverable, msg->getRoutingKey(),
@@ -236,24 +234,24 @@ void Channel::complete(Message::shared_ptr msg) {
 }
 
 void Channel::ack(){
-	ack(getFirstAckRequest(), getLastAckRequest());
+    ack(getFirstAckRequest(), getLastAckRequest());
 }
 
 // Used by Basic
 void Channel::ack(uint64_t deliveryTag, bool multiple){
-	if (multiple)
-		ack(0, deliveryTag);
-	else
-		ack(deliveryTag, deliveryTag);
+    if (multiple)
+        ack(0, deliveryTag);
+    else
+        ack(deliveryTag, deliveryTag);
 }
 
 void Channel::ack(uint64_t firstTag, uint64_t lastTag){
-    if(transactional){
+    if (txBuffer) {
         accumulatedAck.update(firstTag, lastTag);
 
         //TODO: I think the outstanding prefetch size & count should be updated at this point...
         //TODO: ...this may then necessitate dispatching to consumers
-    }else{
+    } else {
         Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
     
         ack_iterator i = find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matches), lastTag));
