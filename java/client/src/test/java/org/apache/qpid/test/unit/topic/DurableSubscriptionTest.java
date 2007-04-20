@@ -36,9 +36,11 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.log4j.Logger;
 
 public class DurableSubscriptionTest extends TestCase
 {
+    private static final Logger _logger = Logger.getLogger(DurableSubscriptionTest.class);
 
     protected void setUp() throws Exception
     {
@@ -55,41 +57,59 @@ public class DurableSubscriptionTest extends TestCase
     public void testUnsubscribe() throws AMQException, JMSException, URLSyntaxException
     {
         AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
-        AMQTopic topic = new AMQTopic(con,"MyTopic");
+        AMQTopic topic = new AMQTopic(con, "MyTopic");
+        _logger.info("Create Session 1");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        _logger.info("Create Consumer on Session 1");
         MessageConsumer consumer1 = session1.createConsumer(topic);
+        _logger.info("Create Producer on Session 1");
         MessageProducer producer = session1.createProducer(topic);
 
+        _logger.info("Create Session 2");
         Session session2 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        _logger.info("Create Durable Subscriber on Session 2");
         TopicSubscriber consumer2 = session2.createDurableSubscriber(topic, "MySubscription");
 
+        _logger.info("Starting connection");
         con.start();
 
+        _logger.info("Producer sending message A");
         producer.send(session1.createTextMessage("A"));
 
         Message msg;
+        _logger.info("Receive message on consumer 1:expecting A");
         msg = consumer1.receive();
         assertEquals("A", ((TextMessage) msg).getText());
+        _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(1000);
         assertEquals(null, msg);
 
+
+        _logger.info("Receive message on consumer 1:expecting A");
         msg = consumer2.receive();
         assertEquals("A", ((TextMessage) msg).getText());
         msg = consumer2.receive(1000);
+        _logger.info("Receive message on consumer 1 :expecting null");
         assertEquals(null, msg);
 
+        _logger.info("Unsubscribe session2/consumer2");
         session2.unsubscribe("MySubscription");
 
+        _logger.info("Producer sending message B");
         producer.send(session1.createTextMessage("B"));
 
+        _logger.info("Receive message on consumer 1 :expecting B");
         msg = consumer1.receive();
         assertEquals("B", ((TextMessage) msg).getText());
+        _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(1000);
         assertEquals(null, msg);
 
+        _logger.info("Receive message on consumer 2 :expecting null");
         msg = consumer2.receive(1000);
         assertEquals(null, msg);
 
+        _logger.info("Close connection");
         con.close();
     }
 
@@ -97,7 +117,7 @@ public class DurableSubscriptionTest extends TestCase
     {
 
         AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
-        AMQTopic topic = new AMQTopic(con,"MyTopic");
+        AMQTopic topic = new AMQTopic(con, "MyTopic");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
 
@@ -129,13 +149,17 @@ public class DurableSubscriptionTest extends TestCase
 
         producer.send(session1.createTextMessage("B"));
 
+        _logger.info("Receive message on consumer 1 :expecting B");
         msg = consumer1.receive(100);
         assertEquals("B", ((TextMessage) msg).getText());
+        _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(100);
         assertEquals(null, msg);
 
+        _logger.info("Receive message on consumer 3 :expecting B");
         msg = consumer3.receive(100);
         assertEquals("B", ((TextMessage) msg).getText());
+        _logger.info("Receive message on consumer 3 :expecting null");
         msg = consumer3.receive(100);
         assertEquals(null, msg);
 

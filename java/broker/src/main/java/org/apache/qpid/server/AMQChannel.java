@@ -197,7 +197,6 @@ public class AMQChannel
 
         _currentMessage = new AMQMessage(_messageStore.getNewMessageId(), info,
                                          _txnContext);
-        // TODO: used in clustering only I think (RG)
         _currentMessage.setPublisher(publisher);
     }
 

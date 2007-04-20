@@ -176,7 +176,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean updatePassword(Principal principal, String password) throws AccountNotFoundException
+    public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
     {
         User user = _users.get(principal.getName());
 
@@ -187,13 +187,10 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
         try
         {
-
-            char[] passwd = convertPassword(password);
-
             try
             {
                 _userUpdate.lock();
-                user.setPassword(passwd);
+                user.setPassword(password);
 
                 try
                 {
@@ -215,7 +212,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 }
             }
         }
-        catch (UnsupportedEncodingException e)
+        catch (Exception e)
         {
             return false;
         }
@@ -237,23 +234,14 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         return passwd;
     }
 
-    public boolean createPrincipal(Principal principal, String password)
+    public boolean createPrincipal(Principal principal, char[] password)
     {
         if (_users.get(principal.getName()) != null)
         {
             return false;
         }
 
-        User user;
-        try
-        {
-            user = new User(principal.getName(), convertPassword(password));
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            _logger.warn("Unable to encode password:" + e);
-            return false;
-        }
+        User user = new User(principal.getName(), password);
 
         try
         {
@@ -598,8 +586,13 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
         private void encodePassword() throws EncoderException, UnsupportedEncodingException, NoSuchAlgorithmException
         {
-            Base64 b64 = new Base64();
-            _encodedPassword = b64.encode(new String(_password).getBytes(DEFAULT_ENCODING));
+            byte[] byteArray = new byte[_password.length];
+            int index = 0;
+            for (char c : _password)
+            {
+                byteArray[index++] = (byte)c;    
+            }
+            _encodedPassword = (new Base64()).encode(byteArray);
         }
 
         public boolean isModified()

@@ -62,7 +62,8 @@ public class MessageListenerMultiConsumerTest extends TestCase
     private Connection _clientConnection;
     private MessageConsumer _consumer1;
     private MessageConsumer _consumer2;
-
+    private Session _clientSession1;
+    private Queue _queue;
     private final CountDownLatch _allMessagesSent = new CountDownLatch(2); //all messages Sent Lock
 
 
@@ -76,25 +77,25 @@ public class MessageListenerMultiConsumerTest extends TestCase
         Hashtable<String, String> env = new Hashtable<String, String>();
 
         env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/test?brokerlist='vm://:1'");
-        env.put("queue.queue", "direct://amq.direct//MessageListenerTest");
+        env.put("queue.queue", "direct://amq.direct//"+this.getClass().getName());
 
         _context = factory.getInitialContext(env);
 
-        Queue queue = (Queue) _context.lookup("queue");
+        _queue = (Queue) _context.lookup("queue");
 
         //Create Client 1
         _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _clientConnection.start();
 
-        Session clientSession1 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _clientSession1 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _consumer1 = clientSession1.createConsumer(queue);
+        _consumer1 = _clientSession1.createConsumer(_queue);
 
         //Create Client 2
         Session clientSession2 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _consumer2 = clientSession2.createConsumer(queue);
+        _consumer2 = clientSession2.createConsumer(_queue);
 
         //Create Producer
         Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
@@ -104,7 +105,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
 
         Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        MessageProducer producer = producerSession.createProducer(queue);
+        MessageProducer producer = producerSession.createProducer(_queue);
 
         for (int msg = 0; msg < MSG_COUNT; msg++)
         {
@@ -123,20 +124,6 @@ public class MessageListenerMultiConsumerTest extends TestCase
         TransportConnection.killAllVMBrokers();
     }
 
-//    public void testRecieveC1thenC2() throws Exception
-//    {
-//
-//        for (int msg = 0; msg < MSG_COUNT / 2; msg++)
-//        {
-//
-//            assertTrue(_consumer1.receive() != null);
-//        }
-//
-//        for (int msg = 0; msg < MSG_COUNT / 2; msg++)
-//        {
-//            assertTrue(_consumer2.receive() != null);
-//        }
-//    }
 
     public void testRecieveInterleaved() throws Exception
     {
@@ -206,14 +193,53 @@ public class MessageListenerMultiConsumerTest extends TestCase
         assertEquals(MSG_COUNT, receivedCount1 + receivedCount2);
     }
 
-    public void testRecieveC2Only_OnlyRunWith_REGISTER_CONSUMERS_FLOWED() throws Exception
+    public void testRecieveC2Only() throws Exception
     {
-        if (Boolean.parseBoolean(System.getProperties().getProperty("REGISTER_CONSUMERS_FLOWED", "false")))
+        if (!Boolean.parseBoolean(System.getProperties().
+                getProperty(AMQSession.IMMEDIATE_PREFETCH, AMQSession.IMMEDIATE_PREFETCH_DEFAULT)))
         {
+            _logger.info("Performing Receive only on C2");
             for (int msg = 0; msg < MSG_COUNT; msg++)
             {
                 assertTrue(MSG_COUNT + " msg should be received. Only received:" + msg,
                            _consumer2.receive(1000) != null);
+            }
+        }
+    }
+
+    public void testRecieveBoth() throws Exception
+    {
+        if (!Boolean.parseBoolean(System.getProperties().
+                getProperty(AMQSession.IMMEDIATE_PREFETCH, AMQSession.IMMEDIATE_PREFETCH_DEFAULT)))
+        {
+            _logger.info("Performing Receive only with two consumers on one session ");
+
+            MessageConsumer consumer2 = _clientSession1.createConsumer(_queue);
+
+            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            {
+
+                assertTrue(_consumer1.receive() != null);
+            }
+
+            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            {
+                assertTrue(consumer2.receive() != null);
+            }
+        }
+        else
+        {
+            _logger.info("Performing Receive only on both C1 and C2");
+
+            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            {
+
+                assertTrue(_consumer1.receive() != null);
+            }
+
+            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            {
+                assertTrue(_consumer2.receive() != null);
             }
         }
     }

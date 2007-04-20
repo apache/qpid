@@ -65,7 +65,7 @@ public interface PrincipalDatabase
      * @return True if change was successful
      * @throws AccountNotFoundException If the given principal doesn't exist in the Database
      */
-    boolean updatePassword(Principal principal, String password)
+    boolean updatePassword(Principal principal, char[] password)
             throws AccountNotFoundException;
 
     /**
@@ -74,7 +74,7 @@ public interface PrincipalDatabase
      * @param password The password to set for the principal
      * @return True on a successful creation
      */
-    boolean createPrincipal(Principal principal, String password);
+    boolean createPrincipal(Principal principal, char[] password);
 
     /**
      * Delete a principal
