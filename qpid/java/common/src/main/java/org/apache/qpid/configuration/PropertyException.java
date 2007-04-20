@@ -1,4 +1,3 @@
-/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,8 +19,6 @@
  *
  */
 package org.apache.qpid.configuration;
-
-import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -50,19 +47,4 @@ public class PropertyException extends AMQException
     {
         super(errorCode, msg);
     }
-
-    /*public PropertyException(Logger logger, String msg, Throwable t)
-    {
-        super(logger, msg, t);
-    }
-
-    public PropertyException(Logger logger, String msg)
-    {
-        super(logger, msg);
-    }
-
-    public PropertyException(Logger logger, AMQConstant errorCode, String msg)
-    {
-        super(logger, errorCode, msg);
-    }*/
 }

@@ -1,4 +1,3 @@
-/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,8 +20,6 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
@@ -37,14 +34,4 @@ public class AMQFrameDecodingException extends AMQException
     {
         super(errorCode, message, t);
     }
-
-    /*public AMQFrameDecodingException(Logger log, String message)
-    {
-        super(log, message);
-    }
-
-    public AMQFrameDecodingException(Logger log, String message, Throwable t)
-    {
-        super(log, message, t);
-    }*/
 }
