@@ -17,6 +17,7 @@
  */
 #include "DtxHandlerImpl.h"
 
+#include <boost/format.hpp>
 #include "Broker.h"
 #include "BrokerChannel.h"
 
@@ -30,18 +31,6 @@ DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : CoreRefs(parent) {}
 
 // DtxDemarcationHandler:
 
-void DtxHandlerImpl::end(const MethodContext& /*context*/,
-                         u_int16_t /*ticket*/,
-                         const string& /*xid*/,
-                         bool /*fail*/,
-                         bool /*suspend*/ )
-{
-    channel.endDtx();
-    //send end-ok
-    //TODO: handle fail and suspend
-    //TODO: check xid is as expected?
-}
-
 
 void DtxHandlerImpl::select(const MethodContext& /*context*/ )
 {
@@ -49,16 +38,38 @@ void DtxHandlerImpl::select(const MethodContext& /*context*/ )
     //send select-ok
 }
 
+void DtxHandlerImpl::end(const MethodContext& /*context*/,
+                         u_int16_t /*ticket*/,
+                         const string& xid,
+                         bool fail,
+                         bool suspend)
+{
+    if (fail && suspend) {
+        throw ConnectionException(503, "End and suspend cannot both be set.");
+    }
+
+    //TODO: handle fail
+    if (suspend) {
+        channel.suspendDtx(xid);
+    } else {
+        channel.endDtx(xid);
+    }
+    //send end-ok
+}
 
 void DtxHandlerImpl::start(const MethodContext& /*context*/,
                            u_int16_t /*ticket*/,
                            const string& xid,
                            bool /*join*/,
-                           bool /*resume*/ )
+                           bool resume)
 {
-    channel.startDtx(xid, broker.getDtxManager());
+    //TODO: handle join
+    if (resume) {
+        channel.resumeDtx(xid);
+    } else {
+        channel.startDtx(xid, broker.getDtxManager());
+    }
     //send start-ok
-    //TODO: handle join and resume
 }
 
 // DtxCoordinationHandler:

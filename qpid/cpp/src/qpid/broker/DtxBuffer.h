@@ -28,14 +28,19 @@ namespace qpid {
     namespace broker {
         class DtxBuffer : public TxBuffer{
             sys::Mutex lock;
+            const std::string xid;
             bool ended;
+            bool suspended;           
         public:
             typedef boost::shared_ptr<DtxBuffer> shared_ptr;
 
-            DtxBuffer();
+            DtxBuffer(const std::string& xid = "");
             ~DtxBuffer();
             void markEnded();
             bool isEnded();
+            void setSuspended(bool suspended);
+            bool isSuspended();
+            const std::string& getXid();
         };
     }
 }
