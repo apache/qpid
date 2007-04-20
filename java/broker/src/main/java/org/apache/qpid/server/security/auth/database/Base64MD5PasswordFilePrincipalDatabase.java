@@ -153,27 +153,19 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
      *
      * @throws AccountNotFoundException if the principal cannot be found
      */
-    public boolean verifyPassword(String principal, String password) throws AccountNotFoundException
+    public boolean verifyPassword(String principal, char[] password) throws AccountNotFoundException
     {
-        try
-        {
-            char[] pwd = lookupPassword(principal);
-            byte[] passwordBytes = password.getBytes(DEFAULT_ENCODING);
+        char[] pwd = lookupPassword(principal);
 
-            int index = 0;
-            boolean verified = true;
+        int index = 0;
+        boolean verified = true;
 
-            while (verified & index < passwordBytes.length)
-            {
-                verified = (pwd[index] == (char) passwordBytes[index]);
-                index++;
-            }
-            return verified;
-        }
-        catch (UnsupportedEncodingException e)
+        while (verified & index < password.length)
         {
-            return false;
+            verified = (pwd[index] == password[index]);
+            index++;
         }
+        return verified;
     }
 
     public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
@@ -590,7 +582,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             int index = 0;
             for (char c : _password)
             {
-                byteArray[index++] = (byte)c;    
+                byteArray[index++] = (byte) c;
             }
             _encodedPassword = (new Base64()).encode(byteArray);
         }

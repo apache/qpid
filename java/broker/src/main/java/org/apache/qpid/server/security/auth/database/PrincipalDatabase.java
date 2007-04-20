@@ -55,7 +55,7 @@ public interface PrincipalDatabase
      * @return true if password is correct
      * @throws AccountNotFoundException if the principal cannot be found
      */
-    boolean verifyPassword(String principal, String password)
+    boolean verifyPassword(String principal, char[] password)
             throws AccountNotFoundException;
 
     /**

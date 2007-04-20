@@ -64,6 +64,10 @@
         </layout>
     </appender>
 
+     <category name="Qpid.Broker">
+        <priority value="info"/>
+    </category>
+
     <!--<category name="org.apache.qpid.server.store">
         <priority value="debug"/>
     </category-->
