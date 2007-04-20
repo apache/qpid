@@ -373,6 +373,7 @@ public class Main
                 }
 
                 acceptor.bind(bindAddress, handler, sconfig);
+                //fixme  qpid.AMQP should be using qpidproperties to get value
                 _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
             }
 
@@ -381,14 +382,21 @@ public class Main
                 AMQPFastProtocolHandler handler = new AMQPProtocolProvider().getHandler();
                 try
                 {
-                    acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
+
+                   acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
+                    //fixme  qpid.AMQP should be using qpidproperties to get value
                     _brokerLogger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
+
                 }
                 catch (IOException e)
                 {
                     _brokerLogger.error("Unable to listen on SSL port: " + e, e);
                 }
             }
+
+            //fixme  qpid.AMQP should be using qpidproperties to get value            
+            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
+                               + " build: " + QpidProperties.getBuildVersion());
         }
         catch (Exception e)
         {
