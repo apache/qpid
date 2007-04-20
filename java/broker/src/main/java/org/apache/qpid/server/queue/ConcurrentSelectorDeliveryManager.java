@@ -28,7 +28,6 @@ import java.util.Set;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -372,7 +371,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             for (Subscription sub : _subscriptions.getSubscriptions())
             {
-                if (!sub.isSuspended() && sub.hasFilters())
+                if (!sub.isSuspended() && sub.filtersMessages())
                 {
                     Queue<AMQMessage> preDeliveryQueue = sub.getPreDeliveryQueue();
                     for (AMQMessage msg : messageList)
@@ -613,6 +612,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             _processingThreadName = Thread.currentThread().getName();
         }
 
+        if (_log.isDebugEnabled())
+        {
+            _log.debug(debugIdentity() + "Running process Queue." + currentStatus());
+        }
+
         // Continue to process delivery while we haveSubscribers and messages
         boolean hasSubscribers = _subscriptions.hasActiveSubscribers();
 
@@ -633,11 +637,17 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 }
             }
         }
+
+        if (_log.isDebugEnabled())
+        {
+            _log.debug(debugIdentity() + "Done process Queue." + currentStatus());
+        }
+
     }
 
 //    private void sendNextMessage(Subscription sub)
 //    {
-//        if (sub.hasFilters())
+//        if (sub.filtersMessages())
 //        {
 //            sendNextMessage(sub, sub.getPreDeliveryQueue());
 //            if (sub.isAutoClose())
@@ -817,6 +827,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             //are we already running? if so, don't re-run
             if (_processing.compareAndSet(false, true))
             {
+                if (_log.isDebugEnabled())
+                {
+                    _log.debug(debugIdentity() + "Executing Async process.");
+                }
                 executor.execute(asyncDelivery);
             }
         }
