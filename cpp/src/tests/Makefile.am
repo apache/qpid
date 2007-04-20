@@ -6,6 +6,7 @@ broker_unit_tests =	\
   AccumulatedAckTest	\
   BrokerChannelTest 	\
   ConfigurationTest	\
+  DtxWorkRecordTest     \
   ExchangeTest		\
   HeadersExchangeTest	\
   InMemoryContentTest	\
@@ -72,6 +73,7 @@ EXTRA_DIST =					\
   InProcessBroker.h				\
   MockChannel.h					\
   MockConnectionInputHandler.h			\
+  TxMocks.h					\
   qpid_test_plugin.h				\
   APRBaseTest.cpp
 

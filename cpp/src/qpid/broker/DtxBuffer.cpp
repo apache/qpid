@@ -23,7 +23,7 @@
 using namespace qpid::broker;
 using qpid::sys::Mutex;
 
-DtxBuffer::DtxBuffer() : ended(false) {}
+DtxBuffer::DtxBuffer(const std::string& _xid) : xid(_xid), ended(false), suspended(false) {}
 
 DtxBuffer::~DtxBuffer() {}
 
@@ -38,3 +38,19 @@ bool DtxBuffer::isEnded()
     Mutex::ScopedLock locker(lock); 
     return ended; 
 }
+
+void DtxBuffer::setSuspended(bool isSuspended) 
+{ 
+    suspended = isSuspended; 
+}
+
+bool DtxBuffer::isSuspended() 
+{ 
+    return suspended; 
+}
+
+const std::string& DtxBuffer::getXid()
+{
+    return xid;
+}
+

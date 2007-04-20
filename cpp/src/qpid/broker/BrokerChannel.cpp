@@ -26,6 +26,7 @@
 #include <functional>
 
 #include <boost/bind.hpp>
+#include <boost/format.hpp>
 
 #include "BrokerChannel.h"
 #include "qpid/framing/ChannelAdapter.h"
@@ -121,18 +122,44 @@ void Channel::rollback(){
 }
 
 void Channel::startDtx(const std::string& xid, DtxManager& mgr){
-    dtxBuffer = DtxBuffer::shared_ptr(new DtxBuffer());
+    dtxBuffer = DtxBuffer::shared_ptr(new DtxBuffer(xid));
     txBuffer = static_pointer_cast<TxBuffer>(dtxBuffer);
     mgr.start(xid, dtxBuffer);
 }
 
-void Channel::endDtx(){
+void Channel::endDtx(const std::string& xid){
+    if (dtxBuffer->getXid() != xid) {
+        throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on end") 
+                                  % dtxBuffer->getXid() % xid);
+    }
+
     TxOp::shared_ptr txAck(new TxAck(accumulatedAck, unacked));
     dtxBuffer->enlist(txAck);    
     dtxBuffer->markEnded();
     
     dtxBuffer.reset();
     txBuffer.reset();
+}
+
+void Channel::suspendDtx(const std::string& xid){
+    if (dtxBuffer->getXid() != xid) {
+        throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on suspend") 
+                                  % dtxBuffer->getXid() % xid);
+    }
+    dtxBuffer->setSuspended(true);
+    txBuffer.reset();
+}
+
+void Channel::resumeDtx(const std::string& xid){
+    if (dtxBuffer->getXid() != xid) {
+        throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on resume") 
+                                  % dtxBuffer->getXid() % xid);
+    }
+    if (!dtxBuffer->isSuspended()) {
+        throw ConnectionException(503, boost::format("xid %1% not suspended")% xid);
+    }
+    dtxBuffer->setSuspended(true);
+    txBuffer = static_pointer_cast<TxBuffer>(dtxBuffer);
 }
 
 void Channel::deliver(

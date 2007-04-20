@@ -31,6 +31,11 @@
 namespace qpid {
 namespace broker {
 
+/**
+ * Represents the work done under a particular distributed transaction
+ * across potentially multiple channels. Identified by a xid. Allows
+ * that work to be prepared, committed and rolled-back.
+ */
 class DtxWorkRecord
 {
     typedef std::vector<DtxBuffer::shared_ptr> Work;
