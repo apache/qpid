@@ -18,6 +18,7 @@
 package org.apache.qpid.server.management;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.security.access.AMQUserManagementMBean;
 import org.apache.log4j.Logger;
 
 import javax.management.remote.MBeanServerForwarder;
@@ -122,8 +123,20 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         Principal principal = principals.iterator().next();
         String identity = principal.getName();
 
+        if (isAdminMethod(args))
+        {
+            if (isAdmin(identity))
+            {
+                return method.invoke(mbs, args);
+            }
+            else
+            {
+                throw new SecurityException("Access denied");
+            }
+        }
+
         // Following users can perform any operation other than "createMBean" and "unregisterMBean"
-        if (isAdmin(identity) || isAllowedToModify(identity))
+        if (isAllowedToModify(identity))
         {
             return method.invoke(mbs, args);
         }
@@ -136,6 +149,41 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         }
 
         throw new SecurityException("Access denied");
+    }
+
+    private boolean isAdminMethod(Object[] args)
+    {
+        if (args[0] instanceof ObjectName)
+        {
+            String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
+            if (mbeanMethod == null)
+            {
+                if (args[0] instanceof ObjectName)
+                {
+                    ObjectName object = (ObjectName) args[0];
+                    return object.getCanonicalName().contains("UserManagement");
+                }
+                else
+                {
+                    return false;
+                }
+            }
+
+            try
+            {
+                MBeanInfo mbeanInfo = mbs.getMBeanInfo((ObjectName) args[0]);
+                if (mbeanInfo != null)
+                {
+                    return mbeanInfo.getClassName().equals("org.apache.qpid.server.security.access.AMQUserManagementMBean");
+                }
+            }
+            catch (JMException ex)
+            {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     // Initialises the user roles
@@ -155,7 +203,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
 
     private boolean isAllowedToModify(String userName)
     {
-        if (READWRITE.equals(_userRoles.getProperty(userName)))
+        if (ADMIN.equals(_userRoles.getProperty(userName))
+            || READWRITE.equals(_userRoles.getProperty(userName)))
         {
             return true;
         }

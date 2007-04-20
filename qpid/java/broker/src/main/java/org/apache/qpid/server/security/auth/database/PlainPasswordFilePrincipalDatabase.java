@@ -121,34 +121,18 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean verifyPassword(String principal, String password) throws AccountNotFoundException
+    public boolean verifyPassword(String principal, char[] password) throws AccountNotFoundException
     {
         try
         {
             char[] pwd = lookupPassword(principal);
 
-            return compareCharArray(pwd, convertPassword(password));
+            return compareCharArray(pwd, password);
         }
         catch (IOException e)
         {
             return false;
         }
-    }
-
-    private char[] convertPassword(String password) throws UnsupportedEncodingException
-    {
-        byte[] passwdBytes = password.getBytes("utf-8");
-
-        char[] passwd = new char[passwdBytes.length];
-
-        int index = 0;
-
-        for (byte b : passwdBytes)
-        {
-            passwd[index++] = (char) b;
-        }
-
-        return passwd;
     }
 
     public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException

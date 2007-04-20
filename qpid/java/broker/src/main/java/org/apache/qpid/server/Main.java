@@ -48,6 +48,7 @@ import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
@@ -66,6 +67,7 @@ import org.apache.qpid.url.URLSyntaxException;
 public class Main
 {
     private static final Logger _logger = Logger.getLogger(Main.class);
+    public static final Logger _brokerLogger = Logger.getLogger("Qpid.Broker");
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
@@ -118,25 +120,25 @@ public class Main
         Option help = new Option("h", "help", false, "print this message");
         Option version = new Option("v", "version", false, "print the version information and exit");
         Option configFile =
-            OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
-                         .create("c");
+                OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
+                        .create("c");
         Option port =
-            OptionBuilder.withArgName("port").hasArg()
-                         .withDescription("listen on the specified port. Overrides any value in the config file")
-                         .withLongOpt("port").create("p");
+                OptionBuilder.withArgName("port").hasArg()
+                        .withDescription("listen on the specified port. Overrides any value in the config file")
+                        .withLongOpt("port").create("p");
         Option bind =
-            OptionBuilder.withArgName("bind").hasArg()
-                         .withDescription("bind to the specified address. Overrides any value in the config file")
-                         .withLongOpt("bind").create("b");
+                OptionBuilder.withArgName("bind").hasArg()
+                        .withDescription("bind to the specified address. Overrides any value in the config file")
+                        .withLongOpt("bind").create("b");
         Option logconfig =
-            OptionBuilder.withArgName("logconfig").hasArg()
-                         .withDescription("use the specified log4j xml configuration file. By "
-                + "default looks for a file named " + DEFAULT_LOG_CONFIG_FILENAME
-                + " in the same directory as the configuration file").withLongOpt("logconfig").create("l");
+                OptionBuilder.withArgName("logconfig").hasArg()
+                        .withDescription("use the specified log4j xml configuration file. By "
+                                         + "default looks for a file named " + DEFAULT_LOG_CONFIG_FILENAME
+                                         + " in the same directory as the configuration file").withLongOpt("logconfig").create("l");
         Option logwatchconfig =
-            OptionBuilder.withArgName("logwatch").hasArg()
-                         .withDescription("monitor the log file configuration file for changes. Units are seconds. "
-                + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
+                OptionBuilder.withArgName("logwatch").hasArg()
+                        .withDescription("monitor the log file configuration file for changes. Units are seconds. "
+                                         + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
 
         options.addOption(help);
         options.addOption(version);
@@ -213,7 +215,7 @@ public class Main
 
             if (QpidHome == null)
             {
-                error = error + "\nNote: "+QPID_HOME+" is not set.";
+                error = error + "\nNote: " + QPID_HOME + " is not set.";
             }
 
             throw new InitException(error, null);
@@ -239,10 +241,14 @@ public class Main
 
         ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(configFile));
 
-        _logger.info("Starting Qpid.AMQP broker");
+        //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
+        // that are causing the broker build to pick up the wrong properties file and hence say
+        // Starting Qpid Client 
+        _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
+                           + " build: " + QpidProperties.getBuildVersion());
 
         ConnectorConfiguration connectorConfig =
-            ApplicationRegistry.getInstance().getConfiguredObject(ConnectorConfiguration.class);
+                ApplicationRegistry.getInstance().getConfiguredObject(ConnectorConfiguration.class);
 
         ByteBuffer.setUseDirectBuffers(connectorConfig.enableDirectBuffers);
 
@@ -293,7 +299,7 @@ public class Main
     }
 
     protected void setupVirtualHosts(String configFileParent, String configFilePath)
-        throws ConfigurationException, AMQException, URLSyntaxException
+            throws ConfigurationException, AMQException, URLSyntaxException
     {
         String configVar = "${conf}";
 
@@ -320,7 +326,7 @@ public class Main
                 if (fileNames[each].endsWith(".xml"))
                 {
                     VirtualHostConfiguration vHostConfig =
-                        new VirtualHostConfiguration(configFilePath + "/" + fileNames[each]);
+                            new VirtualHostConfiguration(configFilePath + "/" + fileNames[each]);
                     vHostConfig.performBindings();
                 }
             }
@@ -367,7 +373,7 @@ public class Main
                 }
 
                 acceptor.bind(bindAddress, handler, sconfig);
-                _logger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
+                _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
             }
 
             if (connectorConfig.enableSSL)
@@ -376,11 +382,11 @@ public class Main
                 try
                 {
                     acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
-                    _logger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
+                    _brokerLogger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
                 }
                 catch (IOException e)
                 {
-                    _logger.error("Unable to listen on SSL port: " + e, e);
+                    _brokerLogger.error("Unable to listen on SSL port: " + e, e);
                 }
             }
         }
@@ -434,7 +440,7 @@ public class Main
         catch (NumberFormatException e)
         {
             System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
-                + "a non-negative integer. Using default of zero (no watching configured");
+                               + "a non-negative integer. Using default of zero (no watching configured");
         }
 
         if (logConfigFile.exists() && logConfigFile.canRead())
@@ -443,7 +449,7 @@ public class Main
             if (logWatchTime > 0)
             {
                 System.out.println("log file " + logConfigFile.getAbsolutePath() + " will be checked for changes every "
-                    + logWatchTime + " seconds");
+                                   + logWatchTime + " seconds");
                 // log4j expects the watch interval in milliseconds
                 DOMConfigurator.configureAndWatch(logConfigFile.getAbsolutePath(), logWatchTime * 1000);
             }

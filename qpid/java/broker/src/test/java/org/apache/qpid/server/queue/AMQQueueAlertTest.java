@@ -64,7 +64,7 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testMessageCountAlert() throws Exception
     {
-        _queue = new AMQQueue(new AMQShortString("testQueue1"), false,  new AMQShortString("AMQueueAlertTest"),
+        _queue = new AMQQueue(new AMQShortString("testQueue1"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
 
@@ -87,7 +87,7 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testMessageSizeAlert() throws Exception
     {
-        _queue = new AMQQueue(new AMQShortString("testQueue2"), false,  new AMQShortString("AMQueueAlertTest"),
+        _queue = new AMQQueue(new AMQShortString("testQueue2"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
@@ -112,7 +112,7 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testQueueDepthAlertNoSubscriber() throws Exception
     {
-        _queue = new AMQQueue(new AMQShortString("testQueue3"), false,  new AMQShortString("AMQueueAlertTest"),
+        _queue = new AMQQueue(new AMQShortString("testQueue3"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
@@ -138,7 +138,7 @@ public class AMQQueueAlertTest extends TestCase
      */
     public void testMessageAgeAlert() throws Exception
     {
-        _queue = new AMQQueue(new AMQShortString("testQueue4"), false,  new AMQShortString("AMQueueAlertTest"),
+        _queue = new AMQQueue(new AMQShortString("testQueue4"), false, new AMQShortString("AMQueueAlertTest"),
                               false, _virtualHost);
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(MAX_MESSAGE_COUNT);
@@ -175,19 +175,19 @@ public class AMQQueueAlertTest extends TestCase
         _queue = getNewQueue();
         _queue.registerProtocolSession(protocolSession, channel.getChannelId(),
                                        new AMQShortString("consumer_tag"), true, null, false, false);
-        
+
         _queueMBean = (AMQQueueMBean) _queue.getManagedObject();
         _queueMBean.setMaximumMessageCount(9999l);   // Set a high value, because this is not being tested
         _queueMBean.setMaximumQueueDepth(MAX_QUEUE_DEPTH);
 
         // Send messages(no of message to be little more than what can cause a Queue_Depth alert)
-        int messageCount = Math.round(MAX_QUEUE_DEPTH/MAX_MESSAGE_SIZE) + 10;
+        int messageCount = Math.round(MAX_QUEUE_DEPTH / MAX_MESSAGE_SIZE) + 10;
         long totalSize = (messageCount * MAX_MESSAGE_SIZE) >> 10;
         sendMessages(messageCount, MAX_MESSAGE_SIZE);
 
         // Check queueDepth. There should be no messages on the queue and as the subscriber is listening
         // so there should be no Queue_Deoth alert raised
-        assertTrue(_queueMBean.getQueueDepth() == 0);
+        assertEquals(new Long(0), new Long(_queueMBean.getQueueDepth()));
         Notification lastNotification = _queueMBean.getLastNotification();
         assertNull(lastNotification);
 
@@ -196,13 +196,12 @@ public class AMQQueueAlertTest extends TestCase
         _queue.unregisterProtocolSession(protocolSession, channel.getChannelId(), new AMQShortString("consumer_tag"));
         channel.requeue();
 
-        assertTrue(_queueMBean.getQueueDepth() == totalSize);
+        assertEquals(new Long(totalSize), new Long(_queueMBean.getQueueDepth()));
 
         lastNotification = _queueMBean.getLastNotification();
         assertNotNull(lastNotification);
         String notificationMsg = lastNotification.getMessage();
         assertTrue(notificationMsg.startsWith(NotificationCheck.QUEUE_DEPTH_ALERT.name()));
-
 
         // Connect a consumer again and check QueueDepth values. The queue should get emptied.
         // Messages will get delivered but still are unacknowledged.
@@ -213,19 +212,19 @@ public class AMQQueueAlertTest extends TestCase
         {
             Thread.sleep(100);
         }
-        assertTrue(_queueMBean.getQueueDepth() == 0);
+        assertEquals(new Long(0), new Long(_queueMBean.getQueueDepth()));
 
         // Kill the subscriber again. Now those messages should get requeued again. Check if the queue depth
         // value is correct.
         _queue.unregisterProtocolSession(protocolSession, channel.getChannelId(), new AMQShortString("consumer_tag"));
         channel.requeue();
 
-        assertTrue(_queueMBean.getQueueDepth() == totalSize);
+        assertEquals(new Long(totalSize), new Long(_queueMBean.getQueueDepth()));
         protocolSession.closeSession();
 
         // Check the clear queue
         _queueMBean.clearQueue();
-        assertTrue(_queueMBean.getQueueDepth() == 0);
+        assertEquals(new Long(0), new Long(_queueMBean.getQueueDepth()));
     }
 
     protected AMQMessage message(final boolean immediate, long size) throws AMQException
@@ -272,7 +271,7 @@ public class AMQQueueAlertTest extends TestCase
 
     private void sendMessages(long messageCount, long size) throws AMQException
     {
-        AMQMessage[] messages = new AMQMessage[(int)messageCount];
+        AMQMessage[] messages = new AMQMessage[(int) messageCount];
         for (int i = 0; i < messages.length; i++)
         {
             messages[i] = message(false, size);
