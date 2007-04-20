@@ -79,18 +79,12 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean verifyPassword(String principal, String password) throws AccountNotFoundException
+    public boolean verifyPassword(String principal, char[] password) throws AccountNotFoundException
     {
+        //fixme this is not correct as toCharArray is not safe based on the type of string.
         char[] pwd = _users.getProperty(principal).toCharArray();
 
-        try
-        {
-            return compareCharArray(pwd, convertPassword(password));
-        }
-        catch (UnsupportedEncodingException e)
-        {
-            return false;
-        }
+        return compareCharArray(pwd, password);
     }
 
     public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException

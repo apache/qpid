@@ -83,7 +83,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     }
 
 
-    public void start()
+    public void start() throws IOException
     {
         // Check if the "QPID_OPTS" is set to use Out of the Box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
@@ -97,76 +97,60 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", true);
         int port = appRegistry.getConfiguration().getInt("management.jmxport", 8999);
 
-        try
+        if (security)
         {
-            if (security)
+            // For SASL using JMXMP
+            _jmxURL = new JMXServiceURL("jmxmp", null, port);
+
+            Map env = new HashMap();
+            Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();
+            PrincipalDatabase db = null;
+
+            for (Map.Entry<String, PrincipalDatabase> entry : map.entrySet())
             {
-                // For SASL using JMXMP
-                _jmxURL = new JMXServiceURL("jmxmp", null, port);
-
-                Map env = new HashMap();
-                Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();
-                PrincipalDatabase db = null;
-                
-                for (Map.Entry<String, PrincipalDatabase> entry : map.entrySet())
+                if (entry.getValue() instanceof Base64MD5PasswordFilePrincipalDatabase)
                 {
-                    if (entry.getValue() instanceof Base64MD5PasswordFilePrincipalDatabase)
-                    {
-                        db = entry.getValue();
-                        break;
-                    }
-                    else if (entry.getValue() instanceof PlainPasswordFilePrincipalDatabase)
-                    {
-                        db = entry.getValue();
-                    }
+                    db = entry.getValue();
+                    break;
                 }
-
-                if (db instanceof Base64MD5PasswordFilePrincipalDatabase)
+                else if (entry.getValue() instanceof PlainPasswordFilePrincipalDatabase)
                 {
-                    env.put("jmx.remote.profiles", "SASL/CRAM-MD5");
-                    CRAMMD5HashedInitialiser initialiser = new CRAMMD5HashedInitialiser();
-                    initialiser.initialise(db);
-                    env.put("jmx.remote.sasl.callback.handler", initialiser.getCallbackHandler());
-                }
-                else if (db instanceof PlainPasswordFilePrincipalDatabase)
-                {
-                    env.put("jmx.remote.profiles", "SASL/PLAIN");
-                    env.put("jmx.remote.sasl.callback.handler", new UserCallbackHandler(db));
-                }
-
-                // Enable the SSL security and server authentication
-                /*
-                SslRMIClientSocketFactory csf = new SslRMIClientSocketFactory();
-                SslRMIServerSocketFactory ssf = new SslRMIServerSocketFactory();
-                env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE, csf);
-                env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE, ssf);
-                 */
-
-                try
-                {
-                    JMXConnectorServer cs = JMXConnectorServerFactory.newJMXConnectorServer(_jmxURL, env, _mbeanServer);
-                    MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
-                    cs.setMBeanServerForwarder(mbsf);
-                    cs.start();
-                    _log.info("JMX: Starting JMXConnector server with SASL");
-                }
-                catch (java.net.MalformedURLException urlException)
-                {
-                    // When JMXMPConnector is not available
-                    // java.net.MalformedURLException: Unsupported protocol: jmxmp
-                    _log.info("JMX: Starting JMXConnector server");
-                    startJMXConnectorServer(port);
+                    db = entry.getValue();
                 }
             }
-            else
+
+            if (db instanceof Base64MD5PasswordFilePrincipalDatabase)
             {
-                startJMXConnectorServer(port);
+                env.put("jmx.remote.profiles", "SASL/CRAM-MD5");
+                CRAMMD5HashedInitialiser initialiser = new CRAMMD5HashedInitialiser();
+                initialiser.initialise(db);
+                env.put("jmx.remote.sasl.callback.handler", initialiser.getCallbackHandler());
             }
+            else if (db instanceof PlainPasswordFilePrincipalDatabase)
+            {
+                env.put("jmx.remote.profiles", "SASL/PLAIN");
+                env.put("jmx.remote.sasl.callback.handler", new UserCallbackHandler(db));
+            }
+
+            // Enable the SSL security and server authentication
+            /*
+           SslRMIClientSocketFactory csf = new SslRMIClientSocketFactory();
+           SslRMIServerSocketFactory ssf = new SslRMIServerSocketFactory();
+           env.put(RMIConnectorServer.RMI_CLIENT_SOCKET_FACTORY_ATTRIBUTE, csf);
+           env.put(RMIConnectorServer.RMI_SERVER_SOCKET_FACTORY_ATTRIBUTE, ssf);
+            */
+
+            JMXConnectorServer cs = JMXConnectorServerFactory.newJMXConnectorServer(_jmxURL, env, _mbeanServer);
+            MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
+            cs.setMBeanServerForwarder(mbsf);
+            cs.start();
+            _log.warn("JMX: Started JMXConnector server with SASL");
+
         }
-        catch (Exception ex)
+        else
         {
-            _log.error("Error in initialising Managed Object Registry." + ex.getMessage());
-            ex.printStackTrace();
+            startJMXConnectorServer(port);
+            _log.warn("JMX: Started JMXConnector server with security disabled");
         }
     }
 
@@ -280,7 +264,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 String username = ncb.getDefaultName();
                 try
                 {
-                    authorized = _principalDatabase.verifyPassword(username, new String(pcb.getPassword()));
+                    authorized = _principalDatabase.verifyPassword(username, pcb.getPassword());
                 }
                 catch (AccountNotFoundException e)
                 {
