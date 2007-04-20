@@ -93,12 +93,12 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
         }
     }
 
-    public boolean updatePassword(Principal principal, String password) throws AccountNotFoundException
+    public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
     {
         return false; // updates denied
     }
 
-    public boolean createPrincipal(Principal principal, String password)
+    public boolean createPrincipal(Principal principal, char[] password)
     {
         return false; // updates denied
     }

@@ -151,12 +151,12 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         return passwd;
     }
 
-    public boolean updatePassword(Principal principal, String password) throws AccountNotFoundException
+    public boolean updatePassword(Principal principal, char[] password) throws AccountNotFoundException
     {
         return false; // updates denied
     }
 
-    public boolean createPrincipal(Principal principal, String password)
+    public boolean createPrincipal(Principal principal, char[] password)
     {
         return false; // updates denied
     }
