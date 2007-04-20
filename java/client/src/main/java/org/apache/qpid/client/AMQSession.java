@@ -203,9 +203,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private final AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
 
     /** System property to enable immediate message prefetching */
-    private static final String IMMEDIATE_PREFETCH = "IMMEDIATE_PREFETCH";
+    public static final String IMMEDIATE_PREFETCH = "IMMEDIATE_PREFETCH";
     /** Immediate message prefetch default */
-    private static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
+    public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
 
 
     private static final Logger _dispatcherLogger = Logger.getLogger(Dispatcher.class);
