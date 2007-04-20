@@ -1,4 +1,3 @@
-/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -8,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,110 +29,111 @@ import static org.apache.qpid.management.ui.Constants.CONNECTION_PROTOCOLS;
  */
 public class Constants
 {
-    public static final String APPLICATION_NAME = "Qpid Management Console";
-
-    public static final String ACTION_REMOVE_MBEANNODE = "Remove from list";
-    public static final String VALUE = "value";
-    public static final String TYPE = "type";
-    public static final String NODE_TYPE_SERVER = "server";
-    public static final String NODE_TYPE_DOMAIN = "domain";
-    public static final String NODE_TYPE_MBEANTYPE = "mbeantype";
+    public final static String APPLICATION_NAME = "Qpid Management Console";
+    
+    public final static String ACTION_REMOVE_MBEANNODE = "Remove from list";
+    public final static String VALUE = "value";
+    public final static String TYPE  = "type";
+    public final static String NODE_TYPE_SERVER    = "server";
+    public final static String NODE_TYPE_DOMAIN    = "domain";
+    public final static String NODE_TYPE_MBEANTYPE = "mbeantype";
     // currently used only for virtual host instances, but will work as general also
-    public static final String NODE_TYPE_TYPEINSTANCE = "mbeantype_instance";
-    public static final String MBEAN = "mbean";
-    public static final String ATTRIBUTE = "Attribute";
-    public static final String ATTRIBUTES = "Attributes";
-    public static final String NOTIFICATIONS = "Notifications";
-    public static final String RESULT = "Result";
-    public static final String VIRTUAL_HOST = "VirtualHost";
-    public static final String DEFAULT_VH = "Default";
-    public static final String DEFAULT_USERNAME = "guest";
-    public static final String DEFAULT_PASSWORD = "guest";
-
-    public static final String USERNAME = "Username";
-    public static final String PASSWORD = "Password";
-
+    public final static String NODE_TYPE_TYPEINSTANCE = "mbeantype_instance";
+    public final static String MBEAN      = "mbean";
+    public final static String ATTRIBUTE = "Attribute";
+    public final static String ATTRIBUTES = "Attributes";
+    public final static String NOTIFICATIONS = "Notifications";
+    public final static String RESULT = "Result";
+    public final static String VIRTUAL_HOST = "VirtualHost";
+    public final static String DEFAULT_VH = "Default";
+    public final static String DEFAULT_USERNAME = "guest";
+    public final static String DEFAULT_PASSWORD = "guest";
+    
+    public final static String USERNAME = "Username";
+    public final static String PASSWORD = "Password";
+    
     // Attributes and operations are used to customize the GUI for Qpid. If these are changes in the
     // Qpid server, then these should be updated accordingly
-    public static final String ATTRIBUTE_QUEUE_OWNER = "owner";
-    public static final String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth";
-    public static final String ATTRIBUTE_QUEUE_CONSUMERCOUNT = "ActiveConsumerCount";
-    public static final String OPERATION_CREATE_QUEUE = "createNewQueue";
-    public static final String OPERATION_CREATE_BINDING = "createNewBinding";
-    public static final String OPERATION_MOVE_MESSAGES = "moveMessages";
-
-    public static final String OPERATION_CREATEUSER = "createUser";
-    public static final String OPERATION_VIEWUSERS = "viewUsers";
-    public static final String OPERATION_PARAM_USERNAME = "username";
-
-    public static final String OPERATION_SUCCESSFUL = "Operation successful";
-    public static final String OPERATION_UNSUCCESSFUL = "Operation unsuccessful";
-
-    public static final String ALL = "All";
-
-    public static final String NAVIGATION_ROOT = "Qpid Connections";
-    public static final String DESCRIPTION = " Description";
-
-    public static final String ADMIN_MBEAN_TYPE = "UserManagement";
-    public static final String QUEUE = "Queue";
-    public static final String CONNECTION = "Connection";
-    public static final String EXCHANGE = "Exchange";
-    public static final String EXCHANGE_TYPE = "ExchangeType";
-    public static final String[] EXCHANGE_TYPE_VALUES = { "direct", "fanout", "headers", "topic" };
-    public static final String[] BOOLEAN_TYPE_VALUES = { "false", "true" };
-    public static final String[] ATTRIBUTE_TABLE_TITLES = { "Attribute Name", "Value" };
-    public static final String[] CONNECTION_PROTOCOLS = { "RMI" };
+    public final static String ATTRIBUTE_QUEUE_OWNER = "owner";
+    public final static String ATTRIBUTE_QUEUE_DEPTH = "QueueDepth";
+    public final static String ATTRIBUTE_QUEUE_CONSUMERCOUNT = "ActiveConsumerCount";    
+    public final static String OPERATION_CREATE_QUEUE = "createNewQueue";
+    public final static String OPERATION_CREATE_BINDING = "createNewBinding";
+    public final static String OPERATION_MOVE_MESSAGES = "moveMessages";
+    
+    public final static String OPERATION_CREATEUSER = "createUser";
+    public final static String OPERATION_VIEWUSERS = "viewUsers";
+    public final static String OPERATION_PARAM_USERNAME = "username";
+    
+    public final static String OPERATION_SUCCESSFUL = "Operation successful";
+    public final static String OPERATION_UNSUCCESSFUL = "Operation unsuccessful";
+    
+    public final static String ALL = "All";
+    
+    public final static String NAVIGATION_ROOT = "Qpid Connections";
+    public final static String DESCRIPTION = " Description";
+    
+    public final static String ADMIN_MBEAN_TYPE = "UserManagement";
+    public final static String QUEUE  = "Queue";
+    public final static String CONNECTION ="Connection";
+    public final static String EXCHANGE = "Exchange";
+    public final static String EXCHANGE_TYPE = "ExchangeType";
+    public final static String[] EXCHANGE_TYPE_VALUES = {"direct", "fanout", "headers", "topic"};
+    public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
+    public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
+    public static final String[] CONNECTION_PROTOCOLS ={"RMI"};
     public static final String DEFAULT_PROTOCOL = CONNECTION_PROTOCOLS[0];
-
-    public static final String ACTION_ADDSERVER = "New Connection";
-    public static final String ACTION_RECONNECT = "Reconnect";
-    public static final String ACTION_LOGIN = "Login";
-
-    public static final String QUEUE_SORT_BY_NAME = "Queue Name";
-    public static final String QUEUE_SORT_BY_DEPTH = "Queue Depth";
-    public static final String QUEUE_SORT_BY_CONSUMERCOUNT = "Consumer Count";
-    public static final String QUEUE_SHOW_TEMP_QUEUES = "show temporary queues";
-
-    public static final String SUBSCRIBE_BUTTON = "Subscribe";
-    public static final String UNSUBSCRIBE_BUTTON = "Unsubscribe";
-
-    public static final String CONSOLE_IMAGE = "ConsoelImage";
-    public static final String CLOSED_FOLDER_IMAGE = "ClosedFolderImage";
-    public static final String OPEN_FOLDER_IMAGE = "OpenFolderImage";
-    public static final String MBEAN_IMAGE = "MBeanImage";
-    public static final String NOTIFICATION_IMAGE = "NotificationImage";
-
-    public static final String FONT_BUTTON = "ButtonFont";
-    public static final String FONT_BOLD = "BoldFont";
-    public static final String FONT_ITALIC = "ItalicFont";
-    public static final String FONT_TABLE_CELL = "TableCellFont";
-    public static final String FONT_NORMAL = "Normal";
-
-    public static final String BUTTON_DETAILS = "Details";
-    public static final String BUTTON_EDIT_ATTRIBUTE = "Edit Attribute";
-    public static final String BUTTON_REFRESH = "Refresh";
-    public static final String BUTTON_GRAPH = "Graph";
-    public static final int TIMER_INTERVAL = 5000;
-    public static final String BUTTON_EXECUTE = "Execute";
-    public static final String BUTTON_CLEAR = "Clear";
-    public static final String BUTTON_CONNECT = "Connect";
-    public static final String BUTTON_CANCEL = "Cancel";
-    public static final String BUTTON_UPDATE = "Update";
-
-    public static final int OPERATION_IMPACT_INFO = 0;
-    public static final int OPERATION_IMPACT_ACTION = 1;
-    public static final int OPERATION_IMPACT_ACTIONINFO = 2;
-    public static final int OPERATION_IMPACT_UNKNOWN = 3;
-
-    public static final String ERROR_SERVER_CONNECTION = "Server could not be connected";
-    public static final String INFO_PROTOCOL = "Please select the protocol";
-    public static final String INFO_HOST_ADDRESS = "Please enter the host address";
-    public static final String INFO_HOST_PORT = "Please enter the port number";
-    public static final String INFO_USERNAME = "Please enter the " + USERNAME;
-    public static final String INFO_PASSWORD = "Please enter the " + PASSWORD;
-
-    public static final String MECH_CRAMMD5 = "CRAM-MD5";
-    public static final String MECH_PLAIN = "PLAIN";
-    public static final String SASL_CRAMMD5 = "SASL/CRAM-MD5";
-    public static final String SASL_PLAIN = "SASL/PLAIN";
+    
+    public final static String ACTION_ADDSERVER = "New Connection";
+    public final static String ACTION_RECONNECT = "Reconnect";
+    public final static String ACTION_LOGIN = "Login";
+    
+    public final static String QUEUE_SORT_BY_NAME = "Queue Name";
+    public final static String QUEUE_SORT_BY_DEPTH = "Queue Depth";
+    public final static String QUEUE_SORT_BY_CONSUMERCOUNT = "Consumer Count";
+    public final static String QUEUE_SHOW_TEMP_QUEUES= "show temporary queues";
+    
+    public final static String SUBSCRIBE_BUTTON   = "Subscribe";
+    public final static String UNSUBSCRIBE_BUTTON = "Unsubscribe";
+    
+    public final static String CONSOLE_IMAGE = "ConsoelImage";
+    public final static String CLOSED_FOLDER_IMAGE = "ClosedFolderImage";
+    public final static String OPEN_FOLDER_IMAGE = "OpenFolderImage";
+    public final static String MBEAN_IMAGE = "MBeanImage";
+    public final static String NOTIFICATION_IMAGE = "NotificationImage";
+    
+    public final static String FONT_BUTTON = "ButtonFont";
+    public final static String FONT_BOLD = "BoldFont";
+    public final static String FONT_ITALIC = "ItalicFont";
+    public final static String FONT_TABLE_CELL = "TableCellFont";
+    public final static String FONT_NORMAL = "Normal";
+    
+    public final static String BUTTON_DETAILS = "Details";
+    public final static String BUTTON_EDIT_ATTRIBUTE = "Edit Attribute";
+    public final static String BUTTON_REFRESH = "Refresh";
+    public final static String BUTTON_GRAPH = "Graph";
+    public final static int TIMER_INTERVAL = 5000;
+    public final static String BUTTON_EXECUTE = "Execute";
+    public final static String BUTTON_CLEAR = "Clear";
+    public final static String BUTTON_CONNECT = "Connect";
+    public final static String BUTTON_CANCEL = "Cancel";
+    public final static String BUTTON_UPDATE = "Update";
+    
+    
+    public final static int OPERATION_IMPACT_INFO    = 0;
+    public final static int OPERATION_IMPACT_ACTION  = 1;
+    public final static int OPERATION_IMPACT_ACTIONINFO  = 2;
+    public final static int OPERATION_IMPACT_UNKNOWN = 3;
+    
+    public final static String ERROR_SERVER_CONNECTION = "Server could not be connected";
+    public final static String INFO_PROTOCOL = "Please select the protocol";
+    public final static String INFO_HOST_ADDRESS = "Please enter the host address";
+    public final static String INFO_HOST_PORT = "Please enter the port number";
+    public final static String INFO_USERNAME = "Please enter the " + USERNAME;
+    public final static String INFO_PASSWORD = "Please enter the " + PASSWORD;
+    
+    public final static String MECH_CRAMMD5 = "CRAM-MD5";
+    public final static String MECH_PLAIN = "PLAIN";
+    public final static String SASL_CRAMMD5 = "SASL/CRAM-MD5";
+    public final static String SASL_PLAIN = "SASL/PLAIN";
 }
