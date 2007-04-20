@@ -157,7 +157,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
                     //FIXME the queue could be full of sent messages.
                     // Either need to clean all PDQs after sending a message
                     // OR have a clean up thread that runs the PDQs expunging the messages.
-                    if (!subscription.hasFilters() || subscription.getPreDeliveryQueue().isEmpty())
+                    if (!subscription.filtersMessages() || subscription.getPreDeliveryQueue().isEmpty())
                     {
                         return subscription;
                     }

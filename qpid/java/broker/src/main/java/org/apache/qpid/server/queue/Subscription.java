@@ -32,7 +32,7 @@ public interface Subscription
 
     void queueDeleted(AMQQueue queue) throws AMQException;
 
-    boolean hasFilters();
+    boolean filtersMessages();
 
     boolean hasInterest(AMQMessage msg);
 

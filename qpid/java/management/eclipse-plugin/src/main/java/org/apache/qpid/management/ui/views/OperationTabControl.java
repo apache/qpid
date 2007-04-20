@@ -31,6 +31,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.TabularDataSupport;
 
 import static org.apache.qpid.management.ui.Constants.*;
+
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
@@ -337,10 +338,17 @@ public class OperationTabControl extends TabControl
             
             // display the parameter data type next to the text field
             if (valueInCombo)
+            {
                 label = _toolkit.createLabel(_paramsComposite, "");
+            }
+            else if (PASSWORD.equalsIgnoreCase(param.getName()))
+            {
+                label = _toolkit.createLabel(_paramsComposite, "(String)");
+            }
             else
             {
-                String str = param.getType() ;
+                String str = param.getType();
+                
                 if (param.getType().lastIndexOf(".") != -1)
                     str = param.getType().substring(1 + param.getType().lastIndexOf("."));
                 
@@ -581,34 +589,32 @@ public class OperationTabControl extends TabControl
                         }
                         // End of custom code
                         
-                        
-                        // customized for passwords
-                        if (PASSWORD.equalsIgnoreCase(param.getName()))
-                        {
-                            try
-                            {
-                                param.setValueFromString(ViewUtility.getHashedString(param.getValue()));
-                            }
-                            catch (Exception ex)
-                            {
-                                MBeanUtility.handleException(_mbean, ex);
-                                return;
-                            }
-                        }
-                        // end of customization
-                        ViewUtility.popupInfoMessage(_form.getText(),
-                                "Please select the " + ViewUtility.getDisplayText(param.getName()));
-                        
+                        ViewUtility.popupInfoMessage(_form.getText(), "Please select the " + ViewUtility.getDisplayText(param.getName()));                       
                         return;
                     }
+                    
+                    // customized for passwords
+                    String securityMechanism = ApplicationRegistry.getSecurityMechanism();
+                    if ((MECH_CRAMMD5.equals(securityMechanism)) && PASSWORD.equalsIgnoreCase(param.getName()))
+                    {
+                        try
+                        {
+                            param.setValue(ViewUtility.getMD5HashedCharArray(param.getValue()));
+                        }
+                        catch (Exception ex)
+                        {
+                            MBeanUtility.handleException(_mbean, ex);
+                            return;
+                        }
+                    }
+                    // end of customization
                 }
             }
             
             if (_opData.getImpact() == OPERATION_IMPACT_ACTION)
             {
                 String bean = _mbean.getName() == null ? _mbean.getType() : _mbean.getName();
-                int response = ViewUtility.popupConfirmationMessage(bean, 
-                        "Do you want to " + _form.getText()+ " ?");
+                int response = ViewUtility.popupConfirmationMessage(bean, "Do you want to " + _form.getText()+ " ?");
                 if (response == SWT.YES)
                 {
                     executeAndShowResults();

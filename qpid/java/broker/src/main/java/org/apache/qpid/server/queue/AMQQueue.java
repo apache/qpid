@@ -21,7 +21,6 @@
 package org.apache.qpid.server.queue;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
@@ -237,8 +236,10 @@ public class AMQQueue implements Managable, Comparable
 
     /**
      * Returns messages within the given range of message Ids
+     *
      * @param fromMessageId
      * @param toMessageId
+     *
      * @return List of messages
      */
     public List<AMQMessage> getMessagesOnTheQueue(long fromMessageId, long toMessageId)
@@ -253,6 +254,7 @@ public class AMQQueue implements Managable, Comparable
 
     /**
      * @param messageId
+     *
      * @return AMQMessage with give id if exists. null if AMQMessage with given id doesn't exist.
      */
     public AMQMessage getMessageOnTheQueue(long messageId)
@@ -267,10 +269,10 @@ public class AMQQueue implements Managable, Comparable
 
     /**
      * moves messages from this queue to another queue. to do this the approach is following- - setup the queue for
-     * moving messages (stop the async delivery) - get all the messages available in the given message
-     * id range - setup the other queue for moving messages (stop the async delivery) - send these
-     * available messages to the other queue (enqueue in other queue) - Once sending to other Queue is successful,
-     * remove messages from this queue - remove locks from both queues and start async delivery
+     * moving messages (stop the async delivery) - get all the messages available in the given message id range - setup
+     * the other queue for moving messages (stop the async delivery) - send these available messages to the other queue
+     * (enqueue in other queue) - Once sending to other Queue is successful, remove messages from this queue - remove
+     * locks from both queues and start async delivery
      *
      * @param fromMessageId
      * @param toMessageId
@@ -442,7 +444,7 @@ public class AMQQueue implements Managable, Comparable
         Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks,
                                                                             filters, noLocal, this);
 
-        if (subscription.hasFilters())
+        if (subscription.filtersMessages())
         {
             if (_deliveryMgr.hasQueuedMessages())
             {
@@ -641,7 +643,7 @@ public class AMQQueue implements Managable, Comparable
         {
             _totalMessagesReceived.incrementAndGet();
         }
-        
+
         try
         {
             _managedObject.checkForNotification(msg);

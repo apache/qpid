@@ -45,7 +45,7 @@ public interface UserManagement
      */
     @MBeanOperation(name = "setPassword", description = "Set password for user.")              
     boolean setPassword(@MBeanOperationParameter(name = "username", description = "Username")String username,
-                        @MBeanOperationParameter(name = "password", description = "Password")String password);
+                        @MBeanOperationParameter(name = "password", description = "Password")char[] password);
 
     /**
      * set rights for users with given details
@@ -76,7 +76,7 @@ public interface UserManagement
      */
     @MBeanOperation(name = "createUser", description = "Create new user from system.")
     boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
-                       @MBeanOperationParameter(name = "password", description = "Password")String password,
+                       @MBeanOperationParameter(name = "password", description = "Password")char[] password,
                        @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
                        @MBeanOperationParameter(name = "write", description = "Administration write")boolean write,
                        @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin);
