@@ -28,6 +28,7 @@ import org.apache.qpid.AMQException;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.CompositeData;
 import javax.management.JMException;
+import javax.management.MBeanOperationInfo;
 import java.io.IOException;
 
 public interface UserManagement
@@ -43,7 +44,8 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
-    @MBeanOperation(name = "setPassword", description = "Set password for user.")              
+    @MBeanOperation(name = "setPassword", description = "Set password for user.",
+                    impact = MBeanOperationInfo.ACTION)
     boolean setPassword(@MBeanOperationParameter(name = "username", description = "Username")String username,
                         @MBeanOperationParameter(name = "password", description = "Password")char[] password);
 
@@ -57,7 +59,8 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
-    @MBeanOperation(name = "setRights", description = "Set access rights for user.")
+    @MBeanOperation(name = "setRights", description = "Set access rights for user.",
+                    impact = MBeanOperationInfo.ACTION)
     boolean setRights(@MBeanOperationParameter(name = "username", description = "Username")String username,
                       @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
                       @MBeanOperationParameter(name = "write", description = "Administration write")boolean write,
@@ -74,7 +77,8 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
-    @MBeanOperation(name = "createUser", description = "Create new user from system.")
+    @MBeanOperation(name = "createUser", description = "Create new user from system.",
+                    impact = MBeanOperationInfo.ACTION)
     boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
                        @MBeanOperationParameter(name = "password", description = "Password")char[] password,
                        @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
@@ -88,7 +92,8 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
-    @MBeanOperation(name = "deleteUser", description = "Delete user from system.")
+    @MBeanOperation(name = "deleteUser", description = "Delete user from system.",
+                    impact = MBeanOperationInfo.ACTION)
     boolean deleteUser(@MBeanOperationParameter(name = "username", description = "Username")String username);
 
 
@@ -97,15 +102,17 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
-//    @MBeanOperation(name = "reloadData", description = "Reload the authentication file from disk.")
-//    boolean reloadData();
+    @MBeanOperation(name = "reloadData", description = "Reload the authentication file from disk.",
+                    impact = MBeanOperationInfo.ACTION)
+    boolean reloadData();
 
     /**
      * View users returns all the users that are currently available to the system.
      *
      * @return a table of users data (Username, read, write, admin)
      */
-    @MBeanOperation(name = "viewUsers", description = "All users with access rights to the system.")
+    @MBeanOperation(name = "viewUsers", description = "All users with access rights to the system.",
+                    impact = MBeanOperationInfo.ACTION)
     TabularData viewUsers();
 
 }
