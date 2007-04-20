@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 import org.apache.commons.configuration.ConfigurationException;
 
 import javax.management.JMException;
+import javax.management.remote.JMXPrincipal;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
@@ -40,6 +41,7 @@ import javax.management.openmbean.OpenDataException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.security.auth.login.AccountNotFoundException;
+import javax.security.auth.Subject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -47,8 +49,11 @@ import java.io.FileOutputStream;
 import java.util.Properties;
 import java.util.List;
 import java.util.Enumeration;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.security.Principal;
+import java.security.AccessControlContext;
+import java.security.AccessController;
 
 /** MBean class for AMQUserManagementMBean. It implements all the management features exposed for managing users. */
 @MBeanDescription("User Management Interface")
@@ -250,8 +255,6 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         // Table of users
         // Username(string), Access rights Read,Write,Admin(bool,bool,bool)
 
-        reloadData();
-        
         if (_userlistDataType == null)
         {
             _logger.warn("TabluarData not setup correctly");
@@ -411,7 +414,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 rights.renameTo(old);
 
                 FileOutputStream output = new FileOutputStream(tmp);
-                _accessRights.store(output, "");
+                _accessRights.store(output, "Last edited by user:" + getCurrentJMXUser());
                 output.close();
 
                 // Rename new file to main file
@@ -432,6 +435,22 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 _accessRightsUpdate.unlock();
             }
         }
+    }
+
+    private String getCurrentJMXUser()
+    {
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
+
+        // Retrieve JMXPrincipal from Subject
+        Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
+        if (principals == null || principals.isEmpty())
+        {
+            return "Unknown user principals were null";
+        }
+
+        Principal principal = principals.iterator().next();
+        return principal.getName();
     }
 
     /**
