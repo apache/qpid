@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
-
 import org.apache.log4j.Logger;
+
 import org.apache.mina.common.ByteBuffer;
+
+import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
 public class VersionSpecificRegistry
 {
     private static final Logger _log = Logger.getLogger(VersionSpecificRegistry.class);
-
 
     private final byte _protocolMajorVersion;
     private final byte _protocolMinorVersion;
@@ -48,33 +48,37 @@ public class VersionSpecificRegistry
         _protocolVersionConverter = loadProtocolVersionConverters(major, minor);
     }
 
-    private static ProtocolVersionMethodConverter loadProtocolVersionConverters(byte protocolMajorVersion, byte protocolMinorVersion)
+    private static ProtocolVersionMethodConverter loadProtocolVersionConverters(byte protocolMajorVersion,
+        byte protocolMinorVersion)
     {
         try
         {
             Class<ProtocolVersionMethodConverter> versionMethodConverterClass =
-                    (Class<ProtocolVersionMethodConverter>) Class.forName("org.apache.qpid.framing.MethodConverter_"+protocolMajorVersion + "_" + protocolMinorVersion);
+                (Class<ProtocolVersionMethodConverter>) Class.forName("org.apache.qpid.framing.MethodConverter_"
+                    + protocolMajorVersion + "_" + protocolMinorVersion);
+
             return versionMethodConverterClass.newInstance();
 
         }
         catch (ClassNotFoundException e)
         {
             _log.warn("Could not find protocol conversion classes for " + protocolMajorVersion + "-" + protocolMinorVersion);
-            if(protocolMinorVersion != 0)
+            if (protocolMinorVersion != 0)
             {
                 protocolMinorVersion--;
+
                 return loadProtocolVersionConverters(protocolMajorVersion, protocolMinorVersion);
             }
             else if (protocolMajorVersion != 0)
             {
                 protocolMajorVersion--;
+
                 return loadProtocolVersionConverters(protocolMajorVersion, protocolMinorVersion);
             }
             else
             {
                 return null;
             }
-
 
         }
         catch (IllegalAccessException e)
@@ -83,7 +87,7 @@ public class VersionSpecificRegistry
         }
         catch (InstantiationException e)
         {
-             throw new IllegalStateException("Unable to load protocol version converter: ", e);
+            throw new IllegalStateException("Unable to load protocol version converter: ", e);
         }
     }
 
@@ -115,58 +119,59 @@ public class VersionSpecificRegistry
 
     public void registerMethod(final short classID, final short methodID, final AMQMethodBodyInstanceFactory instanceFactory)
     {
-        if(_registry.length <= classID)
+        if (_registry.length <= classID)
         {
             AMQMethodBodyInstanceFactory[][] oldRegistry = _registry;
-            _registry = new AMQMethodBodyInstanceFactory[classID+1][];
+            _registry = new AMQMethodBodyInstanceFactory[classID + 1][];
             System.arraycopy(oldRegistry, 0, _registry, 0, oldRegistry.length);
         }
 
-        if(_registry[classID] == null)
+        if (_registry[classID] == null)
         {
-            _registry[classID] = new AMQMethodBodyInstanceFactory[methodID > DEFAULT_MAX_METHOD_ID ? methodID + 1 : DEFAULT_MAX_METHOD_ID + 1];
+            _registry[classID] =
+                new AMQMethodBodyInstanceFactory[(methodID > DEFAULT_MAX_METHOD_ID) ? (methodID + 1)
+                                                                                    : (DEFAULT_MAX_METHOD_ID + 1)];
         }
-        else if(_registry[classID].length <= methodID)
+        else if (_registry[classID].length <= methodID)
         {
             AMQMethodBodyInstanceFactory[] oldMethods = _registry[classID];
-            _registry[classID] = new AMQMethodBodyInstanceFactory[methodID+1];
-            System.arraycopy(oldMethods,0,_registry[classID],0,oldMethods.length);
+            _registry[classID] = new AMQMethodBodyInstanceFactory[methodID + 1];
+            System.arraycopy(oldMethods, 0, _registry[classID], 0, oldMethods.length);
         }
 
         _registry[classID][methodID] = instanceFactory;
 
     }
 
-
-    public AMQMethodBody get(short classID, short methodID, ByteBuffer in, long size)
-        throws AMQFrameDecodingException
+    public AMQMethodBody get(short classID, short methodID, ByteBuffer in, long size) throws AMQFrameDecodingException
     {
         AMQMethodBodyInstanceFactory bodyFactory;
         try
         {
             bodyFactory = _registry[classID][methodID];
         }
-        catch(NullPointerException e)
+        catch (NullPointerException e)
         {
             throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion
                 + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID + ".", e);
         }
-        catch(IndexOutOfBoundsException e)
+        catch (IndexOutOfBoundsException e)
         {
-            if(classID >= _registry.length)
+            if (classID >= _registry.length)
             {
                 throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion
                     + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID
                     + ".", e);
+
             }
             else
             {
                 throw new AMQFrameDecodingException(null, "Method " + methodID + " unknown in AMQP version "
                     + _protocolMajorVersion + "-" + _protocolMinorVersion + " (while trying to decode class " + classID
                     + " method " + methodID + ".", e);
+
             }
         }
-
 
         if (bodyFactory == null)
         {
@@ -174,9 +179,7 @@ public class VersionSpecificRegistry
                 + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID + ".", null);
         }
 
-
         return bodyFactory.newInstance(_protocolMajorVersion, _protocolMinorVersion, classID, methodID, in, size);
-
 
     }
 

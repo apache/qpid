@@ -1,44 +1,45 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
 package org.apache.log4j;
 
-import org.apache.log4j.helpers.OptionConverter;
-import org.apache.log4j.helpers.CountingQuietWriter;
-import org.apache.log4j.helpers.LogLog;
-import org.apache.log4j.spi.LoggingEvent;
-import org.apache.qpid.framing.FieldTable;
-
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.Writer;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.GZIPOutputStream;
-import java.text.SimpleDateFormat;
-import java.io.IOException;
-import java.io.Writer;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+
+import org.apache.log4j.helpers.CountingQuietWriter;
+import org.apache.log4j.helpers.LogLog;
+import org.apache.log4j.helpers.OptionConverter;
+import org.apache.log4j.spi.LoggingEvent;
+
+import org.apache.qpid.framing.FieldTable;
 
 /**
  * <p>CompositeRollingAppender combines RollingFileAppender and DailyRollingFileAppender<br> It can function as either
@@ -83,7 +84,7 @@ public class QpidCompositeRollingAppender extends FileAppender
     static final int BY_DATE = 2;
     static final int BY_COMPOSITE = 3;
 
-    //Not currently used
+    // Not currently used
     static final String S_BY_SIZE = "Size";
     static final String S_BY_DATE = "Date";
     static final String S_BY_COMPOSITE = "Composite";
@@ -146,7 +147,6 @@ public class QpidCompositeRollingAppender extends FileAppender
     /** FileName provided in configuration.  Used for rolling properly */
     protected String baseFileName;
 
-
     /** Do we want to .gz our backup files. */
     protected boolean compress = false;
 
@@ -163,15 +163,13 @@ public class QpidCompositeRollingAppender extends FileAppender
 
     /** The default constructor does nothing. */
     public QpidCompositeRollingAppender()
-    {
-    }
+    { }
 
     /**
      * Instantiate a <code>CompositeRollingAppender</code> and open the file designated by <code>filename</code>. The
      * opened filename will become the ouput destination for this appender.
      */
-    public QpidCompositeRollingAppender(Layout layout, String filename,
-                                        String datePattern) throws IOException
+    public QpidCompositeRollingAppender(Layout layout, String filename, String datePattern) throws IOException
     {
         this(layout, filename, datePattern, true);
     }
@@ -183,8 +181,7 @@ public class QpidCompositeRollingAppender extends FileAppender
      * <p>If the <code>append</code> parameter is true, the file will be appended to. Otherwise, the file desginated by
      * <code>filename</code> will be truncated before being opened.
      */
-    public QpidCompositeRollingAppender(Layout layout, String filename, boolean append)
-            throws IOException
+    public QpidCompositeRollingAppender(Layout layout, String filename, boolean append) throws IOException
     {
         super(layout, filename, append);
     }
@@ -193,8 +190,8 @@ public class QpidCompositeRollingAppender extends FileAppender
      * Instantiate a CompositeRollingAppender and open the file designated by <code>filename</code>. The opened filename
      * will become the ouput destination for this appender.
      */
-    public QpidCompositeRollingAppender(Layout layout, String filename,
-                                        String datePattern, boolean append) throws IOException
+    public QpidCompositeRollingAppender(Layout layout, String filename, String datePattern, boolean append)
+        throws IOException
     {
         super(layout, filename, append);
         this.datePattern = datePattern;
@@ -305,7 +302,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         qw = new CountingQuietWriter(writer, errorHandler);
     }
 
-    //Taken verbatum from DailyRollingFileAppender
+    // Taken verbatum from DailyRollingFileAppender
     int computeCheckPeriod()
     {
         RollingCalendar c = new RollingCalendar();
@@ -319,17 +316,18 @@ public class QpidCompositeRollingAppender extends FileAppender
                 c.setType(i);
                 Date next = new Date(c.getNextCheckMillis(epoch));
                 String r1 = sdf.format(next);
-                //LogLog.debug("Type = "+i+", r0 = "+r0+", r1 = "+r1);
-                if (r0 != null && r1 != null && !r0.equals(r1))
+                // LogLog.debug("Type = "+i+", r0 = "+r0+", r1 = "+r1);
+                if ((r0 != null) && (r1 != null) && !r0.equals(r1))
                 {
                     return i;
                 }
             }
         }
+
         return TOP_OF_TROUBLE; // Deliberately head for trouble...
     }
 
-    //Now for the new stuff
+    // Now for the new stuff
     /**
      * Handles append time behavior for CompositeRollingAppender.  This checks if a roll over either by date (checked
      * first) or time (checked second) is need and then appends to the file last.
@@ -351,7 +349,7 @@ public class QpidCompositeRollingAppender extends FileAppender
 
         if (rollSize)
         {
-            if ((fileName != null) && ((CountingQuietWriter) qw).getCount() >= maxFileSize)
+            if ((fileName != null) && (((CountingQuietWriter) qw).getCount() >= maxFileSize))
             {
                 rollOverSize();
             }
@@ -410,20 +408,24 @@ public class QpidCompositeRollingAppender extends FileAppender
         rollingStyle = style;
         switch (rollingStyle)
         {
-            case BY_SIZE:
-                rollDate = false;
-                rollSize = true;
-                break;
-            case BY_DATE:
-                rollDate = true;
-                rollSize = false;
-                break;
-            case BY_COMPOSITE:
-                rollDate = true;
-                rollSize = true;
-                break;
-            default:
-                errorHandler.error("Invalid rolling Style, use 1 (by size only), 2 (by date only) or 3 (both)");
+
+        case BY_SIZE:
+            rollDate = false;
+            rollSize = true;
+            break;
+
+        case BY_DATE:
+            rollDate = true;
+            rollSize = false;
+            break;
+
+        case BY_COMPOSITE:
+            rollDate = true;
+            rollSize = true;
+            break;
+
+        default:
+            errorHandler.error("Invalid rolling Style, use 1 (by size only), 2 (by date only) or 3 (both)");
         }
     }
 
@@ -439,7 +441,7 @@ public class QpidCompositeRollingAppender extends FileAppender
                 rollingStyle = BY_COMPOSITE;
             }
         }
-    */
+     */
     public boolean getStaticLogFileName()
     {
         return staticLogFileName;
@@ -477,10 +479,9 @@ public class QpidCompositeRollingAppender extends FileAppender
         {
             executor = Executors.newFixedThreadPool(1);
 
-            compressor = new Compressor();            
+            compressor = new Compressor();
         }
     }
-
 
     public boolean getZeroBased()
     {
@@ -504,6 +505,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         {
             td.mkdirs();
         }
+
         backupFilesToPath = path;
     }
 
@@ -519,9 +521,10 @@ public class QpidCompositeRollingAppender extends FileAppender
         {
             curSizeRollBackups = -1;
         }
+
         curTimeRollBackups = 0;
 
-        //part A starts here
+        // part A starts here
         String filter;
         if (staticLogFileName || !rollDate)
         {
@@ -556,9 +559,9 @@ public class QpidCompositeRollingAppender extends FileAppender
                 if (staticLogFileName)
                 {
                     int endLength = files[i].length() - index;
-                    if (baseFileName.length() + endLength != files[i].length())
+                    if ((baseFileName.length() + endLength) != files[i].length())
                     {
-                        //file is probably scheduledFilename + .x so I don't care
+                        // file is probably scheduledFilename + .x so I don't care
                         continue;
                     }
                 }
@@ -574,18 +577,19 @@ public class QpidCompositeRollingAppender extends FileAppender
                 }
                 catch (Exception e)
                 {
-                    //this happens when file.log -> file.log.yyyy-mm-dd which is normal
-                    //when staticLogFileName == false
+                    // this happens when file.log -> file.log.yyyy-mm-dd which is normal
+                    // when staticLogFileName == false
                     LogLog.debug("Encountered a backup file not ending in .x " + files[i]);
                 }
             }
         }
+
         LogLog.debug("curSizeRollBackups starts at: " + curSizeRollBackups);
-        //part A ends here
+        // part A ends here
 
-        //part B not yet implemented
+        // part B not yet implemented
 
-        //part C
+        // part C
         if (staticLogFileName && rollDate)
         {
             File old = new File(baseFileName);
@@ -600,8 +604,9 @@ public class QpidCompositeRollingAppender extends FileAppender
                 }
             }
         }
+
         LogLog.debug("curSizeRollBackups after rollOver at: " + curSizeRollBackups);
-        //part C ends here
+        // part C ends here
 
     }
 
@@ -612,29 +617,28 @@ public class QpidCompositeRollingAppender extends FileAppender
     public void activateOptions()
     {
 
-        //REMOVE removed rollDate from boolean to enable Alex's change
+        // REMOVE removed rollDate from boolean to enable Alex's change
         if (datePattern != null)
         {
             now.setTime(System.currentTimeMillis());
             sdf = new SimpleDateFormat(datePattern);
             int type = computeCheckPeriod();
-            //printPeriodicity(type);
+            // printPeriodicity(type);
             rc.setType(type);
-            //next line added as this removes the name check in rollOver
+            // next line added as this removes the name check in rollOver
             nextCheck = rc.getNextCheckMillis(now);
         }
         else
         {
             if (rollDate)
             {
-                LogLog.error("Either DatePattern or rollingStyle options are not set for [" +
-                             name + "].");
+                LogLog.error("Either DatePattern or rollingStyle options are not set for [" + name + "].");
             }
         }
 
         existingInit();
 
-        if (rollDate && fileName != null && scheduledFilename == null)
+        if (rollDate && (fileName != null) && (scheduledFilename == null))
         {
             scheduledFilename = fileName + sdf.format(now);
         }
@@ -662,7 +666,7 @@ public class QpidCompositeRollingAppender extends FileAppender
 
         this.closeFile(); // keep windows happy.
 
-        //delete the old stuff here
+        // delete the old stuff here
 
         if (staticLogFileName)
         {
@@ -670,23 +674,25 @@ public class QpidCompositeRollingAppender extends FileAppender
             if (datePattern == null)
             {
                 errorHandler.error("Missing DatePattern option in rollOver().");
+
                 return;
             }
 
-            //is the new file name equivalent to the 'current' one
-            //something has gone wrong if we hit this -- we should only
-            //roll over if the new file will be different from the old
+            // is the new file name equivalent to the 'current' one
+            // something has gone wrong if we hit this -- we should only
+            // roll over if the new file will be different from the old
             String dateFormat = sdf.format(now);
             if (scheduledFilename.equals(fileName + dateFormat))
             {
                 errorHandler.error("Compare " + scheduledFilename + " : " + fileName + dateFormat);
+
                 return;
             }
 
             // close current file, and rename it to datedFilename
             this.closeFile();
 
-            //we may have to roll over a large number of backups here
+            // we may have to roll over a large number of backups here
             String from, to;
             for (int i = 1; i <= curSizeRollBackups; i++)
             {
@@ -709,9 +715,9 @@ public class QpidCompositeRollingAppender extends FileAppender
         {
             // This will also close the file. This is OK since multiple
             // close operations are safe.
-            curSizeRollBackups = 0; //We're cleared out the old date and are ready for the new
+            curSizeRollBackups = 0; // We're cleared out the old date and are ready for the new
 
-            //new scheduled name
+            // new scheduled name
             scheduledFilename = fileName + sdf.format(now);
             this.setFile(baseFileName, false);
         }
@@ -734,8 +740,10 @@ public class QpidCompositeRollingAppender extends FileAppender
             {
                 LogLog.debug("Attempting to compress file with same output name.");
             }
+
             return;
         }
+
         File target = new File(to);
         if (target.exists())
         {
@@ -755,9 +763,9 @@ public class QpidCompositeRollingAppender extends FileAppender
                 file.renameTo(target);
             }
         }
+
         LogLog.debug(from + " -> " + to);
     }
-
 
     protected void compress(String file)
     {
@@ -773,6 +781,7 @@ public class QpidCompositeRollingAppender extends FileAppender
             {
                 _compress.offer(new CompressJob(from, target));
             }
+
             startCompression();
         }
         else
@@ -805,7 +814,7 @@ public class QpidCompositeRollingAppender extends FileAppender
      * <p>If the maximum number of size based backups is reached (<code>curSizeRollBackups == maxSizeRollBackups</code)
      * then the oldest file is deleted -- it's index determined by the sign of countDirection.<br> If
      * <code>countDirection</code> < 0, then files {<code>File.1</code>, ..., <code>File.curSizeRollBackups -1</code>}
-     * are renamed to {<code>File.2</code>, ..., <code>File.curSizeRollBackups</code>}.	 Moreover, <code>File</code> is
+     * are renamed to {<code>File.2</code>, ..., <code>File.curSizeRollBackups</code>}.  Moreover, <code>File</code> is
      * renamed <code>File.1</code> and closed.<br>
      *
      * A new file is created to receive further log output.
@@ -851,20 +860,20 @@ public class QpidCompositeRollingAppender extends FileAppender
                 // Rename fileName to fileName.1
                 rollFile(fileName, fileName + ".1", compress);
 
-            } //REMOVE This code branching for Alexander Cerna's request
+            } // REMOVE This code branching for Alexander Cerna's request
             else if (countDirection == 0)
             {
-                //rollFile based on date pattern
+                // rollFile based on date pattern
                 curSizeRollBackups++;
                 now.setTime(System.currentTimeMillis());
                 scheduledFilename = fileName + sdf.format(now);
                 rollFile(fileName, scheduledFilename, compress);
             }
             else
-            { //countDirection > 0
-                if (curSizeRollBackups >= maxSizeRollBackups && maxSizeRollBackups > 0)
+            { // countDirection > 0
+                if ((curSizeRollBackups >= maxSizeRollBackups) && (maxSizeRollBackups > 0))
                 {
-                    //delete the first and keep counting up.
+                    // delete the first and keep counting up.
                     int oldestFileIndex = curSizeRollBackups - maxSizeRollBackups + 1;
                     deleteFile(fileName + '.' + oldestFileIndex);
                 }
@@ -930,6 +939,7 @@ public class QpidCompositeRollingAppender extends FileAppender
             {
                 out.write(buf, 0, len);
             }
+
             in.close();
 
             // Complete the GZIP file
@@ -944,6 +954,7 @@ public class QpidCompositeRollingAppender extends FileAppender
             {
                 target.delete();
             }
+
             rollFile(from.getPath(), to.getPath(), false);
         }
     }
