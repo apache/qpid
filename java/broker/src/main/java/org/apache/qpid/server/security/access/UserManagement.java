@@ -112,7 +112,7 @@ public interface UserManagement
      * @return a table of users data (Username, read, write, admin)
      */
     @MBeanOperation(name = "viewUsers", description = "All users with access rights to the system.",
-                    impact = MBeanOperationInfo.ACTION)
+                    impact = MBeanOperationInfo.INFO)
     TabularData viewUsers();
 
 }
