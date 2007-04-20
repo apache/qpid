@@ -25,7 +25,7 @@ using boost::mem_fn;
 
 using namespace qpid::broker;
 
-DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const _store) : xid(_xid), store(_store) {}
+DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const _store) : xid(_xid), store(_store), completed(false) {}
 
 DtxWorkRecord::~DtxWorkRecord() {}
 
@@ -65,6 +65,7 @@ void DtxWorkRecord::commit()
         std::auto_ptr<TransactionContext> localtxn = store->begin();
         if (prepare(localtxn.get())) {
             store->commit(*localtxn);
+            for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
         } else {
             store->abort(*localtxn);
             abort();
@@ -103,5 +104,4 @@ void DtxWorkRecord::abort()
         txn.reset();
     }
     for_each(work.begin(), work.end(), mem_fn(&TxBuffer::rollback));
-
 }

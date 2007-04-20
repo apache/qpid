@@ -138,7 +138,9 @@ class Channel : public framing::ChannelAdapter,
     void commit();
     void rollback();
     void startDtx(const std::string& xid, DtxManager& mgr);
-    void endDtx();
+    void endDtx(const std::string& xid);
+    void suspendDtx(const std::string& xid);
+    void resumeDtx(const std::string& xid);
     void ack();
     void ack(uint64_t deliveryTag, bool multiple);
     void ack(uint64_t deliveryTag, uint64_t endTag);
