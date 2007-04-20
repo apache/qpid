@@ -70,7 +70,7 @@ public class Main
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
     private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
-    
+    public static final String QPID_HOME = "QPID_HOME";
     private static final int IPV4_ADDRESS_LENGTH = 4;
     
     private static final char IPV4_LITERAL_SEPARATOR = '.';    
@@ -204,7 +204,7 @@ public class Main
 
     protected void startup() throws InitException, ConfigurationException, Exception
     {
-        final String QpidHome = System.getProperty("QPID_HOME");
+        final String QpidHome = System.getProperty(QPID_HOME);
         final File defaultConfigFile = new File(QpidHome, DEFAULT_CONFIG_FILE);
         final File configFile = new File(commandLine.getOptionValue("c", defaultConfigFile.getPath()));
         if (!configFile.exists())
@@ -213,7 +213,7 @@ public class Main
 
             if (QpidHome == null)
             {
-                error = error + "\nNote: Qpid_HOME is not set.";
+                error = error + "\nNote: "+QPID_HOME+" is not set.";
             }
 
             throw new InitException(error, null);

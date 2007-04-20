@@ -22,7 +22,6 @@ package org.apache.qpid.server.security.access;
 
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.MBeanOperationParameter;
 import org.apache.qpid.server.management.MBeanOperation;
 import org.apache.qpid.server.management.MBeanInvocationHandlerImpl;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
@@ -107,8 +106,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         return UserManagement.TYPE;
     }
 
-    public boolean setPassword(@MBeanOperationParameter(name = "username", description = "Username")String username,
-                               @MBeanOperationParameter(name = "password", description = "Password")String password)
+    public boolean setPassword(String username, char[] password)
     {
         try
         {
@@ -122,10 +120,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
     }
 
-    public boolean setRights(@MBeanOperationParameter(name = "username", description = "Username")String username,
-                             @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
-                             @MBeanOperationParameter(name = "write", description = "Administration write")boolean write,
-                             @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin)
+    public boolean setRights(String username, boolean read, boolean write, boolean admin)
     {
 
         if (_accessRights.get(username) == null)
@@ -179,11 +174,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         return true;
     }
 
-    public boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
-                              @MBeanOperationParameter(name = "password", description = "Password")String password,
-                              @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
-                              @MBeanOperationParameter(name = "write", description = "Administration write")boolean write,
-                              @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin)
+    public boolean createUser(String username, char[] password, boolean read, boolean write, boolean admin)
     {
         if (_principalDatabase.createPrincipal(new UsernamePrincipal(username), password))
         {
@@ -195,7 +186,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         return false;
     }
 
-    public boolean deleteUser(@MBeanOperationParameter(name = "username", description = "Username")String username)
+    public boolean deleteUser(String username)
     {
 
         try

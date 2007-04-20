@@ -158,7 +158,7 @@ public class SubscriptionImpl implements Subscription
         }
 
 
-        if (_filters != null)
+        if (filtersMessages())
         {
             _messages = new ConcurrentLinkedMessageQueueAtomicSize<AMQMessage>();
         }
@@ -346,9 +346,9 @@ public class SubscriptionImpl implements Subscription
         channel.queueDeleted(queue);
     }
 
-    public boolean hasFilters()
+    public boolean filtersMessages()
     {
-        return _filters != null;
+        return _filters != null || _noLocal;
     }
 
     public boolean hasInterest(AMQMessage msg)
@@ -363,7 +363,10 @@ public class SubscriptionImpl implements Subscription
 //            return false;
         }
 
-        if (_noLocal)
+        final AMQProtocolSession publisher = msg.getPublisher();
+
+        //todo - client id should be recoreded and this test removed but handled below
+        if (_noLocal && publisher != null)
         {
             // We don't want local messages so check to see if message is one we sent
             Object localInstance;
@@ -372,8 +375,9 @@ public class SubscriptionImpl implements Subscription
             if ((protocolSession.getClientProperties() != null) &&
                 (localInstance = protocolSession.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
             {
-                if ((msg.getPublisher().getClientProperties() != null) &&
-                    (msgInstance = msg.getPublisher().getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
+
+                if ((publisher.getClientProperties() != null) &&
+                    (msgInstance = publisher.getClientProperties().getObject(CLIENT_PROPERTIES_INSTANCE)) != null)
                 {
                     if (localInstance == msgInstance || localInstance.equals(msgInstance))
                     {
@@ -388,8 +392,11 @@ public class SubscriptionImpl implements Subscription
             }
             else
             {
+
                 localInstance = protocolSession.getClientIdentifier();
-                msgInstance = msg.getPublisher().getClientIdentifier();
+                //todo - client id should be recoreded and this test removed but handled here
+
+                msgInstance = publisher.getClientIdentifier();
                 if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
                 {
                     if (_logger.isTraceEnabled())
@@ -399,7 +406,6 @@ public class SubscriptionImpl implements Subscription
                     }
                     return false;
                 }
-
             }
 
 
@@ -623,7 +629,7 @@ public class SubscriptionImpl implements Subscription
             return _resendQueue;
         }
 
-        if (_filters != null)
+        if (filtersMessages())
         {
             if (isAutoClose())
             {

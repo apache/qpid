@@ -102,7 +102,7 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
         }
     }
 
-    public boolean hasFilters()
+    public boolean filtersMessages()
     {
         return false;
     }
