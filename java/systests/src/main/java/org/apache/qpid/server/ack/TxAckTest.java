@@ -24,6 +24,8 @@ import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.queue.AMQMessage;
@@ -102,7 +104,7 @@ public class TxAckTest extends TestCase
                                                                           _storeContext, null,
                                                                           new LinkedList<RequiredDeliveryException>(),
                                                                           new HashSet<Long>());
-            for(int i = 0; i < messageCount; i++)
+            for (int i = 0; i < messageCount; i++)
             {
                 long deliveryTag = i + 1;
 
@@ -144,7 +146,7 @@ public class TxAckTest extends TestCase
 
         private void assertCount(List<Long> tags, int expected)
         {
-            for(long tag : tags)
+            for (long tag : tags)
             {
                 UnacknowledgedMessage u = _map.get(tag);
                 assertTrue("Message not found for tag " + tag, u != null);
@@ -161,6 +163,7 @@ public class TxAckTest extends TestCase
             assertCount(_unacked, 0);
 
         }
+
         void undoPrepare()
         {
             _op.consolidate();
@@ -174,7 +177,6 @@ public class TxAckTest extends TestCase
         {
             _op.consolidate();
             _op.commit(_storeContext);
-
 
             //check acked messages are removed from map
             Set<Long> keys = new HashSet<Long>(_map.getDeliveryTags());
@@ -195,6 +197,20 @@ public class TxAckTest extends TestCase
         TestMessage(long tag, long messageId, MessagePublishInfo publishBody, TransactionalContext txnContext)
         {
             super(messageId, publishBody, txnContext);
+            try
+            {
+                setContentHeaderBody(new ContentHeaderBody()
+                {
+                    public int getSize()
+                    {
+                        return 1;
+                    }
+                });
+            }
+            catch (AMQException e)
+            {
+                // won't happen
+            }
             _tag = tag;
         }
 

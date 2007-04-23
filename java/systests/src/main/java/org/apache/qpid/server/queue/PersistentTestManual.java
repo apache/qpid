@@ -37,9 +37,9 @@ import javax.jms.TextMessage;
 import java.io.IOException;
 import java.util.Properties;
 
-public class PersistentTest
+public class PersistentTestManual
 {
-    private static final Logger _logger = Logger.getLogger(PersistentTest.class);
+    private static final Logger _logger = Logger.getLogger(PersistentTestManual.class);
 
 
     private static final String QUEUE = "direct://amq.direct//PersistentTest-Queue2?durable='true',exclusive='true'";
@@ -56,7 +56,7 @@ public class PersistentTest
     private String _password;
     private String _virtualpath;
 
-    public PersistentTest(Properties overrides)
+    public PersistentTestManual(Properties overrides)
     {
         properties = new Properties(defaults);
         properties.putAll(overrides);
@@ -257,12 +257,12 @@ public class PersistentTest
 
     public static void main(String[] args)
     {
-        PersistentTest test;
+        PersistentTestManual test;
 
         Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][]{}));
 
 
-        test = new PersistentTest(options);
+        test = new PersistentTestManual(options);
         try
         {
             test.test();

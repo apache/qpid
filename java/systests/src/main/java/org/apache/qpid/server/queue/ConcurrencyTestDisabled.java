@@ -34,7 +34,7 @@ import java.util.concurrent.Executor;
  * Tests delivery in the face of concurrent incoming _messages, subscription alterations
  * and attempts to asynchronously process queued _messages.
  */
-public class ConcurrencyTest extends MessageTestHelper
+public class ConcurrencyTestDisabled extends MessageTestHelper
 {
     private final Random random = new Random();
 
@@ -55,7 +55,7 @@ public class ConcurrencyTest extends MessageTestHelper
     private boolean failed;
     private VirtualHost _virtualHost;
 
-    public ConcurrencyTest() throws Exception
+    public ConcurrencyTestDisabled() throws Exception
     {
 
         IApplicationRegistry applicationRegistry = ApplicationRegistry.getInstance();
@@ -259,7 +259,7 @@ public class ConcurrencyTest extends MessageTestHelper
 
     public static junit.framework.Test suite()
     {
-        return new junit.framework.TestSuite(ConcurrencyTest.class);
+        return new junit.framework.TestSuite(ConcurrencyTestDisabled.class);
     }
 
 }
