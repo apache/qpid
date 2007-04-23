@@ -149,15 +149,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     {
         if (args[0] instanceof ObjectName)
         {
-            if (args[0] instanceof ObjectName)
-            {
-                ObjectName object = (ObjectName) args[0];
-                return UserManagement.TYPE.equals(object.getKeyProperty("type"));
-            }
-            else
-            {
-                return false;
-            }
+            ObjectName object = (ObjectName) args[0];
+            return UserManagement.TYPE.equals(object.getKeyProperty("type"));
         }
 
         return false;
@@ -200,16 +193,16 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private boolean isReadOnlyMethod(Method method, Object[] args)
     {
         String methodName = method.getName();
-        if (methodName.equals("queryMBeans") ||
-            methodName.equals("getDefaultDomain") ||
-            methodName.equals("getMBeanInfo") ||
-            methodName.equals("getAttribute") ||
-            methodName.equals("getAttributes"))
+        if (methodName.startsWith("query") || methodName.startsWith("get"))
         {
             return true;
         }
+        else if (methodName.startsWith("set"))
+        {
+            return false;
+        }
 
-        if (args[0] instanceof ObjectName)
+        if ((args[0] instanceof ObjectName) && (methodName.equals("invoke")))
         {
             String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
             if (mbeanMethod == null)
