@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /**
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,18 +21,12 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
-
-
-
 
 /**
  * A BooleanExpression is an expression that always
  * produces a Boolean result.
- *
- * @version $Revision$
  */
 public interface BooleanExpression extends Expression
 {
