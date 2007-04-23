@@ -644,7 +644,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             catch (AMQException e)
             {
-                throw(JMSException) (new JMSException("Failed to rollback: " + e).initCause(e));
+                throw (JMSException) (new JMSException("Failed to rollback: " + e).initCause(e));
             }
         }
     }
