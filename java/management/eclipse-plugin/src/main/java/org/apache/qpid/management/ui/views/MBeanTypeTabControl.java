@@ -1,9 +1,13 @@
 package org.apache.qpid.management.ui.views;
 
+import static org.apache.qpid.management.ui.Constants.BUTTON_REFRESH;
+import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
+import static org.apache.qpid.management.ui.Constants.FONT_ITALIC;
+import static org.apache.qpid.management.ui.Constants.FONT_NORMAL;
+
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;

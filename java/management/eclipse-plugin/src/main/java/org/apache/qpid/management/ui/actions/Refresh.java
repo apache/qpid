@@ -25,17 +25,14 @@ import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 /**
  * This action refreshes both the views -Navigation and MBeanView
  * @author Bhupendra Bhardwaj
  */
-public class Refresh implements IWorkbenchWindowActionDelegate
+public class Refresh extends AbstractAction implements IWorkbenchWindowActionDelegate
 {
-    private IWorkbenchWindow _window;
-
     /**
      * Selection in the workbench has been changed. We 
      * can change the state of the 'real' action here
@@ -56,16 +53,6 @@ public class Refresh implements IWorkbenchWindowActionDelegate
     public void dispose()
     {
         
-    }
-
-    /**
-     * We will cache window object in order to
-     * be able to provide parent shell for the message dialog.
-     * @see IWorkbenchWindowActionDelegate#init
-     */
-    public void init(IWorkbenchWindow window)
-    {
-        this._window = window;
     }
     
     public void run(IAction action)

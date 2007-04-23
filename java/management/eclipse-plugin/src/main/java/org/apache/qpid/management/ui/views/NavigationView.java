@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui.views;
 
+import static org.apache.qpid.management.ui.Constants.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,14 +29,12 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import static org.apache.qpid.management.ui.Constants.*;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
 import org.apache.qpid.management.ui.ServerRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
-
 import org.eclipse.jface.preference.PreferenceStore;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
@@ -48,7 +48,6 @@ import org.eclipse.jface.viewers.TreeExpansionEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.Image;
@@ -63,7 +62,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
-
 import org.eclipse.ui.part.ViewPart;
 
 /**
@@ -216,10 +214,9 @@ public class NavigationView extends ViewPart
             ServerRegistry serverRegistry = new JMXServerRegistry(server);
             ApplicationRegistry.addServer(server, serverRegistry);
         }
-        catch (Exception ex)
+        catch (IOException ex)
         {
-            ex.printStackTrace();
-            throw new Exception("Error in connecting to Qpid broker at " + server.getUrl(), ex);
+            throw (Exception)ex.getCause();
         }
     }
 
@@ -274,7 +271,15 @@ public class NavigationView extends ViewPart
         _managedServerMap.put(managedServer, serverNode);
 
         // populate the server tree
-        populateServer(serverNode);
+        try
+        {
+            populateServer(serverNode);
+        }
+        catch (SecurityException ex)
+        {
+            disconnect(managedServer);
+            throw ex;
+        }
 
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
@@ -413,38 +418,30 @@ public class NavigationView extends ViewPart
      * the given server node.
      * @param serverNode
      */
-    private void populateServer(TreeObject serverNode)
+    private void populateServer(TreeObject serverNode) throws Exception
     {
         ManagedServer server = (ManagedServer) serverNode.getManagedObject();
         String domain = server.getDomain();
-        try
+        if (!domain.equals(ALL))
         {
-            if (!domain.equals(ALL))
+            TreeObject domainNode = new TreeObject(domain, NODE_TYPE_DOMAIN);
+            domainNode.setParent(serverNode);
+
+            populateDomain(domainNode);
+        }
+        else
+        {
+            List<TreeObject> domainList = new ArrayList<TreeObject>();
+            List<String> domains = MBeanUtility.getAllDomains(server);
+
+            for (String domainName : domains)
             {
-                TreeObject domainNode = new TreeObject(domain, NODE_TYPE_DOMAIN);
+                TreeObject domainNode = new TreeObject(domainName, NODE_TYPE_DOMAIN);
                 domainNode.setParent(serverNode);
 
+                domainList.add(domainNode);
                 populateDomain(domainNode);
             }
-            else
-            {
-                List<TreeObject> domainList = new ArrayList<TreeObject>();
-                List<String> domains = MBeanUtility.getAllDomains(server);
-                ;
-                for (String domainName : domains)
-                {
-                    TreeObject domainNode = new TreeObject(domainName, NODE_TYPE_DOMAIN);
-                    domainNode.setParent(serverNode);
-
-                    domainList.add(domainNode);
-                    populateDomain(domainNode);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            System.out.println("\nError in connecting to Qpid broker ");
-            ex.printStackTrace();
         }
     }
 
@@ -726,6 +723,11 @@ public class NavigationView extends ViewPart
     {
         TreeObject selectedNode = getSelectedServerNode();
         ManagedServer managedServer = (ManagedServer) selectedNode.getManagedObject();
+        disconnect(managedServer);
+    }
+    
+    private void disconnect(ManagedServer managedServer) throws Exception
+    {
         if (!_managedServerMap.containsKey(managedServer))
         {
             return;
@@ -763,8 +765,17 @@ public class NavigationView extends ViewPart
         // put the server in the managed server map
         _managedServerMap.put(managedServer, selectedNode);
 
-        // populate the server tree now
-        populateServer(selectedNode);
+        try
+        {
+            // populate the server tree now
+            populateServer(selectedNode);
+        }
+        catch (SecurityException ex)
+        {
+            disconnect(managedServer);
+            throw ex;
+        }
+        
 
         // Add the Queue/Exchanges/Connections from config file into the navigation tree
         addConfiguredItems(managedServer);
