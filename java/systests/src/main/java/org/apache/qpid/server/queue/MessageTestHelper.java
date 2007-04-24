@@ -29,6 +29,7 @@ import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
@@ -51,7 +52,7 @@ class MessageTestHelper extends TestCase
 
     MessageTestHelper() throws Exception
     {
-        ApplicationRegistry.initialise(new TestApplicationRegistry());
+        ApplicationRegistry.initialise(new NullApplicationRegistry());
     }
 
     AMQMessage message() throws AMQException

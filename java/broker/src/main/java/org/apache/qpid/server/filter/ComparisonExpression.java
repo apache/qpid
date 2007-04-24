@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -32,8 +33,6 @@ import org.apache.qpid.server.queue.AMQMessage;
 
 /**
  * A filter performing a comparison of two objects
- *
- * @version $Revision$
  */
 public abstract class ComparisonExpression extends BinaryExpression implements BooleanExpression
 {
@@ -153,7 +152,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             {
                 return
                     Boolean.FALSE;
-                    //throw new RuntimeException("LIKE can only operate on String identifiers.  LIKE attemped on: '" + rv.getClass());
+                    // throw new RuntimeException("LIKE can only operate on String identifiers.  LIKE attemped on: '" + rv.getClass());
             }
 
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
@@ -240,42 +239,42 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     private static BooleanExpression doCreateEqual(Expression left, Expression right)
     {
         return new ComparisonExpression(left, right)
-        {
-
-            public Object evaluate(AMQMessage message) throws AMQException
             {
-                Object lv = left.evaluate(message);
-                Object rv = right.evaluate(message);
 
-                // Iff one of the values is null
-                if ((lv == null) ^ (rv == null))
+                public Object evaluate(AMQMessage message) throws AMQException
                 {
+                    Object lv = left.evaluate(message);
+                    Object rv = right.evaluate(message);
+
+                    // Iff one of the values is null
+                    if ((lv == null) ^ (rv == null))
+                    {
+                        return Boolean.FALSE;
+                    }
+
+                    if ((lv == rv) || lv.equals(rv))
+                    {
+                        return Boolean.TRUE;
+                    }
+
+                    if ((lv instanceof Comparable) && (rv instanceof Comparable))
+                    {
+                        return compare((Comparable) lv, (Comparable) rv);
+                    }
+
                     return Boolean.FALSE;
                 }
 
-                if ((lv == rv) || lv.equals(rv))
+                protected boolean asBoolean(int answer)
                 {
-                    return Boolean.TRUE;
+                    return answer == 0;
                 }
 
-                if ((lv instanceof Comparable) && (rv instanceof Comparable))
+                public String getExpressionSymbol()
                 {
-                    return compare((Comparable) lv, (Comparable) rv);
+                    return "=";
                 }
-
-                return Boolean.FALSE;
-            }
-
-            protected boolean asBoolean(int answer)
-            {
-                return answer == 0;
-            }
-
-            public String getExpressionSymbol()
-            {
-                return "=";
-            }
-        };
+            };
     }
 
     public static BooleanExpression createGreaterThan(final Expression left, final Expression right)
@@ -284,17 +283,17 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(right);
 
         return new ComparisonExpression(left, right)
-        {
-            protected boolean asBoolean(int answer)
             {
-                return answer > 0;
-            }
+                protected boolean asBoolean(int answer)
+                {
+                    return answer > 0;
+                }
 
-            public String getExpressionSymbol()
-            {
-                return ">";
-            }
-        };
+                public String getExpressionSymbol()
+                {
+                    return ">";
+                }
+            };
     }
 
     public static BooleanExpression createGreaterThanEqual(final Expression left, final Expression right)
@@ -303,17 +302,17 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(right);
 
         return new ComparisonExpression(left, right)
-        {
-            protected boolean asBoolean(int answer)
             {
-                return answer >= 0;
-            }
+                protected boolean asBoolean(int answer)
+                {
+                    return answer >= 0;
+                }
 
-            public String getExpressionSymbol()
-            {
-                return ">=";
-            }
-        };
+                public String getExpressionSymbol()
+                {
+                    return ">=";
+                }
+            };
     }
 
     public static BooleanExpression createLessThan(final Expression left, final Expression right)
@@ -322,19 +321,19 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(right);
 
         return new ComparisonExpression(left, right)
-        {
-
-            protected boolean asBoolean(int answer)
             {
-                return answer < 0;
-            }
 
-            public String getExpressionSymbol()
-            {
-                return "<";
-            }
+                protected boolean asBoolean(int answer)
+                {
+                    return answer < 0;
+                }
 
-        };
+                public String getExpressionSymbol()
+                {
+                    return "<";
+                }
+
+            };
     }
 
     public static BooleanExpression createLessThanEqual(final Expression left, final Expression right)
@@ -343,18 +342,18 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         checkLessThanOperand(right);
 
         return new ComparisonExpression(left, right)
-        {
-
-            protected boolean asBoolean(int answer)
             {
-                return answer <= 0;
-            }
 
-            public String getExpressionSymbol()
-            {
-                return "<=";
-            }
-        };
+                protected boolean asBoolean(int answer)
+                {
+                    return answer <= 0;
+                }
+
+                public String getExpressionSymbol()
+                {
+                    return "<=";
+                }
+            };
     }
 
     /**

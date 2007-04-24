@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /**
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,69 +26,86 @@ import org.apache.qpid.server.queue.AMQMessage;
 
 /**
  * A filter performing a comparison of two objects
- * 
- * @version $Revision$
  */
-public abstract class LogicExpression extends BinaryExpression implements BooleanExpression {
+public abstract class LogicExpression extends BinaryExpression implements BooleanExpression
+{
 
-    public static BooleanExpression createOR(BooleanExpression lvalue, BooleanExpression rvalue) {
-        return new LogicExpression(lvalue, rvalue) {
-        	
-            public Object evaluate(AMQMessage message) throws AMQException {
-                
-            	Boolean lv = (Boolean) left.evaluate(message);
-                // Can we do an OR shortcut??
-            	if (lv !=null && lv.booleanValue()) {
-                    return Boolean.TRUE;
+    public static BooleanExpression createOR(BooleanExpression lvalue, BooleanExpression rvalue)
+    {
+        return new LogicExpression(lvalue, rvalue)
+            {
+
+                public Object evaluate(AMQMessage message) throws AMQException
+                {
+
+                    Boolean lv = (Boolean) left.evaluate(message);
+                    // Can we do an OR shortcut??
+                    if ((lv != null) && lv.booleanValue())
+                    {
+                        return Boolean.TRUE;
+                    }
+
+                    Boolean rv = (Boolean) right.evaluate(message);
+
+                    return (rv == null) ? null : rv;
                 }
-            	
-                Boolean rv = (Boolean) right.evaluate(message);
-                return rv==null ? null : rv;
-            }
 
-            public String getExpressionSymbol() {
-                return "OR";
-            }
-        };
+                public String getExpressionSymbol()
+                {
+                    return "OR";
+                }
+            };
     }
 
-    public static BooleanExpression createAND(BooleanExpression lvalue, BooleanExpression rvalue) {
-        return new LogicExpression(lvalue, rvalue) {
+    public static BooleanExpression createAND(BooleanExpression lvalue, BooleanExpression rvalue)
+    {
+        return new LogicExpression(lvalue, rvalue)
+            {
 
-            public Object evaluate(AMQMessage message) throws AMQException {
+                public Object evaluate(AMQMessage message) throws AMQException
+                {
 
-                Boolean lv = (Boolean) left.evaluate(message);
+                    Boolean lv = (Boolean) left.evaluate(message);
 
-                // Can we do an AND shortcut??
-                if (lv == null)
-                    return null;
-                if (!lv.booleanValue()) {
-                    return Boolean.FALSE;
+                    // Can we do an AND shortcut??
+                    if (lv == null)
+                    {
+                        return null;
+                    }
+
+                    if (!lv.booleanValue())
+                    {
+                        return Boolean.FALSE;
+                    }
+
+                    Boolean rv = (Boolean) right.evaluate(message);
+
+                    return (rv == null) ? null : rv;
                 }
 
-                Boolean rv = (Boolean) right.evaluate(message);
-                return rv == null ? null : rv;
-            }
-
-            public String getExpressionSymbol() {
-                return "AND";
-            }
-        };
+                public String getExpressionSymbol()
+                {
+                    return "AND";
+                }
+            };
     }
 
     /**
      * @param left
      * @param right
      */
-    public LogicExpression(BooleanExpression left, BooleanExpression right) {
+    public LogicExpression(BooleanExpression left, BooleanExpression right)
+    {
         super(left, right);
     }
 
-    abstract public Object evaluate(AMQMessage message) throws AMQException;
+    public abstract Object evaluate(AMQMessage message) throws AMQException;
 
-    public boolean matches(AMQMessage message) throws AMQException {
+    public boolean matches(AMQMessage message) throws AMQException
+    {
         Object object = evaluate(message);
-        return object!=null && object==Boolean.TRUE;            
+
+        return (object != null) && (object == Boolean.TRUE);
     }
 
 }

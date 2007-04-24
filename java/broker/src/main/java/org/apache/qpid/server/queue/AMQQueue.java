@@ -615,7 +615,7 @@ public class AMQQueue implements Managable, Comparable
         }
         catch (MessageCleanupException e)
         {
-            //Message was dequeued, but could notthen be deleted
+            //Message was dequeued, but could not then be deleted
             //though it is no longer referenced. This should be very
             //rare and can be detected and cleaned up on recovery or
             //done through some form of manual intervention.

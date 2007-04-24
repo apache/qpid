@@ -25,9 +25,10 @@ import javax.jms.TemporaryQueue;
 
 import org.apache.qpid.framing.AMQShortString;
 
-/**
- * AMQ implementation of a TemporaryQueue.
- */
+import java.util.Random;
+import java.util.UUID;
+
+/** AMQ implementation of a TemporaryQueue. */
 final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue, TemporaryDestination
 {
 
@@ -35,21 +36,17 @@ final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue, Tempor
     private final AMQSession _session;
     private boolean _deleted;
 
-    /**
-     * Create a new instance of an AMQTemporaryQueue
-     */
+    /** Create a new instance of an AMQTemporaryQueue */
     public AMQTemporaryQueue(AMQSession session)
     {
-        super(session.getTemporaryQueueExchangeName(),new AMQShortString("TempQueue" + Long.toString(System.currentTimeMillis())), true);
+        super(session.getTemporaryQueueExchangeName(), new AMQShortString("TempQueue" + UUID.randomUUID()), true);
         _session = session;
     }
 
-    /**
-     * @see javax.jms.TemporaryQueue#delete()
-     */
+    /** @see javax.jms.TemporaryQueue#delete() */
     public synchronized void delete() throws JMSException
     {
-        if(_session.hasConsumer(this))
+        if (_session.hasConsumer(this))
         {
             throw new JMSException("Temporary Queue has consumers so cannot be deleted");
         }

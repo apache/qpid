@@ -43,16 +43,13 @@ import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 
 /**
- * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery queue
- * <p/>
- * The message delivery process:
- * Mina puts a message on _queue in AMQSession and the dispatcher thread take()s
- * from here and dispatches to the _consumers. If the _consumer1 doesn't have a message listener set at connection start
- * then messages are stored on _synchronousQueue (which needs to be > 1 to pass JMS TCK as multiple consumers on a
- * session can run in any order and a synchronous put/poll will block the dispatcher).
- * <p/>
- * When setting the message listener later the _synchronousQueue is just poll()'ed and the first message delivered
- * the remaining messages will be left on the queue and lost, subsequent messages on the session will arrive first.
+ * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
+ * queue <p/> The message delivery process: Mina puts a message on _queue in AMQSession and the dispatcher thread
+ * take()s from here and dispatches to the _consumers. If the _consumer1 doesn't have a message listener set at
+ * connection start then messages are stored on _synchronousQueue (which needs to be > 1 to pass JMS TCK as multiple
+ * consumers on a session can run in any order and a synchronous put/poll will block the dispatcher). <p/> When setting
+ * the message listener later the _synchronousQueue is just poll()'ed and the first message delivered the remaining
+ * messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
 public class ResetMessageListenerTest extends TestCase
 {
@@ -77,6 +74,8 @@ public class ResetMessageListenerTest extends TestCase
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
+
+        System.setProperty(AMQSession.IMMEDIATE_PREFETCH, "true");
 
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
@@ -203,7 +202,7 @@ public class ResetMessageListenerTest extends TestCase
 
         try
         {
-            _clientConnection.stop();                        
+            _clientConnection.stop();
         }
         catch (JMSException e)
         {
@@ -226,7 +225,7 @@ public class ResetMessageListenerTest extends TestCase
                     }
                 }
             });
-            
+
             _clientConnection.start();
         }
         catch (javax.jms.IllegalStateException e)

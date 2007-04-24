@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,11 +146,6 @@ public class MBeanUtility
         if (mbean == null)
         {
             ViewUtility.popupErrorMessage("Error", "Managed Object is null \n" + ex.toString());
-            printStackTrace(ex);
-        }
-        else if (ex instanceof IOException)
-        {
-            ViewUtility.popupErrorMessage(mbean.getInstanceName(), "IO Error occured \n" + ex.toString());
             printStackTrace(ex);
         }
         else if (ex instanceof ReflectionException)
@@ -462,7 +456,7 @@ public class MBeanUtility
         }
     }
     
-    private static void printStackTrace(Throwable ex)
+    public static void printStackTrace(Throwable ex)
     {
         if (ApplicationRegistry.debug)
         {

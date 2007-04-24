@@ -20,22 +20,16 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
+import static org.apache.qpid.management.ui.Constants.ACTION_EDITATTRIBUTE;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.ViewUtility;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-public class EditAttribute implements IWorkbenchWindowActionDelegate
-{
-    private IWorkbenchWindow _window;
-    
+public class EditAttribute extends AbstractAction implements IWorkbenchWindowActionDelegate
+{    
     public void run(IAction action)
     {
         if(_window != null)
@@ -47,13 +41,11 @@ public class EditAttribute implements IWorkbenchWindowActionDelegate
             }
             catch(InfoRequiredException ex)
             {
-                ViewUtility.popupInfoMessage("Edit Attribute", ex.getMessage());
+                ViewUtility.popupInfoMessage(ACTION_EDITATTRIBUTE, ex.getMessage());
             }
             catch(Exception ex)
             {
-                IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                            IStatus.OK, ex.getMessage(), ex.getCause()); 
-                ErrorDialog.openError(_window.getShell(), "Error", "Attribute could not be edited", status);
+                handleException(ex, "Attribute could not be edited", null);
             }
         }
     }
@@ -74,14 +66,6 @@ public class EditAttribute implements IWorkbenchWindowActionDelegate
      * @see IWorkbenchWindowActionDelegate#dispose
      */
     public void dispose() {
-    }
-
-    /**
-     * We will cache window object in order to
-     * be able to provide parent shell for the message dialog.
-     * @see IWorkbenchWindowActionDelegate#init
-     */
-    public void init(IWorkbenchWindow window) {
-        this._window = window;
+        
     }
 }

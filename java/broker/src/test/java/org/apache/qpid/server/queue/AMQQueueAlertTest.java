@@ -106,7 +106,7 @@ public class AMQQueueAlertTest extends TestCase
     /**
      * Tests if Queue Depth alert is thrown when queue depth reaches the threshold value
      *
-     * Based on FT402 subbmitted by client
+     * Based on FT-402 subbmitted by client
      *
      * @throws Exception
      */
@@ -133,6 +133,8 @@ public class AMQQueueAlertTest extends TestCase
     /**
      * Tests if MESSAGE AGE alert is thrown, when a message is in the queue for time higher than threshold value of
      * message age
+     *
+     * Alternative test to FT-401 provided by client
      *
      * @throws Exception
      */
