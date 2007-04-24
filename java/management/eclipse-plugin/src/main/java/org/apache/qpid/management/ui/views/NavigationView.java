@@ -216,6 +216,10 @@ public class NavigationView extends ViewPart
         }
         catch (IOException ex)
         {
+            if (ex.getCause() == null)
+            {
+                throw ex;
+            }
             throw (Exception)ex.getCause();
         }
     }

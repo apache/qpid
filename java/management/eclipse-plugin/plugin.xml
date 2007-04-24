@@ -96,6 +96,11 @@
             description="pops up the window for editing selected attribute"
             id="org.apache.qpid.management.ui.actions.cmd_editAttribute"
             name="Edit Attribute"/>
+      <command
+            categoryId="org.apache.qpid.management.ui.category"
+            description="About Qpid Management Console"
+            id="qpidmc.about"
+            name="About"/>
    </extension>
    <extension
          point="org.eclipse.ui.bindings">
@@ -139,16 +144,12 @@
             application="org.apache.qpid.management.ui.application"
             name="Qpid Management Console">
          <property
-               name="about Qpid Management Console"
-               value="version 0.1.0">
-         </property>
-         <property
                name="windowImages"
                value="icons/qpidmc16.gif,icons/qpidmc32.gif">
          </property>
          <property
                name="aboutText"
-               value="Qpid Management Console&#x0A;version 0.1.0"/>
+               value="Qpid Management Console"/>
       </product>
    </extension>
    <extension
