@@ -27,14 +27,14 @@ import static org.apache.qpid.management.ui.Constants.INFO_USERNAME;
 import static org.apache.qpid.management.ui.Constants.PASSWORD;
 import static org.apache.qpid.management.ui.Constants.USERNAME;
 
+import java.io.IOException;
+
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
-import org.apache.qpid.management.ui.views.NavigationView;
 import org.apache.qpid.management.ui.views.TreeObject;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -50,44 +50,11 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 public class ReconnectServer extends AbstractAction implements IWorkbenchWindowActionDelegate
 {
-    private NavigationView _navigationView;
     private String _title;
     private String _serverName;
     private String _user;
     private String _password;
     private boolean _connect;
-    
-    /**
-     * Selection in the workbench has been changed. We 
-     * can change the state of the 'real' action here
-     * if we want, but this can only happen after 
-     * the delegate has been created.
-     * @see IWorkbenchWindowActionDelegate#selectionChanged
-     */
-    public void selectionChanged(IAction action, ISelection selection)
-    {
-        
-    }
-
-    /**
-     * We can use this method to dispose of any system
-     * resources we previously allocated.
-     * @see IWorkbenchWindowActionDelegate#dispose
-     */
-    public void dispose()
-    {
-        
-    }
-    
-    private NavigationView getNavigationView()
-    {
-        if (_navigationView == null)
-        {
-            _navigationView = (NavigationView)_window.getActivePage().findView(NavigationView.ID);
-        }
-        
-        return _navigationView;
-    }
     
     public void run(IAction action)
     {
@@ -113,6 +80,17 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
             catch(InfoRequiredException ex)
             {
                 ViewUtility.popupInfoMessage("Reconnect Qpid server", ex.getMessage());
+            }
+            catch (IOException ex)
+            {
+                if ((ex.getMessage() != null) && (ex.getMessage().indexOf(RMI_SASL_ERROR) != -1))
+                {
+                    handleException(ex, null, SECURITY_FAILURE);
+                }
+                else
+                {
+                    handleException(ex, null, SERVER_UNAVAILABLE);
+                }
             }
             catch (Exception ex)
             {

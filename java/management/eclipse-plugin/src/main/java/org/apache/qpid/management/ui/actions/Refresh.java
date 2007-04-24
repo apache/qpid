@@ -24,7 +24,6 @@ import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 /**
@@ -32,29 +31,7 @@ import org.eclipse.ui.IWorkbenchWindowActionDelegate;
  * @author Bhupendra Bhardwaj
  */
 public class Refresh extends AbstractAction implements IWorkbenchWindowActionDelegate
-{
-    /**
-     * Selection in the workbench has been changed. We 
-     * can change the state of the 'real' action here
-     * if we want, but this can only happen after 
-     * the delegate has been created.
-     * @see IWorkbenchWindowActionDelegate#selectionChanged
-     */
-    public void selectionChanged(IAction action, ISelection selection)
-    {
-        
-    }
-
-    /**
-     * We can use this method to dispose of any system
-     * resources we previously allocated.
-     * @see IWorkbenchWindowActionDelegate#dispose
-     */
-    public void dispose()
-    {
-        
-    }
-    
+{    
     public void run(IAction action)
     {
         if(_window != null)
