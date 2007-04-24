@@ -96,19 +96,20 @@ public class JMXServerRegistry extends ServerRegistry
     {
         super(server);
         String securityMechanism = ApplicationRegistry.getSecurityMechanism();
+        String connectorClassName = ApplicationRegistry.getJMXConnectorClass();
+        
         boolean saslPluginAvailable = false;
        
-        if (securityMechanism != null)
+        if ((securityMechanism != null) && (connectorClassName != null))
         { 
             try
             {
-                createSASLConnector(securityMechanism);
+                createSASLConnector(securityMechanism, connectorClassName);
                 saslPluginAvailable = true;
             }
             catch (Exception ex)
             {
-                ex.printStackTrace();
-                saslPluginAvailable = false;
+                MBeanUtility.printStackTrace(ex);
             }
         }
         
@@ -133,11 +134,11 @@ public class JMXServerRegistry extends ServerRegistry
         return _mbsc;
     }
     
-    private void createSASLConnector(String mech) throws Exception
+    private void createSASLConnector(String mech, String className) throws Exception
     {
         String text = "Security mechanism " + mech + " is not supported.";
-        // Check if the JMXMP connector is available
-        Class klass = Class.forName("javax.management.remote.jmxmp.JMXMPConnector");
+        // Check if the given connector, which supports SASL is available
+        Class connectorClass = Class.forName(className);
 
         _jmxUrl = new JMXServiceURL("jmxmp", getManagedServer().getHost(), getManagedServer().getPort());
         _env = new HashMap<String, Object>();
@@ -171,7 +172,7 @@ public class JMXServerRegistry extends ServerRegistry
         }
         // Now create the instance of JMXMPConnector                                               
         Class[] paramTypes = {JMXServiceURL.class, Map.class};                           
-        Constructor cons = klass.getConstructor(paramTypes);
+        Constructor cons = connectorClass.getConstructor(paramTypes);
 
         Object[] args = {_jmxUrl, _env};           
         Object theObject = cons.newInstance(args);
