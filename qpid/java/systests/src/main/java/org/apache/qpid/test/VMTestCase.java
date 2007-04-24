@@ -114,4 +114,9 @@ public class VMTestCase extends TestCase
         TransportConnection.killVMBroker(1);
         super.tearDown();
     }
+
+    public void testDummyinVMTestCase()
+    {
+        // keep maven happy
+    }
 }

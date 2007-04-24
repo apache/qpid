@@ -20,22 +20,16 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
+import static org.apache.qpid.management.ui.Constants.ACTION_CLOSE;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.apache.qpid.management.ui.views.ViewUtility;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-public class CloseConnection implements IWorkbenchWindowActionDelegate
-{
-	private IWorkbenchWindow _window;
-	
+public class CloseConnection extends AbstractAction implements IWorkbenchWindowActionDelegate
+{	
 	public CloseConnection()
 	{
         
@@ -52,13 +46,11 @@ public class CloseConnection implements IWorkbenchWindowActionDelegate
             }
             catch(InfoRequiredException ex)
             {
-                ViewUtility.popupInfoMessage("Close connection", ex.getMessage());
+                ViewUtility.popupInfoMessage(ACTION_CLOSE, ex.getMessage());
             }
             catch(Exception ex)
             {
-                IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                            IStatus.OK, ex.getMessage(), ex.getCause()); 
-                ErrorDialog.openError(_window.getShell(), "Error", "Server could not be removed", status);
+                handleException(ex, null, null);
             }
         }
     }
@@ -79,15 +71,6 @@ public class CloseConnection implements IWorkbenchWindowActionDelegate
      * @see IWorkbenchWindowActionDelegate#dispose
      */
     public void dispose() {
-    }
-
-    /**
-     * We will cache window object in order to
-     * be able to provide parent shell for the message dialog.
-     * @see IWorkbenchWindowActionDelegate#init
-     */
-    public void init(IWorkbenchWindow window) {
-        this._window = window;
-    }
-    
+        
+    }    
 }

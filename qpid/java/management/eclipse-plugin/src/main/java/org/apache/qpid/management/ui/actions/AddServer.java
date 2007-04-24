@@ -23,15 +23,11 @@ package org.apache.qpid.management.ui.actions;
 import static org.apache.qpid.management.ui.Constants.*;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.apache.qpid.management.ui.views.NumberVerifyListener;
 import org.apache.qpid.management.ui.views.ViewUtility;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -45,12 +41,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDelegate 
+public class AddServer extends AbstractAction implements IWorkbenchWindowActionDelegate 
 {
-	private IWorkbenchWindow _window;
     private static final String[] _domains ={"org.apache.qpid"};
     
     private NavigationView _navigationView;
@@ -96,13 +90,11 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
             }
             catch(InfoRequiredException ex)
             {
-                ViewUtility.popupInfoMessage("New connection", ex.getMessage());
+                ViewUtility.popupInfoMessage(ACTION_ADDSERVER, ex.getMessage());
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                            IStatus.OK, ex.getMessage(), ex.getCause()); 
-                ErrorDialog.openError(_window.getShell(), "Error", ERROR_SERVER_CONNECTION, status);
+                handleException(ex, null, null);
             }
         }
     }
@@ -133,15 +125,7 @@ public class AddServer/* extends Action*/ implements IWorkbenchWindowActionDeleg
      * @see IWorkbenchWindowActionDelegate#dispose
      */
     public void dispose() {
-    }
-
-    /**
-     * We will cache window object in order to
-     * be able to provide parent shell for the message dialog.
-     * @see IWorkbenchWindowActionDelegate#init
-     */
-    public void init(IWorkbenchWindow window) {
-        this._window = window;
+        
     }
     
     private NavigationView getNavigationView()

@@ -57,19 +57,16 @@ public class DestWildExchange extends AbstractExchange
 
     private ConcurrentHashMap<AMQShortString, List<AMQQueue>> _routingKey2queues = new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
 
-    /**
-     *  DestWildExchangeMBean class implements the management interface for the
-     *  Topic exchanges.
-     */
+    /** DestWildExchangeMBean class implements the management interface for the Topic exchanges. */
     @MBeanDescription("Management Bean for Topic Exchange")
     private final class DestWildExchangeMBean extends ExchangeMBean
     {
         // open mbean data types for representing exchange bindings
-        private String[]   _bindingItemNames = {"Routing Key", "Queue Names"};
-        private String[]   _bindingItemIndexNames = {_bindingItemNames[0]};
+        private String[] _bindingItemNames = {"Routing Key", "Queue Names"};
+        private String[] _bindingItemIndexNames = {_bindingItemNames[0]};
         private OpenType[] _bindingItemTypes = new OpenType[2];
-        private CompositeType      _bindingDataType = null;
-        private TabularType        _bindinglistDataType = null;
+        private CompositeType _bindingDataType = null;
+        private TabularType _bindinglistDataType = null;
         private TabularDataSupport _bindingList = null;
 
         @MBeanConstructor("Creates an MBean for AMQ topic exchange")
@@ -80,22 +77,18 @@ public class DestWildExchange extends AbstractExchange
             init();
         }
 
-        /**
-         * initialises the OpenType objects.
-         */
+        /** initialises the OpenType objects. */
         private void init() throws OpenDataException
         {
             _bindingItemTypes[0] = SimpleType.STRING;
             _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
             _bindingDataType = new CompositeType("Exchange Binding", "Routing key and Queue names",
-                                         _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
             _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
-                                         _bindingDataType, _bindingItemIndexNames);
+                                                   _bindingDataType, _bindingItemIndexNames);
         }
 
-        /**
-         * returns exchange bindings in tabular form
-         */
+        /** returns exchange bindings in tabular form */
         public TabularData bindings() throws OpenDataException
         {
             _bindingList = new TabularDataSupport(_bindinglistDataType);
@@ -122,7 +115,9 @@ public class DestWildExchange extends AbstractExchange
         {
             AMQQueue queue = getQueueRegistry().getQueue(new AMQShortString(queueName));
             if (queue == null)
+            {
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+            }
 
             try
             {
@@ -159,7 +154,7 @@ public class DestWildExchange extends AbstractExchange
         {
             queueList.add(queue);
         }
-        else if(_logger.isDebugEnabled())
+        else if (_logger.isDebugEnabled())
         {
             _logger.debug("Queue " + queue + " is already registered with routing key " + routingKey);
         }
@@ -176,10 +171,18 @@ public class DestWildExchange extends AbstractExchange
         // TODO: add support for the immediate flag
         if (queues == null)
         {
-            _logger.warn("No queues found for routing key " + routingKey);
-            _logger.warn("Routing map contains: " + _routingKey2queues);
-            //todo Check for valid topic - mritchie
-            return;
+            if (info.isMandatory())
+            {
+                String msg = "Topic " + routingKey + " is not known to " + this;
+                throw new NoRouteException(msg, payload);
+            }
+            else
+            {
+                _logger.warn("No queues found for routing key " + routingKey);
+                _logger.warn("Routing map contains: " + _routingKey2queues);
+                //todo Check for valid topic - mritchie
+                return;
+            }
         }
 
         for (AMQQueue q : queues)
@@ -245,7 +248,7 @@ public class DestWildExchange extends AbstractExchange
         }
     }
 
-    protected ExchangeMBean createMBean()  throws AMQException
+    protected ExchangeMBean createMBean() throws AMQException
     {
         try
         {
