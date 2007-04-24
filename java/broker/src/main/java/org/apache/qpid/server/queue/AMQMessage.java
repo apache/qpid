@@ -366,7 +366,7 @@ public class AMQMessage
      */
     public AMQMessage takeReference()
     {
-        _referenceCount.incrementAndGet();
+        incrementReference();// _referenceCount.incrementAndGet();
         return this;
     }
 

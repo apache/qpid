@@ -463,7 +463,17 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             throw new AMQException("Session is marked awaiting channel close");
         }
 
-        _channelMap.put(channelId, channel);
+        if (_channelMap.size() == _maxNoOfChannels)
+        {
+            String errorMessage = toString() + ": maximum number of channels has been reached (" +
+                                  _maxNoOfChannels + "); can't create channel";
+            _logger.error(errorMessage);
+            throw new AMQException(AMQConstant.NOT_ALLOWED, errorMessage);
+        }
+        else
+        {
+            _channelMap.put(channel.getChannelId(), channel);
+        }
 
         if (((channelId & CHANNEL_CACHE_SIZE) == channelId))
         {
@@ -755,8 +765,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         return _authorizedID;
     }
+
     public String getClientVersion()
     {
-        return _clientVersion == null ? null : _clientVersion.toString();    
+        return _clientVersion == null ? null : _clientVersion.toString();
     }
 }
