@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /**
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -15,7 +16,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.qpid.server.filter;
 //
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
@@ -24,11 +24,8 @@ package org.apache.qpid.server.filter;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
 
-
 /**
  * Represents an expression
- * 
- * @version $Revision$
  */
 public interface Expression
 {
@@ -37,5 +34,5 @@ public interface Expression
      * @return the value of this expression
      */
     public Object evaluate(AMQMessage message) throws AMQException;
-    
+
 }

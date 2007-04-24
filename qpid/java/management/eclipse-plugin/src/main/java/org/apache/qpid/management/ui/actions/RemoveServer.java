@@ -20,22 +20,15 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.apache.qpid.management.ui.views.ViewUtility;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-public class RemoveServer implements IWorkbenchWindowActionDelegate
-{
-    private IWorkbenchWindow _window;
-    
+public class RemoveServer extends AbstractAction implements IWorkbenchWindowActionDelegate
+{    
     /**
      * Selection in the workbench has been changed. We 
      * can change the state of the 'real' action here
@@ -57,16 +50,6 @@ public class RemoveServer implements IWorkbenchWindowActionDelegate
     {
         
     }
-
-    /**
-     * We will cache window object in order to
-     * be able to provide parent shell for the message dialog.
-     * @see IWorkbenchWindowActionDelegate#init
-     */
-    public void init(IWorkbenchWindow window)
-    {
-        this._window = window;
-    }
     
     public void run(IAction action)
     {
@@ -83,9 +66,7 @@ public class RemoveServer implements IWorkbenchWindowActionDelegate
             }
             catch(Exception ex)
             {
-                IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                            IStatus.OK, ex.getMessage(), ex.getCause()); 
-                ErrorDialog.openError(_window.getShell(), "Error", "Server could not be removed", status);
+                handleException(ex, "Server could not be removed", null);
             }
         }
     }

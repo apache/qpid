@@ -16,7 +16,7 @@ public class HeapExhaustion extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(HeapExhaustion.class);
 
-    protected QpidClientConnection conn;
+    protected QpidClientConnection conn;                         
     protected final String BROKER = "localhost";
     protected final String vhost = "/test";
     protected final String queue = "direct://amq.direct//queue";
@@ -65,7 +65,7 @@ public class HeapExhaustion extends TestCase
             conn.put(queue, payload, 1);
             copies++;
             total += size;
-            _logger.info("put copy " + copies + " OK for total bytes: " + total);
+            System.out.println("put copy " + copies + " OK for total bytes: " + total);
         }
     }
 
@@ -85,7 +85,7 @@ public class HeapExhaustion extends TestCase
             conn.put(queue, payload, 1);
             copies++;
             total += size;
-            _logger.debug("put copy " + copies + " OK for total bytes: " + total);
+            System.out.println("put copy " + copies + " OK for total bytes: " + total);
             Thread.sleep(200);
         }
     }

@@ -7,13 +7,19 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
+import javax.jms.Queue;
 
 import junit.framework.TestCase;
+import junit.framework.Assert;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.URLSyntaxException;
+
+import java.util.List;
+import java.util.LinkedList;
 
 public class TemporaryQueueTest extends TestCase
 {
@@ -35,7 +41,7 @@ public class TemporaryQueueTest extends TestCase
     protected Connection createConnection() throws AMQException, URLSyntaxException
     {
         return new AMQConnection(_broker, "guest", "guest",
-                                                      "fred", "test");
+                                 "fred", "test");
     }
 
     public void testTempoaryQueue() throws Exception
@@ -50,14 +56,14 @@ public class TemporaryQueueTest extends TestCase
         producer.send(session.createTextMessage("hello"));
         TextMessage tm = (TextMessage) consumer.receive(2000);
         assertNotNull(tm);
-        assertEquals("hello",tm.getText());
+        assertEquals("hello", tm.getText());
 
         try
         {
             queue.delete();
             fail("Expected JMSException : should not be able to delete while there are active consumers");
         }
-        catch(JMSException je)
+        catch (JMSException je)
         {
             ; //pass
         }
@@ -68,12 +74,133 @@ public class TemporaryQueueTest extends TestCase
         {
             queue.delete();
         }
-        catch(JMSException je)
+        catch (JMSException je)
         {
             fail("Unexpected Exception: " + je.getMessage());
         }
 
         conn.close();
+    }
+
+    public void tUniqueness() throws JMSException, AMQException, URLSyntaxException
+    {
+        int numProcs = Runtime.getRuntime().availableProcessors();
+        final int threadsProc = 5;
+
+        runUniqueness(1, 10);
+        runUniqueness(numProcs * threadsProc, 10);
+        runUniqueness(numProcs * threadsProc, 100);
+        runUniqueness(numProcs * threadsProc, 500);
+    }
+
+    void runUniqueness(int makers, int queues) throws JMSException, AMQException, URLSyntaxException
+    {
+        Connection connection = createConnection();
+
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+
+        List<TempQueueMaker> tqList = new LinkedList<TempQueueMaker>();
+
+        //Create Makers
+        for (int m = 0; m < makers; m++)
+        {
+            tqList.add(new TempQueueMaker(session, queues));
+        }
+
+
+        List<Thread> threadList = new LinkedList<Thread>();
+
+        //Create Makers
+        for (TempQueueMaker maker : tqList)
+        {
+            threadList.add(new Thread(maker));
+        }
+
+        //Start threads
+        for (Thread thread : threadList)
+        {
+            thread.start();
+        }
+
+        // Join Threads
+        for (Thread thread : threadList)
+        {
+            try
+            {
+                thread.join();
+            }
+            catch (InterruptedException e)
+            {
+                fail("Couldn't correctly join threads");
+            }
+        }
+
+
+        List<AMQQueue> list = new LinkedList<AMQQueue>();
+
+        // Test values
+        for (TempQueueMaker maker : tqList)
+        {
+            check(maker, list);
+        }
+
+        Assert.assertEquals("Not enough queues made.", makers * queues, list.size());
+
+        connection.close();
+    }
+
+    private void check(TempQueueMaker tq, List<AMQQueue> list)
+    {
+        for (AMQQueue q : tq.getList())
+        {
+            if (list.contains(q))
+            {
+                fail(q + " already exists.");
+            }
+            else
+            {
+                list.add(q);
+            }
+        }
+    }
+
+
+    class TempQueueMaker implements Runnable
+    {
+        List<AMQQueue> _queues;
+        Session _session;
+        private int _count;
+
+
+        TempQueueMaker(Session session, int queues) throws JMSException
+        {
+            _queues = new LinkedList<AMQQueue>();
+
+            _count = queues;
+
+            _session = session;
+        }
+
+        public void run()
+        {
+            int i = 0;
+            try
+            {
+                for (; i < _count; i++)
+                {
+                    _queues.add((AMQQueue) _session.createTemporaryQueue());
+                }
+            }
+            catch (JMSException jmse)
+            {
+                //stop
+            }
+        }
+
+        List<AMQQueue> getList()
+        {
+            return _queues;
+        }
     }
 
 

@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import static org.apache.qpid.management.ui.Constants.*; 
+import static org.apache.qpid.management.ui.Constants.ACTION_LOGIN;
+import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
+import static org.apache.qpid.management.ui.Constants.INFO_PASSWORD;
+import static org.apache.qpid.management.ui.Constants.INFO_USERNAME;
+import static org.apache.qpid.management.ui.Constants.PASSWORD;
+import static org.apache.qpid.management.ui.Constants.USERNAME;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.apache.qpid.management.ui.views.TreeObject;
 import org.apache.qpid.management.ui.views.ViewUtility;
-import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -40,18 +41,15 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
-public class ReconnectServer implements IWorkbenchWindowActionDelegate
+public class ReconnectServer extends AbstractAction implements IWorkbenchWindowActionDelegate
 {
-    private IWorkbenchWindow _window;
     private NavigationView _navigationView;
     private String _title;
     private String _serverName;
@@ -79,16 +77,6 @@ public class ReconnectServer implements IWorkbenchWindowActionDelegate
     public void dispose()
     {
         
-    }
-
-    /**
-     * We will cache window object in order to
-     * be able to provide parent shell for the message dialog.
-     * @see IWorkbenchWindowActionDelegate#init
-     */
-    public void init(IWorkbenchWindow window)
-    {
-        this._window = window;
     }
     
     private NavigationView getNavigationView()
@@ -126,11 +114,9 @@ public class ReconnectServer implements IWorkbenchWindowActionDelegate
             {
                 ViewUtility.popupInfoMessage("Reconnect Qpid server", ex.getMessage());
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                IStatus status = new Status(IStatus.ERROR, ApplicationWorkbenchAdvisor.PERSPECTIVE_ID,
-                                            IStatus.OK, ex.getMessage(), ex.getCause()); 
-                ErrorDialog.openError(_window.getShell(), "Error", ERROR_SERVER_CONNECTION, status);
+                handleException(ex, null, null);
             }
         }
     }

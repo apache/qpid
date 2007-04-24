@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.test.VMTestCase;
 import org.apache.log4j.Logger;
+import org.apache.qpid.test.VMTestCase;
 
 import javax.jms.Queue;
 import javax.jms.ConnectionFactory;
@@ -35,6 +35,8 @@ import javax.jms.JMSException;
 import javax.jms.QueueReceiver;
 import javax.jms.Message;
 import java.util.Enumeration;
+
+import junit.framework.TestCase;
 
 public class QueueBrowserTest extends VMTestCase
 {
@@ -87,7 +89,7 @@ public class QueueBrowserTest extends VMTestCase
     *
     */
 
-    public void queueBrowserMsgsRemainOnQueueTest() throws JMSException
+    public void testQueueBrowserMsgsRemainOnQueue() throws JMSException
     {
 
         // create QueueBrowser

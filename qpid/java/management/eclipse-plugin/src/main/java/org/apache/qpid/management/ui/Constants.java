@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.management.ui;
 
-import static org.apache.qpid.management.ui.Constants.CONNECTION_PROTOCOLS;
-
 /**
  * Contains constants for the application
  * @author Bhupendra Bhardwaj
@@ -86,6 +84,8 @@ public class Constants
     
     public final static String ACTION_ADDSERVER = "New Connection";
     public final static String ACTION_RECONNECT = "Reconnect";
+    public final static String ACTION_CLOSE = "Close Connection";
+    public final static String ACTION_EDITATTRIBUTE = "Edit Attribute";
     public final static String ACTION_LOGIN = "Login";
     
     public final static String QUEUE_SORT_BY_NAME = "Queue Name";
@@ -125,7 +125,7 @@ public class Constants
     public final static int OPERATION_IMPACT_ACTIONINFO  = 2;
     public final static int OPERATION_IMPACT_UNKNOWN = 3;
     
-    public final static String ERROR_SERVER_CONNECTION = "Server could not be connected";
+    public final static String ERROR_SERVER_CONNECTION = "Server Connection Failed";
     public final static String INFO_PROTOCOL = "Please select the protocol";
     public final static String INFO_HOST_ADDRESS = "Please enter the host address";
     public final static String INFO_HOST_PORT = "Please enter the port number";

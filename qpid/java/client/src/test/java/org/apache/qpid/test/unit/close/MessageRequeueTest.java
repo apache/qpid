@@ -181,7 +181,9 @@ public class MessageRequeueTest extends TestCase
         passed = true;
     }
 
-    /** multiple consumers */
+    /** multiple consumers
+     * Based on code subbmitted by client FT-304
+     */
     public void testTwoCompetingConsumers()
     {
         Consumer c1 = new Consumer();

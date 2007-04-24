@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /**
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -20,35 +21,35 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-
-
 /**
  * An expression which performs an operation on two expression values.
- * 
- * @version $Revision$
  */
-abstract public class BinaryExpression implements Expression {
+public abstract class BinaryExpression implements Expression
+{
     protected Expression left;
     protected Expression right;
 
-    public BinaryExpression(Expression left, Expression right) {
+    public BinaryExpression(Expression left, Expression right)
+    {
         this.left = left;
         this.right = right;
     }
 
-    public Expression getLeft() {
+    public Expression getLeft()
+    {
         return left;
     }
 
-    public Expression getRight() {
+    public Expression getRight()
+    {
         return right;
     }
-
 
     /**
      * @see java.lang.Object#toString()
      */
-    public String toString() {
+    public String toString()
+    {
         return "(" + left.toString() + " " + getExpressionSymbol() + " " + right.toString() + ")";
     }
 
@@ -57,7 +58,8 @@ abstract public class BinaryExpression implements Expression {
      *
      * @see java.lang.Object#hashCode()
      */
-    public int hashCode() {
+    public int hashCode()
+    {
         return toString().hashCode();
     }
 
@@ -66,11 +68,14 @@ abstract public class BinaryExpression implements Expression {
      *
      * @see java.lang.Object#equals(java.lang.Object)
      */
-    public boolean equals(Object o) {
+    public boolean equals(Object o)
+    {
 
-        if (o == null || !this.getClass().equals(o.getClass())) {
+        if ((o == null) || !this.getClass().equals(o.getClass()))
+        {
             return false;
         }
+
         return toString().equals(o.toString());
 
     }
@@ -81,20 +86,22 @@ abstract public class BinaryExpression implements Expression {
      *
      * @return
      */
-    abstract public String getExpressionSymbol();
+    public abstract String getExpressionSymbol();
 
     /**
      * @param expression
      */
-    public void setRight(Expression expression) {
+    public void setRight(Expression expression)
+    {
         right = expression;
     }
 
     /**
      * @param expression
      */
-    public void setLeft(Expression expression) {
+    public void setLeft(Expression expression)
+    {
         left = expression;
     }
-    
+
 }

@@ -17,8 +17,7 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.security.access.AMQUserManagementMBean;
+import org.apache.qpid.server.security.access.UserManagement;
 import org.apache.log4j.Logger;
 
 import javax.management.remote.MBeanServerForwarder;
@@ -37,12 +36,6 @@ import java.security.Principal;
 import java.security.AccessControlContext;
 import java.util.Set;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.io.File;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.FileInputStream;
 
 /**
  * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. This implements
@@ -110,6 +103,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
         // Restrict access to "createMBean" and "unregisterMBean" to any user
         if (methodName.equals("createMBean") || methodName.equals("unregisterMBean"))
         {
+            _logger.debug("User trying to create or unregister an MBean");
             throw new SecurityException("Access denied");
         }
 
@@ -155,32 +149,8 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     {
         if (args[0] instanceof ObjectName)
         {
-            String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
-            if (mbeanMethod == null)
-            {
-                if (args[0] instanceof ObjectName)
-                {
-                    ObjectName object = (ObjectName) args[0];
-                    return object.getCanonicalName().contains("UserManagement");
-                }
-                else
-                {
-                    return false;
-                }
-            }
-
-            try
-            {
-                MBeanInfo mbeanInfo = mbs.getMBeanInfo((ObjectName) args[0]);
-                if (mbeanInfo != null)
-                {
-                    return mbeanInfo.getClassName().equals("org.apache.qpid.server.security.access.AMQUserManagementMBean");
-                }
-            }
-            catch (JMException ex)
-            {
-                return false;
-            }
+            ObjectName object = (ObjectName) args[0];
+            return UserManagement.TYPE.equals(object.getKeyProperty("type"));
         }
 
         return false;
@@ -223,16 +193,16 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler
     private boolean isReadOnlyMethod(Method method, Object[] args)
     {
         String methodName = method.getName();
-        if (methodName.equals("queryMBeans") ||
-            methodName.equals("getDefaultDomain") ||
-            methodName.equals("getMBeanInfo") ||
-            methodName.equals("getAttribute") ||
-            methodName.equals("getAttributes"))
+        if (methodName.startsWith("query") || methodName.startsWith("get"))
         {
             return true;
         }
+        else if (methodName.startsWith("set"))
+        {
+            return false;
+        }
 
-        if (args[0] instanceof ObjectName)
+        if ((args[0] instanceof ObjectName) && (methodName.equals("invoke")))
         {
             String mbeanMethod = (args.length > 1) ? (String) args[1] : null;
             if (mbeanMethod == null)
