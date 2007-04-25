@@ -1049,7 +1049,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         try
         {
             // Generate a sample message and time stamp it.
-            ObjectMessage msg = getTestMessage(_replyDestination, _messageSize, _persistent);
+            Message msg = getTestMessage(_replyDestination, _messageSize, _persistent);
             msg.setLongProperty(MESSAGE_TIMESTAMP_PROPNAME, System.nanoTime());
 
             // Send the message and wait for a reply.
@@ -1096,7 +1096,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      *
      * @throws javax.jms.JMSException All underlying JMSException are allowed to fall through.
      */
-    public ObjectMessage getTestMessage(Destination replyQueue, int messageSize, boolean persistent) throws JMSException
+    public Message getTestMessage(Destination replyQueue, int messageSize, boolean persistent) throws JMSException
     {
         ObjectMessage msg = TestMessageFactory.newObjectMessage(_producerSession, replyQueue, messageSize, persistent);
 

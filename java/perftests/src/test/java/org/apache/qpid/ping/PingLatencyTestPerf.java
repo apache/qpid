@@ -168,7 +168,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
         pingClient.setChainedMessageListener(batchedResultsListener);
 
         // Generate a sample message of the specified size.
-        ObjectMessage msg =
+        Message msg =
             pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
                                       testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
                                       testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
