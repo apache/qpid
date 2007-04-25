@@ -7,7 +7,8 @@ INCLUDES = -I$(top_builddir)  -I$(top_srcdir)/gen
 
 qpidd_LDADD = \
   libqpidbroker.la \
-  libqpidcommon.la
+  libqpidcommon.la \
+  -lboost_program_options 
 
 sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
@@ -49,6 +50,7 @@ platform_hdr = $(apr_hdr)
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
 libqpidcommon_la_LIBADD = \
+  -lboost_program_options \
   $(APR_LIBS) \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
@@ -92,9 +94,11 @@ libqpidcommon_la_SOURCES = \
   qpid/QpidError.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/Time.cpp \
-  qpid/sys/ProducerConsumer.cpp
+  qpid/sys/ProducerConsumer.cpp \
+  qpid/CommonOptions.cpp
 
-libqpidbroker_la_LIBADD = libqpidcommon.la
+
+libqpidbroker_la_LIBADD = libqpidcommon.la 
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidbroker_la_SOURCES = \
   qpid/broker/AccumulatedAck.cpp \
@@ -106,7 +110,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerMessage.cpp \
   qpid/broker/BrokerMessageMessage.cpp \
   qpid/broker/BrokerQueue.cpp \
-  qpid/broker/Configuration.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionFactory.cpp \
   qpid/broker/DeliverableMessage.cpp \
@@ -160,7 +163,6 @@ nobase_include_HEADERS = \
   qpid/broker/BrokerMessageBase.h \
   qpid/broker/BrokerQueue.h \
   qpid/broker/CompletionHandler.h \
-  qpid/broker/Configuration.h \
   qpid/broker/Consumer.h \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.h \
@@ -277,7 +279,8 @@ nobase_include_HEADERS = \
   qpid/ExceptionHolder.h \
   qpid/QpidError.h \
   qpid/SharedObject.h \
-  qpid/shared_ptr.h 
+  qpid/shared_ptr.h \
+  qpid/CommonOptions.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: qpidd
