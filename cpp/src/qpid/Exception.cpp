@@ -20,9 +20,15 @@
  */
 
 #include "Exception.h"
+#include <errno.h>
 
 namespace qpid {
 
+std::string strError(int err) {
+    char buf[512];
+    return std::string(strerror_r(err, buf, sizeof(buf)));
+}
+    
 Exception::Exception() throw() {}
 
 Exception::Exception(const std::string& str) throw() : whatStr(str) {}

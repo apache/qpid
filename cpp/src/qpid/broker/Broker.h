@@ -22,7 +22,6 @@
  *
  */
 
-#include "Configuration.h"
 #include "ConnectionFactory.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Acceptor.h"
@@ -36,8 +35,9 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "QueueRegistry.h"
+#include "qpid/CommonOptions.h"
 
-namespace qpid {
+namespace qpid { 
 namespace broker {
 /**
  * A broker instance. 
@@ -46,20 +46,28 @@ class Broker : public sys::Runnable,
                public SharedObject<Broker>
 {
   public:
-    static const int16_t DEFAULT_PORT;
-            
+    struct Options : public CommonOptions {
+        Options();
+        void addTo(po::options_description&);
+        int workerThreads;
+        int maxConnections;
+        int connectionBacklog;
+        std::string store;      
+        long stagingThreshold;
+    };
+    
     virtual ~Broker();
 
     /**
      * Create a broker.
      * @param port Port to listen on or 0 to pick a port dynamically.
      */
-    static shared_ptr create(int16_t port = DEFAULT_PORT);
+    static shared_ptr create(int16_t port = CommonOptions::DEFAULT_PORT);
 
     /**
-     * Create a broker using a Configuration.
+     * Create a broker with the options in config.
      */
-    static shared_ptr create(const Configuration& config);
+    static shared_ptr create(const Options& config);
 
     /**
      * Return listening port. If called before bind this is
@@ -87,10 +95,10 @@ class Broker : public sys::Runnable,
     DtxManager& getDtxManager() { return dtxManager; }
     
   private:
-    Broker(const Configuration& config);
+    Broker(const Options& configuration);
     sys::Acceptor& getAcceptor() const;
 
-    Configuration config;
+    Options config;
     sys::Acceptor::shared_ptr acceptor;
     const std::auto_ptr<MessageStore> store;
     QueueRegistry queues;
@@ -101,7 +109,7 @@ class Broker : public sys::Runnable,
     ConnectionFactory factory;
     DtxManager dtxManager;
 
-    static MessageStore* createStore(const Configuration& config);
+    static MessageStore* createStore(const Options& config);
 };
 
 }}
