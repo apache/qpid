@@ -54,18 +54,27 @@ struct QpiddOptions : public Broker::Options
 
     void parse(int argc, char* argv[]) {
         po::variables_map vm;
+        // Earlier sources get precedence.
         po::store(po::parse_command_line(argc, argv, desc), vm);
+        try { 
+            po::store(po::parse_environment(desc, po::env2option), vm);
+        }
+        catch (const logic_error& e) {
+            // Make it clear this is an env. var problem, the
+            // exception from boost::program_options doesn't.
+            throw logic_error(string(e.what())+" (parsing environment variables)");
+        }
         po::notify(vm);
     };
     
-    void usage(std::ostream& out) const {
+    void usage(ostream& out) const {
         out << "Usage: qpidd [OPTIONS]" << endl 
             << "Start the Qpid AMQP broker." << endl << endl
             << desc << endl;
     };
 };
 
-std::ostream& operator<<(std::ostream& out, const QpiddOptions& config)  {
+ostream& operator<<(ostream& out, const QpiddOptions& config)  {
     config.usage(out); return out;
 }
 
