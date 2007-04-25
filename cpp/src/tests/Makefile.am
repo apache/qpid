@@ -5,7 +5,6 @@ INCLUDES =  -I$(srcdir)/.. -I$(top_builddir)/gen
 broker_unit_tests =	\
   AccumulatedAckTest	\
   BrokerChannelTest 	\
-  ConfigurationTest	\
   DtxWorkRecordTest     \
   ExchangeTest		\
   HeadersExchangeTest	\
