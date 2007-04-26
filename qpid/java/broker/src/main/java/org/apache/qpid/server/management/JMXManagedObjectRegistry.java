@@ -94,7 +94,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
 
-        boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", true);
+        boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", false);
         int port = appRegistry.getConfiguration().getInt("management.jmxport", 8999);
 
         if (security)

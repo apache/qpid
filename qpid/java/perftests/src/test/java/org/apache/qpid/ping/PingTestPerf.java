@@ -140,7 +140,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
         }
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
-        ObjectMessage msg =
+        Message msg =
             perThreadSetup._pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
                 testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
                 testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));

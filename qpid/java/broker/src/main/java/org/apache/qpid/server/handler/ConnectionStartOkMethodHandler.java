@@ -30,6 +30,7 @@ import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ConnectionSecureBody;
 import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.ConnectionTuneBody;
+import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -93,10 +94,24 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
             switch (authResult.status)
             {
                 case ERROR:
-                    throw new AMQException("Authentication failed");
+                    _logger.info("Authentication failed");
+                    stateManager.changeState(AMQState.CONNECTION_CLOSING);
+                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
+                    // Be aware of possible changes to parameter order as versions change.
+                    AMQFrame close = ConnectionCloseBody.createAMQFrame(0,
+                                                                        (byte) 8, (byte) 0,    // AMQP version (major, minor)
+                                                                        ConnectionCloseBody.getClazz((byte) 8, (byte) 0),        // classId
+                                                                        ConnectionCloseBody.getMethod((byte) 8, (byte) 0),    // methodId
+                                                                        AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
+                                                                        AMQConstant.NOT_ALLOWED.getName());    // replyText
+                    session.writeFrame(close);
+                    disposeSaslServer(session);
+                    break;
+
                 case SUCCESS:
                     _logger.info("Connected as: " + ss.getAuthorizationID());
-                    session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));                
+                    session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
                     // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)

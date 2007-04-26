@@ -41,8 +41,9 @@ public abstract class ApplicationRegistry
 {
     private static ImageRegistry imageRegistry = new ImageRegistry();
     private static FontRegistry fontRegistry = new FontRegistry();
-    public static final boolean debug = Boolean.getBoolean("debug");
-    public static final String securityMechanism = System.getProperty("security", null);    
+    public static final boolean debug = Boolean.getBoolean("eclipse.consoleLog");
+    public static final String securityMechanism = System.getProperty("security", null);
+    public static final String connectorClass =  System.getProperty("jmxconnector");
     
     static
     {
@@ -136,5 +137,10 @@ public abstract class ApplicationRegistry
     public static String getSecurityMechanism()
     {
         return securityMechanism;
+    }
+    
+    public static String getJMXConnectorClass()
+    {
+        return connectorClass;
     }
 }
