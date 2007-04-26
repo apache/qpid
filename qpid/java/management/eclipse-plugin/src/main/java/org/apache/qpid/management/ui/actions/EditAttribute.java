@@ -25,7 +25,6 @@ import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 public class EditAttribute extends AbstractAction implements IWorkbenchWindowActionDelegate
@@ -48,24 +47,5 @@ public class EditAttribute extends AbstractAction implements IWorkbenchWindowAct
                 handleException(ex, "Attribute could not be edited", null);
             }
         }
-    }
-    
-    /**
-     * Selection in the workbench has been changed. We 
-     * can change the state of the 'real' action here
-     * if we want, but this can only happen after 
-     * the delegate has been created.
-     * @see IWorkbenchWindowActionDelegate#selectionChanged
-     */
-    public void selectionChanged(IAction action, ISelection selection) {
-    }
-
-    /**
-     * We can use this method to dispose of any system
-     * resources we previously allocated.
-     * @see IWorkbenchWindowActionDelegate#dispose
-     */
-    public void dispose() {
-        
     }
 }

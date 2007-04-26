@@ -148,7 +148,7 @@ public class PingPongTestPerf extends AsymptoticTestCase
         PerThreadSetup perThreadSetup = threadSetup.get();
 
         // Generate a sample message. This message is already time stamped and has its reply-to destination set.
-        ObjectMessage msg =
+        Message msg =
             perThreadSetup._testPingProducer.getTestMessage(perThreadSetup._testPingProducer.getReplyDestinations().get(0),
                 testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
                 testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));

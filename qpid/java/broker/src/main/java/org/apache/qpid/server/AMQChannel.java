@@ -431,24 +431,20 @@ public class AMQChannel
      */
     public void requeue() throws AMQException
     {
-        if (_log.isInfoEnabled())
-        {
-            _log.info("Requeuing for " + toString());
-        }
-
         // we must create a new map since all the messages will get a new delivery tag when they are redelivered
         Collection<UnacknowledgedMessage> messagesToBeDelivered = _unacknowledgedMessageMap.cancelAllMessages();
 
-        if (_log.isDebugEnabled())
-        {
-            _log.info("Requeuing " + messagesToBeDelivered.size() + " unacked messages.");
-        }
         // Deliver these messages out of the transaction as their delivery was never
         // part of the transaction only the receive.
         TransactionalContext deliveryContext = null;
 
         if (!messagesToBeDelivered.isEmpty())
         {
+            if (_log.isInfoEnabled())
+            {
+                _log.info("Requeuing " + messagesToBeDelivered.size() + " unacked messages. for " + toString());
+            }
+
             if (!(_txnContext instanceof NonTransactionalContext))
             {
 //                if (_nonTransactedContext == null)

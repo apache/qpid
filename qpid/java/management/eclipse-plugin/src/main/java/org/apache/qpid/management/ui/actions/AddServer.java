@@ -22,13 +22,13 @@ package org.apache.qpid.management.ui.actions;
 
 import static org.apache.qpid.management.ui.Constants.*;
 
+import java.io.IOException;
+
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
-import org.apache.qpid.management.ui.views.NavigationView;
 import org.apache.qpid.management.ui.views.NumberVerifyListener;
 import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
@@ -47,7 +47,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
 {
     private static final String[] _domains ={"org.apache.qpid"};
     
-    private NavigationView _navigationView;
     private String _transport = DEFAULT_PROTOCOL;
     private String _host;
     private String _port;
@@ -61,19 +60,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
     {
         
     }
-    
-    /*
-	public AddServer(IWorkbenchWindow window)//, String label)
-	{
-		_window = window;
-        //setText(label);
-        // The id is used to refer to the action in a menu or toolbar
-		setId(ICommandIds.CMD_ADD_SERVER);
-        // Associate the action with a pre-defined command, to allow key bindings.
-		setActionDefinitionId(ICommandIds.CMD_ADD_SERVER);
-		//setImageDescriptor(org.apache.qpid.management.ui.Activator.getImageDescriptor("/icons/add.gif"));
-	}
-	*/
     
     public void run(IAction action)
     {
@@ -92,6 +78,17 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
             {
                 ViewUtility.popupInfoMessage(ACTION_ADDSERVER, ex.getMessage());
             }
+            catch (IOException ex)
+            {
+                if ((ex.getMessage() != null) && (ex.getMessage().indexOf(RMI_SASL_ERROR) != -1))
+                {
+                    handleException(ex, null, SECURITY_FAILURE);
+                }
+                else
+                {
+                    handleException(ex, null, SERVER_UNAVAILABLE);
+                }
+            }
             catch (Exception ex)
             {
                 handleException(ex, null, null);
@@ -108,45 +105,6 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
         _user = null;
         _password = null;
     }
-    
-    /**
-     * Selection in the workbench has been changed. We 
-     * can change the state of the 'real' action here
-     * if we want, but this can only happen after 
-     * the delegate has been created.
-     * @see IWorkbenchWindowActionDelegate#selectionChanged
-     */
-    public void selectionChanged(IAction action, ISelection selection) {
-    }
-
-    /**
-     * We can use this method to dispose of any system
-     * resources we previously allocated.
-     * @see IWorkbenchWindowActionDelegate#dispose
-     */
-    public void dispose() {
-        
-    }
-    
-    private NavigationView getNavigationView()
-    {
-        if (_navigationView == null)
-        {
-            _navigationView = (NavigationView)_window.getActivePage().findView(NavigationView.ID);
-        }
-        
-        return _navigationView;
-    }
-    
-    /*
-	public void run()
-    {
-		if(_window != null)
-        {	
-            createWidgets();
-		}
-	}
-    */
     
     /**
      * Creates the shell and then opens the popup where user can enter new connection details.

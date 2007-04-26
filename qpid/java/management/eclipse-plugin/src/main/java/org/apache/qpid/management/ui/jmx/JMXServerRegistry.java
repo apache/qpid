@@ -39,6 +39,7 @@ import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
+import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslClientFactory;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
@@ -58,6 +59,8 @@ import org.apache.qpid.management.ui.sasl.UsernameHashedPasswordCallbackHandler;
 public class JMXServerRegistry extends ServerRegistry
 {
     private ObjectName _serverObjectName = null;
+    private Map<String, Object> _env = null;
+    private JMXServiceURL _jmxUrl = null;
     private JMXConnector _jmxc = null;
     private MBeanServerConnection _mbsc = null;
     
@@ -92,68 +95,28 @@ public class JMXServerRegistry extends ServerRegistry
     public JMXServerRegistry(ManagedServer server) throws Exception
     {
         super(server);
-        JMXServiceURL jmxUrl = new JMXServiceURL(server.getUrl());
-        Map<String, Object> env = null;
         String securityMechanism = ApplicationRegistry.getSecurityMechanism();
+        String connectorClassName = ApplicationRegistry.getJMXConnectorClass();
+        
+        boolean saslPluginAvailable = false;
        
-        if (securityMechanism != null)
-        {                                
+        if ((securityMechanism != null) && (connectorClassName != null))
+        { 
             try
             {
-                // Check if the JMXMP connector is available
-                Class klass = Class.forName("javax.management.remote.jmxmp.JMXMPConnector");
-                
-                jmxUrl = new JMXServiceURL("jmxmp", server.getHost(), server.getPort());
-                env = new HashMap<String, Object>();
-                
-                if (MECH_CRAMMD5.equals(securityMechanism))
-                {
-                    // For SASL/CRAM-MD5
-                    Map<String, Class<? extends SaslClientFactory>> map = new HashMap<String, Class<? extends SaslClientFactory>>();
-                    Class<?> clazz = Class.forName("org.apache.qpid.management.ui.sasl.CRAMMD5HashedSaslClientFactory");
-                    map.put("CRAM-MD5-HASHED", (Class<? extends SaslClientFactory>) clazz);
-                    
-                    Security.addProvider(new JCAProvider(map));
-                    env.put("jmx.remote.profiles", SASL_CRAMMD5); 
-                    env.put("jmx.remote.sasl.callback.handler",
-                            new UsernameHashedPasswordCallbackHandler(server.getUser(), server.getPassword()));
-                }
-                else if (MECH_PLAIN.equals(securityMechanism))
-                {
-                    // For SASL/PLAIN
-                    Security.addProvider(new SaslProvider());
-                    env.put("jmx.remote.profiles", SASL_PLAIN);
-                    env.put("jmx.remote.sasl.callback.handler",
-                            new UserPasswordCallbackHandler(server.getUser(), server.getPassword())); 
-                }
-                else
-                {
-                    MBeanUtility.printOutput("Security mechanism " + securityMechanism + " is not supported.");
-                }
-                
-                // Now create the instance of JMXMPConnector                                               
-                Class[] paramTypes = {JMXServiceURL.class, Map.class};                           
-                Constructor cons = klass.getConstructor(paramTypes);
-                
-                Object[] args = {jmxUrl, env};           
-                Object theObject = cons.newInstance(args);
-                
-                _jmxc = (JMXConnector)theObject;
-                _jmxc.connect();
-                MBeanUtility.printOutput("Starting JMXConnector with SASL. Server=" + server.getName());
+                createSASLConnector(securityMechanism, connectorClassName);
+                saslPluginAvailable = true;
             }
             catch (Exception ex)
             {
-                // When JMXMPConnector is not available
-                MBeanUtility.printOutput("Starting JMXConnector. Server=" + server.getName());                
-                jmxUrl = new JMXServiceURL(server.getUrl());
-                _jmxc = JMXConnectorFactory.connect(jmxUrl, null);
+                MBeanUtility.printStackTrace(ex);
             }
         }
-        else
+        
+        if (!saslPluginAvailable)
         {
-            jmxUrl = new JMXServiceURL(server.getUrl());
-            _jmxc = JMXConnectorFactory.connect(jmxUrl, null);
+            _jmxUrl = new JMXServiceURL(server.getUrl());
+            _jmxc = JMXConnectorFactory.connect(_jmxUrl, null);
         }
         
         _mbsc = _jmxc.getMBeanServerConnection();
@@ -169,6 +132,53 @@ public class JMXServerRegistry extends ServerRegistry
     public MBeanServerConnection getServerConnection()
     {
         return _mbsc;
+    }
+    
+    private void createSASLConnector(String mech, String className) throws Exception
+    {
+        String text = "Security mechanism " + mech + " is not supported.";
+        // Check if the given connector, which supports SASL is available
+        Class connectorClass = Class.forName(className);
+
+        _jmxUrl = new JMXServiceURL("jmxmp", getManagedServer().getHost(), getManagedServer().getPort());
+        _env = new HashMap<String, Object>();
+        CallbackHandler handler;
+        if (MECH_CRAMMD5.equals(mech))
+        {
+            // For SASL/CRAM-MD5
+            Map<String, Class<? extends SaslClientFactory>> map = new HashMap<String, Class<? extends SaslClientFactory>>();
+            Class<?> clazz = Class.forName("org.apache.qpid.management.ui.sasl.CRAMMD5HashedSaslClientFactory");
+            map.put("CRAM-MD5-HASHED", (Class<? extends SaslClientFactory>) clazz);
+
+            Security.addProvider(new JCAProvider(map));
+            handler = new UsernameHashedPasswordCallbackHandler(getManagedServer().getUser(),
+                                                                getManagedServer().getPassword());
+            _env.put("jmx.remote.profiles", SASL_CRAMMD5); 
+            _env.put("jmx.remote.sasl.callback.handler", handler);
+                    
+        }
+        else if (MECH_PLAIN.equals(mech))
+        {
+            // For SASL/PLAIN
+            Security.addProvider(new SaslProvider());
+            handler = new UserPasswordCallbackHandler(getManagedServer().getUser(), getManagedServer().getPassword());
+            _env.put("jmx.remote.profiles", SASL_PLAIN);
+            _env.put("jmx.remote.sasl.callback.handler", handler); 
+        }
+        else
+        {
+            MBeanUtility.printOutput(text);
+            throw new Exception(text);
+        }
+        // Now create the instance of JMXMPConnector                                               
+        Class[] paramTypes = {JMXServiceURL.class, Map.class};                           
+        Constructor cons = connectorClass.getConstructor(paramTypes);
+
+        Object[] args = {_jmxUrl, _env};           
+        Object theObject = cons.newInstance(args);
+
+        _jmxc = (JMXConnector)theObject;
+        _jmxc.connect();
     }
     
     /**

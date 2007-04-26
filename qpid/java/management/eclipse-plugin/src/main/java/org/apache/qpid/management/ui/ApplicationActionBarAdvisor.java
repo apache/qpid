@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui;
 
+import org.apache.qpid.management.ui.actions.VersionAction;
+import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.ICoolBarManager;
 import org.eclipse.jface.action.IMenuManager;
@@ -44,8 +46,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor
     // in the fill methods.  This ensures that the actions aren't recreated
     // when fillActionBars is called with FILL_PROXY.
     private IWorkbenchAction exitAction;
-    private IWorkbenchAction aboutAction;
-    
+    private Action _aboutAction;
 
     public ApplicationActionBarAdvisor(IActionBarConfigurer configurer)
     {
@@ -63,8 +64,8 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor
         exitAction = ActionFactory.QUIT.create(window);
         register(exitAction);
         
-        aboutAction = ActionFactory.ABOUT.create(window);
-        register(aboutAction);
+        _aboutAction = new VersionAction(window);
+        register(_aboutAction);
     }
     
     
@@ -85,8 +86,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor
         fileMenu.add(exitAction);
         
         // Help
-        //aboutAction.setText("about Qpid Management Console");
-        helpMenu.add(aboutAction);        
+        helpMenu.add(_aboutAction);
     }
     
     protected void fillCoolBar(ICoolBarManager coolBar)
