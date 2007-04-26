@@ -101,16 +101,27 @@ CPPUNIT_CXXFLAGS=$CPPUNIT_CFLAGS
 AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(CPPUNIT_CXXFLAGS)
 
-# Removed --enable-apr option as we currently don't build without APR.
-  
+AC_ARG_ENABLE([apr],
+  [AS_HELP_STRING([--enable-apr],
+    [use the Apache Portable Runtime library (default yes)])],
+  [case $enableval in
+    yes|no) enable_APR=$enableval;;
+    *) AC_MSG_ERROR([Invalid value for --enable-apr: $enableval]);;
+   esac],
+  [enable_APR=yes]
+)
+AM_CONDITIONAL([USE_APR], [test x$enable_APR = xyes])
+
 APR_MINIMUM_VERSION=1.2.2
 AC_SUBST(APR_MINIMUM_VERSION)
 AC_SUBST(APR_CXXFLAGS)
 AC_SUBST(USE_APR)
 
-PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
-APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
-USE_APR=1
+if test "$enable_APR" = yes; then
+  PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
+  APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR=1"
+  USE_APR=1
+fi
 
 AC_ARG_ENABLE([valgrind],
   [AS_HELP_STRING([--enable-valgrind],

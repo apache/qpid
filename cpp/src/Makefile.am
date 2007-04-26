@@ -43,9 +43,15 @@ posix_hdr = \
   qpid/sys/posix/EventChannel.h \
   qpid/sys/posix/EventChannelThreads.h
 
-EXTRA_DIST=$(posix_src) $(posix_hdr)
-platform_src = $(apr_src)
-platform_hdr = $(apr_hdr)
+if USE_APR
+ EXTRA_DIST=$(posix_src) $(posix_hdr)
+ platform_src = $(apr_src)
+ platform_hdr = $(apr_hdr)
+else
+ EXTRA_DIST=$(apr_src) $(apr_hdr)
+ platform_src = $(posix_src)
+ platform_hdr = $(posix_hdr)
+endif
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
