@@ -208,16 +208,9 @@ public class NavigationView extends ViewPart
      */
     private void createRMIServerConnection(ManagedServer server) throws Exception
     {
-        try
-        {
-            // Currently Qpid Management Console only supports JMX MBeanServer
-            ServerRegistry serverRegistry = new JMXServerRegistry(server);
-            ApplicationRegistry.addServer(server, serverRegistry);
-        }
-        catch (IOException ex)
-        {
-            throw (Exception)ex.getCause();
-        }
+        // Currently Qpid Management Console only supports JMX MBeanServer
+        ServerRegistry serverRegistry = new JMXServerRegistry(server);
+        ApplicationRegistry.addServer(server, serverRegistry);
     }
 
     /**

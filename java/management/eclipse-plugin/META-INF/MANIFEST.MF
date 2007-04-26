@@ -8,6 +8,6 @@ Bundle-Localization: plugin
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime,
  org.eclipse.ui.forms,
- jmxremote.optional
+ jmxremote.sasl
 Eclipse-LazyStart: true
 Bundle-Vendor: Apache Software Foundation
