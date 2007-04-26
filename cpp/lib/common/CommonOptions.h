@@ -62,6 +62,11 @@ value_semantic* optValue(T& value, const char* arg) {
     return new OptionValue<T>(value, argName);
 }
 
+/** Environment-to-option name mapping.
+ * Maps env variable "QPID_SOME_VAR" to option "some-var"
+ */
+std::string env2option(const std::string& env);
+
 /**
  * Like boost::program_options::bool_switch but takes reference, not pointer.
  */

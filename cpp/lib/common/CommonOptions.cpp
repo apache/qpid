@@ -17,8 +17,28 @@
  */
 
 #include "CommonOptions.h"
+#include <algorithm>
 
 namespace qpid {
+
+namespace program_options {
+
+char env2optchar(char env) {
+    return (env=='_') ? '-' : tolower(env);
+}
+    
+const std::string envPrefix("QPID_");
+
+std::string env2option(const std::string& env) {
+    if (env.find(envPrefix) ==0) {
+        std::string opt = env.substr(envPrefix.size());
+        std::transform(opt.begin(), opt.end(), opt.begin(), env2optchar);
+        return opt;
+    }
+    return std::string();
+} 
+
+} // namespace program_options
 
 const int CommonOptions::DEFAULT_PORT=5672;
 

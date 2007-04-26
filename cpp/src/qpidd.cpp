@@ -24,7 +24,7 @@
 #include <memory>
 #include <config.h>
 #include <unistd.h>
-
+#include <fstream>
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -37,34 +37,53 @@ struct QpiddOptions : public Broker::Options
     bool help;
     bool version;
     bool daemon;
+    string config;
     po::options_description desc;
     
     QpiddOptions() :
-        help(false), version(false), daemon(false), desc("Options")
+        help(false), version(false), daemon(false),
+        config("/etc/qpidd.conf"),
+        desc("Options")
     {
         using namespace po;
         desc.add_options()
             ("daemon,d", optValue(daemon), "Run as a daemon");
         Broker::Options::addTo(desc);
         desc.add_options()
+            ("config", optValue(config, "FILE"), "Configuation file")
             ("help,h", optValue(help), "Print help message")
             ("version,v", optValue(version), "Print version information");
     }
 
     void parse(int argc, char* argv[]) {
         po::variables_map vm;
+        // Earlier sources get precedence.
         po::store(po::parse_command_line(argc, argv, desc), vm);
+        try { 
+            po::store(po::parse_environment(desc, po::env2option), vm);
+        }
+        catch (const logic_error& e) {
+            throw logic_error(string("parsing environment variables: ")
+                              + e.what());
+        }
+        po::notify(vm);         // So we can use the value of config.
+        try {
+            ifstream conf(config.c_str());
+            po::store(po::parse_config_file(conf, desc), vm);
+        }
+        catch (const logic_error& e) {
+            throw logic_error(string("parsing config file: ")+ e.what());
+        }
         po::notify(vm);
     };
     
-    void usage(std::ostream& out) const {
-        out << "Usage: qpidd [OPTIONS]" << endl 
-            << "Start the Qpid AMQP broker." << endl << endl
+    void usage(ostream& out) const {
+        out << "Usage: qpidd [OPTIONS]" << endl << endl
             << desc << endl;
     };
 };
 
-std::ostream& operator<<(std::ostream& out, const QpiddOptions& config)  {
+ostream& operator<<(ostream& out, const QpiddOptions& config)  {
     config.usage(out); return out;
 }
 
