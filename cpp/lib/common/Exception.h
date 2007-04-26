@@ -29,6 +29,10 @@
 
 namespace qpid
 {
+
+/** Get the error message for error number err. */
+std::string strError(int err);
+
 /**
  * Exception base class for all Qpid exceptions.
  */

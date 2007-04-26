@@ -19,62 +19,92 @@
  *
  */
 #include <Broker.h>
-#include <Configuration.h>
 #include <signal.h>
 #include <iostream>
 #include <memory>
-#include <cerrno>
 #include <config.h>
 #include <unistd.h>
 
-static char const* programName = "qpidd";
 
+using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::sys;
+using namespace std;
 
-Broker::shared_ptr broker;
+/** Command line options */
+struct QpiddOptions : public Broker::Options
+{
+    bool help;
+    bool version;
+    bool daemon;
+    po::options_description desc;
+    
+    QpiddOptions() :
+        help(false), version(false), daemon(false), desc("Options")
+    {
+        using namespace po;
+        desc.add_options()
+            ("daemon,d", optValue(daemon), "Run as a daemon");
+        Broker::Options::addTo(desc);
+        desc.add_options()
+            ("help,h", optValue(help), "Print help message")
+            ("version,v", optValue(version), "Print version information");
+    }
 
-void handle_signal(int /*signal*/){
-    std::cerr << "Shutting down..." << std::endl;
-    broker->shutdown();
+    void parse(int argc, char* argv[]) {
+        po::variables_map vm;
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+    };
+    
+    void usage(std::ostream& out) const {
+        out << "Usage: qpidd [OPTIONS]" << endl 
+            << "Start the Qpid AMQP broker." << endl << endl
+            << desc << endl;
+    };
+};
+
+std::ostream& operator<<(std::ostream& out, const QpiddOptions& config)  {
+    config.usage(out); return out;
 }
 
-int main(int argc, char** argv)
-{
-    Configuration config;
-    try {
-        config.parse(programName, argc, argv);
+Broker::shared_ptr brokerPtr;
 
-        if(config.isHelp()){
-            config.usage();
-        }else if(config.isVersion()){
-            std::cout << programName << " (" << PACKAGE_NAME << ") version "
-                      << PACKAGE_VERSION << std::endl;
-        }else{
-            broker = Broker::create(config);
+void handle_signal(int /*signal*/){
+    if (brokerPtr) {
+        cerr << "Shutting down..." << endl;
+        brokerPtr->shutdown();
+    }
+}
+
+int main(int argc, char* argv[])
+{
+    QpiddOptions config;
+    try {
+        config.parse(argc, argv);
+        if(config.help) {
+            config.usage(cout);
+        }
+        else if (config.version) {
+            cout << "qpidd (" << PACKAGE_NAME << ") version "
+                 << PACKAGE_VERSION << endl;
+        }
+        else {
+            brokerPtr=Broker::create(config);
             signal(SIGINT, handle_signal);
-            if (config.isDaemon()) {
-                // Detach & run as daemon.
-                int chdirRoot = 0;  // 0 means chdir to root.
-                int closeStd = 0;   // 0 means close stdin/out/err
-                if (daemon(chdirRoot, closeStd) < 0) {
-                    char buf[512];
-                    
-                    std::cerr << "Failed to detach as daemon: "
-                              << strerror_r(errno, buf, sizeof(buf))
-                              << std::endl;;
-                    return 1;
-                }
+            if (config.daemon) {
+                if (daemon(0, 0) < 0) // daemon(nochdir, noclose)
+                    throw QPID_ERROR(
+                        INTERNAL_ERROR,
+                        "Failed to detach as daemon: "+ strError(errno));
             }
-            broker->run();
+            brokerPtr->run();
         }
         return 0;
     }
-    catch (const Configuration::BadOptionException& e) {
-        std::cerr << e.what() << std::endl << std::endl;
-        config.usage();
-    } catch(const std::exception& e) {
-        std::cerr << e.what() << std::endl;
+    catch(const exception& e) {
+        cerr << "Error: " << e.what() << endl
+             << "Type 'qpidd --help' for usage." << endl;
     }
     return 1;
 }

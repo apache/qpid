@@ -44,13 +44,14 @@ framing = framing
 gen     = $(srcdir)/../../gen
 
 lib_LTLIBRARIES = libqpidcommon.la
-libqpidcommon_la_LIBADD =		\
-  $(APR_LIBS)			\
-  $(LIB_DLOPEN)			\
-  $(LIB_CLOCK_GETTIME)
+libqpidcommon_la_LIBADD =			\
+  $(APR_LIBS)					\
+  $(LIB_DLOPEN)					\
+  $(LIB_CLOCK_GETTIME)				\
+  -lboost_program_options
 
-libqpidcommon_la_LDFLAGS =		\
-  -version-info			\
+libqpidcommon_la_LDFLAGS =			\
+  -version-info					\
   $(LIBTOOL_VERSION_INFO_ARG)
 
 libqpidcommon_la_SOURCES =			\
@@ -72,12 +73,13 @@ libqpidcommon_la_SOURCES =			\
   $(framing)/ProtocolVersionException.cpp	\
   $(framing)/Value.cpp				\
   $(gen)/AMQP_ClientProxy.cpp			\
-  $(gen)/AMQP_HighestVersion.h		\
+  $(gen)/AMQP_HighestVersion.h			\
   $(gen)/AMQP_MethodVersionMap.cpp		\
   $(gen)/AMQP_ServerProxy.cpp			\
   Exception.cpp					\
   ExceptionHolder.cpp				\
   QpidError.cpp					\
+  CommonOptions.cpp				\
   sys/Runnable.cpp				\
   sys/Time.cpp
 
@@ -109,6 +111,7 @@ nobase_pkginclude_HEADERS =			\
   ExceptionHolder.h				\
   QpidError.h					\
   SharedObject.h				\
+  CommonOptions.cpp				\
   sys/Acceptor.h				\
   sys/AtomicCount.h				\
   sys/Module.h					\

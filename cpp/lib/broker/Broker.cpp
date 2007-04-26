@@ -22,38 +22,63 @@
 #include <memory>
 #include <Broker.h>
 
-
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-Broker::Broker(const Configuration& config) :
-    acceptor(Acceptor::create(config.getPort(),
-                              config.getConnectionBacklog(),
-                              config.getWorkerThreads(),
-                              config.isTrace())),
-    factory(config.getStore())
+Broker::Options::Options() :
+    workerThreads(5),
+    maxConnections(500),
+    connectionBacklog(10),
+    store(),
+    stagingThreshold(5000000)
+{}
+
+void Broker::Options::addTo(po::options_description& desc)
+{
+    using namespace po;
+    CommonOptions::addTo(desc);
+    desc.add_options()
+        ("worker-threads", optValue(workerThreads, "N"),
+         "Broker thread pool size")
+        ("max-connections", optValue(maxConnections, "N"),
+         "Maximum allowed connections")
+        ("connection-backlog", optValue(connectionBacklog, "N"),
+         "Connection backlog limit for server socket.")
+        ("staging-threshold", optValue(stagingThreshold, "N"),
+         "Messages over N bytes are staged to disk.")
+        ("store", optValue(store,"LIBNAME"),
+         "Name of message store shared library.");
+}
+
+
+Broker::Broker(const Options& config) :
+    acceptor(Acceptor::create(config.port,
+                              config.connectionBacklog,
+                              config.workerThreads,
+                              config.trace)),
+    factory(config.store)
 { }
 
 
 Broker::shared_ptr Broker::create(int16_t port) 
 {
-    Configuration config;
-    config.setPort(port);
+    Options config;
+    config.port=port;
     return create(config);
 }
 
-Broker::shared_ptr Broker::create(const Configuration& config) {
+Broker::shared_ptr Broker::create(const Options& config) {
     return Broker::shared_ptr(new Broker(config));
 }    
-        
+
 void Broker::run() {
     acceptor->run(&factory);
 }
 
 void Broker::shutdown() {
-    acceptor->shutdown();
+    if (acceptor)
+        acceptor->shutdown();
 }
 
 Broker::~Broker() { }
 
-const int16_t Broker::DEFAULT_PORT(5672);

@@ -24,8 +24,6 @@ libqpidbroker_la_SOURCES =			\
   BrokerMessage.h				\
   BrokerQueue.cpp				\
   BrokerQueue.h					\
-  Configuration.cpp				\
-  Configuration.h				\
   ConnectionToken.h				\
   Consumer.h					\
   Content.h					\

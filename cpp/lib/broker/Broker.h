@@ -22,7 +22,7 @@
  *
  */
 
-#include <Configuration.h>
+#include <CommonOptions.h>
 #include <SessionHandlerFactoryImpl.h>
 #include <sys/Runnable.h>
 #include <sys/Acceptor.h>
@@ -37,7 +37,15 @@ class Broker : public qpid::sys::Runnable,
                public qpid::SharedObject<Broker>
 {
   public:
-    static const int16_t DEFAULT_PORT;
+    struct Options : public CommonOptions {
+        Options();
+        void addTo(po::options_description&);
+        int workerThreads;
+        int maxConnections;
+        int connectionBacklog;
+        std::string store;      
+        long stagingThreshold;
+    };
             
     virtual ~Broker();
 
@@ -45,12 +53,12 @@ class Broker : public qpid::sys::Runnable,
      * Create a broker.
      * @param port Port to listen on or 0 to pick a port dynamically.
      */
-    static shared_ptr create(int16_t port = DEFAULT_PORT);
+    static shared_ptr create(int16_t port = Options::DEFAULT_PORT);
 
     /**
      * Create a broker using a Configuration.
      */
-    static shared_ptr create(const Configuration& config);
+    static shared_ptr create(const Options& config);
 
     /**
      * Return listening port. If called before bind this is
@@ -70,7 +78,8 @@ class Broker : public qpid::sys::Runnable,
     virtual void shutdown();
 
   private:
-    Broker(const Configuration& config); 
+    Broker(const Options& config);
+    Options config;
     qpid::sys::Acceptor::shared_ptr acceptor;
     SessionHandlerFactoryImpl factory;
 };

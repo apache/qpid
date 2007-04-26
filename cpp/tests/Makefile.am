@@ -29,7 +29,6 @@ client_tests =		\
 broker_tests =		\
   AccumulatedAckTest	\
   ChannelTest		\
-  ConfigurationTest	\
   ExchangeTest		\
   HeadersExchangeTest	\
   InMemoryContentTest	\
@@ -66,6 +65,9 @@ unit_tests =		\
 
 noinst_PROGRAMS = $(client_tests)
 
+abs_builddir = @abs_builddir@
+abs_srcdir = @abs_srcdir@
+
 TESTS_ENVIRONMENT =			\
   VALGRIND=$(VALGRIND)			\
   abs_builddir='$(abs_builddir)'	\
@@ -80,7 +82,6 @@ DISTCLEANFILES=gen.mk
 
 include gen.mk
 
-abs_builddir = @abs_builddir@
 extra_libs = $(CPPUNIT_LIBS)
 lib_client = $(abs_builddir)/../lib/client/libqpidclient.la
 lib_common = $(abs_builddir)/../lib/common/libqpidcommon.la
