@@ -42,7 +42,7 @@
     <management>
         <enabled>true</enabled>
         <jmxport>8999</jmxport>
-        <security-enabled>true</security-enabled>
+        <security-enabled>false</security-enabled>
     </management>
     <advanced>
         <filterchain enableExecutorPool="true"/>
