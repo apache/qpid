@@ -278,8 +278,7 @@ public class OperationTabControl extends TabControl
             {
                 items = EXCHANGE_TYPE_VALUES;
             }
-            else if (_mbean.isAdmin() && param.getName().equals(OPERATION_PARAM_USERNAME)
-                                      && !_opData.getName().equals(OPERATION_CREATEUSER))
+            else if (isUserListParameter(param))
             {
                 List<String> list = ApplicationRegistry.getServerRegistry(_mbean).getUsernames();
                 if (list != null && !list.isEmpty())
@@ -359,6 +358,17 @@ public class OperationTabControl extends TabControl
             formData.left = new FormAttachment(valueWidth, 5);
             label.setLayoutData(formData);
         }
+    }
+    
+    private boolean isUserListParameter(ParameterData param)
+    {
+        if (_mbean.isAdmin() && param.getName().equals(OPERATION_PARAM_USERNAME)
+                && !_opData.getName().equals(OPERATION_CREATEUSER))
+        {
+            return true;
+        }
+        
+        return false;
     }
     
     /**
@@ -624,8 +634,16 @@ public class OperationTabControl extends TabControl
             {
                 executeAndShowResults();
             }
-            clearParameters();
-            clearParameterValues(_paramsComposite);
+            
+            if (_mbean.isAdmin() && _opData.getName().equals(OPERATION_DELETEUSER))
+            {
+                refresh(_mbean);
+            }
+            else
+            {
+                clearParameters();
+                clearParameterValues(_paramsComposite);
+            }
         }
     }
     
@@ -659,9 +677,32 @@ public class OperationTabControl extends TabControl
          * Here we are adding the users to a list, which will be used to list username to be selected on
          * pages like "delete user", "set password" instead of typing the username
         */
-        if (_mbean.isAdmin() && _opData.getName().equals(OPERATION_VIEWUSERS))
+        if (_mbean.isAdmin())
         {
-            ApplicationRegistry.getServerRegistry(_mbean).setUserList(extractUserList(result));
+            if (_opData.getName().equals(OPERATION_VIEWUSERS))
+            {
+                ApplicationRegistry.getServerRegistry(_mbean).setUserList(extractUserList(result));
+            }
+            else if (_opData.getName().equals(OPERATION_DELETEUSER))
+            {
+                List<String> list = ApplicationRegistry.getServerRegistry(_mbean).getUsernames();
+                Object userName = _opData.getParameterValue(OPERATION_PARAM_USERNAME);
+                if ((list != null) && !list.isEmpty() && (userName != null))
+                {
+                    list.remove(userName);
+                    ApplicationRegistry.getServerRegistry(_mbean).setUserList(list);
+                }                
+            }
+            else if (_opData.getName().equals(OPERATION_CREATEUSER))
+            {
+                List<String> list = ApplicationRegistry.getServerRegistry(_mbean).getUsernames();
+                Object userName = _opData.getParameterValue(OPERATION_PARAM_USERNAME);
+                if ((list != null) && !list.isEmpty() && (userName != null))
+                {
+                    list.add(userName.toString());
+                    ApplicationRegistry.getServerRegistry(_mbean).setUserList(list);
+                }                
+            }
         }
         // end of custom code
         
@@ -710,7 +751,7 @@ public class OperationTabControl extends TabControl
         {
             list.add(data.get(USERNAME).toString());
         }
-        Collections.sort(list);
+        
         return list;
     }
     

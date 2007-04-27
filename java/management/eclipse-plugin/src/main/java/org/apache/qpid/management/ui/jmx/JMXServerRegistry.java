@@ -25,6 +25,7 @@ import static org.apache.qpid.management.ui.Constants.*;
 import java.lang.reflect.Constructor;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -581,6 +582,7 @@ public class JMXServerRegistry extends ServerRegistry
     public void setUserList(List<String> list)
     {
         _usersList = list;
+        Collections.sort(_usersList);
     }
     
     public List<String> getUsernames()
