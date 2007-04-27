@@ -89,4 +89,22 @@ public class OperationData
     {
         return (_returnType.equals("void") || _returnType.equals("java.lang.Void"));
     }
+    
+    public Object getParameterValue(String paramName)
+    {
+        if (_parameters == null)
+        {
+            return null;
+        }
+        
+        for (int i = 0; i < _parameters.size(); i++)
+        {
+            if (paramName.equalsIgnoreCase(_parameters.get(i).getName()))
+            {
+                return _parameters.get(i).getValue();
+            }
+        }
+        
+        return null;
+    }
 }

@@ -60,6 +60,7 @@ public class Constants
     public final static String OPERATION_MOVE_MESSAGES = "moveMessages";
     
     public final static String OPERATION_CREATEUSER = "createUser";
+    public final static String OPERATION_DELETEUSER = "deleteUser";
     public final static String OPERATION_VIEWUSERS = "viewUsers";
     public final static String OPERATION_PARAM_USERNAME = "username";
     
