@@ -131,6 +131,12 @@
       <fileMode>420</fileMode>
     </file>
     <file>
+      <source>../broker/bin/qpid.start</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>qpid.start</destName>
+      <fileMode>493</fileMode>
+    </file>
+    <file>
       <source>../broker/bin/qpid.stop</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid.stop</destName>
@@ -176,12 +182,6 @@
       <source>../broker/bin/runAll</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>runAll</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/bdbbackup</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>bdbbackup</destName>
       <fileMode>493</fileMode>
     </file>
   </files>
