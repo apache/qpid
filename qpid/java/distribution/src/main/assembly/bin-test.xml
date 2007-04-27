@@ -107,6 +107,24 @@
       <fileMode>420</fileMode>
     </file>
     <file>
+      <source>../broker/bin/qpid.start</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>qpid.start</destName>
+      <fileMode>493</fileMode>
+    </file>
+    <file>
+      <source>../broker/bin/qpid.stop</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>qpid.stop</destName>
+      <fileMode>493</fileMode>
+    </file>
+    <file>
+      <source>../broker/bin/qpid.stopall</source>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <destName>qpid.stopall</destName>
+      <fileMode>493</fileMode>
+    </file>
+    <file>
       <source>../common/bin/qpid-run</source>
       <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
       <destName>qpid-run</destName>
