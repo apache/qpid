@@ -63,17 +63,21 @@ public class MessageListenerTest extends TestCase implements MessageListener
     private MessageConsumer _consumer;
     private Connection _clientConnection;
     private CountDownLatch _awaitMessages = new CountDownLatch(MSG_COUNT);
+    private static final String BROKER = "vm://:1";
+    private static final String VHOST = "test";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
-
+        if (BROKER.contains("vm://"))
+        {
+            TransportConnection.createVMBroker(1);
+        }
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
         Hashtable<String, String> env = new Hashtable<String, String>();
 
-        env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/test?brokerlist='vm://:1'");
+        env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/" + VHOST + "?brokerlist='" + BROKER + "'");
         env.put("queue.queue", "MessageListenerTest");
 
         _context = factory.getInitialContext(env);
@@ -113,7 +117,10 @@ public class MessageListenerTest extends TestCase implements MessageListener
         _clientConnection.close();
 
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
+        if (BROKER.contains("vm://"))
+        {
+            TransportConnection.killAllVMBrokers();
+        }
     }
 
 
@@ -145,34 +152,34 @@ public class MessageListenerTest extends TestCase implements MessageListener
     }
 
     public void testRecieveTheUseMessageListener() throws Exception
-     {
+    {
 
-         _logger.error("Test disabled as initial receive is not called first");
-         // Perform initial receive to start connection
+        _logger.error("Test disabled as initial receive is not called first");
+        // Perform initial receive to start connection
 //         assertTrue(_consumer.receive(2000) != null);
 //         receivedCount++;
 
-         // Sleep to ensure remaining 4 msgs end up on _synchronousQueue
+        // Sleep to ensure remaining 4 msgs end up on _synchronousQueue
 //         Thread.sleep(1000);
 
-         // Set the message listener and wait for the messages to come in.
-         _consumer.setMessageListener(this);
+        // Set the message listener and wait for the messages to come in.
+        _consumer.setMessageListener(this);
 
-         _logger.info("Waiting 3 seconds for messages");
+        _logger.info("Waiting 3 seconds for messages");
 
-         try
-         {
-             _awaitMessages.await(3000, TimeUnit.MILLISECONDS);
-         }
-         catch (InterruptedException e)
-         {
-             //do nothing
-         }
-         //Should have recieved all async messages
-         assertEquals(MSG_COUNT, receivedCount);
+        try
+        {
+            _awaitMessages.await(3000, TimeUnit.MILLISECONDS);
+        }
+        catch (InterruptedException e)
+        {
+            //do nothing
+        }
+        //Should have recieved all async messages
+        assertEquals(MSG_COUNT, receivedCount);
 
-     }
-    
+    }
+
 
     public void onMessage(Message message)
     {
