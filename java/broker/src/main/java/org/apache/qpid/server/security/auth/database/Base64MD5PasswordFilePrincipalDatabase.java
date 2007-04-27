@@ -182,6 +182,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             try
             {
                 _userUpdate.lock();
+                char[] orig = user.getPassword();
                 user.setPassword(password);
 
                 try
@@ -192,6 +193,8 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
                 {
                     _logger.error("Unable to save password file, password change for user'"
                                   + principal + "' will revert at restart");
+                    //revert the password change
+                    user.setPassword(orig);
                     return false;
                 }
                 return true;
@@ -208,22 +211,6 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
         {
             return false;
         }
-    }
-
-    private char[] convertPassword(String password) throws UnsupportedEncodingException
-    {
-        byte[] passwdBytes = password.getBytes(DEFAULT_ENCODING);
-
-        char[] passwd = new char[passwdBytes.length];
-
-        int index = 0;
-
-        for (byte b : passwdBytes)
-        {
-            passwd[index++] = (char) b;
-        }
-
-        return passwd;
     }
 
     public boolean createPrincipal(Principal principal, char[] password)
@@ -247,9 +234,10 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
             }
             catch (IOException e)
             {
+                //remove the use on failure.
+                _users.remove(user.getName());
                 return false;
             }
-
         }
         finally
         {

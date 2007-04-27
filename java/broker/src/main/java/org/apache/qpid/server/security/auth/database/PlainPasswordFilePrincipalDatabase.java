@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.LinkedList;
 import java.security.Principal;
 
 /**
@@ -157,7 +158,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
 
     public List<Principal> getUsers()
     {
-        return null; //todo
+        return new LinkedList<Principal>(); //todo
     }
 
     public Principal getUser(String username)
