@@ -57,7 +57,7 @@ noinst_PROGRAMS = $(testprogs)
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
 
 CLIENT_TESTS = client_test quick_topictest
-TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker
+TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker daemon_test
 
 EXTRA_DIST =					\
   test_env					\

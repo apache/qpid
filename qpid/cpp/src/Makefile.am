@@ -5,10 +5,9 @@ AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 # -I top_builddir for config.h
 INCLUDES = -I$(top_builddir)  -I$(top_srcdir)/gen 
 
-qpidd_LDADD = \
-  libqpidbroker.la \
-  libqpidcommon.la \
-  -lboost_program_options 
+qpidd_LDADD =					\
+  libqpidbroker.la				\
+  libqpidcommon.la
 
 sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
@@ -104,7 +103,7 @@ libqpidcommon_la_SOURCES = \
   qpid/CommonOptions.cpp
 
 
-libqpidbroker_la_LIBADD = libqpidcommon.la 
+libqpidbroker_la_LIBADD = libqpidcommon.la -ldaemon -lboost_filesystem
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidbroker_la_SOURCES = \
   qpid/broker/AccumulatedAck.cpp \
@@ -118,6 +117,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerQueue.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionFactory.cpp \
+  qpid/broker/Daemon.cpp \
   qpid/broker/DeliverableMessage.cpp \
   qpid/broker/DeliveryRecord.cpp \
   qpid/broker/DirectExchange.cpp \
@@ -204,6 +204,7 @@ nobase_include_HEADERS = \
   qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionToken.h \
   qpid/broker/Content.h \
+  qpid/broker/Daemon.h \
   qpid/broker/DeliveryRecord.h \
   qpid/broker/HeadersExchange.h \
   qpid/broker/LazyLoadedContent.h \
