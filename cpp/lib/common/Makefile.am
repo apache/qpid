@@ -111,7 +111,7 @@ nobase_pkginclude_HEADERS =			\
   ExceptionHolder.h				\
   QpidError.h					\
   SharedObject.h				\
-  CommonOptions.cpp				\
+  CommonOptions.h				\
   sys/Acceptor.h				\
   sys/AtomicCount.h				\
   sys/Module.h					\

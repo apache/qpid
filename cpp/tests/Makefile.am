@@ -14,7 +14,6 @@ EXTRA_DIST =		\
   .vg-supp		\
   setup			\
   env			\
-  broker		\
   topicall		\
   topictest		\
   qpid_test_plugin.h	\

@@ -5,18 +5,20 @@
 
 TEMP=`mktemp`
 trap 'rm -f $TEMP' 0
+qpidd=../src/qpidd
+client_test=./client_test
 
 fail() { echo FAIL: $0:$* 1>&2; exit 1; }
 
 # Start and stop daemon.
-PID=`qpidd --check --ppid` && fail $LINENO: qpidd already running $PID
-qpidd -d || $LINENO: qpidd -d failed
-qpidd --check || fail $LINENO: qpidd --check says qpidd didnt start
-client_test > $TEMP || fail $LINENO:  client_test: `cat $TEMP`
-qpidd -q || fail $LINENO: qpidd -q failed
-qpidd -d || fail $LINENO: restart after quit failed.
-qpidd -k || fail $LINENO: qpidd -k failed
+PID=`$qpidd --check --ppid` && fail $LINENO: qpidd already running $PID
+$qpidd -d || $LINENO: qpidd -d failed
+$qpidd --check || fail $LINENO: qpidd --check says qpidd didnt start
+$client_test > $TEMP || fail $LINENO:  client_test: `cat $TEMP`
+$qpidd -q || fail $LINENO: qpidd -q failed
+$qpidd -d || fail $LINENO: restart after quit failed.
+$qpidd -k || fail $LINENO: qpidd -k failed
 # Supress expected message re. cleanup of old PID file.
-PID=`qpidd --check --ppid 2>/dev/null` && fail $LINENO: $PID still running after kill. 
+PID=`$qpidd --check --ppid 2>/dev/null` && fail $LINENO: $PID still running after kill. 
 
 true

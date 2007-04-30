@@ -2,10 +2,11 @@
 # Build RPMs from the distribution tarball.
 #
 
-# TODO aconway 2006-12-21: use autoconf macros for version, base name etc.
+abs_top_srcdir=@abs_top_srcdir@
+abs_builddir=@abs_builddir@
 
 SPEC=${top_srcdir}/qpidc.spec
-RPMOPTS=--define "_sourcedir ${abs_top_srcdir}" --define "_topdir ${abs_builddir}"
+RPMOPTS=--define "_sourcedir ${abs_top_srcdir}" --define "_topdir ${abs_builddir}" --define "_dist -incubator-M2"
 
 clean-local:
 	-rm -rf BUILD  RPMS  SOURCES  SPECS  SRPMS

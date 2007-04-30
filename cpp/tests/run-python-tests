@@ -1,5 +1,10 @@
 #!/bin/bash
 
+test -x $abs_srcdir/../../python/run-tests || {
+    echo WARNING: Python tests not available, skipping.
+    exit 0;
+}
+
 if test "$VERBOSE" = yes; then
   set -x
   qpidd --version
@@ -18,7 +23,7 @@ sleep 4
 
 # Run the tests.
 ( cd $abs_srcdir/../../python \
-    && python ./run-tests -v -I cpp_failing.txt || fail=1 )
+    && python ./run-tests -v -I cpp_failing.txt ) || fail=1 
 
 kill $pid || { echo FAIL: process already died; cat log; fail=1; }
 
