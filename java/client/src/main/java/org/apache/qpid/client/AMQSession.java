@@ -429,17 +429,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
-               MessageFactoryRegistry messageFactoryRegistry)
-    {
-        this(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, DEFAULT_PREFETCH_HIGH_MARK, DEFAULT_PREFETCH_LOW_MARK);
-    }
 
-    AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
-               MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetch)
-    {
-        this(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetch, defaultPrefetch);
-    }
 
     AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
                MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark, int defaultPrefetchLowMark)
@@ -493,15 +483,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-    AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode)
-    {
-        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry());
-    }
 
-    AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetch)
-    {
-        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetch);
-    }
 
     AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetchHigh, int defaultPrefetchLow)
     {
@@ -796,7 +778,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 amqe = new AMQException("Closing session forcibly", e);
             }
             _connection.deregisterSession(_channelId);
-            closeProducersAndConsumers(amqe);
+            closeProducersAndConsumers(amqe);            
         }
     }
 
@@ -809,6 +791,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         _closed.set(true);
         _connection.deregisterSession(_channelId);
         markClosedProducersAndConsumers();
+
     }
 
     private void markClosedProducersAndConsumers()
