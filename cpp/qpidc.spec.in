@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        5%-M2
+Release:        5%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -20,12 +20,10 @@ BuildRequires: doxygen
 BuildRequires: e2fsprogs-devel
 BuildRequires: graphviz
 BuildRequires: help2man
-BuildRequires: libdaemon-devel
 BuildRequires: libtool
 BuildRequires: pkgconfig
 
 Requires: boost
-Requires: libdaemon
 
 Requires(post):/sbin/chkconfig
 Requires(preun):/sbin/chkconfig
@@ -131,6 +129,8 @@ fi
 /sbin/ldconfig
 
 %changelog
+* Mon Apr 30 2007 Alan Conway <aconway@redhat.com> - 0.1-5.M2
+- Added M2 release tag.
 
 * Mon Feb 19 2007 Jim Meyering <meyering@redhat.com> - 0.1-4
 - Address http://bugzilla.redhat.com/220630:
