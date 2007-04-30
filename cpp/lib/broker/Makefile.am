@@ -7,7 +7,11 @@ INCLUDES =				\
   $(APR_CXXFLAGS)
 
 lib_LTLIBRARIES = libqpidbroker.la
-libqpidbroker_la_LIBADD = ../common/libqpidcommon.la
+libqpidbroker_la_LIBADD =			\
+  ../common/libqpidcommon.la			\
+  -ldaemon					\
+  -lboost_filesystem
+
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidbroker_la_SOURCES =			\
   AccumulatedAck.cpp				\
@@ -27,6 +31,8 @@ libqpidbroker_la_SOURCES =			\
   ConnectionToken.h				\
   Consumer.h					\
   Content.h					\
+  Daemon.cpp					\
+  Daemon.h					\
   DeletingTxOp.cpp				\
   DeletingTxOp.h				\
   Deliverable.h					\

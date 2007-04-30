@@ -71,10 +71,10 @@ abs_srcdir = @abs_srcdir@
 TESTS_ENVIRONMENT =			\
   VALGRIND=$(VALGRIND)			\
   abs_builddir='$(abs_builddir)'	\
-  PATH="$(abs_builddir)/../src$(PATH_SEPARATOR)$$PATH" \
+  PATH="$(abs_srcdir)$(PATH_SEPARATOR)$(abs_builddir)/../src$(PATH_SEPARATOR)$$PATH" \
   abs_srcdir='$(abs_srcdir)'
 
-TESTS = run-unit-tests run-python-tests
+TESTS = run-unit-tests run-python-tests daemon_test
 EXTRA_DIST += $(TESTS)
 
 CLEANFILES=qpidd.log

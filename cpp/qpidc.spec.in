@@ -13,17 +13,19 @@ URL:            http://rhm.et.redhat.com/qpidc/
 Source0:        http://rhm.et.redhat.com/download/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires: libtool
+BuildRequires: apr-devel
 BuildRequires: boost-devel
 BuildRequires: cppunit-devel
 BuildRequires: doxygen
+BuildRequires: e2fsprogs-devel
 BuildRequires: graphviz
 BuildRequires: help2man
+BuildRequires: libdaemon-devel
+BuildRequires: libtool
 BuildRequires: pkgconfig
-BuildRequires: e2fsprogs-devel
-BuildRequires: apr-devel
 
 Requires: boost
+Requires: libdaemon
 
 Requires(post):/sbin/chkconfig
 Requires(preun):/sbin/chkconfig
