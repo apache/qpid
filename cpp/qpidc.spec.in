@@ -20,11 +20,13 @@ BuildRequires: doxygen
 BuildRequires: e2fsprogs-devel
 BuildRequires: graphviz
 BuildRequires: help2man
+BuildRequires: libdaemon-devel
 BuildRequires: libtool
 BuildRequires: pkgconfig
 
-Requires: boost
 Requires: apr
+Requires: boost
+Requires: libdaemon
 
 Requires(post):/sbin/chkconfig
 Requires(preun):/sbin/chkconfig
