@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="ISO-8859-1" ?>
+<qpidClientConfig>
+
+	<security>
+		<saslClientFactoryTypes>
+			<saslClientFactory type="AMQPLAIN">org.apache.qpid.nclient.security.amqplain.AmqPlainSaslClientFactory</saslClientFactory>
+		</saslClientFactoryTypes>
+		<securityMechanisms>
+			<securityMechanismHandler type="PLAIN">org.apache.qpid.nclient.security.UsernamePasswordCallbackHandler</securityMechanismHandler>
+			<securityMechanismHandler type="CRAM_MD5">org.apache.qpid.nclient.security.UsernamePasswordCallbackHandler</securityMechanismHandler>
+		</securityMechanisms>
+	</security>
+	
+	<!-- Transport Layer properties -->
+	<useSharedReadWritePool>false</useSharedReadWritePool>
+	<enableDirectBuffers>true</enableDirectBuffers>
+	<enablePooledAllocator>false</enablePooledAllocator>
+	<tcpNoDelay>true</tcpNoDelay>
+	<sendBufferSizeInKb>32</sendBufferSizeInKb>
+	<reciveBufferSizeInKb>32</reciveBufferSizeInKb>
+	<qpidVMBrokerClass>org.apache.qpid.server.protocol.AMQPFastProtocolHandler</qpidVMBrokerClass>
+	
+	<!-- Execution Layer properties -->
+	<maxAccumilatedResponses>20</maxAccumilatedResponses>
+	
+	<!-- Model Phase properties -->
+	<serverTimeoutInMilliSeconds>60000</serverTimeoutInMilliSeconds>
+	<amqpClassFactory>org.apache.qpid.nclient.amqp.qpid.QpidAMQPClassFactory</amqpClassFactory>
+	<maxAccumilatedResponses>20</maxAccumilatedResponses>
+	
+	<phasePipe>
+		<phase index="0">org.apache.qpid.nclient.transport.TransportPhase</phase>
+		<phase index="1">org.apache.qpid.nclient.execution.ExecutionPhase</phase>
+		<phase index="2">org.apache.qpid.nclient.model.ModelPhase</phase>
+	</phasePipe>
+
+</qpidClientConfig>
