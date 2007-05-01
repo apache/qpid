@@ -390,7 +390,6 @@ public class CommitRollbackTest extends TestCase
         assertEquals("1", ((TextMessage) result).getText());
         assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
 
-
         _logger.info("Closing Consumer");
         _consumer.close();
 
@@ -398,30 +397,31 @@ public class CommitRollbackTest extends TestCase
         _consumer = _session.createConsumer(_jmsQueue);
 
         _logger.info("receiving result");
+
+        // NOTE: Both msg 1 & 2 will be marked as redelivered as they have both will have been rejected.
+        // Only the occasion where it is not rejected will it mean it hasn't arrived at the client yet.
         result = _consumer.receive(1000);
         assertNotNull("test message was consumed and rolled back, but is gone", result);
+
+        // The first message back will be either 1 or 2 being redelivered
         if (result.getJMSRedelivered())
         {
-            assertEquals("1", ((TextMessage) result).getText());
-
-            result = _consumer.receive(1000);
-            assertNotNull("test message was consumed and rolled back, but is gone", result);
-            assertEquals("2", ((TextMessage) result).getText());
             assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
         }
-        else
+        else // or it will be msg 2 arriving the first time due to latency.  
         {
-            assertEquals("2", ((TextMessage) result).getText());
-            assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
-
-            result = _consumer.receive(1000);
-            assertNotNull("test message was consumed and rolled back, but is gone", result);
-            assertEquals("1", ((TextMessage) result).getText());
-            assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
-
+            _logger.info("Message 2 wasn't prefetched so wasn't rejected");
+            assertEquals("2", ((TextMessage) result).getText());            
         }
+
+        result = _consumer.receive(1000);
+        assertNotNull("test message was consumed and rolled back, but is gone", result);
+        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+
         result = _consumer.receive(1000);
         assertNull("test message should be null:" + result, result);
+
+        _session.commit();
 
     }
 
