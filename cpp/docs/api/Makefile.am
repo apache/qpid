@@ -4,7 +4,8 @@ dist-hook: html
 
 EXTRA_DIST = \
   html \
-  user.doxygen
+  user.doxygen \
+  doxygen.tstamp
 
 SOURCES = \
   $(wildcard $(top_srcdir)/gen/*.h) \
