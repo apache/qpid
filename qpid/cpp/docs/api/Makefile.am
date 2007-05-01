@@ -6,7 +6,7 @@
 # TODO aconway 2007-04-12: html should have a
 # dependency on source/header files.
 
-EXTRA_DIST = html user.doxygen developer.doxygen
+EXTRA_DIST = html user.doxygen developer.doxygen html.timestamp
 
 html: html.timestamp
 
