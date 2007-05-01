@@ -490,27 +490,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                                                 new SpecificMethodFrameListener(frame.getChannel(), responseClass), timeout);
     }
 
-    /**
-     * Convenience method to register an AMQSession with the protocol handler. Registering a session with the protocol
-     * handler will ensure that messages are delivered to the consumer(s) on that session.
-     *
-     * @param channelId the channel id of the session
-     * @param session   the session instance.
-     */
-    public void addSessionByChannel(int channelId, AMQSession session)
-    {
-        _protocolSession.addSessionByChannel(channelId, session);
-    }
 
-    /**
-     * Convenience method to deregister an AMQSession with the protocol handler.
-     *
-     * @param channelId then channel id of the session
-     */
-    public void removeSessionByChannel(int channelId)
-    {
-        _protocolSession.removeSessionByChannel(channelId);
-    }
 
     public void closeSession(AMQSession session) throws AMQException
     {

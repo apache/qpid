@@ -32,9 +32,6 @@ public class AMQProtocolSessionTest extends TestCase
 {
     private static class AMQProtSession extends AMQProtocolSession
     {
-        public AMQProtSession()
-        {
-        }
 
         public AMQProtSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
         {
