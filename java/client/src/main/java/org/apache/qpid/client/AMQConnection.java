@@ -96,7 +96,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private AMQProtocolHandler _protocolHandler;
 
     /** Maps from session id (Integer) to AMQSession instance */
-    private final Map _sessions = new LinkedHashMap(); // fixme this is map is replicated in amqprotocolsession as _channelId2SessionMap
+    private final Map<Integer,AMQSession> _sessions = new LinkedHashMap<Integer,AMQSession>();
+
 
     private String _clientName;
 
@@ -508,7 +509,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                             AMQSession session =
                                 new AMQSession(AMQConnection.this, channelId, transacted, acknowledgeMode, prefetchHigh,
                                     prefetchLow);
-                            _protocolHandler.addSessionByChannel(channelId, session);
+                            //_protocolHandler.addSessionByChannel(channelId, session);
                             registerSession(channelId, session);
 
                             boolean success = false;
@@ -527,7 +528,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                             {
                                 if (!success)
                                 {
-                                    _protocolHandler.removeSessionByChannel(channelId);
                                     deregisterSession(channelId);
                                 }
                             }
@@ -589,7 +589,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         catch (AMQException e)
         {
-            _protocolHandler.removeSessionByChannel(channelId);
             deregisterSession(channelId);
             throw new AMQException("Error reopening channel " + channelId + " after failover: " + e, e);
         }
@@ -1136,7 +1135,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {
             AMQSession s = (AMQSession) it.next();
-            _protocolHandler.addSessionByChannel(s.getChannelId(), s);
+            //_protocolHandler.addSessionByChannel(s.getChannelId(), s);
             reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.getTransacted());
             s.resubscribe();
         }
@@ -1222,5 +1221,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public void performConnectionTask(Runnable task)
     {
         _taskPool.execute(task);
+    }
+
+
+    public AMQSession getSession(int channelId)
+    {
+        return _sessions.get(channelId);
     }
 }
