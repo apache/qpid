@@ -16,6 +16,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.TextMessage;
+import javax.jms.DeliveryMode;
 
 public class QpidClientConnection implements ExceptionListener
 {
@@ -150,7 +151,7 @@ public class QpidClientConnection implements ExceptionListener
      *
      * @throws javax.jms.JMSException any exception that occurs
      */
-    public void put(String queueName, String payload, int copies) throws JMSException
+    public void put(String queueName, String payload, int copies, int deliveryMode) throws JMSException
     {
         if (!connected)
         {
@@ -161,6 +162,8 @@ public class QpidClientConnection implements ExceptionListener
         Queue queue = session.createQueue(queueName);
 
         final MessageProducer sender = session.createProducer(queue);
+
+        sender.setDeliveryMode(deliveryMode);
 
         for (int i = 0; i < copies; i++)
         {

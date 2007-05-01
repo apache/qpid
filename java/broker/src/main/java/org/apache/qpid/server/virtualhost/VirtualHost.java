@@ -107,12 +107,23 @@ public class VirtualHost implements Accessable
 
     } // End of MBean class
 
-
+    /**
+     * Used for testing only
+     * @param name
+     * @param store
+     * @throws Exception
+     */
     public VirtualHost(String name, MessageStore store) throws Exception
     {
         this(name, null, store);
     }
 
+    /**
+     * Normal Constructor
+     * @param name
+     * @param hostConfig
+     * @throws Exception
+     */
     public VirtualHost(String name, Configuration hostConfig) throws Exception
     {
         this(name, hostConfig, null);
