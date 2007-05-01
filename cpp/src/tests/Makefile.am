@@ -60,24 +60,16 @@ CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker daemon_test
 
 EXTRA_DIST =					\
+  $(TESTS)					\
   test_env					\
   topictest					\
-  quick_topictest				\
-  run-unit-tests				\
-  start_broker					\
-  python_tests					\
-  kill_broker					\
   .valgrind.supp				\
   .valgrindrc-default				\
   InProcessBroker.h				\
   MockChannel.h					\
   MockConnectionInputHandler.h			\
   TxMocks.h					\
-  qpid_test_plugin.h				\
-  APRBaseTest.cpp
-
-CLEANFILES=qpidd.log
-MAINTAINERCLEANFILES=gen.mk
+  qpid_test_plugin.h
 
 include gen.mk
 
@@ -123,3 +115,7 @@ check-unit:
 # This is necessary because with two or more identical and simultaneous
 # ltmain invocations, one may corrupt the temporaries of the other.
 .NOTPARALLEL:
+
+CLEANFILES=valgrind.out qpidd.log
+DISTCLEANFILES=.valgrindrc 
+MAINTAINERCLEANFILES=gen.mk
