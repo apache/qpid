@@ -89,7 +89,18 @@ struct CommonOptions {
 
     /** Add  members to program_options to be updated */
     void addTo(po::options_description&);
+
 };
+
+/** Convenience function to parse an options_description.
+ * Parses argc/argv, environment variables and config file.
+ * Note the filename argument can reference a variable that
+ * is updated by argc/argv or environment variable parsing.
+ */
+void parseOptions(po::options_description&,
+                  int argc, char** argv,
+                  const std::string& filename=std::string());
+    
 
 } // namespace qpid
 
