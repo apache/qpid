@@ -1,8 +1,8 @@
 dist_man_MANS = qpidd.1
 
-man_aux = $(dist_man_MANS:.1=.x) $(optional_mans:.1=.x)
-EXTRA_DIST = $(man_aux) $(optional_mans)
-MAINTAINERCLEANFILES = $(dist_man_MANS)
+man_aux = $(dist_man_MANS:.1=.x) 
+EXTRA_DIST = $(man_aux) 
+DISTCLEANFILES = $(dist_man_MANS)
 
 dist-hook: $(man_aux)
 
