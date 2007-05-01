@@ -85,7 +85,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     protected final AMQProtocolHandler _protocolHandler;
 
     /** Maps from the channel id to the AMQSession that it represents. */
-    protected ConcurrentMap _channelId2SessionMap = new ConcurrentHashMap();
+    protected ConcurrentMap<Integer, AMQSession> _channelId2SessionMap = new ConcurrentHashMap<Integer, AMQSession>();
 
     protected ConcurrentMap _closingChannels = new ConcurrentHashMap();
 
@@ -104,26 +104,13 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     private VersionSpecificRegistry _registry =
         MainRegistry.getVersionSpecificRegistry(ProtocolVersion.getLatestSupportedVersion());
 
-    /**
-     * No-arg constructor for use by test subclass - has to initialise final vars NOT intended for use other then for
-     * test
-     */
-    public AMQProtocolSession()
-    {
-        _protocolHandler = null;
-        _minaProtocolSession = null;
-        _stateManager = new AMQStateManager(this);
-    }
+    private final AMQConnection _connection;
+
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
     {
-        _protocolHandler = protocolHandler;
-        _minaProtocolSession = protocolSession;
-        // properties of the connection are made available to the event handlers
-        _minaProtocolSession.setAttribute(AMQ_CONNECTION, connection);
-        // fixme - real value needed
-        _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
-        _stateManager = new AMQStateManager(this);
+        this(protocolHandler,protocolSession,connection, new AMQStateManager());
+
     }
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection,
@@ -138,6 +125,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         _stateManager = stateManager;
         _stateManager.setProtocolSession(this);
+        _connection = connection;
 
     }
 
@@ -305,9 +293,14 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      */
     private void deliverMessageToAMQSession(int channelId, UnprocessedMessage msg)
     {
-        AMQSession session = (AMQSession) _channelId2SessionMap.get(channelId);
+        AMQSession session = getSession(channelId);
         session.messageReceived(msg);
         _channelId2UnprocessedMsgMap.remove(channelId);
+    }
+
+    protected AMQSession getSession(int channelId)
+    {
+        return _connection.getSession(channelId);
     }
 
     /**
@@ -335,32 +328,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         }
     }
 
-    public void addSessionByChannel(int channelId, AMQSession session)
-    {
-        if (channelId <= 0)
-        {
-            throw new IllegalArgumentException("Attempt to register a session with a channel id <= zero");
-        }
-
-        if (session == null)
-        {
-            throw new IllegalArgumentException("Attempt to register a null session");
-        }
-
-        _logger.debug("Add session with channel id  " + channelId);
-        _channelId2SessionMap.put(channelId, session);
-    }
-
-    public void removeSessionByChannel(int channelId)
-    {
-        if (channelId <= 0)
-        {
-            throw new IllegalArgumentException("Attempt to deregister a session with a channel id <= zero");
-        }
-
-        _logger.debug("Removing session with channelId " + channelId);
-        _channelId2SessionMap.remove(channelId);
-    }
 
     /**
      * Starts the process of closing a session
@@ -393,11 +360,11 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      */
     public boolean channelClosed(int channelId, AMQConstant code, String text) throws AMQException
     {
-        final Integer chId = channelId;
+
         // if this is not a response to an earlier request to close the channel
-        if (_closingChannels.remove(chId) == null)
+        if (_closingChannels.remove(channelId) == null)
         {
-            final AMQSession session = (AMQSession) _channelId2SessionMap.get(chId);
+            final AMQSession session = getSession(channelId);
             try
             {
                 session.closed(new AMQException(code, text));
@@ -469,8 +436,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void confirmConsumerCancelled(int channelId, AMQShortString consumerTag)
     {
-        final Integer chId = channelId;
-        final AMQSession session = (AMQSession) _channelId2SessionMap.get(chId);
+        final AMQSession session = getSession(channelId);
 
         session.confirmConsumerCancelled(consumerTag);
     }

@@ -9,119 +9,141 @@ import javax.jms.Queue;
 import javax.jms.QueueSender;
 import javax.jms.InvalidDestinationException;
 
-public class QueueSenderAdapter implements QueueSender {
+public class QueueSenderAdapter implements QueueSender
+{
 
-	private BasicMessageProducer _delegate;
-	private Queue _queue;
-	private boolean closed = false;
-	
-	public QueueSenderAdapter(BasicMessageProducer msgProducer, Queue queue){
-		_delegate = msgProducer;
-		_queue = queue;
-	}
-	
-	public Queue getQueue() throws JMSException {
-		checkPreConditions();
-		return _queue;
-	}
+    private BasicMessageProducer _delegate;
+    private Queue _queue;
+    private boolean closed = false;
 
-	public void send(Message msg) throws JMSException {
-		checkPreConditions();
-		_delegate.send(msg);
-	}
+    public QueueSenderAdapter(BasicMessageProducer msgProducer, Queue queue)
+    {
+        _delegate = msgProducer;
+        _queue = queue;
+    }
 
-	public void send(Queue queue, Message msg) throws JMSException {
-		checkPreConditions(queue);
-		_delegate.send(queue, msg);
-	}
+    public Queue getQueue() throws JMSException
+    {
+        checkPreConditions();
+        return _queue;
+    }
 
-	public void publish(Message msg, int deliveryMode, int priority, long timeToLive)
-	throws JMSException {
-		checkPreConditions();
-		_delegate.send(msg, deliveryMode,priority,timeToLive);
-	}
+    public void send(Message msg) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.send(msg);
+    }
 
-	public void send(Queue queue,Message msg, int deliveryMode, int priority, long timeToLive)
-			throws JMSException {
-		checkPreConditions(queue);
-		_delegate.send(queue,msg, deliveryMode,priority,timeToLive);
-	}
-	
-	public void close() throws JMSException {
-		_delegate.close();
-		closed = true;
-	}
+    public void send(Queue queue, Message msg) throws JMSException
+    {
+        checkPreConditions(queue);
+        _delegate.send(queue, msg);
+    }
 
-	public int getDeliveryMode() throws JMSException {
-		checkPreConditions();
-		return _delegate.getDeliveryMode();
-	}
+    public void publish(Message msg, int deliveryMode, int priority, long timeToLive)
+            throws JMSException
+    {
+        checkPreConditions();
+        _delegate.send(msg, deliveryMode, priority, timeToLive);
+    }
 
-	public Destination getDestination() throws JMSException {
-		checkPreConditions();
-		return _delegate.getDestination();
-	}
+    public void send(Queue queue, Message msg, int deliveryMode, int priority, long timeToLive)
+            throws JMSException
+    {
+        checkPreConditions(queue);
+        _delegate.send(queue, msg, deliveryMode, priority, timeToLive);
+    }
 
-	public boolean getDisableMessageID() throws JMSException {
-		checkPreConditions();
-		return _delegate.getDisableMessageID();
-	}
+    public void close() throws JMSException
+    {
+        _delegate.close();
+        closed = true;
+    }
 
-	public boolean getDisableMessageTimestamp() throws JMSException {
-		checkPreConditions();
-		return _delegate.getDisableMessageTimestamp();
-	}
+    public int getDeliveryMode() throws JMSException
+    {
+        checkPreConditions();
+        return _delegate.getDeliveryMode();
+    }
 
-	public int getPriority() throws JMSException {
-		checkPreConditions();
-		return _delegate.getPriority();
-	}
+    public Destination getDestination() throws JMSException
+    {
+        checkPreConditions();
+        return _delegate.getDestination();
+    }
 
-	public long getTimeToLive() throws JMSException {
-		checkPreConditions();
-		return _delegate.getTimeToLive();
-	}
+    public boolean getDisableMessageID() throws JMSException
+    {
+        checkPreConditions();
+        return _delegate.getDisableMessageID();
+    }
 
-	public void send(Destination dest, Message msg) throws JMSException {
-		checkPreConditions((Queue)dest);
-		_delegate.send(dest,msg);
-	}
+    public boolean getDisableMessageTimestamp() throws JMSException
+    {
+        checkPreConditions();
+        return _delegate.getDisableMessageTimestamp();
+    }
 
-	public void send(Message msg, int deliveryMode, int priority, long timeToLive)
-			throws JMSException {
-		checkPreConditions();
-		_delegate.send(msg, deliveryMode,priority,timeToLive);
-	}
+    public int getPriority() throws JMSException
+    {
+        checkPreConditions();
+        return _delegate.getPriority();
+    }
 
-	public void send(Destination dest, Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException {
-		checkPreConditions((Queue)dest);
-		_delegate.send(dest,msg, deliveryMode,priority,timeToLive);
-	}
+    public long getTimeToLive() throws JMSException
+    {
+        checkPreConditions();
+        return _delegate.getTimeToLive();
+    }
 
-	public void setDeliveryMode(int deliveryMode) throws JMSException {
-		checkPreConditions();
-		_delegate.setDeliveryMode(deliveryMode);
-	}
+    public void send(Destination dest, Message msg) throws JMSException
+    {
+        checkPreConditions((Queue) dest);
+        _delegate.send(dest, msg);
+    }
 
-	public void setDisableMessageID(boolean disableMessageID) throws JMSException {
-		checkPreConditions();
-		_delegate.setDisableMessageID(disableMessageID);
-	}
+    public void send(Message msg, int deliveryMode, int priority, long timeToLive)
+            throws JMSException
+    {
+        checkPreConditions();
+        _delegate.send(msg, deliveryMode, priority, timeToLive);
+    }
 
-	public void setDisableMessageTimestamp(boolean disableMessageTimestamp) throws JMSException {
-		checkPreConditions();
-		_delegate.setDisableMessageTimestamp(disableMessageTimestamp);
-	}
+    public void send(Destination dest, Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
+    {
+        checkPreConditions((Queue) dest);
+        _delegate.send(dest, msg, deliveryMode, priority, timeToLive);
+    }
 
-	public void setPriority(int priority) throws JMSException {
-		checkPreConditions();
-		_delegate.setPriority(priority);
-	}
+    public void setDeliveryMode(int deliveryMode) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setDeliveryMode(deliveryMode);
+    }
 
-	public void setTimeToLive(long timeToLive) throws JMSException {
-		checkPreConditions();
-		_delegate.setTimeToLive(timeToLive);
-	}
+    public void setDisableMessageID(boolean disableMessageID) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setDisableMessageID(disableMessageID);
+    }
+
+    public void setDisableMessageTimestamp(boolean disableMessageTimestamp) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setDisableMessageTimestamp(disableMessageTimestamp);
+    }
+
+    public void setPriority(int priority) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setPriority(priority);
+    }
+
+    public void setTimeToLive(long timeToLive) throws JMSException
+    {
+        checkPreConditions();
+        _delegate.setTimeToLive(timeToLive);
+    }
 
     private void checkPreConditions() throws JMSException
     {
@@ -130,31 +152,41 @@ public class QueueSenderAdapter implements QueueSender {
 
     private void checkPreConditions(Queue queue) throws JMSException
     {
-		if (closed){
-			throw new javax.jms.IllegalStateException("Publisher is closed");
-		}
-		
-		AMQSession session = ((BasicMessageProducer) _delegate).getSession();
-		
-		if(session == null || session.isClosed()){
-			throw new javax.jms.IllegalStateException("Invalid Session");
-		}
+        if (closed)
+        {
+            throw new javax.jms.IllegalStateException("Publisher is closed");
+        }
 
-        if(!(queue instanceof AMQDestination))
+        AMQSession session = ((BasicMessageProducer) _delegate).getSession();
+
+        if (session == null || session.isClosed())
+        {
+            throw new javax.jms.IllegalStateException("Invalid Session");
+        }
+
+        if (!(queue instanceof AMQDestination))
         {
             throw new InvalidDestinationException("Queue: " + queue + " is not a valid Qpid queue");
         }
         AMQDestination destination = (AMQDestination) queue;
-        if(!destination.isValidated() && checkQueueBeforePublish())
+        if (!destination.isValidated() && checkQueueBeforePublish())
         {
 
-            if (_delegate.isBound(destination))
+            if (_delegate.getSession().isStrictAMQP())
             {
+                _delegate._logger.warn("AMQP does not support destination validation before publish, ");
                 destination.setValidated(true);
             }
             else
             {
-                throw new InvalidDestinationException("Queue: " + queue + " is not a valid destination (no bindings on server");
+                if (_delegate.isBound(destination))
+                {
+                    destination.setValidated(true);
+                }
+                else
+                {
+                    throw new InvalidDestinationException("Queue: " + queue + " is not a valid destination (no bindings on server");
+                }
             }
         }
     }
