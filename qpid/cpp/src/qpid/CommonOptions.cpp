@@ -17,10 +17,10 @@
  */
 
 #include "CommonOptions.h"
+#include <fstream>
 #include <algorithm>
 
 namespace qpid {
-
 namespace program_options {
 
 char env2optchar(char env) {
@@ -50,6 +50,30 @@ void CommonOptions::addTo(po::options_description& desc)
     desc.add_options()
         ("trace,t", optValue(trace), "Enable debug tracing" )
         ("port,p", optValue(port,"PORT"), "Use PORT for AMQP connections.");
+}
+
+void parseOptions(
+    po::options_description& desc, int argc, char** argv,
+    const std::string& configFile)
+{
+    po::variables_map vm;
+    po::store(po::parse_command_line(argc, argv, desc), vm);
+    try { 
+        po::store(po::parse_environment(desc, po::env2option), vm);
+    }
+    catch (const po::error& e) {
+        throw po::error(std::string("parsing environment variables: ")
+                          + e.what());
+    }
+    po::notify(vm);         // So we can use the value of config.
+    try {
+        std::ifstream conf(configFile.c_str());
+        po::store(po::parse_config_file(conf, desc), vm);
+    }
+    catch (const po::error& e) {
+        throw po::error(std::string("parsing config file: ")+ e.what());
+    }
+    po::notify(vm);
 }
 
 } // namespace qpid
