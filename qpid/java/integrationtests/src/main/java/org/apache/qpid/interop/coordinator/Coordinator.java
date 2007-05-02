@@ -31,8 +31,11 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase2BasicP2P;
 import org.apache.qpid.interop.testclient.InteropClientTestCase;
 import org.apache.qpid.interop.testclient.TestClient;
+import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
+import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
 import org.apache.qpid.util.ClasspathScanner;
 import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.ConversationHelper;
@@ -69,6 +72,10 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
     /** Holds the list of all clients that enlisted, when the compulsory invite was issued. */
     Set<TestClientDetails> enlistedClients = new HashSet<TestClientDetails>();
 
+    /** Holds the conversation helper for the control conversation. */
+    private ConversationHelper conversation;
+    private Connection connection;
+
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
      *
@@ -99,39 +106,34 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
     {
         try
         {
-            // Use the command line parser to evaluate the command line.
-            CommandLineParser commandLine =
-                new CommandLineParser(new String[][]
-                                      {
-                                          { "b", "The broker URL.", "broker", "false" },
-                                          { "h", "The virtual host to use.", "virtual host", "false" }
-                                      });
-
-            // Capture the command line arguments or display errors and correct usage and then exit.
-            Properties options = null;
-
-            try
-            {
-                options = commandLine.parseCommandLine(args);
-            }
-            catch (IllegalArgumentException e)
-            {
-                System.out.println(commandLine.getErrors());
-                System.out.println(commandLine.getUsage());
-                System.exit(1);
-            }
+            // Use the command line parser to evaluate the command line with standard handling behaviour (print errors
+            // and usage then exist if there are errors).
+            Properties options =
+                CommandLineParser.processCommandLine(args,
+                    new CommandLineParser(
+                        new String[][]
+                        {
+                            { "b", "The broker URL.", "broker", "false" },
+                            { "h", "The virtual host to use.", "virtual host", "false" }
+                        }));
 
             // Extract the command line options.
             String brokerUrl = options.getProperty("b");
             String virtualHost = options.getProperty("h");
 
-            // Add all the trailing command line options (name=value pairs) to system properties. Tests may pick up
-            // overridden values from there.
-            commandLine.addCommandLineToSysProperties();
-
             // Scan for available test cases using a classpath scanner.
             Collection<Class<? extends CoordinatingTestCase>> testCaseClasses =
-                ClasspathScanner.getMatches(CoordinatingTestCase.class, "^Test.*", true);
+                new ArrayList<Class<? extends CoordinatingTestCase>>();
+            // ClasspathScanner.getMatches(CoordinatingTestCase.class, "^Test.*", true);
+            // Hard code the test classes till the classpath scanner is fixed.
+            Collections.addAll(testCaseClasses, new Class[] { CoordinatingTestCase2BasicP2P.class });
+
+            // Check that some test classes were actually found.
+            if ((testCaseClasses == null) || testCaseClasses.isEmpty())
+            {
+                throw new RuntimeException(
+                    "No test classes implementing CoordinatingTestCase were found on the class path.");
+            }
 
             int i = 0;
             String[] testClassNames = new String[testCaseClasses.size()];
@@ -174,17 +176,16 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
     public TestResult start(String[] testClassNames) throws Exception
     {
         log.debug("public TestResult start(String[] testClassNames = " + PrettyPrintingUtils.printArray(testClassNames)
-                  + "): called");
+            + "): called");
 
         // Connect to the broker.
-        Connection connection = TestClient.createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
+        connection = TestClient.createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         Destination controlTopic = session.createTopic("iop.control");
         Destination responseQueue = session.createQueue("coordinator");
 
-        ConversationHelper conversation =
-            new ConversationHelper(connection, controlTopic, responseQueue, LinkedBlockingQueue.class);
+        conversation = new ConversationHelper(connection, controlTopic, responseQueue, LinkedBlockingQueue.class);
 
         // Broadcast the compulsory invitation to find out what clients are available to test.
         Message invite = session.createMessage();
@@ -222,7 +223,7 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
     public static Set<TestClientDetails> extractEnlists(Collection<Message> enlists) throws JMSException
     {
         log.debug("public static Set<TestClientDetails> extractEnlists(Collection<Message> enlists = " + enlists
-                  + "): called");
+            + "): called");
 
         Set<TestClientDetails> enlistedClients = new HashSet<TestClientDetails>();
 
@@ -282,7 +283,7 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         }
 
         // Wrap the tests in an inviting test decorator, to perform the invite/test cycle.
-        targetTest = new InvitingTestDecorator(targetTest, enlistedClients);
+        targetTest = new InvitingTestDecorator(targetTest, enlistedClients, conversation);
 
         return super.doRun(targetTest, wait);
     }

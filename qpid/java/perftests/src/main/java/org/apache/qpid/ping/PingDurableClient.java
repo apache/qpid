@@ -1,4 +1,3 @@
-/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -303,8 +302,6 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
 
         System.out.println("Messages sent: " + messagesSent + ", Messages Committed = " + messagesCommitted
             + ", Messages not Committed = " + messagesNotCommitted);
-
-
 
         return messagesSent;
     }
