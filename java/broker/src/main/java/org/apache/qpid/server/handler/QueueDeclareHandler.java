@@ -42,9 +42,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.QueueAlreadyExistsException;
 import org.apache.commons.configuration.Configuration;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
@@ -103,7 +105,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     queue = createQueue(body, virtualHost, session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
-                        store.createQueue(queue);
+                        try
+                        {
+                            store.createQueue(queue);
+                        } catch (Exception e)
+                        {
+                           throw new AMQException("Problem when creating queue " + queue,  e);
+                        }
                     }
                     queueRegistry.registerQueue(queue);
                     if (autoRegister)

@@ -29,7 +29,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.exception.InternalErrorException;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
@@ -65,7 +66,13 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _exchangeMap.put(exchange.getName(), exchange);
         if(exchange.isDurable())
         {
-            getMessageStore().createExchange(exchange);
+            try
+            {
+                getMessageStore().createExchange(exchange);
+            } catch (InternalErrorException e)
+            {
+                throw new AMQException("problem registering excahgne " + exchange, e);
+            }
         }
     }
 
@@ -87,7 +94,13 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         {
             if(e.isDurable())
             {
-                getMessageStore().removeExchange(e);
+                try
+                {
+                    getMessageStore().removeExchange(e);
+                } catch (InternalErrorException e1)
+                {
+                    throw new AMQException("Problem unregistering Exchange " + name, e1);
+                }
             }
             e.close();
         }

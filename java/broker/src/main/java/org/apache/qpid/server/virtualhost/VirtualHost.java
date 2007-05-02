@@ -25,6 +25,7 @@ import javax.management.NotCompliantMBeanException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.txn.TransactionManager;
 import org.apache.qpid.server.security.access.AccessManager;
 import org.apache.qpid.server.security.access.AccessManagerImpl;
 import org.apache.qpid.server.security.access.Accessable;
@@ -40,7 +41,7 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 
 public class VirtualHost implements Accessable
 {
@@ -56,6 +57,8 @@ public class VirtualHost implements Accessable
     private ExchangeFactory _exchangeFactory;
 
     private MessageStore _messageStore;
+
+    private TransactionManager _transactionManager;
 
     protected VirtualHostMBean _virtualHostMBean;
 
@@ -140,6 +143,7 @@ public class VirtualHost implements Accessable
             {
                 throw new IllegalAccessException("HostConfig and MessageStore cannot be null");
             }
+            initialiseTransactionManager(hostConfig);
             initialiseMessageStore(hostConfig);
         }
 
@@ -167,7 +171,21 @@ public class VirtualHost implements Accessable
                                          " does not.");
         }
         _messageStore = (MessageStore) o;
-        _messageStore.configure(this, "store", config);
+        _messageStore.configure(this, _transactionManager, "store", config);
+    }
+
+     private void initialiseTransactionManager(Configuration config) throws Exception
+    {
+    	  String transactionManagerClass = config.getString("txn.class");
+        Class clazz = Class.forName(transactionManagerClass);
+        Object o = clazz.newInstance();
+
+        if (!(o instanceof TransactionManager))
+        {
+            throw new ClassCastException("Transaction Manager class must implement " + TransactionManager.class + ". Class " + clazz +
+                                         " does not.");
+        }
+        _transactionManager = (TransactionManager) o;
     }
 
 
@@ -217,6 +235,11 @@ public class VirtualHost implements Accessable
     public MessageStore getMessageStore()
     {
         return _messageStore;
+    }
+
+    public TransactionManager getTransactionManager()
+    {
+        return _transactionManager;
     }
 
     public AuthenticationManager getAuthenticationManager()

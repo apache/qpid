@@ -24,7 +24,8 @@ import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.messageStore.MemoryMessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -42,7 +43,7 @@ import java.util.HashSet;
 
 class MessageTestHelper extends TestCase
 {
-    private final MessageStore _messageStore = new SkeletonMessageStore();
+    private final MessageStore _messageStore = new MemoryMessageStore();
 
     private final StoreContext _storeContext = new StoreContext();
 

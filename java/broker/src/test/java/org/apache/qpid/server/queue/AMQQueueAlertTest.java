@@ -19,14 +19,16 @@ package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.messageStore.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
+import org.apache.qpid.server.txn.TransactionManager;
+import org.apache.qpid.server.txn.MemoryTransactionManager;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.TestMinaProtocolSession;
@@ -51,6 +53,8 @@ public class AMQQueueAlertTest extends TestCase
     private VirtualHost _virtualHost;
     private AMQMinaProtocolSession protocolSession = null;
     private MessageStore _messageStore = new MemoryMessageStore();
+    private TransactionManager _txm = new MemoryTransactionManager();
+
     private StoreContext _storeContext = new StoreContext();
     private TransactionalContext _transactionalContext = new NonTransactionalContext(_messageStore, _storeContext,
                                                                                      null,
@@ -170,7 +174,7 @@ public class AMQQueueAlertTest extends TestCase
     public void testQueueDepthAlertWithSubscribers() throws Exception
     {
         protocolSession = new TestMinaProtocolSession();
-        AMQChannel channel = new AMQChannel(protocolSession, 2, _messageStore, null);
+        AMQChannel channel = new AMQChannel(protocolSession, 2,_txm, _messageStore, null);
         protocolSession.addChannel(channel);
 
         // Create queue

@@ -47,11 +47,9 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.Subscription;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.txn.LocalTransactionalContext;
-import org.apache.qpid.server.txn.NonTransactionalContext;
-import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.txn.*;
 
 public class AMQChannel
 {
@@ -93,6 +91,8 @@ public class AMQChannel
 
     private final MessageStore _messageStore;
 
+    private final TransactionManager _transactionManager;
+
     private UnacknowledgedMessageMap _unacknowledgedMessageMap = new UnacknowledgedMessageMapImpl(DEFAULT_PREFETCH);
 
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
@@ -116,7 +116,8 @@ public class AMQChannel
     //Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
 
-    public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore, MessageRouter exchanges)
+
+    public AMQChannel(AMQProtocolSession session, int channelId, TransactionManager transactionManager, MessageStore messageStore, MessageRouter exchanges)
             throws AMQException
     {
         _session = session;
@@ -125,6 +126,7 @@ public class AMQChannel
         _prefetch_HighWaterMark = DEFAULT_PREFETCH;
         _prefetch_LowWaterMark = _prefetch_HighWaterMark / 2;
         _messageStore = messageStore;
+        _transactionManager = transactionManager;
         _exchanges = exchanges;
         // by default the session is non-transactional
         _txnContext = new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
@@ -133,7 +135,7 @@ public class AMQChannel
     /** Sets this channel to be part of a local transaction */
     public void setLocalTransactional()
     {
-        _txnContext = new LocalTransactionalContext(_messageStore, _storeContext, _returnMessages);
+        _txnContext = new DistributedTransactionalContext(_transactionManager, _messageStore, _storeContext, _returnMessages);
     }
 
     public boolean isTransactional()
