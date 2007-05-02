@@ -90,14 +90,18 @@
     <virtualhosts>
         <virtualhost>
             <name>localhost</name>
-            <localhost>
-                <store>
-                    <!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                    <environment-path>${work}/localhost-store</environment-path> -->
-
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                </store>
-
+            <localhost>                
+							  <store>                  
+                    <environment-path>${work}/localhost-store</environment-path> 
+                   <!-- <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> -->
+                    <class>org.apache.qpid.server.messageStore.MemoryMessageStore</class>
+                </store>             
+                <txn>
+                    <environment-tx-timeout>60</environment-tx-timeout>
+                	  <!-- <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> -->
+                	  <class>org.apache.qpid.server.messageStore.MemoryTransactionManager</class>
+                </txn>
+                
                 <security>
                     <!-- Need protocol changes to allow this-->
                     <authentication>
@@ -125,9 +129,12 @@
         <virtualhost>
             <name>development</name>
             <development>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                </store>
+                <store>                  
+                    <class>org.apache.qpid.server.messageStore.MemoryMessageStore</class>
+                </store>             
+                <txn>
+                  	  <class>org.apache.qpid.server.messageStore.MemoryTransactionManager</class>
+                </txn>
                 <security>
                     <name>passwordfile-notusedyet</name>
                     <mechanism>PLAIN</mechanism>
@@ -139,9 +146,12 @@
         <virtualhost>
             <name>test</name>
             <test>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                </store>
+                <store>                  
+                    <class>org.apache.qpid.server.messageStore.MemoryMessageStore</class>
+                </store>             
+                <txn>
+                  	  <class>org.apache.qpid.server.messageStore.MemoryTransactionManager</class>
+                </txn>
                 <security>
                     <name>passwordfile-notusedyet</name>
                     <mechanism>PLAIN</mechanism>

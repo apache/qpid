@@ -58,8 +58,10 @@ import org.apache.qpid.server.management.ManagedBroker;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.QueueAlreadyExistsException;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -100,7 +102,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param exchangeName
      * @param type
      * @param durable
-     * @param autoDelete
      * @throws JMException
      */
     public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException
@@ -158,7 +159,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param queueName
      * @param durable
      * @param owner
-     * @param autoDelete
      * @throws JMException
      */
     public void createNewQueue(String queueName, String owner, boolean durable) throws JMException
@@ -180,7 +180,13 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             queue = new AMQQueue(new AMQShortString(queueName), durable, ownerShortString, false, getVirtualHost());
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _messageStore.createQueue(queue);
+                try
+                {
+                    _messageStore.createQueue(queue);
+                } catch (Exception e)
+                {
+                    throw new JMException("problem creating queue " + queue.getName());
+                }
             }
 
             Configuration virtualHostDefaultQueueConfiguration =
@@ -222,10 +228,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            _messageStore.removeQueue(new AMQShortString(queueName));
-
+            _messageStore.destroyQueue(queue);
         }
-        catch (AMQException ex)
+        catch (Exception ex)
         {
             JMException jme = new JMException(ex.getMessage());
             jme.initCause(ex);
