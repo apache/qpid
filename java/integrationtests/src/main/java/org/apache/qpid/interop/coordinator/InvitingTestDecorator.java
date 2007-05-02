@@ -21,6 +21,7 @@
 package org.apache.qpid.interop.coordinator;
 
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -47,34 +48,33 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
 {
     private static final Logger log = Logger.getLogger(InvitingTestDecorator.class);
 
+    /** Holds the contact information for all test clients that are available and that may take part in the test. */
     Set<TestClientDetails> allClients;
+
+    /** Holds the conversation helper for the control level conversation for coordinating the test through. */
     ConversationHelper conversation;
 
+    /** Holds the underlying {@link CoordinatingTestCase}s that this decorator wraps. */
     WrappedSuiteTestDecorator testSuite;
-
-    /**
-     * Creates a wrappred suite test decorator from a test suite.
-     *
-     * @param suite      The test suite.
-     * @param allClients The list of all clients that responded to the compulsory invite.
-     */
-    /*public InvitingTestDecorator(TestSuite suite, Collection<TestClientDetails> allClients, ConversationHelper conversation)
-    {
-        super(suite);
-    }*/
 
     /**
      * Creates a wrapped suite test decorator from another one.
      *
-     * @param suite The test suite.
-     * @param allClients The list of all clients that responded to the compulsory invite.
+     * @param suite               The test suite.
+     * @param availableClients          The list of all clients that responded to the compulsory invite.
+     * @param controlConversation The conversation helper for the control level, test coordination conversation.
      */
-    public InvitingTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> allClients)
+    public InvitingTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> availableClients,
+        ConversationHelper controlConversation)
     {
         super(suite);
 
         log.debug("public InvitingTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> allClients = "
-                  + allClients + "): called");
+            + availableClients + ", ConversationHelper controlConversation = " + controlConversation + "): called");
+
+        testSuite = suite;
+        allClients = availableClients;
+        conversation = controlConversation;
     }
 
     /**
@@ -127,7 +127,7 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
 
             for (List<TestClientDetails> failPair : failPairs)
             {
-                CoordinatingTestCase failTest = new OptOutTestCase("");
+                CoordinatingTestCase failTest = new OptOutTestCase("testOptOut");
                 failTest.setSender(failPair.get(0));
                 failTest.setReceiver(failPair.get(1));
 
