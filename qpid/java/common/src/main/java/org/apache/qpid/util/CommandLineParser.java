@@ -81,8 +81,6 @@ import java.util.regex.*;
  * <tr><td> Provide a formatted options in force string for a command line.
  * <tr><td> Allow errors on unknowns behaviour to be turned on or off.
  * </table>
- *
- * @author Rupert Smith
  */
 public class CommandLineParser
 {
@@ -644,8 +642,6 @@ public class CommandLineParser
      * <tr><th> Responsibilities <th> Collaborations
      * <tr><td> Hold details of a command line option.
      * </table>
-     *
-     * @author Rupert Smith
      */
     protected class CommandLineOption
     {

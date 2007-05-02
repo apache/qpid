@@ -1,17 +1,16 @@
-/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 package org.apache.qpid.ping;
 
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.util.CommandLineParser;
-import org.apache.qpid.client.message.TestMessageFactory;
-
-import javax.jms.ObjectMessage;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.ObjectMessage;
+
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.client.message.TestMessageFactory;
+import org.apache.qpid.util.CommandLineParser;
 
 /**
  * <p><table id="crc"><caption>CRC Card</caption>
