@@ -31,7 +31,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.NoConsumersException;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
 /** @author Apache Software Foundation */
@@ -74,7 +74,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         if (!_inTran)
         {
-            _messageStore.beginTran(_storeContext);
+          //  _messageStore.beginTran(_storeContext);
             _inTran = true;
         }
     }
@@ -212,7 +212,7 @@ public class NonTransactionalContext implements TransactionalContext
     {
         if (persistent)
         {
-            _messageStore.commitTran(_storeContext);
+           // _messageStore.commitTran(_storeContext);
             _inTran = false;
         }
     }

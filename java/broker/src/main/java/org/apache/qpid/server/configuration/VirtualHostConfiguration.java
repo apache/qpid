@@ -36,8 +36,10 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.QueueAlreadyExistsException;
 
 public class VirtualHostConfiguration
 {
@@ -48,7 +50,9 @@ public class VirtualHostConfiguration
     private static final String VIRTUALHOST_PROPERTY_BASE = "virtualhost.";
 
 
-    public VirtualHostConfiguration(String configFile) throws ConfigurationException
+    public VirtualHostConfiguration(String configFile)
+            throws
+            ConfigurationException
     {
         _logger.info("Loading Config file:" + configFile);
 
@@ -57,24 +61,25 @@ public class VirtualHostConfiguration
     }
 
 
-
-    private void configureVirtualHost(String virtualHostName, Configuration configuration) throws ConfigurationException, AMQException
+    private void configureVirtualHost(String virtualHostName, Configuration configuration)
+            throws
+            ConfigurationException,
+            AMQException
     {
-        _logger.debug("Loding configuration for virtaulhost: "+virtualHostName);
+        _logger.debug("Loding configuration for virtaulhost: " + virtualHostName);
 
 
         VirtualHost virtualHost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(virtualHostName);
 
 
-
-        if(virtualHost == null)
+        if (virtualHost == null)
         {
             throw new ConfigurationException("Unknown virtual host: " + virtualHostName);
         }
 
         List exchangeNames = configuration.getList("exchanges.exchange.name");
 
-        for(Object exchangeNameObj : exchangeNames)
+        for (Object exchangeNameObj : exchangeNames)
         {
             String exchangeName = String.valueOf(exchangeNameObj);
             configureExchange(virtualHost, exchangeName, configuration);
@@ -83,7 +88,7 @@ public class VirtualHostConfiguration
 
         List queueNames = configuration.getList("queues.queue.name");
 
-        for(Object queueNameObj : queueNames)
+        for (Object queueNameObj : queueNames)
         {
             String queueName = String.valueOf(queueNameObj);
             configureQueue(virtualHost, queueName, configuration);
@@ -91,12 +96,14 @@ public class VirtualHostConfiguration
 
     }
 
-    private void configureExchange(VirtualHost virtualHost, String exchangeNameString, Configuration configuration) throws AMQException
+    private void configureExchange(VirtualHost virtualHost, String exchangeNameString, Configuration configuration)
+            throws
+            AMQException
     {
 
         CompositeConfiguration exchangeConfiguration = new CompositeConfiguration();
 
-        exchangeConfiguration.addConfiguration(configuration.subset("exchanges.exchange."+ exchangeNameString));
+        exchangeConfiguration.addConfiguration(configuration.subset("exchanges.exchange." + exchangeNameString));
         exchangeConfiguration.addConfiguration(configuration.subset("exchanges"));
 
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
@@ -110,18 +117,17 @@ public class VirtualHostConfiguration
         Exchange exchange;
 
 
-
         synchronized (exchangeRegistry)
         {
             exchange = exchangeRegistry.getExchange(exchangeName);
-            if(exchange == null)
+            if (exchange == null)
             {
 
-                AMQShortString type = new AMQShortString(exchangeConfiguration.getString("type","direct"));
-                boolean durable = exchangeConfiguration.getBoolean("durable",false);
-                boolean autodelete = exchangeConfiguration.getBoolean("autodelete",false);
+                AMQShortString type = new AMQShortString(exchangeConfiguration.getString("type", "direct"));
+                boolean durable = exchangeConfiguration.getBoolean("durable", false);
+                boolean autodelete = exchangeConfiguration.getBoolean("autodelete", false);
 
-                Exchange newExchange = exchangeFactory.createExchange(exchangeName,type,durable,autodelete,0);
+                Exchange newExchange = exchangeFactory.createExchange(exchangeName, type, durable, autodelete, 0);
                 exchangeRegistry.registerExchange(newExchange);
             }
 
@@ -149,11 +155,14 @@ public class VirtualHostConfiguration
         return queueConfiguration;
     }
 
-    private void configureQueue(VirtualHost virtualHost, String queueNameString, Configuration configuration) throws AMQException, ConfigurationException
+    private void configureQueue(VirtualHost virtualHost, String queueNameString, Configuration configuration)
+            throws
+            AMQException,
+            ConfigurationException
     {
         CompositeConfiguration queueConfiguration = new CompositeConfiguration();
 
-        queueConfiguration.addConfiguration(configuration.subset("queues.queue."+ queueNameString));
+        queueConfiguration.addConfiguration(configuration.subset("queues.queue." + queueNameString));
         queueConfiguration.addConfiguration(configuration.subset("queues"));
 
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
@@ -173,7 +182,7 @@ public class VirtualHostConfiguration
             {
                 _logger.info("Creating queue '" + queueName + "' on virtual host " + virtualHost.getName());
 
-                boolean durable = queueConfiguration.getBoolean("durable" ,false);
+                boolean durable = queueConfiguration.getBoolean("durable", false);
                 boolean autodelete = queueConfiguration.getBoolean("autodelete", false);
                 String owner = queueConfiguration.getString("owner", null);
 
@@ -184,21 +193,32 @@ public class VirtualHostConfiguration
 
                 if (queue.isDurable())
                 {
-                    messageStore.createQueue(queue);
+                    try
+                    {
+                        messageStore.createQueue(queue);
+                    } catch (InternalErrorException e)
+                    {
+                        _logger.error("Problem when creating Queue '" + queueNameString
+                                + "' on virtual host " + virtualHost.getName() + ", not creating.");
+
+                    } catch (QueueAlreadyExistsException e)
+                    {
+                        _logger.error("Queue '" + queueNameString
+                                + "' already exists on virtual host " + virtualHost.getName() + ", not creating.");
+                    }
                 }
 
                 queueRegistry.registerQueue(queue);
-            }
-            else
+            } else
             {
-                _logger.info("Queue '" + queueNameString + "' already exists on virtual host "+virtualHost.getName()+", not creating.");
+                _logger.info("Queue '" + queueNameString + "' already exists on virtual host " + virtualHost.getName() + ", not creating.");
             }
 
             String exchangeName = queueConfiguration.getString("exchange", null);
 
             Exchange exchange = exchangeRegistry.getExchange(exchangeName == null ? null : new AMQShortString(exchangeName));
 
-            if(exchange == null)
+            if (exchange == null)
             {
                 exchange = virtualHost.getExchangeRegistry().getDefaultExchange();
             }
@@ -211,15 +231,15 @@ public class VirtualHostConfiguration
             synchronized (exchange)
             {
                 List routingKeys = queueConfiguration.getList("routingKey");
-                if(routingKeys == null || routingKeys.isEmpty())
+                if (routingKeys == null || routingKeys.isEmpty())
                 {
                     routingKeys = Collections.singletonList(queue.getName());
                 }
 
-                for(Object routingKeyNameObj : routingKeys)
+                for (Object routingKeyNameObj : routingKeys)
                 {
                     AMQShortString routingKey = new AMQShortString(String.valueOf(routingKeyNameObj));
-                    
+
 
                     queue.bind(routingKey, null, exchange);
 
@@ -227,31 +247,33 @@ public class VirtualHostConfiguration
                     _logger.info("Queue '" + queue.getName() + "' bound to exchange:" + exchangeName + " RK:'" + routingKey + "'");
                 }
 
-                if(exchange != virtualHost.getExchangeRegistry().getDefaultExchange())
+                if (exchange != virtualHost.getExchangeRegistry().getDefaultExchange())
                 {
-                    queue.bind(queue.getName(), null, virtualHost.getExchangeRegistry().getDefaultExchange());                    
+                    queue.bind(queue.getName(), null, virtualHost.getExchangeRegistry().getDefaultExchange());
                 }
             }
 
         }
 
 
-
         Configurator.configure(queue, queueConfiguration);
     }
 
 
-    public void performBindings() throws AMQException, ConfigurationException
+    public void performBindings()
+            throws
+            AMQException,
+            ConfigurationException
     {
         List virtualHostNames = _config.getList(VIRTUALHOST_PROPERTY_BASE + "name");
         String defaultVirtualHostName = _config.getString("default");
-        if(defaultVirtualHostName != null)
+        if (defaultVirtualHostName != null)
         {
-            ApplicationRegistry.getInstance().getVirtualHostRegistry().setDefaultVirtualHostName(defaultVirtualHostName);            
+            ApplicationRegistry.getInstance().getVirtualHostRegistry().setDefaultVirtualHostName(defaultVirtualHostName);
         }
         _logger.info("Configuring " + virtualHostNames == null ? 0 : virtualHostNames.size() + " virtual hosts: " + virtualHostNames);
 
-        for(Object nameObject : virtualHostNames)
+        for (Object nameObject : virtualHostNames)
         {
             String name = String.valueOf(nameObject);
             configureVirtualHost(name, _config.subset(VIRTUALHOST_PROPERTY_BASE + name));
@@ -263,7 +285,6 @@ public class VirtualHostConfiguration
                     "Virtualhost Configuration document does not contain a valid virtualhost.");
         }
     }
-
 
 
 }

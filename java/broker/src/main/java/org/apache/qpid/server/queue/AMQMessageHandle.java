@@ -76,4 +76,7 @@ public interface AMQMessageHandle
     void dequeue(StoreContext storeContext, Long messageId, AMQQueue queue) throws AMQException;
 
     long getArrivalTime();
+
+    // added by Arnaud
+    byte[] getMessagePayload();
 }

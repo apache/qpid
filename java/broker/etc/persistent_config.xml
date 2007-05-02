@@ -73,12 +73,15 @@
     <virtualhosts>
         <virtualhost>
             <name>localhost</name>
-            <localhost>
-                <store>
-                    <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+            <localhost>               
+								<store>                  
                     <environment-path>${work}/bdbstore/localhost-store</environment-path>
-                </store>
-
+                   <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
+                </store>             
+                <txn>
+                    <environment-tx-timeout>60</environment-tx-timeout>
+                	 <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> 
+                </txn>
                 <security>
                     <access>
                         <class>org.apache.qpid.server.security.access.PrincipalDatabaseAccessManager</class>
@@ -100,20 +103,28 @@
         <virtualhost>
             <name>development</name>
             <development>
-                <store>
-                    <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                    <environment-path>${work}/bdbstore/development-store</environment-path>
-                </store>
+            <store>                  
+                   <environment-path>${work}/bdbstore/development-store</environment-path>
+                   <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
+           </store>             
+                <txn>
+                    <environment-tx-timeout>60</environment-tx-timeout>
+                	 <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> 
+                </txn>              
             </development>
         </virtualhost>
 
         <virtualhost>
             <name>test</name>
             <test>
-                <store>
-                    <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
-                    <environment-path>${work}/bdbstore/test-store</environment-path>
-                </store>
+              <store>                  
+                   <environment-path>${work}/bdbstore/test-store</environment-path>
+                   <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
+           </store>             
+                <txn>
+                    <environment-tx-timeout>60</environment-tx-timeout>
+                	 <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> 
+                </txn>     
             </test>
         </virtualhost>
 

@@ -28,9 +28,9 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
-import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.messageStore.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
@@ -261,7 +261,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
      */
     static class Message extends AMQMessage
     {
-        private static MessageStore _messageStore = new SkeletonMessageStore();
+        private static MessageStore _messageStore = new MemoryMessageStore();
 
         private static StoreContext _storeContext = new StoreContext();
 
