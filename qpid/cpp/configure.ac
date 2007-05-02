@@ -22,6 +22,7 @@ AC_PROG_CC_STDC
 AM_PROG_CC_C_O
 AC_PROG_CXX
 AC_USE_SYSTEM_EXTENSIONS
+AC_LANG([C++])	
 
 AM_MISSING_PROG([HELP2MAN], [help2man])
 
@@ -148,7 +149,14 @@ URL=http://rhm.et.redhat.com/qpidc
 AC_SUBST(URL)
 DOWNLOAD_URL=http://rhm.et.redhat.com/download
 AC_SUBST(DOWNLOAD_URL)
-	
+
+# Check for headers from required devel kits.
+missing=""
+AC_CHECK_HEADERS([libdaemon/daemon.h],,[missing="$missing libdaemon"])
+AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost"])
+test -z "$missing" ||
+    AC_MSG_ERROR([Missing required headers. Install the folowing packages or -devel rpms: $missing.])
+
 AC_CONFIG_FILES([
   qpidc.spec
   Makefile
