@@ -55,8 +55,6 @@ import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * </table>
- *
- * @author Rupert Smith
  */
 public class PingPongTestPerf extends AsymptoticTestCase
 {

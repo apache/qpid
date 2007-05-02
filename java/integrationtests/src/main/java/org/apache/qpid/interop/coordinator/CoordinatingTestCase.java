@@ -1,3 +1,4 @@
+/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -125,7 +126,7 @@ public abstract class CoordinatingTestCase extends TestCase
 
     /**
      * Holds a test coordinating conversation with the test clients. This is the basic implementation of the inner
-     * loop of Use Case 5. It consists of assign the test roles, begining the test and gathering the test reports
+     * loop of Use Case 5. It consists of assigning the test roles, begining the test and gathering the test reports
      * from the participants.
      *
      * @param testProperties The test case definition.
@@ -134,7 +135,7 @@ public abstract class CoordinatingTestCase extends TestCase
      *
      * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
-    protected Object[] sequenceTest(Properties testProperties) throws JMSException
+    protected Message[] sequenceTest(Properties testProperties) throws JMSException
     {
         // Assign the sender role to the sending test client.
         Message assignSender = conversation.getSession().createMessage();

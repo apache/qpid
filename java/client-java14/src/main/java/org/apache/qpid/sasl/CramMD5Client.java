@@ -35,8 +35,6 @@ import javax.security.sasl.SaslException;
  * <tr><td> Concatenate the user id and password hashed by a challenge string as the challenge response.
  * <tr><td> Ensure password is wiped once a challenge has been processed.
  * </table>
- *
- * @author Rupert Smith
  */
 public class CramMD5Client implements SaslClient
 {

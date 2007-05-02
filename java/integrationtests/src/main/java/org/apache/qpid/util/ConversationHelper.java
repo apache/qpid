@@ -31,19 +31,16 @@ import javax.jms.*;
  * A conversation helper, uses a message correlation id pattern to match up sent and received messages as a conversation
  * over JMS messaging. Incoming message traffic is divided up by correlation id. Each id has a queue (behaviour dependant
  * on the queue implementation). Clients of this de-multiplexer can wait on messages, defined by message correlation ids.
- * The correlating listener is a message listener, and can therefore be attached to a MessageConsumer which is consuming
- * from a queue or topic.
  *
- * <p/>One use of the correlating listener is to act as a conversation synchronizer where multiple threads are carrying
- * out conversations over a multiplexed messaging route. This can be usefull, as JMS sessions are not multi-threaded.
- * Setting up the correlating listener with synchronous queues will allow these threads to be written in a synchronous
- * style, but with their execution order governed by the asynchronous message flow. For example, something like the
- * following code could run a multi-threaded conversation (the conversation methods can be called many times in
- * parallel):
+ * <p/>One use of this is as a conversation synchronizer where multiple threads are carrying out conversations over a
+ * multiplexed messaging route. This can be usefull, as JMS sessions are not multi-threaded. Setting up the conversation
+ * with synchronous queues will allow these threads to be written in a synchronous style, but with their execution order
+ * governed by the asynchronous message flow. For example, something like the following code could run a multi-threaded
+ * conversation (the conversation methods can be called many times in parallel):
  *
  * <p/><pre>
- * MessageListener conversation = new ConversationHelper(java.util.concurrent.LinkedBlockingQueue.class),
- *                                                       sendDesitination, replyDestination);
+ * ConversationHelper conversation = new ConversationHelper(connection, sendDesitination, replyDestination,
+ *                                                          java.util.concurrent.LinkedBlockingQueue.class);
  *
  * initiateConversation()
  * {
@@ -79,9 +76,9 @@ import javax.jms.*;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><th> Associate messages to a conversation using correlation ids.
+ * <tr><th> Associate messages to an ongoing conversation using correlation ids.
  * <tr><td> Auto manage sessions for conversations.
- * <tr><td> Store messages not in conversation in dead letter box.
+ * <tr><td> Store messages not in a conversation in dead letter box.
  * </table>
  *
  * @todo Non-transactional, can use shared session. Transactional, must have session per-thread. Session pool? In
@@ -91,9 +88,9 @@ import javax.jms.*;
  *       to restrict receives on that session to prevent it picking up messages bound for other conversations. Or use
  *       a temporary response queue, with only that session listening to it.
  *
- * @todo Want something convenient that hides many details. Write out some example use cases to get the best feel for
+ * @todo Want something convenient that hides details. Write out some example use cases to get the best feel for
  *       it. Pass in connection, send destination, receive destination. Provide endConvo, send, receive
- *       methods. Bind corrId, session etc. on thread locals. Clean on endConvo. Provide deadLetter box, that
+ *       methods. Bind corrId, session etc. on thread locals? Clean on endConvo. Provide deadLetter box, that
  *       uncorrelated or late messages go in. Provide time-out on wait methods, and global time-out.
  *       PingPongProducer provides a good use-case example (sends messages, waits for replies).
  *
@@ -139,7 +136,7 @@ public class ConversationHelper
      * @throws JMSException All undelying JMSExceptions are allowed to fall through.
      */
     public ConversationHelper(Connection connection, Destination sendDestination, Destination receiveDestination,
-                              Class<? extends BlockingQueue> queueClass) throws JMSException
+        Class<? extends BlockingQueue> queueClass) throws JMSException
     {
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         producer = session.createProducer(sendDestination);
