@@ -32,8 +32,6 @@ import javax.security.sasl.SaslException;
  * <tr><td> Concatenate the user id and password in plain text as the challenge respose.
  * <tr><td> Ensure password is wiped once a challenge has been processed.
  * </table>
- *
- * @author Rupert Smith
  */
 public class PlainClient implements SaslClient
 {
@@ -124,7 +122,7 @@ public class PlainClient implements SaslClient
             // Create an array big enough to hold the results.
             byte[] result =
                 new byte[password.length + authenticationBytes.length + 2
-                                    + ((authorizationBytes == null) ? 0 : authorizationBytes.length)];
+                    + ((authorizationBytes == null) ? 0 : authorizationBytes.length)];
 
             // Copy the authorization id, authentication id and password into the results.
             int pos = 0;
