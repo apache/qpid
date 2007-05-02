@@ -22,6 +22,8 @@ package org.apache.qpid.management.ui.actions;
 
 import static org.apache.qpid.management.ui.Constants.ERROR_SERVER_CONNECTION;
 
+import java.io.IOException;
+
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
 import org.apache.qpid.management.ui.Constants;
@@ -75,8 +77,27 @@ public class AbstractAction
         MBeanUtility.printStackTrace(ex);
         if (msg == null)
         {
-            msg = ex.getMessage();
+            if (ex instanceof IOException)
+            {
+                if ((ex.getMessage() != null) && (ex.getMessage().indexOf(RMI_SASL_ERROR) != -1))
+                {
+                    msg = SECURITY_FAILURE;
+                }
+                else
+                {
+                    msg = SERVER_UNAVAILABLE;
+                }
+            }
+            else if (ex instanceof SecurityException)
+            {
+                msg = SECURITY_FAILURE;
+            }
+            else
+            {
+                msg = ex.getMessage();
+            }
         }
+        
         if ((msg == null) && (ex.getCause() != null))
         {
             msg = ex.getCause().getMessage();

@@ -41,33 +41,12 @@ public class FanoutExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Fanout Exchange")
     private final class FanoutExchangeMBean extends ExchangeMBean
     {
-        // open mbean data types for representing exchange bindings
-        private String[]   _bindingItemNames = {"Routing Key", "Queue Names"};
-        private String[]   _bindingItemIndexNames = {_bindingItemNames[0]};
-        private OpenType[] _bindingItemTypes = new OpenType[2];
-        private CompositeType _bindingDataType = null;
-        private TabularType _bindinglistDataType = null;
-        private TabularDataSupport _bindingList = null;
-
         @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
         public FanoutExchangeMBean()  throws JMException
         {
             super();
             _exchangeType = "fanout";
             init();
-        }
-
-        /**
-         * initialises the OpenType objects.
-         */
-        private void init() throws OpenDataException
-        {
-            _bindingItemTypes[0] = SimpleType.STRING;
-            _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
-            _bindingDataType = new CompositeType("Exchange Binding", "Routing key and Queue names",
-                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
-            _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
-                                                 _bindingDataType, _bindingItemIndexNames);
         }
 
         public TabularData bindings() throws OpenDataException
