@@ -73,9 +73,14 @@
         <virtualhost>
             <name>localhost</name>
             <localhost>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                </store>
+                <store>                  
+                   <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
+                </store>             
+                <txn>
+                    <environment-tx-timeout>60</environment-tx-timeout>
+                	 <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> 
+                </txn>
+            
 
                 <security>
                     <access>
@@ -98,18 +103,26 @@
         <virtualhost>
             <name>development</name>
             <development>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                </store>
+                  <store>                  
+                   <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
+                </store>             
+                <txn>
+                    <environment-tx-timeout>60</environment-tx-timeout>
+                	 <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> 
+                </txn>
             </development>
         </virtualhost>
 
         <virtualhost>
             <name>test</name>
             <test>
-                <store>
-                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
-                </store>
+                 <store>                  
+                   <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
+                </store>             
+                <txn>
+                    <environment-tx-timeout>60</environment-tx-timeout>
+                	 <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> 
+                </txn>
             </test>
         </virtualhost>
 

@@ -25,38 +25,45 @@ import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.messageStore.StorableMessage;
+import org.apache.qpid.server.messageStore.StorableQueue;
 
 /** Combines the information that make up a deliverable message into a more manageable form. */
 
 import org.apache.log4j.Logger;
+import org.apache.mina.common.ByteBuffer;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/** Combines the information that make up a deliverable message into a more manageable form. */
-public class AMQMessage
+/**
+ * Combines the information that make up a deliverable message into a more manageable form.
+ */
+public class AMQMessage implements StorableMessage
 {
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
-    /** Used in clustering */
+    // The ordered list of queues into which this message is enqueued.
+    private List<StorableQueue> _queues = new LinkedList<StorableQueue>();
+    // Indicates whether this message is staged
+     private boolean _isStaged = false;
+
+    /**
+     * Used in clustering
+     */
     private Set<Object> _tokens;
 
-    /** Only use in clustering - should ideally be removed? */
+    /**
+     * Only use in clustering - should ideally be removed?
+     */
     private AMQProtocolSession _publisher;
 
     private final Long _messageId;
@@ -221,13 +228,14 @@ public class AMQMessage
      * @param messageId
      * @param store
      * @param factory
-     *
      * @throws AMQException
      */
-    public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory, TransactionalContext txnConext) throws AMQException
+    public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory, TransactionalContext txnConext)
+            throws
+            AMQException
     {
         _messageId = messageId;
-        _messageHandle = factory.createMessageHandle(messageId, store, true);
+        _messageHandle = factory.createMessageHandle(store, this, true);
         _txnContext = txnConext;
         _transientMessageData = null;
     }
@@ -241,7 +249,9 @@ public class AMQMessage
      * @param contentHeader
      */
     public AMQMessage(Long messageId, MessagePublishInfo info,
-                      TransactionalContext txnContext, ContentHeaderBody contentHeader) throws AMQException
+                      TransactionalContext txnContext, ContentHeaderBody contentHeader)
+            throws
+            AMQException
     {
         this(messageId, info, txnContext);
         setContentHeaderBody(contentHeader);
@@ -256,14 +266,15 @@ public class AMQMessage
      * @param contentHeader
      * @param destinationQueues
      * @param contentBodies
-     *
      * @throws AMQException
      */
     public AMQMessage(Long messageId, MessagePublishInfo info,
                       TransactionalContext txnContext,
                       ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues,
                       List<ContentChunk> contentBodies, MessageStore messageStore, StoreContext storeContext,
-                      MessageHandleFactory messageHandleFactory) throws AMQException
+                      MessageHandleFactory messageHandleFactory)
+            throws
+            AMQException
     {
         this(messageId, info, txnContext, contentHeader);
         _transientMessageData.setDestinationQueues(destinationQueues);
@@ -274,13 +285,107 @@ public class AMQMessage
         }
     }
 
-    protected AMQMessage(AMQMessage msg) throws AMQException
+    protected AMQMessage(AMQMessage msg)
+            throws
+            AMQException
     {
         _messageId = msg._messageId;
         _messageHandle = msg._messageHandle;
         _txnContext = msg._txnContext;
         _deliveredToConsumer = msg._deliveredToConsumer;
         _transientMessageData = msg._transientMessageData;
+    }
+
+    //========================================================================
+    // Interface  StorableMessage
+    //========================================================================
+
+    public long getMessageId()
+    {
+        return _messageId;
+    }
+
+    public byte[] getHeaderBody()
+    {
+        byte[] result = null;
+        ContentHeaderBody headerBody;
+        ByteBuffer bufferedResult;
+        try
+        {
+            headerBody = _messageHandle.getContentHeaderBody(_txnContext.getStoreContext(), _messageId);
+            result = new byte[headerBody.getSize()];
+            bufferedResult = ByteBuffer.wrap(result);
+            headerBody.writePayload(bufferedResult);
+        } catch (AMQException e)
+        {
+            _log.error("Error when getting message header", e);
+        }
+        return result;
+    }
+
+    public int getHeaderSize()
+    {
+        int result = 0;
+        try
+        {
+            result = _messageHandle.getContentHeaderBody(_txnContext.getStoreContext(), _messageId).getSize();
+        } catch (AMQException e)
+        {
+            _log.error("Error when getting message header size", e);
+        }
+        return result;
+    }
+
+    public byte[] getData()
+    {
+        return _messageHandle.getMessagePayload();
+    }
+
+    public int getPayloadSize()
+    {
+        return _messageHandle.getMessagePayload().length;
+    }
+
+       public boolean isEnqueued()
+    {
+        return _queues.size() > 0;
+    }
+
+    public void enqueue(StorableQueue queue)
+    {
+        _queues.add(queue);
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("enqueued");
+        }
+    }
+
+    public void dequeue(StorableQueue queue)
+    {
+        _queues.remove(queue);
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("dequeued");
+        }
+    }
+
+    public int getQueuePosition(StorableQueue queue)
+    {
+        if (_log.isDebugEnabled())
+        {
+            _log.debug("The queue position is " + _queues.indexOf(queue));
+        }
+        return _queues.indexOf(queue);
+    }
+
+    public boolean isStaged()
+    {
+        return _isStaged;
+    }
+
+    public void staged()
+    {
+        _isStaged = true;
     }
 
     public Iterator<AMQDataBlock> getBodyFrameIterator(AMQProtocolSession protocolSession, int channel)
@@ -293,32 +398,36 @@ public class AMQMessage
         return new BodyContentIterator();
     }
 
-    public ContentHeaderBody getContentHeaderBody() throws AMQException
+    public ContentHeaderBody getContentHeaderBody()
+            throws
+            AMQException
     {
         if (_transientMessageData != null)
         {
             return _transientMessageData.getContentHeaderBody();
-        }
-        else
+        } else
         {
             return _messageHandle.getContentHeaderBody(getStoreContext(), _messageId);
         }
     }
 
     public void setContentHeaderBody(ContentHeaderBody contentHeaderBody)
-            throws AMQException
+            throws
+            AMQException
     {
         _transientMessageData.setContentHeaderBody(contentHeaderBody);
     }
 
-    public void routingComplete(MessageStore store, StoreContext storeContext, MessageHandleFactory factory) throws AMQException
+    public void routingComplete(MessageStore store, StoreContext storeContext, MessageHandleFactory factory)
+            throws
+            AMQException
     {
         final boolean persistent = isPersistent();
-        _messageHandle = factory.createMessageHandle(_messageId, store, persistent);
-        if (persistent)
-        {
+        _messageHandle = factory.createMessageHandle(store, this, persistent);
+        //if (persistent)
+       // {
             _txnContext.beginTranIfNecessary();
-        }
+       // }
 
         // enqueuing the messages ensure that if required the destinations are recorded to a
         // persistent store
@@ -334,7 +443,9 @@ public class AMQMessage
         }
     }
 
-    public boolean addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk) throws AMQException
+    public boolean addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk)
+            throws
+            AMQException
     {
         _transientMessageData.addBodyLength(contentChunk.getSize());
         final boolean allContentReceived = isAllContentReceived();
@@ -343,22 +454,19 @@ public class AMQMessage
         {
             deliver(storeContext);
             return true;
-        }
-        else
+        } else
         {
             return false;
         }
     }
 
-    public boolean isAllContentReceived() throws AMQException
+    public boolean isAllContentReceived()
+            throws
+            AMQException
     {
         return _transientMessageData.isAllContentReceived();
     }
 
-    public long getMessageId()
-    {
-        return _messageId;
-    }
 
     /**
      * Creates a long-lived reference to this message, and increments the count of such references, as an atomic
@@ -366,11 +474,13 @@ public class AMQMessage
      */
     public AMQMessage takeReference()
     {
-        incrementReference();// _referenceCount.incrementAndGet();
+        _referenceCount.incrementAndGet();
         return this;
     }
 
-    /** Threadsafe. Increment the reference count on the message. */
+    /**
+     * Threadsafe. Increment the reference count on the message.
+     */
     protected void incrementReference()
     {
         _referenceCount.incrementAndGet();
@@ -385,11 +495,12 @@ public class AMQMessage
      * message store.
      *
      * @param storeContext
-     *
      * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
      *                                 failed
      */
-    public void decrementReference(StoreContext storeContext) throws MessageCleanupException
+    public void decrementReference(StoreContext storeContext)
+            throws
+            MessageCleanupException
     {
         int count = _referenceCount.decrementAndGet();
 
@@ -419,8 +530,7 @@ public class AMQMessage
                 incrementReference();
                 throw new MessageCleanupException(_messageId, e);
             }
-        }
-        else
+        } else
         {
             if (_log.isDebugEnabled())
             {
@@ -497,8 +607,7 @@ public class AMQMessage
             if (taken.getAndSet(true))
             {
                 return true;
-            }
-            else
+            } else
             {
                 _takenMap.put(queue, taken);
                 _takenBySubcriptionMap.put(queue, sub);
@@ -524,8 +633,7 @@ public class AMQMessage
             if (taken == null)
             {
                 taken = new AtomicBoolean(false);
-            }
-            else
+            } else
             {
                 taken.set(false);
             }
@@ -546,8 +654,7 @@ public class AMQMessage
         if (_tokens.contains(token))
         {
             return true;
-        }
-        else
+        } else
         {
             _tokens.add(token);
             return false;
@@ -560,26 +667,30 @@ public class AMQMessage
      * AMQMessageHandle implementation can be picked based on various criteria.
      *
      * @param queue the queue
-     *
      * @throws org.apache.qpid.AMQException if there is an error enqueuing the message
      */
-    public void enqueue(AMQQueue queue) throws AMQException
+    public void enqueue(AMQQueue queue)
+            throws
+            AMQException
     {
         _transientMessageData.addDestinationQueue(queue);
     }
 
-    public void dequeue(StoreContext storeContext, AMQQueue queue) throws AMQException
+    public void dequeue(StoreContext storeContext, AMQQueue queue)
+            throws
+            AMQException
     {
         _messageHandle.dequeue(storeContext, _messageId, queue);
     }
 
-    public boolean isPersistent() throws AMQException
+    public boolean isPersistent()
+            throws
+            AMQException
     {
         if (_transientMessageData != null)
         {
             return _transientMessageData.isPersistent();
-        }
-        else
+        } else
         {
             return _messageHandle.isPersistent(getStoreContext(), _messageId);
         }
@@ -591,7 +702,9 @@ public class AMQMessage
      * @throws NoConsumersException if the message is marked for immediate delivery but has not been marked as delivered
      *                              to a consumer
      */
-    public void checkDeliveredToConsumer() throws NoConsumersException
+    public void checkDeliveredToConsumer()
+            throws
+            NoConsumersException
     {
 
         if (_immediate && !_deliveredToConsumer)
@@ -600,14 +713,15 @@ public class AMQMessage
         }
     }
 
-    public MessagePublishInfo getMessagePublishInfo() throws AMQException
+    public MessagePublishInfo getMessagePublishInfo()
+            throws
+            AMQException
     {
         MessagePublishInfo pb;
         if (_transientMessageData != null)
         {
             pb = _transientMessageData.getMessagePublishInfo();
-        }
-        else
+        } else
         {
             pb = _messageHandle.getMessagePublishInfo(getStoreContext(), _messageId);
         }
@@ -630,13 +744,17 @@ public class AMQMessage
     }
 
 
-    /** Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality). */
+    /**
+     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
+     */
     public void setDeliveredToConsumer()
     {
         _deliveredToConsumer = true;
     }
 
-    private void deliver(StoreContext storeContext) throws AMQException
+    private void deliver(StoreContext storeContext)
+            throws
+            AMQException
     {
         // we get a reference to the destination queues now so that we can clear the
         // transient message data as quickly as possible
@@ -650,7 +768,7 @@ public class AMQMessage
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
             _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId, _transientMessageData.getMessagePublishInfo(),
-                                                          _transientMessageData.getContentHeaderBody());
+                    _transientMessageData.getContentHeaderBody());
 
             // we then allow the transactional context to do something with the message content
             // now that it has all been received, before we attempt delivery
@@ -867,7 +985,9 @@ public class AMQMessage
     }
 
 
-    public void restoreTransientMessageData() throws AMQException
+    public void restoreTransientMessageData()
+            throws
+            AMQException
     {
         TransientMessageData transientMessageData = new TransientMessageData();
         transientMessageData.setMessagePublishInfo(getMessagePublishInfo());
@@ -889,7 +1009,7 @@ public class AMQMessage
 //               _taken + " by :" + _takenBySubcription;
 
         return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: " +
-               _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
+                _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
     }
 
     public Subscription getDeliveredSubscription(AMQQueue queue)
@@ -911,8 +1031,7 @@ public class AMQMessage
             }
 
             _rejectedBy.add(subscription);
-        }
-        else
+        } else
         {
             _log.warn("Requesting rejection by null subscriber:" + debugIdentity());
         }
@@ -925,8 +1044,7 @@ public class AMQMessage
         if (rejected)  // We have subscriptions that rejected this message
         {
             return _rejectedBy.contains(subscription);
-        }
-        else // This messasge hasn't been rejected yet.
+        } else // This messasge hasn't been rejected yet.
         {
             return rejected;
         }

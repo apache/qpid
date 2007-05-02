@@ -224,4 +224,10 @@ public class WeakReferenceMessageHandle implements AMQMessageHandle
         return _arrivalTime;
     }
 
+
+    // added by Arnaud
+    public byte[] getMessagePayload()
+    {
+        return new byte[0];  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

@@ -30,9 +30,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.QueueDoesntExistException;
 
 public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteBody>
 {
@@ -107,7 +109,13 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
 
                 if (queue.isDurable())
                 {
-                    store.removeQueue(queue.getName());
+                    try
+                    {
+                        store.destroyQueue(queue);
+                    } catch (Exception e)
+                    {
+                      throw new AMQException("problem when destroying queue " + queue, e);
+                    }
                 }
                 
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
