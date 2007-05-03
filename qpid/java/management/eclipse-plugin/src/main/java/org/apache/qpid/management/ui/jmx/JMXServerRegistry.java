@@ -65,6 +65,7 @@ public class JMXServerRegistry extends ServerRegistry
     private JMXServiceURL _jmxUrl = null;
     private JMXConnector _jmxc = null;
     private MBeanServerConnection _mbsc = null;
+    private Exception _connectionException = null;
     
     private List<String> _usersList;
     // When an mbean gets removed from mbean server, then the notification listener
@@ -175,9 +176,16 @@ public class JMXServerRegistry extends ServerRegistry
         long timeNow = System.currentTimeMillis();
         connectorThread.join(ApplicationRegistry.timeout);
         
-        if (!_connected && (System.currentTimeMillis() - timeNow >= ApplicationRegistry.timeout))
+        if (_connectionException != null)
         {
-            throw new Exception("Qpid server connection timed out");
+            throw _connectionException;
+        }
+        if (!_connected)
+        {
+            if (System.currentTimeMillis() - timeNow >= ApplicationRegistry.timeout)
+                throw new Exception("Qpid server connection timed out");
+            else
+                throw new Exception("Qpid server connection failed");
         }
     }
     
@@ -188,11 +196,14 @@ public class JMXServerRegistry extends ServerRegistry
             try
             {
                 _connected = false;
+                _connectionException = null;
+                
                 _jmxc.connect();
                 _connected = true;
             }
             catch (Exception ex)
             {
+                _connectionException = ex;
                 MBeanUtility.printStackTrace(ex);
             }
         }
@@ -205,10 +216,10 @@ public class JMXServerRegistry extends ServerRegistry
     {
         try
         {
-            if (_jmxc != null)
+            if (_jmxc != null && _clientListener != null)
                 _jmxc.removeConnectionNotificationListener(_clientListener);
 
-            if (_mbsc != null)
+            if (_mbsc != null && _clientListener != null)
                 _mbsc.removeNotificationListener(_serverObjectName, _clientListener);
 
             // remove mbean notification listeners
@@ -219,7 +230,7 @@ public class JMXServerRegistry extends ServerRegistry
         }
         catch (ListenerNotFoundException ex)
         {
-            System.out.println(ex.toString());
+            MBeanUtility.printOutput(ex.toString());
         }
     }
     
