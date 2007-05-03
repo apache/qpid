@@ -22,8 +22,6 @@ package org.apache.qpid.management.ui.actions;
 
 import static org.apache.qpid.management.ui.Constants.*;
 
-import java.io.IOException;
-
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.NumberVerifyListener;
@@ -63,36 +61,25 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
     
     public void run(IAction action)
     {
-        if(_window != null)
-        {   
-            reset();
-            createAddServerPopup();
-            try
+        if(_window == null)
+            return;
+        
+        reset();
+        createAddServerPopup();
+        try
+        {
+            if (_addServer)
             {
-                if (_addServer)
-                {
-                    getNavigationView().addNewServer(_transport, _host, Integer.parseInt(_port), _domain, _user, _password);
-                }
+                getNavigationView().addNewServer(_transport, _host, Integer.parseInt(_port), _domain, _user, _password);
             }
-            catch(InfoRequiredException ex)
-            {
-                ViewUtility.popupInfoMessage(ACTION_ADDSERVER, ex.getMessage());
-            }
-            catch (IOException ex)
-            {
-                if ((ex.getMessage() != null) && (ex.getMessage().indexOf(RMI_SASL_ERROR) != -1))
-                {
-                    handleException(ex, null, SECURITY_FAILURE);
-                }
-                else
-                {
-                    handleException(ex, null, SERVER_UNAVAILABLE);
-                }
-            }
-            catch (Exception ex)
-            {
-                handleException(ex, null, null);
-            }
+        }
+        catch(InfoRequiredException ex)
+        {
+            ViewUtility.popupInfoMessage(ACTION_ADDSERVER, ex.getMessage());
+        }
+        catch (Exception ex)
+        {
+            handleException(ex, null, null);
         }
     }
     

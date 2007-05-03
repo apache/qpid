@@ -749,7 +749,10 @@ public class OperationTabControl extends TabControl
         List<String> list = new ArrayList<String>();
         for (CompositeData data : records)
         {
-            list.add(data.get(USERNAME).toString());
+            if (data.containsKey(USERNAME))
+            {
+                list.add(data.get(USERNAME).toString());
+            }
         }
         
         return list;

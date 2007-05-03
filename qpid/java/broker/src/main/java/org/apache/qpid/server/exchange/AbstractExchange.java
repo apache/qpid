@@ -23,6 +23,13 @@ package org.apache.qpid.server.exchange;
 import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.TabularType;
+import javax.management.openmbean.TabularDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.ArrayType;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -60,9 +67,31 @@ public abstract class AbstractExchange implements Exchange, Managable
      */
     protected abstract class ExchangeMBean extends AMQManagedObject implements ManagedExchange
     {
+        // open mbean data types for representing exchange bindings
+        protected String[] _bindingItemNames;
+        protected String[] _bindingItemIndexNames;
+        protected OpenType[] _bindingItemTypes;
+        protected CompositeType _bindingDataType;
+        protected TabularType _bindinglistDataType;
+        protected TabularDataSupport _bindingList;
+        
         public ExchangeMBean() throws NotCompliantMBeanException
         {
             super(ManagedExchange.class, ManagedExchange.TYPE);
+        }
+
+        protected void init() throws OpenDataException
+        {
+            _bindingItemNames = new String[]{"Binding Key", "Queue Names"};
+            _bindingItemIndexNames = new String[]{_bindingItemNames[0]};
+            
+            _bindingItemTypes = new OpenType[2];
+            _bindingItemTypes[0] = SimpleType.STRING;
+            _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
+            _bindingDataType = new CompositeType("Exchange Binding", "Binding key and Queue names",
+                                                 _bindingItemNames, _bindingItemNames, _bindingItemTypes);
+            _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
+                                                   _bindingDataType, _bindingItemIndexNames);
         }
 
         public ManagedObject getParentObject()

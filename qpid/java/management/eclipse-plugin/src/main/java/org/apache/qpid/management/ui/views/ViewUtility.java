@@ -335,11 +335,15 @@ public class ViewUtility
                     if (data.containsKey("MimeType"))
                     {
                         mimeType = (String)data.get("MimeType");
+                    }
+                    if (data.containsKey("Encoding"))
+                    {
                         encoding = (String)data.get("Encoding");
-                        if (encoding == null || encoding.length() == 0)
-                        {
-                            encoding = Charset.defaultCharset().name();
-                        }
+                    }
+                    
+                    if (encoding == null || encoding.length() == 0)
+                    {
+                        encoding = Charset.defaultCharset().name();
                     }
 
                     if ("text/plain".equals(mimeType))

@@ -90,14 +90,6 @@ public class HeadersExchange extends AbstractExchange
     @MBeanDescription("Management Bean for Headers Exchange")
     private final class HeadersExchangeMBean extends ExchangeMBean
     {
-        // open mbean data types for representing exchange bindings
-        private String[]   _bindingItemNames = {"S.No.", "Queue Name", "Header Bindings"};
-        private String[]   _bindingItemIndexNames = {_bindingItemNames[0]};
-        private OpenType[] _bindingItemTypes = new OpenType[3];
-        private CompositeType      _bindingDataType = null;
-        private TabularType        _bindinglistDataType = null;
-        private TabularDataSupport _bindingList = null;
-
         @MBeanConstructor("Creates an MBean for AMQ Headers exchange")
         public HeadersExchangeMBean()  throws JMException
         {
@@ -105,11 +97,16 @@ public class HeadersExchange extends AbstractExchange
             _exchangeType = "headers";
             init();
         }
+        
         /**
          * initialises the OpenType objects.
          */
-        private void init() throws OpenDataException
+        protected void init() throws OpenDataException
         {
+            _bindingItemNames = new String[]{"Binding No", "Queue  Name", "Queue Bindings"};
+            _bindingItemIndexNames = new String[]{_bindingItemNames[0]};
+
+            _bindingItemTypes = new OpenType[3];
             _bindingItemTypes[0] = SimpleType.INTEGER;
             _bindingItemTypes[1] = SimpleType.STRING;
             _bindingItemTypes[2] = new ArrayType(1, SimpleType.STRING);
