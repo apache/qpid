@@ -59,6 +59,7 @@ import org.apache.qpid.management.ui.sasl.UsernameHashedPasswordCallbackHandler;
 
 public class JMXServerRegistry extends ServerRegistry
 {
+    private boolean _connected = false;
     private ObjectName _serverObjectName = null;
     private Map<String, Object> _env = null;
     private JMXServiceURL _jmxUrl = null;
@@ -98,23 +99,12 @@ public class JMXServerRegistry extends ServerRegistry
         super(server);
         String securityMechanism = ApplicationRegistry.getSecurityMechanism();
         String connectorClassName = ApplicationRegistry.getJMXConnectorClass();
-        
-        boolean saslPluginAvailable = false;
        
         if ((securityMechanism != null) && (connectorClassName != null))
         { 
-            try
-            {
-                createSASLConnector(securityMechanism, connectorClassName);
-                saslPluginAvailable = true;
-            }
-            catch (Exception ex)
-            {
-                MBeanUtility.printStackTrace(ex);
-            }
+            createSASLConnector(securityMechanism, connectorClassName);
         }
-        
-        if (!saslPluginAvailable)
+        else
         {
             _jmxUrl = new JMXServiceURL(server.getUrl());
             _jmxc = JMXConnectorFactory.connect(_jmxUrl, null);
@@ -179,9 +169,34 @@ public class JMXServerRegistry extends ServerRegistry
         Object theObject = cons.newInstance(args);
 
         _jmxc = (JMXConnector)theObject;
-        _jmxc.connect();
+        
+        Thread connectorThread = new Thread(new ConnectorThread());
+        connectorThread.start();
+        long timeNow = System.currentTimeMillis();
+        connectorThread.join(ApplicationRegistry.timeout);
+        
+        if (!_connected && (System.currentTimeMillis() - timeNow >= ApplicationRegistry.timeout))
+        {
+            throw new Exception("Qpid server connection timed out");
+        }
     }
     
+    private class ConnectorThread implements Runnable
+    {
+        public void run()
+        {
+            try
+            {
+                _connected = false;
+                _jmxc.connect();
+                _connected = true;
+            }
+            catch (Exception ex)
+            {
+                MBeanUtility.printStackTrace(ex);
+            }
+        }
+    }
     /**
      * removes all listeners from the mbean server. This is required when user
      * disconnects the Qpid server connection
