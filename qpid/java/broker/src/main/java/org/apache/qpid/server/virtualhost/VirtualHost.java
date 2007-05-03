@@ -110,12 +110,27 @@ public class VirtualHost implements Accessable
 
     } // End of MBean class
 
-
+    /**
+     * Used for testing only
+     *
+     * @param name
+     * @param store
+     *
+     * @throws Exception
+     */
     public VirtualHost(String name, MessageStore store) throws Exception
     {
         this(name, null, store);
     }
 
+    /**
+     * Normal Constructor
+     *
+     * @param name
+     * @param hostConfig
+     *
+     * @throws Exception
+     */
     public VirtualHost(String name, Configuration hostConfig) throws Exception
     {
         this(name, hostConfig, null);
@@ -174,9 +189,9 @@ public class VirtualHost implements Accessable
         _messageStore.configure(this, _transactionManager, "store", config);
     }
 
-     private void initialiseTransactionManager(Configuration config) throws Exception
+    private void initialiseTransactionManager(Configuration config) throws Exception
     {
-    	  String transactionManagerClass = config.getString("txn.class");
+        String transactionManagerClass = config.getString("txn.class");
         Class clazz = Class.forName(transactionManagerClass);
         Object o = clazz.newInstance();
 
