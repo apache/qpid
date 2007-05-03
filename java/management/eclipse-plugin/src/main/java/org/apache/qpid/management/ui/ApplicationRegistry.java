@@ -44,6 +44,7 @@ public abstract class ApplicationRegistry
     public static final boolean debug = Boolean.getBoolean("eclipse.consoleLog");
     public static final String securityMechanism = System.getProperty("security", null);
     public static final String connectorClass =  System.getProperty("jmxconnector");
+    public static final long timeout = Long.parseLong(System.getProperty("timeout", "5000"));
     
     static
     {

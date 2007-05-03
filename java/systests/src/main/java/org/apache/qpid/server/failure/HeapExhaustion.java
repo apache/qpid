@@ -8,6 +8,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
+import javax.jms.DeliveryMode;
 import java.io.IOException;
 
 
@@ -16,7 +17,7 @@ public class HeapExhaustion extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(HeapExhaustion.class);
 
-    protected QpidClientConnection conn;                         
+    protected QpidClientConnection conn;
     protected final String BROKER = "localhost";
     protected final String vhost = "/test";
     protected final String queue = "direct://amq.direct//queue";
@@ -54,7 +55,7 @@ public class HeapExhaustion extends TestCase
      *
      * @throws Exception on error
      */
-    public void testUntilFailure() throws Exception
+    public void testUntilFailureTransient() throws Exception
     {
         int copies = 0;
         int total = 0;
@@ -62,7 +63,7 @@ public class HeapExhaustion extends TestCase
         int size = payload.getBytes().length;
         while (true)
         {
-            conn.put(queue, payload, 1);
+            conn.put(queue, payload, 1, DeliveryMode.NON_PERSISTENT);
             copies++;
             total += size;
             System.out.println("put copy " + copies + " OK for total bytes: " + total);
@@ -74,7 +75,7 @@ public class HeapExhaustion extends TestCase
      *
      * @throws Exception on error
      */
-    public void testUntilFailureWithDelays() throws Exception
+    public void testUntilFailureWithDelaysTransient() throws Exception
     {
         int copies = 0;
         int total = 0;
@@ -82,7 +83,7 @@ public class HeapExhaustion extends TestCase
         int size = payload.getBytes().length;
         while (true)
         {
-            conn.put(queue, payload, 1);
+            conn.put(queue, payload, 1, DeliveryMode.NON_PERSISTENT);
             copies++;
             total += size;
             System.out.println("put copy " + copies + " OK for total bytes: " + total);
@@ -109,7 +110,7 @@ public class HeapExhaustion extends TestCase
             _logger.info("Running testUntilFailure");
             try
             {
-                he.testUntilFailure();
+                he.testUntilFailureTransient();
             }
             catch (FailoverException fe)
             {
@@ -158,7 +159,7 @@ public class HeapExhaustion extends TestCase
             _logger.info("Running testUntilFailure");
             try
             {
-                he.testUntilFailureWithDelays();
+                he.testUntilFailureWithDelaysTransient();
             }
             catch (FailoverException fe)
             {
