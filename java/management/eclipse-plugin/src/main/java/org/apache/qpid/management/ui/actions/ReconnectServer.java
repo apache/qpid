@@ -27,8 +27,6 @@ import static org.apache.qpid.management.ui.Constants.INFO_USERNAME;
 import static org.apache.qpid.management.ui.Constants.PASSWORD;
 import static org.apache.qpid.management.ui.Constants.USERNAME;
 
-import java.io.IOException;
-
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
@@ -58,44 +56,33 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
     
     public void run(IAction action)
     {
-        if(_window != null)
-        {   
-            try
+        if(_window == null)
+            return;
+  
+        try
+        {
+            reset();
+            // Check if a server node is selected to be reconnected.
+            TreeObject serverNode = getNavigationView().getSelectedServerNode();
+            _serverName = serverNode.getName();
+            _title = ACTION_LOGIN + " (" + _serverName + ")";
+
+            // Get the login details(username/password)
+            createLoginPopup();
+
+            if (_connect)
             {
-                reset();
-                // Check if a server node is selected to be reconnected.
-                TreeObject serverNode = getNavigationView().getSelectedServerNode();
-                _serverName = serverNode.getName();
-                _title = ACTION_LOGIN + " (" + _serverName + ")";
-                
-                // Get the login details(username/password)
-                createLoginPopup();
-                
-                if (_connect)
-                {
-                    // Connect the server
-                    getNavigationView().reconnect(_user, _password);
-                }
+                // Connect the server
+                getNavigationView().reconnect(_user, _password);
             }
-            catch(InfoRequiredException ex)
-            {
-                ViewUtility.popupInfoMessage("Reconnect Qpid server", ex.getMessage());
-            }
-            catch (IOException ex)
-            {
-                if ((ex.getMessage() != null) && (ex.getMessage().indexOf(RMI_SASL_ERROR) != -1))
-                {
-                    handleException(ex, null, SECURITY_FAILURE);
-                }
-                else
-                {
-                    handleException(ex, null, SERVER_UNAVAILABLE);
-                }
-            }
-            catch (Exception ex)
-            {
-                handleException(ex, null, null);
-            }
+        }
+        catch(InfoRequiredException ex)
+        {
+            ViewUtility.popupInfoMessage("Reconnect Qpid server", ex.getMessage());
+        }
+        catch (Exception ex)
+        {
+            handleException(ex, null, null);
         }
     }
     
