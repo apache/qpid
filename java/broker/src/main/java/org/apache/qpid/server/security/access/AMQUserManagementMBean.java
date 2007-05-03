@@ -72,7 +72,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
     static TabularType _userlistDataType; // Datatype for representing User Lists
 
     static CompositeType _userDataType; // Composite type for representing User
-    static String[] _userItemNames = {"Username", "Read", "Write", "Admin"};
+    static String[] _userItemNames = {"Username", "read", "write", "admin"};
 
     static
     {

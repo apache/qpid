@@ -106,7 +106,7 @@ public abstract class ApplicationRegistry
     public static ServerRegistry getServerRegistry(ManagedBean mbean)
     {
         ManagedServer server = mbean.getServer();
-        return _serverRegistryMap.get(server);
+        return getServerRegistry(server);
     }
     
     public static boolean isServerConnected(ManagedServer server)
@@ -118,7 +118,7 @@ public abstract class ApplicationRegistry
     public static void serverConnectionClosed(ManagedServer server)
     {
         _closedServerList.add(server);
-        _serverRegistryMap.remove(server);
+        removeServer(server);
     }
     
     /*
