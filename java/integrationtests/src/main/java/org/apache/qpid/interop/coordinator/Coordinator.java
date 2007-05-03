@@ -38,7 +38,7 @@ import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
 import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
 import org.apache.qpid.util.ClasspathScanner;
 import org.apache.qpid.util.CommandLineParser;
-import org.apache.qpid.util.ConversationHelper;
+import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
 
 import uk.co.thebadgerset.junit.extensions.TestRunnerImprovedErrorHandling;
@@ -51,7 +51,7 @@ import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Find out what test clients are available. <td> {@link ConversationHelper}
+ * <tr><td> Find out what test clients are available. <td> {@link ConversationFactory}
  * <tr><td> Decorate available tests to run all available clients. <td> {@link InvitingTestDecorator}
  * <tr><td> Attach XML test result logger.
  * <tr><td> Terminate the interop testing framework.
@@ -73,7 +73,9 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
     Set<TestClientDetails> enlistedClients = new HashSet<TestClientDetails>();
 
     /** Holds the conversation helper for the control conversation. */
-    private ConversationHelper conversation;
+    private ConversationFactory conversationFactory;
+
+    /** Holds the connection that the coordinating messages are sent over. */
     private Connection connection;
 
     /**
@@ -185,14 +187,15 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         Destination controlTopic = session.createTopic("iop.control");
         Destination responseQueue = session.createQueue("coordinator");
 
-        conversation = new ConversationHelper(connection, controlTopic, responseQueue, LinkedBlockingQueue.class);
+        conversationFactory = new ConversationFactory(connection, responseQueue, LinkedBlockingQueue.class);
+        ConversationFactory.Conversation conversation = conversationFactory.startConversation();
 
         // Broadcast the compulsory invitation to find out what clients are available to test.
         Message invite = session.createMessage();
         invite.setStringProperty("CONTROL_TYPE", "INVITE");
         invite.setJMSReplyTo(responseQueue);
 
-        conversation.send(invite);
+        conversation.send(controlTopic, invite);
 
         // Wait for a short time, to give test clients an opportunity to reply to the invitation.
         Collection<Message> enlists = conversation.receiveAll(0, 10000);
@@ -206,7 +209,7 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         Message terminate = session.createMessage();
         terminate.setStringProperty("CONTROL_TYPE", "TERMINATE");
 
-        conversation.send(terminate);
+        conversation.send(controlTopic, terminate);
 
         return result;
     }
@@ -283,7 +286,7 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         }
 
         // Wrap the tests in an inviting test decorator, to perform the invite/test cycle.
-        targetTest = new InvitingTestDecorator(targetTest, enlistedClients, conversation);
+        targetTest = new InvitingTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
 
         return super.doRun(targetTest, wait);
     }

@@ -23,13 +23,13 @@ package org.apache.qpid.interop.coordinator;
 
 import java.util.Collection;
 import java.util.Properties;
+import java.util.concurrent.LinkedBlockingQueue;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
+import javax.jms.*;
 
 import junit.framework.TestCase;
 
-import org.apache.qpid.util.ConversationHelper;
+import org.apache.qpid.util.ConversationFactory;
 
 /**
  * An CoordinatingTestCase is a JUnit test case extension that knows how to coordinate test clients that take part in a
@@ -60,7 +60,8 @@ import org.apache.qpid.util.ConversationHelper;
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Accept notification of test case participants. <td> {@link InvitingTestDecorator}
- * <tr><td> Coordinate the test sequence amongst participants. <td> {@link ConversationHelper}
+ * <tr><td> Accpet JMS Connection to carry out the coordination over.
+ * <tr><td> Coordinate the test sequence amongst participants. <td> {@link ConversationFactory}
  * <tr><td> Supply test properties
  * </table>
  */
@@ -72,7 +73,8 @@ public abstract class CoordinatingTestCase extends TestCase
     /** Holds the contact details for the receving test client. */
     TestClientDetails receiver;
 
-    ConversationHelper conversation;
+    /** Holds the conversation factory over which to coordinate the test. */
+    ConversationFactory conversationFactory;
 
     /**
      * Creates a new coordinating test case with the specified name.
@@ -125,6 +127,16 @@ public abstract class CoordinatingTestCase extends TestCase
     }
 
     /**
+     * Accepts the conversation factory over which to hold the test coordinating conversation.
+     *
+     * @param conversationFactory The conversation factory to coordinate the test over.
+     */
+    public void setConversationFactory(ConversationFactory conversationFactory)
+    {
+        this.conversationFactory = conversationFactory;
+    }
+
+    /**
      * Holds a test coordinating conversation with the test clients. This is the basic implementation of the inner
      * loop of Use Case 5. It consists of assigning the test roles, begining the test and gathering the test reports
      * from the participants.
@@ -137,41 +149,48 @@ public abstract class CoordinatingTestCase extends TestCase
      */
     protected Message[] sequenceTest(Properties testProperties) throws JMSException
     {
+        Session session = conversationFactory.getSession();
+        Destination senderControlTopic = session.createTopic(sender.privateControlKey);
+        Destination receiverControlTopic = session.createTopic(receiver.privateControlKey);
+
+        ConversationFactory.Conversation senderConversation = conversationFactory.startConversation();
+        ConversationFactory.Conversation receiverConversation = conversationFactory.startConversation();
+
         // Assign the sender role to the sending test client.
-        Message assignSender = conversation.getSession().createMessage();
+        Message assignSender = conversationFactory.getSession().createMessage();
         assignSender.setStringProperty("CONTROL_TYPE", "ASSIGN_ROLE");
         assignSender.setStringProperty("ROLE", "SENDER");
 
-        conversation.send(assignSender);
+        senderConversation.send(senderControlTopic, assignSender);
 
         // Assign the receiver role the receiving client.
-        Message assignReceiver = conversation.getSession().createMessage();
+        Message assignReceiver = session.createMessage();
         assignReceiver.setStringProperty("CONTROL_TYPE", "ASSIGN_ROLE");
         assignReceiver.setStringProperty("ROLE", "RECEIVER");
 
-        conversation.send(assignReceiver);
+        receiverConversation.send(receiverControlTopic, assignReceiver);
 
         // Wait for the senders and receivers to confirm their roles.
-        conversation.receive();
-        conversation.receive();
+        senderConversation.receive();
+        receiverConversation.receive();
 
         // Start the test.
-        Message start = conversation.getSession().createMessage();
+        Message start = session.createMessage();
         start.setStringProperty("CONTROL_TYPE", "START");
 
-        conversation.send(start);
+        senderConversation.send(senderControlTopic, start);
 
         // Wait for the test sender to return its report.
-        Message senderReport = conversation.receive();
+        Message senderReport = senderConversation.receive();
 
         // Ask the receiver for its report.
-        Message statusRequest = conversation.getSession().createMessage();
+        Message statusRequest = session.createMessage();
         statusRequest.setStringProperty("CONTROL_TYPE", "STATUS_REQUEST");
 
-        conversation.send(statusRequest);
+        receiverConversation.send(receiverControlTopic, statusRequest);
 
         // Wait for the receiver to send its report.
-        Message receiverReport = conversation.receive();
+        Message receiverReport = receiverConversation.receive();
 
         return new Message[] { senderReport, receiverReport };
     }
