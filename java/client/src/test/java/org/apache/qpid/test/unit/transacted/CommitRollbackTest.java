@@ -359,16 +359,36 @@ public class CommitRollbackTest extends TestCase
 
         _logger.info("receiving result");
         Message result = _consumer.receive(1000);
+
         assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertEquals("1", ((TextMessage) result).getText());
-        assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
+
+
+        if (((TextMessage) result).getText().equals("2"))
+        {
+            assertTrue("Messasge is marked as redelivered", !result.getJMSRedelivered());
+
+            result = _consumer.receive(1000);
+            assertEquals("1", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
+        }
+        else
+        {
+            assertEquals("1", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
+            result = _consumer.receive(1000);
+            assertNotNull("test message was consumed and rolled back, but is gone", result);
+            assertEquals("2", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
+        }
 
         result = _consumer.receive(1000);
-        assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertEquals("2", ((TextMessage) result).getText());
-        assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
 
-        result = _consumer.receive(1000);
+        if (result != null)
+        {
+            assertEquals("2", ((TextMessage) result).getText());
+            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
+            result = _consumer.receive(1000);
+        }
 
         assertNull("test message should be null", result);
     }
@@ -411,7 +431,7 @@ public class CommitRollbackTest extends TestCase
         else // or it will be msg 2 arriving the first time due to latency.  
         {
             _logger.info("Message 2 wasn't prefetched so wasn't rejected");
-            assertEquals("2", ((TextMessage) result).getText());            
+            assertEquals("2", ((TextMessage) result).getText());
         }
 
         result = _consumer.receive(1000);
