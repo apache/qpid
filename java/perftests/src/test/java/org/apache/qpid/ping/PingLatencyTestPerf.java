@@ -35,6 +35,9 @@ import junit.framework.TestSuite;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.requestreply.PingPongProducer;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.message.AMQMessage;
+import org.apache.qpid.framing.AMQShortString;
 
 import uk.co.thebadgerset.junit.extensions.TimingController;
 import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
@@ -48,18 +51,16 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
  * waiting until all expected replies are received.
  *
  * <p/>This test does not output timings for every single ping message, as when running at high volume, writing the test
- * log for a vast number of messages would slow the testing down. Instead samples ping latency occasionally. The frequency
- * of ping sampling is set using the {@link #TEST_RESULTS_BATCH_SIZE_PROPNAME} property, to override the default of every
- * {@link #DEFAULT_TEST_RESULTS_BATCH_SIZE}.
+ * log for a vast number of messages would slow the testing down. Instead samples ping latency occasionally. The
+ * frequency of ping sampling is set using the {@link #TEST_RESULTS_BATCH_SIZE_PROPNAME} property, to override the
+ * default of every {@link #DEFAULT_TEST_RESULTS_BATCH_SIZE}.
  *
- * <p/>The size parameter logged for each individual ping is set to the size of the batch of messages that the individual
- * timed ping was taken from, rather than 1 for a single message. This is so that the total throughput (messages / time)
- * can be calculated in order to examine the relationship between throughput and latency.
+ * <p/>The size parameter logged for each individual ping is set to the size of the batch of messages that the
+ * individual timed ping was taken from, rather than 1 for a single message. This is so that the total throughput
+ * (messages / time) can be calculated in order to examine the relationship between throughput and latency.
  *
- * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><td> Responsibilities <th> Collaborations
- * <tr><td> Send many ping messages and output timings for sampled individual pings.
- * </table>
+ * <p/><table id="crc"><caption>CRC Card</caption> <tr><td> Responsibilities <th> Collaborations <tr><td> Send many ping
+ * messages and output timings for sampled individual pings. </table>
  */
 public class PingLatencyTestPerf extends PingTestPerf implements TimingControllerAware
 {
@@ -77,9 +78,12 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
     /** Used to generate unique correlation ids for each test run. */
     private AtomicLong corellationIdGenerator = new AtomicLong();
 
-    /** Holds test specifics by correlation id. This consists of the expected number of messages and the timing controler. */
+    /**
+     * Holds test specifics by correlation id. This consists of the expected number of messages and the timing
+     * controler.
+     */
     private Map<String, PerCorrelationId> perCorrelationIds =
-        Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
+            Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
 
     /** Holds the batched results listener, that does logging on batch boundaries. */
     private BatchedResultsListener batchedResultsListener = null;
@@ -98,9 +102,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
                                               Integer.toString(DEFAULT_TEST_RESULTS_BATCH_SIZE));
     }
 
-    /**
-     * Compile all the tests into a test suite.
-     */
+    /** Compile all the tests into a test suite. */
     public static Test suite()
     {
         // Build a new test suite
@@ -133,8 +135,8 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
     }
 
     /**
-     * Sends the specified number of pings, asynchronously outputs timings on every batch boundary, and waits until
-     * all replies have been received or a time out occurs before exiting this method.
+     * Sends the specified number of pings, asynchronously outputs timings on every batch boundary, and waits until all
+     * replies have been received or a time out occurs before exiting this method.
      *
      * @param numPings The number of pings to send.
      */
@@ -169,9 +171,9 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
 
         // Generate a sample message of the specified size.
         Message msg =
-            pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                      testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                      testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
+                pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                                          testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                                          testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
@@ -190,9 +192,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
         perCorrelationIds.remove(messageCorrelationId);
     }
 
-    /**
-     * Performs test fixture creation on a per thread basis. This will only be called once for each test thread.
-     */
+    /** Performs test fixture creation on a per thread basis. This will only be called once for each test thread. */
     public void threadSetUp()
     {
         _logger.debug("public void threadSetUp(): called");
@@ -228,14 +228,15 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
 
     /**
      * BatchedResultsListener is a {@link org.apache.qpid.requestreply.PingPongProducer.ChainedMessageListener} that can
-     * be attached to the pinger, in order to receive notifications about every message received and the number remaining
-     * to be received. Whenever the number remaining crosses a batch size boundary this results listener outputs a test
-     * timing for the actual number of messages received in the current batch.
+     * be attached to the pinger, in order to receive notifications about every message received and the number
+     * remaining to be received. Whenever the number remaining crosses a batch size boundary this results listener
+     * outputs a test timing for the actual number of messages received in the current batch.
      */
     private class BatchedResultsListener implements PingPongProducer.ChainedMessageListener
     {
         /** The test results logging batch size. */
         int _batchSize;
+        private boolean _strictAMQP;
 
         /**
          * Creates a results listener on the specified batch size.
@@ -245,6 +246,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
         public BatchedResultsListener(int batchSize)
         {
             _batchSize = batchSize;
+            _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
         }
 
         /**
@@ -278,7 +280,19 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
 
                     // Extract the send time from the message and work out from the current time, what the ping latency was.
                     // The ping producer time stamps messages in nanoseconds.
-                    long startTime = message.getLongProperty(PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME);
+                    long startTime;
+
+                    if (_strictAMQP)
+                    {
+                        Long value = ((AMQMessage) message).getTimestampProperty(new AMQShortString(PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME));
+
+                        startTime = (value == null ? 0L : value);
+                    }
+                    else
+                    {
+                        startTime = message.getLongProperty(PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME);
+                    }
+
                     long now = System.nanoTime();
                     long pingTime = now - startTime;
 
@@ -306,8 +320,8 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
     }
 
     /**
-     * Holds state specific to each correlation id, needed to output test results. This consists of the count of
-     * the total expected number of messages, and the timing controller for the thread sending those message ids.
+     * Holds state specific to each correlation id, needed to output test results. This consists of the count of the
+     * total expected number of messages, and the timing controller for the thread sending those message ids.
      */
     private static class PerCorrelationId
     {

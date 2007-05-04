@@ -48,6 +48,7 @@ public final class JMSHeaderAdapter
 
     public boolean getBoolean(String string) throws JMSException
     {
+        checkPropertyName(string);
         Boolean b = getHeaders().getBoolean(string);
 
         if (b == null)
@@ -76,6 +77,7 @@ public final class JMSHeaderAdapter
 
     public boolean getBoolean(AMQShortString string) throws JMSException
     {
+        checkPropertyName(string);
         Boolean b = getHeaders().getBoolean(string);
 
         if (b == null)
@@ -104,6 +106,7 @@ public final class JMSHeaderAdapter
 
     public char getCharacter(String string) throws JMSException
     {
+        checkPropertyName(string);
         Character c = getHeaders().getCharacter(string);
 
         if (c == null)
@@ -130,6 +133,8 @@ public final class JMSHeaderAdapter
 
     public byte[] getBytes(AMQShortString string) throws JMSException
     {
+        checkPropertyName(string);
+
         byte[] bs = getHeaders().getBytes(string);
 
         if (bs == null)
@@ -144,6 +149,7 @@ public final class JMSHeaderAdapter
 
     public byte getByte(String string) throws JMSException
     {
+        checkPropertyName(string);
         Byte b = getHeaders().getByte(string);
         if (b == null)
         {
@@ -171,6 +177,7 @@ public final class JMSHeaderAdapter
 
     public short getShort(String string) throws JMSException
     {
+        checkPropertyName(string);
         Short s = getHeaders().getShort(string);
 
         if (s == null)
@@ -183,6 +190,7 @@ public final class JMSHeaderAdapter
 
     public int getInteger(String string) throws JMSException
     {
+        checkPropertyName(string);
         Integer i = getHeaders().getInteger(string);
 
         if (i == null)
@@ -195,6 +203,7 @@ public final class JMSHeaderAdapter
 
     public long getLong(String string) throws JMSException
     {
+        checkPropertyName(string);
         Long l = getHeaders().getLong(string);
 
         if (l == null)
@@ -207,6 +216,7 @@ public final class JMSHeaderAdapter
 
     public float getFloat(String string) throws JMSException
     {
+        checkPropertyName(string);
         Float f = getHeaders().getFloat(string);
 
         if (f == null)
@@ -236,6 +246,7 @@ public final class JMSHeaderAdapter
 
     public double getDouble(String string) throws JMSException
     {
+        checkPropertyName(string);
         Double d = getHeaders().getDouble(string);
 
         if (d == null)
@@ -248,6 +259,7 @@ public final class JMSHeaderAdapter
 
     public String getString(String string) throws JMSException
     {
+        checkPropertyName(string);
         String s = getHeaders().getString(string);
 
         if (s == null)
@@ -278,6 +290,7 @@ public final class JMSHeaderAdapter
 
     public Object getObject(String string) throws JMSException
     {
+        checkPropertyName(string);
         return getHeaders().getObject(string);
     }
 
@@ -301,16 +314,19 @@ public final class JMSHeaderAdapter
 
     public Object setBytes(AMQShortString string, byte[] bytes)
     {
+        checkPropertyName(string);
         return getHeaders().setBytes(string, bytes);
     }
 
     public Object setBytes(String string, byte[] bytes)
     {
+        checkPropertyName(string);
         return getHeaders().setBytes(string, bytes);
     }
 
     public Object setBytes(String string, byte[] bytes, int start, int length)
     {
+        checkPropertyName(string);
         return getHeaders().setBytes(string, bytes, start, length);
     }
 
@@ -392,6 +408,7 @@ public final class JMSHeaderAdapter
 
     public boolean itemExists(String string) throws JMSException
     {
+        checkPropertyName(string);
         return getHeaders().containsKey(string);
     }
 
@@ -407,26 +424,31 @@ public final class JMSHeaderAdapter
 
     public boolean propertyExists(AMQShortString propertyName)
     {
+        checkPropertyName(propertyName);
         return getHeaders().propertyExists(propertyName);
     }
 
     public boolean propertyExists(String propertyName)
     {
+        checkPropertyName(propertyName);
         return getHeaders().propertyExists(propertyName);
     }
 
     public Object put(Object key, Object value)
     {
+        checkPropertyName(key.toString());
         return getHeaders().setObject(key.toString(), value);
     }
 
     public Object remove(AMQShortString propertyName)
     {
+        checkPropertyName(propertyName);
         return getHeaders().remove(propertyName);
     }
 
     public Object remove(String propertyName)
     {
+        checkPropertyName(propertyName);
         return getHeaders().remove(propertyName);
     }
 

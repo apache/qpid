@@ -23,6 +23,7 @@ package org.apache.qpid.test.unit.basic;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.math.BigDecimal;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -41,6 +42,8 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.AMQMessage;
+import org.apache.qpid.framing.AMQShortString;
 
 public class PropertyValueTest extends TestCase implements MessageListener
 {
@@ -53,7 +56,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
     private AMQSession _session;
     private final List<JMSTextMessage> received = new ArrayList<JMSTextMessage>();
     private final List<String> messages = new ArrayList<String>();
-    private int _count = 100;
+    private int _count = 1;
     public String _connectionString = "vm://:1";
 
     protected void setUp() throws Exception
@@ -118,7 +121,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
                 check();
                 _logger.info("Completed without failure");
 
-	        Thread.sleep(10);
+                Thread.sleep(10);
                 _connection.close();
 
                 _logger.error("End Run Number:" + (run - 1));
@@ -180,6 +183,20 @@ public class PropertyValueTest extends TestCase implements MessageListener
             m.setShortProperty("Short", (short) Short.MAX_VALUE);
             m.setStringProperty("String", "Test");
 
+            //AMQP Specific values
+
+            // Timestamp
+            long nano = System.nanoTime();
+            m.setStringProperty("time-str", String.valueOf(nano));
+            ((AMQMessage) m).setTimestampProperty(new AMQShortString("time"), nano);
+
+            //Decimal
+            BigDecimal bd = new BigDecimal(Integer.MAX_VALUE);
+            ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal"), bd.setScale(Byte.MAX_VALUE));
+
+            //Void
+            ((AMQMessage) m).setVoidProperty(new AMQShortString("void"));
+
             _logger.debug("Sending Msg:" + m);
             producer.send(m);
         }
@@ -235,6 +252,25 @@ public class PropertyValueTest extends TestCase implements MessageListener
                                 (long) Long.MAX_VALUE, m.getLongProperty("Long"));
             Assert.assertEquals("Check String properties are correctly transported",
                                 "Test", m.getStringProperty("String"));
+
+            // AMQP Tests Specific values
+           
+            Assert.assertEquals("Check Timestamp properties are correctly transported",
+                                m.getStringProperty("time-str"),
+                                ((AMQMessage) m).getTimestampProperty(new AMQShortString("time")).toString());
+
+            //Decimal
+            BigDecimal bd = new BigDecimal(Integer.MAX_VALUE);
+
+            Assert.assertEquals("Check decimal properties are correctly transported",
+                                bd.setScale(Byte.MAX_VALUE),
+                                ((AMQMessage) m).getDecimalProperty(new AMQShortString("decimal")));
+
+            //Void
+            ((AMQMessage) m).setVoidProperty(new AMQShortString("void"));
+
+            Assert.assertTrue("Check void properties are correctly transported",
+                              ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
         }
         received.clear();
 

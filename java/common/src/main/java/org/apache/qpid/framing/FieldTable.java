@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.math.BigDecimal;
 
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
@@ -56,26 +57,28 @@ public class FieldTable
      *
      * @param buffer the buffer from which to read data. The length byte must be read already
      * @param length the length of the field table. Must be > 0.
+     *
      * @throws AMQFrameDecodingException if there is an error decoding the table
      */
     public FieldTable(ByteBuffer buffer, long length) throws AMQFrameDecodingException
     {
         this();
         _encodedForm = buffer.slice();
-        _encodedForm.limit((int)length);
+        _encodedForm.limit((int) length);
         _encodedSize = length;
-        buffer.skip((int)length);
+        buffer.skip((int) length);
     }
-
 
 
     private AMQTypedValue getProperty(AMQShortString string)
     {
-        synchronized(this)
+        checkPropertyName(string);
+
+        synchronized (this)
         {
-            if(_properties == null)
+            if (_properties == null)
             {
-                if(_encodedForm == null)
+                if (_encodedForm == null)
                 {
                     return null;
                 }
@@ -86,7 +89,7 @@ public class FieldTable
             }
         }
 
-        if(_properties == null)
+        if (_properties == null)
         {
             return null;
         }
@@ -112,17 +115,18 @@ public class FieldTable
 
     private AMQTypedValue setProperty(AMQShortString key, AMQTypedValue val)
     {
+        checkPropertyName(key);
         initMapIfNecessary();
-        if(_properties.containsKey(key))
+        if (_properties.containsKey(key))
         {
             _encodedForm = null;
 
-            if(val == null)
+            if (val == null)
             {
                 return removeKey(key);
             }
         }
-        else if(_encodedForm != null && val != null)
+        else if (_encodedForm != null && val != null)
         {
             EncodingUtils.writeShortStringBytes(_encodedForm, key);
             val.writeToBuffer(_encodedForm);
@@ -134,9 +138,8 @@ public class FieldTable
         }
 
 
-
-        AMQTypedValue oldVal = _properties.put(key,val);
-        if(oldVal != null)
+        AMQTypedValue oldVal = _properties.put(key, val);
+        if (oldVal != null)
         {
             _encodedSize -= oldVal.getEncodingSize();
         }
@@ -151,13 +154,13 @@ public class FieldTable
 
     private void initMapIfNecessary()
     {
-        synchronized(this)
+        synchronized (this)
         {
-            if(_properties == null)
+            if (_properties == null)
             {
-                if(_encodedForm == null  || _encodedSize == 0)
+                if (_encodedForm == null || _encodedSize == 0)
                 {
-                    _properties = new LinkedHashMap<AMQShortString,AMQTypedValue>();
+                    _properties = new LinkedHashMap<AMQShortString, AMQTypedValue>();
                 }
                 else
                 {
@@ -365,7 +368,7 @@ public class FieldTable
     public Object getObject(AMQShortString string)
     {
         AMQTypedValue value = getProperty(string);
-        if(value != null)
+        if (value != null)
         {
             return value.getValue();
         }
@@ -376,6 +379,33 @@ public class FieldTable
 
     }
 
+    public Long getTimestamp(AMQShortString name)
+    {
+        AMQTypedValue value = getProperty(name);
+        if ((value != null) && ((value.getType() == AMQType.TIMESTAMP)))
+        {
+            return (Long) value.getValue();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    public BigDecimal getDecimal(AMQShortString propertyName)
+    {
+        AMQTypedValue value = getProperty(propertyName);
+        if ((value != null) && ((value.getType() == AMQType.DECIMAL)))
+        {
+            return (BigDecimal) value.getValue();
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+
     // ************  Setters
     public Object setBoolean(String string, boolean b)
     {
@@ -384,18 +414,16 @@ public class FieldTable
 
     public Object setBoolean(AMQShortString string, boolean b)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.BOOLEAN.asTypedValue(b));
     }
 
     public Object setByte(String string, byte b)
     {
         return setByte(new AMQShortString(string), b);
-    }    
+    }
 
     public Object setByte(AMQShortString string, byte b)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.BYTE.asTypedValue(b));
     }
 
@@ -406,7 +434,6 @@ public class FieldTable
 
     public Object setShort(AMQShortString string, short i)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.SHORT.asTypedValue(i));
     }
 
@@ -418,7 +445,6 @@ public class FieldTable
 
     public Object setInteger(AMQShortString string, int i)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.INT.asTypedValue(i));
     }
 
@@ -430,10 +456,8 @@ public class FieldTable
 
     public Object setLong(AMQShortString string, long l)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.LONG.asTypedValue(l));
     }
-
 
     public Object setFloat(String string, float f)
     {
@@ -442,7 +466,6 @@ public class FieldTable
 
     public Object setFloat(AMQShortString string, float v)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.FLOAT.asTypedValue(v));
     }
 
@@ -451,13 +474,10 @@ public class FieldTable
         return setDouble(new AMQShortString(string), d);
     }
 
-
     public Object setDouble(AMQShortString string, double v)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.DOUBLE.asTypedValue(v));
     }
-
 
     public Object setString(String string, String s)
     {
@@ -466,7 +486,6 @@ public class FieldTable
 
     public Object setAsciiString(AMQShortString string, String value)
     {
-        checkPropertyName(string);
         if (value == null)
         {
             return setProperty(string, AMQType.VOID.asTypedValue(null));
@@ -479,7 +498,6 @@ public class FieldTable
 
     public Object setString(AMQShortString string, String value)
     {
-        checkPropertyName(string);
         if (value == null)
         {
             return setProperty(string, AMQType.VOID.asTypedValue(null));
@@ -490,19 +508,15 @@ public class FieldTable
         }
     }
 
-
     public Object setChar(String string, char c)
     {
         return setChar(new AMQShortString(string), c);
     }
 
-
     public Object setChar(AMQShortString string, char c)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.ASCII_CHARACTER.asTypedValue(c));
     }
-
 
     public Object setBytes(String string, byte[] b)
     {
@@ -511,26 +525,39 @@ public class FieldTable
 
     public Object setBytes(AMQShortString string, byte[] bytes)
     {
-        checkPropertyName(string);
         return setProperty(string, AMQType.BINARY.asTypedValue(bytes));
     }
 
     public Object setBytes(String string, byte[] bytes, int start, int length)
     {
-        return setBytes(new AMQShortString(string), bytes,start,length);
+        return setBytes(new AMQShortString(string), bytes, start, length);
     }
 
     public Object setBytes(AMQShortString string, byte[] bytes, int start, int length)
     {
-        checkPropertyName(string);
         byte[] newBytes = new byte[length];
-        System.arraycopy(bytes,start,newBytes,0,length);
+        System.arraycopy(bytes, start, newBytes, 0, length);
         return setBytes(string, bytes);
     }
 
     public Object setObject(String string, Object o)
     {
         return setObject(new AMQShortString(string), o);
+    }
+
+    public Object setTimestamp(AMQShortString string, long datetime)
+    {
+        return setProperty(string, AMQType.TIMESTAMP.asTypedValue(datetime));
+    }
+
+    public Object setDecimal(AMQShortString string, BigDecimal decimal)
+    {
+        return setProperty(string, AMQType.DECIMAL.asTypedValue(decimal));
+    }
+
+    public Object setVoid(AMQShortString string)
+    {
+        return setProperty(string, AMQType.VOID.asTypedValue(null));
     }
 
     public Object setObject(AMQShortString string, Object object)
@@ -579,7 +606,6 @@ public class FieldTable
         throw new AMQPInvalidClassException("Only Primatives objects allowed Object is:" + object.getClass());
     }
 
-
     public boolean isNullStringValue(String name)
     {
         AMQTypedValue value = getProperty(new AMQShortString(name));
@@ -603,10 +629,11 @@ public class FieldTable
         return itemExists(propertyName);
     }
 
-    public boolean itemExists(AMQShortString string)
+    public boolean itemExists(AMQShortString propertyName)
     {
+        checkPropertyName(propertyName);
         initMapIfNecessary();
-        return _properties.containsKey(string);
+        return _properties.containsKey(propertyName);
     }
 
     public boolean itemExists(String string)
@@ -620,22 +647,19 @@ public class FieldTable
         return _properties.toString();
     }
 
-
-
     private void checkPropertyName(AMQShortString propertyName)
     {
         if (propertyName == null)
         {
             throw new IllegalArgumentException("Property name must not be null");
         }
-        else if (propertyName.length()==0)
+        else if (propertyName.length() == 0)
         {
             throw new IllegalArgumentException("Property name must not be the empty string");
         }
 
         checkIdentiferFormat(propertyName);
     }
-
 
     protected static void checkIdentiferFormat(AMQShortString propertyName)
     {
@@ -648,7 +672,6 @@ public class FieldTable
 //             field name, it SHOULD signal a connection exception with reply code
 //             503 (syntax error). Conformance test: amq_wlp_table_01.
 //           * A peer MUST handle duplicate fields by using only the first instance.
-
 
         // AMQP length limit
         if (propertyName.length() > 128)
@@ -666,7 +689,6 @@ public class FieldTable
         }
     }
 
- 
     // *************************  Byte Buffer Processing
 
     public void writeToBuffer(ByteBuffer buffer)
@@ -707,9 +729,9 @@ public class FieldTable
     {
 
         int encodedSize = 0;
-        if(_properties != null)
+        if (_properties != null)
         {
-            for(Map.Entry<AMQShortString,AMQTypedValue> e : _properties.entrySet())
+            for (Map.Entry<AMQShortString, AMQTypedValue> e : _properties.entrySet())
             {
                 encodedSize += EncodingUtils.encodedShortStringLength(e.getKey());
                 encodedSize++; // the byte for the encoding Type
@@ -732,18 +754,19 @@ public class FieldTable
     public static interface FieldTableElementProcessor
     {
         public boolean processElement(String propertyName, AMQTypedValue value);
+
         public Object getResult();
     }
 
     public Object processOverElements(FieldTableElementProcessor processor)
     {
         initMapIfNecessary();
-        if(_properties != null)
+        if (_properties != null)
         {
-            for(Map.Entry<AMQShortString,AMQTypedValue> e : _properties.entrySet())
+            for (Map.Entry<AMQShortString, AMQTypedValue> e : _properties.entrySet())
             {
                 boolean result = processor.processElement(e.getKey().toString(), e.getValue());
-                if(!result)
+                if (!result)
                 {
                     break;
                 }
@@ -764,7 +787,7 @@ public class FieldTable
 
     public boolean isEmpty()
     {
-        return size() ==0;
+        return size() == 0;
     }
 
     public boolean containsKey(AMQShortString key)
@@ -782,7 +805,7 @@ public class FieldTable
     {
         initMapIfNecessary();
         Set<String> keys = new LinkedHashSet<String>();
-        for(AMQShortString key : _properties.keySet())
+        for (AMQShortString key : _properties.keySet())
         {
             keys.add(key.toString());
         }
@@ -795,7 +818,6 @@ public class FieldTable
 
         return getObject(key);
     }
-
 
 
     public Object put(AMQShortString key, Object value)
@@ -824,7 +846,7 @@ public class FieldTable
         initMapIfNecessary();
         _encodedForm = null;
         AMQTypedValue value = _properties.remove(key);
-        if(value == null)
+        if (value == null)
         {
             return null;
         }
@@ -839,11 +861,10 @@ public class FieldTable
     }
 
 
-
     public void clear()
     {
         initMapIfNecessary();
-        _encodedForm = null;        
+        _encodedForm = null;
         _properties.clear();
         _encodedSize = 0;
     }
@@ -857,19 +878,19 @@ public class FieldTable
     private void putDataInBuffer(ByteBuffer buffer)
     {
 
-        if(_encodedForm != null)
+        if (_encodedForm != null)
         {
 
-            if(_encodedForm.position() != 0)
+            if (_encodedForm.position() != 0)
             {
                 _encodedForm.flip();
             }
 //            _encodedForm.limit((int)getEncodedSize());
             buffer.put(_encodedForm);
         }
-        else if(_properties != null)
+        else if (_properties != null)
         {
-            final Iterator<Map.Entry<AMQShortString,AMQTypedValue>> it = _properties.entrySet().iterator();
+            final Iterator<Map.Entry<AMQShortString, AMQTypedValue>> it = _properties.entrySet().iterator();
 
             //If there are values then write out the encoded Size... could check _encodedSize != 0
             // write out the total length, which we have kept up to date as data is added
@@ -877,7 +898,7 @@ public class FieldTable
 
             while (it.hasNext())
             {
-                final Map.Entry<AMQShortString,AMQTypedValue> me = it.next();
+                final Map.Entry<AMQShortString, AMQTypedValue> me = it.next();
                 try
                 {
                     if (_logger.isTraceEnabled())
@@ -888,8 +909,6 @@ public class FieldTable
                         _logger.trace("Buffer Position:" + buffer.position() +
                                       " Remaining:" + buffer.remaining());
                     }
-
-
 
                     //Write the actual parameter name
                     EncodingUtils.writeShortStringBytes(buffer, me.getKey());
@@ -917,12 +936,12 @@ public class FieldTable
     {
 
         final boolean trace = _logger.isTraceEnabled();
-        if(length > 0)
+        if (length > 0)
         {
 
-            final int expectedRemaining = buffer.remaining()-(int)length;
+            final int expectedRemaining = buffer.remaining() - (int) length;
 
-            _properties = new LinkedHashMap<AMQShortString,AMQTypedValue>(INITIAL_HASHMAP_CAPACITY);
+            _properties = new LinkedHashMap<AMQShortString, AMQTypedValue>(INITIAL_HASHMAP_CAPACITY);
 
             do
             {
@@ -936,11 +955,9 @@ public class FieldTable
                 }
 
 
+                _properties.put(key, value);
 
-                _properties.put(key,value);
 
-
-            
             }
             while (buffer.remaining() > expectedRemaining);
 
@@ -962,15 +979,15 @@ public class FieldTable
 
     public boolean equals(Object o)
     {
-        if(o == this)
+        if (o == this)
         {
             return true;
         }
-        if(o == null)
+        if (o == null)
         {
             return false;
         }
-        if(!(o instanceof FieldTable))
+        if (!(o instanceof FieldTable))
         {
             return false;
         }
