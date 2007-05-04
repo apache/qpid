@@ -115,12 +115,12 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
                 ConversationFactory.Conversation conversation = conversationFactory.startConversation();
 
                 invite.setStringProperty("CONTROL_TYPE", "INVITE");
-                invite.setStringProperty("TEST_NAME", coordTest.getName());
+                invite.setStringProperty("TEST_NAME", coordTest.getTestCaseNameForTestMethod(coordTest.getName()));
 
                 conversation.send(controlTopic, invite);
 
                 // Wait for a short time, to give test clients an opportunity to reply to the invitation.
-                Collection<Message> replies = conversation.receiveAll(allClients.size(), 10000);
+                Collection<Message> replies = conversation.receiveAll(allClients.size(), 3000);
                 enlists = Coordinator.extractEnlists(replies);
             }
             catch (JMSException e)

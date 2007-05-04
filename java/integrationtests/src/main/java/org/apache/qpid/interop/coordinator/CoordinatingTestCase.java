@@ -22,12 +22,15 @@
 package org.apache.qpid.interop.coordinator;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.jms.*;
 
 import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.util.ConversationFactory;
 
@@ -67,6 +70,9 @@ import org.apache.qpid.util.ConversationFactory;
  */
 public abstract class CoordinatingTestCase extends TestCase
 {
+    /** Used for debugging. */
+    private static final Logger log = Logger.getLogger(CoordinatingTestCase.class);
+
     /** Holds the contact details for the sending test client. */
     TestClientDetails sender;
 
@@ -93,6 +99,8 @@ public abstract class CoordinatingTestCase extends TestCase
      */
     public void setSender(TestClientDetails sender)
     {
+        log.debug("public void setSender(TestClientDetails sender = " + sender + "): called");
+
         this.sender = sender;
     }
 
@@ -103,6 +111,8 @@ public abstract class CoordinatingTestCase extends TestCase
      */
     public void setReceiver(TestClientDetails receiver)
     {
+        log.debug("public void setReceiver(TestClientDetails receiver = " + receiver + "): called");
+
         this.receiver = receiver;
     }
 
@@ -127,6 +137,17 @@ public abstract class CoordinatingTestCase extends TestCase
     }
 
     /**
+     * Should provide a translation from the junit method name of a test to its test case name as defined in the
+     * interop testing specification. For example the method "testP2P" might map onto the interop test case name
+     * "TC2_BasicP2P".
+     *
+     * @param methodName The name of the JUnit test method.
+     *
+     * @return The name of the corresponding interop test case.
+     */
+    public abstract String getTestCaseNameForTestMethod(String methodName);
+
+    /**
      * Accepts the conversation factory over which to hold the test coordinating conversation.
      *
      * @param conversationFactory The conversation factory to coordinate the test over.
@@ -147,8 +168,10 @@ public abstract class CoordinatingTestCase extends TestCase
      *
      * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
-    protected Message[] sequenceTest(Properties testProperties) throws JMSException
+    protected Message[] sequenceTest(Map<String, Object> testProperties) throws JMSException
     {
+        log.debug("protected Message[] sequenceTest(Object... testProperties = " + testProperties + "): called");
+
         Session session = conversationFactory.getSession();
         Destination senderControlTopic = session.createTopic(sender.privateControlKey);
         Destination receiverControlTopic = session.createTopic(receiver.privateControlKey);
@@ -158,6 +181,7 @@ public abstract class CoordinatingTestCase extends TestCase
 
         // Assign the sender role to the sending test client.
         Message assignSender = conversationFactory.getSession().createMessage();
+        setPropertiesOnMessage(assignSender, testProperties);
         assignSender.setStringProperty("CONTROL_TYPE", "ASSIGN_ROLE");
         assignSender.setStringProperty("ROLE", "SENDER");
 
@@ -165,6 +189,7 @@ public abstract class CoordinatingTestCase extends TestCase
 
         // Assign the receiver role the receiving client.
         Message assignReceiver = session.createMessage();
+        setPropertiesOnMessage(assignReceiver, testProperties);
         assignReceiver.setStringProperty("CONTROL_TYPE", "ASSIGN_ROLE");
         assignReceiver.setStringProperty("ROLE", "RECEIVER");
 
@@ -183,6 +208,13 @@ public abstract class CoordinatingTestCase extends TestCase
         // Wait for the test sender to return its report.
         Message senderReport = senderConversation.receive();
 
+        try
+        {
+            Thread.sleep(500);
+        }
+        catch (InterruptedException e)
+        { }
+
         // Ask the receiver for its report.
         Message statusRequest = session.createMessage();
         statusRequest.setStringProperty("CONTROL_TYPE", "STATUS_REQUEST");
@@ -193,5 +225,24 @@ public abstract class CoordinatingTestCase extends TestCase
         Message receiverReport = receiverConversation.receive();
 
         return new Message[] { senderReport, receiverReport };
+    }
+
+    /**
+     * Sets properties of different types on a JMS Message.
+     *
+     * @param message    The message to set properties on.
+     * @param properties The property name/value pairs to set.
+     *
+     * @throws JMSException All underlying JMSExceptions are allowed to fall through.
+     */
+    public void setPropertiesOnMessage(Message message, Map<String, Object> properties) throws JMSException
+    {
+        for (Map.Entry<String, Object> entry : properties.entrySet())
+        {
+            String name = entry.getKey();
+            Object value = entry.getValue();
+
+            message.setObjectProperty(name, value);
+        }
     }
 }

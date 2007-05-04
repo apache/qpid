@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.interop.testclient.testcases;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
+import javax.jms.*;
+
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.interop.testclient.InteropClientTestCase;
+import org.apache.qpid.interop.testclient.TestClient;
 
 /**
  * Implements test case 2, basic P2P. Sends/received a specified number of messages to a specified route on the
@@ -41,6 +42,30 @@ import org.apache.qpid.interop.testclient.InteropClientTestCase;
  */
 public class TestCase2BasicP2P implements InteropClientTestCase
 {
+    /** Used for debugging. */
+    private static final Logger log = Logger.getLogger(TestCase2BasicP2P.class);
+
+    /** Holds the count of test messages received. */
+    private int messageCount;
+
+    /** The role to be played by the test. */
+    private Roles role;
+
+    /** The number of test messages to send. */
+    private int numMessages;
+
+    /** The routing key to send them to on the default direct exchange. */
+    private Destination sendDestination;
+
+    /** The connection to send the test messages on. */
+    private Connection connection;
+
+    /** The session to send the test messages on. */
+    private Session session;
+
+    /** The producer to send the test messages with. */
+    MessageProducer producer;
+
     /**
      * Should provide the name of the test case that this class implements. The exact names are defined in the
      * interop testing spec.
@@ -49,6 +74,8 @@ public class TestCase2BasicP2P implements InteropClientTestCase
      */
     public String getName()
     {
+        log.debug("public String getName(): called");
+
         return "TC2_BasicP2P";
     }
 
@@ -63,6 +90,8 @@ public class TestCase2BasicP2P implements InteropClientTestCase
      */
     public boolean acceptInvite(Message inviteMessage) throws JMSException
     {
+        log.debug("public boolean acceptInvite(Message inviteMessage = " + inviteMessage + "): called");
+
         // All invites are acceptable.
         return true;
     }
@@ -79,27 +108,65 @@ public class TestCase2BasicP2P implements InteropClientTestCase
      */
     public void assignRole(Roles role, Message assignRoleMessage) throws JMSException
     {
-        // Take note of the role to be played.
+        log.debug("public void assignRole(Roles role = " + role + ", Message assignRoleMessage = " + assignRoleMessage
+            + "): called");
 
-        // Extract and retain the test parameters.
+        // Reset the message count for a new test.
+        messageCount = 0;
+
+        // Take note of the role to be played.
+        this.role = role;
 
         // Create a new connection to pass the test messages on.
+        connection =
+            TestClient.createConnection(TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, TestClient.brokerUrl,
+                TestClient.virtualHost);
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
+        // Extract and retain the test parameters.
+        numMessages = assignRoleMessage.getIntProperty("P2P_NUM_MESSAGES");
+        sendDestination = session.createQueue(assignRoleMessage.getStringProperty("P2P_QUEUE_AND_KEY_NAME"));
+
+        log.debug("numMessages = " + numMessages);
+        log.debug("sendDestination = " + sendDestination);
+        log.debug("role = " + role);
+
+        switch (role)
+        {
         // Check if the sender role is being assigned, and set up a message producer if so.
-        {
-        }
+        case SENDER:
+            producer = session.createProducer(sendDestination);
+            break;
+
         // Otherwise the receiver role is being assigned, so set this up to listen for messages.
-        {
+        case RECEIVER:
+            MessageConsumer consumer = session.createConsumer(sendDestination);
+            consumer.setMessageListener(this);
+            break;
         }
+
+        connection.start();
     }
 
     /**
      * Performs the test case actions.
      */
-    public void start()
+    public void start() throws JMSException
     {
+        log.debug("public void start(): called");
+
         // Check that the sender role is being performed.
+        if (role.equals(Roles.SENDER))
         {
+            Message testMessage = session.createTextMessage("test");
+
+            for (int i = 0; i < numMessages; i++)
+            {
+                producer.send(testMessage);
+
+                // Increment the message count.
+                messageCount++;
+            }
         }
     }
 
@@ -114,11 +181,17 @@ public class TestCase2BasicP2P implements InteropClientTestCase
      */
     public Message getReport(Session session) throws JMSException
     {
+        log.debug("public Message getReport(Session session): called");
+
         // Close the test connection.
+        connection.close();
 
         // Generate a report message containing the count of the number of messages passed.
+        Message report = session.createMessage();
+        report.setStringProperty("CONTROL_TYPE", "REPORT");
+        report.setIntProperty("MESSAGE_COUNT", messageCount);
 
-        return null;
+        return report;
     }
 
     /**
@@ -128,6 +201,9 @@ public class TestCase2BasicP2P implements InteropClientTestCase
      */
     public void onMessage(Message message)
     {
+        log.debug("public void onMessage(Message message = " + message + "): called");
+
         // Increment the message count.
+        messageCount++;
     }
 }

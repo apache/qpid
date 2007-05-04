@@ -31,12 +31,9 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase1DummyRun;
 import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase2BasicP2P;
-import org.apache.qpid.interop.testclient.InteropClientTestCase;
 import org.apache.qpid.interop.testclient.TestClient;
-import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
-import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
-import org.apache.qpid.util.ClasspathScanner;
 import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
@@ -128,7 +125,8 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
                 new ArrayList<Class<? extends CoordinatingTestCase>>();
             // ClasspathScanner.getMatches(CoordinatingTestCase.class, "^Test.*", true);
             // Hard code the test classes till the classpath scanner is fixed.
-            Collections.addAll(testCaseClasses, new Class[] { CoordinatingTestCase2BasicP2P.class });
+            Collections.addAll(testCaseClasses,
+                new Class[] { CoordinatingTestCase1DummyRun.class, CoordinatingTestCase2BasicP2P.class });
 
             // Check that some test classes were actually found.
             if ((testCaseClasses == null) || testCaseClasses.isEmpty())
@@ -190,6 +188,8 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         conversationFactory = new ConversationFactory(connection, responseQueue, LinkedBlockingQueue.class);
         ConversationFactory.Conversation conversation = conversationFactory.startConversation();
 
+        connection.start();
+
         // Broadcast the compulsory invitation to find out what clients are available to test.
         Message invite = session.createMessage();
         invite.setStringProperty("CONTROL_TYPE", "INVITE");
@@ -198,7 +198,7 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         conversation.send(controlTopic, invite);
 
         // Wait for a short time, to give test clients an opportunity to reply to the invitation.
-        Collection<Message> enlists = conversation.receiveAll(0, 10000);
+        Collection<Message> enlists = conversation.receiveAll(0, 3000);
 
         enlistedClients = extractEnlists(enlists);
 

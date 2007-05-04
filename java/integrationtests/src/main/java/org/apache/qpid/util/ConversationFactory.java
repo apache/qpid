@@ -23,9 +23,12 @@ package org.apache.qpid.util;
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.*;
+
+import org.apache.log4j.Logger;
 
 /**
  * A conversation helper, uses a message correlation id pattern to match up sent and received messages as a conversation
@@ -96,6 +99,9 @@ import javax.jms.*;
  */
 public class ConversationFactory
 {
+    /** Used for debugging. */
+    private static final Logger log = Logger.getLogger(ConversationFactory.class);
+
     /** Holds a map from correlation id's to queues. */
     private Map<Long, BlockingQueue<Message>> idsToQueues = new HashMap<Long, BlockingQueue<Message>>();
 
@@ -152,6 +158,9 @@ public class ConversationFactory
     public ConversationFactory(Connection connection, Destination receiveDestination,
         Class<? extends BlockingQueue> queueClass) throws JMSException
     {
+        log.debug("public ConversationFactory(Connection connection, Destination receiveDestination = " + receiveDestination
+            + ", Class<? extends BlockingQueue> queueClass = " + queueClass + "): called");
+
         this.connection = connection;
         this.queueClass = queueClass;
 
@@ -173,6 +182,8 @@ public class ConversationFactory
      */
     public Conversation startConversation()
     {
+        log.debug("public Conversation startConversation(): called");
+
         Conversation conversation = new Conversation();
         conversation.conversationId = conversationIdGenerator.getAndIncrement();
 
@@ -199,6 +210,8 @@ public class ConversationFactory
      */
     public Collection<Message> emptyDeadLetterBox()
     {
+        log.debug("public Collection<Message> emptyDeadLetterBox(): called");
+
         Collection<Message> result = new ArrayList<Message>();
         deadLetterBox.drainTo(result);
 
@@ -246,6 +259,9 @@ public class ConversationFactory
          */
         public void send(Destination sendDestination, Message message) throws JMSException
         {
+            log.debug("public void send(Destination sendDestination = " + sendDestination + ", Message message = " + message
+                + "): called");
+
             // Conversation settings = threadLocals.get();
             // long conversationId = conversationId;
             message.setJMSCorrelationID(Long.toString(conversationId));
@@ -287,6 +303,8 @@ public class ConversationFactory
          */
         public Message receive() throws JMSException
         {
+            log.debug("public Message receive(): called");
+
             // Conversation settings = threadLocals.get();
             // long conversationId = settings.conversationId;
 
@@ -313,7 +331,8 @@ public class ConversationFactory
         /**
          * Gets many messages in an ongoing conversation. If a limit is specified, then once that many messages are
          * received they will be returned. If a timeout is specified, then all messages up to the limit, received within
-         * that timespan will be returned.
+         * that timespan will be returned. At least one of the message count or timeout should be set to a value of
+         * 1 or greater.
          *
          * @param num     The number of messages to receive, or all if this is less than 1.
          * @param timeout The timeout in milliseconds to receive the messages in, or forever if this is less than 1.
@@ -324,12 +343,78 @@ public class ConversationFactory
          */
         public Collection<Message> receiveAll(int num, long timeout) throws JMSException
         {
+            log.debug("public Collection<Message> receiveAll(int num = " + num + ", long timeout = " + timeout
+                + "): called");
+
+            // Check that a timeout or message count was set.
+            if ((num < 1) && (timeout < 1))
+            {
+                throw new IllegalArgumentException("At least one of message count (num) or timeout must be set.");
+            }
+
+            // Ensure that the reply queue for this conversation exists.
+            initQueueForId(conversationId);
+            BlockingQueue<Message> queue = idsToQueues.get(conversationId);
+
+            // Used to collect the received messages in.
             Collection<Message> result = new ArrayList<Message>();
 
-            for (int i = 0; i < num; i++)
+            // Used to indicate when the timeout or message count has expired.
+            boolean receiveMore = true;
+
+            int messageCount = 0;
+
+            // Receive messages until the timeout or message count expires.
+            do
             {
-                result.add(receive());
+                try
+                {
+                    Message next = null;
+
+                    // Try to receive the message with a timeout if one has been set.
+                    if (timeout > 0)
+                    {
+                        next = queue.poll(timeout, TimeUnit.MILLISECONDS);
+
+                        // Check if the timeout expired, and stop receiving if so.
+                        if (next == null)
+                        {
+                            receiveMore = false;
+                        }
+                    }
+                    // Receive the message without a timeout.
+                    else
+                    {
+                        next = queue.take();
+                    }
+
+                    // Increment the message count if a message was received.
+                    messageCount += (next != null) ? 1 : 0;
+
+                    // Check if all the requested messages were received, and stop receiving if so.
+                    if ((num > 0) && (messageCount >= num))
+                    {
+                        receiveMore = false;
+                    }
+
+                    // Keep the reply-to destination to send replies to.
+                    sendDestination = (next != null) ? next.getJMSReplyTo() : sendDestination;
+
+                    if (next != null)
+                    {
+                        result.add(next);
+                    }
+                }
+                catch (InterruptedException e)
+                {
+                    // Restore the threads interrupted status.
+                    Thread.currentThread().interrupt();
+
+                    // Stop receiving but return the messages received so far.
+                    receiveMore = false;
+                }
             }
+            while (receiveMore);
 
             return result;
         }
@@ -340,6 +425,8 @@ public class ConversationFactory
          */
         public void end()
         {
+            log.debug("public void end(): called");
+
             // Ensure that the thread local for the current thread is cleaned up.
             // Conversation settings = threadLocals.get();
             // long conversationId = settings.conversationId;
@@ -366,6 +453,8 @@ public class ConversationFactory
          */
         public void onMessage(Message message)
         {
+            log.debug("public void onMessage(Message message = " + message + "): called");
+
             try
             {
                 Long conversationId = Long.parseLong(message.getJMSCorrelationID());
