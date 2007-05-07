@@ -443,7 +443,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP, STRICT_AMQP_DEFAULT));
         _strictAMQPFATAL = Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP_FATAL, STRICT_AMQP_FATAL_DEFAULT));
-        _immediatePrefetch = Boolean.parseBoolean(System.getProperties().getProperty(IMMEDIATE_PREFETCH, IMMEDIATE_PREFETCH_DEFAULT));
+        _immediatePrefetch = _strictAMQP || Boolean.parseBoolean(System.getProperties().getProperty(IMMEDIATE_PREFETCH, IMMEDIATE_PREFETCH_DEFAULT));
 
         _connection = con;
         _transacted = transacted;
@@ -489,7 +489,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             _queue = new FlowControllingBlockingQueue(_defaultPrefetchHighMark, null);
         }
     }
-
 
 
     AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetchHigh, int defaultPrefetchLow)
@@ -785,7 +784,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 amqe = new AMQException("Closing session forcibly", e);
             }
             _connection.deregisterSession(_channelId);
-            closeProducersAndConsumers(amqe);            
+            closeProducersAndConsumers(amqe);
         }
     }
 
@@ -2021,7 +2020,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     synchronized void startDistpatcherIfNecessary()
     {
-        // If IMMEDIATE_PREFETCH is not set then we need to start fetching          
+        // If IMMEDIATE_PREFETCH is not set then we need to start fetching
         if (!_immediatePrefetch)
         {
             // We do this now if this is the first call on a started connection
