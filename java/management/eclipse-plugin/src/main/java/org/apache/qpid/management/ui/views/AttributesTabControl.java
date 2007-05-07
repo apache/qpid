@@ -477,37 +477,32 @@ public class AttributesTabControl extends TabControl
         layout.marginHeight = 20;
         layout.marginWidth = 20;
         
-        Composite parent = new Composite(shell, SWT.NONE);
+        Composite parent = _toolkit.createComposite(shell, SWT.NONE);
         parent.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         parent.setLayout(layout);
 
         // Name
-        Label label = new Label(parent, SWT.NONE);               
-        label.setText(ATTRIBUTE_TABLE_TITLES[0]);
+        Label label = _toolkit.createLabel(parent, ATTRIBUTE_TABLE_TITLES[0], SWT.NONE);       
         GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false);
         label.setLayoutData(layoutData);
-        Text  value = new Text(parent, SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY);
-        value.setText(ViewUtility.getDisplayText(attribute.getName()));
+        int textStyle = SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY;
+        Text  value = _toolkit.createText(parent, ViewUtility.getDisplayText(attribute.getName()), textStyle);
         value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
 
         
         // Description
-        label = new Label(parent, SWT.NONE);
-        label.setText(DESCRIPTION);
+        label = _toolkit.createLabel(parent, DESCRIPTION, SWT.NONE);
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
-        value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
-        value.setText(attribute.getDescription());
+        value = _toolkit.createText(parent, attribute.getDescription(), textStyle);
         value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
         // value
-        label = new Label(parent, SWT.NONE);
-        label.setText(ATTRIBUTE_TABLE_TITLES[1]);
+        label = _toolkit.createLabel(parent, ATTRIBUTE_TABLE_TITLES[1], SWT.NONE);
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         if (!attribute.isReadable())
         {
-            value = new Text(parent, SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY);
-            value.setText("");
+            value = _toolkit.createText(parent, "", textStyle);
             value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         }
         else
@@ -521,11 +516,9 @@ public class AttributesTabControl extends TabControl
             }
             else
             {
-                int style = 0;
                 if (attribute.isWritable())
                 {
-                    style = SWT.BEGINNING | SWT.BORDER;
-                    value = new Text(parent, style);
+                    value = _toolkit.createText(parent, "", SWT.BEGINNING | SWT.BORDER);
                     value.addVerifyListener(new NumberVerifyListener());
                     
                     // set data to access in the listener
@@ -533,8 +526,7 @@ public class AttributesTabControl extends TabControl
                 }
                 else
                 {
-                    style = SWT.BEGINNING | SWT.BORDER | SWT.READ_ONLY;
-                    value = new Text(parent, style);
+                    value = _toolkit.createText(parent, "", textStyle);
                 }
                 
                 value.setText(attribute.getValue().toString());

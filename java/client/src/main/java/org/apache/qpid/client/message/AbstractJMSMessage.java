@@ -54,6 +54,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     private Destination _destination;
     private JMSHeaderAdapter _headerAdapter;
     private BasicMessageConsumer _consumer;
+    private boolean _strictAMQP;
 
     protected AbstractJMSMessage(ByteBuffer data)
     {
@@ -68,6 +69,8 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _readableMessage = (data != null);
         _changedData = (data == null);
         _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
+
+        _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
     }
 
     protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
@@ -289,85 +292,116 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public boolean propertyExists(AMQShortString propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
-
         return getJmsHeaders().propertyExists(propertyName);
     }
 
     public boolean propertyExists(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
-
         return getJmsHeaders().propertyExists(propertyName);
     }
 
     public boolean getBooleanProperty(AMQShortString propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getBoolean(propertyName);
     }
 
     public boolean getBooleanProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getBoolean(propertyName);
     }
 
     public byte getByteProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getByte(propertyName);
     }
 
+    public byte[] getBytesProperty(AMQShortString propertyName) throws JMSException
+    {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
+        return getJmsHeaders().getBytes(propertyName);
+    }
+
     public short getShortProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getShort(propertyName);
     }
 
     public int getIntProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getInteger(propertyName);
     }
 
     public long getLongProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getLong(propertyName);
     }
 
     public float getFloatProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getFloat(propertyName);
     }
 
     public double getDoubleProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getDouble(propertyName);
     }
 
     public String getStringProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
 
         return getJmsHeaders().getString(propertyName);
     }
 
     public Object getObjectProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
-
         return getJmsHeaders().getObject(propertyName);
     }
 
@@ -378,83 +412,124 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setBooleanProperty(AMQShortString propertyName, boolean b) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setBoolean(propertyName, b);
     }
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setBoolean(propertyName, b);
     }
 
     public void setByteProperty(String propertyName, byte b) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setByte(propertyName, new Byte(b));
+    }
+
+    public void setBytesProperty(AMQShortString propertyName, byte[] bytes) throws JMSException
+    {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
+        checkWritableProperties();
+        getJmsHeaders().setBytes(propertyName, bytes);
     }
 
     public void setShortProperty(String propertyName, short i) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setShort(propertyName, new Short(i));
     }
 
     public void setIntProperty(String propertyName, int i) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
-        getJmsHeaders().setInteger(propertyName, new Integer(i));
+        JMSHeaderAdapter.checkPropertyName(propertyName);
+        super.setIntProperty(new AMQShortString(propertyName), new Integer(i));
     }
 
     public void setLongProperty(String propertyName, long l) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setLong(propertyName, new Long(l));
     }
 
     public void setFloatProperty(String propertyName, float f) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setFloat(propertyName, new Float(f));
     }
 
     public void setDoubleProperty(String propertyName, double v) throws JMSException
     {
+        if (_strictAMQP)
+        {
+            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+        }
+
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setDouble(propertyName, new Double(v));
     }
 
     public void setStringProperty(String propertyName, String value) throws JMSException
     {
         checkWritableProperties();
-        checkPropertyName(propertyName);
-        getJmsHeaders().setString(propertyName, value);
+        JMSHeaderAdapter.checkPropertyName(propertyName);
+        super.setLongStringProperty(new AMQShortString(propertyName), value);
     }
 
     public void setObjectProperty(String propertyName, Object object) throws JMSException
     {
         checkWritableProperties();
-        checkPropertyName(propertyName);
         getJmsHeaders().setObject(propertyName, object);
     }
 
     protected void removeProperty(AMQShortString propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
         getJmsHeaders().remove(propertyName);
     }
 
     protected void removeProperty(String propertyName) throws JMSException
     {
-        checkPropertyName(propertyName);
         getJmsHeaders().remove(propertyName);
     }
 
@@ -544,17 +619,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         getContentHeaderProperties().setHeaders(messageProperties);
     }
 
-    private void checkPropertyName(CharSequence propertyName)
-    {
-        if (propertyName == null)
-        {
-            throw new IllegalArgumentException("Property name must not be null");
-        }
-        else if (propertyName.length() == 0)
-        {
-            throw new IllegalArgumentException("Property name must not be the empty string");
-        }
-    }
 
     public JMSHeaderAdapter getJmsHeaders()
     {
@@ -625,11 +689,4 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _consumer = basicMessageConsumer;
     }
 
-    public byte[] getBytesProperty(AMQShortString propertyName) throws JMSException
-    {
-        checkPropertyName(propertyName);
-
-        return getJmsHeaders().getBytes(propertyName);
-
-    }
 }
