@@ -22,10 +22,11 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 public enum AMQType
 {
-
-
     //AMQP FieldTable Wire Types
 
     LONG_STRING('S')
@@ -113,55 +114,75 @@ public enum AMQType
 
         public int getEncodingSize(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            return EncodingUtils.encodedByteLength()+ EncodingUtils.encodedIntegerLength();
         }
 
         public Object toNativeValue(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            if(value instanceof BigDecimal)
+            {
+                return (BigDecimal) value;
+            }
+            else
+            {
+                throw new NumberFormatException("Cannot convert: " + value + "(" +
+                                                value.getClass().getName() + ") to BigDecimal.");
+            }
         }
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            BigDecimal bd = (BigDecimal) value;
+
+            byte places = new Integer(bd.scale()).byteValue();
+
+            int unscaled = bd.intValue();
+
+            EncodingUtils.writeByte(buffer, places);
+
+            EncodingUtils.writeInteger(buffer, unscaled);
         }
 
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            byte places = EncodingUtils.readByte(buffer);
+
+            int unscaled = EncodingUtils.readInteger(buffer);
+
+            BigDecimal bd = new BigDecimal(unscaled);
+            return bd.setScale(places);            
         }
     },
 
     TIMESTAMP('T')
     {
-
         public int getEncodingSize(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            return EncodingUtils.encodedLongLength();
         }
-
 
         public Object toNativeValue(Object value)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            if(value instanceof Long)
+            {
+                return (Long) value;
+            }
+            else
+            {
+                throw new NumberFormatException("Cannot convert: " + value + "(" +
+                                                value.getClass().getName() + ") to timestamp.");
+            }
         }
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            EncodingUtils.writeLong(buffer, (Long) value);
         }
+
 
         public Object readValueFromBuffer(ByteBuffer buffer)
         {
-            // TODO : fixme
-            throw new UnsupportedOperationException();
+            return EncodingUtils.readLong(buffer);
         }
     },
 
@@ -172,7 +193,6 @@ public enum AMQType
             // TODO : fixme
             throw new UnsupportedOperationException();
         }
-
 
         public Object toNativeValue(Object value)
         {
@@ -250,7 +270,7 @@ public enum AMQType
 
         public void writeValueImpl(Object value, ByteBuffer buffer)
         {
-            EncodingUtils.writeLongstr(buffer, (byte[]) value);            
+            EncodingUtils.writeLongstr(buffer, (byte[]) value);
         }
 
         public Object readValueFromBuffer(ByteBuffer buffer)

@@ -24,14 +24,17 @@ import javax.jms.JMSException;
 
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.ContentHeaderProperties;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+
+import java.math.BigDecimal;
 
 public class AMQMessage
 {
     protected ContentHeaderProperties _contentHeaderProperties;
 
-    /**
-     * If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required
-     */
+    /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
     protected AMQSession _session;
 
     protected final long _deliveryTag;
@@ -48,8 +51,9 @@ public class AMQMessage
     }
 
     /**
-     * The session is set when CLIENT_ACKNOWLEDGE mode is used so that the CHANNEL ACK can be sent when the user
-     * calls acknowledge()
+     * The session is set when CLIENT_ACKNOWLEDGE mode is used so that the CHANNEL ACK can be sent when the user calls
+     * acknowledge()
+     *
      * @param s the AMQ session that delivered this message
      */
     public void setAMQSession(AMQSession s)
@@ -64,6 +68,7 @@ public class AMQMessage
 
     /**
      * Get the AMQ message number assigned to this message
+     *
      * @return the message number
      */
     public long getDeliveryTag()
@@ -71,11 +76,60 @@ public class AMQMessage
         return _deliveryTag;
     }
 
-    /**
-     * Invoked prior to sending the message. Allows the message to be modified if necessary before
-     * sending.
-     */
+    /** Invoked prior to sending the message. Allows the message to be modified if necessary before sending. */
     public void prepareForSending() throws JMSException
     {
+    }
+
+    public FieldTable getPropertyHeaders()
+    {
+        return ((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders();
+    }
+
+    public void setDecimalProperty(AMQShortString propertyName, BigDecimal bd) throws JMSException
+    {
+        getPropertyHeaders().setDecimal(propertyName, bd);
+    }
+
+    public void setIntProperty(AMQShortString propertyName, int i) throws JMSException
+    {
+        getPropertyHeaders().setInteger(propertyName, new Integer(i));
+    }
+
+    public void setLongStringProperty(AMQShortString propertyName, String value)
+    {
+        getPropertyHeaders().setString(propertyName, value);
+    }
+
+    public void setTimestampProperty(AMQShortString propertyName, long value)
+    {
+        getPropertyHeaders().setTimestamp(propertyName, value);
+    }
+
+    public void setVoidProperty(AMQShortString propertyName)
+    {
+        getPropertyHeaders().setVoid(propertyName);
+    }
+
+    //** Getters
+
+    public BigDecimal getDecimalProperty(AMQShortString propertyName) throws JMSException
+    {
+        return getPropertyHeaders().getDecimal(propertyName);
+    }
+
+    public int getIntegerProperty(AMQShortString propertyName) throws JMSException
+    {
+        return getPropertyHeaders().getInteger(propertyName);
+    }
+
+    public String getLongStringProperty(AMQShortString propertyName)
+    {
+        return getPropertyHeaders().getString(propertyName);
+    }
+
+    public Long getTimestampProperty(AMQShortString propertyName)
+    {
+        return getPropertyHeaders().getTimestamp(propertyName);
     }
 }
