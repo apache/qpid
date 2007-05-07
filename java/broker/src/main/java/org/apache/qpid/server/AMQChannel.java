@@ -816,13 +816,14 @@ public class AMQChannel
             }
 
             _unacknowledgedMessageMap.acknowledgeMessage(deliveryTag, multiple, _txnContext);
-            checkSuspension();
+
             if (_log.isDebugEnabled())
             {
                 _log.debug("Unacked (PostAck) Size:" + _unacknowledgedMessageMap.size());
             }
 
         }
+        checkSuspension();
     }
 
     /**
