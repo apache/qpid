@@ -2,7 +2,6 @@ package org.apache.qpid.interop.coordinator.testcases;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import javax.jms.Message;
 
@@ -22,7 +21,7 @@ import org.apache.qpid.interop.coordinator.CoordinatingTestCase;
 public class CoordinatingTestCase1DummyRun extends CoordinatingTestCase
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(CoordinatingTestCase2BasicP2P.class);
+    private static final Logger log = Logger.getLogger(CoordinatingTestCase1DummyRun.class);
 
     /**
      * Creates a new coordinating test case with the specified name.
@@ -62,5 +61,4 @@ public class CoordinatingTestCase1DummyRun extends CoordinatingTestCase
     {
         return "TC1_DummyRun";
     }
-
 }

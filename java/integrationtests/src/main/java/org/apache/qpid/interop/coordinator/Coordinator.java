@@ -33,6 +33,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase1DummyRun;
 import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase2BasicP2P;
+import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase3BasicPubSub;
 import org.apache.qpid.interop.testclient.TestClient;
 import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.ConversationFactory;
@@ -126,7 +127,11 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
             // ClasspathScanner.getMatches(CoordinatingTestCase.class, "^Test.*", true);
             // Hard code the test classes till the classpath scanner is fixed.
             Collections.addAll(testCaseClasses,
-                new Class[] { CoordinatingTestCase1DummyRun.class, CoordinatingTestCase2BasicP2P.class });
+                new Class[]
+                {
+                    CoordinatingTestCase1DummyRun.class, CoordinatingTestCase2BasicP2P.class,
+                    CoordinatingTestCase3BasicPubSub.class
+                });
 
             // Check that some test classes were actually found.
             if ((testCaseClasses == null) || testCaseClasses.isEmpty())
@@ -145,9 +150,12 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
 
             // Create a coordinator and begin its test procedure.
             Coordinator coordinator = new Coordinator(brokerUrl, virtualHost);
+
+            boolean failure = false;
+
             TestResult testResult = coordinator.start(testClassNames);
 
-            if (!testResult.wasSuccessful())
+            if (failure)
             {
                 System.exit(FAILURE_EXIT);
             }
@@ -175,8 +183,7 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
      */
     public TestResult start(String[] testClassNames) throws Exception
     {
-        log.debug("public TestResult start(String[] testClassNames = " + PrettyPrintingUtils.printArray(testClassNames)
-            + "): called");
+        log.debug("public TestResult start(String testClassName): called");
 
         // Connect to the broker.
         connection = TestClient.createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
@@ -202,8 +209,13 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
 
         enlistedClients = extractEnlists(enlists);
 
-        // Run all of the tests in the suite using JUnit.
-        TestResult result = super.start(testClassNames);
+        // Run the test in the suite using JUnit.
+        TestResult result = null;
+
+        for (String testClassName : testClassNames)
+        {
+            result = super.start(new String[] { testClassName });
+        }
 
         // At this point in time, all tests have completed. Broadcast the shutdown message.
         Message terminate = session.createMessage();

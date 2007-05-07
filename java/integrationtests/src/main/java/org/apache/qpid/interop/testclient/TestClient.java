@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
 import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
+import org.apache.qpid.interop.testclient.testcases.TestCase3BasicPubSub;
 import org.apache.qpid.util.ClasspathScanner;
 import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.PropertiesUtils;
@@ -175,7 +176,8 @@ public class TestClient implements MessageListener
             new ArrayList<Class<? extends InteropClientTestCase>>();
         // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
         // Hard code the test classes till the classpath scanner is fixed.
-        Collections.addAll(testCaseClasses, new Class[] { TestCase1DummyRun.class, TestCase2BasicP2P.class });
+        Collections.addAll(testCaseClasses,
+            new Class[] { TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class });
 
         // Create all the test case implementations and index them by the test names.
         for (Class<? extends InteropClientTestCase> nextClass : testCaseClasses)
