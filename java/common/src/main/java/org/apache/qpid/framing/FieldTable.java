@@ -552,6 +552,16 @@ public class FieldTable
 
     public Object setDecimal(AMQShortString string, BigDecimal decimal)
     {
+        if (decimal.longValue() > Integer.MAX_VALUE)
+        {
+            throw new UnsupportedOperationException("AMQP doesnot support decimals larger than " + Integer.MAX_VALUE);
+        }
+
+        if (decimal.scale() > Byte.MAX_VALUE)
+        {
+            throw new UnsupportedOperationException("AMQP doesnot support decimal scales larger than " + Byte.MAX_VALUE);
+        }        
+
         return setProperty(string, AMQType.DECIMAL.asTypedValue(decimal));
     }
 

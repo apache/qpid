@@ -194,6 +194,30 @@ public class PropertyValueTest extends TestCase implements MessageListener
             BigDecimal bd = new BigDecimal(Integer.MAX_VALUE);
             ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal"), bd.setScale(Byte.MAX_VALUE));
 
+
+            bd = new BigDecimal((long) Integer.MAX_VALUE + 1L);
+
+            try
+            {
+                ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal-bad-value"), bd.setScale(Byte.MAX_VALUE));
+                fail("UnsupportedOperationException should be thrown as value can't be correctly transmitted");
+            }
+            catch (UnsupportedOperationException uoe)
+            {
+                // normal path.
+            }
+
+
+            try
+            {
+                ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal-bad-scale"), bd.setScale(Byte.MAX_VALUE + 1));
+                fail("UnsupportedOperationException should be thrown as scale can't be correctly transmitted");
+            }
+            catch (UnsupportedOperationException uoe)
+            {
+                // normal path.
+            }
+
             //Void
             ((AMQMessage) m).setVoidProperty(new AMQShortString("void"));
 
@@ -254,7 +278,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
                                 "Test", m.getStringProperty("String"));
 
             // AMQP Tests Specific values
-           
+
             Assert.assertEquals("Check Timestamp properties are correctly transported",
                                 m.getStringProperty("time-str"),
                                 ((AMQMessage) m).getTimestampProperty(new AMQShortString("time")).toString());
