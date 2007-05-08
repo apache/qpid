@@ -84,6 +84,8 @@ public class TestCase1DummyRun implements InteropClientTestCase
 
     public void onMessage(Message message)
     {
+        log.debug("public void onMessage(Message message = " + message + "): called");
+
         // Ignore any messages.
     }
 }
