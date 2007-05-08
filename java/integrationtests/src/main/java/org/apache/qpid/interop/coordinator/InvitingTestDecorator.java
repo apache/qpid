@@ -163,6 +163,16 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
     }
 
     /**
+     * Prints a string summarizing this test decorator, mainly for debugging purposes.
+     *
+     * @return String representation for debugging purposes.
+     */
+    public String toString()
+    {
+        return "InvitingTestDecorator: [ testSuite = " + testSuite + " ]";
+    }
+
+    /**
      * Produces all pairs of combinations of elements from two sets. The ordering of the elements in the pair is
      * important, that is the pair <l, r> is distinct from <r, l>; both pairs are generated. For any element, i, in
      * both the left and right sets, the reflexive pair <i, i> is not generated.

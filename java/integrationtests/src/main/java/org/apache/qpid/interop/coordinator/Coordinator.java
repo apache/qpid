@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.interop.coordinator;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -39,8 +40,10 @@ import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
 
-import uk.co.thebadgerset.junit.extensions.TestRunnerImprovedErrorHandling;
+import uk.co.thebadgerset.junit.extensions.TKTestResult;
+import uk.co.thebadgerset.junit.extensions.TKTestRunner;
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
 /**
  * <p/>Implements the coordinator client described in the interop testing specification
@@ -55,7 +58,7 @@ import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
  * <tr><td> Terminate the interop testing framework.
  * </table>
  */
-public class Coordinator extends TestRunnerImprovedErrorHandling
+public class Coordinator extends TKTestRunner
 {
     private static final Logger log = Logger.getLogger(Coordinator.class);
 
@@ -75,6 +78,15 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
 
     /** Holds the connection that the coordinating messages are sent over. */
     private Connection connection;
+
+    /**
+     * Holds the name of the class of the test currently being run. Ideally passed into the {@link #createTestResult}
+     * method, but as the signature is already fixed for this, the current value gets pushed here as a member variable.
+     */
+    private String currentTestClassName;
+
+    /** Holds the path of the directory to output test results too, if one is defined. */
+    private static String reportDir;
 
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
@@ -114,12 +126,14 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
                         new String[][]
                         {
                             { "b", "The broker URL.", "broker", "false" },
-                            { "h", "The virtual host to use.", "virtual host", "false" }
+                            { "h", "The virtual host to use.", "virtual host", "false" },
+                            { "o", "The name of the directory to output test timings to.", "dir", "false" }
                         }));
 
             // Extract the command line options.
             String brokerUrl = options.getProperty("b");
             String virtualHost = options.getProperty("h");
+            reportDir = options.getProperty("o");
 
             // Scan for available test cases using a classpath scanner.
             Collection<Class<? extends CoordinatingTestCase>> testCaseClasses =
@@ -183,7 +197,8 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
      */
     public TestResult start(String[] testClassNames) throws Exception
     {
-        log.debug("public TestResult start(String testClassName): called");
+        log.debug("public TestResult start(String[] testClassNames = " + PrettyPrintingUtils.printArray(testClassNames)
+            + ": called");
 
         // Connect to the broker.
         connection = TestClient.createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
@@ -214,6 +229,9 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
 
         for (String testClassName : testClassNames)
         {
+            // Record the current test class, so that the test results can be output to a file incorporating this name.
+            this.currentTestClassName = testClassName;
+
             result = super.start(new String[] { testClassName });
         }
 
@@ -300,6 +318,67 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         // Wrap the tests in an inviting test decorator, to perform the invite/test cycle.
         targetTest = new InvitingTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
 
-        return super.doRun(targetTest, wait);
+        TestSuite suite = new TestSuite();
+        suite.addTest(targetTest);
+
+        // Wrap the tests in a scaled test decorator to them them as a 'batch' in one thread.
+        // targetTest = new ScaledTestDecorator(targetTest, new int[] { 1 });
+
+        return super.doRun(suite, wait);
+    }
+
+    /**
+     * Creates the TestResult object to be used for test runs.
+     *
+     * @return An instance of the test result object.
+     */
+    protected TestResult createTestResult()
+    {
+        log.debug("protected TestResult createTestResult(): called");
+
+        TKTestResult result = new TKTestResult(fPrinter.getWriter(), delay, verbose, testCaseName);
+
+        // Check if a directory to output reports to has been specified and attach test listeners if so.
+        if (reportDir != null)
+        {
+            // Create the report directory if it does not already exist.
+            File reportDirFile = new File(reportDir);
+
+            if (!reportDirFile.exists())
+            {
+                reportDirFile.mkdir();
+            }
+
+            // Create the timings file (make the name of this configurable as a command line parameter).
+            Writer timingsWriter = null;
+
+            try
+            {
+                File timingsFile = new File(reportDirFile, "TEST." + currentTestClassName + ".xml");
+                timingsWriter = new BufferedWriter(new FileWriter(timingsFile), 20000);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Unable to create the log file to write test results to: " + e, e);
+            }
+
+            // Set up a CSV results listener to output the timings to the results file.
+            XMLTestListener listener = new XMLTestListener(timingsWriter, currentTestClassName);
+            result.addListener(listener);
+            result.addTKTestListener(listener);
+
+            // Register the results listeners shutdown hook to flush its data if the test framework is shutdown
+            // prematurely.
+            // registerShutdownHook(listener);
+
+            // Record the start time of the batch.
+            // result.notifyStartBatch();
+
+            // At this point in time the test class has been instantiated, giving it an opportunity to read its parameters.
+            // Inform any test listers of the test properties.
+            result.notifyTestProperties(TestContextProperties.getAccessedProps());
+        }
+
+        return result;
     }
 }
