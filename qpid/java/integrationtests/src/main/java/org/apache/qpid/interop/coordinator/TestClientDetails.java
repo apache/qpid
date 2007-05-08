@@ -82,6 +82,6 @@ public class TestClientDetails
      */
     public String toString()
     {
-        return "clientName = " + clientName + ", privateControlKey = " + privateControlKey;
+        return "TestClientDetails: [ clientName = " + clientName + ", privateControlKey = " + privateControlKey + " ]";
     }
 }

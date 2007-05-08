@@ -79,8 +79,10 @@ public interface InteropClientTestCase extends MessageListener
 
     /**
      * Performs the test case actions.
+     *
+     * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.
      */
-    public void start();
+    public void start() throws JMSException;
 
     /**
      * Gets a report on the actions performed by the test case in its assigned role.

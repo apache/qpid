@@ -14,20 +14,20 @@ import org.apache.qpid.interop.coordinator.CoordinatingTestCase;
 /**
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Setup p2p test parameters and compare with test output. <td> {@link CoordinatingTestCase}
+ * <tr><td> Setup pub/sub test parameters and compare with test output. <td> {@link CoordinatingTestCase}
  * </table>
  */
-public class CoordinatingTestCase2BasicP2P extends CoordinatingTestCase
+public class CoordinatingTestCase3BasicPubSub extends CoordinatingTestCase
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(CoordinatingTestCase2BasicP2P.class);
+    private static final Logger log = Logger.getLogger(CoordinatingTestCase3BasicPubSub.class);
 
     /**
      * Creates a new coordinating test case with the specified name.
      *
      * @param name The test case name.
      */
-    public CoordinatingTestCase2BasicP2P(String name)
+    public CoordinatingTestCase3BasicPubSub(String name)
     {
         super(name);
     }
@@ -35,14 +35,15 @@ public class CoordinatingTestCase2BasicP2P extends CoordinatingTestCase
     /**
      * Performs the basic P2P test case, "Test Case 2" in the specification.
      */
-    public void testBasicP2P() throws Exception
+    public void testBasicPubSub() throws Exception
     {
-        log.debug("public void testBasicP2P(): called");
+        log.debug("public void testBasicPubSub(): called");
 
         Map<String, Object> testConfig = new HashMap<String, Object>();
-        testConfig.put("TEST_NAME", "TC2_BasicP2P");
-        testConfig.put("P2P_QUEUE_AND_KEY_NAME", "tc2queue");
-        testConfig.put("P2P_NUM_MESSAGES", 50);
+        testConfig.put("TEST_NAME", "TC3_BasicPubSub");
+        testConfig.put("PUBSUB_KEY", "tc3route");
+        testConfig.put("PUBSUB_NUM_MESSAGES", 10);
+        testConfig.put("PUBSUB_NUM_RECEIVERS", 5);
 
         Message[] reports = sequenceTest(testConfig);
 
@@ -50,8 +51,9 @@ public class CoordinatingTestCase2BasicP2P extends CoordinatingTestCase
         int messagesSent = reports[0].getIntProperty("MESSAGE_COUNT");
         int messagesReceived = reports[1].getIntProperty("MESSAGE_COUNT");
 
-        Assert.assertEquals("The requested number of messages were not sent.", 50, messagesSent);
-        Assert.assertEquals("Sender and receiver messages sent did not match up.", messagesSent, messagesReceived);
+        Assert.assertEquals("The requested number of messages were not sent.", 10, messagesSent);
+        Assert.assertEquals("Received messages did not match up to num sent * num receivers.", messagesSent * 5,
+            messagesReceived);
     }
 
     /**
@@ -64,6 +66,6 @@ public class CoordinatingTestCase2BasicP2P extends CoordinatingTestCase
      */
     public String getTestCaseNameForTestMethod(String methodName)
     {
-        return "TC2_BasicP2P";
+        return "TC3_BasicPubSub";
     }
 }

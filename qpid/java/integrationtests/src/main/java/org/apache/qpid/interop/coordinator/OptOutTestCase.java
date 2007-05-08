@@ -49,4 +49,17 @@ public class OptOutTestCase extends CoordinatingTestCase
     {
         Assert.fail("One of " + getSender() + " and " + getReceiver() + " opted out of the test.");
     }
+
+    /**
+     * Should provide a translation from the junit method name of a test to its test case name as defined in the
+     * interop testing specification. For example the method "testP2P" might map onto the interop test case name
+     * "TC2_BasicP2P".
+     *
+     * @param methodName The name of the JUnit test method.
+     * @return The name of the corresponding interop test case.
+     */
+    public String getTestCaseNameForTestMethod(String methodName)
+    {
+        return "OptOutTest";
+    }
 }
