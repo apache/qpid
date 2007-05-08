@@ -51,7 +51,7 @@ const char* Daemon::getPidFile() {
     return pidFile.c_str();
 }
 
-Daemon::Daemon(const string& name_, int secs) : timeout(secs)
+Daemon::Daemon(const string& name_, int secs) : pid(-1), timeout(secs)
 {
     name = name_;
     daemon_pid_file_ident = daemon_log_ident = name.c_str();
