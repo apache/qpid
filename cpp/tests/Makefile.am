@@ -23,7 +23,8 @@ client_tests =		\
   client_test		\
   echo_service		\
   topic_listener	\
-  topic_publisher
+  topic_publisher	\
+  interop_runner
 
 broker_tests =		\
   AccumulatedAckTest	\
