@@ -1,23 +1,3 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
 package org.apache.qpid.interop.testclient.testcases;
 
 import javax.jms.*;
@@ -28,22 +8,23 @@ import org.apache.qpid.interop.testclient.InteropClientTestCase;
 import org.apache.qpid.interop.testclient.TestClient;
 
 /**
- * Implements test case 2, basic P2P. Sends/received a specified number of messages to a specified route on the
- * default direct exchange. Produces reports on the actual number of messages sent/received.
+ * Implements test case 3, basic pub/sub. Sends/received a specified number of messages to a specified route on the
+ * default topic exchange, using the specified number of receiver connections. Produces reports on the actual number of
+ * messages sent/received.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Supply the name of the test case that this implements.
  * <tr><td> Accept/Reject invites based on test parameters.
  * <tr><td> Adapt to assigned roles.
- * <tr><td> Send required number of test messages.
+ * <tr><td> Send required number of test messages using pub/sub.
  * <tr><td> Generate test reports.
  * </table>
  */
-public class TestCase2BasicP2P implements InteropClientTestCase
+public class TestCase3BasicPubSub implements InteropClientTestCase
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(TestCase2BasicP2P.class);
+    private static final Logger log = Logger.getLogger(TestCase3BasicPubSub.class);
 
     /** Holds the count of test messages received. */
     private int messageCount;
@@ -54,14 +35,17 @@ public class TestCase2BasicP2P implements InteropClientTestCase
     /** The number of test messages to send. */
     private int numMessages;
 
+    /** The number of receiver connection to use. */
+    private int numReceivers;
+
     /** The routing key to send them to on the default direct exchange. */
     private Destination sendDestination;
 
-    /** The connection to send the test messages on. */
-    private Connection connection;
+    /** The connections to send/receive the test messages on. */
+    private Connection[] connection;
 
-    /** The session to send the test messages on. */
-    private Session session;
+    /** The sessions to send/receive the test messages on. */
+    private Session[] session;
 
     /** The producer to send the test messages with. */
     MessageProducer producer;
@@ -76,7 +60,7 @@ public class TestCase2BasicP2P implements InteropClientTestCase
     {
         log.debug("public String getName(): called");
 
-        return "TC2_BasicP2P";
+        return "TC3_BasicPubSub";
     }
 
     /**
@@ -86,7 +70,7 @@ public class TestCase2BasicP2P implements InteropClientTestCase
      *
      * @return <tt>true</tt> to accept the invitation, <tt>false</tt> to reject it.
      *
-     * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.
+     * @throws javax.jms.JMSException Any JMSException resulting from reading the message are allowed to fall through.
      */
     public boolean acceptInvite(Message inviteMessage) throws JMSException
     {
@@ -117,35 +101,63 @@ public class TestCase2BasicP2P implements InteropClientTestCase
         // Take note of the role to be played.
         this.role = role;
 
-        // Create a new connection to pass the test messages on.
-        connection =
-            TestClient.createConnection(TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, TestClient.brokerUrl,
-                TestClient.virtualHost);
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
         // Extract and retain the test parameters.
-        numMessages = assignRoleMessage.getIntProperty("P2P_NUM_MESSAGES");
-        sendDestination = session.createQueue(assignRoleMessage.getStringProperty("P2P_QUEUE_AND_KEY_NAME"));
+        numMessages = assignRoleMessage.getIntProperty("PUBSUB_NUM_MESSAGES");
+        numReceivers = assignRoleMessage.getIntProperty("PUBSUB_NUM_RECEIVERS");
+        String sendKey = assignRoleMessage.getStringProperty("PUBSUB_KEY");
 
         log.debug("numMessages = " + numMessages);
-        log.debug("sendDestination = " + sendDestination);
+        log.debug("numReceivers = " + numReceivers);
+        log.debug("sendKey = " + sendKey);
         log.debug("role = " + role);
 
         switch (role)
         {
-        // Check if the sender role is being assigned, and set up a message producer if so.
+        // Check if the sender role is being assigned, and set up a single message producer if so.
         case SENDER:
-            producer = session.createProducer(sendDestination);
+            // Create a new connection to pass the test messages on.
+            connection = new Connection[1];
+            session = new Session[1];
+
+            connection[0] =
+                TestClient.createConnection(TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, TestClient.brokerUrl,
+                    TestClient.virtualHost);
+            session[0] = connection[0].createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // Extract and retain the test parameters.
+            sendDestination = session[0].createTopic(sendKey);
+
+            producer = session[0].createProducer(sendDestination);
             break;
 
-        // Otherwise the receiver role is being assigned, so set this up to listen for messages.
+        // Otherwise the receiver role is being assigned, so set this up to listen for messages on the required number
+        // of receiver connections.
         case RECEIVER:
-            MessageConsumer consumer = session.createConsumer(sendDestination);
-            consumer.setMessageListener(this);
+            // Create the required number of receiver connections.
+            connection = new Connection[numReceivers];
+            session = new Session[numReceivers];
+
+            for (int i = 0; i < numReceivers; i++)
+            {
+                connection[i] =
+                    TestClient.createConnection(TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, TestClient.brokerUrl,
+                        TestClient.virtualHost);
+                session[i] = connection[i].createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+                sendDestination = session[i].createTopic(sendKey);
+
+                MessageConsumer consumer = session[i].createConsumer(sendDestination);
+                consumer.setMessageListener(this);
+            }
+
             break;
         }
 
-        connection.start();
+        // Start all the connection dispatcher threads running.
+        for (int i = 0; i < connection.length; i++)
+        {
+            connection[i].start();
+        }
     }
 
     /**
@@ -158,7 +170,7 @@ public class TestCase2BasicP2P implements InteropClientTestCase
         // Check that the sender role is being performed.
         if (role.equals(Roles.SENDER))
         {
-            Message testMessage = session.createTextMessage("test");
+            Message testMessage = session[0].createTextMessage("test");
 
             for (int i = 0; i < numMessages; i++)
             {
@@ -183,8 +195,11 @@ public class TestCase2BasicP2P implements InteropClientTestCase
     {
         log.debug("public Message getReport(Session session): called");
 
-        // Close the test connection.
-        connection.close();
+        // Close the test connections.
+        for (int i = 0; i < connection.length; i++)
+        {
+            connection[i].close();
+        }
 
         // Generate a report message containing the count of the number of messages passed.
         Message report = session.createMessage();

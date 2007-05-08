@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.interop.coordinator;
 
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -31,18 +32,18 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase1DummyRun;
 import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase2BasicP2P;
-import org.apache.qpid.interop.testclient.InteropClientTestCase;
+import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase3BasicPubSub;
 import org.apache.qpid.interop.testclient.TestClient;
-import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
-import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
-import org.apache.qpid.util.ClasspathScanner;
 import org.apache.qpid.util.CommandLineParser;
-import org.apache.qpid.util.ConversationHelper;
+import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
 
-import uk.co.thebadgerset.junit.extensions.TestRunnerImprovedErrorHandling;
+import uk.co.thebadgerset.junit.extensions.TKTestResult;
+import uk.co.thebadgerset.junit.extensions.TKTestRunner;
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
 /**
  * <p/>Implements the coordinator client described in the interop testing specification
@@ -51,13 +52,13 @@ import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Find out what test clients are available. <td> {@link ConversationHelper}
+ * <tr><td> Find out what test clients are available. <td> {@link ConversationFactory}
  * <tr><td> Decorate available tests to run all available clients. <td> {@link InvitingTestDecorator}
  * <tr><td> Attach XML test result logger.
  * <tr><td> Terminate the interop testing framework.
  * </table>
  */
-public class Coordinator extends TestRunnerImprovedErrorHandling
+public class Coordinator extends TKTestRunner
 {
     private static final Logger log = Logger.getLogger(Coordinator.class);
 
@@ -73,8 +74,19 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
     Set<TestClientDetails> enlistedClients = new HashSet<TestClientDetails>();
 
     /** Holds the conversation helper for the control conversation. */
-    private ConversationHelper conversation;
+    private ConversationFactory conversationFactory;
+
+    /** Holds the connection that the coordinating messages are sent over. */
     private Connection connection;
+
+    /**
+     * Holds the name of the class of the test currently being run. Ideally passed into the {@link #createTestResult}
+     * method, but as the signature is already fixed for this, the current value gets pushed here as a member variable.
+     */
+    private String currentTestClassName;
+
+    /** Holds the path of the directory to output test results too, if one is defined. */
+    private static String reportDir;
 
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
@@ -114,19 +126,26 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
                         new String[][]
                         {
                             { "b", "The broker URL.", "broker", "false" },
-                            { "h", "The virtual host to use.", "virtual host", "false" }
+                            { "h", "The virtual host to use.", "virtual host", "false" },
+                            { "o", "The name of the directory to output test timings to.", "dir", "false" }
                         }));
 
             // Extract the command line options.
             String brokerUrl = options.getProperty("b");
             String virtualHost = options.getProperty("h");
+            reportDir = options.getProperty("o");
 
             // Scan for available test cases using a classpath scanner.
             Collection<Class<? extends CoordinatingTestCase>> testCaseClasses =
                 new ArrayList<Class<? extends CoordinatingTestCase>>();
             // ClasspathScanner.getMatches(CoordinatingTestCase.class, "^Test.*", true);
             // Hard code the test classes till the classpath scanner is fixed.
-            Collections.addAll(testCaseClasses, new Class[] { CoordinatingTestCase2BasicP2P.class });
+            Collections.addAll(testCaseClasses,
+                new Class[]
+                {
+                    CoordinatingTestCase1DummyRun.class, CoordinatingTestCase2BasicP2P.class,
+                    CoordinatingTestCase3BasicPubSub.class
+                });
 
             // Check that some test classes were actually found.
             if ((testCaseClasses == null) || testCaseClasses.isEmpty())
@@ -145,9 +164,12 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
 
             // Create a coordinator and begin its test procedure.
             Coordinator coordinator = new Coordinator(brokerUrl, virtualHost);
+
+            boolean failure = false;
+
             TestResult testResult = coordinator.start(testClassNames);
 
-            if (!testResult.wasSuccessful())
+            if (failure)
             {
                 System.exit(FAILURE_EXIT);
             }
@@ -176,7 +198,7 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
     public TestResult start(String[] testClassNames) throws Exception
     {
         log.debug("public TestResult start(String[] testClassNames = " + PrettyPrintingUtils.printArray(testClassNames)
-            + "): called");
+            + ": called");
 
         // Connect to the broker.
         connection = TestClient.createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
@@ -185,28 +207,39 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         Destination controlTopic = session.createTopic("iop.control");
         Destination responseQueue = session.createQueue("coordinator");
 
-        conversation = new ConversationHelper(connection, controlTopic, responseQueue, LinkedBlockingQueue.class);
+        conversationFactory = new ConversationFactory(connection, responseQueue, LinkedBlockingQueue.class);
+        ConversationFactory.Conversation conversation = conversationFactory.startConversation();
+
+        connection.start();
 
         // Broadcast the compulsory invitation to find out what clients are available to test.
         Message invite = session.createMessage();
         invite.setStringProperty("CONTROL_TYPE", "INVITE");
         invite.setJMSReplyTo(responseQueue);
 
-        conversation.send(invite);
+        conversation.send(controlTopic, invite);
 
         // Wait for a short time, to give test clients an opportunity to reply to the invitation.
-        Collection<Message> enlists = conversation.receiveAll(0, 10000);
+        Collection<Message> enlists = conversation.receiveAll(0, 3000);
 
         enlistedClients = extractEnlists(enlists);
 
-        // Run all of the tests in the suite using JUnit.
-        TestResult result = super.start(testClassNames);
+        // Run the test in the suite using JUnit.
+        TestResult result = null;
+
+        for (String testClassName : testClassNames)
+        {
+            // Record the current test class, so that the test results can be output to a file incorporating this name.
+            this.currentTestClassName = testClassName;
+
+            result = super.start(new String[] { testClassName });
+        }
 
         // At this point in time, all tests have completed. Broadcast the shutdown message.
         Message terminate = session.createMessage();
         terminate.setStringProperty("CONTROL_TYPE", "TERMINATE");
 
-        conversation.send(terminate);
+        conversation.send(controlTopic, terminate);
 
         return result;
     }
@@ -283,8 +316,69 @@ public class Coordinator extends TestRunnerImprovedErrorHandling
         }
 
         // Wrap the tests in an inviting test decorator, to perform the invite/test cycle.
-        targetTest = new InvitingTestDecorator(targetTest, enlistedClients, conversation);
+        targetTest = new InvitingTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
 
-        return super.doRun(targetTest, wait);
+        TestSuite suite = new TestSuite();
+        suite.addTest(targetTest);
+
+        // Wrap the tests in a scaled test decorator to them them as a 'batch' in one thread.
+        // targetTest = new ScaledTestDecorator(targetTest, new int[] { 1 });
+
+        return super.doRun(suite, wait);
+    }
+
+    /**
+     * Creates the TestResult object to be used for test runs.
+     *
+     * @return An instance of the test result object.
+     */
+    protected TestResult createTestResult()
+    {
+        log.debug("protected TestResult createTestResult(): called");
+
+        TKTestResult result = new TKTestResult(fPrinter.getWriter(), delay, verbose, testCaseName);
+
+        // Check if a directory to output reports to has been specified and attach test listeners if so.
+        if (reportDir != null)
+        {
+            // Create the report directory if it does not already exist.
+            File reportDirFile = new File(reportDir);
+
+            if (!reportDirFile.exists())
+            {
+                reportDirFile.mkdir();
+            }
+
+            // Create the timings file (make the name of this configurable as a command line parameter).
+            Writer timingsWriter = null;
+
+            try
+            {
+                File timingsFile = new File(reportDirFile, "TEST." + currentTestClassName + ".xml");
+                timingsWriter = new BufferedWriter(new FileWriter(timingsFile), 20000);
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException("Unable to create the log file to write test results to: " + e, e);
+            }
+
+            // Set up a CSV results listener to output the timings to the results file.
+            XMLTestListener listener = new XMLTestListener(timingsWriter, currentTestClassName);
+            result.addListener(listener);
+            result.addTKTestListener(listener);
+
+            // Register the results listeners shutdown hook to flush its data if the test framework is shutdown
+            // prematurely.
+            // registerShutdownHook(listener);
+
+            // Record the start time of the batch.
+            // result.notifyStartBatch();
+
+            // At this point in time the test class has been instantiated, giving it an opportunity to read its parameters.
+            // Inform any test listers of the test properties.
+            result.notifyTestProperties(TestContextProperties.getAccessedProps());
+        }
+
+        return result;
     }
 }

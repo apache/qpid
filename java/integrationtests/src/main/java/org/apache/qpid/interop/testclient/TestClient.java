@@ -21,10 +21,7 @@
 package org.apache.qpid.interop.testclient;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 import javax.jms.*;
 import javax.naming.Context;
@@ -33,6 +30,9 @@ import javax.naming.NamingException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
+import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
+import org.apache.qpid.interop.testclient.testcases.TestCase3BasicPubSub;
 import org.apache.qpid.util.ClasspathScanner;
 import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.PropertiesUtils;
@@ -61,41 +61,53 @@ public class TestClient implements MessageListener
 {
     private static Logger log = Logger.getLogger(TestClient.class);
 
+    public static final String CONNECTION_PROPERTY = "connectionfactory.broker";
+    public static final String CONNECTION_NAME = "broker";
+    public static final String CLIENT_NAME = "java";
+    public static final String DEFAULT_CONNECTION_PROPS_RESOURCE = "org/apache/qpid/interop/connection.properties";
+
     /** Holds the URL of the broker to run the tests on. */
-    String brokerUrl;
+    public static String brokerUrl;
 
     /** Holds the virtual host to run the tests on. If <tt>null</tt>, then the default virtual host is used. */
-    String virtualHost;
+    public static String virtualHost;
 
     /** Holds all the test cases loaded from the classpath. */
     Map<String, InteropClientTestCase> testCases = new HashMap<String, InteropClientTestCase>();
 
     InteropClientTestCase currentTestCase;
 
-    public static final String CONNECTION_PROPERTY = "connectionfactory.broker";
-    public static final String CONNECTION_NAME = "broker";
-    public static final String CLIENT_NAME = "java";
-    public static final String DEFAULT_CONNECTION_PROPS_RESOURCE = "org/apache/qpid/interop/connection.properties";
-
     private MessageProducer producer;
     private Session session;
 
-    public TestClient(String brokerUrl, String virtualHost)
+    private String clientName = CLIENT_NAME;
+
+    /**
+     * Creates a new interop test client, listenting to the specified broker and virtual host, with the specified
+     * client identifying name.
+     *
+     * @param brokerUrl   The url of the broker to connect to.
+     * @param virtualHost The virtual host to conect to.
+     * @param clientName  The client name to use.
+     */
+    public TestClient(String brokerUrl, String virtualHost, String clientName)
     {
         log.debug("public TestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
-                  + "): called");
+            + ", String clientName = " + clientName + "): called");
 
         // Retain the connection parameters.
         this.brokerUrl = brokerUrl;
         this.virtualHost = virtualHost;
+        this.clientName = clientName;
     }
 
     /**
      * The entry point for the interop test coordinator. This client accepts the following command line arguments:
      *
      * <p/><table>
-     * <tr><td> -b         <td> The broker URL.   <td> Mandatory.
-     * <tr><td> -h         <td> The virtual host. <td> Optional.
+     * <tr><td> -b         <td> The broker URL.       <td> Optional.
+     * <tr><td> -h         <td> The virtual host.     <td> Optional.
+     * <tr><td> -n         <td> The test client name. <td> Optional.
      * <tr><td> name=value <td> Trailing argument define name/value pairs. Added to system properties. <td> Optional.
      * </table>
      *
@@ -105,11 +117,13 @@ public class TestClient implements MessageListener
     {
         // Use the command line parser to evaluate the command line.
         CommandLineParser commandLine =
-            new CommandLineParser(new String[][]
-                                  {
-                                      { "b", "The broker URL.", "broker", "false" },
-                                      { "h", "The virtual host to use.", "virtual host", "false" }
-                                  });
+            new CommandLineParser(
+                new String[][]
+                {
+                    { "b", "The broker URL.", "broker", "false" },
+                    { "h", "The virtual host to use.", "virtual host", "false" },
+                    { "n", "The test client name.", "name", "false" }
+                });
 
         // Capture the command line arguments or display errors and correct usage and then exit.
         Properties options = null;
@@ -128,13 +142,14 @@ public class TestClient implements MessageListener
         // Extract the command line options.
         String brokerUrl = options.getProperty("b");
         String virtualHost = options.getProperty("h");
+        String clientName = options.getProperty("n");
 
         // Add all the trailing command line options (name=value pairs) to system properties. Tests may pick up
         // overridden values from there.
         commandLine.addCommandLineToSysProperties();
 
         // Create a test client and start it running.
-        TestClient client = new TestClient(brokerUrl, virtualHost);
+        TestClient client = new TestClient(brokerUrl, virtualHost, (clientName == null) ? CLIENT_NAME : clientName);
 
         try
         {
@@ -147,13 +162,22 @@ public class TestClient implements MessageListener
         }
     }
 
+    /**
+     * Starts the interop test client running. This causes it to start listening for incoming test invites.
+     *
+     * @throws JMSException Any underlying JMSExceptions are allowed to fall through.
+     */
     private void start() throws JMSException
     {
         log.debug("private void start(): called");
 
         // Use a class path scanner to find all the interop test case implementations.
         Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
-            ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
+            new ArrayList<Class<? extends InteropClientTestCase>>();
+        // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
+        // Hard code the test classes till the classpath scanner is fixed.
+        Collections.addAll(testCaseClasses,
+            new Class[] { TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class });
 
         // Create all the test case implementations and index them by the test names.
         for (Class<? extends InteropClientTestCase> nextClass : testCaseClasses)
@@ -181,8 +205,11 @@ public class TestClient implements MessageListener
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // Set this up to listen for control messages.
-        MessageConsumer consumer = session.createConsumer(session.createTopic("iop.control." + CLIENT_NAME));
+        MessageConsumer consumer = session.createConsumer(session.createTopic("iop.control." + clientName));
         consumer.setMessageListener(this);
+
+        MessageConsumer consumer2 = session.createConsumer(session.createTopic("iop.control"));
+        consumer2.setMessageListener(this);
 
         // Create a producer to send replies with.
         producer = session.createProducer(null);
@@ -209,13 +236,13 @@ public class TestClient implements MessageListener
     public static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
     {
         log.debug("public static Connection createConnection(String connectionPropsResource = " + connectionPropsResource
-                  + ", String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
+            + ", String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
 
         try
         {
             Properties connectionProps =
                 PropertiesUtils.getProperties(TestClient.class.getClassLoader().getResourceAsStream(
-                                                  connectionPropsResource));
+                        connectionPropsResource));
 
             if (brokerUrl != null)
             {
@@ -270,6 +297,8 @@ public class TestClient implements MessageListener
 
                 if (testCaseName != null)
                 {
+                    log.debug("Got an invite to test: " + testCaseName);
+
                     // Check if the requested test case is available.
                     InteropClientTestCase testCase = testCases.get(testCaseName);
 
@@ -282,6 +311,8 @@ public class TestClient implements MessageListener
                 }
                 else
                 {
+                    log.debug("Got a compulsory invite.");
+
                     enlist = true;
                 }
 
@@ -290,8 +321,8 @@ public class TestClient implements MessageListener
                     // Reply with the client name in an Enlist message.
                     Message enlistMessage = session.createMessage();
                     enlistMessage.setStringProperty("CONTROL_TYPE", "ENLIST");
-                    enlistMessage.setStringProperty("CLIENT_NAME", CLIENT_NAME);
-                    enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + CLIENT_NAME);
+                    enlistMessage.setStringProperty("CLIENT_NAME", clientName);
+                    enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + clientName);
                     enlistMessage.setJMSCorrelationID(message.getJMSCorrelationID());
 
                     producer.send(message.getJMSReplyTo(), enlistMessage);
@@ -300,7 +331,10 @@ public class TestClient implements MessageListener
             else if ("ASSIGN_ROLE".equals(controlType))
             {
                 // Assign the role to the current test case.
-                String roleName = message.getStringProperty("");
+                String roleName = message.getStringProperty("ROLE");
+
+                log.debug("Got a role assignment to role: " + roleName);
+
                 InteropClientTestCase.Roles role = Enum.valueOf(InteropClientTestCase.Roles.class, roleName);
 
                 currentTestCase.assignRole(role, message);
@@ -316,8 +350,14 @@ public class TestClient implements MessageListener
             {
                 if ("START".equals(controlType))
                 {
+                    log.debug("Got a start notification.");
+
                     // Start the current test case.
                     currentTestCase.start();
+                }
+                else
+                {
+                    log.debug("Got a status request.");
                 }
 
                 // Generate the report from the test case and reply with it as a Report message.
@@ -327,10 +367,17 @@ public class TestClient implements MessageListener
 
                 producer.send(message.getJMSReplyTo(), reportMessage);
             }
+            else if ("TERMINATE".equals(controlType))
+            {
+                System.out.println("Received termination instruction from coordinator.");
+
+                // Is a cleaner shutdown needed?
+                System.exit(0);
+            }
             else
             {
                 // Log a warning about this but otherwise ignore it.
-                log.warn("Got an unknown control message: " + message);
+                log.warn("Got an unknown control message, controlType = " + controlType + ", message = " + message);
             }
         }
         catch (JMSException e)

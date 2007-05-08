@@ -23,6 +23,8 @@ package org.apache.qpid.interop.coordinator;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.jms.Connection;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
@@ -32,14 +34,14 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.util.ConversationHelper;
+import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
 
 /**
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Broadcast test invitations and collect enlists. <td> {@link ConversationHelper}.
+ * <tr><td> Broadcast test invitations and collect enlists. <td> {@link ConversationFactory}.
  * <tr><td> Output test failures for clients unwilling to run the test case. <td> {@link Coordinator}
  * <tr><td> Execute coordinated test cases. <td> {@link CoordinatingTestCase}
  * </table>
@@ -52,7 +54,10 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
     Set<TestClientDetails> allClients;
 
     /** Holds the conversation helper for the control level conversation for coordinating the test through. */
-    ConversationHelper conversation;
+    ConversationFactory conversationFactory;
+
+    /** Holds the connection that the control conversation is held over. */
+    Connection connection;
 
     /** Holds the underlying {@link CoordinatingTestCase}s that this decorator wraps. */
     WrappedSuiteTestDecorator testSuite;
@@ -61,11 +66,12 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
      * Creates a wrapped suite test decorator from another one.
      *
      * @param suite               The test suite.
-     * @param availableClients          The list of all clients that responded to the compulsory invite.
+     * @param availableClients    The list of all clients that responded to the compulsory invite.
      * @param controlConversation The conversation helper for the control level, test coordination conversation.
+     * @param controlConnection   The connection that the coordination messages are sent over.
      */
     public InvitingTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> availableClients,
-        ConversationHelper controlConversation)
+        ConversationFactory controlConversation, Connection controlConnection)
     {
         super(suite);
 
@@ -74,7 +80,8 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
 
         testSuite = suite;
         allClients = availableClients;
-        conversation = controlConversation;
+        conversationFactory = controlConversation;
+        connection = controlConnection;
     }
 
     /**
@@ -103,14 +110,17 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
             Set<TestClientDetails> enlists = null;
             try
             {
-                Message invite = conversation.getSession().createMessage();
-                invite.setStringProperty("CONTROL_TYPE", "INVITE");
-                invite.setStringProperty("TEST_NAME", coordTest.getName());
+                Message invite = conversationFactory.getSession().createMessage();
+                Destination controlTopic = conversationFactory.getSession().createTopic("iop.control");
+                ConversationFactory.Conversation conversation = conversationFactory.startConversation();
 
-                conversation.send(invite);
+                invite.setStringProperty("CONTROL_TYPE", "INVITE");
+                invite.setStringProperty("TEST_NAME", coordTest.getTestCaseNameForTestMethod(coordTest.getName()));
+
+                conversation.send(controlTopic, invite);
 
                 // Wait for a short time, to give test clients an opportunity to reply to the invitation.
-                Collection<Message> replies = conversation.receiveAll(allClients.size(), 10000);
+                Collection<Message> replies = conversation.receiveAll(allClients.size(), 3000);
                 enlists = Coordinator.extractEnlists(replies);
             }
             catch (JMSException e)
@@ -143,10 +153,23 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
                 coordTest.setSender(enlistedPair.get(0));
                 coordTest.setReceiver(enlistedPair.get(1));
 
+                // Pass down the connection to hold the coordination conversation over.
+                coordTest.setConversationFactory(conversationFactory);
+
                 // Execute the test case.
                 coordTest.run(testResult);
             }
         }
+    }
+
+    /**
+     * Prints a string summarizing this test decorator, mainly for debugging purposes.
+     *
+     * @return String representation for debugging purposes.
+     */
+    public String toString()
+    {
+        return "InvitingTestDecorator: [ testSuite = " + testSuite + " ]";
     }
 
     /**
