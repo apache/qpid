@@ -75,7 +75,7 @@ Building without documentaion does not require:
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
 
-  # yum install apr apr-devel boost boost-devel cppunit cppunit-devel
+  # yum install apr apr-devel boost boost-devel cppunit cppunit-devel libdaemon libdaemon-devel
   # yum install pkgconfig doxygen graphviz help2man
 
 
