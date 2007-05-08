@@ -152,8 +152,8 @@ AC_SUBST(DOWNLOAD_URL)
 
 # Check for headers from required devel kits.
 missing=""
-AC_CHECK_HEADERS([libdaemon/daemon.h],,[missing="$missing libdaemon"])
-AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost"])
+AC_CHECK_HEADERS([libdaemon/daemon.h],,[missing="$missing libdaemon development files"])
+AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost developement files"])
 test -z "$missing" ||
     AC_MSG_ERROR([Missing required headers. Install the folowing packages or -devel rpms: $missing.])
 
