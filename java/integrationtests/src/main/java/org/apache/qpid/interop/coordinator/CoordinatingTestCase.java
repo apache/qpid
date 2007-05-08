@@ -137,6 +137,25 @@ public abstract class CoordinatingTestCase extends TestCase
     }
 
     /**
+     * Returns the name of the current test method of this test class, with the sending and receiving client names
+     * appended on to it, so that the resulting name unqiuely identifies the test and the clients that participated
+     * in it.
+     *
+     * @return The unique test and client name.
+     */
+    public String getName()
+    {
+        if ((sender == null) || (receiver == null))
+        {
+            return super.getName();
+        }
+        else
+        {
+            return super.getName() + "_sender_" + sender.clientName + "_receiver_" + receiver.clientName;
+        }
+    }
+
+    /**
      * Should provide a translation from the junit method name of a test to its test case name as defined in the
      * interop testing specification. For example the method "testP2P" might map onto the interop test case name
      * "TC2_BasicP2P".
