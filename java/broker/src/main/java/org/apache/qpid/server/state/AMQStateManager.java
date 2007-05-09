@@ -241,10 +241,6 @@ public class AMQStateManager implements AMQMethodListener
                                                                                                B frame)
             throws IllegalStateTransitionException
     {
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Looking for state transition handler for frame " + frame.getClass());
-        }
         final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>
                 classToHandlerMap = _state2HandlersMap.get(currentState);
 

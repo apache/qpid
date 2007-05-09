@@ -77,7 +77,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
         final AMQMessageHandle messageHandle = message.getMessageHandle();
         final StoreContext storeContext = message.getStoreContext();
-        final long messageId = message.getMessageId();
+        final Long messageId = message.getMessageId();
 
         final int bodyCount = messageHandle.getBodyCount(storeContext,messageId);
 
