@@ -52,7 +52,7 @@ public class MemoryMessageStore implements MessageStore
     // The table of message with its corresponding stream containing the message body
     private Map<StorableMessage, ByteArrayOutputStream> _stagedMessages;
     // The queue/messages association
-    private Map<StorableQueue, List<StorableMessage>> _queueMap;
+    protected Map<StorableQueue, List<StorableMessage>> _queueMap;
     // the message ID
     private long _messageID = 0;
     // The transaction manager
