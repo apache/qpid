@@ -44,7 +44,7 @@ namespace client {
 	const int send_buffer_size;
 	qpid::framing::ProtocolVersion version;
 
-	bool closed;
+	volatile bool closed;
 
         int64_t lastIn;
         int64_t lastOut;
@@ -73,6 +73,7 @@ namespace client {
 
 	void run();
 	void handleClosed();
+        bool markClosed();
 
     public:
 	Connector(const qpid::framing::ProtocolVersion& pVersion, bool debug = false, u_int32_t buffer_size = 1024);

@@ -24,6 +24,7 @@
 #include <apr/APRBase.h>
 #include <apr/APRPool.h>
 
+#include <iostream>
 
 using namespace qpid::sys;
 
@@ -55,6 +56,7 @@ void Socket::connect(const std::string& host, int port) {
 
 void Socket::close() {
     if (socket == 0) return;
+    CHECK_APR_SUCCESS(apr_socket_shutdown(socket, APR_SHUTDOWN_READWRITE));
     CHECK_APR_SUCCESS(apr_socket_close(socket));
     socket = 0;
 }
@@ -76,8 +78,9 @@ ssize_t Socket::recv(void* data, size_t size)
     apr_status_t status =
         apr_socket_recv(socket, reinterpret_cast<char*>(data), &received);
     if (APR_STATUS_IS_TIMEUP(status)) return SOCKET_TIMEOUT;
+    if (APR_STATUS_IS_EOF(status)) return SOCKET_EOF;
     CHECK_APR_SUCCESS(status);
-     return received;
+    return received;
 }
 
 

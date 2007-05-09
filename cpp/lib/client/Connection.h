@@ -68,7 +68,8 @@ namespace client {
 
         typedef std::map<int, Channel*>::iterator iterator;
 
-	static u_int16_t channelIdCounter;
+        const bool debug;
+	u_int16_t channelIdCounter;
 
 	std::string host;
 	int port;

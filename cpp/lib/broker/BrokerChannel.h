@@ -89,6 +89,7 @@ namespace qpid {
             MessageBuilder messageBuilder;//builder for in-progress message
             Exchange::shared_ptr exchange;//exchange to which any in-progress message was published to
 	    qpid::framing::ProtocolVersion version; // version used for this channel
+            bool flowActive;
 
             virtual void complete(Message::shared_ptr& msg);
             void deliver(Message::shared_ptr& msg, const string& tag, Queue::shared_ptr& queue, bool ackExpected);            
@@ -118,6 +119,7 @@ namespace qpid {
             void handlePublish(Message* msg, Exchange::shared_ptr exchange);
             void handleHeader(qpid::framing::AMQHeaderBody::shared_ptr header);
             void handleContent(qpid::framing::AMQContentBody::shared_ptr content);
+            void flow(bool active);
         };
 
         struct InvalidAckException{};

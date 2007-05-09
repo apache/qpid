@@ -30,9 +30,11 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 using namespace qpid::sys;
 
-u_int16_t Connection::channelIdCounter;
-
-Connection::Connection(  bool debug, u_int32_t _max_frame_size, qpid::framing::ProtocolVersion* _version) : max_frame_size(_max_frame_size), closed(true),
+Connection::Connection(  bool _debug, u_int32_t _max_frame_size, qpid::framing::ProtocolVersion* _version) : 
+    debug(_debug),
+    channelIdCounter(0),
+    max_frame_size(_max_frame_size), 
+    closed(true),
     version(_version->getMajor(),_version->getMinor())
 {
     connector = new Connector(version, debug, _max_frame_size);
@@ -96,7 +98,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
     }else{
         THROW_QPID_ERROR(PROTOCOL_ERROR, "Bad response");
     }
-    
+    closed = false;
 }
 
 void Connection::close(){
@@ -108,6 +110,7 @@ void Connection::close(){
         
         sendAndReceive(new AMQFrame(version, 0, new ConnectionCloseBody(version, code, text, classId, methodId)), method_bodies.connection_close_ok);
         connector->close();
+        closed = true;
     }
 }
 

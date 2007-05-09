@@ -53,6 +53,7 @@ class ChannelTest : public CppUnit::TestCase
     CPPUNIT_TEST(testDeliveryAndRecovery);
     CPPUNIT_TEST(testStaging);
     CPPUNIT_TEST(testQueuePolicy);
+    CPPUNIT_TEST(testFlow);
     CPPUNIT_TEST_SUITE_END();
 
     class MockMessageStore : public NullMessageStore
@@ -301,6 +302,37 @@ class ChannelTest : public CppUnit::TestCase
 
         }
         store.check();
+    }
+
+
+    void testFlow(){
+        DummyHandler handler;
+        Channel channel(qpid::framing::highestProtocolVersion, &handler, 7, 10000);
+
+        const string data("abcdefghijklmn");
+
+        Message::shared_ptr msg(createMessage("test", "my_routing_key", "my_message_id", 14));
+        addContent(msg, data);
+        Queue::shared_ptr queue(new Queue("my_queue"));
+        ConnectionToken* owner(0);
+        string tag("no_ack");
+        channel.consume(tag, queue, false, false, owner);
+        channel.flow(false);
+        queue->deliver(msg);
+        CPPUNIT_ASSERT_EQUAL((size_t) 0, handler.frames.size());
+        CPPUNIT_ASSERT_EQUAL((u_int32_t) 1, queue->getMessageCount());        
+        channel.flow(true);
+        CPPUNIT_ASSERT_EQUAL((size_t) 3, handler.frames.size());
+        CPPUNIT_ASSERT_EQUAL((u_int16_t) 7, handler.frames[0]->getChannel());        
+        CPPUNIT_ASSERT_EQUAL((u_int16_t) 7, handler.frames[1]->getChannel());        
+        CPPUNIT_ASSERT_EQUAL((u_int16_t) 7, handler.frames[2]->getChannel());
+        BasicDeliverBody::shared_ptr deliver(dynamic_pointer_cast<BasicDeliverBody, AMQBody>(handler.frames[0]->getBody()));
+        AMQHeaderBody::shared_ptr contentHeader(dynamic_pointer_cast<AMQHeaderBody, AMQBody>(handler.frames[1]->getBody()));
+        AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(handler.frames[2]->getBody()));
+        CPPUNIT_ASSERT(deliver);
+        CPPUNIT_ASSERT(contentHeader);
+        CPPUNIT_ASSERT(contentBody);
+        CPPUNIT_ASSERT_EQUAL(data, contentBody->getData());
     }
 
     Message* createMessage(const string& exchange, const string& routingKey, const string& messageId, u_int64_t contentSize)

@@ -43,7 +43,8 @@ Channel::Channel(qpid::framing::ProtocolVersion& _version, OutputHandler* _out, 
     accumulatedAck(0),
     store(_store),
     messageBuilder(this, _store, _stagingThreshold),
-    version(_version){
+    version(_version),
+    flowActive(true){
 
     outstanding.reset();
 }
@@ -142,7 +143,7 @@ Channel::ConsumerImpl::ConsumerImpl(Channel* _parent, const string& _tag,
 
 bool Channel::ConsumerImpl::deliver(Message::shared_ptr& msg){
     if(!connection || connection != msg->getPublisher()){//check for no_local
-        if(ackExpected && !parent->checkPrefetch(msg)){
+        if(!parent->flowActive || (ackExpected && !parent->checkPrefetch(msg))){
             blocked = true;
         }else{
             blocked = false;
@@ -256,4 +257,16 @@ bool Channel::get(Queue::shared_ptr queue, bool ackExpected){
 
 void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag, u_int64_t deliveryTag){
     msg->deliver(out, id, consumerTag, deliveryTag, framesize, &version);
+}
+
+void Channel::flow(bool active){
+    Mutex::ScopedLock locker(deliveryLock);
+    bool requestDelivery(!flowActive && active);
+    flowActive = active;
+    if (requestDelivery) {
+        //there may be messages that can be now be delivered
+        for(consumer_iterator j = consumers.begin(); j != consumers.end(); j++){
+            j->second->requestDispatch();
+        }
+    }
 }

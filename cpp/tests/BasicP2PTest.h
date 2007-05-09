@@ -71,7 +71,7 @@ public:
         std::string queue = params.getString("P2P_QUEUE_AND_KEY_NAME");
         int messages = params.getInt("P2P_NUM_MESSAGES");
         if (role == "SENDER") {
-            worker = std::auto_ptr<Worker>(new Sender(options, Exchange::DEFAULT_EXCHANGE, queue, messages));
+            worker = std::auto_ptr<Worker>(new Sender(options, Exchange::STANDARD_DIRECT_EXCHANGE, queue, messages));
         } else if(role == "RECEIVER"){
             worker = std::auto_ptr<Worker>(new Receiver(options, queue, messages));
         } else {
