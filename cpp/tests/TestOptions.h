@@ -35,7 +35,7 @@ struct TestOptions : public qpid::CommonOptions
         desc.add_options()
             ("broker,b", optValue(broker, "HOSTNAME"), "the hostname to connect to")
             ("virtualhost,v", optValue(virtualhost, "VIRTUAL_HOST"), "virtual host")
-            ("clientid,i", optValue(clientid, "ID"), "unique client identifier")
+            ("clientname,n", optValue(clientid, "ID"), "unique client identifier")
             ("help,h", optValue(help), "print this usage statement");
     }
 

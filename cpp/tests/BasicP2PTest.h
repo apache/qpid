@@ -50,6 +50,8 @@ class BasicP2PTest : public SimpleTestCaseBase
         {
             Queue q(queue, true);
             channel.declareQueue(q);
+            framing::FieldTable args;
+            channel.bind(Exchange::STANDARD_DIRECT_EXCHANGE, q, queue, args);
             channel.consume(q, tag, this);
             channel.start();
         }
