@@ -25,6 +25,7 @@ import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
@@ -34,6 +35,7 @@ import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.messageStore.StorableMessage;
 import org.apache.qpid.server.messageStore.StorableQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 /** Combines the information that make up a deliverable message into a more manageable form. */
 
@@ -100,10 +102,40 @@ public class AMQMessage implements StorableMessage
 
 
     private final int hashcode = System.identityHashCode(this);
+    private long _expiration;
 
     public String debugIdentity()
     {
         return "(HC:" + hashcode + " ID:" + _messageId + " Ref:" + _referenceCount.get() + ")";
+    }
+
+    public void setExpiration()
+    {
+        long expiration = ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getExpiration();
+        long timestamp = ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
+
+        if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false))
+        {
+            _expiration = expiration;
+        }
+        else
+        {
+            // Update TTL to be in broker time.
+            if (expiration != 0L)
+            {
+                if (timestamp != 0L)
+                {
+                    //todo perhaps use arrival time
+                    long diff = (System.currentTimeMillis() - timestamp);
+
+                    if (diff > 1000L || diff < 1000L)
+                    {
+                        _expiration = expiration + diff;
+                    }
+                }
+            }
+        }
+
     }
 
     /**
@@ -211,8 +243,6 @@ public class AMQMessage implements StorableMessage
         _txnContext = txnContext;
         _immediate = info.isImmediate();
         _transientMessageData.setMessagePublishInfo(info);
-
-//        _taken = new AtomicBoolean(false);
 
     }
 
@@ -731,10 +761,35 @@ public class AMQMessage implements StorableMessage
         return _messageHandle.getArrivalTime();
     }
 
-
     /**
-     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
+     * Checks to see if the message has expired. If it has the message is dequeued.
+     *
+     * @param storecontext
+     * @param queue
+     *
+     * @return true if the message has expire
+     *
+     * @throws AMQException
      */
+    public boolean expired(StoreContext storecontext, AMQQueue queue) throws AMQException
+    {
+        //note: If the storecontext isn't need then we can remove the getChannel() from Subscription.
+
+        if (_expiration != 0L)
+        {
+            long now = System.currentTimeMillis();
+
+            if (now > _expiration)
+            {
+                dequeue(storecontext, queue);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality). */
     public void setDeliveredToConsumer()
     {
         _deliveredToConsumer = true;

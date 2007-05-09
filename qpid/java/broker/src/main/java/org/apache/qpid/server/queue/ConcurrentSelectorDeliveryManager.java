@@ -434,13 +434,19 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return count;
     }
 
-    /** This can only be used to clear the _messages queue. Any subscriber resend queue will not be purged. */
+    /**
+     * This can only be used to clear the _messages queue. Any subscriber resend queue will not be purged.
+     *
+     * @return the next message or null
+     *
+     * @throws org.apache.qpid.AMQException
+     */
     private AMQMessage getNextMessage() throws AMQException
     {
         return getNextMessage(_messages, null);
     }
 
-    private AMQMessage getNextMessage(Queue<AMQMessage> messages, Subscription sub)
+    private AMQMessage getNextMessage(Queue<AMQMessage> messages, Subscription sub) throws AMQException
     {
         AMQMessage message = messages.peek();
 
@@ -449,9 +455,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                && (
                 ((sub != null && !sub.isBrowser()) || message.isTaken(_queue))
                 || sub == null)
-               && message.taken(_queue, sub))
+               && (message.taken(_queue, sub) // Message not taken by another consumer ... unless it is expired
+                   || (sub == null || message.expired(sub.getChannel().getStoreContext(), _queue))) // Message not expired
+                )
         {
-            //remove the already taken message
+            //remove the already taken message or expired
             AMQMessage removed = messages.poll();
 
             assert removed == message;
@@ -466,6 +474,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             // try the next message
             message = messages.peek();
         }
+
         return message;
     }
 
