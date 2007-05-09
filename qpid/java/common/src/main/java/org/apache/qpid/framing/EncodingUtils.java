@@ -157,7 +157,7 @@ public class EncodingUtils
         }
         else
         {
-            return (short) (1 + s.length());
+            return (1 + s.length());
         }
     }
 
@@ -1023,4 +1023,7 @@ public class EncodingUtils
 
         return l;
     }
+
+    
+
 }

@@ -15,12 +15,14 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private final ByteBuffer _data;
     private int _hashCode;
+    final int _length;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
 
     public AMQShortString(byte[] data)
     {
 
         _data = ByteBuffer.wrap(data);
+        _length = data.length;
     }
 
 
@@ -45,6 +47,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
         _data = ByteBuffer.wrap(stringBytes);
         _data.rewind();
+        _length = length;
 
     }
 
@@ -62,12 +65,14 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         _data = ByteBuffer.wrap(stringBytes);
         _data.rewind();
         _hashCode = hash;
+        _length = length;
 
     }
 
     private AMQShortString(ByteBuffer data)
     {
         _data = data;
+        _length = data.limit();
         
     }
 
@@ -78,7 +83,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
      */
     public int length()
     {
-        return _data.limit();
+        return _length;
     }
 
     public char charAt(int index)
