@@ -432,15 +432,16 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
 
     public AMQChannel getChannel(int channelId) throws AMQException
     {
-        if (channelAwaitingClosure(channelId))
+        final AMQChannel channel = ((channelId & CHANNEL_CACHE_SIZE) == channelId)
+                   ? _cachedChannels[channelId]
+                   : _channelMap.get(channelId);
+        if (channel == null || channel.isClosing())
         {
             return null;
         }
         else
         {
-            return ((channelId & CHANNEL_CACHE_SIZE) == channelId)
-                   ? _cachedChannels[channelId]
-                   : _channelMap.get(channelId);
+            return channel;
         }
     }
 

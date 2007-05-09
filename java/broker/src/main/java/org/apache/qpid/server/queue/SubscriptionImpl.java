@@ -322,17 +322,17 @@ public class SubscriptionImpl implements Subscription
 
     public boolean isSuspended()
     {
-        if (_suspensionlogger.isInfoEnabled())
-        {
-            if (channel.isSuspended())
-            {
-                _suspensionlogger.info("Subscription(" + debugIdentity() + ") channel's is susupended");
-            }
-            if (_sendLock.get())
-            {
-                _suspensionlogger.info("Subscription(" + debugIdentity() + ") has sendLock set so closing.");
-            }
-        }
+//        if (_suspensionlogger.isInfoEnabled())
+//        {
+//            if (channel.isSuspended())
+//            {
+//                _suspensionlogger.debug("Subscription(" + debugIdentity() + ") channel's is susupended");
+//            }
+//            if (_sendLock.get())
+//            {
+//                _suspensionlogger.debug("Subscription(" + debugIdentity() + ") has sendLock set so closing.");
+//            }
+//        }
         return channel.isSuspended() || _sendLock.get();
     }
 
@@ -381,11 +381,11 @@ public class SubscriptionImpl implements Subscription
                 {
                     if (localInstance == msgInstance || localInstance.equals(msgInstance))
                     {
-                        if (_logger.isTraceEnabled())
-                        {
-                            _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
-                                          msg.debugIdentity() + ")");
-                        }
+//                        if (_logger.isTraceEnabled())
+//                        {
+//                            _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
+//                                          msg.debugIdentity() + ")");
+//                        }
                         return false;
                     }
                 }
@@ -399,11 +399,11 @@ public class SubscriptionImpl implements Subscription
                 msgInstance = publisher.getClientIdentifier();
                 if (localInstance == msgInstance || ((localInstance != null) && localInstance.equals(msgInstance)))
                 {
-                    if (_logger.isTraceEnabled())
-                    {
-                        _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
-                                      msg.debugIdentity() + ")");
-                    }
+//                    if (_logger.isTraceEnabled())
+//                    {
+//                        _logger.trace("(" + debugIdentity() + ") has no interest as it is a local message(" +
+//                                      msg.debugIdentity() + ")");
+//                    }
                     return false;
                 }
             }
@@ -431,18 +431,18 @@ public class SubscriptionImpl implements Subscription
     {
         if (_filters != null)
         {
-            if (_logger.isTraceEnabled())
-            {
-                _logger.trace("(" + debugIdentity() + ") has filters.");
-            }
+//            if (_logger.isTraceEnabled())
+//            {
+//                _logger.trace("(" + debugIdentity() + ") has filters.");
+//            }
             return _filters.allAllow(msg);
         }
         else
         {
-            if (_logger.isTraceEnabled())
-            {
-                _logger.trace("(" + debugIdentity() + ") has no filters");
-            }
+//            if (_logger.isTraceEnabled())
+//            {
+//                _logger.trace("(" + debugIdentity() + ") has no filters");
+//            }
 
             return true;
         }
