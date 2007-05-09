@@ -3,7 +3,6 @@ package org.apache.qpid.server.exchange;
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
 import org.apache.qpid.client.*;
 import org.apache.qpid.client.transport.TransportConnection;
@@ -269,7 +268,14 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
     public void onException(JMSException jmsException)
     {
 
-        Exception linkedException = jmsException.getLinkedException();
+        Exception linkedException = null;
+        try
+        {
+            linkedException = jmsException.getLinkedException();
+        } catch (Exception e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
         if (linkedException instanceof AMQNoRouteException)
         {
             AMQNoRouteException noRoute = (AMQNoRouteException) linkedException;

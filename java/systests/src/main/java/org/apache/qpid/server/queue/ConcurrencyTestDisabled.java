@@ -38,7 +38,7 @@ public class ConcurrencyTestDisabled extends MessageTestHelper
 {
     private final Random random = new Random();
 
-    private final int numMessages = 1000;
+    private final int numMessages = 10;
 
     private final List<SubscriptionTestHelper> _subscribers = new ArrayList<SubscriptionTestHelper>();
     private final Set<Subscription> _active = new HashSet<Subscription>();
