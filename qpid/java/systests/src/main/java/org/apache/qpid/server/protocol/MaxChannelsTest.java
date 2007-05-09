@@ -58,11 +58,11 @@ public class MaxChannelsTest extends TestCase
         assertEquals("Number of channels not correctly set.", new Long(maxChannels), _protocolSession.getMaximumNumberOfChannels());
 
 
-       try
+        try
         {
             for (long currentChannel = 0L; currentChannel < maxChannels; currentChannel++)
             {
-                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null, null, null));
+                _protocolSession.addChannel(new AMQChannel(_protocolSession, (int) currentChannel, null, null));
             }
         }
         catch (AMQException e)
