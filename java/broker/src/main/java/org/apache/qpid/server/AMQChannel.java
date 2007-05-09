@@ -115,6 +115,8 @@ public class AMQChannel
 
     //Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
+    private boolean _closing;
+
 
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore, MessageRouter exchanges)
             throws AMQException
@@ -353,6 +355,7 @@ public class AMQChannel
      */
     public void close(AMQProtocolSession session) throws AMQException
     {
+        _closing = true;
         _txnContext.rollback();
         unsubscribeAllConsumers(session);
         requeue();
@@ -960,5 +963,10 @@ public class AMQChannel
     public TransactionalContext getTransactionalContext()
     {
         return _txnContext;
+    }
+
+    public boolean isClosing()
+    {
+        return _closing;
     }
 }

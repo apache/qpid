@@ -207,10 +207,6 @@ public class AMQMessage
 
 //        _taken = new AtomicBoolean(false);
 
-        if (_log.isDebugEnabled())
-        {
-            _log.debug("Message(" + System.identityHashCode(this) + ") created (" + debugIdentity() + ")");
-        }
     }
 
     /**
@@ -355,7 +351,7 @@ public class AMQMessage
         return _transientMessageData.isAllContentReceived();
     }
 
-    public long getMessageId()
+    public Long getMessageId()
     {
         return _messageId;
     }
@@ -374,10 +370,10 @@ public class AMQMessage
     protected void incrementReference()
     {
         _referenceCount.incrementAndGet();
-        if (_log.isDebugEnabled())
-        {
-            _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
-        }
+//        if (_log.isDebugEnabled())
+//        {
+//            _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+//        }
     }
 
     /**
@@ -401,10 +397,10 @@ public class AMQMessage
         {
             try
             {
-                if (_log.isDebugEnabled())
-                {
-                    _log.debug("Decremented ref count on message " + debugIdentity() + " is zero; removing message" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
-                }
+//                if (_log.isDebugEnabled())
+//                {
+//                    _log.debug("Decremented ref count on message " + debugIdentity() + " is zero; removing message" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+//                }
 
                 // must check if the handle is null since there may be cases where we decide to throw away a message
                 // and the handle has not yet been constructed
@@ -422,14 +418,6 @@ public class AMQMessage
         }
         else
         {
-            if (_log.isDebugEnabled())
-            {
-                _log.debug("Decremented ref count is now " + count + " for message id " + debugIdentity() + "\n" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 5));
-                if (count < 0)
-                {
-                    Thread.dumpStack();
-                }
-            }
             if (count < 0)
             {
                 throw new MessageCleanupException("Reference count for message id " + debugIdentity() + " has gone below 0.");
