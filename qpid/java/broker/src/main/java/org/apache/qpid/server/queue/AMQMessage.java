@@ -432,10 +432,10 @@ public class AMQMessage implements StorableMessage
         // enqueuing the messages ensure that if required the destinations are recorded to a
         // persistent store
 
-        for (AMQQueue q : _transientMessageData.getDestinationQueues())
-        {
-            _messageHandle.enqueue(storeContext, _messageId, q);
-        }
+       // for (AMQQueue q : _transientMessageData.getDestinationQueues())
+       // {
+       //     _messageHandle.enqueue(storeContext, _messageId, q);
+       // }
 
         if (_transientMessageData.getContentHeaderBody().bodySize == 0)
         {

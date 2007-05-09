@@ -18,18 +18,42 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.messageStore.StorableMessage;
+import org.apache.qpid.server.messageStore.StorableQueue;
 import org.apache.qpid.server.exception.*;
+import org.apache.log4j.Logger;
 
 import javax.transaction.xa.Xid;
 
 /**
  * Created by Arnaud Simon
- * Date: 25-Apr-2007
- * Time: 17:13:07
+ * Date: 03-May-2007
+ * Time: 13:59:47
  */
-public class DequeueRecord implements TransactionRecord
+public class MemoryDequeueRecord implements TransactionRecord
 {
+    //========================================================================
+    // Static Constants
+    //========================================================================
+    // The logger for this class
+    private static final Logger _log = Logger.getLogger(MemoryDequeueRecord.class);
+    // the queue
+    StorableQueue _queue;
+    // the message
+    StorableMessage _message;
 
+    //========================================================================
+    // Constructor
+    //========================================================================
+    public MemoryDequeueRecord( StorableMessage m, StorableQueue queue)
+    {
+        _queue = queue;
+        _message = m;
+    }
+
+    //========================================================================
+    // Interface TransactionRecord
+    //========================================================================
 
     public void commit(MessageStore store, Xid xid)
             throws
@@ -39,21 +63,20 @@ public class DequeueRecord implements TransactionRecord
             UnknownXidException,
             MessageDoesntExistException
     {
-        // nothing    
+        store.dequeue(null, _message, _queue);
     }
 
     public void rollback(MessageStore store)
             throws
             InternalErrorException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // do nothing
     }
 
     public void prepare(MessageStore store)
             throws
             InternalErrorException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // do nothing
     }
 }
-

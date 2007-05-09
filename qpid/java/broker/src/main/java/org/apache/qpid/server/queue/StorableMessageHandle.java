@@ -169,7 +169,10 @@ public class StorableMessageHandle implements AMQMessageHandle
     {
         try
         {
-            _messageStore.enqueue((Xid) storeContext.getPayload(), _message, queue);
+            if (queue.isDurable())
+            {
+                _messageStore.enqueue((Xid) storeContext.getPayload(), _message, queue);
+            }
         } catch (Exception e)
         {
             throw new AMQException("PRoblem during message enqueue", e);
@@ -182,7 +185,10 @@ public class StorableMessageHandle implements AMQMessageHandle
     {
         try
         {
-            _messageStore.dequeue((Xid) storeContext.getPayload(), _message, queue);
+            if (queue.isDurable())
+            {
+                _messageStore.dequeue((Xid) storeContext.getPayload(), _message, queue);
+            }
         } catch (Exception e)
         {
             throw new AMQException("PRoblem during message dequeue", e);
@@ -199,8 +205,8 @@ public class StorableMessageHandle implements AMQMessageHandle
         if (_payload == null)
         {
             int bodySize = (int) _contentHeaderBody.bodySize;
-            _buffer = ByteBuffer.allocate(bodySize);
             _payload = new byte[bodySize];
+            _buffer = ByteBuffer.wrap(_payload);
             for (ContentChunk contentBody : _chunks)
             {
                 int chunkSize = contentBody.getSize();
@@ -208,7 +214,6 @@ public class StorableMessageHandle implements AMQMessageHandle
                 contentBody.getData().get(chunk);
                 _buffer.put(chunk);
             }
-            _buffer.get(_payload);
         }
         return _payload;
     }

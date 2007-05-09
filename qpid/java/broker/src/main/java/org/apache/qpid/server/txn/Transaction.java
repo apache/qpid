@@ -26,10 +26,24 @@ package org.apache.qpid.server.txn;
 public interface Transaction
 {
 
-     /**
+    /**
      * Add an abstract record to this tx.
      *
      * @param record The record to be added
      */
     public void addRecord(TransactionRecord record);
+
+    /**
+     * Set this tx timeout
+     *
+     * @param timeout This tx timeout in seconds
+     */
+    public void setTimeout(long timeout);
+
+    /**
+     * Get this tx timeout
+     *
+     * @return This tx timeout in seconds
+     */
+    public long getTimeout();
 }
