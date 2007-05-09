@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.AMQChannel;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
@@ -82,6 +84,10 @@ public class SubscriptionTestHelper implements Subscription
         return new Object();
     }
 
+    public AMQChannel getChannel()
+    {
+        return null;
+    }
 
     public void queueDeleted(AMQQueue queue)
     {

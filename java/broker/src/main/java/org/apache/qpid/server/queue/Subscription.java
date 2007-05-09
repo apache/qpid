@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import java.util.Queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.AMQChannel;
 
 public interface Subscription
 {
@@ -57,4 +58,6 @@ public interface Subscription
     void addToResendQueue(AMQMessage msg);
 
     Object getSendLock();
+
+    AMQChannel getChannel();
 }

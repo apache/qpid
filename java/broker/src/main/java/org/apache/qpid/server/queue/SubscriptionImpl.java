@@ -668,5 +668,9 @@ public class SubscriptionImpl implements Subscription
         return _sendLock;
     }
 
+    public AMQChannel getChannel()
+    {
+        return channel;
+    }
 
 }
