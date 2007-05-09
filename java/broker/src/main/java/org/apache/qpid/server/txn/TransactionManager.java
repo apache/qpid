@@ -19,6 +19,8 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.exception.*;
+import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.commons.configuration.Configuration;
 
 import javax.transaction.xa.Xid;
 import java.util.Set;
@@ -30,6 +32,17 @@ import java.util.Set;
  */
 public interface TransactionManager
 {
+
+    /**
+      * Configure this TM with the Message store implementation
+      *
+      * @param base         The base element identifier from which all configuration items are relative. For example, if the base
+      *                     element is "store", the all elements used by concrete classes will be "store.foo" etc.
+      * @param config       The apache commons configuration object
+      * @param messageStroe the message store associated with the TM
+      */
+     public void configure(MessageStore messageStroe, String base, Configuration config);
+
     /**
      * Begin a transaction branch identified by Xid
      *

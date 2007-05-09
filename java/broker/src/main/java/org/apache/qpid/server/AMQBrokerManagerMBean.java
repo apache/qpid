@@ -228,10 +228,14 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            _messageStore.destroyQueue(queue);
+            if( queue.isDurable() )
+            {
+                _messageStore.destroyQueue(queue);
+            }
         }
         catch (Exception ex)
         {
+           ex.printStackTrace();
             JMException jme = new JMException(ex.getMessage());
             jme.initCause(ex);
             throw new MBeanException(jme, "Error in deleting queue " + queueName);

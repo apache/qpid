@@ -18,9 +18,13 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.exception.*;
+import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.commons.configuration.Configuration;
+import org.apache.log4j.Logger;
 
 import javax.transaction.xa.Xid;
 import java.util.Set;
+import java.util.HashMap;
 
 /**
  * Created by Arnaud Simon
@@ -29,13 +33,65 @@ import java.util.Set;
  */
 public class MemoryTransactionManager implements TransactionManager
 {
+    //========================================================================
+    // Static Constants
+    //========================================================================
+    // The logger for this class
+    private static final Logger _log = Logger.getLogger(MemoryTransactionManager.class);
+
+    private static final String ENVIRONMENT_TX_TIMEOUT = "environment-tx-timeout";
+
+    //========================================================================
+    // Instance Fields
+    //========================================================================
+    // The underlying BDB message store
+    private MessageStore _messagStore;
+    // A map of XID/BDBtx
+    private HashMap<Xid, Transaction> _xidMap;
+    // A map of in-doubt txs
+    private HashMap<Xid, MemoryTransaction> _indoubtXidMap;
+
+    // A default tx timeout in sec
+    private int _defaultTimeout;   // set to 10s if not specified in the config
+
+    //========================================================================
+    // Interface TransactionManager
+    //========================================================================
+    public void configure(MessageStore messageStroe, String base, Configuration config)
+    {
+        _messagStore = messageStroe;
+        if (config != null)
+        {
+            _defaultTimeout = config.getInt(base + "." + ENVIRONMENT_TX_TIMEOUT, 10);
+        } else
+        {
+            _defaultTimeout = 10;
+        }
+        _log.info("Using transaction timeout of " + _defaultTimeout + " s");
+        _xidMap = new HashMap<Xid, Transaction>();
+        _indoubtXidMap = new HashMap<Xid, MemoryTransaction>();
+    }
 
     public XAFlag begin(Xid xid)
             throws
             InternalErrorException,
             InvalidXidException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        synchronized (xid)
+        {
+            if (xid == null)
+            {
+                throw new InvalidXidException(xid, "null xid");
+            }
+            if (_xidMap.containsKey(xid))
+            {
+                throw new InvalidXidException(xid, "Xid already exist");
+            }
+            MemoryTransaction tx = new MemoryTransaction();
+            tx.setTimeout(_defaultTimeout);
+            _xidMap.put(xid, tx);
+            return XAFlag.ok;
+        }
     }
 
     public XAFlag prepare(Xid xid)
@@ -44,7 +100,35 @@ public class MemoryTransactionManager implements TransactionManager
             CommandInvalidException,
             UnknownXidException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        synchronized (xid)
+        {
+            // get the transaction
+            MemoryTransaction tx = (MemoryTransaction) getTransaction(xid);
+            XAFlag result = XAFlag.ok;
+            if (tx.hasExpired())
+            {
+                result = XAFlag.rbtimeout;
+                // rollback this tx branch
+                rollback(xid);
+            } else
+            {
+                if (tx.isPrepared())
+                {
+                    throw new CommandInvalidException("TransactionImpl is already prepared");
+                }
+                if (tx.getrecords().size() == 0)
+                {
+                    // the tx was read only (no work has been done)
+                    _xidMap.remove(xid);
+                    result = XAFlag.rdonly;
+                } else
+                {
+                    // we need to persist the tx records
+                    tx.prepare();
+                }
+            }
+            return result;
+        }
     }
 
     public XAFlag rollback(Xid xid)
@@ -53,7 +137,28 @@ public class MemoryTransactionManager implements TransactionManager
             CommandInvalidException,
             UnknownXidException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        synchronized (xid)
+        {
+            // get the transaction
+            MemoryTransaction tx = (MemoryTransaction) getTransaction(xid);
+            XAFlag flag = XAFlag.ok;
+            if (tx.isHeurRollback())
+            {
+                flag = XAFlag.heurrb;
+            } else
+            {
+                for (TransactionRecord record : tx.getrecords())
+                {
+                    record.rollback(_messagStore);
+                }
+                _xidMap.remove(xid);
+            }
+            if (tx.hasExpired())
+            {
+                flag = XAFlag.rbtimeout;
+            }
+            return flag;
+        }
     }
 
     public XAFlag commit(Xid xid)
@@ -63,7 +168,44 @@ public class MemoryTransactionManager implements TransactionManager
             UnknownXidException,
             NotPreparedException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        synchronized (xid)
+        {
+            // get the transaction
+            MemoryTransaction tx = (MemoryTransaction) getTransaction(xid);
+            XAFlag flag = XAFlag.ok;
+            if (tx.isHeurRollback())
+            {
+                flag = XAFlag.heurrb;
+            } else if (tx.hasExpired())
+            {
+                flag = XAFlag.rbtimeout;
+                // rollback this tx branch
+                rollback(xid);
+            } else
+            {
+                if (!tx.isPrepared())
+                {
+                    throw new NotPreparedException("TransactionImpl is not prepared");
+                }
+                for (TransactionRecord record : tx.getrecords())
+                {
+                    try
+                    {
+                        record.commit(_messagStore, xid);
+                    } catch (InvalidXidException e)
+                    {
+                        throw new UnknownXidException(xid, e);
+                    } catch (Exception e)
+                    {
+                        // this should not happen as the queue and the message must exist
+                        _log.error("Error when committing distributed transaction heurmix mode returned: " + xid);
+                        flag = XAFlag.heurmix;
+                    }
+                }
+                _xidMap.remove(xid);
+            }
+            return flag;
+        }
     }
 
     public XAFlag commit_one_phase(Xid xid)
@@ -72,7 +214,47 @@ public class MemoryTransactionManager implements TransactionManager
             CommandInvalidException,
             UnknownXidException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        synchronized (xid)
+        {
+            XAFlag flag = XAFlag.ok;
+            MemoryTransaction tx = (MemoryTransaction) getTransaction(xid);
+            if (tx.isHeurRollback())
+            {
+                flag = XAFlag.heurrb;
+            } else if (tx.hasExpired())
+            {
+                flag = XAFlag.rbtimeout;
+                // rollback this tx branch
+                rollback(xid);
+            } else
+            {
+                // we need to prepare the tx
+                tx.prepare();
+                try
+                {
+                    for (TransactionRecord record : tx.getrecords())
+                    {
+                        try
+                        {
+                            record.commit(_messagStore, xid);
+                        } catch (InvalidXidException e)
+                        {
+                            throw new UnknownXidException(xid, e);
+                        } catch (Exception e)
+                        {
+                            // this should not happen as the queue and the message must exist
+                            _log.error("Error when committing transaction heurmix mode returned: " + xid);
+                            flag = XAFlag.heurmix;
+                        }
+                    }
+                }               
+                finally
+                {
+                    _xidMap.remove(xid);
+                }
+            }
+            return flag;
+        }
     }
 
     public void forget(Xid xid)
@@ -81,7 +263,10 @@ public class MemoryTransactionManager implements TransactionManager
             CommandInvalidException,
             UnknownXidException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        synchronized (xid)
+        {
+            _xidMap.remove(xid);
+        }
     }
 
     public void setTimeout(Xid xid, long timeout)
@@ -89,7 +274,8 @@ public class MemoryTransactionManager implements TransactionManager
             InternalErrorException,
             UnknownXidException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        Transaction tx = getTransaction(xid);
+        tx.setTimeout(timeout);
     }
 
     public long getTimeout(Xid xid)
@@ -97,7 +283,8 @@ public class MemoryTransactionManager implements TransactionManager
             InternalErrorException,
             UnknownXidException
     {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        Transaction tx = getTransaction(xid);
+        return tx.getTimeout();
     }
 
     public Set<Xid> recover(boolean startscan, boolean endscan)
@@ -105,7 +292,7 @@ public class MemoryTransactionManager implements TransactionManager
             InternalErrorException,
             CommandInvalidException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return _indoubtXidMap.keySet();
     }
 
     public void HeuristicOutcome(Xid xid)
@@ -113,13 +300,32 @@ public class MemoryTransactionManager implements TransactionManager
             UnknownXidException,
             InternalErrorException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        synchronized (xid)
+        {
+            MemoryTransaction tx = (MemoryTransaction) getTransaction(xid);
+            if (!tx.isPrepared())
+            {
+                // heuristically rollback this tx
+                for (TransactionRecord record : tx.getrecords())
+                {
+                    record.rollback(_messagStore);
+                }
+                tx.heurRollback();
+            }
+            // add this branch in the list of indoubt tx
+            _indoubtXidMap.put(xid, tx);
+        }
     }
 
     public Transaction getTransaction(Xid xid)
             throws
             UnknownXidException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Transaction tx = _xidMap.get(xid);
+        if (tx == null)
+        {
+            throw new UnknownXidException(xid);
+        }
+        return tx;
     }
 }

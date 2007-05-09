@@ -8,7 +8,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
-import javax.jms.DeliveryMode;
 import java.io.IOException;
 
 
@@ -17,7 +16,7 @@ public class HeapExhaustion extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(HeapExhaustion.class);
 
-    protected QpidClientConnection conn;
+    protected QpidClientConnection conn;                         
     protected final String BROKER = "localhost";
     protected final String vhost = "/test";
     protected final String queue = "direct://amq.direct//queue";
@@ -35,7 +34,13 @@ public class HeapExhaustion extends TestCase
         conn = new QpidClientConnection(BROKER);
         conn.setVirtualHost(vhost);
 
-        conn.connect();
+        try
+        {
+            conn.connect();
+        } catch (JMSException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
         // clear queue
         _logger.debug("setup: clearing test queue");
         conn.consume(queue, 2000);
@@ -55,7 +60,7 @@ public class HeapExhaustion extends TestCase
      *
      * @throws Exception on error
      */
-    public void testUntilFailureTransient() throws Exception
+    public void testUntilFailure() throws Exception
     {
         int copies = 0;
         int total = 0;
@@ -63,7 +68,7 @@ public class HeapExhaustion extends TestCase
         int size = payload.getBytes().length;
         while (true)
         {
-            conn.put(queue, payload, 1, DeliveryMode.NON_PERSISTENT);
+            conn.put(queue, payload, 1);
             copies++;
             total += size;
             System.out.println("put copy " + copies + " OK for total bytes: " + total);
@@ -75,7 +80,7 @@ public class HeapExhaustion extends TestCase
      *
      * @throws Exception on error
      */
-    public void testUntilFailureWithDelaysTransient() throws Exception
+    public void testUntilFailureWithDelays() throws Exception
     {
         int copies = 0;
         int total = 0;
@@ -83,7 +88,7 @@ public class HeapExhaustion extends TestCase
         int size = payload.getBytes().length;
         while (true)
         {
-            conn.put(queue, payload, 1, DeliveryMode.NON_PERSISTENT);
+            conn.put(queue, payload, 1);
             copies++;
             total += size;
             System.out.println("put copy " + copies + " OK for total bytes: " + total);
@@ -110,7 +115,7 @@ public class HeapExhaustion extends TestCase
             _logger.info("Running testUntilFailure");
             try
             {
-                he.testUntilFailureTransient();
+                he.testUntilFailure();
             }
             catch (FailoverException fe)
             {
@@ -159,7 +164,7 @@ public class HeapExhaustion extends TestCase
             _logger.info("Running testUntilFailure");
             try
             {
-                he.testUntilFailureWithDelaysTransient();
+                he.testUntilFailureWithDelays();
             }
             catch (FailoverException fe)
             {

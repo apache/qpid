@@ -16,7 +16,6 @@ import javax.jms.MessageProducer;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.TextMessage;
-import javax.jms.DeliveryMode;
 
 public class QpidClientConnection implements ExceptionListener
 {
@@ -42,7 +41,9 @@ public class QpidClientConnection implements ExceptionListener
     }
 
 
-    public void connect() throws JMSException
+    public void connect()
+            throws
+            JMSException
     {
         if (!connected)
         {
@@ -77,7 +78,9 @@ public class QpidClientConnection implements ExceptionListener
         }
     }
 
-    public void disconnect() throws JMSException
+    public void disconnect()
+            throws
+            JMSException
     {
         if (connected)
         {
@@ -89,7 +92,9 @@ public class QpidClientConnection implements ExceptionListener
         }
     }
 
-    public void disconnectWithoutCommit() throws JMSException
+    public void disconnectWithoutCommit()
+            throws
+            JMSException
     {
         if (connected)
         {
@@ -126,7 +131,9 @@ public class QpidClientConnection implements ExceptionListener
     }
 
 
-    /** override as necessary */
+    /**
+     * override as necessary
+     */
     public void onException(JMSException exception)
     {
         _logger.info("ExceptionListener event: error " + exception.getErrorCode() + ", message: " + exception.getMessage());
@@ -148,10 +155,11 @@ public class QpidClientConnection implements ExceptionListener
      * @param queueName The queue name to put to
      * @param payload   the content of the payload
      * @param copies    the number of messages to put
-     *
      * @throws javax.jms.JMSException any exception that occurs
      */
-    public void put(String queueName, String payload, int copies, int deliveryMode) throws JMSException
+    public void put(String queueName, String payload, int copies)
+            throws
+            JMSException
     {
         if (!connected)
         {
@@ -163,8 +171,6 @@ public class QpidClientConnection implements ExceptionListener
 
         final MessageProducer sender = session.createProducer(queue);
 
-        sender.setDeliveryMode(deliveryMode);
-
         for (int i = 0; i < copies; i++)
         {
             Message m = session.createTextMessage(payload + i);
@@ -172,7 +178,13 @@ public class QpidClientConnection implements ExceptionListener
             sender.send(m);
         }
 
-        session.commit();
+        try
+        {
+            session.commit();
+        } catch (JMSException e)
+        {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
         sender.close();
         _logger.info("put " + copies + " copies");
     }
@@ -182,12 +194,12 @@ public class QpidClientConnection implements ExceptionListener
      *
      * @param queueName   The quename to get from
      * @param readTimeout The timeout to use
-     *
      * @return the content of the text message if any
-     *
      * @throws javax.jms.JMSException any exception that occured
      */
-    public Message getNextMessage(String queueName, long readTimeout) throws JMSException
+    public Message getNextMessage(String queueName, long readTimeout)
+            throws
+            JMSException
     {
         if (!connected)
         {
@@ -208,12 +220,10 @@ public class QpidClientConnection implements ExceptionListener
         if (message instanceof TextMessage)
         {
             result = ((TextMessage) message);
-        }
-        else if (null == message)
+        } else if (null == message)
         {
             result = null;
-        }
-        else
+        } else
         {
             _logger.info("warning: received non-text message");
             result = message;
@@ -226,12 +236,12 @@ public class QpidClientConnection implements ExceptionListener
      * GET the top message on a queue. Consumes the message.
      *
      * @param queueName The Queuename to get from
-     *
      * @return The string content of the text message, if any received
-     *
      * @throws javax.jms.JMSException any exception that occurs
      */
-    public Message getNextMessage(String queueName) throws JMSException
+    public Message getNextMessage(String queueName)
+            throws
+            JMSException
     {
         return getNextMessage(queueName, 0);
     }
@@ -241,11 +251,13 @@ public class QpidClientConnection implements ExceptionListener
      *
      * @param queueName   The Queue name to consume from
      * @param readTimeout The timeout for each consume
-     *
      * @throws javax.jms.JMSException Any exception that occurs during the consume
      * @throws InterruptedException   If the consume thread was interrupted during a consume.
      */
-    public void consume(String queueName, int readTimeout) throws JMSException, InterruptedException
+    public void consume(String queueName, int readTimeout)
+            throws
+            JMSException,
+            InterruptedException
     {
         if (!connected)
         {
@@ -266,6 +278,7 @@ public class QpidClientConnection implements ExceptionListener
 
         session.commit();
         consumer.close();
+
         _logger.info("consumed: " + messagesReceived);
     }
 }
