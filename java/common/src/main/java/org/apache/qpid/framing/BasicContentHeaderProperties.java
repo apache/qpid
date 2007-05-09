@@ -31,26 +31,23 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     private static final AMQShortString ZERO_STRING = null;
 
     /**
-     * We store the encoded form when we decode the content header so that if we need to
-     * write it out without modifying it we can do so without incurring the expense of
-     * reencoding it
+     * We store the encoded form when we decode the content header so that if we need to write it out without modifying
+     * it we can do so without incurring the expense of reencoding it
      */
     private byte[] _encodedForm;
 
-    /**
-     * Flag indicating whether the entire content header has been decoded yet
-     */
+    /** Flag indicating whether the entire content header has been decoded yet */
     private boolean _decoded = true;
 
     /**
-     * We have some optimisations for partial decoding for maximum performance. The headers are used in the broker
-     * for routing in some cases so we can decode that separately.
+     * We have some optimisations for partial decoding for maximum performance. The headers are used in the broker for
+     * routing in some cases so we can decode that separately.
      */
     private boolean _decodedHeaders = true;
 
     /**
-     * We have some optimisations for partial decoding for maximum performance. The content type is used by all
-     * clients to determine the message type
+     * We have some optimisations for partial decoding for maximum performance. The content type is used by all clients
+     * to determine the message type
      */
     private boolean _decodedContentType = true;
 
@@ -142,9 +139,9 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
             }
             if ((_propertyFlags & EXPIRATION_MASK) > 0)
             {
-                if(_expiration == 0L)
+                if (_expiration == 0L)
                 {
-                    size+=EncodingUtils.encodedShortStringLength(ZERO_STRING);
+                    size += EncodingUtils.encodedShortStringLength(ZERO_STRING);
                 }
                 else
                 {
@@ -237,9 +234,9 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
             }
             if ((_propertyFlags & EXPIRATION_MASK) != 0)
             {
-                if(_expiration == 0L)
+                if (_expiration == 0L)
                 {
-                    EncodingUtils.writeShortStringBytes(buffer, ZERO_STRING);                    
+                    EncodingUtils.writeShortStringBytes(buffer, ZERO_STRING);
                 }
                 else
                 {
@@ -274,7 +271,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     }
 
     public void populatePropertiesFromBuffer(ByteBuffer buffer, int propertyFlags, int size)
-        throws AMQFrameDecodingException
+            throws AMQFrameDecodingException
     {
         _propertyFlags = propertyFlags;
 
@@ -463,7 +460,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public String getEncodingAsString()
     {
-        
+
         return getEncoding() == null ? null : getEncoding().toString();
     }
 
@@ -575,7 +572,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     {
         setReplyTo(replyTo == null ? null : new AMQShortString(replyTo));
     }
-    
+
     public void setReplyTo(AMQShortString replyTo)
     {
 
@@ -702,7 +699,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setAppId(String appId)
     {
-        setAppId(appId == null ? null : new AMQShortString(appId));        
+        setAppId(appId == null ? null : new AMQShortString(appId));
     }
 
     public void setAppId(AMQShortString appId)
