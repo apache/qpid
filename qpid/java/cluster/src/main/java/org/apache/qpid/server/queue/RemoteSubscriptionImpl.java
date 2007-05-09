@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.cluster.MemberHandle;
 import org.apache.qpid.server.cluster.GroupManager;
 import org.apache.qpid.server.cluster.SimpleSendable;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.AMQException;
 
 import java.util.Queue;
@@ -165,6 +166,11 @@ class RemoteSubscriptionImpl implements Subscription, WeightedSubscriptionManage
     public Object getSendLock()
     {
         return new Object();
+    }
+
+    public AMQChannel getChannel()
+    {
+        return null;
     }
 
 }
