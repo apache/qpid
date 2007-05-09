@@ -46,7 +46,8 @@ public class DistributedTransactionalContext implements TransactionalContext
     //========================================================================
     // The logger for this class
     private static final Logger _log = Logger.getLogger(DistributedTransactionalContext.class);
-
+    private static final Object _lockXID = new Object();
+    private static int _count = 0;
     //========================================================================
     // Instance Fields
     //========================================================================
@@ -60,7 +61,6 @@ public class DistributedTransactionalContext implements TransactionalContext
     final private List<RequiredDeliveryException> _returnMessages;
     // for generating xids
     private byte[] _txId = ("txid").getBytes();
-    private int _count = 0;
 
     public DistributedTransactionalContext(TransactionManager transactionManager, MessageStore messageStore, StoreContext storeContext,
                                            List<RequiredDeliveryException> returnMessages)
@@ -75,15 +75,21 @@ public class DistributedTransactionalContext implements TransactionalContext
             throws
             AMQException
     {
-        // begin the transaction and pass the XID through the context
-        Xid xid = new XidImpl(("branch" + _count++).getBytes(), 1, _txId);
-        try
+        if (_storeContext.getPayload() == null)
         {
-            _transactionManager.begin(xid);
-            _storeContext.setPayload(xid);
-        } catch (Exception e)
-        {
-            throw new AMQException("Problem during transaction begin", e);
+            synchronized (_lockXID)
+            {
+                // begin the transaction and pass the XID through the context
+                Xid xid = new XidImpl(("branch" + _count++).getBytes(), 1, _txId);
+                try
+                {
+                    _transactionManager.begin(xid);
+                    _storeContext.setPayload(xid);
+                } catch (Exception e)
+                {
+                    throw new AMQException("Problem during transaction begin", e);
+                }
+            }
         }
     }
 
@@ -93,10 +99,17 @@ public class DistributedTransactionalContext implements TransactionalContext
     {
         try
         {
-            _transactionManager.commit_one_phase((Xid) _storeContext.getPayload());
+            if (_storeContext.getPayload() != null)
+            {
+                _transactionManager.commit_one_phase((Xid) _storeContext.getPayload());
+            }
         } catch (Exception e)
         {
             throw new AMQException("Problem during transaction commit", e);
+        }
+        finally
+        {
+            _storeContext.setPayload(null);
         }
     }
 
@@ -106,10 +119,17 @@ public class DistributedTransactionalContext implements TransactionalContext
     {
         try
         {
-            _transactionManager.rollback((Xid) _storeContext.getPayload());
+            if (_storeContext.getPayload() != null)
+            {
+                _transactionManager.rollback((Xid) _storeContext.getPayload());
+            }
         } catch (Exception e)
         {
             throw new AMQException("Problem during transaction rollback", e);
+        }
+        finally
+        {
+            _storeContext.setPayload(null);
         }
     }
 
@@ -142,6 +162,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             throws
             AMQException
     {
+        beginTranIfNecessary();
         if (multiple)
         {
             if (deliveryTag == 0)
