@@ -216,6 +216,8 @@ public class AMQChannel
                 _log.trace(debugIdentity() + "Content header received on channel " + _channelId);
             }
             _currentMessage.setContentHeaderBody(contentHeaderBody);
+            _currentMessage.setExpiration();
+
             routeCurrentMessage();
             _currentMessage.routingComplete(_messageStore, _storeContext, _messageHandleFactory);
 
