@@ -32,6 +32,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Qpid.Common\lib\log4net\log4net.dll</HintPath>
     </Reference>
+    <Reference Include="Org.Mentalis.Security, Version=1.0.13.716, Culture=neutral, PublicKeyToken=085a8f6006888436">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Qpid.Common\lib\seclib-1.0.0\Org.Mentalis.Security.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -46,6 +50,7 @@
     <Compile Include="Client\AMQNoConsumersException.cs" />
     <Compile Include="Client\AMQNoRouteException.cs" />
     <Compile Include="Client\Configuration\AuthenticationConfigurationSectionHandler.cs" />
+    <Compile Include="Client\SslOptions.cs" />
     <Compile Include="Client\Message\QpidHeaders.cs" />
     <Compile Include="Client\QpidConnectionInfo.cs" />
     <Compile Include="Client\BasicMessageConsumer.cs" />
@@ -99,14 +104,18 @@
     <Compile Include="Client\State\StateWaiter.cs" />
     <Compile Include="Client\Transport\AmqpChannel.cs" />
     <Compile Include="Client\Transport\AMQProtocolProvider.cs" />
+    <Compile Include="Client\Transport\IStreamFilter.cs" />
+    <Compile Include="Client\Transport\IoHandler.cs" />
     <Compile Include="Client\Transport\IByteChannel.cs" />
     <Compile Include="Client\Transport\IProtocolChannel.cs" />
     <Compile Include="Client\Transport\IProtocolWriter.cs" />
     <Compile Include="Client\Transport\ITransport.cs" />
     <Compile Include="Client\Transport\SingleProtocolEncoderOutput.cs" />
-    <Compile Include="Client\Transport\Socket\Blocking\BlockingSocketProcessor.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\BlockingSocketTransport.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\ByteChannel.cs" />
+    <Compile Include="Client\Transport\Socket\Blocking\SslSocketConnector.cs" />
+    <Compile Include="Client\Transport\Socket\Blocking\SocketConnector.cs" />
+    <Compile Include="Client\Transport\Socket\Blocking\ISocketConnector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="qms\BrokerInfo.cs" />
     <Compile Include="qms\ConnectionInfo.cs" />

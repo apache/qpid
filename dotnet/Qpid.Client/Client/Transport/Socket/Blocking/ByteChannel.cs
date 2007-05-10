@@ -29,16 +29,16 @@ namespace Qpid.Client.Transport.Socket.Blocking
         // Warning: don't use this log for regular logging.
         private static readonly ILog _ioTraceLog = LogManager.GetLogger("Qpid.Client.ByteChannel.Tracing");
 
-        BlockingSocketProcessor processor;
+       private IByteChannel _lowerChannel;
         
-        public ByteChannel(BlockingSocketProcessor processor)
+        public ByteChannel(IByteChannel lowerChannel)
         {
-            this.processor = processor;
+            _lowerChannel = lowerChannel;
         }
 
         public ByteBuffer Read()
         {
-            ByteBuffer result = processor.Read();
+            ByteBuffer result = _lowerChannel.Read();
 
             // TODO: Move into decorator.
             if (_ioTraceLog.IsDebugEnabled)
@@ -49,6 +49,21 @@ namespace Qpid.Client.Transport.Socket.Blocking
             return result;
         }
 
+        public IAsyncResult BeginRead(AsyncCallback callback, object state)
+        {
+           return _lowerChannel.BeginRead(callback, state);
+        }
+
+        public ByteBuffer EndRead(IAsyncResult result)
+        {
+           ByteBuffer buffer = _lowerChannel.EndRead(result);
+           if ( _ioTraceLog.IsDebugEnabled )
+           {
+              _ioTraceLog.Debug(String.Format("READ {0}", buffer));
+           }
+           return buffer;
+        }
+
         public void Write(ByteBuffer buffer)
         {
             // TODO: Move into decorator.
@@ -56,8 +71,22 @@ namespace Qpid.Client.Transport.Socket.Blocking
             {
                 _ioTraceLog.Debug(String.Format("WRITE {0}", buffer));
             }
-            
-            processor.Write(buffer);
+
+            _lowerChannel.Write(buffer);
         }
-    }
+     
+        public IAsyncResult BeginWrite(ByteBuffer buffer, AsyncCallback callback, object state)
+        {
+           if ( _ioTraceLog.IsDebugEnabled )
+           {
+              _ioTraceLog.Debug(String.Format("WRITE {0}", buffer));
+           }
+           return _lowerChannel.BeginWrite(buffer, callback, state);
+        }
+
+        public void EndWrite(IAsyncResult result)
+        {
+           _lowerChannel.EndWrite(result);
+        }
+     }
 }

@@ -271,7 +271,7 @@ namespace Qpid.Client.Protocol
                 id = _queueId++;
             }
 
-            return "tmp_" + _connection.Transport.getLocalEndPoint() + "_" + id;          
+            return "tmp_" + _connection.Transport.LocalEndpoint + "_" + id;          
         }
     }
 }

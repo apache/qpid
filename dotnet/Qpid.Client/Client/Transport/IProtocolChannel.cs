@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+using System;
 using System.Collections;
 
 namespace Qpid.Client.Transport
@@ -25,5 +26,7 @@ namespace Qpid.Client.Transport
     public interface IProtocolChannel : IProtocolWriter
     {
         Queue Read();
+        IAsyncResult BeginRead(AsyncCallback callback, object state);
+        Queue EndRead(IAsyncResult result);
     }
 }

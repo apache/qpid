@@ -672,9 +672,9 @@ namespace Qpid.Client
             }
         }
 
-        public bool AttemptReconnection(String host, int port, bool useSSL)
+        public bool AttemptReconnection(String host, int port, SslOptions sslConfig)
         {
-            IBrokerInfo bd = new AmqBrokerInfo("amqp", host, port, useSSL);
+            IBrokerInfo bd = new AmqBrokerInfo("amqp", host, port, sslConfig);
 
             _failoverPolicy.setBroker(bd);
 
@@ -708,10 +708,10 @@ namespace Qpid.Client
                 _transport = LoadTransportFromAssembly(brokerDetail.getHost(), brokerDetail.getPort(), assemblyName, transportType);
                 */
 
-                _transport = new BlockingSocketTransport(brokerDetail.Host, brokerDetail.Port, this);
+                _transport = new BlockingSocketTransport();
                 
                 // Connect.
-                _transport.Open();                
+                _transport.Connect(brokerDetail, this);                
                 _protocolWriter = new ProtocolWriter(_transport.ProtocolWriter, _protocolListener);
                 _protocolSession = new AMQProtocolSession(_transport.ProtocolWriter, _transport, this);
                 _protocolListener.ProtocolSession = _protocolSession;

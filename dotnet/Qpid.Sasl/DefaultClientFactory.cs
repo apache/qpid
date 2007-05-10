@@ -21,7 +21,6 @@
 
 using System;
 using System.Collections;
-using System.Text;
 
 using Qpid.Sasl.Mechanisms;
 
@@ -29,11 +28,12 @@ namespace Qpid.Sasl
 {
    public class DefaultClientFactory : ISaslClientFactory
    {
-      private static readonly string[] SUPPORTED = new string[] { 
+      private static readonly string[] SUPPORTED = new string[] {
                DigestSaslClient.Mechanism,
                CramMD5SaslClient.Mechanism,
                PlainSaslClient.Mechanism, 
                AnonymousSaslClient.Mechanism,
+               ExternalSaslClient.Mechanism,
             };
 
       public string[] GetSupportedMechanisms(IDictionary props)
@@ -52,6 +52,7 @@ namespace Qpid.Sasl
             vetoed.Add(CramMD5SaslClient.Mechanism);
             vetoed.Add(PlainSaslClient.Mechanism);
             vetoed.Add(AnonymousSaslClient.Mechanism);
+            vetoed.Add(ExternalSaslClient.Mechanism);
          } 
          if ( props.Contains(SaslProperties.PolicyNoAnonymous) )
          {
@@ -85,6 +86,8 @@ namespace Qpid.Sasl
                return new AnonymousSaslClient(authorizationId, props, handler);
             case DigestSaslClient.Mechanism:
                return new DigestSaslClient(authorizationId, serverName, protocol, props, handler);
+            case ExternalSaslClient.Mechanism:
+               return new ExternalSaslClient(authorizationId, props, handler);
             }
          }
          // unknown mechanism

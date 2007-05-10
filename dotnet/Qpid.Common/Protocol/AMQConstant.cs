@@ -90,7 +90,7 @@ namespace Qpid.Protocol
       public static readonly AMQConstant COMMAND_INVALID = new AMQConstant(503, "command invalid", true);
       public static readonly AMQConstant CHANNEL_ERROR = new AMQConstant(504, "channel error", true);
       public static readonly AMQConstant RESOURCE_ERROR = new AMQConstant(506, "resource error", true);
-      public static readonly AMQConstant NOT_ALLOWED = new AMQConstant(507, "not allowed", true);
+      public static readonly AMQConstant NOT_ALLOWED = new AMQConstant(530, "not allowed", true);
       public static readonly AMQConstant NOT_IMPLEMENTED = new AMQConstant(540, "not implemented", true);
       public static readonly AMQConstant INTERNAL_ERROR = new AMQConstant(541, "internal error", true);
 

@@ -20,101 +20,119 @@
  */
 using System;
 using System.Collections;
+using System.IO;
 using System.Threading;
-using log4net;
+using Qpid.Client.Qms;
 using Qpid.Client.Protocol;
 using Qpid.Framing;
 
 namespace Qpid.Client.Transport.Socket.Blocking
 {
-    public class BlockingSocketTransport : ITransport
-    {
-//        static readonly ILog _log = LogManager.GetLogger(typeof(BlockingSocketTransport));
+   /// <summary>
+   /// TCP Socket transport supporting both
+   /// SSL and non-SSL connections.
+   /// </summary>
+   public class BlockingSocketTransport : ITransport
+   {
+      // Configuration variables.
+      IProtocolListener _protocolListener;
 
-        // Configuration variables.
-        string _host;
-        int _port;
-        IProtocolListener _protocolListener;
+      // Runtime variables.
+      private ISocketConnector _connector;
+      private IoHandler _ioHandler;
+      private AmqpChannel _amqpChannel;
+      private ManualResetEvent _stopEvent;
 
-        // Runtime variables.
-        private BlockingSocketProcessor _socketProcessor;
-        private AmqpChannel _amqpChannel;
-        
-        private ReaderRunner _readerRunner;
-        private Thread _readerThread;       
+      public IProtocolWriter ProtocolWriter
+      {
+         get { return _amqpChannel; }
+      }
+      public string LocalEndpoint
+      {
+         get { return _connector.LocalEndpoint; }
+      }
 
-        public BlockingSocketTransport(string host, int port, AMQConnection connection)
-        {
-            _host = host;
-            _port = port;
-            _protocolListener = connection.ProtocolListener;
-        }
-        
-        public void Open()
-        {
-            _socketProcessor = new BlockingSocketProcessor(_host, _port, _protocolListener);
-            _socketProcessor.Connect();
-            _amqpChannel = new AmqpChannel(_socketProcessor.ByteChannel);
-            _readerRunner = new ReaderRunner(this);
-            _readerThread = new Thread(new ThreadStart(_readerRunner.Run));  
-            _readerThread.Start();
-        }
+      
+      /// <summary>
+      /// Connect to the specified broker
+      /// </summary>
+      /// <param name="broker">The broker to connect to</param>
+      /// <param name="connection">The AMQ connection</param>
+      public void Connect(IBrokerInfo broker, AMQConnection connection)
+      {
+         _stopEvent = new ManualResetEvent(false);
+         _protocolListener = connection.ProtocolListener;
 
-        public string getLocalEndPoint()
-        {
-            return _socketProcessor.getLocalEndPoint();
-        }
+         _ioHandler = MakeBrokerConnection(broker, connection);
+         // todo: get default read size from config!
 
-        public void Close()
-        {
-            StopReaderThread();
-            _socketProcessor.Disconnect();
-        }
+         _amqpChannel = new AmqpChannel(new ByteChannel(_ioHandler));
+         // post an initial async read
+         _amqpChannel.BeginRead(new AsyncCallback(OnAsyncReadDone), this);
+      }
 
-        public IProtocolChannel ProtocolChannel { get { return _amqpChannel;  } }
-        public IProtocolWriter ProtocolWriter { get { return _amqpChannel; } }
+      /// <summary>
+      /// Close the broker connection
+      /// </summary>
+      public void Close()
+      {
+         StopReading();
+         CloseBrokerConnection();
+      }
 
-        public void StopReaderThread()
-        {
-            _readerRunner.Stop();
-        }
+      private void StopReading()
+      {
+         _stopEvent.Set();
+      }
 
-        class ReaderRunner
-        {
-            BlockingSocketTransport _transport;
-            bool _running = true;
+      private void CloseBrokerConnection()
+      {
+         if ( _ioHandler != null )
+         {
+            _ioHandler.Dispose();
+            _ioHandler = null;
+         }
+         if ( _connector != null )
+         {
+            _connector.Dispose();
+            _connector = null;
+         }
+      }
 
-            public ReaderRunner(BlockingSocketTransport transport)
+      private IoHandler MakeBrokerConnection(IBrokerInfo broker, AMQConnection connection)
+      {
+         if ( broker.UseSSL )
+         {
+            _connector = new SslSocketConnector();
+         } else
+         {
+            _connector = new SocketConnector();
+         }
+
+         Stream stream = _connector.Connect(broker);
+         return new IoHandler(stream, connection.ProtocolListener);
+      }
+
+      private void OnAsyncReadDone(IAsyncResult result)
+      {
+         try
+         {
+            Queue frames = _amqpChannel.EndRead(result);
+            // if we're not stopping, post a read again
+            bool stopping = _stopEvent.WaitOne(0, false);
+            if ( !stopping )
+               _amqpChannel.BeginRead(new AsyncCallback(OnAsyncReadDone), null);
+
+            // process results
+            foreach ( IDataBlock dataBlock in frames )
             {
-                _transport = transport;
+               _protocolListener.OnMessage(dataBlock);
             }
-
-            public void Run()
-            {
-                try
-                {
-                    while (_running)
-                    {
-                        Queue frames = _transport.ProtocolChannel.Read();
-
-                        foreach (IDataBlock dataBlock in frames)
-                        {
-                            _transport._protocolListener.OnMessage(dataBlock);
-                        }
-                    }
-                }
-                catch (Exception e)
-                {
-                    _transport._protocolListener.OnException(e);
-                }
-            }
-
-            public void Stop()
-            {
-                // TODO: Check if this is thread safe. running is not volitile....
-                _running = false;
-            }
-        }
-    }
+         } catch ( Exception e )
+         {
+            _protocolListener.OnException(e);
+         }
+      }
+   }
 }
 
