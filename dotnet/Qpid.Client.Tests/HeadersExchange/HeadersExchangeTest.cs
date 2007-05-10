@@ -96,7 +96,7 @@ namespace Qpid.Client.Tests
             _consumer = _channel.CreateConsumerBuilder(queueName)
                 .WithPrefetchLow(100)
                 .WithPrefetchHigh(500)
-                .WithNoLocal(true)
+                .WithNoLocal(false) // make sure we get our own messages
                 .Create();
 
             // Register this to listen for messages on the consumer.
@@ -188,7 +188,7 @@ namespace Qpid.Client.Tests
             SendTestMessage(msg, true);
         }
 
-        /// <summary>Check that a message matching only some fields of a headers exhcnage is not passed by the exchange.</summary>
+        /// <summary>Check that a message matching only some fields of a headers exchange is not passed by the exchange.</summary>
         [Test]
         public void TestMatchOneFails()
         {
@@ -258,9 +258,9 @@ namespace Qpid.Client.Tests
         {
             FieldTable matchTable = new FieldTable();
 
-            // Currently all String matching must be prefixed by an "S" ("S" for string because of a failing of the FieldType definition).
-            matchTable["Smatch1"] = "foo";
-            matchTable["Smatch2"] = "";
+            matchTable["match1"] = "foo";
+            matchTable["match2"] = "";
+            matchTable["x-match"] = "all";
 
             return matchTable;
         }
