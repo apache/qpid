@@ -18,14 +18,15 @@
  * under the License.
  *
  */
+using Qpid.Client.Qms;
 using Qpid.Client.Protocol;
 
 namespace Qpid.Client.Transport
 {
     public interface ITransport : IConnectionCloser
     {
-        void Open();
-        string getLocalEndPoint();
+        void Connect(IBrokerInfo broker, AMQConnection connection);
+        string LocalEndpoint { get; }
         IProtocolWriter ProtocolWriter { get; }
     }
 }

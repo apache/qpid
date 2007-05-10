@@ -40,7 +40,7 @@ namespace Qpid.Client.Tests
 
         private int _expectedMessageCount = NUM_MESSAGES;
 
-        private long _startTime;        
+        private long _startTime = 0;        
         
         private string _commandQueueName = "ServiceQ1";
         

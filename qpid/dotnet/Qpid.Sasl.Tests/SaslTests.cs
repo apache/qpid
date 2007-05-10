@@ -78,6 +78,17 @@ namespace Qpid.Sasl.Tests
       }
 
       [Test]
+      public void CanCreateExternal()
+      {
+         Hashtable props = new Hashtable();
+         string[] mechanisms = new string[] { "EXTERNAL", "OTHER" };
+         ISaslClient client = Sasl.CreateClient(mechanisms, "", "", "", props, this);
+
+         Assert.IsNotNull(client);
+         Assert.IsInstanceOfType(typeof(ExternalSaslClient), client);
+      }
+
+      [Test]
       public void ReturnsNullIfNoFactoryFound()
       {
          Hashtable props = new Hashtable();
