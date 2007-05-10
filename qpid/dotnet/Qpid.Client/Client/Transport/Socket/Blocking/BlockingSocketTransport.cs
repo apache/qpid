@@ -118,16 +118,16 @@ namespace Qpid.Client.Transport.Socket.Blocking
          try
          {
             Queue frames = _amqpChannel.EndRead(result);
-            // if we're not stopping, post a read again
-            bool stopping = _stopEvent.WaitOne(0, false);
-            if ( !stopping )
-               _amqpChannel.BeginRead(new AsyncCallback(OnAsyncReadDone), null);
 
             // process results
             foreach ( IDataBlock dataBlock in frames )
             {
                _protocolListener.OnMessage(dataBlock);
             }
+            // if we're not stopping, post a read again
+            bool stopping = _stopEvent.WaitOne(0, false);
+            if ( !stopping )
+               _amqpChannel.BeginRead(new AsyncCallback(OnAsyncReadDone), null);
          } catch ( Exception e )
          {
             _protocolListener.OnException(e);
