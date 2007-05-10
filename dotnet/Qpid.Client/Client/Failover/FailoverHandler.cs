@@ -97,7 +97,8 @@ namespace Qpid.Client.Failover
                 // if _host has value then we are performing a redirect.
                 if (_host != null)
                 {
-                    failoverSucceeded = _connection.AttemptReconnection(_host, _port, false);
+                   // todo: fix SSL support!
+                    failoverSucceeded = _connection.AttemptReconnection(_host, _port, null);
                 }
                 else
                 {

@@ -18,13 +18,54 @@
  * under the License.
  *
  */
+using System;
 using Qpid.Buffer;
 
 namespace Qpid.Client.Transport
 {
-    public interface IByteChannel
-    {
-        ByteBuffer Read();
-        void Write(ByteBuffer buffer);
-    }
+   /// <summary>
+   /// Represents input/output channels that read
+   /// and write <see cref="ByteBuffer"/> instances
+   /// </summary>
+   public interface IByteChannel
+   {
+      /// <summary>
+      /// Read a <see cref="ByteBuffer"/> from the underlying 
+      /// network stream and any configured filters 
+      /// </summary>
+      /// <returns>A ByteBuffer, if available</returns>
+      ByteBuffer Read();
+      /// <summary>
+      /// Begin an asynchronous read operation
+      /// </summary>
+      /// <param name="callback">Callback method to call when read operation completes</param>
+      /// <param name="state">State object</param>
+      /// <returns>An <see cref="System.IAsyncResult"/> object</returns>
+      IAsyncResult BeginRead(AsyncCallback callback, object state);
+      /// <summary>
+      /// End an asynchronous read operation
+      /// </summary>
+      /// <param name="result">The <see cref="System.IAsyncResult"/> object returned from <see cref="BeginRead"/></param>
+      /// <returns>The <see cref="ByteBuffer"/> read</returns>
+      ByteBuffer EndRead(IAsyncResult result);
+      /// <summary>
+      /// Write a <see cref="ByteBuffer"/> to the underlying network 
+      /// stream, going through any configured filters
+      /// </summary>
+      /// <param name="buffer"></param>
+      void Write(ByteBuffer buffer);
+      /// <summary>
+      /// Begin an asynchronous write operation
+      /// </summary>
+      /// <param name="buffer">Buffer to write</param>
+      /// <param name="callback">A callback to call when the operation completes</param>
+      /// <param name="state">State object</param>
+      /// <returns>An <see cref="System.IAsyncResult"/> object</returns>
+      IAsyncResult BeginWrite(ByteBuffer buffer, AsyncCallback callback, object state);
+      /// <summary>
+      /// End an asynchronous write operation
+      /// </summary>
+      /// <param name="result">The <see cref="System.IAsyncResult"/> object returned by <see cref="BeginWrite"/></param>
+      void EndWrite(IAsyncResult result);
+   }
 }
