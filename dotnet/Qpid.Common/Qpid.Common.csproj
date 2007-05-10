@@ -44,6 +44,8 @@
     <Compile Include="AMQConnectionClosedException.cs" />
     <Compile Include="AMQDisconnectedException.cs" />
     <Compile Include="AMQException.cs" />
+    <Compile Include="AMQInvalidArgumentException.cs" />
+    <Compile Include="AMQInvalidRoutingKeyException.cs" />
     <Compile Include="AMQUndeliveredException.cs" />
     <Compile Include="AssemblySettings.cs" />
     <Compile Include="Collections\LinkedHashtable.cs" />

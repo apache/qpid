@@ -43,6 +43,8 @@
     <Compile Include="Client\AMQDestination.cs" />
     <Compile Include="Client\AmqChannel.cs" />
     <Compile Include="Client\AMQAuthenticationException.cs" />
+    <Compile Include="Client\AMQNoConsumersException.cs" />
+    <Compile Include="Client\AMQNoRouteException.cs" />
     <Compile Include="Client\Configuration\AuthenticationConfigurationSectionHandler.cs" />
     <Compile Include="Client\Message\QpidHeaders.cs" />
     <Compile Include="Client\QpidConnectionInfo.cs" />
