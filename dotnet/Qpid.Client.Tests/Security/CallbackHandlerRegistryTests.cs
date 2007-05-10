@@ -32,7 +32,7 @@ namespace Qpid.Client.Tests.Security
       public void ParsesConfiguration()
       {
          CallbackHandlerRegistry registry = CallbackHandlerRegistry.Instance;
-         Assert.AreEqual(3, registry.Mechanisms.Length);
+         Assert.AreEqual(4, registry.Mechanisms.Length);
          Assert.Contains("TEST", registry.Mechanisms);
 
          Type handlerType = registry.GetCallbackHandler("TEST");

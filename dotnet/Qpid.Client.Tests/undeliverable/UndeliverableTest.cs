@@ -26,69 +26,103 @@ using Qpid.Messaging;
 
 namespace Qpid.Client.Tests
 {
-    [TestFixture]
-    public class UndeliverableTest : BaseMessagingTestFixture
-    {
-        private static ILog _logger = LogManager.GetLogger(typeof(UndeliverableTest));
+   /// <summary>
+   /// Tests that when sending undeliverable messages with the 
+   /// mandatory flag set, an exception is raised on the connection
+   /// as the message is bounced back by the broker
+   /// </summary>
+   [TestFixture]
+   public class UndeliverableTest : BaseMessagingTestFixture
+   {
+      private static ILog _logger = LogManager.GetLogger(typeof(UndeliverableTest));
+      private ManualResetEvent _event;
+      public const int TIMEOUT = 1000;
+      private Exception _lastException;
 
-        [SetUp]
-        public override void Init()
-        {
-            base.Init();
+      [SetUp]
+      public override void Init()
+      {
+         base.Init();
+         _event = new ManualResetEvent(false);
+         _lastException = null;
 
-            try
+         try
+         {
+            _connection.ExceptionListener = new ExceptionListenerDelegate(OnException);
+         } catch ( QpidException e )
+         {
+            _logger.Error("Could not add ExceptionListener", e);
+         }
+      }
+
+      public void OnException(Exception e)
+      {
+         // Here we dig out the AMQUndelivered exception (if present) in order to log the returned message.
+
+         _lastException = e;
+         _logger.Error("OnException handler received connection-level exception", e);
+         if ( e is QpidException )
+         {
+            QpidException qe = (QpidException)e;
+            if ( qe.InnerException is AMQUndeliveredException )
             {
-                _connection.ExceptionListener = new ExceptionListenerDelegate(OnException);
+               AMQUndeliveredException ue = (AMQUndeliveredException)qe.InnerException;
+               _logger.Error("inner exception is AMQUndeliveredException", ue);
+               _logger.Error(string.Format("Returned message = {0}", ue.GetUndeliveredMessage()));
             }
-            catch (QpidException e)
-            {
-                _logger.Error("Could not add ExceptionListener", e);
-            }
-        }
+         }
+         _event.Set();
+      }
 
-        public static void OnException(Exception e)
-        {
-            // Here we dig out the AMQUndelivered exception (if present) in order to log the returned message.
+      [Test]
+      public void SendUndeliverableMessageOnDefaultExchange()
+      {
+         SendOne("default exchange", null);
+      }
+      [Test]
+      public void SendUndeliverableMessageOnDirectExchange()
+      {
+         SendOne("direct exchange", ExchangeNameDefaults.DIRECT);
+      }
+      [Test]
+      public void SendUndeliverableMessageOnTopicExchange()
+      {
+         SendOne("topic exchange", ExchangeNameDefaults.TOPIC);
+      }
+      [Test]
+      public void SendUndeliverableMessageOnHeadersExchange()
+      {
+         SendOne("headers exchange", ExchangeNameDefaults.HEADERS);
+      }
 
-            _logger.Error("OnException handler received connection-level exception", e);
-            if (e is QpidException)
-            {
-                QpidException qe = (QpidException)e;
-                if (qe.InnerException is AMQUndeliveredException)
-                {
-                    AMQUndeliveredException ue = (AMQUndeliveredException)qe.InnerException;
-                    _logger.Error("inner exception is AMQUndeliveredException", ue);
-                    _logger.Error(string.Format("Returned message = {0}", ue.GetUndeliveredMessage()));
+      private void SendOne(string exchangeNameFriendly, string exchangeName)
+      {
+         _logger.Info("Sending undeliverable message to " + exchangeNameFriendly);
 
-                }
-            }
-        }
+         // Send a test message to a non-existant queue 
+         // on the specified exchange. See if message is returned!
+         MessagePublisherBuilder builder = _channel.CreatePublisherBuilder()
+             .WithRoutingKey("Non-existant route key!")
+             .WithMandatory(true); // necessary so that the server bounces the message back
+         if ( exchangeName != null )
+         {
+            builder.WithExchangeName(exchangeName);
+         }
+         IMessagePublisher publisher = builder.Create();
+         publisher.Send(_channel.CreateTextMessage("Hiya!"));
 
-        [Test]
-        public void SendUndeliverableMessage()
-        {
-            SendOne("default exchange", null);
-            SendOne("direct exchange", ExchangeNameDefaults.DIRECT);
-            SendOne("topic exchange", ExchangeNameDefaults.TOPIC);
-            SendOne("headers exchange", ExchangeNameDefaults.HEADERS);
+         // check we received an exception on the connection
+         // and that it is of the right type
+         _event.WaitOne(TIMEOUT, true);
 
-            Thread.Sleep(1000); // Wait for message returns!
-        }
+         Type expectedException = typeof(AMQUndeliveredException);
+         Exception ex = _lastException;
+         Assert.IsNotNull(ex, "No exception was thrown by the test. Expected " + expectedException);
 
-        private void SendOne(string exchangeNameFriendly, string exchangeName)
-        {
-            _logger.Info("Sending undeliverable message to " + exchangeNameFriendly);
+         if ( ex.InnerException != null )
+            ex = ex.InnerException;
 
-            // Send a test message to a non-existant queue on the default exchange. See if message is returned!
-            MessagePublisherBuilder builder = _channel.CreatePublisherBuilder()
-                .WithRoutingKey("Non-existant route key!")
-                .WithMandatory(true);
-            if (exchangeName != null)
-            {
-                builder.WithExchangeName(exchangeName);
-            }
-            IMessagePublisher publisher = builder.Create();
-            publisher.Send(_channel.CreateTextMessage("Hiya!"));
-        }
-    }
+         Assert.IsInstanceOfType(expectedException, ex);
+      }
+   }
 }

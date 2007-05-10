@@ -44,11 +44,20 @@ namespace Qpid.Client.Handler
 
             AMQFrame frame = ChannelCloseOkBody.CreateAMQFrame(evt.ChannelId);
             evt.ProtocolSession.WriteFrame(frame);
-            // HACK
+
             if ( errorCode != AMQConstant.REPLY_SUCCESS.Code )
             {
-                _logger.Debug("Channel close received with errorCode " + errorCode + ", throwing exception");
-                evt.ProtocolSession.AMQConnection.ExceptionReceived(new AMQChannelClosedException(errorCode, "Error: " + reason));
+               _logger.Debug("Channel close received with errorCode " + errorCode + ", throwing exception");
+               if ( errorCode == AMQConstant.NO_CONSUMERS.Code )
+                  throw new AMQNoConsumersException(reason);
+               if ( errorCode == AMQConstant.NO_ROUTE.Code )
+                  throw new AMQNoRouteException(reason);
+               if ( errorCode == AMQConstant.INVALID_ARGUMENT.Code )
+                  throw new AMQInvalidArgumentException(reason);
+               if ( errorCode == AMQConstant.INVALID_ROUTING_KEY.Code )
+                  throw new AMQInvalidRoutingKeyException(reason);
+               // any other
+               throw new AMQChannelClosedException(errorCode, "Error: " + reason);
             }
             evt.ProtocolSession.ChannelClosed(evt.ChannelId, errorCode, reason);
         }

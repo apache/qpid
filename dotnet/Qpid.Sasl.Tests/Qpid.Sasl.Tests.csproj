@@ -38,6 +38,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Mechanisms\ExternalSaslClientTests.cs" />
     <Compile Include="TestClientFactory.cs" />
     <Compile Include="Mechanisms\AnonymousSaslClientTests.cs" />
     <Compile Include="Mechanisms\DigestSaslClientTests.cs" />
