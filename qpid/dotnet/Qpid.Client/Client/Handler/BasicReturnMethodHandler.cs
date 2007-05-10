@@ -32,7 +32,7 @@ namespace Qpid.Client.Handler
 
         public void MethodReceived(AMQStateManager stateManager, AMQMethodEvent evt) 
         {
-            _logger.Debug("New JmsBounce method received");
+            _logger.Debug("New Basic.Return method received");
             UnprocessedMessage msg = new UnprocessedMessage();
             msg.DeliverBody = null;
             msg.BounceBody = (BasicReturnBody) evt.Method;

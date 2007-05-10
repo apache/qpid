@@ -92,6 +92,8 @@ namespace Qpid.Client.Security
          if ( _mechanism2HandlerMap == null )
             _mechanism2HandlerMap = new Hashtable();
 
+         if ( !_mechanism2HandlerMap.Contains(ExternalSaslClient.Mechanism) )
+            _mechanism2HandlerMap.Add(ExternalSaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
          if ( !_mechanism2HandlerMap.Contains(CramMD5SaslClient.Mechanism) )
             _mechanism2HandlerMap.Add(CramMD5SaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
          if ( !_mechanism2HandlerMap.Contains(PlainSaslClient.Mechanism) )

@@ -36,6 +36,7 @@ namespace Qpid.Client
         private int _port = 5672;
         private string _transport = "amqp";
         private Hashtable _options = new Hashtable();
+        private SslOptions _sslOptions;
 
         public AmqBrokerInfo()
         {
@@ -182,6 +183,21 @@ namespace Qpid.Client
             }
         }
 
+        public AmqBrokerInfo(string transport, string host, int port, SslOptions sslConfig)
+           : this()
+        {
+           _transport = transport;
+           _host = host;
+           _port = port;
+            
+           if ( sslConfig != null )
+           {
+              SetOption(BrokerInfoConstants.OPTIONS_SSL, "true");
+              _sslOptions = sslConfig;
+           }
+        }
+
+
         public string Host
         {
             get { return _host; }
@@ -198,6 +214,11 @@ namespace Qpid.Client
         {
             get { return _transport; }
             set { _transport = value; }
+        }
+
+        public SslOptions SslOptions
+        {
+            get { return _sslOptions; }
         }
 
         public string GetOption(string key)

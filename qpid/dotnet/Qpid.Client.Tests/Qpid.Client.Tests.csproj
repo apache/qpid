@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="bio\BlockingIo.cs" />
     <Compile Include="connection\ConnectionTest.cs" />
+    <Compile Include="connection\SslConnectionTest.cs" />
     <Compile Include="failover\FailoverTest.cs" />
     <Compile Include="failover\FailoverTxTest.cs" />
     <Compile Include="HeadersExchange\HeadersExchangeTest.cs" />
@@ -86,6 +87,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <EmbeddedResource Include="connection\QpidTestCert.pfx" />
     <None Include="Qpid.Common.DLL.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

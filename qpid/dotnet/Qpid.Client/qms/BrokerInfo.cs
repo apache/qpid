@@ -24,7 +24,7 @@ namespace Qpid.Client.Qms
 {
     /// <summary>
     /// Know URL option names.
-    /// <seealso cref="ConnectionInfo"/>
+    /// <seealso cref="IConnectionInfo"/>
     /// </summary>
     public class BrokerInfoConstants
     {
@@ -47,6 +47,7 @@ namespace Qpid.Client.Qms
         string Transport { get; set; }
         bool UseSSL { get; set; }
         long Timeout { get; set; }
+        SslOptions SslOptions { get; }
         
         String GetOption(string key);
         void SetOption(string key, string value);

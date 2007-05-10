@@ -28,6 +28,7 @@ using Qpid.Client.Message;
 using Qpid.Collections;
 using Qpid.Framing;
 using Qpid.Messaging;
+using Qpid.Protocol;
 
 namespace Qpid.Client
 {
@@ -568,8 +569,14 @@ namespace Qpid.Client
             if (_logger.IsDebugEnabled)
             {
                 _logger.Debug("Message received in session with channel id " + _channelId);
-            }            
-            _queue.EnqueueBlocking(message);         
+            }
+            if ( message.DeliverBody == null )
+            {
+               ReturnBouncedMessage(message);
+            } else
+            {
+               _queue.EnqueueBlocking(message);
+            }
         }
 
         public int DefaultPrefetch
@@ -986,5 +993,42 @@ namespace Qpid.Client
             // FIXME: lock FailoverMutex here?
             _connection.ProtocolWriter.Write(ackFrame);
         }
+
+       /// <summary>
+       /// Handle a message that bounced from the server, creating
+       /// the corresponding exception and notifying the connection about it
+       /// </summary>
+       /// <param name="message">Unprocessed message</param>
+       private void ReturnBouncedMessage(UnprocessedMessage message)
+       {
+          try
+          {
+             AbstractQmsMessage bouncedMessage =
+                _messageFactoryRegistry.CreateMessage(
+                     0, false, message.ContentHeader,
+                     message.Bodies
+                );
+
+             int errorCode = message.BounceBody.ReplyCode;
+             string reason = message.BounceBody.ReplyText;
+             _logger.Debug("Message returned with error code " + errorCode + " (" + reason + ")");
+             AMQException exception;
+             if ( errorCode == AMQConstant.NO_CONSUMERS.Code )
+             {
+                exception = new AMQNoConsumersException(reason, bouncedMessage);
+             } else if ( errorCode == AMQConstant.NO_ROUTE.Code )
+             {
+                exception = new AMQNoRouteException(reason, bouncedMessage);
+             } else
+             {
+                exception = new AMQUndeliveredException(errorCode, reason, bouncedMessage);
+             }
+             _connection.ExceptionReceived(exception);
+          } catch ( Exception ex )
+          {
+             _logger.Error("Caught exception trying to raise undelivered message exception (dump follows) - ignoring...", ex);
+          }
+
+       }
     }
 }
