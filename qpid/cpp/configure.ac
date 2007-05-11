@@ -15,7 +15,7 @@ AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
 # Minimum Autoconf version required.
 AC_PREREQ(2.59)
 
-AC_CONFIG_HEADERS([config.h:config.in])
+AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([qpidc.spec.in])
 
 AC_PROG_CC_STDC
@@ -33,18 +33,6 @@ AC_ARG_ENABLE(warnings,
    *)      AC_MSG_ERROR([bad value ${enableval} for warnings option]) ;;
  esac],
  [enableval=yes])
-
-# Turn on this automake conditional if we are in a qpid
-# hierarchy (i.e. with gentools/ and specs/ sibling directories),
-# and if we have working java + javac.
-AC_CHECK_PROGS([JAVA],  [java],  [no])
-AC_CHECK_PROGS([JAVAC], [javac], [no])
-build=yes
-test x$JAVA  = xno && build=no
-test x$JAVAC = xno && build=no
-test -d $srcdir/gentools || build=no
-test -d $srcdir/../specs    || build=no
-AM_CONDITIONAL([CAN_GENERATE_CODE], [test x$build = xyes])
 
 # Warnings: Enable as many as possible, keep the code clean. Please
 # do not disable warnings or remove -Werror without discussing on
@@ -160,7 +148,6 @@ test -z "$missing" ||
 AC_CONFIG_FILES([
   qpidc.spec
   Makefile
-  gen/Makefile
   src/Makefile
   src/tests/Makefile
   docs/man/Makefile
