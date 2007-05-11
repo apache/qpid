@@ -1,9 +1,27 @@
 SUBDIRS = . tests
 
-AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
+# Generated code
+-include generate.mk
 
-# -I top_builddir for config.h
-INCLUDES = -I$(top_builddir)  -I$(top_srcdir)/gen 
+generate.mk $(generated_cpp) $(generated_h): generate.sh $(generator)
+	$(srcdir)/generate.sh
+
+# Empty rule in case a generator file is renamed/removed.
+$(generator):
+
+DISTCLEANFILES=generate.mk
+
+clean-gen:
+	rm -rf gen
+
+maintainer-clean-local:
+	clean-gen
+
+EXTRA_DIST=generate.sh $(generated_cpp) $(generated_h) $(platform_dist)
+
+AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
+AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
+INCLUDES = -Igen
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
@@ -43,11 +61,11 @@ posix_hdr = \
   qpid/sys/posix/EventChannelThreads.h
 
 if USE_APR
- EXTRA_DIST=$(posix_src) $(posix_hdr)
+ platform_dist=$(posix_src) $(posix_hdr)
  platform_src = $(apr_src)
  platform_hdr = $(apr_hdr)
 else
- EXTRA_DIST=$(apr_src) $(apr_hdr)
+ platform_dist =$(apr_src) $(apr_hdr) $(generated_cpp) $(generated_h)
  platform_src = $(posix_src)
  platform_hdr = $(posix_hdr)
 endif
@@ -59,11 +77,6 @@ libqpidcommon_la_LIBADD = \
   $(APR_LIBS) \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
-
-libqpidcommon_la_LDFLAGS = \
-  -version-info \
-  $(LIBTOOL_VERSION_INFO_ARG)
-
 libqpidcommon_la_SOURCES = \
   $(platform_src) \
   qpid/framing/AMQBody.cpp \
@@ -90,10 +103,10 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Correlator.cpp \
   qpid/framing/Value.cpp \
   qpid/framing/Proxy.cpp \
-  ../gen/qpid/framing/AMQP_ClientProxy.cpp \
-  ../gen/qpid/framing/AMQP_HighestVersion.h \
-  ../gen/qpid/framing/AMQP_MethodVersionMap.cpp \
-  ../gen/qpid/framing/AMQP_ServerProxy.cpp \
+  gen/qpid/framing/AMQP_ClientProxy.cpp \
+  gen/qpid/framing/AMQP_HighestVersion.h \
+  gen/qpid/framing/AMQP_MethodVersionMap.cpp \
+  gen/qpid/framing/AMQP_ServerProxy.cpp \
   qpid/Exception.cpp \
   qpid/ExceptionHolder.cpp \
   qpid/QpidError.cpp \
@@ -104,7 +117,6 @@ libqpidcommon_la_SOURCES = \
 
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -ldaemon -lboost_filesystem
-libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidbroker_la_SOURCES = \
   qpid/broker/AccumulatedAck.cpp \
   qpid/broker/AutoDelete.cpp \
@@ -145,7 +157,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxPublish.cpp
 
 libqpidclient_la_LIBADD = libqpidcommon.la
-libqpidclient_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidclient_la_SOURCES =			\
   qpid/client/ClientConnection.cpp				\
   qpid/client/ClientChannel.cpp				\

@@ -9,7 +9,7 @@ EXTRA_DIST = \
   $(SPEC) $(SPEC).in \
   rpm/README.qpidd-devel 
 
-SUBDIRS = gen src docs/api docs/man
+SUBDIRS = src docs/api docs/man
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
