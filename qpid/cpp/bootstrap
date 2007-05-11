@@ -9,9 +9,6 @@ libtoolize --automake
 : ${JAVAC=javac}
 export JAVA JAVAC
 
-# If we're building in the qpid tree, we can generate
-# some Makefile snippets:
-
 # Generate (for automake) lots of repetitive parts of tests/Makefile.am.
 (cd src/tests && rm -f gen.mk
   perl -ne '/^include / or print' Makefile.am \
