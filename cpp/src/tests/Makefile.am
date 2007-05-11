@@ -59,16 +59,17 @@ TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
 CLIENT_TESTS = client_test quick_topictest
 TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker daemon_test
 
-EXTRA_DIST =					\
-  $(TESTS)					\
-  test_env					\
-  topictest					\
-  .valgrind.supp				\
-  .valgrindrc-default				\
-  InProcessBroker.h				\
-  MockChannel.h					\
-  MockConnectionInputHandler.h			\
-  TxMocks.h					\
+EXTRA_DIST =								\
+  test_env								\
+  run-unit-tests start_broker python_tests kill_broker daemon_test	\
+  quick_topictest							\
+  topictest								\
+  .valgrind.supp							\
+  .valgrindrc-default							\
+  InProcessBroker.h							\
+  MockChannel.h								\
+  MockConnectionInputHandler.h						\
+  TxMocks.h								\
   qpid_test_plugin.h
 
 include gen.mk
