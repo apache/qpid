@@ -171,7 +171,7 @@ void Channel::cancelAll(){
     for(consumer_iterator i = consumers.begin(); i != consumers.end(); i = consumers.begin()){
         Consumer* c = i->second;
         if((c->ackMode == LAZY_ACK || c->ackMode == AUTO_ACK) && c->lastDeliveryTag > 0){
-            out->send(new AMQFrame(version, id, new BasicAckBody(c->lastDeliveryTag, true)));
+            out->send(new AMQFrame(version, id, new BasicAckBody(version, c->lastDeliveryTag, true)));
         }
         consumers.erase(i);
         delete c;
@@ -377,7 +377,7 @@ void Channel::deliver(Consumer* consumer, Message& msg){
             if(++(consumer->count) < prefetch) break;
             //else drop-through
         case AUTO_ACK:
-            out->send(new AMQFrame(version, id, new BasicAckBody(msg.getDeliveryTag(), multiple)));
+            out->send(new AMQFrame(version, id, new BasicAckBody(version, msg.getDeliveryTag(), multiple)));
             consumer->lastDeliveryTag = 0;
         }
     }
