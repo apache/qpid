@@ -74,22 +74,17 @@ namespace Qpid.Sasl
          IDictionary props, ISaslCallbackHandler handler
          )
       {
-         foreach ( string mech in mechanisms )
-         {
-            switch ( mech )
-            {
-            case PlainSaslClient.Mechanism:
-               return new PlainSaslClient(authorizationId, props, handler);
-            case CramMD5SaslClient.Mechanism:
-               return new CramMD5SaslClient(authorizationId, props, handler);
-            case AnonymousSaslClient.Mechanism:
-               return new AnonymousSaslClient(authorizationId, props, handler);
-            case DigestSaslClient.Mechanism:
-               return new DigestSaslClient(authorizationId, serverName, protocol, props, handler);
-            case ExternalSaslClient.Mechanism:
-               return new ExternalSaslClient(authorizationId, props, handler);
-            }
-         }
+         IList mechs = mechanisms;
+         if ( mechs.Contains(ExternalSaslClient.Mechanism) )
+            return new ExternalSaslClient(authorizationId, props, handler);
+         if ( mechs.Contains(DigestSaslClient.Mechanism) )
+            return new DigestSaslClient(authorizationId, serverName, protocol, props, handler);
+         if ( mechs.Contains(CramMD5SaslClient.Mechanism) )
+            return new CramMD5SaslClient(authorizationId, props, handler);
+         if ( mechs.Contains(PlainSaslClient.Mechanism) )
+            return new PlainSaslClient(authorizationId, props, handler);
+         if ( mechs.Contains(AnonymousSaslClient.Mechanism) )
+            return new AnonymousSaslClient(authorizationId, props, handler);
          // unknown mechanism
          return null;
       }

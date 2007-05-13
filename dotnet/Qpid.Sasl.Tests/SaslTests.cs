@@ -112,6 +112,17 @@ namespace Qpid.Sasl.Tests
          Assert.IsInstanceOfType(typeof(TestSaslClient), client);
       }
 
+      [Test]
+      public void ChoosesStrongerMechanism()
+      {
+         Hashtable props = new Hashtable();
+         string[] mechanisms = new string[] { "PLAIN", "OTHER", "CRAM-MD5" };
+         ISaslClient client = Sasl.CreateClient(mechanisms, "", "", "", props, this);
+
+         Assert.IsNotNull(client);
+         Assert.IsInstanceOfType(typeof(CramMD5SaslClient), client);
+      }
+
 
       void ISaslCallbackHandler.Handle(ISaslCallback[] callbacks)
       {
