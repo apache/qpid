@@ -39,6 +39,17 @@ namespace Qpid.Client.Tests.Security
          Assert.IsNotNull(handlerType);
          Assert.AreEqual(typeof(TestCallbackHandler), handlerType);
       }
+
+      [Test]
+      public void MechanimsInOrder()
+      {
+         CallbackHandlerRegistry registry = CallbackHandlerRegistry.Instance;
+         Assert.AreEqual(4, registry.Mechanisms.Length);
+         Assert.AreEqual("TEST", registry.Mechanisms[0]);
+         Assert.AreEqual("EXTERNAL", registry.Mechanisms[1]);
+         Assert.AreEqual("CRAM-MD5", registry.Mechanisms[2]);
+         Assert.AreEqual("PLAIN", registry.Mechanisms[3]);
+      }
    } // class CallbackRegistryHandlerTests
 
    public class TestCallbackHandler : IAMQCallbackHandler
