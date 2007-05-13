@@ -37,7 +37,7 @@ namespace Qpid.Client.Configuration
       public object Create(object parent, object configContext, System.Xml.XmlNode section)
       {
          NameValueSectionHandler handler = new NameValueSectionHandler();
-         IDictionary schemes = new Hashtable();
+         OrderedHashTable schemes = new OrderedHashTable();
 
          NameValueCollection options = (NameValueCollection)
             handler.Create(parent, configContext, section);
@@ -52,7 +52,7 @@ namespace Qpid.Client.Configuration
                if ( !typeof(IAMQCallbackHandler).IsAssignableFrom(type) )
                   throw new ConfigurationException(string.Format("Type '{0}' does not implement IAMQCallbackHandler", key));
 
-               schemes[key] = type;
+               schemes.Add(key, type);
             }
          }
 
@@ -61,4 +61,24 @@ namespace Qpid.Client.Configuration
 
    } // class AuthenticationConfigurationSectionHandler
 
+   public class OrderedHashTable : Hashtable
+   {
+      private ArrayList _keys = new ArrayList();
+
+      public IList OrderedKeys
+      {
+         get { return _keys; }
+      }
+
+      public override void Add(object key, object value)
+      {
+         base.Add(key, value);
+         _keys.Add(key);
+      }
+      public override void Remove(object key)
+      {
+         base.Remove(key);
+         _keys.Remove(key);
+      }
+   }
 } // namespace Qpid.Client.Configuration

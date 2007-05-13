@@ -103,14 +103,7 @@ namespace Qpid.Client.Handler
 
        private string ChooseMechanism(string mechanisms)
        {
-           foreach ( string mech in mechanisms.Split(' ') )
-           {
-               if ( CallbackHandlerRegistry.Instance.IsSupportedMechanism(mech) )
-               {
-                   return mech;
-               }
-           }
-           return null;
+          return CallbackHandlerRegistry.Instance.ChooseMechanism(mechanisms);
        }
 
        private byte[] DoAuthentication(string selectedMechanism, AMQProtocolSession ps)

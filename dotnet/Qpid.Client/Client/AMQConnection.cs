@@ -157,7 +157,10 @@ namespace Qpid.Client
             
             if (!_failoverPolicy.FailoverAllowed())
             {
-                throw new AMQConnectionException("Unable to connect", lastException);
+                if ( lastException is AMQException )
+                   throw lastException;
+                else
+                   throw new AMQConnectionException("Unable to connect", lastException);
             }
 
             // TODO: this needs to be redone so that we are not spinning.

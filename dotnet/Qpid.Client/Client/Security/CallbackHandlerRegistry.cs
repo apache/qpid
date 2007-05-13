@@ -70,7 +70,7 @@ namespace Qpid.Client.Security
    {
       private static CallbackHandlerRegistry _instance = 
          new CallbackHandlerRegistry();
-      private IDictionary _mechanism2HandlerMap;
+      private OrderedHashTable _mechanism2HandlerMap;
       private string[] _mechanisms;
 
       public static CallbackHandlerRegistry Instance
@@ -85,12 +85,12 @@ namespace Qpid.Client.Security
 
       private CallbackHandlerRegistry()
       {
-         _mechanism2HandlerMap = (IDictionary)
+         _mechanism2HandlerMap = (OrderedHashTable)
             ConfigurationSettings.GetConfig("qpid.client/authentication");
 
          // configure default options if not available
          if ( _mechanism2HandlerMap == null )
-            _mechanism2HandlerMap = new Hashtable();
+            _mechanism2HandlerMap = new OrderedHashTable();
 
          if ( !_mechanism2HandlerMap.Contains(ExternalSaslClient.Mechanism) )
             _mechanism2HandlerMap.Add(ExternalSaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
@@ -99,13 +99,24 @@ namespace Qpid.Client.Security
          if ( !_mechanism2HandlerMap.Contains(PlainSaslClient.Mechanism) )
             _mechanism2HandlerMap.Add(PlainSaslClient.Mechanism, typeof(UsernamePasswordCallbackHandler));
 
-         _mechanisms = new string[_mechanism2HandlerMap.Keys.Count];
-         _mechanism2HandlerMap.Keys.CopyTo(_mechanisms, 0);
+         _mechanisms = new string[_mechanism2HandlerMap.Count];
+         _mechanism2HandlerMap.OrderedKeys.CopyTo(_mechanisms, 0);
       }
 
       public bool IsSupportedMechanism(string mechanism)
       {
          return _mechanism2HandlerMap.Contains(mechanism);
+      }
+
+      public string ChooseMechanism(string mechanisms)
+      {
+         IList mechs = mechanisms.Split(' ');
+         foreach ( string supportedMech in _mechanisms )
+         {
+            if ( mechs.Contains(supportedMech) )
+               return supportedMech;
+         }
+         return null;
       }
 
       public Type GetCallbackHandler(string mechanism)
