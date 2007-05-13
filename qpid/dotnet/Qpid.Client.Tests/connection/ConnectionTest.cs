@@ -28,12 +28,15 @@ namespace Qpid.Client.Tests.Connection
     [TestFixture]
     public class ConnectionTest
     {
+        private AmqBrokerInfo _broker = 
+           new AmqBrokerInfo("amqp", "localhost", 5672, false);
+        
         [Test]
         public void SimpleConnection()
         {
             IConnectionInfo connectionInfo = new QpidConnectionInfo();
             connectionInfo.VirtualHost = "test";
-            connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
+            connectionInfo.AddBrokerInfo(_broker);
             using (IConnection connection = new AMQConnection(connectionInfo))
             {
                 Console.WriteLine("connection = " + connection);
@@ -41,62 +44,29 @@ namespace Qpid.Client.Tests.Connection
         }
 
         [Test]
+        [ExpectedException(typeof(AMQAuthenticationException))]
         public void PasswordFailureConnection()
         {
             IConnectionInfo connectionInfo = new QpidConnectionInfo();
             connectionInfo.VirtualHost = "test";
             connectionInfo.Password = "rubbish";
-            connectionInfo.AddBrokerInfo(new AmqBrokerInfo());
-            try
+            connectionInfo.AddBrokerInfo(_broker);
+
+            using (IConnection connection = new AMQConnection(connectionInfo))
             {
-                using (IConnection connection = new AMQConnection(connectionInfo))
-                {
-                    Console.WriteLine("connection = " + connection);
-                    // wrong
-                    Assert.Fail("Authentication succeeded but should've failed");
-                }
-            } 
-            catch (AMQException e)
-            {
-                if (!(e.InnerException is AMQAuthenticationException))
-                {
-                    Assert.Fail("Expected AMQAuthenticationException!");
-                }
-           }
+                 Console.WriteLine("connection = " + connection);
+                 // wrong
+                 Assert.Fail("Authentication succeeded but should've failed");
+            }
         }
-//
-//        [Test]
-//        public void connectionFailure()
-//        {
-//            try
-//            {
-//                new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5673?retries='0''");
-//                Assert.fail("Connection should not be established");
-//            }
-//            catch (AMQException amqe)
-//            {
-//                if (!(amqe instanceof AMQConnectionException))
-//                {
-//                    Assert.fail("Correct exception not thrown");
-//                }
-//            }
-//        }
-//
-//        [Test]
-//        public void unresolvedHostFailure()
-//        {
-//            try
-//            {
-//                new AMQConnection("amqp://guest:guest@clientid/testpath?brokerlist='tcp://rubbishhost:5672?retries='0''");
-//                Assert.fail("Connection should not be established");
-//            }
-//            catch (AMQException amqe)
-//            {
-//                if (!(amqe instanceof AMQUnresolvedAddressException))
-//                {
-//                    Assert.fail("Correct exception not thrown");
-//                }
-//            }
-//        }
+
+        [Test]
+        [ExpectedException(typeof(AMQConnectionException))]
+        public void connectionFailure()
+        {
+            string url = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5673?retries='0''";
+            new AMQConnection(QpidConnectionInfo.FromUrl(url));
+            Assert.Fail("Connection should not be established");
+        }
     }
 }
