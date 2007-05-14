@@ -53,7 +53,6 @@ namespace Qpid.Sasl.Tests.Mechanisms
       [Test]
       public void CanEvaluateChallenge()
       {
-         Hashtable props = new Hashtable();
          ISaslClient client = new ExternalSaslClient(AUTHID, new Hashtable(), this);
 
          Assert.IsFalse(client.IsComplete);
