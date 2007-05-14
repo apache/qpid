@@ -2,50 +2,12 @@
 
 Usage() 
 {
-  echo "usage: $0 dotnet11|dotnet20|mono release-number (e.g. 2.0.1)"
+  echo "usage: $0 net-1.1|net-2.0|mono-2.0"
   exit 2
 }
 
-if [[ $# -ne 2 ]]; then
+if [[ $# -ne 1 ]]; then
   Usage
 fi
 
-dotNetVersion=$1
-releaseName=Qpid.NET-$2-$dotNetVersion
-
-if [[ $dotNetVersion == "dotnet11" ]]; then
-  binDir=Qpid.Client/bin/FX1_1/Release
-elif [[ $dotNetVersion == "dotnet20" ]]; then
-  binDir=qpid.client/bin/Release
-elif [[ $dotNetVersion == "mono" ]]; then
-  binDir=build/mono
-else
-  Usage
-fi
-
-binFilesToRelease="
-  Qpid.Buffer.dll
-  Qpid.Client.dll
-  Qpid.Codec.dll
-  Qpid.Common.dll
-  Qpid.Messaging.dll
-  Qpid.Sasl.dll
-  log4net.dll"
-
-filesToRelease="
-  LICENCE.txt
-  NOTICE.txt"
-
-releaseDir=build/release/$releaseName
-mkdir -p $releaseDir
-
-for file in $binFilesToRelease; do
-  cp $binDir/$file $releaseDir
-done
-
-for file in $filesToRelease; do
-  cp $file $releaseDir
-done
-
-cd build/release
-jar -cvMf $releaseName.zip $releaseName
+nant -t:$1 release-pkg -D:build.config=release
