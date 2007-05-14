@@ -35,7 +35,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.util.ConversationFactory;
 
 /**
- * An CoordinatingTestCase is a JUnit test case extension that knows how to coordinate test clients that take part in a
+ * A CoordinatingTestCase is a JUnit test case extension that knows how to coordinate test clients that take part in a
  * test case as defined in the interop testing specification
  * (http://cwiki.apache.org/confluence/display/qpid/Interop+Testing+Specification).
  *
