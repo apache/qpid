@@ -1,68 +1,41 @@
 <?xml version="1.0"?>
-<project name="XMS.AMQ.ClientTests" default="build">
-    <property name="nant.settings.currentframework" value="net-1.0" />
-    <property name="basename" value="XMSClientTests"/>
-    <property name="debug" value="true"/>
-    <property name="MINADir" value="../minadotnet"/>
-    <property name="XMSCommonDir" value="../xmscommon"/>
-    <property name="XMSClientDir" value="../xmsclient"/>
-<!--
-    <property name="NunitDir" value="../build/nunit"/>
-    <property name="NunitDir" value="C:\Program Files\NUnit-Net-2.0 2.2.8"/>
--->
-    <property name="NunitDir" value="C:\Program Files\NUnit 2.2.8"/>
+<project name="Qpid.Client" default="test">
 
-    <if test="${debug}">
-        <property name="targetdir" value="bin/${nant.settings.currentframework}/Debug"/>
-    </if>
-    <ifnot test="${debug}">
-        <property name="targetdir" value="bin/${nant.settings.currentframework}/Release"/>
-    </ifnot>
-
-    <target name="clean">
-        <delete>
-            <fileset>
-                <include name="${targetdir}/${basename}.dll"/>
-                <include name="${targetdir}/${basename}.pdb"/>
-            </fileset>
-        </delete>
-    </target>
-
-    <target name="init">
-        <mkdir dir="${targetdir}"/>
-    </target>
-
-    <target name="build" depends="init">
-        <csc target="library" output="${targetdir}/${basename}.dll" debug="${debug}">
+   <target name="build">
+        <csc target="library" 
+			define="${build.defines}" 
+			warnaserror="false" debug="${build.debug}" 
+         output="${build.dir}/${project::get-name()}.Tests.dll">
+			
             <sources>
-                <include name="**/*.cs"/>
-                <exclude name="Properties/Settings.Designer.cs" />
+                <include name="**/*.cs" />
             </sources>
             <references>
-                <lib>
-                    <include name="${MINADir}/${targetdir}" />
-                    <include name="${XMSCommonDir}/${targetdir}" />
-                    <include name="${XMSClientDir}/${targetdir}" />
-                    <include name="${XMSCommonDir}/lib/**" />
-                    <include name="${NunitDir}/bin" />
-                </lib>
-                <include name="log4net.dll" />
-                <include name="MINA.dll" />
-                <include name="IBM.XMS.dll" />
-                <include name="XMSCommon.dll" />
-                <include name="XMSClient.dll" />
-                <include name="nunit.framework.dll" />
+               <include name="${build.dir}/log4net.dll" />
+               <include name="${build.dir}/nunit.framework.dll" />
+               <include name="${build.dir}/${project::get-name()}.dll" />
+               <include name="${build.dir}/Qpid.Common.dll" />
+               <include name="${build.dir}/Qpid.Messaging.dll" />
+               <include name="${build.dir}/Qpid.Sasl.dll" />
             </references>
+            <resources dynamicprefix="true" prefix="${project::get-name()}.Tests">
+               <include name="connection/QpidTestCert.pfx"/>
+            </resources>
         </csc>
-        <copy todir="${targetdir}">
-            <fileset>
-                <include name="*.config" />
-                <include name="${MINADir}/${targetdir}/*.dll" />
-                <include name="${XMSCommonDir}/${targetdir}/*.dll" />
-                <include name="${XMSClientDir}/${targetdir}/*.dll" />
-                <include name="${NunitDir}/bin/nunit.framework.dll" />
-                <include name="${XMSCommonDir}/lib/xms/*.dll" />
-            </fileset>
-        </copy>
+         <copy 
+            tofile="${build.dir}/${project::get-name()}.Tests.dll.config" 
+            file="App.config"
+         />
+         <copy 
+            todir="${build.dir}" 
+            file="log4net.config"
+         />
+    </target>
+    <target name="test" depends="build">
+         <nunit2>
+            <formatter type="${nant.formatter}" usefile="false" />
+            <test assemblyname="${build.dir}/${project::get-name()}.Tests.dll" />
+         </nunit2>
     </target>
 </project>
+

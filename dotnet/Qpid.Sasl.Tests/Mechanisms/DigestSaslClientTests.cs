@@ -210,7 +210,7 @@ namespace Qpid.Sasl.Tests.Mechanisms
          DigestSaslClient client = CreateClient();
 
          byte[] bresp = client.EvaluateChallenge(Encoding.UTF8.GetBytes(challenge));
-         string response = Encoding.UTF8.GetString(bresp);
+         Encoding.UTF8.GetString(bresp);
 
          // repeat challenge 1, which is incorrect
          client.EvaluateChallenge(Encoding.UTF8.GetBytes(challenge));
