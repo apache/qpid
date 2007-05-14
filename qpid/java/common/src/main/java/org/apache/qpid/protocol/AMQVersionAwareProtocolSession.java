@@ -22,7 +22,25 @@ package org.apache.qpid.protocol;
 
 import org.apache.qpid.framing.VersionSpecificRegistry;
 
+/**
+ * AMQVersionAwareProtocolSession is implemented by all AMQP session classes, that need to provide an awareness to
+ * callers of the version of the AMQP protocol that they are able to work with.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities
+ * <tr><td> Provide the method registry for a specific version of the AMQP.
+ * </table>
+ *
+ * @todo Why is this a seperate interface to {@link ProtocolVersionAware}, could they be combined into a single
+ *       interface and one of them eliminated? Move getRegistry method to ProtocolVersionAware, make the sessions
+ *       implement AMQProtocolWriter directly and drop this interface.
+ */
 public interface AMQVersionAwareProtocolSession extends AMQProtocolWriter, ProtocolVersionAware
 {
+    /**
+     * Gets the method registry for a specific version of the AMQP.
+     *
+     * @return The method registry for a specific version of the AMQP.
+     */
     public VersionSpecificRegistry getRegistry();
 }
