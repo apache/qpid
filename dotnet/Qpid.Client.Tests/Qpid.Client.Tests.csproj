@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="bio\BlockingIo.cs" />
+    <Compile Include="BrokerDetails\BrokerDetailsTest.cs" />
     <Compile Include="connection\ConnectionTest.cs" />
     <Compile Include="connection\SslConnectionTest.cs" />
     <Compile Include="failover\FailoverTest.cs" />

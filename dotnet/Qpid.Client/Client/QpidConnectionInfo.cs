@@ -171,19 +171,10 @@ namespace Qpid.Client
                 sb.Append('?');
                 foreach (String key in options.Keys)
                 {
-                    sb.Append(key);
-
-                    sb.Append("='");
-
-                    sb.Append(options[key]);
-
-                    sb.Append("'");
-                    sb.Append(DEFAULT_OPTION_SEPERATOR);
+                    sb.AppendFormat("{0}='{1}'{2}", key, options[key], DEFAULT_OPTION_SEPERATOR);
                 }
 
                 sb.Remove(sb.Length - 1, 1);
-                //                sb.deleteCharAt(sb.length() - 1);
-
                 return sb.ToString();
             }
         }
@@ -358,9 +349,10 @@ namespace Qpid.Client
 
     public class QpidConnectionInfo : IConnectionInfo
     {
+        const string DEFAULT_VHOST = "/";
         string _username = "guest";
         string _password = "guest";
-        string _virtualHost = "/";
+        string _virtualHost = DEFAULT_VHOST;
 
         string _failoverMethod = null;
         IDictionary _failoverOptions = new Hashtable();
@@ -385,14 +377,50 @@ namespace Qpid.Client
 
         public string AsUrl()
         {
-            string result = "amqp://";
-            foreach (IBrokerInfo info in _brokerInfos)
-            {
-                result += info.ToString();
-            }
-            return result;
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("{0}://", ConnectionUrlConstants.AMQ_PROTOCOL);
 
+            if (_username != null)
+            {
+                sb.Append(_username);
+                if (_password != null)
+                {
+                    sb.AppendFormat(":{0}", _password);
+                }
+                sb.Append("@");
+            }
+
+            sb.Append(_clientName);
+            sb.Append(_virtualHost);
+            sb.Append(OptionsToString());
+
+            return sb.ToString();
         }
+
+        private String OptionsToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendFormat("?{0}='", ConnectionUrlConstants.OPTIONS_BROKERLIST);
+
+            foreach (IBrokerInfo broker in _brokerInfos)
+            {
+                sb.AppendFormat("{0};", broker);
+            }
+
+            sb.Remove(sb.Length - 1, 1);
+            sb.Append("'");
+
+            if (_failoverMethod != null)
+            {
+                sb.AppendFormat("{0}{1}='{2}{3}'", URLHelper.DEFAULT_OPTION_SEPERATOR,
+                    ConnectionUrlConstants.OPTIONS_FAILOVER,
+                    _failoverMethod,
+                    URLHelper.printOptions((Hashtable)_failoverOptions));
+            }
+
+            return sb.ToString();
+        }
+
 
         public string FailoverMethod
         {
@@ -449,7 +477,13 @@ namespace Qpid.Client
         public string VirtualHost
         {
             get { return _virtualHost; }
-            set { _virtualHost = value; }
+            set { 
+               _virtualHost = value;
+               if ( _virtualHost == null || _virtualHost.Length == 0 )
+                  _virtualHost = DEFAULT_VHOST;
+               if ( _virtualHost[0] != '/' )
+                  _virtualHost = '/' + _virtualHost;
+            }
         }
 
         public string GetOption(string key)
