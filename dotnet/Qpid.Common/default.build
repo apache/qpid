@@ -1,48 +1,28 @@
 <?xml version="1.0"?>
-<project name="XMS.AMQ.Common" default="build">
-    <property name="nant.settings.currentframework" value="net-1.0" />
-    <property name="basename" value="XMSCommon"/>
-    <property name="debug" value="true"/>
-    <property name="CommonCollectionsDir" value="../CommonCollections"/>
-    <property name="MINADir" value="../minadotnet"/>
+<project name="Qpid.Common" default="build">
+    <!--
+		Properties that come from master build file
+		- build.dir: root directory for build
+		- build.debug: true if building debug release
+		- build.defines: variables to define during build
+    -->
 
-    <if test="${debug}">
-        <property name="targetdir" value="bin/${nant.settings.currentframework}/Debug"/>
-    </if>
-    <ifnot test="${debug}">
-        <property name="targetdir" value="bin/${nant.settings.currentframework}/Release"/>
-    </ifnot>
-
-    <target name="clean">
-        <delete>
-            <fileset>
-                <include name="${targetdir}/${basename}.dll"/>
-                <include name="${targetdir}/${basename}.pdb"/>
-            </fileset>
-        </delete>
-    </target>
-
-    <target name="init">
-        <mkdir dir="${targetdir}"/>
-    </target>
-
-    <target name="build" depends="init">
-        <csc target="library" output="${targetdir}/${basename}.dll" debug="${debug}">
-            <sources>
-                <include name="**/*.cs"/>
-                <exclude name="Properties/Settings.Designer.cs" />
-            </sources>
-            <references>
-                <lib>
-                    <include name="${CommonCollectionsDir}/${targetdir}" />
-                    <include name="${MINADir}/${targetdir}" />
-                    <include name="lib/**" />
-                </lib>
-                <include name="CommonCollections.dll" />
-                <include name="log4net.dll" />
-                <include name="MINA.dll" />
-                <include name="IBM.XMS.dll" />
-            </references>
+    <target name="build">
+        <csc target="library" 
+				define="${build.defines}" 
+				debug="${build.debug}" 
+				output="${build.dir}/${project::get-name()}.dll">
+			
+			<sources>
+			   <include name="**/*.cs" />
+         </sources>
+         <references>
+            <include name="${build.dir}/log4net.dll" />	
+            <include name="${build.dir}/Qpid.Buffer.dll" />	
+            <include name="${build.dir}/Qpid.Messaging.dll" />	
+            <include name="${build.dir}/Qpid.Codec.dll" />	
+         </references>
         </csc>
     </target>
 </project>
+

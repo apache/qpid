@@ -79,7 +79,7 @@ namespace Qpid.Client.Tests.Connection
          // load a self-issued certificate from an embedded
          // resource
          const string name = "Qpid.Client.Tests.connection.QpidTestCert.pfx";
-         Assembly assembly = Assembly.GetExecutingAssembly();
+         Assembly assembly = typeof(SslConnectionTest).Assembly;
          
          Stream res = assembly.GetManifestResourceStream(name);
          byte[] buffer = new byte[res.Length];
