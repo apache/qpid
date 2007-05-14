@@ -134,6 +134,7 @@ public class Coordinator extends TKTestRunner
             String brokerUrl = options.getProperty("b");
             String virtualHost = options.getProperty("h");
             reportDir = options.getProperty("o");
+            reportDir = (reportDir == null) ? "." : reportDir;
 
             // Scan for available test cases using a classpath scanner.
             Collection<Class<? extends CoordinatingTestCase>> testCaseClasses =

@@ -114,6 +114,15 @@ else
     echo "Warning: Qpid classpath not set. CLASSPATH must include qpid jars."
 fi
 
+#Use QPID_JAVA_GC if set
+if [ -n "$QPID_JAVA_GC" ]; then
+    export JAVA_GC=$QPID_JAVA_GC
+    echo "Using QPID_JAVA_GC setting" $QPID_JAVA_GC
+else
+    echo "Info: QPID_JAVA_GC not set. Defaulting to JAVA_GC" $JAVA_GC
+fi
+
+
 #Use QPID_JAVA_MEM if set
 if [ -n "$QPID_JAVA_MEM" ]; then
     export JAVA_MEM=$QPID_JAVA_MEM
@@ -224,6 +233,6 @@ if $cygwin; then
   JAVA=$(cygpath -u $JAVA)
 fi
 
-COMMAND=($JAVA $JAVA_VM $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
+COMMAND=($JAVA $JAVA_VM $JAVA_GC $JAVA_MEM $SYSTEM_PROPS $JAVA_OPTS $QPID_OPTS "${JAVA_ARGS[@]}")
 
 DISPATCH
