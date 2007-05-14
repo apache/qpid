@@ -18,7 +18,7 @@
          </csc>
          <copy 
             tofile="${build.dir}/${project::get-name()}.Tests.dll.config" 
-            file="app.config"
+            file="App.config"
          />
     </target>
     <target name="test" depends="build">
