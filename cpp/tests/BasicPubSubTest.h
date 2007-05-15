@@ -40,103 +40,10 @@ using namespace qpid::client;
 
 class BasicPubSubTest : public SimpleTestCaseBase
 {
-
-    class Receiver : public Worker, public MessageListener
-    {
-        const Exchange& exchange;
-        const std::string queue;
-        const std::string key;
-        std::string tag;
-    public:
-        Receiver(TestOptions& options, const Exchange& _exchange, const std::string& _queue, const std::string& _key, const int _messages) 
-            : Worker(options, _messages), exchange(_exchange), queue(_queue), key(_key){}
-
-        void init()
-        {
-            Queue q(queue, true);
-            channel.declareQueue(q);
-            framing::FieldTable args;
-            channel.bind(exchange, q, key, args);
-            channel.consume(q, tag, this);
-            channel.start();
-        }
-
-        void start(){
-        }
-        
-        void received(Message&)
-        {
-            count++;
-        }
-    };
-
-    class MultiReceiver : public Worker, public MessageListener
-    {
-        typedef boost::ptr_vector<Receiver> ReceiverList;
-        ReceiverList receivers;
-
-    public:
-        MultiReceiver(TestOptions& options, const Exchange& exchange, const std::string& key, const int _messages, int receiverCount) 
-            : Worker(options, _messages) 
-        {
-            for (int i = 0; i != receiverCount; i++) {                
-                std::string queue = (boost::format("%1%_%2%") % options.clientid % i).str();
-                receivers.push_back(new Receiver(options, exchange, queue, key, _messages));
-            }
-        }
-
-        void init()
-        {
-            for (ReceiverList::size_type i = 0; i != receivers.size(); i++) {
-                receivers[i].init();
-            }
-        }
-
-        void start()
-        {
-            for (ReceiverList::size_type i = 0; i != receivers.size(); i++) {
-                receivers[i].start();
-            }
-        }
-        
-        void received(Message& msg)
-        {
-            for (ReceiverList::size_type i = 0; i != receivers.size(); i++) {
-                receivers[i].received(msg);
-            }
-        }
-
-        virtual int getCount()
-        {
-            count = 0;
-            for (ReceiverList::size_type i = 0; i != receivers.size(); i++) {
-                count += receivers[i].getCount();
-            }
-            return count;
-        }
-        virtual void stop()
-        {
-            for (ReceiverList::size_type i = 0; i != receivers.size(); i++) {
-                receivers[i].stop();
-            }
-        }
-    };
-
+    class Receiver;
+    class MultiReceiver;
 public:
-    void assign(const std::string& role, framing::FieldTable& params, TestOptions& options)
-    {
-        std::string key = params.getString("PUBSUB_KEY");
-        int messages = params.getInt("PUBSUB_NUM_MESSAGES");
-        int receivers = params.getInt("PUBSUB_NUM_RECEIVERS");
-        if (role == "SENDER") {
-            worker = std::auto_ptr<Worker>(new Sender(options, Exchange::STANDARD_TOPIC_EXCHANGE, key, messages));
-        } else if(role == "RECEIVER"){
-            worker = std::auto_ptr<Worker>(new MultiReceiver(options, Exchange::STANDARD_TOPIC_EXCHANGE, key, messages, receivers));
-        } else {
-            throw Exception("unrecognised role");
-        }
-        worker->init();
-    }
+    void assign(const std::string& role, framing::FieldTable& params, TestOptions& options);
 };
 
 }

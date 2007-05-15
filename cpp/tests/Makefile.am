@@ -23,8 +23,7 @@ client_tests =		\
   client_test		\
   echo_service		\
   topic_listener	\
-  topic_publisher	\
-  interop_runner
+  topic_publisher	
 
 broker_tests =		\
   AccumulatedAckTest	\
@@ -105,3 +104,11 @@ gen.mk: Makefile.am
 	)					\
 	> $@-t
 	mv $@-t $@
+
+bin_PROGRAMS = interop_runner
+interop_runner_SOURCES = 	\
+  interop_runner.cpp	 	\
+  SimpleTestCaseBase.cpp	\
+  BasicP2PTest.cpp		\
+  BasicPubSubTest.cpp
+interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)

@@ -49,26 +49,11 @@ protected:
 
     public:
 
-        Worker(TestOptions& options, const int _messages) : 
-            connection(options.trace), messages(_messages), count(0)
-        {
-            connection.open(options.broker, options.port);
-            connection.openChannel(&channel);
-        }
-            
+        Worker(TestOptions& options, const int messages);
         virtual ~Worker(){}
 
-        virtual void stop()
-        {
-            channel.close();
-            connection.close();
-        }
-
-        virtual int getCount()
-        {
-            return count;
-        }
-
+        virtual void stop();
+        virtual int getCount();
         virtual void init() = 0;
         virtual void start() = 0;
     };
@@ -79,24 +64,11 @@ protected:
         const std::string key;
     public:
         Sender(TestOptions& options, 
-               const Exchange& _exchange, 
-               const std::string& _key, 
-               const int _messages) 
-            : Worker(options, _messages), exchange(_exchange), key(_key) {}
-
-        void init()
-        {
-            channel.start();
-        }
-
-        void start(){
-            Message msg;
-            while (count < messages) {
-                channel.publish(msg, exchange, key);
-                count++;
-            }
-            stop();
-        }
+               const Exchange& exchange, 
+               const std::string& key, 
+               const int messages); 
+        void init();
+        void start();
     };
 
     std::auto_ptr<Worker> worker;
@@ -106,30 +78,9 @@ public:
     
     virtual ~SimpleTestCaseBase() {}
 
-    void start()
-    {
-        if (worker.get()) {
-            worker->start();
-        }
-    }
-
-    void stop()
-    {
-        if (worker.get()) {
-            worker->stop();
-        }
-    }
-
-    void report(client::Message& report)
-    {
-        if (worker.get()) {
-            report.getHeaders().setInt("MESSAGE_COUNT", worker->getCount());
-            //add number of messages sent or received
-            std::stringstream reportstr;
-            reportstr << worker->getCount();
-            report.setData(reportstr.str());
-        }
-    }
+    void start();
+    void stop();
+    void report(client::Message& report);
 };
 
 }

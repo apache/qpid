@@ -34,51 +34,11 @@
 
 namespace qpid {
 
-using namespace qpid::client;
-
 class BasicP2PTest : public SimpleTestCaseBase
 {
-
-    class Receiver : public Worker, public MessageListener
-    {
-        const std::string queue;
-        std::string tag;
-    public:
-        Receiver(TestOptions& options, const std::string& _queue, const int _messages) : Worker(options, _messages), queue(_queue){}
-
-        void init()
-        {
-            Queue q(queue, true);
-            channel.declareQueue(q);
-            framing::FieldTable args;
-            channel.bind(Exchange::STANDARD_DIRECT_EXCHANGE, q, queue, args);
-            channel.consume(q, tag, this);
-            channel.start();
-        }
-
-        void start(){
-        }
-        
-        void received(Message&)
-        {
-            count++;
-        }
-    };
-
+    class Receiver;
 public:
-    void assign(const std::string& role, framing::FieldTable& params, TestOptions& options)
-    {
-        std::string queue = params.getString("P2P_QUEUE_AND_KEY_NAME");
-        int messages = params.getInt("P2P_NUM_MESSAGES");
-        if (role == "SENDER") {
-            worker = std::auto_ptr<Worker>(new Sender(options, Exchange::STANDARD_DIRECT_EXCHANGE, queue, messages));
-        } else if(role == "RECEIVER"){
-            worker = std::auto_ptr<Worker>(new Receiver(options, queue, messages));
-        } else {
-            throw Exception("unrecognised role");
-        }
-        worker->init();
-    }
+    void assign(const std::string& role, framing::FieldTable& params, TestOptions& options);
 };
 
 }
