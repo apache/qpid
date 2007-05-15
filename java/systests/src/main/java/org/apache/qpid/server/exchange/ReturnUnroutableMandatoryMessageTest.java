@@ -251,7 +251,7 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
             ;
         }
 
-        assertTrue("Wrong number of messages bounced (expect 1): " + _bouncedMessageList.size(), _bouncedMessageList.size() == 1);
+        assertEquals("Wrong number of messages bounced: ", 1, _bouncedMessageList.size());
         Message m = _bouncedMessageList.get(0);
         assertTrue("Wrong message bounced: " + m.toString(), m.toString().contains("msg2"));
 
