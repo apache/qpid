@@ -105,10 +105,15 @@ gen.mk: Makefile.am
 	> $@-t
 	mv $@-t $@
 
-bin_PROGRAMS = interop_runner
+check_PROGRAMS = interop_runner
 interop_runner_SOURCES = 	\
   interop_runner.cpp	 	\
   SimpleTestCaseBase.cpp	\
   BasicP2PTest.cpp		\
-  BasicPubSubTest.cpp
+  BasicPubSubTest.cpp		\
+  SimpleTestCaseBase.h		\
+  BasicP2PTest.h		\
+  BasicPubSubTest.h		\
+  TestCase.h			\
+  TestOptions.h
 interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
