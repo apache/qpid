@@ -156,103 +156,72 @@ namespace Qpid.Client
             }
         }
 
-        internal AmqChannel(AMQConnection con, ushort channelId, bool transacted, AcknowledgeMode acknowledgeMode, int defaultPrefetch) :
-            this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.NewDefaultRegistry(), defaultPrefetch)
-        {
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="AmqChannel"/> class.
         /// </summary>
-        /// <param name="con">The con.</param>
+        /// <param name="con">The connection.</param>
         /// <param name="channelId">The channel id.</param>
         /// <param name="transacted">if set to <c>true</c> [transacted].</param>
         /// <param name="acknowledgeMode">The acknowledge mode.</param>
-        /// <param name="messageFactoryRegistry">The message factory registry.</param>
-        internal AmqChannel(AMQConnection con, ushort channelId, bool transacted, AcknowledgeMode acknowledgeMode,
-                            MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetch)
+        /// <param name="defaultPrefetch">Default prefetch value</param>
+        internal AmqChannel(AMQConnection con, ushort channelId, bool transacted, AcknowledgeMode acknowledgeMode, int defaultPrefetch)
+           : this()
         {
-            _sessionNumber = Interlocked.Increment(ref _nextSessionNumber);
-            _connection = con;
-            _transacted = transacted;
-            if (transacted)
-            {
-                _acknowledgeMode = AcknowledgeMode.SessionTransacted;
-            }
-            else
-            {
-                _acknowledgeMode = acknowledgeMode;
-            }
-            _channelId = channelId;
-            _messageFactoryRegistry = messageFactoryRegistry;
+           _sessionNumber = Interlocked.Increment(ref _nextSessionNumber);
+           _connection = con;
+           _transacted = transacted;
+           if ( transacted )
+           {
+              _acknowledgeMode = AcknowledgeMode.SessionTransacted;
+           } else
+           {
+              _acknowledgeMode = acknowledgeMode;
+           }
+           _channelId = channelId;
         }
+        
+        private AmqChannel()
+        {
+           _messageFactoryRegistry = MessageFactoryRegistry.NewDefaultRegistry();
+        }
+
+        /// <summary>
+        /// Create a disconnected channel that will fault
+        /// for most things, but is useful for testing
+        /// </summary>
+        /// <returns>A new disconnected channel</returns>
+        public static IChannel CreateDisconnectedChannel()
+        {
+           return new AmqChannel();
+        }
+
 
         public IBytesMessage CreateBytesMessage()
         {
-            lock (_connection.FailoverMutex)
-            {
-                CheckNotClosed();
-                try
-                {
-                    return (IBytesMessage)_messageFactoryRegistry.CreateMessage("application/octet-stream");
-                }
-                catch (AMQException e)
-                {
-                    throw new QpidException("Unable to create message: " + e);
-                }
-            }
+            return (IBytesMessage)_messageFactoryRegistry.CreateMessage("application/octet-stream");
         }
 
         public IMessage CreateMessage()
         {
-            lock (_connection.FailoverMutex)
-            {
-                CheckNotClosed();
-                try
-                {
-                    // TODO: this is supposed to create a message consisting only of message headers
-                    return (IBytesMessage)_messageFactoryRegistry.CreateMessage("application/octet-stream");
-                }
-                catch (AMQException e)
-                {
-                    throw new QpidException("Unable to create message: " + e);
-                }
-            }
+            // TODO: this is supposed to create a message consisting only of message headers
+            return (IBytesMessage)_messageFactoryRegistry.CreateMessage("application/octet-stream");
+        }
+        
+        public IMessage CreateMessage(string mimeType)
+        {
+           return _messageFactoryRegistry.CreateMessage(mimeType);
         }
 
         public ITextMessage CreateTextMessage()
         {
-            lock (_connection.FailoverMutex)
-            {
-                CheckNotClosed();
-
-                try
-                {
-                    return (ITextMessage)_messageFactoryRegistry.CreateMessage("text/plain");
-                }
-                catch (AMQException e)
-                {
-                    throw new QpidException("Unable to create message: " + e);
-                }
-            }
+            return CreateTextMessage(String.Empty);
         }
 
         public ITextMessage CreateTextMessage(string text)
         {
-            lock (_connection.FailoverMutex)
-            {
-                CheckNotClosed();
-                try
-                {
-                    ITextMessage msg = (ITextMessage)_messageFactoryRegistry.CreateMessage("text/plain");
-                    msg.Text = text;
-                    return msg;
-                }
-                catch (AMQException e)
-                {
-                    throw new QpidException("Unable to create message: " + e);
-                }
-            }
+            ITextMessage msg = (ITextMessage)_messageFactoryRegistry.CreateMessage("text/plain");
+            msg.Text = text;
+            return msg;
         }
 
         public bool Transacted
@@ -536,11 +505,6 @@ namespace Qpid.Client
 
                 return consumer;
             }
-        }
-
-        public IFieldTable CreateFieldTable()
-        {
-            return new FieldTable();
         }
 
         public void Unsubscribe(String name)

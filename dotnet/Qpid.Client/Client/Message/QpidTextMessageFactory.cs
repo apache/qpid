@@ -25,9 +25,11 @@ namespace Qpid.Client.Message
 {
     public class QpidTextMessageFactory : AbstractQmsMessageFactory
     {        
-        public override AbstractQmsMessage CreateMessage()
+        public override AbstractQmsMessage CreateMessage(string mimeType)
         {
-            return new QpidTextMessage();
+            QpidTextMessage msg = new QpidTextMessage();
+            msg.ContentType = mimeType;
+            return msg;
         }
 
         protected override AbstractQmsMessage CreateMessage(long deliveryTag, ByteBuffer data, ContentHeaderBody contentHeader)

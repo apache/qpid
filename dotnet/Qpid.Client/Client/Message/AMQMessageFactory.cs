@@ -27,7 +27,7 @@ namespace Qpid.Client.Message
 {
     public abstract class AbstractQmsMessageFactory : IMessageFactory
     {
-        public abstract AbstractQmsMessage CreateMessage();
+        public abstract AbstractQmsMessage CreateMessage(string mimeType);
 
         private static readonly ILog _logger = LogManager.GetLogger(typeof (AbstractQmsMessageFactory));
 
