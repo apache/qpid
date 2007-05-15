@@ -30,7 +30,7 @@ import org.apache.qpid.framing.AMQShortString;
  * constant also defines a short human readable description of the constant.
  *
  * @todo Why would a constant be defined that is not in the map? Seems more natural that getConstant should raise an
- *       exception for an unknown constant. Or else provide an explanation of why this is so. Also their is no way for
+ *       exception for an unknown constant. Or else provide an explanation of why this is so. Also, there is no way for
  *       callers to determine the unknown status of a code except by comparing its name to "unknown code", which would
  *       seem to render this scheme a little bit pointless?
  *
