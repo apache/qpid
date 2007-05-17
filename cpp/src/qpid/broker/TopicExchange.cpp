@@ -116,24 +116,39 @@ bool TopicPattern::match(const Tokens& target)  const
 }
 
 TopicExchange::TopicExchange(const string& _name) : Exchange(_name) { }
+TopicExchange::TopicExchange(const std::string& _name, bool _durable, const FieldTable& _args) : Exchange(_name, _durable, _args) {}
 
-void TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
+
+bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
     Monitor::ScopedLock l(lock);
     TopicPattern routingPattern(routingKey);
-    bindings[routingPattern].push_back(queue);
+    if (isBound(queue, routingPattern)) {
+        return false;
+    } else {
+        bindings[routingPattern].push_back(queue);
+        return true;
+    }
 }
 
-void TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
+bool TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
     Monitor::ScopedLock l(lock);
     BindingMap::iterator bi = bindings.find(TopicPattern(routingKey));
     Queue::vector& qv(bi->second);
-    if (bi == bindings.end()) return;
+    if (bi == bindings.end()) return false;
     Queue::vector::iterator q = find(qv.begin(), qv.end(), queue);
-    if(q == qv.end()) return;
+    if(q == qv.end()) return false;
     qv.erase(q);
     if(qv.empty()) bindings.erase(bi);
+    return true;
 }
 
+bool TopicExchange::isBound(Queue::shared_ptr queue, TopicPattern& pattern)
+{
+    BindingMap::iterator bi = bindings.find(pattern);
+    if (bi == bindings.end()) return false;
+    Queue::vector& qv(bi->second);
+    return find(qv.begin(), qv.end(), queue) != qv.end();
+}
 
 void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
     Monitor::ScopedLock l(lock);

@@ -50,6 +50,10 @@ public:
     void destroy(const PersistableQueue& queue);
     void create(const PersistableExchange& exchange);
     void destroy(const PersistableExchange& exchange);
+    void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+              const std::string& key, const framing::FieldTable& args);
+    void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+                const std::string& key, const framing::FieldTable& args);
     void recover(RecoveryManager& queues);
     void stage(PersistableMessage& msg);
     void destroy(PersistableMessage& msg);

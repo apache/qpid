@@ -124,6 +124,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerAdapter.cpp \
   qpid/broker/BrokerSingleton.cpp \
   qpid/broker/BrokerChannel.cpp \
+  qpid/broker/BrokerExchange.cpp \
   qpid/broker/BrokerMessage.cpp \
   qpid/broker/BrokerMessageMessage.cpp \
   qpid/broker/BrokerQueue.cpp \

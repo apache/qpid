@@ -56,9 +56,21 @@ public:
     virtual void destroy(const PersistableExchange& exchange) = 0;
     
     /**
+     * Record a binding
+     */
+    virtual void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+                      const std::string& key, const framing::FieldTable& args) = 0;
+
+    /**
+     * Forget a binding
+     */
+    virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+                        const std::string& key, const framing::FieldTable& args) = 0;
+
+    /**
      * Request recovery of queue and message state from store
      */
-    virtual void recover(RecoveryManager& queues) = 0;
+    virtual void recover(RecoveryManager& recoverer) = 0;
     
     /**
      * Stores a messages before it has been enqueued
