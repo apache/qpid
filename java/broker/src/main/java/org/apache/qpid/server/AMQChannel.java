@@ -357,10 +357,16 @@ public class AMQChannel
      */
     public void close(AMQProtocolSession session) throws AMQException
     {
-        _closing = true;
         _txnContext.rollback();
         unsubscribeAllConsumers(session);
         requeue();
+
+        setClosing(true);
+    }
+
+    private void setClosing(boolean closing)
+    {
+        _closing = closing;
     }
 
     private void unsubscribeAllConsumers(AMQProtocolSession session) throws AMQException
