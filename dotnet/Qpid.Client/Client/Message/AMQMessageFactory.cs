@@ -43,7 +43,7 @@ namespace Qpid.Client.Message
             if (bodies != null && bodies.Count == 1)
             {
                 _logger.Debug("Non-fragmented message body (bodySize=" + contentHeader.BodySize +")");
-                data = ByteBuffer.Wrap(((ContentBody)bodies[0]).Payload);
+                data = ((ContentBody)bodies[0]).Payload;
             }
             else
             {

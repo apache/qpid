@@ -36,7 +36,7 @@ namespace Qpid.Client
     {
         private static readonly ILog _logger = LogManager.GetLogger(typeof(AmqChannel));
 
-        private const int BASIC_CONTENT_TYPE = 60;
+        internal const int BASIC_CONTENT_TYPE = 60;
 
         private static int _nextSessionNumber = 0;
 
@@ -761,119 +761,6 @@ namespace Qpid.Client
         public MessagePublisherBuilder CreatePublisherBuilder()
         {
             return new MessagePublisherBuilder(this);
-        }
-
-        internal void BasicPublish(string exchangeName, string routingKey, bool mandatory, bool immediate,
-                                   AbstractQmsMessage message, DeliveryMode deliveryMode, int priority, uint timeToLive,
-                                   bool disableTimestamps)
-        {
-            DoBasicPublish(exchangeName, routingKey, mandatory, immediate, message, deliveryMode, timeToLive, priority, disableTimestamps);
-        }
-
-        private void DoBasicPublish(string exchangeName, string routingKey, bool mandatory, bool immediate, AbstractQmsMessage message, DeliveryMode deliveryMode, uint timeToLive, int priority, bool disableTimestamps)
-        {
-            AMQFrame publishFrame = BasicPublishBody.CreateAMQFrame(_channelId, 0, exchangeName,
-                                                                    routingKey, mandatory, immediate);
-
-            long currentTime = 0;
-            if (!disableTimestamps)
-            {
-                currentTime = DateTime.UtcNow.Ticks;
-                message.Timestamp = currentTime;
-            }
-
-            ByteBuffer buf = message.Data;
-            byte[] payload = null;
-            if (buf != null)
-            {
-                payload = new byte[buf.Remaining];
-                buf.GetBytes(payload);
-            }
-            BasicContentHeaderProperties contentHeaderProperties = message.ContentHeaderProperties;
-
-            if (timeToLive > 0)
-            {
-                if (!disableTimestamps)
-                {
-                    contentHeaderProperties.Expiration = currentTime + timeToLive;
-                }
-            }
-            else
-            {
-                contentHeaderProperties.Expiration = 0;
-            }
-            contentHeaderProperties.SetDeliveryMode(deliveryMode);
-            contentHeaderProperties.Priority = (byte)priority;
-
-            ContentBody[] contentBodies = CreateContentBodies(payload);
-            AMQFrame[] frames = new AMQFrame[2 + contentBodies.Length];
-            for (int i = 0; i < contentBodies.Length; i++)
-            {
-                frames[2 + i] = ContentBody.CreateAMQFrame(_channelId, contentBodies[i]);
-            }
-            if (contentBodies.Length > 0 && _logger.IsDebugEnabled)
-            {
-                _logger.Debug(string.Format("Sending content body frames to {{exchangeName={0} routingKey={1}}}", exchangeName, routingKey));
-            }
-
-            // weight argument of zero indicates no child content headers, just bodies
-            AMQFrame contentHeaderFrame = ContentHeaderBody.CreateAMQFrame(_channelId, BASIC_CONTENT_TYPE, 0, contentHeaderProperties,
-                                                                           (uint)payload.Length);
-            if (_logger.IsDebugEnabled)
-            {
-                _logger.Debug(string.Format("Sending content header frame to  {{exchangeName={0} routingKey={1}}}", exchangeName, routingKey));
-            }
-
-            frames[0] = publishFrame;
-            frames[1] = contentHeaderFrame;
-            CompositeAMQDataBlock compositeFrame = new CompositeAMQDataBlock(frames);
-
-            lock (_connection.FailoverMutex) {
-                _connection.ProtocolWriter.Write(compositeFrame);
-            }   
-        }
-
-        /// <summary>
-        /// Create content bodies. This will split a large message into numerous bodies depending on the negotiated
-        /// maximum frame size.
-        /// </summary>
-        /// <param name="payload"></param>
-        /// <returns>return the array of content bodies</returns>
-        private ContentBody[] CreateContentBodies(byte[] payload)
-        {
-            if (payload == null)
-            {
-                return null;
-            }
-            else if (payload.Length == 0)
-            {
-                return new ContentBody[0];
-            }
-            // we substract one from the total frame maximum size to account for the end of frame marker in a body frame
-            // (0xCE byte).
-            long framePayloadMax = Connection.MaximumFrameSize - 1;
-            int lastFrame = (payload.Length % framePayloadMax) > 0 ? 1 : 0;
-            int frameCount = (int)(payload.Length / framePayloadMax) + lastFrame;
-            ContentBody[] bodies = new ContentBody[frameCount];
-
-            if (frameCount == 1)
-            {
-                bodies[0] = new ContentBody();
-                bodies[0].Payload = payload;
-            }
-            else
-            {
-                long remaining = payload.Length;
-                for (int i = 0; i < bodies.Length; i++)
-                {
-                    bodies[i] = new ContentBody();
-                    byte[] framePayload = new byte[(remaining >= framePayloadMax) ? (int)framePayloadMax : (int)remaining];
-                    Array.Copy(payload, (int)framePayloadMax * i, framePayload, 0, framePayload.Length);
-                    bodies[i].Payload = framePayload;
-                    remaining -= framePayload.Length;
-                }
-            }
-            return bodies;
         }
 
         public string GenerateUniqueName()

@@ -44,7 +44,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="bio\BlockingIo.cs" />
     <Compile Include="BrokerDetails\BrokerDetailsTest.cs" />
     <Compile Include="Channel\ChannelMessageCreationTests.cs" />
     <Compile Include="Messages\MessageFactoryRegistryTests.cs" />

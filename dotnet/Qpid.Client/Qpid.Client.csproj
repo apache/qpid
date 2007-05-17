@@ -110,6 +110,7 @@
     <Compile Include="Client\Transport\IProtocolChannel.cs" />
     <Compile Include="Client\Transport\IProtocolWriter.cs" />
     <Compile Include="Client\Transport\ITransport.cs" />
+    <Compile Include="Client\Transport\ProtocolDecoderOutput.cs" />
     <Compile Include="Client\Transport\SingleProtocolEncoderOutput.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\BlockingSocketTransport.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\ByteChannel.cs" />

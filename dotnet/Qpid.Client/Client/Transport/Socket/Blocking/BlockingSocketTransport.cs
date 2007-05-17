@@ -24,6 +24,7 @@ using System.IO;
 using System.Threading;
 using Qpid.Client.Qms;
 using Qpid.Client.Protocol;
+using Qpid.Codec;
 using Qpid.Framing;
 
 namespace Qpid.Client.Transport.Socket.Blocking
@@ -66,7 +67,11 @@ namespace Qpid.Client.Transport.Socket.Blocking
          _ioHandler = MakeBrokerConnection(broker, connection);
          // todo: get default read size from config!
 
-         _amqpChannel = new AmqpChannel(new ByteChannel(_ioHandler));
+         IProtocolDecoderOutput decoderOutput =
+            new ProtocolDecoderOutput(_protocolListener);
+         _amqpChannel = 
+            new AmqpChannel(new ByteChannel(_ioHandler), decoderOutput);
+
          // post an initial async read
          _amqpChannel.BeginRead(new AsyncCallback(OnAsyncReadDone), this);
       }
@@ -117,22 +122,28 @@ namespace Qpid.Client.Transport.Socket.Blocking
       {
          try
          {
-            Queue frames = _amqpChannel.EndRead(result);
+            _amqpChannel.EndRead(result);
 
-            // process results
-            foreach ( IDataBlock dataBlock in frames )
-            {
-               _protocolListener.OnMessage(dataBlock);
-            }
-            // if we're not stopping, post a read again
             bool stopping = _stopEvent.WaitOne(0, false);
             if ( !stopping )
                _amqpChannel.BeginRead(new AsyncCallback(OnAsyncReadDone), null);
          } catch ( Exception e )
          {
-            _protocolListener.OnException(e);
+            // ignore any errors during closing
+            bool stopping = _stopEvent.WaitOne(0, false);
+            if ( !stopping )
+               _protocolListener.OnException(e);
          }
       }
+
+      #region IProtocolDecoderOutput Members
+
+      public void Write(object message)
+      {
+         _protocolListener.OnMessage((IDataBlock)message);
+      }
+
+      #endregion
    }
 }
 

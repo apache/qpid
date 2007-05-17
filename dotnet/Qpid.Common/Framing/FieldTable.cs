@@ -47,7 +47,6 @@ namespace Qpid.Framing
         /// </summary>
         /// <param name="buffer">the buffer from which to read data. The length byte must be read already</param>
         /// <param name="length">the length of the field table. Must be > 0.</param>
-        /// <exception cref="AMQFrameDecodingException">if there is an error decoding the table</exception>
         public FieldTable(ByteBuffer buffer, uint length) : this()
         {
            _encodedForm = buffer.Slice();
@@ -497,27 +496,18 @@ namespace Qpid.Framing
         
         private AMQTypedValue GetProperty(string name)
         {
-           lock ( _syncLock )
-           {
-              if ( _properties == null )
-              {
-                 if ( _encodedForm == null )
-                 {
-                    return null;
-                 } else
-                 {
-                    PopulateFromBuffer();
-                 }
-              }
-              return (AMQTypedValue) _properties[name];
-           }
+           InitMapIfNecessary();
+           return (AMQTypedValue) _properties[name];
         }
 
         private void PopulateFromBuffer()
         {
            try
            {
-              SetFromBuffer(_encodedForm, _encodedSize);
+              ByteBuffer buffer = _encodedForm;
+              _encodedForm = null;
+              if ( buffer != null )
+                 SetFromBuffer(buffer, _encodedSize);
            } catch ( AMQFrameDecodingException e )
            {
               _log.Error("Error decoding FieldTable in deferred decoding mode ", e);
@@ -598,7 +588,11 @@ namespace Qpid.Framing
         {
            if ( _encodedForm != null )
            {
-              buffer.Put(_encodedForm);
+              lock ( _syncLock )
+              {
+                 buffer.Put(_encodedForm);
+                 _encodedForm.Flip();
+              }
            } else if ( _properties != null )
            {
               foreach ( DictionaryEntry de in _properties )
@@ -629,6 +623,7 @@ namespace Qpid.Framing
                        _log.Debug("Buffer Position:" + buffer.Position +
                                   " Remaining:" + buffer.Remaining);
                     }
+                    throw;
                  }
               }
            }

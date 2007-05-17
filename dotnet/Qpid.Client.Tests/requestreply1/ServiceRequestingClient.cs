@@ -26,18 +26,18 @@ using Qpid.Messaging;
 
 namespace Qpid.Client.Tests
 {
-    [TestFixture]
     public class ServiceRequestingClient : BaseMessagingTestFixture
     {
         private const int MESSAGE_SIZE = 1024;
         private static string MESSAGE_DATA = new string('x', MESSAGE_SIZE);
 
-        private const int NUM_MESSAGES = 10000;
+        private const int PACK = 100;
+        private const int NUM_MESSAGES = PACK*10; // increase when in standalone
 
         private static ILog _log = LogManager.GetLogger(typeof(ServiceRequestingClient));
 
-        AutoResetEvent _finishedEvent = new AutoResetEvent(false);
-
+        ManualResetEvent _finishedEvent = new ManualResetEvent(false);
+        
         private int _expectedMessageCount = NUM_MESSAGES;
 
         private long _startTime = 0;        
@@ -54,9 +54,9 @@ namespace Qpid.Client.Tests
             {
                 _publisher = _channel.CreatePublisherBuilder()
                     .WithRoutingKey(_commandQueueName)
+                    .WithDeliveryMode(DeliveryMode.NonPersistent)
                     .Create();
                 _publisher.DisableMessageTimestamp = true; // XXX: need a "with" for this in builder?
-                _publisher.DeliveryMode = DeliveryMode.NonPersistent;  // XXX: need a "with" for this in builder?
             }
             catch (QpidException e)
             {
@@ -64,7 +64,7 @@ namespace Qpid.Client.Tests
             }
         }
         
-        /*[Test]
+        [Test]
         public void SendMessages()
         {
             InitialiseProducer();
@@ -100,47 +100,18 @@ namespace Qpid.Client.Tests
                 // Added timestamp.
                 long timeNow = DateTime.Now.Ticks;
                 string timeSentString = String.Format("{0:G}", timeNow);
-//                _log.Info(String.Format("timeSent={0} timeSentString={1}", timeNow, timeSentString));
-                msg.Headers.SetString("timeSent", timeSentString);
-                //msg.Headers.SetLong("sentAt", timeNow);
+                msg.Headers.SetLong("timeSent", timeNow);
                 
-                try
-                {
-                    _publisher.Send(msg);
-                }
-                catch (Exception e)
-                {
-                    _log.Error("Error sending message: " + e, e);
-                    //base._port = 5673;
-                    _log.Info("Reconnecting but on port 5673");
-                    try
-                    {
-                        base.Init();
-                        InitialiseProducer();
-                        // cheesy but a quick test
-                        _log.Info("Calling SendMessages again");
-                        SendMessages();
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Error("Totally busted: failed to reconnect: " + ex, ex);
-                    }
-                }
+                 _publisher.Send(msg);
             }
 
             // Assert that the test finishes within a reasonable amount of time.
-            const int waitSeconds = 10;
+            const int waitSeconds = 40;
             const int waitMilliseconds = waitSeconds * 1000;
             _log.Info("Finished sending " + _expectedMessageCount + " messages");
             _log.Info(String.Format("Waiting {0} seconds to receive last message...", waitSeconds));
             Assert.IsTrue(_finishedEvent.WaitOne(waitMilliseconds, false), 
                           String.Format("Expected to finish in {0} seconds", waitSeconds));
-        }*/
-
-        [Test]
-        public void TestFail()
-        {
-            Assert.Fail("Tests in this class do not run on autopilot, but hang forever, so commented out until can be fixed.");
         }
 
         public void OnMessage(IMessage m)
@@ -150,23 +121,19 @@ namespace Qpid.Client.Tests
                 _log.Debug("Message received: " + m);
             }
 
-            //if (m.Headers.Contains("sentAt"))
             if (!m.Headers.Contains("timeSent"))
             {
                 throw new Exception("Set timeSent!");
             }
-            //long sentAt = m.Headers.GetLong("sentAt");
-            long sentAt = Int64.Parse(m.Headers.GetString("timeSent"));
+
+            long sentAt = m.Headers.GetLong("timeSent");
             long now = DateTime.Now.Ticks;
             long latencyTicks = now - sentAt;
-//                _log.Info(String.Format("latency = {0} ticks ", latencyTicks));
             long latencyMilliseconds = latencyTicks / TimeSpan.TicksPerMillisecond;
-//                _log.Info(String.Format("latency = {0} ms", latencyMilliseconds));
 
             averager.Add(latencyMilliseconds);
 
-            // Output average every 1000 messages.
-            if (averager.Num % 1000 == 0)
+            if (averager.Num % PACK == 0)
             {
                 _log.Info("Ticks per millisecond = " + TimeSpan.TicksPerMillisecond);
                 _log.Info(String.Format("Average latency (ms) = {0}", averager));
@@ -185,13 +152,6 @@ namespace Qpid.Client.Tests
                 _finishedEvent.Set(); // Notify main thread to quit.
             }
         }
-        
-        /*public static void Main(String[] args)
-        {
-            ServiceRequestingClient c = new ServiceRequestingClient();
-            c.Init();
-            c.SendMessages();
-        }*/
     }
     
     class Avergager
