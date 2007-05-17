@@ -25,29 +25,34 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-DirectExchange::DirectExchange(const string& _name) : Exchange(_name) {
+DirectExchange::DirectExchange(const string& _name) : Exchange(_name) {}
+DirectExchange::DirectExchange(const std::string& _name, bool _durable, const FieldTable& _args) : Exchange(_name, _durable, _args) {}
 
-}
-
-void DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable*){
+bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable*){
     Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
-    if(i == queues.end()){
+    if (i == queues.end()) {
         bindings[routingKey].push_back(queue);
+        return true;
+    } else{
+        return false;
     }
 }
 
-void DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
+bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
     Mutex::ScopedLock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
 
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
-    if(i < queues.end()){
+    if (i < queues.end()) {
         queues.erase(i);
         if(queues.empty()){
             bindings.erase(routingKey);
         }
+        return true;
+    } else {
+        return false;
     }
 }
 

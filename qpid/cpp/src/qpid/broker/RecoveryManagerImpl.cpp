@@ -61,9 +61,19 @@ public:
     void recover(RecoverableMessage::shared_ptr msg);
 };
 
-void RecoveryManagerImpl::recoverExchange(framing::Buffer&)
+class RecoverableExchangeImpl : public RecoverableExchange
 {
-    //TODO
+    Exchange::shared_ptr exchange;
+    QueueRegistry& queues;
+public:
+    RecoverableExchangeImpl(Exchange::shared_ptr _exchange, QueueRegistry& _queues) : exchange(_exchange), queues(_queues) {}
+    void setPersistenceId(uint64_t id);
+    void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args);
+};
+
+RecoverableExchange::shared_ptr RecoveryManagerImpl::recoverExchange(framing::Buffer& buffer)
+{
+    return RecoverableExchange::shared_ptr(new RecoverableExchangeImpl(Exchange::decode(exchanges, buffer), queues));
 }
 
 RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& buffer)
@@ -140,4 +150,15 @@ void RecoverableQueueImpl::recover(RecoverableMessage::shared_ptr msg)
 void RecoverableQueueImpl::setPersistenceId(uint64_t id)
 {
     queue->setPersistenceId(id);
+}
+
+void RecoverableExchangeImpl::setPersistenceId(uint64_t id)
+{
+    exchange->setPersistenceId(id);
+}
+
+void RecoverableExchangeImpl::bind(string& queueName, string& key, framing::FieldTable& args)
+{
+    Queue::shared_ptr queue = queues.find(queueName);
+    exchange->bind(queue, key, &args);
 }

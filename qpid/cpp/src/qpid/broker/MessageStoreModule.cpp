@@ -48,6 +48,18 @@ void MessageStoreModule::destroy(const PersistableExchange& exchange)
     store->destroy(exchange);
 }
 
+void MessageStoreModule::bind(const PersistableExchange& e, const PersistableQueue& q, 
+                              const std::string& k, const framing::FieldTable& a)
+{
+    store->bind(e, q, k, a);
+}
+
+void MessageStoreModule::unbind(const PersistableExchange& e, const PersistableQueue& q, 
+                                const std::string& k, const framing::FieldTable& a)
+{
+    store->unbind(e, q, k, a);
+}
+
 void MessageStoreModule::recover(RecoveryManager& registry)
 {
     store->recover(registry);

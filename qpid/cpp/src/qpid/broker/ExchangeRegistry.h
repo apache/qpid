@@ -24,6 +24,8 @@
 
 #include <map>
 #include "BrokerExchange.h"
+#include "MessageStore.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
 
 namespace qpid {
@@ -34,8 +36,12 @@ namespace broker {
         typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
         ExchangeMap exchanges;
         qpid::sys::Mutex lock;
-    public:
-        std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type) throw(UnknownExchangeTypeException);
+     public:
+        std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type)
+            throw(UnknownExchangeTypeException);
+        std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type, 
+                                                      bool durable, const qpid::framing::FieldTable& args)
+            throw(UnknownExchangeTypeException);
         void destroy(const std::string& name);
         Exchange::shared_ptr get(const std::string& name);
         Exchange::shared_ptr getDefault();

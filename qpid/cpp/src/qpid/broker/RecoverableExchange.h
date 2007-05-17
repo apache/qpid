@@ -1,5 +1,5 @@
-#ifndef _broker_PersistableExchange_h
-#define _broker_PersistableExchange_h
+#ifndef _broker_RecoverableExchange_h
+#define _broker_RecoverableExchange_h
 
 /*
  *
@@ -22,21 +22,25 @@
  *
  */
 
-#include <string>
-#include "Persistable.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
 
 /**
- * The interface exchanges must expose to the MessageStore in order to be
- * persistable.
+ * The interface through which bindings are recovered.
  */
-class PersistableExchange : public Persistable
+class RecoverableExchange
 {
 public:
-    virtual  std::string getName() const = 0;
-    virtual ~PersistableExchange() {};
+    typedef boost::shared_ptr<RecoverableExchange> shared_ptr;
+
+    virtual void setPersistenceId(uint64_t id) = 0;
+    /**
+     * Recover binding. Nb: queue must have been recovered earlier.
+     */
+    virtual void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args) = 0;
+    virtual ~RecoverableExchange() {};
 };
 
 }}
