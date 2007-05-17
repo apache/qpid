@@ -36,7 +36,7 @@ import java.util.regex.*;
  * that they take a default value when not set. Options may be mandatory in wich case it is an error not to specify
  * them on the command line. Flags are never mandatory because they are implicitly set to false when not specified.
  *
- * <p/>Some examples command line are:
+ * <p/>Some example command lines are:
  *
  * <ul>
  * <li>This one has two options that expect arguments:
