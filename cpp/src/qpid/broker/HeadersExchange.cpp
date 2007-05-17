@@ -41,21 +41,35 @@ namespace {
 }
 
 HeadersExchange::HeadersExchange(const string& _name) : Exchange(_name) { }
+HeadersExchange::HeadersExchange(const std::string& _name, bool _durable, const FieldTable& _args) : Exchange(_name, _durable, _args) {}
 
-void HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
+bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
     Mutex::ScopedLock locker(lock);
     std::string what = args->getString("x-match");
     if (what != all && what != any) {
         THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid x-match value binding to headers exchange.");
     }
-    bindings.push_back(Binding(*args, queue));
+    Binding binding(*args, queue);
+    Bindings::iterator i =
+        std::find(bindings.begin(),bindings.end(), binding);
+    if (i == bindings.end()) {
+        bindings.push_back(binding);
+        return true;
+    } else {
+        return false;
+    }
 }
 
-void HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
+bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
     Mutex::ScopedLock locker(lock);
     Bindings::iterator i =
         std::find(bindings.begin(),bindings.end(), Binding(*args, queue));
-    if (i != bindings.end()) bindings.erase(i);
+    if (i != bindings.end()) {
+        bindings.erase(i);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 

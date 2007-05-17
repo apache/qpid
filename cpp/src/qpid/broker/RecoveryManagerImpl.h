@@ -37,7 +37,7 @@ namespace broker {
         RecoveryManagerImpl(QueueRegistry& queues, ExchangeRegistry& exchanges, uint64_t stagingThreshold);
         ~RecoveryManagerImpl();
 
-        void recoverExchange(framing::Buffer& buffer);
+        RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer);
         RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer);
         RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer);
         void recoveryComplete();

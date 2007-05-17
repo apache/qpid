@@ -48,6 +48,11 @@ public:
     virtual void destroy(const PersistableQueue& queue);
     virtual void create(const PersistableExchange& exchange);
     virtual void destroy(const PersistableExchange& exchange);
+
+    virtual void bind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+                      const std::string& key, const framing::FieldTable& args);
+    virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
+                        const std::string& key, const framing::FieldTable& args);
     virtual void recover(RecoveryManager& queues);
     virtual void stage(PersistableMessage& msg);
     virtual void destroy(PersistableMessage& msg);

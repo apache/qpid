@@ -21,6 +21,7 @@
 #ifndef _RecoveryManager_
 #define _RecoveryManager_
 
+#include "RecoverableExchange.h"
 #include "RecoverableQueue.h"
 #include "RecoverableMessage.h"
 #include "qpid/framing/Buffer.h"
@@ -31,7 +32,7 @@ namespace broker {
     class RecoveryManager{
     public:
         virtual ~RecoveryManager(){}
-        virtual void recoverExchange(framing::Buffer& buffer) = 0;
+        virtual RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer) = 0;
         virtual RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer) = 0;
         virtual RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer) = 0;
         virtual void recoveryComplete() = 0;
