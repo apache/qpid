@@ -34,10 +34,10 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.requestreply.PingPongProducer;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.AMQMessage;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.requestreply.PingPongProducer;
 
 import uk.co.thebadgerset.junit.extensions.TimingController;
 import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
@@ -67,7 +67,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
     private static Logger _logger = Logger.getLogger(PingLatencyTestPerf.class);
 
     /** Holds the name of the property to get the test results logging batch size. */
-    public static final String TEST_RESULTS_BATCH_SIZE_PROPNAME = "BatchSize";
+    public static final String TEST_RESULTS_BATCH_SIZE_PROPNAME = "batchSize";
 
     /** Holds the default test results logging batch size. */
     public static final int DEFAULT_TEST_RESULTS_BATCH_SIZE = 1000;
@@ -83,7 +83,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
      * controler.
      */
     private Map<String, PerCorrelationId> perCorrelationIds =
-            Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
+        Collections.synchronizedMap(new HashMap<String, PerCorrelationId>());
 
     /** Holds the batched results listener, that does logging on batch boundaries. */
     private BatchedResultsListener batchedResultsListener = null;
@@ -99,7 +99,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
 
         // Sets up the test parameters with defaults.
         ParsedProperties.setSysPropertyIfNull(TEST_RESULTS_BATCH_SIZE_PROPNAME,
-                                              Integer.toString(DEFAULT_TEST_RESULTS_BATCH_SIZE));
+            Integer.toString(DEFAULT_TEST_RESULTS_BATCH_SIZE));
     }
 
     /** Compile all the tests into a test suite. */
@@ -171,9 +171,9 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
 
         // Generate a sample message of the specified size.
         Message msg =
-                pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
-                                          testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
-                                          testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
+            pingClient.getTestMessage(perThreadSetup._pingClient.getReplyDestinations().get(0),
+                testParameters.getPropertyAsInteger(PingPongProducer.MESSAGE_SIZE_PROPNAME),
+                testParameters.getPropertyAsBoolean(PingPongProducer.PERSISTENT_MODE_PROPNAME));
 
         // Send the requested number of messages, and wait until they have all been received.
         long timeout = Long.parseLong(testParameters.getProperty(PingPongProducer.TIMEOUT_PROPNAME));
@@ -246,7 +246,9 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
         public BatchedResultsListener(int batchSize)
         {
             _batchSize = batchSize;
-            _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
+            _strictAMQP =
+                Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP,
+                        AMQSession.STRICT_AMQP_DEFAULT));
         }
 
         /**
@@ -284,9 +286,11 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
 
                     if (_strictAMQP)
                     {
-                        Long value = ((AMQMessage) message).getTimestampProperty(new AMQShortString(PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME));
+                        Long value =
+                            ((AMQMessage) message).getTimestampProperty(new AMQShortString(
+                                    PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME));
 
-                        startTime = (value == null ? 0L : value);
+                        startTime = ((value == null) ? 0L : value);
                     }
                     else
                     {
