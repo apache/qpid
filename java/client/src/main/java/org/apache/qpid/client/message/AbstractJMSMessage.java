@@ -467,11 +467,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public void setIntProperty(String propertyName, int i) throws JMSException
     {
-        if (_strictAMQP)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
-
         checkWritableProperties();
         JMSHeaderAdapter.checkPropertyName(propertyName);
         super.setIntProperty(new AMQShortString(propertyName), new Integer(i));
