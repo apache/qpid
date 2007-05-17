@@ -14,27 +14,46 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.common;
 
 import org.apache.qpid.framing.AMQShortString;
 
+/**
+ * Specifies the different filter types for consumers that filter their messages.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represent different consumer filter types.
+ * </table>
+ */
 public enum AMQPFilterTypes
 {
     JMS_SELECTOR("x-filter-jms-selector"),
     NO_CONSUME("x-filter-no-consume"),
     AUTO_CLOSE("x-filter-auto-close");
 
+    /** The identifying string for the filter type. */
     private final AMQShortString _value;
 
+    /**
+     * Creates a new filter type from its identifying string.
+     *
+     * @param value The identifying string.
+     */
     AMQPFilterTypes(String value)
     {
         _value = new AMQShortString(value);
     }
 
+    /**
+     * Gets the identifying string of the filter type.
+     *
+     * @return The identifying string of the filter type.
+     */
     public AMQShortString getValue()
     {
         return _value;
