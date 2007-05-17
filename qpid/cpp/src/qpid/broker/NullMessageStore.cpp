@@ -39,13 +39,18 @@ void NullMessageStore::destroy(const PersistableQueue& queue)
     if (warn) std::cout << "WARNING: Can't destroy durable queue '" << queue.getName() << "'. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::create(const PersistableExchange&)
+void NullMessageStore::create(const PersistableExchange& exchange)
 {
+    if (warn) std::cout << "WARNING: Can't create durable exchange '" << exchange.getName() << "'. Persistence not enabled." << std::endl;
 }
 
-void NullMessageStore::destroy(const PersistableExchange&)
+void NullMessageStore::destroy(const PersistableExchange& exchange)
 {
+    if (warn) std::cout << "WARNING: Can't destroy durable exchange '" << exchange.getName() << "'. Persistence not enabled." << std::endl;
 }
+void NullMessageStore::bind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&){}
+
+void NullMessageStore::unbind(const PersistableExchange&, const PersistableQueue&, const std::string&, const framing::FieldTable&){}
 
 void NullMessageStore::recover(RecoveryManager&)
 {

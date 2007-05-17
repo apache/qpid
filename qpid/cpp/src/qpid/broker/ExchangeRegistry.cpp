@@ -27,21 +27,30 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 using std::pair;
+using qpid::framing::FieldTable;
 
-pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type) throw(UnknownExchangeTypeException){
+pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type) 
+    throw(UnknownExchangeTypeException){
+
+    return declare(name, type, false, FieldTable());
+}
+
+pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type, 
+                                                           bool durable, const FieldTable& args) 
+    throw(UnknownExchangeTypeException){
     Mutex::ScopedLock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end()) {
 	Exchange::shared_ptr exchange;
 
         if(type == TopicExchange::typeName){
-            exchange = Exchange::shared_ptr(new TopicExchange(name));
+            exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args));
         }else if(type == DirectExchange::typeName){
-            exchange = Exchange::shared_ptr(new DirectExchange(name));
+            exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args));
         }else if(type == FanOutExchange::typeName){
-            exchange = Exchange::shared_ptr(new FanOutExchange(name));
+            exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args));
         }else if (type == HeadersExchange::typeName) {
-            exchange = Exchange::shared_ptr(new HeadersExchange(name));
+            exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args));
         }else{
             throw UnknownExchangeTypeException();    
         }
@@ -54,7 +63,10 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
 
 void ExchangeRegistry::destroy(const string& name){
     Mutex::ScopedLock locker(lock);
-    exchanges.erase(name);
+    ExchangeMap::iterator i =  exchanges.find(name);
+    if (i != exchanges.end()) {
+        exchanges.erase(i);
+    }
 }
 
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){

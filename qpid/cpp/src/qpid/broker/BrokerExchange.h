@@ -25,24 +25,47 @@
 #include <boost/shared_ptr.hpp>
 #include "Deliverable.h"
 #include "BrokerQueue.h"
+#include "MessageStore.h"
+#include "PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
 
 namespace qpid {
     namespace broker {
         using std::string;
+        class ExchangeRegistry;
 
-        class Exchange{
+        class Exchange : public PersistableExchange{
+        private:
             const string name;
+            const bool durable;
+            qpid::framing::FieldTable args;
+            mutable uint64_t persistenceId;
+
         public:
             typedef boost::shared_ptr<Exchange> shared_ptr;
 
-            explicit Exchange(const string& _name) : name(_name){}
+            explicit Exchange(const string& _name) : name(_name), durable(false), persistenceId(0){}
+            Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args) 
+                : name(_name), durable(_durable), args(_args), persistenceId(0){}
             virtual ~Exchange(){}
-            string getName() { return name; }
-            virtual string getType() = 0;
-            virtual void bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
-            virtual void unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
+
+            string getName() const { return name; }
+            bool isDurable() { return durable; }
+            qpid::framing::FieldTable& getArgs() { return args; }
+
+            virtual string getType() const = 0;
+            virtual bool bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
+            virtual bool unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
             virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
+
+            //PersistableExchange:
+            void setPersistenceId(uint64_t id) const { persistenceId = id; }
+            uint64_t getPersistenceId() const { return persistenceId; }
+            uint32_t encodedSize() const;
+            void encode(framing::Buffer& buffer) const; 
+
+            static Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
+
         };
     }
 }
