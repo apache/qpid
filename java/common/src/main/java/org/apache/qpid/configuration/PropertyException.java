@@ -24,7 +24,16 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
- * Indicates an error parsing a property expansion.
+ * Indicates a failure to parse a property expansion. See {@link PropertyUtils} for the code that does property
+ * expansions.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaboration
+ * <tr><td> Represent failure to expand a property name into a value.
+ * </table>
+ *
+ * @todo AMQException is to be reserved for protocol related conditions. This exception does not have a status code, so
+ *       don't inherit from AMQException.
  */
 public class PropertyException extends AMQException
 {
@@ -33,6 +42,7 @@ public class PropertyException extends AMQException
         super(message);
     }
 
+    /*
     public PropertyException(String msg, Throwable t)
     {
         super(msg, t);
@@ -47,4 +57,5 @@ public class PropertyException extends AMQException
     {
         super(errorCode, msg);
     }
+     */
 }
