@@ -15,4 +15,4 @@ html.timestamp:
 	touch $@
 
 clean-local:
-	rm -rf html html-dev 
+	rm -rf html html-dev html.timestamp
