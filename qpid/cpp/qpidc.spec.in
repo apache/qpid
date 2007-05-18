@@ -26,7 +26,6 @@ BuildRequires: pkgconfig
 
 Requires: apr
 Requires: boost
-Requires: libdaemon
 
 Requires(post):/sbin/chkconfig
 Requires(preun):/sbin/chkconfig
