@@ -43,7 +43,7 @@ namespace Qpid.Client.Message
             Bodies.Add(body);
             if (body.Payload != null)
             {
-                _bytesReceived += (uint)body.Payload.Length;
+                _bytesReceived += (uint)body.Payload.Remaining;
             }
         }
 

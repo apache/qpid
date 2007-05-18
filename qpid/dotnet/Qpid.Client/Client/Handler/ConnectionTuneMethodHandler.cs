@@ -45,14 +45,12 @@ namespace Qpid.Client.Handler
             _logger.Debug(String.Format("ConnectionTune.heartbeat = {0}.", frame.Heartbeat));
 
             parameters.FrameMax = frame.FrameMax;
-            parameters.FrameMax = 65535;
-            //params.setChannelMax(frame.channelMax);
             parameters.Heartbeat = frame.Heartbeat;
             session.ConnectionTuneParameters = parameters;
 
             stateManager.ChangeState(AMQState.CONNECTION_NOT_OPENED);
             session.WriteFrame(ConnectionTuneOkBody.CreateAMQFrame(
-                                   evt.ChannelId, frame.ChannelMax, 65535, frame.Heartbeat));
+                                   evt.ChannelId, frame.ChannelMax, frame.FrameMax, frame.Heartbeat));
             session.WriteFrame(ConnectionOpenBody.CreateAMQFrame(
                                    evt.ChannelId, session.AMQConnection.VirtualHost, null, true));
 

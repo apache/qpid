@@ -26,11 +26,24 @@ namespace Qpid.Framing
     {
         public const byte TYPE = 3;
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// TODO: consider whether this should be a pointer into the ByteBuffer to avoid copying */
-        public byte[] Payload;
+        private ByteBuffer _payload;
+       
+        public ByteBuffer Payload
+        {
+           get { return _payload; }
+        }
+
+       public ContentBody()
+       {
+       }
+       public ContentBody(ByteBuffer payload)
+       {
+          PopulateFromBuffer(payload, (uint)payload.Remaining);
+       }
+       public ContentBody(ByteBuffer payload, uint length)
+       {
+          PopulateFromBuffer(payload, length);
+       }
 
         #region IBody Members
 
@@ -46,7 +59,7 @@ namespace Qpid.Framing
         {
             get
             {
-                return (ushort)(Payload == null ? 0 : Payload.Length);
+                return (ushort)(Payload == null ? 0 : Payload.Remaining);
             }
         }
 
@@ -55,6 +68,7 @@ namespace Qpid.Framing
             if (Payload != null)
             {
                 buffer.Put(Payload);
+                Payload.Rewind();
             }
         }
 
@@ -62,8 +76,9 @@ namespace Qpid.Framing
         {
             if (size > 0)
             {
-                Payload = new byte[size];
-                buffer.GetBytes(Payload);
+                _payload = buffer.Slice();
+                _payload.Limit = (int)size;
+                buffer.Skip((int)size);
             }
         }
 
@@ -75,6 +90,11 @@ namespace Qpid.Framing
             frame.Channel = channelId;
             frame.BodyFrame = body;
             return frame;
+        }
+
+        public override string ToString()
+        {
+            return string.Format("ContentBody [ Size: {0} ]", Size);
         }
     }
 }

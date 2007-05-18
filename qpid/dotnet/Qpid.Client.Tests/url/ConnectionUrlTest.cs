@@ -404,5 +404,43 @@ namespace Qpid.Client.Tests.url
                 Assert.AreEqual("Unterminated option", e.Message);
             }
         }
+
+        [Test]
+        public void ValidateQpidConnectionInfoFromToString()
+        {
+            String url = "amqp://ritchiem:bob@default/temp?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin'";
+
+            IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(url);
+            IConnectionInfo connectionInfo1 = QpidConnectionInfo.FromUrl(connectionInfo.ToString());
+
+            Console.WriteLine(connectionInfo.ToString());
+            Console.WriteLine(connectionInfo1.ToString());
+
+            Assert.AreEqual(connectionInfo.Username, connectionInfo1.Username);
+            Assert.AreEqual(connectionInfo.Password, connectionInfo1.Password);
+            Assert.AreEqual(connectionInfo.VirtualHost, connectionInfo1.VirtualHost);
+
+            Assert.IsTrue((connectionInfo1.GetAllBrokerInfos().Count == 2));
+            Assert.IsTrue(connectionInfo.GetBrokerInfo(0).Equals(connectionInfo1.GetBrokerInfo(0)));
+            Assert.IsTrue(connectionInfo.GetBrokerInfo(1).Equals(connectionInfo1.GetBrokerInfo(1)));
+
+        }
+
+        [Test]
+        public void EnsureVirtualHostStartsWithSlash()
+        {
+           IConnectionInfo connection = new QpidConnectionInfo();
+           connection.VirtualHost = "test";
+           Assert.AreEqual("/test", connection.VirtualHost);
+
+           connection.VirtualHost = "/mytest";
+           Assert.AreEqual("/mytest", connection.VirtualHost);
+
+           connection.VirtualHost = "";
+           Assert.AreEqual("/", connection.VirtualHost);
+
+           connection.VirtualHost = null;
+           Assert.AreEqual("/", connection.VirtualHost);
+        }
     }
 }

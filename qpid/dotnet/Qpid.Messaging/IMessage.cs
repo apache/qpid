@@ -22,25 +22,75 @@ namespace Qpid.Messaging
 {   
     public interface IMessage
     {
-        string ContentType { get; set;}
-        string ContentEncoding { get; set; }
-        string CorrelationId { get; set; }
-        byte[] CorrelationIdAsBytes { get; set; }
-        DeliveryMode DeliveryMode { get; set; }
-        long Expiration { get; set; }
-        string MessageId { get; set; }
-        int Priority { get; set; }
+       /// <summary>
+       /// The MIME Content Type
+       /// </summary>
+       string ContentType { get; set;}
+       /// <summary>
+       /// The MIME Content Encoding
+       /// </summary>
+       string ContentEncoding { get; set; }
+       /// <summary>
+       /// The application correlation identifier
+       /// </summary>
+       string CorrelationId { get; set; }
+       /// <summary>
+       /// The application correlation identifier, as an array of bytes
+       /// </summary>
+       byte[] CorrelationIdAsBytes { get; set; }
+       /// <summary>
+       /// Non-persistent (1) or persistent (2)
+       /// </summary>
+       DeliveryMode DeliveryMode { get; set; }
+       /// <summary>
+       /// Message expiration specification
+       /// </summary>
+       long Expiration { get; set; }
+       /// <summary>
+       /// The application message identifier
+       /// </summary>
+       string MessageId { get; set; }
+       /// <summary>
+       /// The message priority, 0 to 9
+       /// </summary>
+       byte Priority { get; set; }
+       /// <summary>
+       /// True if the message has been redelivered
+       /// </summary>
         bool Redelivered { get; set; }
+        /// <summary>
+        /// Exchange name of the reply-to address
+        /// </summary>
         string ReplyToExchangeName { get; set; }
+        /// <summary>
+        /// Routing key of the reply-to address
+        /// </summary>
         string ReplyToRoutingKey { get; set; }
+        /// <summary>
+        /// The message timestamp
+        /// </summary>
         long Timestamp { get; set; }
+        /// <summary>
+        /// The message type name
+        /// </summary>
         string Type { get; set; }
+        /// <summary>
+        /// Message headers
+        /// </summary>
         IHeaders Headers { get; }
-
-        // XXX: UserId?
-        // XXX: AppId?
-        // XXX: ClusterId?
-
+        /// <summary>
+        /// The creating user id
+        /// </summary>
+        string UserId { get; set; }
+        /// <summary>
+        /// The creating application id
+        /// </summary>
+        string AppId { get; set; }
+        /// <summary>
+        /// Intra-cluster routing identifier
+        /// </summary>
+        string ClusterId { get; set; }
+        
         void Acknowledge();
         void ClearBody();
     }

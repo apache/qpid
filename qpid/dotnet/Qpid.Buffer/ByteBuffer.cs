@@ -809,7 +809,7 @@ namespace Qpid.Buffer
       /// </summary>
       /// <param name="position">Position to read from</param>
       /// <returns>The value at the position</returns>
-      public char getChar(int position)
+      public char GetChar(int position)
       {
          return (char)GetUInt16(position);
       }
@@ -941,7 +941,7 @@ namespace Qpid.Buffer
       {
          if ( position + length > Limit )
          {
-            throw new BufferUnderflowException("Attempt to read " + length + " byte(s) to buffer where position is " + _position +
+            throw new BufferUnderflowException("Attempt to read " + length + " byte(s) to buffer where position is " + position +
                                                " and limit is " + Limit);
          }
       }
@@ -954,7 +954,7 @@ namespace Qpid.Buffer
          }
          if ( position + length > Limit )
          {
-            throw new BufferOverflowException("Attempt to write " + length + " byte(s) to buffer where position is " + _position +
+            throw new BufferOverflowException("Attempt to write " + length + " byte(s) to buffer where position is " + position +
                                               " and limit is " + Limit);
          }
       }
