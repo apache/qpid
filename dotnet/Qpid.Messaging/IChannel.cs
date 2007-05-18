@@ -68,14 +68,25 @@ namespace Qpid.Messaging
         /// <param name="isAutoDelete">True if the queue should be deleted when the channel closes</param>
         void DeclareQueue(string queueName, bool isDurable, bool isExclusive, bool isAutoDelete);
         /// <summary>
-        /// Deletes a queue (todo: fix)
+        /// Delete a queue with the specifies arguments
         /// </summary>
-        void DeleteQueue();
+        /// <param name="queueName">Name of the queue to delete</param>
+        /// <param name="ifUnused">If true, the queue will not deleted if it has no consumers</param>
+        /// <param name="ifEmpty">If true, the queue will not deleted if it has no messages</param>
+        /// <param name="noWait">If true, the server will not respond to the method</param>
+        void DeleteQueue(string queueName, bool ifUnused, bool ifEmpty, bool noWait);
         /// <summary>
         /// Generate a new Unique name to use for a queue
         /// </summary>
         /// <returns>A unique name to this channel</returns>
         string GenerateUniqueName();
+
+        /// <summary>
+        /// Removes all messages from a queue
+        /// </summary>
+        /// <param name="queueName">Name of the queue to delete</param>
+        /// <param name="noWait">If true, the server will not respond to the method</param>
+        void PurgeQueue(string queueName, bool noWait);
         
         /// <summary>
         /// Bind a queue to the specified exchange

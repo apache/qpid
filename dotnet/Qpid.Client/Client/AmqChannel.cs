@@ -122,7 +122,7 @@ namespace Qpid.Client
 
                     if (consumer == null)
                     {
-                        _logger.Warn("Received a message from queue " + message.DeliverBody.ConsumerTag + " without a handler - ignoring...");
+                        _logger.Warn("Received a message from queue " + message.DeliverBody.ConsumerTag + " without a f - ignoring...");
                     }
                     else
                     {
@@ -673,6 +673,30 @@ namespace Qpid.Client
             // at this point the _consumers map will be empty
         }
 
+        public void PurgeQueue(string queueName, bool noWait)
+        {
+            DoPurgeQueue(queueName, noWait);
+        }
+
+        private void DoPurgeQueue(string queueName, bool noWait)
+        {
+            try
+            {
+                _logger.DebugFormat("PurgeQueue {0}", queueName);
+
+                AMQFrame purgeQueue = QueuePurgeBody.CreateAMQFrame(_channelId, 0, queueName, noWait);
+
+                if (noWait)
+                    _connection.ProtocolWriter.Write(purgeQueue);
+                else
+                    _connection.ConvenientProtocolWriter.SyncWrite(purgeQueue, typeof(QueuePurgeOkBody));
+            }
+            catch (AMQException)
+            {
+                throw;
+            }
+        }
+
         /**
          * Replays frame on fail over.
          * 
@@ -748,9 +772,34 @@ namespace Qpid.Client
             throw new NotImplementedException(); // FIXME
         }
 
-        public void DeleteQueue()
+        public void DeleteQueue(string queueName, bool ifUnused, bool ifEmpty, bool noWait)
         {
-            throw new NotImplementedException(); // FIXME
+            DoDeleteQueue(queueName, ifUnused, ifEmpty, noWait);
+        }
+
+        private void DoDeleteQueue(string queueName, bool ifUnused, bool ifEmpty, bool noWait)
+        {
+            try
+            {
+                _logger.Debug(string.Format("DeleteQueue name={0}", queueName));
+                
+                AMQFrame queueDelete = QueueDeleteBody.CreateAMQFrame(_channelId, 0,
+                    queueName, // queueName
+                    ifUnused, // IfUnUsed
+                    ifEmpty, // IfEmpty
+                    noWait); // NoWait
+
+                _replayFrames.Add(queueDelete);
+
+                if (noWait)
+                    _connection.ProtocolWriter.Write(queueDelete);
+                else
+                    _connection.ConvenientProtocolWriter.SyncWrite(queueDelete, typeof(QueueDeleteOkBody));
+            }
+            catch (AMQException)
+            {
+                throw;
+            }
         }
 
         public MessageConsumerBuilder CreateConsumerBuilder(string queueName)
