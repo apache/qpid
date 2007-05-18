@@ -62,9 +62,11 @@ namespace Qpid.Client.Message
             return new QpidBytesMessage(deliveryTag, contentHeader, data);
         }
 
-        public override AbstractQmsMessage CreateMessage()
+        public override AbstractQmsMessage CreateMessage(string mimeType)
         {
-            return new QpidBytesMessage();
+            QpidBytesMessage msg = new QpidBytesMessage();
+            msg.ContentType = mimeType;
+            return msg;
         }
 
     }

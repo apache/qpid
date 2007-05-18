@@ -120,6 +120,9 @@ namespace Qpid.Buffer.Tests
          Assert.AreEqual(10, buffer.Limit);
          Assert.AreEqual(2, buffer.Position);
          Assert.AreEqual(8, buffer.Remaining);
+         buffer.Rewind();
+         Assert.AreEqual((byte)0x02, buffer.GetByte());
+         Assert.AreEqual((byte)0x03, buffer.GetByte());
       }
 
       [Test]
@@ -326,3 +329,4 @@ namespace Qpid.Buffer.Tests
 
    } // class SimpleByteBufferTests
 }
+

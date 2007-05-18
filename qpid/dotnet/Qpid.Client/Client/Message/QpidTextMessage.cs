@@ -28,25 +28,22 @@ namespace Qpid.Client.Message
 {
     public class QpidTextMessage : AbstractQmsMessage, ITextMessage
     {
-        private const string MIME_TYPE = "text/plain";
-
         private string _decodedValue = null;
+        private static Encoding DEFAULT_ENCODING = Encoding.UTF8;
 
         internal QpidTextMessage() : this(null, null)
         {
+           ContentEncoding = DEFAULT_ENCODING.BodyName;
         }
 
-        QpidTextMessage(ByteBuffer data, String encoding) : base(data)
+        internal QpidTextMessage(ByteBuffer data, String encoding) : base(data)
         {
-            ContentHeaderProperties.ContentType = MIME_TYPE;
-            ContentHeaderProperties.Encoding = encoding;
+            ContentEncoding = encoding;
         }
 
         internal QpidTextMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
             :base(deliveryTag, contentHeader, data)
         {
-            contentHeader.ContentType = MIME_TYPE;
-            _data = data; // FIXME: Unnecessary - done in base class ctor.
         }
 
         public override void ClearBodyImpl()
@@ -63,14 +60,6 @@ namespace Qpid.Client.Message
         {
             return Text;
         }
-
-        public override string MimeType
-        {
-            get
-            {
-                return MIME_TYPE;
-            }
-        }        
 
         public string Text
         {
@@ -100,7 +89,7 @@ namespace Qpid.Client.Message
                     }
                     else
                     {
-                        _decodedValue = Encoding.Default.GetString(bytes);
+                        _decodedValue = DEFAULT_ENCODING.GetString(bytes);
                     }
                     return _decodedValue;                    
                 }

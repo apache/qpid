@@ -35,15 +35,14 @@ namespace Qpid.Client.Tests
 
         private string _replyToExchangeName;
         private string _replyToRoutingKey;
+        const int PACK = 100;
 
         private IMessagePublisher _destinationPublisher;
+        private IMessageConsumer _consumer;
 
         private string _serviceName = "ServiceQ1";
 
         private string _selector = null;
-
-        //private EventWaitHandle _event = new ManualResetEvent(false);
-        private AutoResetEvent _event = new AutoResetEvent(false);
 
         [SetUp]
         public override void Init()
@@ -59,36 +58,38 @@ namespace Qpid.Client.Tests
             
             _channel.DeclareQueue(_serviceName, false, false, false);
 
-            IMessageConsumer consumer = _channel.CreateConsumerBuilder(_serviceName)
+            _consumer = _channel.CreateConsumerBuilder(_serviceName)
                 .WithPrefetchLow(100)
                 .WithPrefetchHigh(500)
                 .WithNoLocal(true)
                 .Create();
-            consumer.OnMessage = new MessageReceivedDelegate(OnMessage);
+            _consumer.OnMessage = new MessageReceivedDelegate(OnMessage);
+        }
+
+        public override void Shutdown()
+        {
+           _consumer.Dispose();
+           base.Shutdown();
         }
 
         private void OnConnectionException(Exception e)
         {
             _logger.Info("Connection exception occurred", e);
-            _event.Set(); // Shutdown test on error
             // XXX: Test still doesn't shutdown when broker terminates. Is there no heartbeat?
         }
 
         [Test]
-        public void TestFail()
-        {
-            Assert.Fail("Tests in this class do not run on autopilot, but hang forever, so commented out until can be fixed.");
-        }
-
-        /*[Test]
         public void Test()
         {
             _connection.Start();
             _logger.Info("Waiting...");
-            _event.WaitOne();
-        }*/
 
-        public void OnMessage(IMessage message)
+            ServiceRequestingClient client = new ServiceRequestingClient();
+            client.Init();
+            client.SendMessages();
+        }
+
+        private void OnMessage(IMessage message)
         {
 //            _logger.Info("Got message '" + message + "'");
 
@@ -109,9 +110,9 @@ namespace Qpid.Client.Tests
                 _destinationPublisher = _channel.CreatePublisherBuilder()
                     .WithExchangeName(_replyToExchangeName)
                     .WithRoutingKey(_replyToRoutingKey)
+                    .WithDeliveryMode(DeliveryMode.NonPersistent)
                     .Create();
                 _destinationPublisher.DisableMessageTimestamp = true;
-                _destinationPublisher.DeliveryMode = DeliveryMode.NonPersistent;
                 _logger.Debug("After create a producer");
             }
             catch (QpidException e)
@@ -120,7 +121,7 @@ namespace Qpid.Client.Tests
                 throw e;
             }
             _messageCount++;
-            if (_messageCount % 1000 == 0)
+            if (_messageCount % PACK == 0)
             {
                 _logger.Info("Received message total: " + _messageCount);
                 _logger.Info(string.Format("Sending response to '{0}:{1}'", 
@@ -129,25 +130,20 @@ namespace Qpid.Client.Tests
 
             try
             {
-                String payload = "This is a response: sing together: 'Mahnah mahnah...'" + tm.Text;
-                ITextMessage msg = _channel.CreateTextMessage(payload);
-                if (tm.Headers.Contains("timeSent"))
-                {
-//                    _logger.Info("timeSent property set on message");
-//                    _logger.Info("timeSent value is: " + tm.Headers["timeSent"]);
-                    msg.Headers["timeSent"] = tm.Headers["timeSent"];
-                }
-                _destinationPublisher.Send(msg);
-                if (_messageCount % 1000 == 0)
-                {
-                    _logger.Info(string.Format("Sending response to '{0}:{1}'",
-                                               _replyToExchangeName, _replyToRoutingKey));
-                }
-            }
-            catch (QpidException e)
+               String payload = "This is a response: sing together: 'Mahnah mahnah...'" + tm.Text;
+               ITextMessage msg = _channel.CreateTextMessage(payload);
+               if ( tm.Headers.Contains("timeSent") )
+               {
+                  msg.Headers["timeSent"] = tm.Headers["timeSent"];
+               }
+               _destinationPublisher.Send(msg);
+            } catch ( QpidException e )
             {
-                _logger.Error("Error sending message: " + e, e);
-                throw e;
+               _logger.Error("Error sending message: " + e, e);
+               throw e;
+            } finally
+            {
+               _destinationPublisher.Dispose();
             }
         }               
     }

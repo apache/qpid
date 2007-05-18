@@ -43,8 +43,6 @@ namespace Qpid.Client.Message
 
     public class QpidBytesMessage : AbstractQmsMessage, IBytesMessage
     {
-        private const string MIME_TYPE = "application/octet-stream";
-
         private const int DEFAULT_BUFFER_INITIAL_SIZE = 1024;
 
         public QpidBytesMessage() : this(null)
@@ -59,7 +57,6 @@ namespace Qpid.Client.Message
         QpidBytesMessage(ByteBuffer data) : base(data)
         {
             // superclass constructor has instantiated a content header at this point
-            ContentHeaderProperties.ContentType = MIME_TYPE;
             if (data == null)
             {
                 _data = ByteBuffer.Allocate(DEFAULT_BUFFER_INITIAL_SIZE);
@@ -71,7 +68,6 @@ namespace Qpid.Client.Message
             // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
             : base(messageNbr, (BasicContentHeaderProperties)contentHeader.Properties, data)
         {
-            ContentHeaderProperties.ContentType = MIME_TYPE;        
         }
 
         public override void ClearBodyImpl()
@@ -113,14 +109,6 @@ namespace Qpid.Client.Message
                 byte[] data = new byte[_data.Remaining];
                 _data.GetBytes(data);
                 return Encoding.UTF8.GetString(data);
-            }
-        }
-
-        public override string MimeType
-        {
-            get
-            {
-                return MIME_TYPE;
             }
         }
 

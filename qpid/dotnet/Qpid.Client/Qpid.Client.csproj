@@ -50,6 +50,8 @@
     <Compile Include="Client\AMQNoConsumersException.cs" />
     <Compile Include="Client\AMQNoRouteException.cs" />
     <Compile Include="Client\Configuration\AuthenticationConfigurationSectionHandler.cs" />
+    <Compile Include="Client\Handler\QueueDeleteOkMethodHandler.cs" />
+    <Compile Include="Client\Handler\QueuePurgeOkMethodHandler.cs" />
     <Compile Include="Client\SslOptions.cs" />
     <Compile Include="Client\Message\QpidHeaders.cs" />
     <Compile Include="Client\QpidConnectionInfo.cs" />
@@ -110,6 +112,7 @@
     <Compile Include="Client\Transport\IProtocolChannel.cs" />
     <Compile Include="Client\Transport\IProtocolWriter.cs" />
     <Compile Include="Client\Transport\ITransport.cs" />
+    <Compile Include="Client\Transport\ProtocolDecoderOutput.cs" />
     <Compile Include="Client\Transport\SingleProtocolEncoderOutput.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\BlockingSocketTransport.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\ByteChannel.cs" />

@@ -28,11 +28,12 @@ namespace Qpid.Client.Message
         /// <summary>
         /// Create a message
         /// </summary>
-        /// <param name="messageNbr"></param>
-        /// <param name="redelivered"></param>
-        /// <param name="contentHeader"></param>
-        /// <param name="bodies"></param>
-        /// <returns></returns>
+        /// <param name="deliverTag">Delivery Tag</param>
+        /// <param name="messageNbr">Message Sequence Number</param>
+        /// <param name="redelivered">True if this is a redelivered message</param>
+        /// <param name="contentHeader">Content headers</param>
+        /// <param name="bodies">Message bodies</param>
+        /// <returns>The new message</returns>
         /// <exception cref="QpidMessagingException">if the message cannot be created</exception>
         AbstractQmsMessage CreateMessage(long deliverTag, bool redelivered,
                                          ContentHeaderBody contentHeader,
@@ -41,9 +42,10 @@ namespace Qpid.Client.Message
         /// <summary>
         /// Creates the message.
         /// </summary>
-        /// <returns></returns>
+        /// <param name="mimeType">Mime type to associate the new message with</param>
+        /// <returns>The new message</returns>
         /// <exception cref="QpidMessagingException">if the message cannot be created</exception>
-        AbstractQmsMessage CreateMessage();
+        AbstractQmsMessage CreateMessage(string mimeType);
     }
 }
 

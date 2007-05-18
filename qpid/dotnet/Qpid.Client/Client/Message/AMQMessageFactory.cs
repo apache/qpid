@@ -27,7 +27,7 @@ namespace Qpid.Client.Message
 {
     public abstract class AbstractQmsMessageFactory : IMessageFactory
     {
-        public abstract AbstractQmsMessage CreateMessage();
+        public abstract AbstractQmsMessage CreateMessage(string mimeType);
 
         private static readonly ILog _logger = LogManager.GetLogger(typeof (AbstractQmsMessageFactory));
 
@@ -43,7 +43,7 @@ namespace Qpid.Client.Message
             if (bodies != null && bodies.Count == 1)
             {
                 _logger.Debug("Non-fragmented message body (bodySize=" + contentHeader.BodySize +")");
-                data = ByteBuffer.Wrap(((ContentBody)bodies[0]).Payload);
+                data = ((ContentBody)bodies[0]).Payload;
             }
             else
             {

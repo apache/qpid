@@ -28,16 +28,10 @@ namespace Qpid.Client.Message
          _headers.Clear();
       }
 
-      public string this[string name]
+      public object this[string name]
       {
-         get
-         {
-            return GetString(name);
-         }
-         set
-         {
-            SetString(name, value);
-         }
+         get { return GetObject(name); }
+         set { SetObject(name, value); }
       }
 
       public bool GetBoolean(string name)
@@ -165,6 +159,18 @@ namespace Qpid.Client.Message
       {
          CheckPropertyName(propertyName);
          _headers.SetString(propertyName, value);
+      }
+
+      public object GetObject(string propertyName)
+      {
+         CheckPropertyName(propertyName);
+         return _headers[propertyName];
+      }
+
+      public void SetObject(string propertyName, object value)
+      {
+         CheckPropertyName(propertyName);
+         _headers[propertyName] = value;
       }
 
       private static void CheckPropertyName(string propertyName)
