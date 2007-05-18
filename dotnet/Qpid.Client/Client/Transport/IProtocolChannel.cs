@@ -25,8 +25,8 @@ namespace Qpid.Client.Transport
 {
     public interface IProtocolChannel : IProtocolWriter
     {
-        Queue Read();
+        void Read();
         IAsyncResult BeginRead(AsyncCallback callback, object state);
-        Queue EndRead(IAsyncResult result);
+        void EndRead(IAsyncResult result);
     }
 }

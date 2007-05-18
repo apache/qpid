@@ -33,35 +33,39 @@ namespace Qpid.Client.Transport
         // Warning: don't use this log for regular logging.
         static readonly ILog _protocolTraceLog = LogManager.GetLogger("Qpid.Client.ProtocolChannel.Tracing");
         
-        IByteChannel byteChannel;
-        IProtocolEncoder encoder;
-        IProtocolDecoder decoder;
+        IByteChannel _byteChannel;
+        IProtocolEncoder _encoder;
+        IProtocolDecoder _decoder;
+        IProtocolDecoderOutput _decoderOutput;
+        private object _syncLock;
 
-        public AmqpChannel(IByteChannel byteChannel)
+        public AmqpChannel(IByteChannel byteChannel, IProtocolDecoderOutput decoderOutput)
         {
-            this.byteChannel = byteChannel;    
+            _byteChannel = byteChannel;
+            _decoderOutput = decoderOutput;
+            _syncLock = new object();
             
             AMQProtocolProvider protocolProvider = new AMQProtocolProvider();
             IProtocolCodecFactory factory = protocolProvider.CodecFactory;
-            encoder = factory.Encoder;
-            decoder = factory.Decoder;
+            _encoder = factory.Encoder;
+            _decoder = factory.Decoder;
         }
 
-        public Queue Read()
+        public void Read()
         {
-            ByteBuffer buffer = byteChannel.Read();
-            return DecodeAndTrace(buffer);
+            ByteBuffer buffer = _byteChannel.Read();
+            Decode(buffer);
         }
         
         public IAsyncResult BeginRead(AsyncCallback callback, object state)
         {
-           return byteChannel.BeginRead(callback, state);
+           return _byteChannel.BeginRead(callback, state);
         }
 
-        public Queue EndRead(IAsyncResult result)
+        public void EndRead(IAsyncResult result)
         {
-           ByteBuffer buffer = byteChannel.EndRead(result);
-           return DecodeAndTrace(buffer);
+           ByteBuffer buffer = _byteChannel.EndRead(result);
+           Decode(buffer);
         }
 
         public void Write(IDataBlock o)
@@ -74,43 +78,32 @@ namespace Qpid.Client.Transport
             // we should be doing an async write, but apparently
             // the mentalis library doesn't queue async read/writes
             // correctly and throws random IOException's. Stay sync for a while
-            //byteChannel.BeginWrite(Encode(o), OnAsyncWriteDone, null);
-            byteChannel.Write(Encode(o));
+            //_byteChannel.BeginWrite(Encode(o), OnAsyncWriteDone, null);
+            _byteChannel.Write(Encode(o));
         }
 
         private void OnAsyncWriteDone(IAsyncResult result)
         {
-           byteChannel.EndWrite(result);
+           _byteChannel.EndWrite(result);
         }
 
-        private Queue DecodeAndTrace(ByteBuffer buffer)
+        private void Decode(ByteBuffer buffer)
         {
-           Queue frames = Decode(buffer);
-
-           // TODO: Refactor to decorator.
-           if ( _protocolTraceLog.IsDebugEnabled )
+           // make sure we don't try to decode more than
+           // one buffer at the same time
+           lock ( _syncLock )
            {
-              foreach ( object o in frames )
-              {
-                 _protocolTraceLog.Debug(String.Format("READ {0}", o));
-              }
+              _decoder.Decode(buffer, _decoderOutput);
            }
-           return frames;
         }
 
         private ByteBuffer Encode(object o)
         {
             SingleProtocolEncoderOutput output = new SingleProtocolEncoderOutput();
-            encoder.Encode(o, output);
+            _encoder.Encode(o, output);
             return output.buffer;
         }
 
-        private Queue Decode(ByteBuffer byteBuffer)
-        {
-            SimpleProtocolDecoderOutput outx = new SimpleProtocolDecoderOutput();
-            decoder.Decode(byteBuffer, outx);
-            return outx.MessageQueue;
-        }
     }
 }
 

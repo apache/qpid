@@ -72,24 +72,29 @@ namespace Qpid.Client.Message
 
 #endregion
 
+        #region Properties
+        //
+        // Properties
+        //
+
+        /// <summary>
+        /// The application message identifier
+        /// </summary>
         public string MessageId
         {
-            get
-            {
+            get {
                 if (ContentHeaderProperties.MessageId == null)
                 {
                     ContentHeaderProperties.MessageId = "ID:" + DeliveryTag;
                 }
                 return ContentHeaderProperties.MessageId;
             }
-            set
-            {
-                ContentHeaderProperties.MessageId = value;
-            }
+            set { ContentHeaderProperties.MessageId = value; }
+        }
 
-
-        }        
-
+        /// <summary>
+        /// The message timestamp
+        /// </summary>
         public long Timestamp
         {
             get
@@ -103,36 +108,22 @@ namespace Qpid.Client.Message
             }
         }        
 
-        protected void CheckReadable()
-        {
-            if (!_readableMessage)
-            {
-                throw new MessageNotReadableException("You need to call reset() to make the message readable");
-            }
-        }
-
+        /// <summary>
+        /// The <see cref="CorrelationId"/> as a byte array.
+        /// </summary>
         public byte[] CorrelationIdAsBytes
         {
-            get
-            {            
-                return Encoding.Default.GetBytes(ContentHeaderProperties.CorrelationId);
-            }
-            set
-            {
-                ContentHeaderProperties.CorrelationId = Encoding.Default.GetString(value);
-            }
+            get { return Encoding.Default.GetBytes(ContentHeaderProperties.CorrelationId); }
+            set { ContentHeaderProperties.CorrelationId = Encoding.Default.GetString(value); }
         }
 
+        /// <summary>
+        /// The application correlation identifier
+        /// </summary>
         public string CorrelationId
         {
-            get
-            {
-                return ContentHeaderProperties.CorrelationId;
-            }
-            set
-            {
-                ContentHeaderProperties.ContentType = value;
-            }
+            get { return ContentHeaderProperties.CorrelationId; }
+            set { ContentHeaderProperties.CorrelationId = value; }
         }
         
         struct Dest
@@ -147,6 +138,9 @@ namespace Qpid.Client.Message
             }
         }
 
+        /// <summary>
+        /// Exchange name of the reply-to address
+        /// </summary>
         public string ReplyToExchangeName
         {
             get
@@ -162,6 +156,9 @@ namespace Qpid.Client.Message
             }
         }
 
+        /// <summary>
+        /// Routing key of the reply-to address
+        /// </summary>
         public string ReplyToRoutingKey
         {
             get
@@ -177,50 +174,11 @@ namespace Qpid.Client.Message
             }
         }
 
+
+
         /// <summary>
-        /// Decodes the replyto field if one is set.
-        /// 
-        /// Splits a replyto field containing an exchange name followed by a ':', followed by a routing key into the exchange name and
-        /// routing key seperately. The exchange name may be empty in which case the empty string is returned. If the exchange name is
-        /// empty the replyto field is expected to being with ':'.
-        /// 
-        /// Anyhting other than a two part replyto field sperated with a ':' will result in an exception.
+        /// Non-persistent (1) or persistent (2)
         /// </summary>
-        /// 
-        /// <returns>A destination initialized to the replyto location if a replyto field was set, or an empty destination otherwise.</returns>
-        private Dest ReadReplyToHeader()
-        {
-            string replyToEncoding = ContentHeaderProperties.ReplyTo;
-
-            if (replyToEncoding == null)
-            {
-                return new Dest();
-            }
-            else
-            {
-                // Split the replyto field on a ':'
-                string[] split = replyToEncoding.Split(':');
-
-                // Ensure that the replyto field argument only consisted of two parts.
-                if (split.Length != 2)
-                {
-                    throw new QpidException("Illegal value in ReplyTo property: " + replyToEncoding);
-                }
-
-                // Extract the exchange name and routing key from the split replyto field.
-                string exchangeName = split[0];
-                string routingKey = split[1];
-
-                return new Dest(exchangeName, routingKey);                
-            }            
-        }
-        
-        private void WriteReplyToHeader(Dest dest)
-        {
-            string encodedDestination = string.Format("{0}:{1}", dest.ExchangeName, dest.RoutingKey);
-            ContentHeaderProperties.ReplyTo = encodedDestination;            
-        }
-
         public DeliveryMode DeliveryMode
         {
             get
@@ -242,100 +200,94 @@ namespace Qpid.Client.Message
             }
         }        
 
+       /// <summary>
+       /// True, if this is a redelivered message
+       /// </summary>
         public bool Redelivered
         {
-            get
-            {
-                return _redelivered;
-            }
-            set
-            {
-                _redelivered = value;
-            }
-        }        
+            get { return _redelivered; }
+            set { _redelivered = value; }
+        }
 
+        /// <summary>
+        /// The message type name
+        /// </summary>
         public string Type
         {
-            get
-            {
-                return MimeType;
-            }            
-            set
-            {
-                //MimeType = value;
-            }
+            get { return ContentHeaderProperties.Type; }
+            set { ContentHeaderProperties.Type = value; }
         }
-        
+
+        /// <summary>
+        /// Message expiration specification
+        /// </summary>
         public long Expiration
         {
-            get
-            {
-                return ContentHeaderProperties.Expiration;
-            }
-            set
-            {
-                ContentHeaderProperties.Expiration = value;
-            }
+            get { return ContentHeaderProperties.Expiration; }
+            set { ContentHeaderProperties.Expiration = value; }
         }
 
-        public int Priority
+        /// <summary>
+        /// The message priority, 0 to 9
+        /// </summary>
+        public byte Priority
         {
-            get
-            {
-                return ContentHeaderProperties.Priority;
-            }
-            set
-            {
-                ContentHeaderProperties.Priority = (byte) value;
-            }
+            get { return ContentHeaderProperties.Priority; }
+            set { ContentHeaderProperties.Priority = (byte) value; }
         }
 
-        // FIXME: implement
+        /// <summary>
+        /// The MIME Content Type
+        /// </summary>
         public string ContentType
         {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
+            get { return ContentHeaderProperties.ContentType; }
+            set { ContentHeaderProperties.ContentType = value; }
         }
 
-        // FIXME: implement
+        /// <summary>
+        /// The MIME Content Encoding
+        /// </summary>
         public string ContentEncoding
         {
-            get { throw new NotImplementedException(); }
-            set { throw new NotImplementedException(); }
+            get { return ContentHeaderProperties.Encoding; }
+            set { ContentHeaderProperties.Encoding = value; }
         }
 
-        public void Acknowledge()
-        {
-            // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
-            // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
-            if (_channel != null)
-            {
-                // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
-                // received on the session
-                _channel.AcknowledgeMessage((ulong)DeliveryTag, true);
-            }
-
-        }
-
+        /// <summary>
+        /// Headers of this message
+        /// </summary>
         public IHeaders Headers
         {
             get { return _headers; }
         }
 
-        public abstract void ClearBodyImpl();
-
-        public void ClearBody()
+        /// <summary>
+        /// The creating user id
+        /// </summary>
+        public string UserId
         {
-            ClearBodyImpl();
-            _readableMessage = false;
+            get { return ContentHeaderProperties.UserId; }
+            set { ContentHeaderProperties.UserId = value; }
         }
 
         /// <summary>
-        /// Get a String representation of the body of the message. Used in the
-        /// toString() method which outputs this before message properties.
+        /// The creating application id
         /// </summary>
-        /// <exception cref="QpidException"></exception>
-        public abstract string ToBodyString();
+        public string AppId
+        {
+            get { return ContentHeaderProperties.AppId; }
+            set { ContentHeaderProperties.AppId = value; }
+        }
+
+        /// <summary>
+        /// Intra-cluster routing identifier
+        /// </summary>
+        public string ClusterId
+        {
+            get { return ContentHeaderProperties.ClusterId; }
+            set { ContentHeaderProperties.ClusterId = value; }
+        }
 
         /// <summary>
         /// Return the raw byte array that is used to populate the frame when sending
@@ -367,11 +319,36 @@ namespace Qpid.Client.Message
                 _data = value;
             }
         }
+        #endregion // Properties
 
-        public abstract string MimeType
+
+        public void Acknowledge()
         {
-            get;           
+            // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
+            // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
+            if (_channel != null)
+            {
+                // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
+                // received on the session
+                _channel.AcknowledgeMessage((ulong)DeliveryTag, true);
+            }
+
         }
+
+        public abstract void ClearBodyImpl();
+
+        public void ClearBody()
+        {
+            ClearBodyImpl();
+            _readableMessage = false;
+        }
+
+        /// <summary>
+        /// Get a String representation of the body of the message. Used in the
+        /// toString() method which outputs this before message properties.
+        /// </summary>
+        /// <exception cref="QpidException"></exception>
+        public abstract string ToBodyString();
 
         public override string ToString()
         {
@@ -403,18 +380,6 @@ namespace Qpid.Client.Message
             }
         }
 
-        public IFieldTable UnderlyingMessagePropertiesMap
-        {
-            get
-            {
-                return ContentHeaderProperties.Headers;
-            }
-            set
-            {
-                ContentHeaderProperties.Headers = (FieldTable)value;
-            }
-        }
-        
         public FieldTable PopulateHeadersFromMessageProperties()
         {
             if (ContentHeaderProperties.Headers == null)
@@ -465,6 +430,57 @@ namespace Qpid.Client.Message
         public bool isWritable
         {
             get { return !_readableMessage; }
+        }
+
+        protected void CheckReadable()
+        {
+           if ( !_readableMessage )
+           {
+              throw new MessageNotReadableException("You need to call reset() to make the message readable");
+           }
+        }
+
+        /// <summary>
+        /// Decodes the replyto field if one is set.
+        /// 
+        /// Splits a replyto field containing an exchange name followed by a ':', followed by a routing key into the exchange name and
+        /// routing key seperately. The exchange name may be empty in which case the empty string is returned. If the exchange name is
+        /// empty the replyto field is expected to being with ':'.
+        /// 
+        /// Anyhting other than a two part replyto field sperated with a ':' will result in an exception.
+        /// </summary>
+        /// 
+        /// <returns>A destination initialized to the replyto location if a replyto field was set, or an empty destination otherwise.</returns>
+        private Dest ReadReplyToHeader()
+        {
+           string replyToEncoding = ContentHeaderProperties.ReplyTo;
+
+           if ( replyToEncoding == null )
+           {
+              return new Dest();
+           } else
+           {
+              // Split the replyto field on a ':'
+              string[] split = replyToEncoding.Split(':');
+
+              // Ensure that the replyto field argument only consisted of two parts.
+              if ( split.Length != 2 )
+              {
+                 throw new QpidException("Illegal value in ReplyTo property: " + replyToEncoding);
+              }
+
+              // Extract the exchange name and routing key from the split replyto field.
+              string exchangeName = split[0];
+              string routingKey = split[1];
+
+              return new Dest(exchangeName, routingKey);
+           }
+        }
+
+        private void WriteReplyToHeader(Dest dest)
+        {
+           string encodedDestination = string.Format("{0}:{1}", dest.ExchangeName, dest.RoutingKey);
+           ContentHeaderProperties.ReplyTo = encodedDestination;
         }
     }
 }

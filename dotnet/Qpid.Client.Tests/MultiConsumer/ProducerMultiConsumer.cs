@@ -38,7 +38,7 @@ namespace Qpid.Client.Tests
 
         private const int MESSAGE_COUNT = 1000;
 
-        private const string MESSAGE_DATA_BYTES = "jfd ghljgl hjvhlj cvhvjf ldhfsj lhfdsjf hldsjfk hdslkfj hsdflk  ";
+        private const string MESSAGE_DATA_BYTES = "****jfd ghljgl hjvhlj cvhvjf ldhfsj lhfdsjf hldsjfk hdslkfj hsdflk  ";
 
         AutoResetEvent _finishedEvent = new AutoResetEvent(false);
 
@@ -100,7 +100,9 @@ namespace Qpid.Client.Tests
                 _logger.Info("All messages received");
                 _finishedEvent.Set();
             }
-        }
+            if ( newCount % 100 == 0 ) 
+               System.Diagnostics.Debug.WriteLine(((ITextMessage)m).Text);
+         }
         
         [Test]
         public void RunTest()
@@ -110,7 +112,7 @@ namespace Qpid.Client.Tests
                 ITextMessage msg;
                 try
                 {
-                    msg = _channel.CreateTextMessage(GetData(512 + 8*i));
+                   msg = _channel.CreateTextMessage(GetData(512 + 8*i));
                 }
                 catch (Exception e)
                 {

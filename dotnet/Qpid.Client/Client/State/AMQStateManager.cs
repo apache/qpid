@@ -65,6 +65,8 @@ namespace Qpid.Client.State
             IStateAwareMethodListener channelClose = new ChannelCloseMethodHandler();
             IStateAwareMethodListener basicDeliver = new BasicDeliverMethodHandler();
             IStateAwareMethodListener basicReturn = new BasicReturnMethodHandler();
+            IStateAwareMethodListener queueDeleteOk = new QueueDeleteOkMethodHandler();
+            IStateAwareMethodListener queuePurgeOk = new QueuePurgeOkMethodHandler();
             
             // We need to register a map for the null (i.e. all state) handlers otherwise you get
             // a stack overflow in the handler searching code when you present it with a frame for which
@@ -96,6 +98,8 @@ namespace Qpid.Client.State
                 open[typeof(ConnectionCloseBody)] = connectionClose;
                 open[typeof(BasicDeliverBody)] = basicDeliver;
                 open[typeof(BasicReturnBody)] = basicReturn;
+                open[typeof(QueueDeleteOkBody)] = queueDeleteOk;
+                open[typeof(QueuePurgeOkBody)] = queuePurgeOk;
                 _state2HandlersMap[AMQState.CONNECTION_OPEN] = open;
             }
             {
