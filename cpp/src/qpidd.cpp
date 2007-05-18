@@ -71,7 +71,7 @@ struct QpiddOptions : public Broker::Options
         po::options_description brokerOpts;
         Broker::Options::addTo(desc);
         desc.add_options()
-            ("config", optValue(config, "FILE"), "Configuation file")
+            ("config", optValue(config, "FILE"), "Configuration file")
             ("help,h", optValue(help), "Print help message")
             ("version,v", optValue(version), "Print version information");
     }
