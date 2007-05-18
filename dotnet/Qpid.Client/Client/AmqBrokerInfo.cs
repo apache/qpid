@@ -260,7 +260,7 @@ namespace Qpid.Client
             sb.Append(_transport);
             sb.Append("://");
 
-            if (!(_transport.ToLower().Equals("vm")))
+            if (!(StringEqualsIgnoreCase(_transport, "vm")))
             {
                 sb.Append(_host);
             }
@@ -268,8 +268,7 @@ namespace Qpid.Client
             sb.Append(':');
             sb.Append(_port);
 
-            // XXX
-//            sb.Append(printOptionsURL());
+            sb.Append(URLHelper.printOptions(_options));
 
             return sb.ToString();
         }
@@ -284,7 +283,8 @@ namespace Qpid.Client
 	        IBrokerInfo bd = (IBrokerInfo) obj;
 	        return StringEqualsIgnoreCase(_host, bd.Host) &&
 	        	_port == bd.Port &&
-                _transport == bd.Transport;
+                StringEqualsIgnoreCase(_transport, bd.Transport) &&
+                UseSSL == bd.UseSSL;
         }
     	
 		public override int GetHashCode()
@@ -297,35 +297,6 @@ namespace Qpid.Client
         {
             return one.ToLower().Equals(two.ToLower());
         }
-
-//        private string printOptionsURL()
-//        {
-//            stringBuffer optionsURL = new stringBuffer();
-//
-//            optionsURL.Append('?');
-//
-//            if (!(_options.isEmpty()))
-//            {
-//
-//                for (string key : _options.keySet())
-//                {
-//                    optionsURL.Append(key);
-//
-//                    optionsURL.Append("='");
-//
-//                    optionsURL.Append(_options.get(key));
-//
-//                    optionsURL.Append("'");
-//
-//                    optionsURL.Append(URLHelper.DEFAULT_OPTION_SEPERATOR);
-//                }
-//            }
-//
-//            //remove the extra DEFAULT_OPTION_SEPERATOR or the '?' if there are no options
-//            optionsURL.deleteCharAt(optionsURL.length() - 1);
-//
-//            return optionsURL.tostring();
-//        }
 
         public bool UseSSL
         {

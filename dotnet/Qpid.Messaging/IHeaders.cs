@@ -35,7 +35,7 @@ namespace Qpid.Messaging
     {
         bool Contains(string name);
 
-        string this[string name] { get; set; }
+        object this[string name] { get; set; }
         
         bool GetBoolean(string name);
         void SetBoolean(string name, bool value);
