@@ -21,6 +21,7 @@ qpidc.spec: %: %.in
 	mv $@-tmp $@
 MAINTAINERCLEANFILES = $(PACKAGE).spec
 
-.PHONY: rpm srpm
+.PHONY: rpm srpm rpmbuild
 rpm srpm:
 	cd rpm && $(MAKE) $(MAKEFLAGS_AM) $@
+rpmbuild: rpm
