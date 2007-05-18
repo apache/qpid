@@ -12,7 +12,7 @@
 
   <property name="pythondir" value="../../python"/>
 
-  <target name="run-tests" >
+  <target name="run-tests" unless="skip-python-tests">
 
 	<echo message="Starting Broker with command"/>
 
