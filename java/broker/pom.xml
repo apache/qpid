@@ -173,6 +173,7 @@
                                         <contains string="${user.dir}" substring="broker" />
                                     </condition>
 
+
                                     <property name="command" 
                                               value="python run-tests -v -I java_failing.txt"/>
                                               <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
