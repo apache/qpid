@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ====================================================================== -->
+<!-- Ant build file (http://ant.apache.org/) for Ant 1.6.2 or above.        -->
+<!-- ====================================================================== -->
+
+<project basedir="." default="default">
+
+  <target name="default" >
+      <echo message="Used via maven to run python tests."/>
+  </target>
+
+  <property name="pythondir" value="../../python"/>
+
+  <target name="run-tests" >
+
+	<echo message="Starting Broker with command"/>
+
+	<java classname="org.apache.qpid.server.RunBrokerWithCommand"
+			fork="true"
+			dir="${pythondir}"
+			failonerror="true"
+			>
+		<arg value="${command}"/>
+		
+		<classpath refid="maven.test.classpath"/>
+		<sysproperty key="QPID_HOME" value="${broker.dir}"/>
+		<sysproperty key="QPID_WORK" value="${broker.dir}${file.separator}target"/>
+	</java>
+
+	</target>
+</project>
