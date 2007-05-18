@@ -21,7 +21,7 @@ EXTRA_DIST=generate.sh $(generated_cpp) $(generated_h) $(platform_dist)
 
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
-INCLUDES = -Igen
+INCLUDES = -I$(builddir)/gen -I$(srcdir)/gen
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
