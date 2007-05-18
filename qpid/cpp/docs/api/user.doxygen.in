@@ -467,7 +467,7 @@ WARN_LOGFILE           = doxygen.log
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT      		= @abs_top_srcdir@/src @abs_top_builddir@/gen
+INPUT      		= @abs_top_srcdir@/src @abs_top_builddir@/src/gen
 
 # If the value of the INPUT tag contains directories, you can use the 
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp 
