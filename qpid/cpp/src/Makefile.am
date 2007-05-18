@@ -201,6 +201,7 @@ nobase_include_HEADERS = \
   qpid/broker/Persistable.h \
   qpid/broker/Prefetch.h \
   qpid/broker/QueueRegistry.h \
+  qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \
   qpid/broker/RecoverableQueue.h \
   qpid/broker/RecoveryManager.h \
