@@ -62,7 +62,7 @@ namespace Qpid.Client.Tests.Connection
 
         [Test]
         [ExpectedException(typeof(AMQConnectionException))]
-        public void connectionFailure()
+        public void ConnectionFailure()
         {
             string url = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5673?retries='0''";
             new AMQConnection(QpidConnectionInfo.FromUrl(url));

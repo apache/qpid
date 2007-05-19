@@ -18,9 +18,6 @@
                <include name="${build.dir}/Qpid.Messaging.dll" />
                <include name="${build.dir}/Qpid.Sasl.dll" />
             </references>
-            <resources dynamicprefix="true" prefix="${project::get-name()}.Tests">
-               <include name="connection/QpidTestCert.pfx"/>
-            </resources>
         </csc>
          <copy 
             tofile="${build.dir}/${project::get-name()}.Tests.dll.config" 

@@ -30,8 +30,6 @@ namespace Qpid.Client.Message
 {
     public abstract class AbstractQmsMessage : AMQMessage, IMessage
     {
-        private static readonly ILog _log = LogManager.GetLogger(typeof(AbstractQmsMessage));
-
         protected bool _redelivered;
 
         protected ByteBuffer _data;
