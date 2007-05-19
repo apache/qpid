@@ -37,7 +37,8 @@ namespace Qpid.Messaging
    /// You can attach a delegate to the <see cref="OnMessage"/>
    /// event and be notified when a message arrives, or you can
    /// use the <see cref="Receive"/> and <see cref="ReceiveNoWait"/>
-   /// methods to control when you receive messages.
+   /// methods to control when you receive messages. Be aware that you can use 
+   /// one or the other, but not both at the same time.
    /// </para>
    /// <para>
    /// Regardless of which method you choose, the prefetch settings

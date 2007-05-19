@@ -31,7 +31,7 @@ namespace Qpid.Client.Tests.Connection
    /// <summary>
    /// Test SSL/TLS connections to the broker
    /// </summary>
-   [TestFixture]
+   [TestFixture, Category("SSL")]
    public class SslConnectionTest
    {
       /// <summary>
