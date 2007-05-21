@@ -61,7 +61,7 @@ void Broker::Options::addTo(po::options_description& desc)
          "Connection backlog limit for server socket.")
         ("staging-threshold", optValue(stagingThreshold, "N"),
          "Messages over N bytes are staged to disk.")
-        ("store", optValue(store,"LIBNAME"),
+        ("store,s", optValue(store,"LIBNAME"),
          "Name of message store shared library.");
 }
 
