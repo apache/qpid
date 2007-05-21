@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,14 +17,14 @@
  */
 package org.apache.qpid.server.txn;
 
-import org.apache.qpid.server.messageStore.MessageStore;
+import javax.transaction.xa.Xid;
+
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.exception.*;
-import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.AMQException;
-
-import javax.transaction.xa.Xid;
+import org.apache.qpid.server.store.StoreContext;
 
 /**
  * Created by Arnaud Simon
@@ -47,33 +47,26 @@ public class EnqueueRecord implements TransactionRecord
     }
 
     public void commit(MessageStore store, Xid xid)
-            throws
-            InternalErrorException,
-            QueueDoesntExistException,
-            InvalidXidException,
-            UnknownXidException,
+        throws InternalErrorException, QueueDoesntExistException, InvalidXidException, UnknownXidException,
             MessageDoesntExistException
     {
         try
         {
             _queue.process(_storeContext, _msg, _first);
-        } catch (AMQException e)
+        }
+        catch (AMQException e)
         {
-            throw new InternalErrorException(e);
+            throw new InternalErrorException(e.getMessage(), e);
         }
     }
 
-    public void rollback(MessageStore store)
-            throws
-            InternalErrorException
+    public void rollback(MessageStore store) throws InternalErrorException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void prepare(MessageStore store)
-            throws
-            InternalErrorException
+    public void prepare(MessageStore store) throws InternalErrorException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // To change body of implemented methods use File | Settings | File Templates.
     }
 }

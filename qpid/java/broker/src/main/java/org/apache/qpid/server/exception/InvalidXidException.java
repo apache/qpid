@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,9 +20,13 @@ package org.apache.qpid.server.exception;
 import javax.transaction.xa.Xid;
 
 /**
- * Created by Arnaud Simon
- * Date: 29-Mar-2007
- * Time: 14:12:27
+ * InvalidXidException indicates that an Xid under which to conduct a transaction is invalid. This may be because it
+ * has an incorrect format, is null, or a transcaction with the same Xid is already running.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents an invalid Xid for a transaction.
+ * <tr><td>
  */
 public class InvalidXidException extends Exception
 {
@@ -30,6 +34,8 @@ public class InvalidXidException extends Exception
      * Constructs a newr InvalidXidException with a standard message
      *
      * @param xid The invalid xid.
+     *
+     * @deprected
      */
     public InvalidXidException(Xid xid)
     {
@@ -41,6 +47,8 @@ public class InvalidXidException extends Exception
      *
      * @param xid   The invalid xid.
      * @param cause The casue for the xid to be invalid
+     *
+     * @deprected
      */
     public InvalidXidException(Xid xid, Throwable cause)
     {
@@ -64,6 +72,8 @@ public class InvalidXidException extends Exception
      * @param reason The reason why the xid is invalid
      * @param xid    The invalid xid.
      * @param cause  The casue for the xid to be invalid
+     *
+     * @deprected
      */
     public InvalidXidException(Xid xid, String reason, Throwable cause)
     {
