@@ -180,44 +180,8 @@
                         <Ping-Failover-After-Commit>-n Ping-Failover-After-Commit -s [100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf commitBatchSize=10 failAfterCommit=true</Ping-Failover-After-Commit>
                         
                         <!-- 
-                             Move this commentary to the wiki instead.
-                             -
                              Qpid Performance Tests. If editing, please use a non line wrapping mode and keep in columns, makes it easier to check
                              for consistent parameter setting accross all of the tests.
-                             -
-                             Using PingAsyncTestPerf for simultanes send and receive, sampling results on batches of received messages.
-                             -
-                             Tests are broken down into four main categories by selecting from transient/persistent and pubsub/p2p. One of
-                             these categories is persistent pubsub messaging which is not a common usage model. It is included for completeness.
-                             -
-                             Each category is broken down into three main areas, reliability/burn in testing, client scaling and message size scaling.
-                             -
-                             The reliability/burn in tests, test the broker running at slightly below its maximum throughput for a period of 24 hours.
-                             Their purpose is to check that the broker remains stable under load for a reasonable duration, in order to provide
-                             some confidence in the long-term stability of its process.
-                             These tests are intended to be run as a two step process. The first two tests run for 10 minutes and are used to asses
-                             the broker throughput for the test. The output from these tests are to be fed into the rate limiter for the second set
-                             of tests, so that the broker may be set up to run at slightly below its maximum throughput for the 24 hour duration.
-                             It is suggested that 90% of the rate achieved by the first two tests should be used for this.
-                             -
-                             The client scaling tests are split into two sub-sections. The first section tests the performance of increasing numbers
-                             of client connections, each sending at a fixed rate. The purpose of this is to determine the brokers saturation load,
-                             and to evaluate how its performance degrades uder higher loads. The second section varies the fan-out or fan-in ratio
-                             of the number of sending clients to receving clients. This is primarily intended to test the pubsub messaging model,
-                             but the tests are also run in p2p mode (with each message being received by one consumer), for completeness and to
-                             provide a comparison with the pubsub performance.
-                             -
-                             The message size scaling tests, examine the brokers performance with different message payload sizes. The purpose of
-                             these tests is to evaluate where the broker process switches from being an io-bound to a cpu-bound process (if at all).
-                             The expected model is that the amount of CPU processing the broker has to carry out depends largely on the number of
-                             messages, and not on their size, because it carries out de-framing and routing for each message header but just
-                             copies payloads in-place or in a tight instruction loop. Therefore large message should be io-bound and a constant
-                             data rate through the broker should be seen for messages larger than the io/cpu threshold. Small messages require
-                             more processing so a constant message rate should be seen for message smaller than the io/cpu threshold. If the broker
-                             implementation is extremely efficient the threshold may dissapear altogether and the broker will be purely io-bound.
-                             -
-                             The final variation, which is applied to all tests, is to run a transactional and non-transactional version of each.
-                             Messages are always batched into transactions of 100 messages each.
                         -->
 
                         <!-- Transient, P2P Tests -->
