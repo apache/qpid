@@ -33,8 +33,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQNoRouteException extends AMQUndeliveredException
 {
-    public AMQNoRouteException(String msg, Object bounced)
+    public AMQNoRouteException(String msg, Object bounced, Throwable cause)
     {
-        super(AMQConstant.NO_ROUTE, msg, bounced);
+        super(AMQConstant.NO_ROUTE, msg, bounced, cause);
     }
 }

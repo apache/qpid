@@ -32,8 +32,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQInvalidArgumentException extends AMQException
 {
-    public AMQInvalidArgumentException(String message)
+    public AMQInvalidArgumentException(String message, Throwable cause)
     {
-        super(AMQConstant.INVALID_ARGUMENT, message);
+        super(AMQConstant.INVALID_ARGUMENT, message, cause);
     }
 }

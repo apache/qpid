@@ -32,8 +32,8 @@ package org.apache.qpid;
  */
 public class AMQDisconnectedException extends AMQException
 {
-    public AMQDisconnectedException(String msg)
+    public AMQDisconnectedException(String msg, Throwable cause)
     {
-        super(msg);
+        super(null, msg, cause);
     }
 }

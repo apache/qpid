@@ -44,48 +44,11 @@ public class AMQException extends Exception
      *
      * @param errorCode The error code. May be null if not to be set.
      * @param msg       The exception message. May be null if not to be set.
-     * @param t         The underlying cause of the exception. May be null if not to be set.
+     * @param cause         The underlying cause of the exception. May be null if not to be set.
      */
-    public AMQException(AMQConstant errorCode, String msg, Throwable t)
+    public AMQException(AMQConstant errorCode, String msg, Throwable cause)
     {
-        super(((msg == null) ? "" : msg) + ((errorCode == null) ? "" : (" [error code " + errorCode + "]")), t);
-        _errorCode = errorCode;
-    }
-
-    /**
-     * @param message
-     *
-     * @deprecated Use {@link #AMQException(org.apache.qpid.protocol.AMQConstant, String, Throwable)} instead.
-     */
-    public AMQException(String message)
-    {
-        super(message);
-        // fixme This method needs removed and all AMQExceptions need a valid error code
-        _errorCode = AMQConstant.getConstant(-1);
-    }
-
-    /**
-     * @param msg
-     * @param t
-     *
-     * @deprecated Use {@link #AMQException(org.apache.qpid.protocol.AMQConstant, String, Throwable)} instead.
-     */
-    public AMQException(String msg, Throwable t)
-    {
-        super(msg, t);
-        // fixme This method needs removed and all AMQExceptions need a valid error code
-        _errorCode = AMQConstant.getConstant(-1);
-    }
-
-    /**
-     * @param errorCode
-     * @param msg
-     *
-     * @deprecated Use {@link #AMQException(org.apache.qpid.protocol.AMQConstant, String, Throwable)} instead.
-     */
-    public AMQException(AMQConstant errorCode, String msg)
-    {
-        super(msg + " [error code " + errorCode + ']');
+        super(((msg == null) ? "" : msg) + ((errorCode == null) ? "" : (" [error code " + errorCode + "]")), cause);
         _errorCode = errorCode;
     }
 

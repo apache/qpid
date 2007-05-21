@@ -36,9 +36,9 @@ import org.apache.qpid.server.queue.AMQMessage;
  */
 public class NoRouteException extends RequiredDeliveryException
 {
-    public NoRouteException(String msg, AMQMessage message)
+    public NoRouteException(String msg, AMQMessage message, Throwable cause)
     {
-        super(msg, message);
+        super(msg, message, cause);
     }
 
     public AMQConstant getReplyCode()

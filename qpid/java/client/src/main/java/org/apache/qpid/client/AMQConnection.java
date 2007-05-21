@@ -65,6 +65,7 @@ import org.apache.qpid.jms.Connection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
@@ -96,8 +97,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private AMQProtocolHandler _protocolHandler;
 
     /** Maps from session id (Integer) to AMQSession instance */
-    private final Map<Integer,AMQSession> _sessions = new LinkedHashMap<Integer,AMQSession>();
-
+    private final Map<Integer, AMQSession> _sessions = new LinkedHashMap<Integer, AMQSession>();
 
     private String _clientName;
 
@@ -225,6 +225,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(connection), sslConfig);
     }
 
+    /**
+     * @todo Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception
+     *       was thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
+     */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
         if (_logger.isInfoEnabled())
@@ -321,16 +325,20 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 message = "Unable to Connect";
             }
 
-            AMQException e = new AMQConnectionFailureException(message);
+            AMQException e = new AMQConnectionFailureException(message, null);
 
             if (lastException != null)
             {
                 if (lastException instanceof UnresolvedAddressException)
                 {
-                    e = new AMQUnresolvedAddressException(message, _failoverPolicy.getCurrentBrokerDetails().toString());
+                    e = new AMQUnresolvedAddressException(message, _failoverPolicy.getCurrentBrokerDetails().toString(),
+                            null);
                 }
 
-                e.initCause(lastException);
+                if (e.getCause() != null)
+                {
+                    e.initCause(lastException);
+                }
             }
 
             throw e;
@@ -509,7 +517,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                             AMQSession session =
                                 new AMQSession(AMQConnection.this, channelId, transacted, acknowledgeMode, prefetchHigh,
                                     prefetchLow);
-                            //_protocolHandler.addSessionByChannel(channelId, session);
+                            // _protocolHandler.addSessionByChannel(channelId, session);
                             registerSession(channelId, session);
 
                             boolean success = false;
@@ -590,7 +598,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         catch (AMQException e)
         {
             deregisterSession(channelId);
-            throw new AMQException("Error reopening channel " + channelId + " after failover: " + e, e);
+            throw new AMQException(null, "Error reopening channel " + channelId + " after failover: " + e, e);
         }
     }
 
@@ -1047,7 +1055,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public void exceptionReceived(Throwable cause)
     {
-
         if (_logger.isDebugEnabled())
         {
             _logger.debug("exceptionReceived done by:" + Thread.currentThread().getName(), cause);
@@ -1060,11 +1067,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
+            AMQConstant code = null;
+
             if (cause instanceof AMQException)
             {
+                code = ((AMQException) cause).getErrorCode();
+            }
+
+            if (code != null)
+            {
                 je =
-                    new JMSException(Integer.toString(((AMQException) cause).getErrorCode().getCode()),
-                        "Exception thrown against " + toString() + ": " + cause);
+                    new JMSException(Integer.toString(code.getCode()), "Exception thrown against " + toString() + ": "
+                        + cause);
             }
             else
             {
@@ -1135,7 +1149,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         for (Iterator it = sessions.iterator(); it.hasNext();)
         {
             AMQSession s = (AMQSession) it.next();
-            //_protocolHandler.addSessionByChannel(s.getChannelId(), s);
+            // _protocolHandler.addSessionByChannel(s.getChannelId(), s);
             reopenChannel(s.getChannelId(), s.getDefaultPrefetchHigh(), s.getDefaultPrefetchLow(), s.getTransacted());
             s.resubscribe();
         }
@@ -1222,7 +1236,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         _taskPool.execute(task);
     }
-
 
     public AMQSession getSession(int channelId)
     {

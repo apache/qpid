@@ -39,8 +39,9 @@ import org.apache.qpid.framing.AMQBody;
  */
 public class AMQUnexpectedBodyTypeException extends AMQException
 {
-    public AMQUnexpectedBodyTypeException(Class<? extends AMQBody> expectedClass, AMQBody body)
+    public AMQUnexpectedBodyTypeException(Class<? extends AMQBody> expectedClass, AMQBody body, Throwable cause)
     {
-        super("Unexpected body type.  Expected: " + expectedClass.getName() + "; got: " + body.getClass().getName());
+        super(null, "Unexpected body type.  Expected: " + expectedClass.getName() + "; got: " + body.getClass().getName(),
+            cause);
     }
 }

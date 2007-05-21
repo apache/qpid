@@ -108,7 +108,7 @@ public class SubscriptionImpl implements Subscription
         AMQChannel channel = protocolSession.getChannel(channelId);
         if (channel == null)
         {
-            throw new AMQException(AMQConstant.NOT_FOUND, "channel :" + channelId + " not found in protocol session");
+            throw new AMQException(AMQConstant.NOT_FOUND, "channel :" + channelId + " not found in protocol session", null);
         }
 
         this.channel = channel;

@@ -34,8 +34,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQConnectionClosedException extends AMQException
 {
-    public AMQConnectionClosedException(AMQConstant errorCode, String msg)
+    public AMQConnectionClosedException(AMQConstant errorCode, String msg, Throwable cause)
     {
-        super(errorCode, msg);
+        super(errorCode, msg, cause);
     }
 }

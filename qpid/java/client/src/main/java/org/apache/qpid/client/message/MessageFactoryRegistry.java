@@ -99,7 +99,7 @@ public class MessageFactoryRegistry
         MessageFactory mf = _mimeShortStringToFactoryMap.get(contentTypeShortString);
         if (mf == null)
         {
-            throw new AMQException("Unsupport MIME type of " + properties.getContentTypeAsString());
+            throw new AMQException(null, "Unsupport MIME type of " + properties.getContentTypeAsString(), null);
         }
         else
         {
@@ -117,7 +117,7 @@ public class MessageFactoryRegistry
         MessageFactory mf = _mimeStringToFactoryMap.get(mimeType);
         if (mf == null)
         {
-            throw new AMQException("Unsupport MIME type of " + mimeType);
+            throw new AMQException(null, "Unsupport MIME type of " + mimeType, null);
         }
         else
         {

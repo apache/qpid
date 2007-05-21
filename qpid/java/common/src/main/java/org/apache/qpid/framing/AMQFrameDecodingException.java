@@ -34,8 +34,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQFrameDecodingException extends AMQException
 {
-    public AMQFrameDecodingException(AMQConstant errorCode, String message, Throwable t)
+    public AMQFrameDecodingException(AMQConstant errorCode, String message, Throwable cause)
     {
-        super(errorCode, message, t);
+        super(errorCode, message, cause);
     }
 }

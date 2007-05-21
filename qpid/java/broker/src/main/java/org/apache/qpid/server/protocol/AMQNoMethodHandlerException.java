@@ -39,8 +39,8 @@ import org.apache.qpid.protocol.AMQMethodEvent;
  */
 public class AMQNoMethodHandlerException extends AMQException
 {
-    public AMQNoMethodHandlerException(AMQMethodEvent<AMQMethodBody> evt)
+    public AMQNoMethodHandlerException(AMQMethodEvent<AMQMethodBody> evt, Throwable cause)
     {
-        super("AMQMethodEvent " + evt + " was not processed by any listener on Broker.");
+        super(null, "AMQMethodEvent " + evt + " was not processed by any listener on Broker.", cause);
     }
 }

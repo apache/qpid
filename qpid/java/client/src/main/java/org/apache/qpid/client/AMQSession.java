@@ -781,7 +781,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             else
             {
-                amqe = new AMQException("Closing session forcibly", e);
+                amqe = new AMQException(null, "Closing session forcibly", e);
             }
             _connection.deregisterSession(_channelId);
             closeProducersAndConsumers(amqe);
@@ -1928,15 +1928,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                             //@TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
                             if (errorCode == AMQConstant.NO_CONSUMERS)
                             {
-                                _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage));
+                                _connection.exceptionReceived(new AMQNoConsumersException("Error: " + reason, bouncedMessage, null));
                             }
                             else if (errorCode == AMQConstant.NO_ROUTE)
                             {
-                                _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage));
+                                _connection.exceptionReceived(new AMQNoRouteException("Error: " + reason, bouncedMessage, null));
                             }
                             else
                             {
-                                _connection.exceptionReceived(new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage));
+                                _connection.exceptionReceived(new AMQUndeliveredException(errorCode, "Error: " + reason, bouncedMessage, null));
                             }
 
                         }
@@ -2118,7 +2118,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
         catch (JMSException e) //thrown by getMessageSelector
         {
-            throw new AMQException(e.getMessage(), e);
+            throw new AMQException(null, e.getMessage(), e);
         }
     }
 

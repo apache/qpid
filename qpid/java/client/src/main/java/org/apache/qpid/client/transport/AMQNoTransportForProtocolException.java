@@ -31,19 +31,16 @@ import org.apache.qpid.jms.BrokerDetails;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Represent absence of a transport medium.
  * </table>
+ *
+ * @todo Error code never used. This is not an AMQException.
  */
 public class AMQNoTransportForProtocolException extends AMQTransportConnectionException
 {
     BrokerDetails _details;
 
-    public AMQNoTransportForProtocolException(BrokerDetails details)
+    public AMQNoTransportForProtocolException(BrokerDetails details, String message, Throwable cause)
     {
-        this(details, "No Transport exists for specified broker protocol");
-    }
-
-    public AMQNoTransportForProtocolException(BrokerDetails details, String message)
-    {
-        super(null, message, null);
+        super(null, message, cause);
 
         _details = details;
     }

@@ -46,7 +46,7 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         SaslClient client = protocolSession.getSaslClient();
         if (client == null)
         {
-            throw new AMQException("No SASL client set up - cannot proceed with authentication");
+            throw new AMQException(null, "No SASL client set up - cannot proceed with authentication", null);
         }
 
         ConnectionSecureBody body = (ConnectionSecureBody) evt.getMethod();
@@ -65,7 +65,7 @@ public class ConnectionSecureMethodHandler implements StateAwareMethodListener
         }
         catch (SaslException e)
         {
-            throw new AMQException("Error processing SASL challenge: " + e, e);
+            throw new AMQException(null, "Error processing SASL challenge: " + e, e);
         }
 
 

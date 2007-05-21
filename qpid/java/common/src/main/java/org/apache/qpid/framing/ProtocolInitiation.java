@@ -144,7 +144,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
 
         if(_protocolHeader.length != 4)
         {
-            throw new AMQProtocolHeaderException("Protocol header should have exactly four octets");
+            throw new AMQProtocolHeaderException("Protocol header should have exactly four octets", null);
         }
         for(int i = 0; i < 4; i++)
         {
@@ -152,7 +152,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
             {
                 try
                 {
-                    throw new AMQProtocolHeaderException("Protocol header is not correct: Got " + new String(_protocolHeader,"ISO-8859-1") + " should be: " + new String(AMQP_HEADER, "ISO-8859-1"));
+                    throw new AMQProtocolHeaderException("Protocol header is not correct: Got " + new String(_protocolHeader,"ISO-8859-1") + " should be: " + new String(AMQP_HEADER, "ISO-8859-1"), null);
                 }
                 catch (UnsupportedEncodingException e)
                 {
@@ -163,12 +163,12 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         if (_protocolClass != CURRENT_PROTOCOL_CLASS)
         {
             throw new AMQProtocolClassException("Protocol class " + CURRENT_PROTOCOL_CLASS + " was expected; received " +
-                                                _protocolClass);
+                                                _protocolClass, null);
         }
         if (_protocolInstance != TCP_PROTOCOL_INSTANCE)
         {
             throw new AMQProtocolInstanceException("Protocol instance " + TCP_PROTOCOL_INSTANCE + " was expected; received " +
-                                                   _protocolInstance);
+                                                   _protocolInstance, null);
         }
 
         ProtocolVersion pv = new ProtocolVersion(_protocolMajor, _protocolMinor);
@@ -178,7 +178,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         {
             // TODO: add list of available versions in list to msg...
             throw new AMQProtocolVersionException("Protocol version " +
-                                                  _protocolMajor + "." + _protocolMinor + " not suppoerted by this version of the Qpid broker.");
+                                                  _protocolMajor + "." + _protocolMinor + " not suppoerted by this version of the Qpid broker.", null);
         }
     }
 

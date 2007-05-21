@@ -238,13 +238,12 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
         if (msg == null)
         {
-            throw new AMQException("Error: received content header without having received a BasicDeliver frame first");
+            throw new AMQException(null, "Error: received content header without having received a BasicDeliver frame first", null);
         }
 
         if (msg.getContentHeader() != null)
         {
-            throw new AMQException(
-                "Error: received duplicate content header or did not receive correct number of content body frames");
+            throw new AMQException(null, "Error: received duplicate content header or did not receive correct number of content body frames", null);
         }
 
         msg.setContentHeader(contentHeader);
@@ -259,13 +258,13 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
         if (msg == null)
         {
-            throw new AMQException("Error: received content body without having received a JMSDeliver frame first");
+            throw new AMQException(null, "Error: received content body without having received a JMSDeliver frame first", null);
         }
 
         if (msg.getContentHeader() == null)
         {
             _channelId2UnprocessedMsgMap.remove(channelId);
-            throw new AMQException("Error: received content body without having received a ContentHeader frame first");
+            throw new AMQException(null, "Error: received content body without having received a ContentHeader frame first", null);
         }
 
         /*try
@@ -365,11 +364,11 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             final AMQSession session = getSession(channelId);
             try
             {
-                session.closed(new AMQException(code, text));
+                session.closed(new AMQException(code, text, null));
             }
             catch (JMSException e)
             {
-                throw new AMQException("JMSException received while closing session", e);
+                throw new AMQException(null, "JMSException received while closing session", e);
             }
 
             return true;

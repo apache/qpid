@@ -70,27 +70,27 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             }
             if (errorCode == AMQConstant.NO_CONSUMERS)
             {
-                throw new AMQNoConsumersException("Error: " + reason, null);
+                throw new AMQNoConsumersException("Error: " + reason, null, null);
             }
             else if (errorCode == AMQConstant.NO_ROUTE)
             {
-                throw new AMQNoRouteException("Error: " + reason, null);
+                throw new AMQNoRouteException("Error: " + reason, null, null);
             }
             else if (errorCode == AMQConstant.INVALID_ARGUMENT)
             {
                 _logger.debug("Broker responded with Invalid Argument.");
 
-                throw new org.apache.qpid.AMQInvalidArgumentException(String.valueOf(reason));
+                throw new org.apache.qpid.AMQInvalidArgumentException(String.valueOf(reason), null);
             }
             else if (errorCode == AMQConstant.INVALID_ROUTING_KEY)
             {
                 _logger.debug("Broker responded with Invalid Routing Key.");
 
-                throw new AMQInvalidRoutingKeyException(String.valueOf(reason));
+                throw new AMQInvalidRoutingKeyException(String.valueOf(reason), null);
             }
             else
             {
-                throw new AMQChannelClosedException(errorCode, "Error: " + reason);
+                throw new AMQChannelClosedException(errorCode, "Error: " + reason, null);
             }
 
         }

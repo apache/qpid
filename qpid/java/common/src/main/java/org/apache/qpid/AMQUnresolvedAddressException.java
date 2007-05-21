@@ -37,9 +37,9 @@ public class AMQUnresolvedAddressException extends AMQException
 {
     String _broker;
 
-    public AMQUnresolvedAddressException(String message, String broker)
+    public AMQUnresolvedAddressException(String message, String broker, Throwable cause)
     {
-        super(message);
+        super(null, message, cause);
         _broker = broker;
     }
 
