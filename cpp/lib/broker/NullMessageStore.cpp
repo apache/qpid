@@ -42,7 +42,7 @@ void NullMessageStore::destroy(const Queue& queue)
 
 void NullMessageStore::recover(RecoveryManager&, const MessageStoreSettings* const)
 {
-    if (warn) std::cout << "WARNING: Persistence not enabled, no recovery of queues or messages." << std::endl;
+    if (warn) std::cout << "Persistence not enabled, no recovery attempted." << std::endl;
 }
 
 void NullMessageStore::stage(Message* const)
