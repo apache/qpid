@@ -28,9 +28,10 @@ char env2optchar(char env) {
 }
     
 const std::string envPrefix("QPID_");
+const std::string ignore("QPID_DIR");//temporary hack - this env var is used in other ways; not an option
 
 std::string env2option(const std::string& env) {
-    if (env.find(envPrefix) ==0) {
+    if (env != ignore /*temp hack, see above*/ && env.find(envPrefix) == 0) {
         std::string opt = env.substr(envPrefix.size());
         std::transform(opt.begin(), opt.end(), opt.begin(), env2optchar);
         return opt;
