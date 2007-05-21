@@ -33,8 +33,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQNoConsumersException extends AMQUndeliveredException
 {
-    public AMQNoConsumersException(String msg, Object bounced)
+    public AMQNoConsumersException(String msg, Object bounced, Throwable cause)
     {
-        super(AMQConstant.NO_CONSUMERS, msg, bounced);
+        super(AMQConstant.NO_CONSUMERS, msg, bounced, cause);
     }
 }

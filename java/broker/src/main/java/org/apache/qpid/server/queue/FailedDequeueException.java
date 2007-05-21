@@ -38,13 +38,8 @@ import org.apache.qpid.AMQException;
  */
 public class FailedDequeueException extends AMQException
 {
-    public FailedDequeueException(String queue)
+    public FailedDequeueException(String queue, Throwable cause)
     {
-        super("Failed to dequeue message from " + queue);
-    }
-
-    public FailedDequeueException(String queue, AMQException e)
-    {
-        super("Failed to dequeue message from " + queue, e);
+        super(null, "Failed to dequeue message from " + queue, cause);
     }
 }

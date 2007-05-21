@@ -67,7 +67,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         }                                                        
         catch (JMSException je)
         {
-            throw new AMQException("Error populating MapMessage from ByteBuffer", je);
+            throw new AMQException(null, "Error populating MapMessage from ByteBuffer", je);
             
         }
 

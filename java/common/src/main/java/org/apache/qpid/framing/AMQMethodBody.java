@@ -111,7 +111,7 @@ public abstract class AMQMethodBody extends AMQBody
 
     public AMQChannelException getChannelException(AMQConstant code, String message)
     {
-        return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor);
+        return new AMQChannelException(code, message, getClazz(), getMethod(), major, minor, null);
     }
 
     public AMQChannelException getChannelException(AMQConstant code, String message, Throwable cause)
@@ -121,7 +121,7 @@ public abstract class AMQMethodBody extends AMQBody
 
     public AMQConnectionException getConnectionException(AMQConstant code, String message)
     {
-        return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor);
+        return new AMQConnectionException(code, message, getClazz(), getMethod(), major, minor, null);
     }
 
     public AMQConnectionException getConnectionException(AMQConstant code, String message, Throwable cause)

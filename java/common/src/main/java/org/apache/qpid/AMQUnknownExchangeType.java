@@ -15,8 +15,8 @@ package org.apache.qpid;
  */
 public class AMQUnknownExchangeType extends AMQException
 {
-    public AMQUnknownExchangeType(String message)
+    public AMQUnknownExchangeType(String message, Throwable cause)
     {
-        super(message);
+        super(null, message, cause);
     }
 }

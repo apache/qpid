@@ -34,9 +34,8 @@ import org.apache.qpid.AMQException;
  */
 public class AMQConnectionWaitException extends AMQException
 {
-    public AMQConnectionWaitException(String s, Throwable e)
+    public AMQConnectionWaitException(String s, Throwable cause)
     {
-        super(s, e);
-
+        super(null, s, cause);
     }
 }

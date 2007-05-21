@@ -32,8 +32,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQInvalidRoutingKeyException extends AMQException
 {
-    public AMQInvalidRoutingKeyException(String message)
+    public AMQInvalidRoutingKeyException(String message, Throwable cause)
     {
-        super(AMQConstant.INVALID_ROUTING_KEY, message);
+        super(AMQConstant.INVALID_ROUTING_KEY, message, cause);
     }
 }

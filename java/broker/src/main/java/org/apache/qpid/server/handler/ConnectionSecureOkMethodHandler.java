@@ -69,7 +69,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
         SaslServer ss = session.getSaslServer();
         if (ss == null)
         {
-            throw new AMQException("No SASL context set up in session");
+            throw new AMQException(null, "No SASL context set up in session", null);
         }
 
         AuthenticationResult authResult = authMgr.authenticate(ss, body.response);

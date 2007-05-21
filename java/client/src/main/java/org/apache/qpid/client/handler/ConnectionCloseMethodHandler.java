@@ -77,14 +77,14 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
                     //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
                     stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
 
-                    throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString());
+                    throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString(), null);
                 }
                 else
                 {
                     _logger.info("Connection close received with error code " + errorCode);
 
 
-                    throw new AMQConnectionClosedException(errorCode, "Error: " + reason);
+                    throw new AMQConnectionClosedException(errorCode, "Error: " + reason, null);
                 }
             }
         }

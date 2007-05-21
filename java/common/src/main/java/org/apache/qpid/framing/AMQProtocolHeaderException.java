@@ -34,8 +34,8 @@ import org.apache.qpid.AMQException;
  */
 public class AMQProtocolHeaderException extends AMQException
 {
-    public AMQProtocolHeaderException(String message)
+    public AMQProtocolHeaderException(String message, Throwable cause)
     {
-        super(message);
+        super(null, message, cause);
     }
 }

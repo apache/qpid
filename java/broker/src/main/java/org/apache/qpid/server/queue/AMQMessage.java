@@ -20,31 +20,33 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQBody;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.messageStore.MessageStore;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.messageStore.StorableMessage;
-import org.apache.qpid.server.messageStore.StorableQueue;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 /** Combines the information that make up a deliverable message into a more manageable form. */
 
 import org.apache.log4j.Logger;
+
 import org.apache.mina.common.ByteBuffer;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
+import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.messageStore.StorableMessage;
+import org.apache.qpid.server.messageStore.StorableQueue;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.TransactionalContext;
 
 /**
  * Combines the information that make up a deliverable message into a more manageable form.
@@ -56,7 +58,7 @@ public class AMQMessage implements StorableMessage
     // The ordered list of queues into which this message is enqueued.
     private List<StorableQueue> _queues = new LinkedList<StorableQueue>();
     // Indicates whether this message is staged
-     private boolean _isStaged = false;
+    private boolean _isStaged = false;
 
     /**
      * Used in clustering
@@ -89,17 +91,14 @@ public class AMQMessage implements StorableMessage
      */
     private boolean _immediate;
 
-    //    private Subscription _takenBySubcription;
-    //    private AtomicBoolean _taken = new AtomicBoolean(false);
+    // private Subscription _takenBySubcription;
+    // private AtomicBoolean _taken = new AtomicBoolean(false);
     private TransientMessageData _transientMessageData = new TransientMessageData();
-
 
     private Set<Subscription> _rejectedBy = null;
 
-
     private Map<AMQQueue, AtomicBoolean> _takenMap = new HashMap<AMQQueue, AtomicBoolean>();
     private Map<AMQQueue, Subscription> _takenBySubcriptionMap = new HashMap<AMQQueue, Subscription>();
-
 
     private final int hashcode = System.identityHashCode(this);
     private long _expiration;
@@ -111,8 +110,10 @@ public class AMQMessage implements StorableMessage
 
     public void setExpiration()
     {
-        long expiration = ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getExpiration();
-        long timestamp = ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
+        long expiration =
+            ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getExpiration();
+        long timestamp =
+            ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
 
         if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false))
         {
@@ -125,10 +126,10 @@ public class AMQMessage implements StorableMessage
             {
                 if (timestamp != 0L)
                 {
-                    //todo perhaps use arrival time
+                    // todo perhaps use arrival time
                     long diff = (System.currentTimeMillis() - timestamp);
 
-                    if (diff > 1000L || diff < 1000L)
+                    if ((diff > 1000L) || (diff < 1000L))
                     {
                         _expiration = expiration + diff;
                     }
@@ -159,11 +160,12 @@ public class AMQMessage implements StorableMessage
         {
             try
             {
-                return _index < _messageHandle.getBodyCount(getStoreContext(), _messageId) - 1;
+                return _index < (_messageHandle.getBodyCount(getStoreContext(), _messageId) - 1);
             }
             catch (AMQException e)
             {
                 _log.error("Unable to get body count: " + e, e);
+
                 return false;
             }
         }
@@ -173,7 +175,10 @@ public class AMQMessage implements StorableMessage
             try
             {
 
-                AMQBody cb = getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(), _messageId, ++_index));
+                AMQBody cb =
+                    getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(),
+                            _messageId, ++_index));
+
                 return new AMQFrame(_channel, cb);
             }
             catch (AMQException e)
@@ -209,11 +214,12 @@ public class AMQMessage implements StorableMessage
         {
             try
             {
-                return _index < _messageHandle.getBodyCount(getStoreContext(), _messageId) - 1;
+                return _index < (_messageHandle.getBodyCount(getStoreContext(), _messageId) - 1);
             }
             catch (AMQException e)
             {
                 _log.error("Error getting body count: " + e, e);
+
                 return false;
             }
         }
@@ -236,8 +242,7 @@ public class AMQMessage implements StorableMessage
         }
     }
 
-    public AMQMessage(Long messageId, MessagePublishInfo info,
-                      TransactionalContext txnContext)
+    public AMQMessage(Long messageId, MessagePublishInfo info, TransactionalContext txnContext)
     {
         _messageId = messageId;
         _txnContext = txnContext;
@@ -257,8 +262,7 @@ public class AMQMessage implements StorableMessage
      * @throws AMQException
      */
     public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory, TransactionalContext txnConext)
-            throws
-            AMQException
+        throws AMQException
     {
         _messageId = messageId;
         _messageHandle = factory.createMessageHandle(store, this, true);
@@ -274,10 +278,8 @@ public class AMQMessage implements StorableMessage
      * @param txnContext
      * @param contentHeader
      */
-    public AMQMessage(Long messageId, MessagePublishInfo info,
-                      TransactionalContext txnContext, ContentHeaderBody contentHeader)
-            throws
-            AMQException
+    public AMQMessage(Long messageId, MessagePublishInfo info, TransactionalContext txnContext,
+        ContentHeaderBody contentHeader) throws AMQException
     {
         this(messageId, info, txnContext);
         setContentHeaderBody(contentHeader);
@@ -294,13 +296,9 @@ public class AMQMessage implements StorableMessage
      * @param contentBodies
      * @throws AMQException
      */
-    public AMQMessage(Long messageId, MessagePublishInfo info,
-                      TransactionalContext txnContext,
-                      ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues,
-                      List<ContentChunk> contentBodies, MessageStore messageStore, StoreContext storeContext,
-                      MessageHandleFactory messageHandleFactory)
-            throws
-            AMQException
+    public AMQMessage(Long messageId, MessagePublishInfo info, TransactionalContext txnContext,
+        ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues, List<ContentChunk> contentBodies,
+        MessageStore messageStore, StoreContext storeContext, MessageHandleFactory messageHandleFactory) throws AMQException
     {
         this(messageId, info, txnContext, contentHeader);
         _transientMessageData.setDestinationQueues(destinationQueues);
@@ -311,9 +309,7 @@ public class AMQMessage implements StorableMessage
         }
     }
 
-    protected AMQMessage(AMQMessage msg)
-            throws
-            AMQException
+    protected AMQMessage(AMQMessage msg) throws AMQException
     {
         _messageId = msg._messageId;
         _messageHandle = msg._messageHandle;
@@ -322,9 +318,9 @@ public class AMQMessage implements StorableMessage
         _transientMessageData = msg._transientMessageData;
     }
 
-    //========================================================================
+    // ========================================================================
     // Interface  StorableMessage
-    //========================================================================
+    // ========================================================================
 
     public long getMessageId()
     {
@@ -342,10 +338,12 @@ public class AMQMessage implements StorableMessage
             result = new byte[headerBody.getSize()];
             bufferedResult = ByteBuffer.wrap(result);
             headerBody.writePayload(bufferedResult);
-        } catch (AMQException e)
+        }
+        catch (AMQException e)
         {
             _log.error("Error when getting message header", e);
         }
+
         return result;
     }
 
@@ -355,10 +353,12 @@ public class AMQMessage implements StorableMessage
         try
         {
             result = _messageHandle.getContentHeaderBody(_txnContext.getStoreContext(), _messageId).getSize();
-        } catch (AMQException e)
+        }
+        catch (AMQException e)
         {
             _log.error("Error when getting message header size", e);
         }
+
         return result;
     }
 
@@ -372,7 +372,7 @@ public class AMQMessage implements StorableMessage
         return _messageHandle.getMessagePayload().length;
     }
 
-       public boolean isEnqueued()
+    public boolean isEnqueued()
     {
         return _queues.size() > 0;
     }
@@ -401,6 +401,7 @@ public class AMQMessage implements StorableMessage
         {
             _log.debug("The queue position is " + _queues.indexOf(queue));
         }
+
         return _queues.indexOf(queue);
     }
 
@@ -424,44 +425,40 @@ public class AMQMessage implements StorableMessage
         return new BodyContentIterator();
     }
 
-    public ContentHeaderBody getContentHeaderBody()
-            throws
-            AMQException
+    public ContentHeaderBody getContentHeaderBody() throws AMQException
     {
         if (_transientMessageData != null)
         {
             return _transientMessageData.getContentHeaderBody();
-        } else
+        }
+        else
         {
             return _messageHandle.getContentHeaderBody(getStoreContext(), _messageId);
         }
     }
 
-    public void setContentHeaderBody(ContentHeaderBody contentHeaderBody)
-            throws
-            AMQException
+    public void setContentHeaderBody(ContentHeaderBody contentHeaderBody) throws AMQException
     {
         _transientMessageData.setContentHeaderBody(contentHeaderBody);
     }
 
     public void routingComplete(MessageStore store, StoreContext storeContext, MessageHandleFactory factory)
-            throws
-            AMQException
+        throws AMQException
     {
         final boolean persistent = isPersistent();
         _messageHandle = factory.createMessageHandle(store, this, persistent);
-        //if (persistent)
-       // {
-            _txnContext.beginTranIfNecessary();
-       // }
+        // if (persistent)
+        // {
+        _txnContext.beginTranIfNecessary();
+        // }
 
         // enqueuing the messages ensure that if required the destinations are recorded to a
         // persistent store
 
-       // for (AMQQueue q : _transientMessageData.getDestinationQueues())
-       // {
-       //     _messageHandle.enqueue(storeContext, _messageId, q);
-       // }
+        // for (AMQQueue q : _transientMessageData.getDestinationQueues())
+        // {
+        // _messageHandle.enqueue(storeContext, _messageId, q);
+        // }
 
         if (_transientMessageData.getContentHeaderBody().bodySize == 0)
         {
@@ -469,9 +466,7 @@ public class AMQMessage implements StorableMessage
         }
     }
 
-    public boolean addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk)
-            throws
-            AMQException
+    public boolean addContentBodyFrame(StoreContext storeContext, ContentChunk contentChunk) throws AMQException
     {
         _transientMessageData.addBodyLength(contentChunk.getSize());
         final boolean allContentReceived = isAllContentReceived();
@@ -479,20 +474,19 @@ public class AMQMessage implements StorableMessage
         if (allContentReceived)
         {
             deliver(storeContext);
+
             return true;
-        } else
+        }
+        else
         {
             return false;
         }
     }
 
-    public boolean isAllContentReceived()
-            throws
-            AMQException
+    public boolean isAllContentReceived() throws AMQException
     {
         return _transientMessageData.isAllContentReceived();
     }
-
 
     /**
      * Creates a long-lived reference to this message, and increments the count of such references, as an atomic
@@ -501,6 +495,7 @@ public class AMQMessage implements StorableMessage
     public AMQMessage takeReference()
     {
         _referenceCount.incrementAndGet();
+
         return this;
     }
 
@@ -510,10 +505,10 @@ public class AMQMessage implements StorableMessage
     protected void incrementReference()
     {
         _referenceCount.incrementAndGet();
-//        if (_log.isDebugEnabled())
-//        {
-//            _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
-//        }
+        // if (_log.isDebugEnabled())
+        // {
+        // _log.debug("Ref count on message " + debugIdentity() + " incremented " + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+        // }
     }
 
     /**
@@ -524,9 +519,7 @@ public class AMQMessage implements StorableMessage
      * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
      *                                 failed
      */
-    public void decrementReference(StoreContext storeContext)
-            throws
-            MessageCleanupException
+    public void decrementReference(StoreContext storeContext) throws MessageCleanupException
     {
         int count = _referenceCount.decrementAndGet();
 
@@ -538,10 +531,10 @@ public class AMQMessage implements StorableMessage
         {
             try
             {
-//                if (_log.isDebugEnabled())
-//                {
-//                    _log.debug("Decremented ref count on message " + debugIdentity() + " is zero; removing message" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
-//                }
+                // if (_log.isDebugEnabled())
+                // {
+                // _log.debug("Decremented ref count on message " + debugIdentity() + " is zero; removing message" + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+                // }
 
                 // must check if the handle is null since there may be cases where we decide to throw away a message
                 // and the handle has not yet been constructed
@@ -552,15 +545,17 @@ public class AMQMessage implements StorableMessage
             }
             catch (AMQException e)
             {
-                //to maintain consistency, we revert the count
+                // to maintain consistency, we revert the count
                 incrementReference();
-                throw new MessageCleanupException(_messageId, e);
+                throw new MessageCleanupException("Failed to cleanup message with id " + _messageId, e);
             }
-        } else
+        }
+        else
         {
             if (count < 0)
             {
-                throw new MessageCleanupException("Reference count for message id " + debugIdentity() + " has gone below 0.");
+                throw new MessageCleanupException("Reference count for message id " + debugIdentity() + " has gone below 0.",
+                    null);
             }
         }
     }
@@ -587,7 +582,7 @@ public class AMQMessage implements StorableMessage
 
     public boolean isTaken(AMQQueue queue)
     {
-        //return _taken.get();
+        // return _taken.get();
 
         synchronized (this)
         {
@@ -604,15 +599,15 @@ public class AMQMessage implements StorableMessage
 
     public boolean taken(AMQQueue queue, Subscription sub)
     {
-//        if (_taken.getAndSet(true))
-//        {
-//            return true;
-//        }
-//        else
-//        {
-//            _takenBySubcription = sub;
-//            return false;
-//        }
+        // if (_taken.getAndSet(true))
+        // {
+        // return true;
+        // }
+        // else
+        // {
+        // _takenBySubcription = sub;
+        // return false;
+        // }
 
         synchronized (this)
         {
@@ -625,10 +620,12 @@ public class AMQMessage implements StorableMessage
             if (taken.getAndSet(true))
             {
                 return true;
-            } else
+            }
+            else
             {
                 _takenMap.put(queue, taken);
                 _takenBySubcriptionMap.put(queue, sub);
+
                 return false;
             }
         }
@@ -641,9 +638,8 @@ public class AMQMessage implements StorableMessage
             _log.trace("Releasing Message:" + debugIdentity());
         }
 
-//        _taken.set(false);
-//        _takenBySubcription = null;
-
+        // _taken.set(false);
+        // _takenBySubcription = null;
 
         synchronized (this)
         {
@@ -651,7 +647,8 @@ public class AMQMessage implements StorableMessage
             if (taken == null)
             {
                 taken = new AtomicBoolean(false);
-            } else
+            }
+            else
             {
                 taken.set(false);
             }
@@ -672,9 +669,11 @@ public class AMQMessage implements StorableMessage
         if (_tokens.contains(token))
         {
             return true;
-        } else
+        }
+        else
         {
             _tokens.add(token);
+
             return false;
         }
     }
@@ -687,28 +686,23 @@ public class AMQMessage implements StorableMessage
      * @param queue the queue
      * @throws org.apache.qpid.AMQException if there is an error enqueuing the message
      */
-    public void enqueue(AMQQueue queue)
-            throws
-            AMQException
+    public void enqueue(AMQQueue queue) throws AMQException
     {
         _transientMessageData.addDestinationQueue(queue);
     }
 
-    public void dequeue(StoreContext storeContext, AMQQueue queue)
-            throws
-            AMQException
+    public void dequeue(StoreContext storeContext, AMQQueue queue) throws AMQException
     {
         _messageHandle.dequeue(storeContext, _messageId, queue);
     }
 
-    public boolean isPersistent()
-            throws
-            AMQException
+    public boolean isPersistent() throws AMQException
     {
         if (_transientMessageData != null)
         {
             return _transientMessageData.isPersistent();
-        } else
+        }
+        else
         {
             return _messageHandle.isPersistent(getStoreContext(), _messageId);
         }
@@ -720,29 +714,27 @@ public class AMQMessage implements StorableMessage
      * @throws NoConsumersException if the message is marked for immediate delivery but has not been marked as delivered
      *                              to a consumer
      */
-    public void checkDeliveredToConsumer()
-            throws
-            NoConsumersException
+    public void checkDeliveredToConsumer() throws NoConsumersException
     {
 
         if (_immediate && !_deliveredToConsumer)
         {
-            throw new NoConsumersException(this);
+            throw new NoConsumersException(this, null);
         }
     }
 
-    public MessagePublishInfo getMessagePublishInfo()
-            throws
-            AMQException
+    public MessagePublishInfo getMessagePublishInfo() throws AMQException
     {
         MessagePublishInfo pb;
         if (_transientMessageData != null)
         {
             pb = _transientMessageData.getMessagePublishInfo();
-        } else
+        }
+        else
         {
             pb = _messageHandle.getMessagePublishInfo(getStoreContext(), _messageId);
         }
+
         return pb;
     }
 
@@ -773,7 +765,7 @@ public class AMQMessage implements StorableMessage
      */
     public boolean expired(StoreContext storecontext, AMQQueue queue) throws AMQException
     {
-        //note: If the storecontext isn't need then we can remove the getChannel() from Subscription.
+        // note: If the storecontext isn't need then we can remove the getChannel() from Subscription.
 
         if (_expiration != 0L)
         {
@@ -782,6 +774,7 @@ public class AMQMessage implements StorableMessage
             if (now > _expiration)
             {
                 dequeue(storecontext, queue);
+
                 return true;
             }
         }
@@ -795,9 +788,7 @@ public class AMQMessage implements StorableMessage
         _deliveredToConsumer = true;
     }
 
-    private void deliver(StoreContext storeContext)
-            throws
-            AMQException
+    private void deliver(StoreContext storeContext) throws AMQException
     {
         // we get a reference to the destination queues now so that we can clear the
         // transient message data as quickly as possible
@@ -806,12 +797,13 @@ public class AMQMessage implements StorableMessage
         {
             _log.debug("Delivering message " + debugIdentity() + " to " + destinationQueues);
         }
+
         try
         {
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
-            _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId, _transientMessageData.getMessagePublishInfo(),
-                    _transientMessageData.getContentHeaderBody());
+            _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId,
+                _transientMessageData.getMessagePublishInfo(), _transientMessageData.getContentHeaderBody());
 
             // we then allow the transactional context to do something with the message content
             // now that it has all been received, before we attempt delivery
@@ -821,9 +813,9 @@ public class AMQMessage implements StorableMessage
 
             for (AMQQueue q : destinationQueues)
             {
-                //Increment the references to this message for each queue delivery.
+                // Increment the references to this message for each queue delivery.
                 incrementReference();
-                //normal deliver so add this message at the end.
+                // normal deliver so add this message at the end.
                 _txnContext.deliver(this, q, false);
             }
         }
@@ -835,181 +827,180 @@ public class AMQMessage implements StorableMessage
         }
     }
 
-/*
-    public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
-            throws AMQException
-    {
-        ByteBuffer deliver = createEncodedDeliverFrame(protocolSession, channelId, deliveryTag, consumerTag);
-        AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
-                                                                      getContentHeaderBody());
-
-        final int bodyCount = _messageHandle.getBodyCount(getStoreContext(), _messageId);
-        if (bodyCount == 0)
+    /*
+        public void writeDeliver(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
+                throws AMQException
         {
-            SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
-                                                                                       contentHeader);
+            ByteBuffer deliver = createEncodedDeliverFrame(protocolSession, channelId, deliveryTag, consumerTag);
+            AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
+                                                                          getContentHeaderBody());
 
-            protocolSession.writeFrame(compositeBlock);
-        }
-        else
-        {
-
-            //
-            // Optimise the case where we have a single content body. In that case we create a composite block
-            // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
-            //
-            ContentChunk cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, 0);
-
-            AMQDataBlock firstContentBody = new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
-            AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
-            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
-            protocolSession.writeFrame(compositeBlock);
-
-            //
-            // Now start writing out the other content bodies
-            //
-            for (int i = 1; i < bodyCount; i++)
+            final int bodyCount = _messageHandle.getBodyCount(getStoreContext(), _messageId);
+            if (bodyCount == 0)
             {
-                cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, i);
-                protocolSession.writeFrame(new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
+                SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
+                                                                                           contentHeader);
+
+                protocolSession.writeFrame(compositeBlock);
+            }
+            else
+            {
+
+                //
+                // Optimise the case where we have a single content body. In that case we create a composite block
+                // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
+                //
+                ContentChunk cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, 0);
+
+                AMQDataBlock firstContentBody = new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
+                AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
+                CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
+                protocolSession.writeFrame(compositeBlock);
+
+                //
+                // Now start writing out the other content bodies
+                //
+                for (int i = 1; i < bodyCount; i++)
+                {
+                    cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, i);
+                    protocolSession.writeFrame(new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
+                }
+
+
+            }
+
+
+        }
+
+        public void writeGetOk(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize) throws AMQException
+        {
+            ByteBuffer deliver = createEncodedGetOkFrame(protocolSession, channelId, deliveryTag, queueSize);
+            AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
+                                                                          getContentHeaderBody());
+
+            final int bodyCount = _messageHandle.getBodyCount(getStoreContext(), _messageId);
+            if (bodyCount == 0)
+            {
+                SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
+                                                                                           contentHeader);
+                protocolSession.writeFrame(compositeBlock);
+            }
+            else
+            {
+
+                //
+                // Optimise the case where we have a single content body. In that case we create a composite block
+                // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
+                //
+                ContentChunk cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, 0);
+
+                AMQDataBlock firstContentBody = new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
+                AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
+                CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
+                protocolSession.writeFrame(compositeBlock);
+
+                //
+                // Now start writing out the other content bodies
+                //
+                for (int i = 1; i < bodyCount; i++)
+                {
+                    cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, i);
+                    protocolSession.writeFrame(new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
+                }
+
+
             }
 
 
         }
 
 
-    }
-
-    public void writeGetOk(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize) throws AMQException
-    {
-        ByteBuffer deliver = createEncodedGetOkFrame(protocolSession, channelId, deliveryTag, queueSize);
-        AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
-                                                                      getContentHeaderBody());
-
-        final int bodyCount = _messageHandle.getBodyCount(getStoreContext(), _messageId);
-        if (bodyCount == 0)
+        private ByteBuffer createEncodedDeliverFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
+                throws AMQException
         {
-            SmallCompositeAMQDataBlock compositeBlock = new SmallCompositeAMQDataBlock(deliver,
-                                                                                       contentHeader);
-            protocolSession.writeFrame(compositeBlock);
-        }
-        else
-        {
-
-            //
-            // Optimise the case where we have a single content body. In that case we create a composite block
-            // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
-            //
-            ContentChunk cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, 0);
-
-            AMQDataBlock firstContentBody = new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb));
-            AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
-            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(deliver, headerAndFirstContent);
-            protocolSession.writeFrame(compositeBlock);
-
-            //
-            // Now start writing out the other content bodies
-            //
-            for (int i = 1; i < bodyCount; i++)
-            {
-                cb = _messageHandle.getContentChunk(getStoreContext(), _messageId, i);
-                protocolSession.writeFrame(new AMQFrame(channelId, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToBody(cb)));
-            }
-
-
+            MessagePublishInfo pb = getMessagePublishInfo();
+            AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, protocolSession.getProtocolMajorVersion(), (byte) 0, consumerTag,
+                                                                    deliveryTag, pb.getExchange(), _messageHandle.isRedelivered(),
+                                                                    pb.getRoutingKey());
+            ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
+            deliverFrame.writePayload(buf);
+            buf.flip();
+            return buf;
         }
 
-
-    }
-
-
-    private ByteBuffer createEncodedDeliverFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, AMQShortString consumerTag)
-            throws AMQException
-    {
-        MessagePublishInfo pb = getMessagePublishInfo();
-        AMQFrame deliverFrame = BasicDeliverBody.createAMQFrame(channelId, protocolSession.getProtocolMajorVersion(), (byte) 0, consumerTag,
-                                                                deliveryTag, pb.getExchange(), _messageHandle.isRedelivered(),
+        private ByteBuffer createEncodedGetOkFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize)
+                throws AMQException
+        {
+            MessagePublishInfo pb = getMessagePublishInfo();
+            AMQFrame getOkFrame = BasicGetOkBody.createAMQFrame(channelId,
+                                                                protocolSession.getProtocolMajorVersion(),
+                                                                protocolSession.getProtocolMinorVersion(),
+                                                                deliveryTag, pb.getExchange(),
+                                                                queueSize,
+                                                                _messageHandle.isRedelivered(),
                                                                 pb.getRoutingKey());
-        ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
-        deliverFrame.writePayload(buf);
-        buf.flip();
-        return buf;
-    }
-
-    private ByteBuffer createEncodedGetOkFrame(AMQProtocolSession protocolSession, int channelId, long deliveryTag, int queueSize)
-            throws AMQException
-    {
-        MessagePublishInfo pb = getMessagePublishInfo();
-        AMQFrame getOkFrame = BasicGetOkBody.createAMQFrame(channelId,
-                                                            protocolSession.getProtocolMajorVersion(),
-                                                            protocolSession.getProtocolMinorVersion(),
-                                                            deliveryTag, pb.getExchange(),
-                                                            queueSize,
-                                                            _messageHandle.isRedelivered(),
-                                                            pb.getRoutingKey());
-        ByteBuffer buf = ByteBuffer.allocate((int) getOkFrame.getSize()); // XXX: Could cast be a problem?
-        getOkFrame.writePayload(buf);
-        buf.flip();
-        return buf;
-    }
-
-    private ByteBuffer createEncodedReturnFrame(AMQProtocolSession protocolSession, int channelId, int replyCode, AMQShortString replyText) throws AMQException
-    {
-        AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId,
-                                                              protocolSession.getProtocolMajorVersion(),
-                                                              protocolSession.getProtocolMinorVersion(),
-                                                              getMessagePublishInfo().getExchange(),
-                                                              replyCode, replyText,
-                                                              getMessagePublishInfo().getRoutingKey());
-        ByteBuffer buf = ByteBuffer.allocate((int) returnFrame.getSize()); // XXX: Could cast be a problem?
-        returnFrame.writePayload(buf);
-        buf.flip();
-        return buf;
-    }
-
-    public void writeReturn(AMQProtocolSession protocolSession, int channelId, int replyCode, AMQShortString replyText)
-            throws AMQException
-    {
-        ByteBuffer returnFrame = createEncodedReturnFrame(protocolSession, channelId, replyCode, replyText);
-
-        AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
-                                                                      getContentHeaderBody());
-
-        Iterator<AMQDataBlock> bodyFrameIterator = getBodyFrameIterator(protocolSession, channelId);
-        //
-        // Optimise the case where we have a single content body. In that case we create a composite block
-        // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
-        //
-        if (bodyFrameIterator.hasNext())
-        {
-            AMQDataBlock firstContentBody = bodyFrameIterator.next();
-            AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
-            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(returnFrame, headerAndFirstContent);
-            protocolSession.writeFrame(compositeBlock);
-        }
-        else
-        {
-            CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(returnFrame,
-                                                                             new AMQDataBlock[]{contentHeader});
-            protocolSession.writeFrame(compositeBlock);
+            ByteBuffer buf = ByteBuffer.allocate((int) getOkFrame.getSize()); // XXX: Could cast be a problem?
+            getOkFrame.writePayload(buf);
+            buf.flip();
+            return buf;
         }
 
-        //
-        // Now start writing out the other content bodies
-        // TODO: MINA needs to be fixed so the the pending writes buffer is not unbounded
-        //
-        while (bodyFrameIterator.hasNext())
+        private ByteBuffer createEncodedReturnFrame(AMQProtocolSession protocolSession, int channelId, int replyCode, AMQShortString replyText) throws AMQException
         {
-            protocolSession.writeFrame(bodyFrameIterator.next());
+            AMQFrame returnFrame = BasicReturnBody.createAMQFrame(channelId,
+                                                                  protocolSession.getProtocolMajorVersion(),
+                                                                  protocolSession.getProtocolMinorVersion(),
+                                                                  getMessagePublishInfo().getExchange(),
+                                                                  replyCode, replyText,
+                                                                  getMessagePublishInfo().getRoutingKey());
+            ByteBuffer buf = ByteBuffer.allocate((int) returnFrame.getSize()); // XXX: Could cast be a problem?
+            returnFrame.writePayload(buf);
+            buf.flip();
+            return buf;
         }
-    }
-*/
+
+        public void writeReturn(AMQProtocolSession protocolSession, int channelId, int replyCode, AMQShortString replyText)
+                throws AMQException
+        {
+            ByteBuffer returnFrame = createEncodedReturnFrame(protocolSession, channelId, replyCode, replyText);
+
+            AMQDataBlock contentHeader = ContentHeaderBody.createAMQFrame(channelId,
+                                                                          getContentHeaderBody());
+
+            Iterator<AMQDataBlock> bodyFrameIterator = getBodyFrameIterator(protocolSession, channelId);
+            //
+            // Optimise the case where we have a single content body. In that case we create a composite block
+            // so that we can writeDeliver out the deliver, header and body with a single network writeDeliver.
+            //
+            if (bodyFrameIterator.hasNext())
+            {
+                AMQDataBlock firstContentBody = bodyFrameIterator.next();
+                AMQDataBlock[] headerAndFirstContent = new AMQDataBlock[]{contentHeader, firstContentBody};
+                CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(returnFrame, headerAndFirstContent);
+                protocolSession.writeFrame(compositeBlock);
+            }
+            else
+            {
+                CompositeAMQDataBlock compositeBlock = new CompositeAMQDataBlock(returnFrame,
+                                                                                 new AMQDataBlock[]{contentHeader});
+                protocolSession.writeFrame(compositeBlock);
+            }
+
+            //
+            // Now start writing out the other content bodies
+            // TODO: MINA needs to be fixed so the the pending writes buffer is not unbounded
+            //
+            while (bodyFrameIterator.hasNext())
+            {
+                protocolSession.writeFrame(bodyFrameIterator.next());
+            }
+        }
+     */
 
     public AMQMessageHandle getMessageHandle()
     {
         return _messageHandle;
     }
-
 
     public long getSize()
     {
@@ -1022,15 +1013,13 @@ public class AMQMessage implements StorableMessage
         catch (AMQException e)
         {
             _log.error(e.toString(), e);
+
             return 0;
         }
 
     }
 
-
-    public void restoreTransientMessageData()
-            throws
-            AMQException
+    public void restoreTransientMessageData() throws AMQException
     {
         TransientMessageData transientMessageData = new TransientMessageData();
         transientMessageData.setMessagePublishInfo(getMessagePublishInfo());
@@ -1039,25 +1028,23 @@ public class AMQMessage implements StorableMessage
         _transientMessageData = transientMessageData;
     }
 
-
     public void clearTransientMessageData()
     {
         _transientMessageData = null;
     }
 
-
     public String toString()
     {
-//        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken : " +
-//               _taken + " by :" + _takenBySubcription;
+        // return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken : " +
+        // _taken + " by :" + _takenBySubcription;
 
-        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: " +
-                _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
+        return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: "
+            + _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
     }
 
     public Subscription getDeliveredSubscription(AMQQueue queue)
     {
-//        return _takenBySubcription;
+        // return _takenBySubcription;
         synchronized (this)
         {
             return _takenBySubcriptionMap.get(queue);
@@ -1074,7 +1061,8 @@ public class AMQMessage implements StorableMessage
             }
 
             _rejectedBy.add(subscription);
-        } else
+        }
+        else
         {
             _log.warn("Requesting rejection by null subscriber:" + debugIdentity());
         }
@@ -1084,10 +1072,11 @@ public class AMQMessage implements StorableMessage
     {
         boolean rejected = _rejectedBy != null;
 
-        if (rejected)  // We have subscriptions that rejected this message
+        if (rejected) // We have subscriptions that rejected this message
         {
             return _rejectedBy.contains(subscription);
-        } else // This messasge hasn't been rejected yet.
+        }
+        else // This messasge hasn't been rejected yet.
         {
             return rejected;
         }

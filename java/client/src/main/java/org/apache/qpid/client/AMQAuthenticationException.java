@@ -35,8 +35,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQAuthenticationException extends AMQException
 {
-    public AMQAuthenticationException(AMQConstant error, String msg)
+    public AMQAuthenticationException(AMQConstant error, String msg, Throwable cause)
     {
-        super(error, msg);
+        super(error, msg, cause);
     }
 }

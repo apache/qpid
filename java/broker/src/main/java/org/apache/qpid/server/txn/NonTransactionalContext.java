@@ -149,7 +149,7 @@ public class NonTransactionalContext implements TransactionalContext
             {
                 if (!unacknowledgedMessageMap.contains(deliveryTag))
                 {
-                    throw new AMQException("Multiple ack on delivery tag " + deliveryTag + " not known for channel");
+                    throw new AMQException(null, "Multiple ack on delivery tag " + deliveryTag + " not known for channel", null);
                 }
 
                 LinkedList<UnacknowledgedMessage> acked = new LinkedList<UnacknowledgedMessage>();
@@ -182,8 +182,8 @@ public class NonTransactionalContext implements TransactionalContext
             {
                 _log.info("Single ack on delivery tag " + deliveryTag + " not known for channel:" +
                           _channel.getChannelId());
-                throw new AMQException("Single ack on delivery tag " + deliveryTag + " not known for channel:" +
-                                       _channel.getChannelId());
+                throw new AMQException(null, "Single ack on delivery tag " + deliveryTag + " not known for channel:" +
+                                       _channel.getChannelId(), null);
             }
 
             if (!_browsedAcks.contains(deliveryTag))

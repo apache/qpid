@@ -67,7 +67,7 @@ public class TransportConnection
 
         if (transport == -1)
         {
-            throw new AMQNoTransportForProtocolException(details);
+            throw new AMQNoTransportForProtocolException(details, null, null);
         }
 
         if (transport == _currentInstance)

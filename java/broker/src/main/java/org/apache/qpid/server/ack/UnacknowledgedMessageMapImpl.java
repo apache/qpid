@@ -181,8 +181,8 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 if (unacked.getKey() > deliveryTag)
                 {
                     //This should not occur now.
-                    throw new AMQException("UnacknowledgedMessageMap is out of order:" + unacked.getKey() +
-                                           " When deliveryTag is:" + deliveryTag + "ES:" + _map.entrySet().toString());
+                    throw new AMQException(null, "UnacknowledgedMessageMap is out of order:" + unacked.getKey() +
+                                           " When deliveryTag is:" + deliveryTag + "ES:" + _map.entrySet().toString(), null);
                 }
 
                 it.remove();

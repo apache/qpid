@@ -39,8 +39,8 @@ import org.apache.qpid.framing.AMQDataBlock;
  */
 public class UnknnownMessageTypeException extends AMQException
 {
-    public UnknnownMessageTypeException(AMQDataBlock message)
+    public UnknnownMessageTypeException(AMQDataBlock message, Throwable cause)
     {
-        super("Unknown message type: " + message.getClass().getName() + ": " + message);
+        super(null, "Unknown message type: " + message.getClass().getName() + ": " + message, cause);
     }
 }

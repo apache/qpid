@@ -22,33 +22,8 @@ package org.apache.qpid.example.shared;
 
 public class ConnectionException extends Exception
 {
-
-    private int _errorCode;
-
-    public ConnectionException(String message)
-    {
-        super(message);
-    }
-
     public ConnectionException(String msg, Throwable t)
     {
         super(msg, t);
-    }
-
-    public ConnectionException(int errorCode, String msg, Throwable t)
-    {
-        super(msg + " [error code " + errorCode + ']', t);
-        _errorCode = errorCode;
-    }
-
-    public ConnectionException(int errorCode, String msg)
-    {
-        super(msg + " [error code " + errorCode + ']');
-        _errorCode = errorCode;
-    }
-
-    public int getErrorCode()
-    {
-        return _errorCode;
     }
 }

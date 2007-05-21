@@ -40,13 +40,8 @@ import org.apache.qpid.AMQException;
  */
 public class MessageCleanupException extends AMQException
 {
-    public MessageCleanupException(long messageId, AMQException e)
+    public MessageCleanupException(String message, Throwable cause)
     {
-        super("Failed to cleanup message with id " + messageId, e);
-    }
-
-    public MessageCleanupException(String message)
-    {
-        super(message);
+        super(null, message, cause);
     }
 }

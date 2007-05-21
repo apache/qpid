@@ -216,7 +216,7 @@ public class DestWildExchange extends AbstractExchange
             if (info.isMandatory())
             {
                 String msg = "Topic " + routingKey + " is not known to " + this;
-                throw new NoRouteException(msg, payload);
+                throw new NoRouteException(msg, payload, null);
             }
             else
             {
@@ -276,15 +276,15 @@ public class DestWildExchange extends AbstractExchange
         List<AMQQueue> queues = _routingKey2queues.get(routingKey);
         if (queues == null)
         {
-            throw new AMQException("Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey + ". No queue was registered with that routing key");
+            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
+                                   " with routing key " + routingKey + ". No queue was registered with that routing key", null);
 
         }
         boolean removedQ = queues.remove(queue);
         if (!removedQ)
         {
-            throw new AMQException("Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey);
+            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
+                                   " with routing key " + routingKey, null);
         }
         if (queues.isEmpty())
         {
@@ -301,7 +301,7 @@ public class DestWildExchange extends AbstractExchange
         catch (JMException ex)
         {
             _logger.error("Exception occured in creating the topic exchenge mbean", ex);
-            throw new AMQException("Exception occured in creating the topic exchenge mbean", ex);
+            throw new AMQException(null, "Exception occured in creating the topic exchenge mbean", ex);
         }
     }
 

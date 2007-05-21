@@ -126,7 +126,7 @@ public class DestNameExchange extends AbstractExchange
         catch (JMException ex)
         {
             _logger.error("Exception occured in creating the direct exchange mbean", ex);
-            throw new AMQException("Exception occured in creating the direct exchange mbean", ex);
+            throw new AMQException(null, "Exception occured in creating the direct exchange mbean", ex);
         }
     }
 
@@ -156,8 +156,8 @@ public class DestNameExchange extends AbstractExchange
 
         if (!_index.remove(routingKey, queue))
         {
-            throw new AMQException("Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey + ". No queue was registered with that routing key");
+            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
+                                   " with routing key " + routingKey + ". No queue was registered with that routing key", null);
         }
     }
 
@@ -171,7 +171,7 @@ public class DestNameExchange extends AbstractExchange
             String msg = "Routing key " + routingKey + " is not known to " + this;
             if (info.isMandatory())
             {
-                throw new NoRouteException(msg, payload);
+                throw new NoRouteException(msg, payload, null);
             }
             else
             {

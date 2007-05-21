@@ -38,8 +38,8 @@ import org.apache.qpid.AMQException;
  */
 public class AMQUnexpectedFrameTypeException extends AMQException
 {
-    public AMQUnexpectedFrameTypeException(String s)
+    public AMQUnexpectedFrameTypeException(String s, Throwable cause)
     {
-        super(s);
+        super(null, s, cause);
     }
 }

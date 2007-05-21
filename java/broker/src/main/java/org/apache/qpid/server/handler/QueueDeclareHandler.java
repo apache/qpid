@@ -110,7 +110,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                             store.createQueue(queue);
                         } catch (Exception e)
                         {
-                           throw new AMQException("Problem when creating queue " + queue,  e);
+                           throw new AMQException(null, "Problem when creating queue " + queue,  e);
                         }
                     }
                     queueRegistry.registerQueue(queue);

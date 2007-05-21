@@ -41,9 +41,9 @@ public abstract class RequiredDeliveryException extends AMQException
 {
     private final AMQMessage _amqMessage;
 
-    public RequiredDeliveryException(String message, AMQMessage payload)
+    public RequiredDeliveryException(String message, AMQMessage payload, Throwable cause)
     {
-        super(message);
+        super(null, message, cause);
 
         // Increment the reference as this message is in the routing phase
         // and so will have the ref decremented as routing fails.
