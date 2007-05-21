@@ -93,11 +93,11 @@ public class FailoverHandler implements Runnable
                 _amqProtocolHandler.setStateManager(existingStateManager);
                 if (_host != null)
                 {
-                    _amqProtocolHandler.getConnection().exceptionReceived(new AMQDisconnectedException("Redirect was vetoed by client"));
+                    _amqProtocolHandler.getConnection().exceptionReceived(new AMQDisconnectedException("Redirect was vetoed by client", null));
                 }
                 else
                 {
-                    _amqProtocolHandler.getConnection().exceptionReceived(new AMQDisconnectedException("Failover was vetoed by client"));
+                    _amqProtocolHandler.getConnection().exceptionReceived(new AMQDisconnectedException("Failover was vetoed by client", null));
                 }
                 _amqProtocolHandler.getFailoverLatch().countDown();
                 _amqProtocolHandler.setFailoverLatch(null);
@@ -124,7 +124,7 @@ public class FailoverHandler implements Runnable
                 _amqProtocolHandler.setStateManager(existingStateManager);
                 _amqProtocolHandler.getConnection().exceptionReceived(
                         new AMQDisconnectedException("Server closed connection and no failover " +
-                                "was successful"));
+                                "was successful", null));
             }
             else
             {

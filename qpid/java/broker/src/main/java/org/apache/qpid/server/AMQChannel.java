@@ -212,7 +212,7 @@ public class AMQChannel
     {
         if (_currentMessage == null)
         {
-            throw new AMQException("Received content header without previously receiving a BasicPublish frame");
+            throw new AMQException(null, "Received content header without previously receiving a BasicPublish frame", null);
         }
         else
         {
@@ -239,7 +239,7 @@ public class AMQChannel
     {
         if (_currentMessage == null)
         {
-            throw new AMQException("Received content body without previously receiving a JmsPublishBody");
+            throw new AMQException(null, "Received content body without previously receiving a JmsPublishBody", null);
         }
 
         if (_log.isTraceEnabled())
@@ -883,7 +883,7 @@ public class AMQChannel
     {
         if (!isTransactional())
         {
-            throw new AMQException("Fatal error: commit called on non-transactional channel");
+            throw new AMQException(null, "Fatal error: commit called on non-transactional channel", null);
         }
 
         _txnContext.commit();

@@ -87,7 +87,7 @@ public class DistributedTransactionalContext implements TransactionalContext
                     _storeContext.setPayload(xid);
                 } catch (Exception e)
                 {
-                    throw new AMQException("Problem during transaction begin", e);
+                    throw new AMQException(null, "Problem during transaction begin", e);
                 }
             }
         }
@@ -105,7 +105,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             }
         } catch (Exception e)
         {
-            throw new AMQException("Problem during transaction commit", e);
+            throw new AMQException(null, "Problem during transaction commit", e);
         }
         finally
         {
@@ -125,7 +125,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             }
         } catch (Exception e)
         {
-            throw new AMQException("Problem during transaction rollback", e);
+            throw new AMQException(null, "Problem during transaction rollback", e);
         }
         finally
         {
@@ -152,7 +152,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             _transactionManager.getTransaction((Xid) _storeContext.getPayload()).addRecord(new EnqueueRecord(_storeContext, message, queue, deliverFirst));
         } catch (Exception e)
         {
-            throw new AMQException("Problem during transaction rollback", e);
+            throw new AMQException(null, "Problem during transaction rollback", e);
         }
     }
 
@@ -196,7 +196,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             {
                 if (!unacknowledgedMessageMap.contains(deliveryTag))
                 {
-                    throw new AMQException("Multiple ack on delivery tag " + deliveryTag + " not known for channel");
+                    throw new AMQException(null, "Multiple ack on delivery tag " + deliveryTag + " not known for channel", null);
                 }
 
                 LinkedList<UnacknowledgedMessage> acked = new LinkedList<UnacknowledgedMessage>();
@@ -219,7 +219,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             if (msg == null)
             {
                 _log.info("Single ack on delivery tag " + deliveryTag);
-                throw new AMQException("Single ack on delivery tag " + deliveryTag);
+                throw new AMQException(null, "Single ack on delivery tag " + deliveryTag, null);
             }
 
             if (_log.isDebugEnabled())
@@ -250,7 +250,7 @@ public class DistributedTransactionalContext implements TransactionalContext
             _transactionManager.getTransaction((Xid) _storeContext.getPayload()).addRecord(new DequeueRecord());
         } catch (Exception e)
         {
-            throw new AMQException("Problem during message dequeue", e);
+            throw new AMQException(null, "Problem during message dequeue", e);
         }
     }
 

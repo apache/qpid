@@ -168,7 +168,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         catch (JMException ex)
         {
             _logger.error("AMQProtocolSession MBean creation has failed ", ex);
-            throw new AMQException("AMQProtocolSession MBean creation has failed ", ex);
+            throw new AMQException(null, "AMQProtocolSession MBean creation has failed ", ex);
         }
     }
 
@@ -199,7 +199,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         }
         else
         {
-            throw new UnknnownMessageTypeException(message);
+            throw new UnknnownMessageTypeException(message, null);
         }
     }
 
@@ -321,7 +321,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
                 }
                 if (!wasAnyoneInterested)
                 {
-                    throw new AMQNoMethodHandlerException(evt);
+                    throw new AMQNoMethodHandlerException(evt, null);
                 }
             }
             catch (AMQChannelException e)
@@ -425,7 +425,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
         AMQChannel channel = getChannel(channelId);
         if (channel == null)
         {
-            throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + channelId);
+            throw new AMQException(AMQConstant.NOT_FOUND, "Channel not found with id:" + channelId, null);
         }
         return channel;
     }
@@ -454,14 +454,14 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
     {
         if (_closed)
         {
-            throw new AMQException("Session is closed");
+            throw new AMQException(null, "Session is closed", null);
         }
 
         final int channelId = channel.getChannelId();
 
         if (_closingChannelsList.contains(channelId))
         {
-            throw new AMQException("Session is marked awaiting channel close");
+            throw new AMQException(null, "Session is marked awaiting channel close", null);
         }
 
         if (_channelMap.size() == _maxNoOfChannels)
@@ -469,7 +469,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession,
             String errorMessage = toString() + ": maximum number of channels has been reached (" +
                                   _maxNoOfChannels + "); can't create channel";
             _logger.error(errorMessage);
-            throw new AMQException(AMQConstant.NOT_ALLOWED, errorMessage);
+            throw new AMQException(AMQConstant.NOT_ALLOWED, errorMessage, null);
         }
         else
         {

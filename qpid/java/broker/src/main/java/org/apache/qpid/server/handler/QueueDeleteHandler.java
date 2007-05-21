@@ -114,7 +114,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                         store.destroyQueue(queue);
                     } catch (Exception e)
                     {
-                      throw new AMQException("problem when destroying queue " + queue, e);
+                      throw new AMQException(null, "problem when destroying queue " + queue, e);
                     }
                 }
                 

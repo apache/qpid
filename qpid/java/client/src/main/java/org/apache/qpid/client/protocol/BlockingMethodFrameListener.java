@@ -109,7 +109,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
                         _lock.wait(timeout);
                         if (!_ready)
                         {
-                            _error = new AMQTimeoutException("Server did not respond in a timely fashion");
+                            _error = new AMQTimeoutException("Server did not respond in a timely fashion", null);
                             _ready = true;
                         }
                     }
@@ -138,7 +138,7 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
             }
             else
             {
-                throw new AMQException("Woken up due to " + _error.getClass(), _error);
+                throw new AMQException(null, "Woken up due to " + _error.getClass(), _error);
             }
         }
 

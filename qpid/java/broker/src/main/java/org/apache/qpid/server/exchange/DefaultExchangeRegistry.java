@@ -71,7 +71,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
                 getMessageStore().createExchange(exchange);
             } catch (InternalErrorException e)
             {
-                throw new AMQException("problem registering excahgne " + exchange, e);
+                throw new AMQException(null, "problem registering excahgne " + exchange, e);
             }
         }
     }
@@ -99,14 +99,14 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
                     getMessageStore().removeExchange(e);
                 } catch (InternalErrorException e1)
                 {
-                    throw new AMQException("Problem unregistering Exchange " + name, e1);
+                    throw new AMQException(null, "Problem unregistering Exchange " + name, e1);
                 }
             }
             e.close();
         }
         else
         {
-            throw new AMQException("Unknown exchange " + name);
+            throw new AMQException(null, "Unknown exchange " + name, null);
         }
     }
 
@@ -138,7 +138,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         // TODO: check where the exchange is validated
         if (exch == null)
         {
-            throw new AMQException("Exchange '" + exchange + "' does not exist");
+            throw new AMQException(null, "Exchange '" + exchange + "' does not exist", null);
         }
         exch.route(payload);
     }

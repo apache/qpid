@@ -38,8 +38,8 @@ import org.apache.qpid.AMQException;
  */
 public class ExchangeInUseException extends AMQException
 {
-    public ExchangeInUseException(String exchangeName)
+    public ExchangeInUseException(String exchangeName, Throwable cause)
     {
-        super("Exchange " + exchangeName + " is currently in use");
+        super(null, "Exchange " + exchangeName + " is currently in use", cause);
     }
 }

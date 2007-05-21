@@ -80,7 +80,7 @@ public class PropertyUtils
 
                 if (replacement == null)
                 {
-                    throw new PropertyException("Property ${" + propertyName + "} has not been set");
+                    throw new PropertyException("Property ${" + propertyName + "} has not been set", null);
                 }
 
                 fragment = replacement;
@@ -145,7 +145,7 @@ public class PropertyUtils
                 int endName = value.indexOf('}', pos);
                 if (endName < 0)
                 {
-                    throw new PropertyException("Syntax error in property: " + value);
+                    throw new PropertyException("Syntax error in property: " + value, null);
                 }
 
                 String propertyName = value.substring(pos + 2, endName);

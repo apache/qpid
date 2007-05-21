@@ -107,7 +107,7 @@ public class ClusteredProtocolHandler extends AMQPFastProtocolHandler implements
                 buffer(session, msg);
                 break;
             default:
-                throw new AMQException("Received message while in state: " + state);
+                throw new AMQException(null, "Received message while in state: " + state, null);
         }
         JoinState latest = _groupMgr.getState();
         if (!latest.equals(state))

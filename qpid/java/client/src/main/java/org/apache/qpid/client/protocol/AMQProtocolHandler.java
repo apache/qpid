@@ -195,7 +195,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                     _logger.info("sessionClose() not allowed to failover");
                     _connection.exceptionReceived(
                             new AMQDisconnectedException("Server closed connection and reconnection " +
-                                                         "not permitted."));
+                                                         "not permitted.", null));
                 }
                 else
                 {
@@ -263,7 +263,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             _logger.error("Exception caught by protocol handler: " + cause, cause);
             // we notify the state manager of the error in case we have any clients waiting on a state
             // change. Those "waiters" will be interrupted and can handle the exception
-            AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
+            AMQException amqe = new AMQException(null, "Protocol handler error: " + cause, cause);
             propagateExceptionToWaiters(amqe);
             _connection.exceptionReceived(cause);
         }
@@ -334,7 +334,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                     }
                     if (!wasAnyoneInterested)
                     {
-                        throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:" + _frameListeners);
+                        throw new AMQException(null, "AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:" + _frameListeners, null);
                     }
                 }
                 catch (AMQException e)

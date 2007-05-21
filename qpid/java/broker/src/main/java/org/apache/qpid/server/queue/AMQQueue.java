@@ -21,9 +21,9 @@
 package org.apache.qpid.server.queue;
 
 import java.text.MessageFormat;
-import java.util.List;
-import java.util.Hashtable;
 import java.util.Collection;
+import java.util.Hashtable;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -40,11 +40,11 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exception.InternalErrorException;
-import org.apache.qpid.server.messageStore.StorableMessage;
-import org.apache.qpid.server.messageStore.StorableQueue;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.messageStore.StorableMessage;
+import org.apache.qpid.server.messageStore.StorableQueue;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -55,49 +55,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  */
 public class AMQQueue implements Managable, Comparable, StorableQueue
 {
-    /**
-     * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
-     * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create a subscription, because an exclusive subscription already exists.
-     * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
-     * @todo Move to top level, used outside this class.
-     */
-    public static int s_queueID =0;
-    public static final class ExistingExclusiveSubscription extends AMQException
-    {
-
-        public ExistingExclusiveSubscription()
-        {
-            super("");
-        }
-    }
-
-    /**
-     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusize subscription, as a subscription
-     * already exists.
-     *
-     * <p/><table id="crc"><caption>CRC Card</caption>
-     * <tr><th> Responsibilities <th> Collaborations
-     * <tr><td> Represent failure to create an exclusize subscription, as a subscription already exists.
-     * </table>
-     *
-     * @todo Not an AMQP exception as no status code.
-     *
-     * @todo Move to top level, used outside this class.
-     */
-    public static final class ExistingSubscriptionPreventsExclusive extends AMQException
-    {
-        public ExistingSubscriptionPreventsExclusive()
-        {
-            super("");
-        }
-    }
+    public static int s_queueID = 0;
 
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
 
@@ -107,7 +65,6 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     int _queueId;
     // The list of enqueued messages.
     Hashtable<Long, StorableMessage> _messages = new Hashtable<Long, StorableMessage>();
-
 
     /**
      * null means shared
@@ -236,12 +193,10 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         _subscribers = subscribers;
         _subscriptionFactory = subscriptionFactory;
         _deliveryMgr = new ConcurrentSelectorDeliveryManager(_subscribers, this);
-        _queueId = s_queueID++; 
+        _queueId = s_queueID++;
     }
 
-    private AMQQueueMBean createMBean()
-            throws
-            AMQException
+    private AMQQueueMBean createMBean() throws AMQException
     {
         try
         {
@@ -249,7 +204,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         }
         catch (JMException ex)
         {
-            throw new AMQException("AMQQueue MBean creation has failed ", ex);
+            throw new AMQException(null, "AMQQueue MBean creation has failed ", ex);
         }
     }
 
@@ -443,9 +398,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     /**
      * Removes the AMQMessage from the top of the queue.
      */
-    public synchronized void deleteMessageFromTop(StoreContext storeContext)
-            throws
-            AMQException
+    public synchronized void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
         _deliveryMgr.removeAMessageFromTop(storeContext);
     }
@@ -453,16 +406,12 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     /**
      * removes all the messages from the queue.
      */
-    public synchronized long clearQueue(StoreContext storeContext)
-            throws
-            AMQException
+    public synchronized long clearQueue(StoreContext storeContext) throws AMQException
     {
         return _deliveryMgr.clearAllMessages(storeContext);
     }
 
-    public void bind(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
-            throws
-            AMQException
+    public void bind(AMQShortString routingKey, FieldTable arguments, Exchange exchange) throws AMQException
     {
         exchange.registerQueue(routingKey, this, arguments);
         if (isDurable() && exchange.isDurable())
@@ -470,18 +419,17 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
             try
             {
                 _virtualHost.getMessageStore().bindQueue(exchange, routingKey, this, arguments);
-            } catch (InternalErrorException e)
+            }
+            catch (InternalErrorException e)
             {
-               throw new AMQException("Problem binding queue ", e);
+                throw new AMQException(null, "Problem binding queue ", e);
             }
         }
 
         _bindings.addBinding(routingKey, arguments, exchange);
     }
 
-    public void unBind(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
-            throws
-            AMQException
+    public void unBind(AMQShortString routingKey, FieldTable arguments, Exchange exchange) throws AMQException
     {
         exchange.deregisterQueue(routingKey, this, arguments);
         if (isDurable() && exchange.isDurable())
@@ -489,9 +437,10 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
             try
             {
                 _virtualHost.getMessageStore().unbindQueue(exchange, routingKey, this, arguments);
-            } catch (InternalErrorException e)
+            }
+            catch (InternalErrorException e)
             {
-                throw new AMQException("problem unbinding queue", e);
+                throw new AMQException(null, "problem unbinding queue", e);
             }
         }
 
@@ -506,14 +455,16 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
             if (isExclusive())
             {
                 decrementSubscriberCount();
-                throw new ExistingExclusiveSubscription();
-            } else if (exclusive)
+                throw new ExistingExclusiveSubscriptionException();
+            }
+            else if (exclusive)
             {
                 decrementSubscriberCount();
-                throw new ExistingSubscriptionPreventsExclusive();
+                throw new ExistingSubscriptionPreventsExclusiveException();
             }
 
-        } else if (exclusive)
+        }
+        else if (exclusive)
         {
             setExclusive(true);
         }
@@ -559,9 +510,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         return _subscriberCount.decrementAndGet();
     }
 
-    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag)
-            throws
-            AMQException
+    public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
@@ -576,8 +525,8 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
                         _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel, ps, consumerTag)))
                 == null)
         {
-            throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag
-                + " and protocol session key " + ps.getKey() + " not registered with queue " + this);
+            throw new AMQException(null, "Protocol session with channel " + channel + " and consumer tag " + consumerTag
+                + " and protocol session key " + ps.getKey() + " not registered with queue " + this, null);
         }
 
         removedSubscription.close();
@@ -609,21 +558,21 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         return !_deliveryMgr.hasQueuedMessages();
     }
 
-    public int delete(boolean checkUnused, boolean checkEmpty)
-            throws
-            AMQException
+    public int delete(boolean checkUnused, boolean checkEmpty) throws AMQException
     {
         if (checkUnused && !_subscribers.isEmpty())
         {
             _logger.info("Will not delete " + this + " as it is in use.");
 
             return 0;
-        } else if (checkEmpty && _deliveryMgr.hasQueuedMessages())
+        }
+        else if (checkEmpty && _deliveryMgr.hasQueuedMessages())
         {
             _logger.info("Will not delete " + this + " as it is not empty.");
 
             return 0;
-        } else
+        }
+        else
         {
             delete();
 
@@ -631,9 +580,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         }
     }
 
-    public void delete()
-            throws
-            AMQException
+    public void delete() throws AMQException
     {
         if (!_deleted.getAndSet(true))
         {
@@ -650,9 +597,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         }
     }
 
-    protected void autodelete()
-            throws
-            AMQException
+    protected void autodelete() throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
@@ -662,9 +607,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         delete();
     }
 
-    public void processGet(StoreContext storeContext, AMQMessage msg, boolean deliverFirst)
-            throws
-            AMQException
+    public void processGet(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
         // fixme not sure what this is doing. should we be passing deliverFirst through here?
         // This code is not used so when it is perhaps it should
@@ -687,9 +630,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     // return _deliveryMgr;
     // }
 
-    public void process(StoreContext storeContext, AMQMessage msg, boolean deliverFirst)
-            throws
-            AMQException
+    public void process(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
         _deliveryMgr.deliver(storeContext, getName(), msg, deliverFirst);
         try
@@ -705,9 +646,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         }
     }
 
-    void dequeue(StoreContext storeContext, AMQMessage msg)
-            throws
-            FailedDequeueException
+    void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
     {
         try
         {
@@ -737,9 +676,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         return _subscribers;
     }
 
-    protected void updateReceivedMessageCount(AMQMessage msg)
-            throws
-            AMQException
+    protected void updateReceivedMessageCount(AMQMessage msg) throws AMQException
     {
         if (!msg.isRedelivered())
         {
@@ -752,7 +689,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         }
         catch (JMException e)
         {
-            throw new AMQException("Unable to get notification from manage queue: " + e, e);
+            throw new AMQException(null, "Unable to get notification from manage queue: " + e, e);
         }
     }
 
@@ -783,9 +720,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         return "Queue(" + _name + ")@" + System.identityHashCode(this);
     }
 
-    public boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks)
-            throws
-            AMQException
+    public boolean performGet(AMQProtocolSession session, AMQChannel channel, boolean acks) throws AMQException
     {
         return _deliveryMgr.performGet(session, channel, acks);
     }
@@ -802,9 +737,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
 
     public static interface Task
     {
-        public void doTask(AMQQueue queue)
-                throws
-                AMQException;
+        public void doTask(AMQQueue queue) throws AMQException;
     }
 
     public void addQueueDeleteTask(Task task)
@@ -837,9 +770,9 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         _deliveryMgr.subscriberHasPendingResend(hasContent, subscription, msg);
     }
 
-    //========================================================================
+    // ========================================================================
     // Interface StorableQueue
-    //========================================================================
+    // ========================================================================
 
     public int getQueueID()
     {
@@ -861,9 +794,9 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         _messages.put(m.getMessageId(), m);
     }
 
-    //========================================================================
+    // ========================================================================
     // Used by the Store
-    //========================================================================
+    // ========================================================================
 
     /**
      * Get the list of enqueud messages

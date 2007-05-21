@@ -36,25 +36,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class PropertyException extends AMQException
 {
-    public PropertyException(String message)
+    public PropertyException(String message, Throwable cause)
     {
-        super(message);
+        super(null, message, cause);
     }
-
-    /*
-    public PropertyException(String msg, Throwable t)
-    {
-        super(msg, t);
-    }
-
-    public PropertyException(AMQConstant errorCode, String msg, Throwable t)
-    {
-        super(errorCode, msg, t);
-    }
-
-    public PropertyException(AMQConstant errorCode, String msg)
-    {
-        super(errorCode, msg);
-    }
-     */
 }

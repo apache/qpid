@@ -30,20 +30,12 @@ import org.apache.qpid.protocol.AMQConstant;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Represent failure to create an in VM broker.
  * </table>
+ *
+ * @todo Error code never used. This is not an AMQException.
  */
 public class AMQVMBrokerCreationException extends AMQTransportConnectionException
 {
     private int _port;
-
-    /**
-     * @param port
-     *
-     * @deprecated
-     */
-    public AMQVMBrokerCreationException(int port)
-    {
-        this(null, port, "Unable to create vm broker", null);
-    }
 
     public AMQVMBrokerCreationException(AMQConstant errorCode, int port, String message, Throwable cause)
     {

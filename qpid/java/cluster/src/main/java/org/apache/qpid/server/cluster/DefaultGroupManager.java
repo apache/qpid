@@ -176,7 +176,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         }
         catch (Exception e)
         {
-            throw new AMQException("Could not connect to leader: " + e, e);
+            throw new AMQException(null, "Could not connect to leader: " + e, e);
         }
     }
 
@@ -259,7 +259,7 @@ public class DefaultGroupManager implements GroupManager, MemberFailureListener,
         catch (Exception e)
         {
             e.printStackTrace();
-            throw new AMQException("Could not connect to prospect: " + e, e);
+            throw new AMQException(null, "Could not connect to prospect: " + e, e);
         }
     }
 

@@ -92,7 +92,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
                 if (body.mechanisms == null)
                 {
-                    throw new AMQException("mechanism not specified in ConnectionStart method frame");
+                    throw new AMQException(null, "mechanism not specified in ConnectionStart method frame", null);
                 }
                 else
                 {
@@ -102,7 +102,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
 
                 if (mechanism == null)
                 {
-                    throw new AMQException("No supported security mechanism found, passed: " + new String(body.mechanisms));
+                    throw new AMQException(null, "No supported security mechanism found, passed: " + new String(body.mechanisms), null);
                 }
 
                 byte[] saslResponse;
@@ -113,10 +113,9 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                                               createCallbackHandler(mechanism, protocolSession));
                     if (sc == null)
                     {
-                        throw new AMQException(
-                            "Client SASL configuration error: no SaslClient could be created for mechanism " + mechanism
+                        throw new AMQException(null, "Client SASL configuration error: no SaslClient could be created for mechanism " + mechanism
                             + ". Please ensure all factories are registered. See DynamicSaslRegistrar for "
-                            + " details of how to register non-standard SASL client providers.");
+                            + " details of how to register non-standard SASL client providers.", null);
                     }
 
                     protocolSession.setSaslClient(sc);
@@ -125,12 +124,12 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 catch (SaslException e)
                 {
                     protocolSession.setSaslClient(null);
-                    throw new AMQException("Unable to create SASL client: " + e, e);
+                    throw new AMQException(null, "Unable to create SASL client: " + e, e);
                 }
 
                 if (body.locales == null)
                 {
-                    throw new AMQException("Locales is not defined in Connection Start method");
+                    throw new AMQException(null, "Locales is not defined in Connection Start method", null);
                 }
 
                 final String locales = new String(body.locales, "utf8");
@@ -142,7 +141,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 }
                 else
                 {
-                    throw new AMQException("No locales sent from server, passed: " + locales);
+                    throw new AMQException(null, "No locales sent from server, passed: " + locales, null);
                 }
 
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
@@ -170,7 +169,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
             }
             catch (UnsupportedEncodingException e)
             {
-                throw new AMQException("Unable to decode data: " + e, e);
+                throw new AMQException(null, "Unable to decode data: " + e, e);
             }
         }
         else
@@ -235,7 +234,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
         }
         catch (Exception e)
         {
-            throw new AMQException("Unable to create callback handler: " + e, e);
+            throw new AMQException(null, "Unable to create callback handler: " + e, e);
         }
     }
 }

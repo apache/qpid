@@ -268,7 +268,7 @@ public class TxnBufferTest extends TestCase
     {
         public void prepare() throws AMQException
         {
-            throw new AMQException("Fail!");
+            throw new AMQException(null, "Fail!", null);
         }
     }
 

@@ -34,9 +34,9 @@ public class AMQUndeliveredException extends AMQException
 {
     private Object _bounced;
 
-    public AMQUndeliveredException(AMQConstant errorCode, String msg, Object bounced)
+    public AMQUndeliveredException(AMQConstant errorCode, String msg, Object bounced, Throwable cause)
     {
-        super(errorCode, msg);
+        super(errorCode, msg, cause);
 
         _bounced = bounced;
     }
