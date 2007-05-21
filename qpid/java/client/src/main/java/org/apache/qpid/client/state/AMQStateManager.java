@@ -186,7 +186,7 @@ public class AMQStateManager implements AMQMethodListener
 
     protected StateAwareMethodListener findStateTransitionHandler(AMQState currentState,
                                                                   AMQMethodBody frame)
-            throws IllegalStateTransitionException
+            // throws IllegalStateTransitionException
     {
         final Class clazz = frame.getClass();
         if (_logger.isDebugEnabled())

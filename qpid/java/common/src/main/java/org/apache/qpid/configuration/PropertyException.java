@@ -32,8 +32,7 @@ import org.apache.qpid.protocol.AMQConstant;
  * <tr><td> Represent failure to expand a property name into a value.
  * </table>
  *
- * @todo AMQException is to be reserved for protocol related conditions. This exception does not have a status code, so
- *       don't inherit from AMQException.
+ * @todo Not an AMQP exception as no status code.
  */
 public class PropertyException extends AMQException
 {

@@ -23,6 +23,14 @@ package org.apache.qpid.client.vmbroker;
 import org.apache.qpid.client.transport.AMQTransportConnectionException;
 import org.apache.qpid.protocol.AMQConstant;
 
+/**
+ * AMQVMBrokerCreationException represents failure to create an in VM broker on the vm transport medium.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represent failure to create an in VM broker.
+ * </table>
+ */
 public class AMQVMBrokerCreationException extends AMQTransportConnectionException
 {
     private int _port;

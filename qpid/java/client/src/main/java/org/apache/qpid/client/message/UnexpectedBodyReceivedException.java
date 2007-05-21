@@ -23,6 +23,9 @@ package org.apache.qpid.client.message;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
+/**
+ * @todo Not used! Delete!
+ */
 public class UnexpectedBodyReceivedException extends AMQException
 {
     public UnexpectedBodyReceivedException(String msg, Throwable t)

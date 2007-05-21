@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,6 +26,16 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.protocol.AMQConstant;
 
+/**
+ * AMQConnectionException indicates that an error that requires the channel to be closed has occurred.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents an error that rquires the channel to be closed.
+ * </table>
+ *
+ * @todo Does this duplicate AMQChannelClosedException?
+ */
 public class AMQConnectionException extends AMQException
 {
     private final int _classId;
@@ -35,7 +45,8 @@ public class AMQConnectionException extends AMQException
     private final byte minor;
     boolean _closeConnetion;
 
-    public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor, Throwable t)
+    public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor,
+        Throwable t)
     {
         super(errorCode, msg, t);
         _classId = classId;
@@ -53,12 +64,10 @@ public class AMQConnectionException extends AMQException
         this.minor = minor;
     }
 
-
-
     public AMQFrame getCloseFrame(int channel)
     {
-        return ConnectionCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode().getCode(), new AMQShortString(getMessage()));
+        return ConnectionCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode().getCode(),
+                new AMQShortString(getMessage()));
     }
-
 
 }

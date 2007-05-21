@@ -23,6 +23,15 @@ package org.apache.qpid.client.transport;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
+/**
+ * AMQTransportConnectionException indicates a failure to establish a connection through the transporting medium, to
+ * an AMQP broker.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represent failure to connect through the transport medium.
+ * </table>
+ */
 public class AMQTransportConnectionException extends AMQException
 {
     public AMQTransportConnectionException(AMQConstant errorCode, String message, Throwable cause)

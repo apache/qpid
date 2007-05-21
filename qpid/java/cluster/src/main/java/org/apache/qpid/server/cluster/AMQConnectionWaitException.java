@@ -22,6 +22,16 @@ package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
 
+/**
+ * AMQConnectionWaitException represents a failure to connect to a cluster peer in a timely manner.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents failure to connect to a cluster peer in a timely manner.
+ * </table>
+ *
+ * @todo Not an AMQP exception as no status code.
+ */
 public class AMQConnectionWaitException extends AMQException
 {
     public AMQConnectionWaitException(String s, Throwable e)
