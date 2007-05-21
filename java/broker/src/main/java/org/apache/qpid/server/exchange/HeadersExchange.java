@@ -231,7 +231,7 @@ public class HeadersExchange extends AbstractExchange
 
             if (payload.getMessagePublishInfo().isMandatory())
             {
-                throw new NoRouteException(msg, payload);
+                throw new NoRouteException(msg, payload, null);
             }
             else
             {
@@ -284,7 +284,7 @@ public class HeadersExchange extends AbstractExchange
         catch (JMException ex)
         {
             _logger.error("Exception occured in creating the HeadersExchangeMBean", ex);
-            throw new AMQException("Exception occured in creating the HeadersExchangeMBean", ex);
+            throw new AMQException(null, "Exception occured in creating the HeadersExchangeMBean", ex);
         }
     }
 

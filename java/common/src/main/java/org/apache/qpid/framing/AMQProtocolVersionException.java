@@ -32,8 +32,8 @@ package org.apache.qpid.framing;
  */
 public class AMQProtocolVersionException extends AMQProtocolHeaderException
 {
-    public AMQProtocolVersionException(String message)
+    public AMQProtocolVersionException(String message, Throwable cause)
     {
-        super(message);
+        super(message, cause);
     }
 }

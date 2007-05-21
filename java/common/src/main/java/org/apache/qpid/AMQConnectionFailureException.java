@@ -12,8 +12,8 @@ package org.apache.qpid;
  */
 public class AMQConnectionFailureException extends AMQException
 {
-    public AMQConnectionFailureException(String message)
+    public AMQConnectionFailureException(String message, Throwable cause)
     {
-        super(message);
+        super(null, message, cause);
     }
 }

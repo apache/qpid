@@ -31,6 +31,8 @@ import org.apache.qpid.protocol.AMQConstant;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Represent failure to connect through the transport medium.
  * </table>
+ *
+ * @todo Error code never used. This is not an AMQException.
  */
 public class AMQTransportConnectionException extends AMQException
 {

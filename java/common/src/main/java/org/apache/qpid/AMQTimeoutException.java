@@ -32,8 +32,8 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class AMQTimeoutException extends AMQException
 {
-    public AMQTimeoutException(String message)
+    public AMQTimeoutException(String message, Throwable cause)
     {
-        super(AMQConstant.REQUEST_TIMEOUT, message);
+        super(AMQConstant.REQUEST_TIMEOUT, message, cause);
     }
 }

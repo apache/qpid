@@ -126,7 +126,7 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         if (!unacknowledgedMessageMap.contains(deliveryTag))
         {
-            throw new AMQException("Ack with delivery tag " + deliveryTag + " not known for channel");
+            throw new AMQException(null, "Ack with delivery tag " + deliveryTag + " not known for channel", null);
         }
     }
 

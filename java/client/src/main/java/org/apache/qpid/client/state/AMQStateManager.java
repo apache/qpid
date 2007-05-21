@@ -248,7 +248,7 @@ public class AMQStateManager implements AMQMethodListener
             if (_currentState != s)
             {
                 _logger.warn("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
-                throw new AMQException("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
+                throw new AMQException(null, "State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s, null);
             }
         }
 

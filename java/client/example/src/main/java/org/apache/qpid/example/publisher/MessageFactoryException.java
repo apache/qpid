@@ -22,33 +22,8 @@ package org.apache.qpid.example.publisher;
 
 public class MessageFactoryException extends Exception
 {
-
-    private int _errorCode;
-
-    public MessageFactoryException(String message)
-    {
-        super(message);
-    }
-
     public MessageFactoryException(String msg, Throwable t)
     {
         super(msg, t);
-    }
-
-    public MessageFactoryException(int errorCode, String msg, Throwable t)
-    {
-        super(msg + " [error code " + errorCode + ']', t);
-        _errorCode = errorCode;
-    }
-
-    public MessageFactoryException(int errorCode, String msg)
-    {
-        super(msg + " [error code " + errorCode + ']');
-        _errorCode = errorCode;
-    }
-
-    public int getErrorCode()
-    {
-        return _errorCode;
     }
 }

@@ -35,9 +35,9 @@ import org.apache.qpid.server.RequiredDeliveryException;
  */
 public class NoConsumersException extends RequiredDeliveryException
 {
-    public NoConsumersException(AMQMessage message)
+    public NoConsumersException(AMQMessage message, Throwable cause)
     {
-        super("Immediate delivery is not possible.", message);
+        super("Immediate delivery is not possible.", message, cause);
     }
 
     public AMQConstant getReplyCode()

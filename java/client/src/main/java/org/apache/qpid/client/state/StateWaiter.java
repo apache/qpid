@@ -76,7 +76,7 @@ public class StateWaiter implements StateListener
             }
             else
             {
-                throw new AMQException("Error: " + _throwable, _throwable); // FIXME: this will wrap FailoverException in throwable which will prevent it being caught.
+                throw new AMQException(null, "Error: " + _throwable, _throwable); // FIXME: this will wrap FailoverException in throwable which will prevent it being caught.
             }
         }
     }

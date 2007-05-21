@@ -98,7 +98,7 @@ public class FanoutExchange extends AbstractExchange
         catch (JMException ex)
         {
             _logger.error("Exception occured in creating the direct exchange mbean", ex);
-            throw new AMQException("Exception occured in creating the direct exchange mbean", ex);
+            throw new AMQException(null, "Exception occured in creating the direct exchange mbean", ex);
         }
     }
 
@@ -129,8 +129,8 @@ public class FanoutExchange extends AbstractExchange
 
         if (!_queues.remove(queue))
         {
-            throw new AMQException("Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   ". ");
+            throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
+                                   ". ", null);
         }
     }
 
@@ -143,7 +143,7 @@ public class FanoutExchange extends AbstractExchange
             String msg = "No queues bound to " + this;
             if (publishInfo.isMandatory())
             {
-                throw new NoRouteException(msg, payload);
+                throw new NoRouteException(msg, payload, null);
             }
             else
             {

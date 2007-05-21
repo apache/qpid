@@ -175,7 +175,7 @@ public class StorableMessageHandle implements AMQMessageHandle
             }
         } catch (Exception e)
         {
-            throw new AMQException("PRoblem during message enqueue", e);
+            throw new AMQException(null, "PRoblem during message enqueue", e);
         }
     }
 
@@ -191,7 +191,7 @@ public class StorableMessageHandle implements AMQMessageHandle
             }
         } catch (Exception e)
         {
-            throw new AMQException("PRoblem during message dequeue", e);
+            throw new AMQException(null, "PRoblem during message dequeue", e);
         }
     }
 

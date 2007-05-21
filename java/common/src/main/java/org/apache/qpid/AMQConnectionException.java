@@ -40,24 +40,19 @@ public class AMQConnectionException extends AMQException
 {
     private final int _classId;
     private final int _methodId;
-    /* AMQP version for which exception ocurred */
+
+    /** AMQP version for which exception ocurred, major code. */
     private final byte major;
+
+    /** AMQP version for which exception ocurred, minor code. */
     private final byte minor;
+
     boolean _closeConnetion;
 
     public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor,
-        Throwable t)
+        Throwable cause)
     {
-        super(errorCode, msg, t);
-        _classId = classId;
-        _methodId = methodId;
-        this.major = major;
-        this.minor = minor;
-    }
-
-    public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor)
-    {
-        super(errorCode, msg);
+        super(errorCode, msg, cause);
         _classId = classId;
         _methodId = methodId;
         this.major = major;
@@ -69,5 +64,4 @@ public class AMQConnectionException extends AMQException
         return ConnectionCloseBody.createAMQFrame(channel, major, minor, _classId, _methodId, getErrorCode().getCode(),
                 new AMQShortString(getMessage()));
     }
-
 }

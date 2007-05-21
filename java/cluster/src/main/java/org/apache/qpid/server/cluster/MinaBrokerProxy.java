@@ -207,7 +207,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
         }
         else
         {
-            throw new AMQUnexpectedBodyTypeException(AMQMethodBody.class, body);
+            throw new AMQUnexpectedBodyTypeException(AMQMethodBody.class, body, null);
         }
     }
 
@@ -260,7 +260,7 @@ public class MinaBrokerProxy extends Broker implements MethodHandler
             }
             else
             {
-                throw new AMQUnexpectedFrameTypeException("Received message of unrecognised type: " + object);
+                throw new AMQUnexpectedFrameTypeException("Received message of unrecognised type: " + object, null);
             }
         }
 

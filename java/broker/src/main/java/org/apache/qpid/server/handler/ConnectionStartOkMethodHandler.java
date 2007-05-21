@@ -138,7 +138,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         catch (SaslException e)
         {
             disposeSaslServer(session);
-            throw new AMQException("SASL error: " + e, e);
+            throw new AMQException(null, "SASL error: " + e, e);
         }
     }
 

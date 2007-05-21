@@ -55,7 +55,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         if (exchClass == null)
         {
 
-            throw new AMQUnknownExchangeType("Unknown exchange type: " + type);
+            throw new AMQUnknownExchangeType("Unknown exchange type: " + type, null);
         }
         try
         {
@@ -65,11 +65,11 @@ public class DefaultExchangeFactory implements ExchangeFactory
         }
         catch (InstantiationException e)
         {
-            throw new AMQException("Unable to create exchange: " + e, e);
+            throw new AMQException(null, "Unable to create exchange: " + e, e);
         }
         catch (IllegalAccessException e)
         {
-            throw new AMQException("Unable to create exchange: " + e, e);
+            throw new AMQException(null, "Unable to create exchange: " + e, e);
         }
     }
 }

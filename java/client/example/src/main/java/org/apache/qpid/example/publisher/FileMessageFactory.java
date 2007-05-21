@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,11 +19,12 @@
 
 package org.apache.qpid.example.publisher;
 
+import java.io.*;
+
+import javax.jms.*;
+
 import org.apache.qpid.example.shared.FileUtils;
 import org.apache.qpid.example.shared.Statics;
-
-import java.io.*;
-import javax.jms.*;
 
 public class FileMessageFactory
 {
@@ -47,8 +48,7 @@ public class FileMessageFactory
         }
         catch (IOException e)
         {
-            MessageFactoryException mfe = new MessageFactoryException(e.toString());
-            mfe.initCause(e);
+            MessageFactoryException mfe = new MessageFactoryException(e.toString(), e);
             throw mfe;
         }
     }
@@ -64,7 +64,8 @@ public class FileMessageFactory
     {
         TextMessage msg = _session.createTextMessage();
         msg.setText(_payload);
-        msg.setStringProperty(Statics.FILENAME_PROPERTY,new File(_filename).getName());
+        msg.setStringProperty(Statics.FILENAME_PROPERTY, new File(_filename).getName());
+
         return msg;
     }
 
@@ -79,6 +80,7 @@ public class FileMessageFactory
     {
         TextMessage msg = session.createTextMessage();
         msg.setText(textMsg);
+
         return msg;
     }
 
@@ -116,6 +118,7 @@ public class FileMessageFactory
         catch (JMSException e)
         {
             e.printStackTrace(System.out);
+
             return e.toString();
         }
     }
@@ -124,13 +127,13 @@ public class FileMessageFactory
     {
         try
         {
-            return m instanceof TextMessage && ((TextMessage) m).getText().equals(s);
+            return (m instanceof TextMessage) && ((TextMessage) m).getText().equals(s);
         }
         catch (JMSException e)
         {
             e.printStackTrace(System.out);
+
             return false;
         }
     }
 }
-

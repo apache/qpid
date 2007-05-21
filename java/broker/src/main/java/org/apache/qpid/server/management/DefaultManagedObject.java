@@ -71,7 +71,7 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         }
         catch (JMException e)
         {
-            throw new AMQException("Error registering managed object " + this + ": " + e, e);
+            throw new AMQException(null, "Error registering managed object " + this + ": " + e, e);
         }
     }
 
@@ -88,7 +88,7 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
         }
         catch (JMException e)
         {
-            throw new AMQException("Error unregistering managed object: " + this + ": " + e, e);
+            throw new AMQException(null, "Error unregistering managed object: " + this + ": " + e, e);
         }
     }
 
