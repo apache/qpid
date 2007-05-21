@@ -22,6 +22,16 @@ package org.apache.qpid.client.transport;
 
 import org.apache.qpid.jms.BrokerDetails;
 
+/**
+ * AMQNoTransportForProtocolException represents a connection failure where there is no transport medium to connect
+ * to the broker available.  This may be the case if their is a error in the connection url, or an unsupported transport
+ * type is specified.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represent absence of a transport medium.
+ * </table>
+ */
 public class AMQNoTransportForProtocolException extends AMQTransportConnectionException
 {
     BrokerDetails _details;

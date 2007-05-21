@@ -68,7 +68,13 @@ import org.apache.qpid.pool.Event.CloseEvent;
  * @todo Why set an event limit of 10 on the Job? This also seems bizarre, as the job can have more than 10 events in
  *       it. Its just that it runs them 10 at a time, but the completion hander here checks if there are more to run
  *       and trips off another batch of 10 until they are all done. Why not just have a straight forward
- *       consumer/producer queue scenario without the batches of 10?
+ *       consumer/producer queue scenario without the batches of 10? So instead of having many jobs with batches of 10
+ *       in them, just have one queue of events and worker threads taking the next event. There will be coordination
+ *       between worker threads and new events arriving on the job anyway, so the simpler scenario may have the same
+ *       amount of contention. I can see that the batches of 10 is done, so that no job is allowed to hog the worker
+ *       pool for too long. I'm not convinced this fairly complex scheme will actually add anything, and it might be
+ *       better to encapsulate it under a Queue interface anyway, so that different queue implementations can easily
+ *       be substituted in.
  *
  * @todo The static helper methods are pointless. Could just call new.
  */

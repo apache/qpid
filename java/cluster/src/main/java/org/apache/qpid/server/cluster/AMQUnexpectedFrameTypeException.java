@@ -22,6 +22,20 @@ package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
 
+/**
+ * AMQUnexpectedFrameTypeException represents a failure when Mina passes an unexpected frame type.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents failure to cast a frame to its expected type.
+ * </table>
+ *
+ * @todo Not an AMQP exception as no status code.
+ *
+ * @todo Seems like this exception was created to handle an unsafe type cast that will never happen in practice. Would
+ *       be better just to leave that as a ClassCastException. However, check the framing layer catches this error
+ *       first.
+ */
 public class AMQUnexpectedFrameTypeException extends AMQException
 {
     public AMQUnexpectedFrameTypeException(String s)

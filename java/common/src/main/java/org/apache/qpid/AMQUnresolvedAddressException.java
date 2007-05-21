@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,6 +20,19 @@
  */
 package org.apache.qpid;
 
+/**
+ * AMQUnresolvedAddressException indicates failure to resolve a socket address.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents failre to resolve a socket address.
+ * </table>
+ *
+ * @todo Not an AMQP exception as no status code.
+ *
+ * @todo Why replace java.nio.UnresolvedAddressException with this? This is checked, which may explain why, but it
+ *       doesn't wrap the underlying exception.
+ */
 public class AMQUnresolvedAddressException extends AMQException
 {
     String _broker;
@@ -32,6 +45,6 @@ public class AMQUnresolvedAddressException extends AMQException
 
     public String toString()
     {
-        return super.toString() + " Broker, \"" + _broker +"\"";
+        return super.toString() + " Broker, \"" + _broker + "\"";
     }
 }

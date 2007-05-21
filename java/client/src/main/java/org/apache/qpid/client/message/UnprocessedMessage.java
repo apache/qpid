@@ -63,7 +63,7 @@ public class UnprocessedMessage
         _bounceBody = bounceBody;
     }
 
-    public void receiveBody(ContentBody body) throws UnexpectedBodyReceivedException
+    public void receiveBody(ContentBody body) //throws UnexpectedBodyReceivedException
     {
 
         if (body.payload != null)
