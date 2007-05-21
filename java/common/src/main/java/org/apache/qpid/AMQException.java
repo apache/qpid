@@ -24,11 +24,11 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * AMQException forms the root exception of all exceptions relating to the AMQ protocol. It provides space to associate
- * an AMQ error code with the exception, which is a numberic value, with a meaning defined by the protocol.
+ * a required AMQ error code with the exception, which is a numeric value, with a meaning defined by the protocol.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represents an exception condition associated with an AMQ protocol error code.
+ * <tr><td> Represents an exception condition associated with an AMQ protocol status code.
  * </table>
  *
  * @todo This exception class is also used as a generic exception throughout Qpid code. This usage may not be strictly

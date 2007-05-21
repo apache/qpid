@@ -27,7 +27,7 @@ import org.apache.qpid.client.handler.ConnectionStartMethodHandler;
 import org.apache.qpid.client.handler.ConnectionTuneMethodHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.state.IllegalStateTransitionException;
+// import org.apache.qpid.client.state.IllegalStateTransitionException;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.*;
@@ -78,7 +78,7 @@ public class ClientHandlerRegistry extends AMQStateManager
         return registry;
     }
 
-    protected StateAwareMethodListener findStateTransitionHandler(AMQState state, AMQMethodBody frame) throws IllegalStateTransitionException
+    protected StateAwareMethodListener findStateTransitionHandler(AMQState state, AMQMethodBody frame) //throws IllegalStateTransitionException
     {
         ClientRegistry registry = _handlers.get(state);
         return registry == null ? null : registry.getHandler(frame);
