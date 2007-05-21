@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,9 +18,7 @@
 package org.apache.qpid.server.exception;
 
 /**
- * Created by Arnaud Simon
- * Date: 03-Apr-2007
- * Time: 09:46:31
+ * @todo Need to understand what message staging is to document properly.
  */
 public class MessageAlreadyStagedException extends Exception
 {
@@ -40,6 +38,8 @@ public class MessageAlreadyStagedException extends Exception
      *
      * @param message the detail message .
      * @param cause   the cause.
+     *
+     * @deprected
      */
     public MessageAlreadyStagedException(String message, Throwable cause)
     {
@@ -50,6 +50,8 @@ public class MessageAlreadyStagedException extends Exception
      * Constructs a new MessageAlreadyStagedException with the specified cause.
      *
      * @param cause the cause
+     *
+     * @deprected
      */
     public MessageAlreadyStagedException(Throwable cause)
     {
