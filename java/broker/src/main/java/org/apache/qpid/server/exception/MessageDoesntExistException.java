@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,9 +18,13 @@
 package org.apache.qpid.server.exception;
 
 /**
- * Created by Arnaud Simon
- * Date: 30-Mar-2007
- * Time: 10:52:29
+ * MessageDoesntExistException indicates that a message store cannot find a message looked up by its id. This may
+ * indicate message loss.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents failure of message store to find a message.
+ * </table>
  */
 public class MessageDoesntExistException extends Exception
 {
@@ -40,6 +44,8 @@ public class MessageDoesntExistException extends Exception
      *
      * @param message the detail message .
      * @param cause   the cause.
+     *
+     * @deprected
      */
     public MessageDoesntExistException(String message, Throwable cause)
     {
@@ -50,6 +56,8 @@ public class MessageDoesntExistException extends Exception
      * Constructs a new MessageDoesntExistException with the specified cause.
      *
      * @param cause the cause
+     *
+     * @deprected
      */
     public MessageDoesntExistException(Throwable cause)
     {
