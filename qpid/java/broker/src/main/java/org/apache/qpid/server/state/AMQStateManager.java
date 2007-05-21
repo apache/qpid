@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.BasicAckBody;
@@ -35,6 +36,7 @@ import org.apache.qpid.framing.BasicGetBody;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicRecoverBody;
+import org.apache.qpid.framing.BasicRejectBody;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.framing.ChannelFlowBody;
@@ -55,7 +57,6 @@ import org.apache.qpid.framing.QueuePurgeBody;
 import org.apache.qpid.framing.TxCommitBody;
 import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.framing.TxSelectBody;
-import org.apache.qpid.framing.BasicRejectBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.handler.BasicAckMethodHandler;
@@ -65,6 +66,7 @@ import org.apache.qpid.server.handler.BasicGetMethodHandler;
 import org.apache.qpid.server.handler.BasicPublishMethodHandler;
 import org.apache.qpid.server.handler.BasicQosHandler;
 import org.apache.qpid.server.handler.BasicRecoverMethodHandler;
+import org.apache.qpid.server.handler.BasicRejectMethodHandler;
 import org.apache.qpid.server.handler.ChannelCloseHandler;
 import org.apache.qpid.server.handler.ChannelCloseOkHandler;
 import org.apache.qpid.server.handler.ChannelFlowHandler;
@@ -83,9 +85,8 @@ import org.apache.qpid.server.handler.QueueDeclareHandler;
 import org.apache.qpid.server.handler.QueueDeleteHandler;
 import org.apache.qpid.server.handler.QueuePurgeHandler;
 import org.apache.qpid.server.handler.TxCommitHandler;
-import org.apache.qpid.server.handler.BasicRejectMethodHandler;
-import org.apache.qpid.server.handler.TxSelectHandler;
 import org.apache.qpid.server.handler.TxRollbackHandler;
+import org.apache.qpid.server.handler.TxSelectHandler;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -107,18 +108,18 @@ public class AMQStateManager implements AMQMethodListener
      * AMQFrame.
      */
     private final EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>> _state2HandlersMap =
-            new EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>(AMQState.class);
-
+        new EnumMap<AMQState, Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>>(
+            AMQState.class);
 
     private CopyOnWriteArraySet<StateListener> _stateListeners = new CopyOnWriteArraySet<StateListener>();
-
 
     public AMQStateManager(VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
     {
         this(AMQState.CONNECTION_NOT_STARTED, true, virtualHostRegistry, protocolSession);
     }
 
-    protected AMQStateManager(AMQState initial, boolean register, VirtualHostRegistry virtualHostRegistry, AMQProtocolSession protocolSession)
+    protected AMQStateManager(AMQState initial, boolean register, VirtualHostRegistry virtualHostRegistry,
+        AMQProtocolSession protocolSession)
     {
         _virtualHostRegistry = virtualHostRegistry;
         _protocolSession = protocolSession;
@@ -220,37 +221,38 @@ public class AMQStateManager implements AMQMethodListener
             checkChannel(evt, _protocolSession);
 
             handler.methodReceived(this, evt);
+
             return true;
         }
+
         return false;
     }
 
     private <B extends AMQMethodBody> void checkChannel(AMQMethodEvent<B> evt, AMQProtocolSession protocolSession)
-            throws AMQException
+        throws AMQException
     {
-        if (evt.getChannelId() != 0
-            && !(evt.getMethod() instanceof ChannelOpenBody)
-            && (protocolSession.getChannel(evt.getChannelId()) == null)
-            && !protocolSession.channelAwaitingClosure(evt.getChannelId()))
+        if ((evt.getChannelId() != 0) && !(evt.getMethod() instanceof ChannelOpenBody)
+                && (protocolSession.getChannel(evt.getChannelId()) == null)
+                && !protocolSession.channelAwaitingClosure(evt.getChannelId()))
         {
             throw evt.getMethod().getChannelNotFoundException(evt.getChannelId());
         }
     }
 
     protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState currentState,
-                                                                                               B frame)
-            throws IllegalStateTransitionException
+        B frame)
+    // throws IllegalStateTransitionException
     {
-        final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>>
-                classToHandlerMap = _state2HandlersMap.get(currentState);
+        final Map<Class<? extends AMQMethodBody>, StateAwareMethodListener<? extends AMQMethodBody>> classToHandlerMap =
+            _state2HandlersMap.get(currentState);
 
-        final StateAwareMethodListener<B> handler = classToHandlerMap == null
-                                                    ? null
-                                                    : (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
+        final StateAwareMethodListener<B> handler =
+            (classToHandlerMap == null) ? null : (StateAwareMethodListener<B>) classToHandlerMap.get(frame.getClass());
 
         if (handler == null)
         {
             _logger.debug("No state transition handler defined for receiving frame " + frame);
+
             return null;
         }
         else

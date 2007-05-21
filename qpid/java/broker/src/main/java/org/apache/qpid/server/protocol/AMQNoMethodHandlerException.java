@@ -20,13 +20,25 @@
  */
 package org.apache.qpid.server.protocol;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.AMQException;
 
+/**
+ * AMQNoMethodHandlerException represents the case where no method handler exists to handle an AQMP method.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents failure to handle an AMQP method.
+ * </table>
+ *
+ * @todo Not an AMQP exception as no status code.
+ *
+ * @todo Missing method handler. Unlikely to ever happen, and if it does its a coding error. Consider replacing with a
+ *       Runtime.
+ */
 public class AMQNoMethodHandlerException extends AMQException
 {
-
     public AMQNoMethodHandlerException(AMQMethodEvent<AMQMethodBody> evt)
     {
         super("AMQMethodEvent " + evt + " was not processed by any listener on Broker.");

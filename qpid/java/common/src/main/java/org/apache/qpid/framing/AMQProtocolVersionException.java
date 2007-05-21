@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,13 +21,19 @@
 package org.apache.qpid.framing;
 
 /**
- * Exception that is thrown when the client and server differ on expected protocol version (header) information.
+ * AMQProtocolInstanceException indicates that the client and server differ on expected protocol version  in a header.
  *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represent incorrect protocol version in frame header.
+ * </table>
+ *
+ * @todo Not an AMQP exception as no status code.
  */
 public class AMQProtocolVersionException extends AMQProtocolHeaderException
 {
-   public AMQProtocolVersionException(String message)
-   {
-       super(message);
-   }
+    public AMQProtocolVersionException(String message)
+    {
+        super(message);
+    }
 }

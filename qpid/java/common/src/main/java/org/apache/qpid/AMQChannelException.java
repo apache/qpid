@@ -25,6 +25,16 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.protocol.AMQConstant;
 
+/**
+ * AMQChannelException indicates that an error that requires the channel to be closed has occurred.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents an error that rquires the channel to be closed.
+ * </table>
+ *
+ * @todo Does this duplicate AMQChannelClosedException?
+ */
 public class AMQChannelException extends AMQException
 {
     private final int _classId;

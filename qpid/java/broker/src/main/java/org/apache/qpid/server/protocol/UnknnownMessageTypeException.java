@@ -20,14 +20,27 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQDataBlock;
 
+/**
+ * UnknnownMessageTypeException represents a failure when Mina passes an unexpected frame type.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents failure to cast a frame to its expected type.
+ * </table>
+ *
+ * @todo Not an AMQP exception as no status code.
+ *
+ * @todo Seems like this exception was created to handle an unsafe type cast that will never happen in practice. Would
+ *       be better just to leave that as a ClassCastException. However, check the framing layer catches this error
+ *       first.
+ */
 public class UnknnownMessageTypeException extends AMQException
 {
     public UnknnownMessageTypeException(AMQDataBlock message)
     {
         super("Unknown message type: " + message.getClass().getName() + ": " + message);
-
     }
 }

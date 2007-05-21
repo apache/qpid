@@ -25,9 +25,17 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.queue.AMQMessage;
 
 /**
- * Signals that a required delivery could not be made. This could be bacuse of
- * the immediate flag being set and the queue having no consumers, or the mandatory
- * flag being set and the exchange having no valid bindings.
+ * Signals that a required delivery could not be made. This could be bacuse of the immediate flag being set and the
+ * queue having no consumers, or the mandatory flag being set and the exchange having no valid bindings.
+ *
+ * <p/>The failed message is associated with this error condition, by taking a reference to it. This enables the
+ * correct compensating action to be taken against the message, for example, bouncing it back to the sender.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represent failure to deliver a message that must be delivered.
+ * <tr><td> Associate the failed message with the error condition. <td> {@link AMQMessage}
+ * </table>
  */
 public abstract class RequiredDeliveryException extends AMQException
 {
@@ -40,10 +48,10 @@ public abstract class RequiredDeliveryException extends AMQException
         // Increment the reference as this message is in the routing phase
         // and so will have the ref decremented as routing fails.
         // we need to keep this message around so we can return it in the
-        // handler. So increment here.  
-	_amqMessage = payload.takeReference();
- 
-        //payload.incrementReference();
+        // handler. So increment here.
+        _amqMessage = payload.takeReference();
+
+        // payload.incrementReference();
     }
 
     public AMQMessage getAMQMessage()

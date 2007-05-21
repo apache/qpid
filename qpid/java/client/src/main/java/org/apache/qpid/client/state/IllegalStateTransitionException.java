@@ -22,6 +22,11 @@ package org.apache.qpid.client.state;
 
 import org.apache.qpid.AMQException;
 
+/**
+ * @todo Not an AMQP exception as no status code.
+ *
+ * @todo Not used! Delete.
+ */
 public class IllegalStateTransitionException extends AMQException
 {
     private AMQState _originalState;
