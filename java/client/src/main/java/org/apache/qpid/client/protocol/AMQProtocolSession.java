@@ -39,7 +39,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
-import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
+// import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -106,10 +106,9 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     private final AMQConnection _connection;
 
-
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
     {
-        this(protocolHandler,protocolSession,connection, new AMQStateManager());
+        this(protocolHandler, protocolSession, connection, new AMQStateManager());
 
     }
 
@@ -269,15 +268,15 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             throw new AMQException("Error: received content body without having received a ContentHeader frame first");
         }
 
-        try
-        {
-            msg.receiveBody(contentBody);
-        }
+        /*try
+        {*/
+        msg.receiveBody(contentBody);
+        /*}
         catch (UnexpectedBodyReceivedException e)
         {
             _channelId2UnprocessedMsgMap.remove(channelId);
             throw e;
-        }
+        }*/
 
         if (msg.isAllBodyDataReceived())
         {
@@ -327,7 +326,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
             _lastWriteFuture = f;
         }
     }
-
 
     /**
      * Starts the process of closing a session

@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.server.state.IllegalStateTransitionException;
+//import org.apache.qpid.server.state.IllegalStateTransitionException;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.cluster.util.LogMessage;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -74,7 +74,7 @@ class ServerHandlerRegistry extends AMQStateManager
         }
     }
 
-    protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState state, B frame) throws IllegalStateTransitionException
+    protected <B extends AMQMethodBody> StateAwareMethodListener<B> findStateTransitionHandler(AMQState state, B frame) //throws IllegalStateTransitionException
     {
         MethodHandlerRegistry registry = _handlers.get(state);
         StateAwareMethodListener<B> handler = (registry == null) ? null : registry.getHandler(frame);

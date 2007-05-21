@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.JMException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
@@ -49,7 +50,19 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  */
 public class AMQQueue implements Managable, Comparable
 {
-
+    /**
+     * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription
+     * already exists.
+     *
+     * <p/><table id="crc"><caption>CRC Card</caption>
+     * <tr><th> Responsibilities <th> Collaborations
+     * <tr><td> Represent failure to create a subscription, because an exclusive subscription already exists.
+     * </table>
+     *
+     * @todo Not an AMQP exception as no status code.
+     *
+     * @todo Move to top level, used outside this class.
+     */
     public static final class ExistingExclusiveSubscription extends AMQException
     {
 
@@ -59,18 +72,26 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
+    /**
+     * ExistingSubscriptionPreventsExclusive signals a failure to create an exclusize subscription, as a subscription
+     * already exists.
+     *
+     * <p/><table id="crc"><caption>CRC Card</caption>
+     * <tr><th> Responsibilities <th> Collaborations
+     * <tr><td> Represent failure to create an exclusize subscription, as a subscription already exists.
+     * </table>
+     *
+     * @todo Not an AMQP exception as no status code.
+     *
+     * @todo Move to top level, used outside this class.
+     */
     public static final class ExistingSubscriptionPreventsExclusive extends AMQException
     {
-
         public ExistingSubscriptionPreventsExclusive()
         {
             super("");
         }
     }
-
-    private static final ExistingExclusiveSubscription EXISTING_EXCLUSIVE = new ExistingExclusiveSubscription();
-    private static final ExistingSubscriptionPreventsExclusive EXISTING_SUBSCRIPTION = new ExistingSubscriptionPreventsExclusive();
-
 
     private static final Logger _logger = Logger.getLogger(AMQQueue.class);
 
@@ -110,7 +131,6 @@ public class AMQQueue implements Managable, Comparable
 
     private final VirtualHost _virtualHost;
 
-
     /** max allowed size(KB) of a single message */
     @Configured(path = "maximumMessageSize", defaultValue = "0")
     public long _maximumMessageSize;
@@ -139,37 +159,34 @@ public class AMQQueue implements Managable, Comparable
         return _name.compareTo(((AMQQueue) o).getName());
     }
 
-    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                    boolean autoDelete, VirtualHost virtualHost)
-            throws AMQException
+    public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
+        throws AMQException
     {
-        this(name, durable, owner, autoDelete, virtualHost,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), new SubscriptionSet(), new SubscriptionImpl.Factory());
+        this(name, durable, owner, autoDelete, virtualHost, AsyncDeliveryConfig.getAsyncDeliveryExecutor(),
+            new SubscriptionSet(), new SubscriptionImpl.Factory());
     }
 
-
-    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                       boolean autoDelete, VirtualHost virtualHost,
-                       SubscriptionSet subscribers)
-            throws AMQException
+    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete,
+        VirtualHost virtualHost, SubscriptionSet subscribers) throws AMQException
     {
-        this(name, durable, owner, autoDelete, virtualHost,
-             AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers, new SubscriptionImpl.Factory());
+        this(name, durable, owner, autoDelete, virtualHost, AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers,
+            new SubscriptionImpl.Factory());
     }
 
-    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner,
-                       boolean autoDelete, VirtualHost virtualHost,
-                       Executor asyncDelivery, SubscriptionSet subscribers, SubscriptionFactory subscriptionFactory)
-            throws AMQException
+    protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete,
+        VirtualHost virtualHost, Executor asyncDelivery, SubscriptionSet subscribers,
+        SubscriptionFactory subscriptionFactory) throws AMQException
     {
         if (name == null)
         {
             throw new IllegalArgumentException("Queue name must not be null");
         }
+
         if (virtualHost == null)
         {
             throw new IllegalArgumentException("Virtual Host must not be null");
         }
+
         _name = name;
         _durable = durable;
         _owner = owner;
@@ -260,10 +277,11 @@ public class AMQQueue implements Managable, Comparable
     public AMQMessage getMessageOnTheQueue(long messageId)
     {
         List<AMQMessage> list = getMessagesOnTheQueue(messageId, messageId);
-        if (list == null || list.size() == 0)
+        if ((list == null) || (list.size() == 0))
         {
             return null;
         }
+
         return list.get(0);
     }
 
@@ -280,7 +298,7 @@ public class AMQQueue implements Managable, Comparable
      * @param storeContext
      */
     public synchronized void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        StoreContext storeContext)
+        StoreContext storeContext)
     {
         // prepare the delivery manager for moving messages by stopping the async delivery and creating a lock
         AMQQueue anotherQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
@@ -398,6 +416,7 @@ public class AMQQueue implements Managable, Comparable
         {
             _virtualHost.getMessageStore().bindQueue(exchange, routingKey, this, arguments);
         }
+
         _bindings.addBinding(routingKey, arguments, exchange);
     }
 
@@ -408,25 +427,24 @@ public class AMQQueue implements Managable, Comparable
         {
             _virtualHost.getMessageStore().unbindQueue(exchange, routingKey, this, arguments);
         }
+
         _bindings.remove(routingKey, arguments, exchange);
     }
 
-
     public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks,
-                                        FieldTable filters, boolean noLocal, boolean exclusive)
-            throws AMQException
+        FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException
     {
         if (incrementSubscriberCount() > 1)
         {
             if (isExclusive())
             {
                 decrementSubscriberCount();
-                throw EXISTING_EXCLUSIVE;
+                throw new ExistingExclusiveSubscription();
             }
             else if (exclusive)
             {
                 decrementSubscriberCount();
-                throw EXISTING_SUBSCRIPTION;
+                throw new ExistingSubscriptionPreventsExclusive();
             }
 
         }
@@ -437,12 +455,13 @@ public class AMQQueue implements Managable, Comparable
 
         if (_logger.isDebugEnabled())
         {
-            _logger.debug(MessageFormat.format("Registering protocol session {0} with channel {1} and " +
-                                               "consumer tag {2} with {3}", ps, channel, consumerTag, this));
+            _logger.debug(MessageFormat.format(
+                    "Registering protocol session {0} with channel {1} and " + "consumer tag {2} with {3}", ps, channel,
+                    consumerTag, this));
         }
 
-        Subscription subscription = _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks,
-                                                                            filters, noLocal, this);
+        Subscription subscription =
+            _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, this);
 
         if (subscription.filtersMessages())
         {
@@ -454,7 +473,6 @@ public class AMQQueue implements Managable, Comparable
 
         _subscribers.addSubscriber(subscription);
     }
-
 
     private boolean isExclusive()
     {
@@ -476,23 +494,22 @@ public class AMQQueue implements Managable, Comparable
         return _subscriberCount.decrementAndGet();
     }
 
-
     public void unregisterProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag) throws AMQException
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug(MessageFormat.format("Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel, consumerTag,
-                                               this));
+            _logger.debug(MessageFormat.format(
+                    "Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel,
+                    consumerTag, this));
         }
 
         Subscription removedSubscription;
-        if ((removedSubscription = _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel,
-                                                                                                         ps,
-                                                                                                         consumerTag)))
-            == null)
+        if ((removedSubscription =
+                        _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel, ps, consumerTag)))
+                == null)
         {
-            throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag +
-                                   " and protocol session key " + ps.getKey() + " not registered with queue " + this);
+            throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag
+                + " and protocol session key " + ps.getKey() + " not registered with queue " + this);
         }
 
         removedSubscription.close();
@@ -506,6 +523,7 @@ public class AMQQueue implements Managable, Comparable
             {
                 _logger.info("Auto-deleteing queue:" + this);
             }
+
             autodelete();
             // we need to manually fire the event to the removed subscription (which was the last one left for this
             // queue. This is because the delete method uses the subscription set which has just been cleared
@@ -523,22 +541,24 @@ public class AMQQueue implements Managable, Comparable
         return !_deliveryMgr.hasQueuedMessages();
     }
 
-
     public int delete(boolean checkUnused, boolean checkEmpty) throws AMQException
     {
         if (checkUnused && !_subscribers.isEmpty())
         {
             _logger.info("Will not delete " + this + " as it is in use.");
+
             return 0;
         }
         else if (checkEmpty && _deliveryMgr.hasQueuedMessages())
         {
             _logger.info("Will not delete " + this + " as it is not empty.");
+
             return 0;
         }
         else
         {
             delete();
+
             return _deliveryMgr.getQueueMessageCount();
         }
     }
@@ -555,6 +575,7 @@ public class AMQQueue implements Managable, Comparable
             {
                 task.doTask(this);
             }
+
             _deleteTaskList.clear();
         }
     }
@@ -565,12 +586,13 @@ public class AMQQueue implements Managable, Comparable
         {
             _logger.debug(MessageFormat.format("autodeleting {0}", this));
         }
+
         delete();
     }
 
     public void processGet(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
-        //fixme not sure what this is doing. should we be passing deliverFirst through here?
+        // fixme not sure what this is doing. should we be passing deliverFirst through here?
         // This code is not used so when it is perhaps it should
         _deliveryMgr.deliver(storeContext, getName(), msg, deliverFirst);
         try
@@ -586,10 +608,10 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
-//    public DeliveryManager getDeliveryManager()
-//    {
-//        return _deliveryMgr;
-//    }
+    // public DeliveryManager getDeliveryManager()
+    // {
+    // return _deliveryMgr;
+    // }
 
     public void process(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
@@ -615,10 +637,10 @@ public class AMQQueue implements Managable, Comparable
         }
         catch (MessageCleanupException e)
         {
-            //Message was dequeued, but could not then be deleted
-            //though it is no longer referenced. This should be very
-            //rare and can be detected and cleaned up on recovery or
-            //done through some form of manual intervention.
+            // Message was dequeued, but could not then be deleted
+            // though it is no longer referenced. This should be very
+            // rare and can be detected and cleaned up on recovery or
+            // done through some form of manual intervention.
             _logger.error(e, e);
         }
         catch (AMQException e)
@@ -660,7 +682,8 @@ public class AMQQueue implements Managable, Comparable
         {
             return true;
         }
-        if (o == null || getClass() != o.getClass())
+
+        if ((o == null) || (getClass() != o.getClass()))
         {
             return false;
         }

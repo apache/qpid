@@ -23,9 +23,22 @@ package org.apache.qpid.server.cluster;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQBody;
 
+/**
+ * AMQUnexpectedBodyTypeException represents a failure where a message body does not match its expected type. For example,
+ * and AMQP method should have a method body.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Represents a failure where a message body does not match its expected type.
+ * </table>
+ *
+ * @todo Not an AMQP exception as no status code.
+ *
+ * @todo Seems like this exception was created to handle an unsafe type cast that will never happen in practice. Would
+ *       be better just to leave that as a ClassCastException. Check that the framing layer will pick up the error first.
+ */
 public class AMQUnexpectedBodyTypeException extends AMQException
 {
-
     public AMQUnexpectedBodyTypeException(Class<? extends AMQBody> expectedClass, AMQBody body)
     {
         super("Unexpected body type.  Expected: " + expectedClass.getName() + "; got: " + body.getClass().getName());
