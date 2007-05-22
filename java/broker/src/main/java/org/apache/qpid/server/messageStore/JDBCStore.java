@@ -1107,7 +1107,7 @@ public class JDBCStore implements MessageStore
         JDBCTransaction tx = getTx(xid);
         if (tx == null)
         {
-            throw new UnknownXidException(xid);
+            throw new UnknownXidException(xid, null);
         }
         updateQueueMessageRelation(tx.getConnection(), queue.getQueueID(), m.getMessageId(), 1);
 
@@ -1121,7 +1121,7 @@ public class JDBCStore implements MessageStore
         JDBCTransaction tx = getTx(xid);
         if (tx == null)
         {
-            throw new UnknownXidException(xid);
+            throw new UnknownXidException(xid, null);
         }
         updateQueueMessageRelation(tx.getConnection(), queue.getQueueID(), m.getMessageId(), 0);
     }

@@ -524,7 +524,7 @@ public class JDBCTransactionManager implements TransactionManager
         Transaction tx = _xidMap.get(xid);
         if (tx == null)
         {
-            throw new UnknownXidException(xid);
+            throw new UnknownXidException(xid, null);
         }
         return (JDBCTransaction) tx;
     }
