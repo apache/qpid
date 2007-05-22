@@ -181,7 +181,7 @@ public class JDBCStore implements MessageStore
                 pstmt.executeUpdate();
             } catch (Exception e)
             {
-                throw new InternalErrorException("Cannot create Exchange: " + exchange);
+                throw new InternalErrorException("Cannot create Exchange: " + exchange, e);
             } finally
             {
                 if (connection != null)
@@ -195,7 +195,7 @@ public class JDBCStore implements MessageStore
                         // we did not manage to commit this connection
                         // it is better to release it
                         _connectionPool.releaseDeadInstance();
-                        throw new InternalErrorException("Cannot create Exchange: " + exchange);
+                        throw new InternalErrorException("Cannot create Exchange: " + exchange, e);
                     }
                 }
             }
@@ -223,7 +223,7 @@ public class JDBCStore implements MessageStore
                 pstmt.executeUpdate();
             } catch (Exception e)
             {
-                throw new InternalErrorException("Cannot remove Exchange: " + exchange);
+                throw new InternalErrorException("Cannot remove Exchange: " + exchange, e);
             } finally
             {
                 if (connection != null)
@@ -237,7 +237,7 @@ public class JDBCStore implements MessageStore
                         // we did not manage to commit this connection
                         // it is better to release it
                         _connectionPool.releaseDeadInstance();
-                        throw new InternalErrorException("Cannot remove Exchange: " + exchange);
+                        throw new InternalErrorException("Cannot remove Exchange: " + exchange, e);
                     }
                 }
             }
@@ -274,7 +274,7 @@ public class JDBCStore implements MessageStore
                 pstmt.executeUpdate();
             } catch (Exception e)
             {
-                throw new InternalErrorException("Cannot create Exchange: " + exchange);
+                throw new InternalErrorException("Cannot create Exchange: " + exchange, e);
             } finally
             {
                 if (connection != null)
@@ -288,7 +288,7 @@ public class JDBCStore implements MessageStore
                         // we did not manage to commit this connection
                         // it is better to release it
                         _connectionPool.releaseDeadInstance();
-                        throw new InternalErrorException("Cannot create Exchange: " + exchange);
+                        throw new InternalErrorException("Cannot create Exchange: " + exchange, e);
                     }
                 }
             }
@@ -316,7 +316,7 @@ public class JDBCStore implements MessageStore
             pstmt.executeUpdate();
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot remove Exchange: " + exchange);
+            throw new InternalErrorException("Cannot remove Exchange: " + exchange, e);
         } finally
         {
             if (connection != null)
@@ -330,7 +330,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot remove Exchange: " + exchange);
+                    throw new InternalErrorException("Cannot remove Exchange: " + exchange, e);
                 }
             }
         }
@@ -364,7 +364,7 @@ public class JDBCStore implements MessageStore
             pstmt.executeUpdate();
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot create Queue: " + queue);
+            throw new InternalErrorException("Cannot create Queue: " + queue, e);
         } finally
         {
             if (connection != null)
@@ -378,7 +378,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot create Queue: " + queue);
+                    throw new InternalErrorException("Cannot create Queue: " + queue, e);
                 }
             }
         }
@@ -404,7 +404,7 @@ public class JDBCStore implements MessageStore
             pstmt.executeUpdate();
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot remove Queue: " + queue);
+            throw new InternalErrorException("Cannot remove Queue: " + queue, e);
         } finally
         {
             if (connection != null)
@@ -418,7 +418,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot remove Queue: " + queue);
+                    throw new InternalErrorException("Cannot remove Queue: " + queue, e);
                 }
             }
         }
@@ -441,7 +441,7 @@ public class JDBCStore implements MessageStore
             stage(connection, m);
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot stage Message: " + m);
+            throw new InternalErrorException("Cannot stage Message: " + m, e);
         } finally
         {
             if (connection != null)
@@ -455,7 +455,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot stage Message: " + m);
+                    throw new InternalErrorException("Cannot stage Message: " + m, e);
                 }
             }
         }
@@ -481,7 +481,7 @@ public class JDBCStore implements MessageStore
             appendContent(connection, m, data, offset, size);
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot stage Message: " + m);
+            throw new InternalErrorException("Cannot stage Message: " + m, e);
         } finally
         {
             if (connection != null)
@@ -495,7 +495,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot stage Message: " + m);
+                    throw new InternalErrorException("Cannot stage Message: " + m, e);
                 }
             }
         }
@@ -545,7 +545,7 @@ public class JDBCStore implements MessageStore
             return result;
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot load Message: " + m);
+            throw new InternalErrorException("Cannot load Message: " + m, e);
         } finally
         {
             if (connection != null)
@@ -559,7 +559,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot load Message: " + m);
+                    throw new InternalErrorException("Cannot load Message: " + m, e);
                 }
             }
         }
@@ -577,7 +577,7 @@ public class JDBCStore implements MessageStore
             destroy(connection, m);
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot destroy message: " + m);
+            throw new InternalErrorException("Cannot destroy message: " + m, e);
         } finally
         {
             if (connection != null)
@@ -591,7 +591,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot destroy message: " + m);
+                    throw new InternalErrorException("Cannot destroy message: " + m, e);
                 }
             }
         }
@@ -644,7 +644,7 @@ public class JDBCStore implements MessageStore
                 queue.enqueue(m);
             } catch (Exception e)
             {
-                throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue);
+                throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue, e);
             } finally
             {
                 if (tx == null && connection != null)
@@ -658,7 +658,7 @@ public class JDBCStore implements MessageStore
                         // we did not manage to commit this connection
                         // it is better to release it
                         _connectionPool.releaseDeadInstance();
-                        throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue);
+                        throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue, e);
                     }
                 }
             }
@@ -710,7 +710,7 @@ public class JDBCStore implements MessageStore
                 queue.dequeue(m);
             } catch (Exception e)
             {
-                throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue);
+                throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue, e);
             } finally
             {
                 if (tx == null && connection != null)
@@ -724,7 +724,7 @@ public class JDBCStore implements MessageStore
                         // we did not manage to commit this connection
                         // it is better to release it
                         _connectionPool.releaseDeadInstance();
-                        throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue);
+                        throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue, e);
                     }
                 }
             }
@@ -762,7 +762,7 @@ public class JDBCStore implements MessageStore
             return result;
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot get all queues");
+            throw new InternalErrorException("Cannot get all queues", e);
         } finally
         {
             if (connection != null)
@@ -776,7 +776,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot get all queues");
+                    throw new InternalErrorException("Cannot get all queues", e);
                 }
             }
         }
@@ -793,7 +793,7 @@ public class JDBCStore implements MessageStore
             return getAllMessages(connection, queue);
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot get all queues");
+            throw new InternalErrorException("Cannot get all queues", e);
         } finally
         {
             if (connection != null)
@@ -807,7 +807,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot get all queues");
+                    throw new InternalErrorException("Cannot get all queues", e);
                 }
             }
         }
@@ -922,7 +922,7 @@ public class JDBCStore implements MessageStore
             // we did not manage to commit this connection
             // it is better to release it
             _connectionPool.releaseDeadInstance();
-            throw new InternalErrorException("Cannot commit connection =");
+            throw new InternalErrorException("Cannot commit connection =", e);
         }
     }
 
@@ -939,7 +939,7 @@ public class JDBCStore implements MessageStore
             // we did not manage to rollback this connection
             // it is better to release it
             _connectionPool.releaseDeadInstance();
-            throw new InternalErrorException("Cannot rollback connection");
+            throw new InternalErrorException("Cannot rollback connection", e);
         }
     }
 
@@ -1029,7 +1029,7 @@ public class JDBCStore implements MessageStore
             pstmt.executeUpdate();
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot save record: " + record);
+            throw new InternalErrorException("Cannot save record: " + record, e);
         }
     }
 
@@ -1053,7 +1053,7 @@ public class JDBCStore implements MessageStore
             pstmt.executeUpdate();
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot save xid: " + xid);
+            throw new InternalErrorException("Cannot save xid: " + xid, e);
         }
     }
 
@@ -1074,7 +1074,7 @@ public class JDBCStore implements MessageStore
             pstmt.executeUpdate();
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot delete record: " + tx.getXidID());
+            throw new InternalErrorException("Cannot delete record: " + tx.getXidID(), e);
         }
     }
 
@@ -1095,7 +1095,7 @@ public class JDBCStore implements MessageStore
             pstmt.executeUpdate();
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot delete xid: " + tx.getXidID());
+            throw new InternalErrorException("Cannot delete xid: " + tx.getXidID(), e);
         }
     }
 
@@ -1212,7 +1212,7 @@ public class JDBCStore implements MessageStore
             return result;
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot get MessagePublishInfo of message: " + m);
+            throw new InternalErrorException("Cannot get MessagePublishInfo of message: " + m, e);
         } finally
         {
             if (connection != null)
@@ -1226,7 +1226,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot get MessagePublishInfo of message: " + m);
+                    throw new InternalErrorException("Cannot get MessagePublishInfo of message: " + m, e);
                 }
             }
         }
@@ -1261,7 +1261,7 @@ public class JDBCStore implements MessageStore
             return result;
         } catch (Exception e)
         {
-            throw new InternalErrorException("Cannot get Content Header of message: " + m);
+            throw new InternalErrorException("Cannot get Content Header of message: " + m, e);
         } finally
         {
             if (connection != null)
@@ -1275,7 +1275,7 @@ public class JDBCStore implements MessageStore
                     // we did not manage to commit this connection
                     // it is better to release it
                     _connectionPool.releaseDeadInstance();
-                    throw new InternalErrorException("Cannot get Content Header of message: " + m);
+                    throw new InternalErrorException("Cannot get Content Header of message: " + m, e);
                 }
             }
         }

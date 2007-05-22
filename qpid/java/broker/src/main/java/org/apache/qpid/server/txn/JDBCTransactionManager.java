@@ -191,7 +191,7 @@ public class JDBCTransactionManager implements TransactionManager
                 } catch (Exception e)
                 {
                     _log.error("Cannot prepare tx: " + xid);
-                    throw new InternalErrorException("Cannot prepare tx: " + xid);
+                    throw new InternalErrorException("Cannot prepare tx: " + xid, e);
                 }
                 tx.prepare();
             }
