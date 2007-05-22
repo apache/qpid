@@ -19,13 +19,9 @@ package org.apache.qpid.server.txn;
 
 import java.util.HashMap;
 import java.util.Set;
-
 import javax.transaction.xa.Xid;
-
 import org.apache.commons.configuration.Configuration;
-
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.server.exception.*;
 import org.apache.qpid.server.messageStore.MessageStore;
 
@@ -199,7 +195,7 @@ public class MemoryTransactionManager implements TransactionManager
                     }
                     catch (InvalidXidException e)
                     {
-                        throw new UnknownXidException(xid, e.getMessage(), e);
+                        throw new UnknownXidException(xid, e);
                     }
                     catch (Exception e)
                     {
@@ -246,7 +242,7 @@ public class MemoryTransactionManager implements TransactionManager
                         }
                         catch (InvalidXidException e)
                         {
-                            throw new UnknownXidException(xid, e.getMessage(), e);
+                            throw new UnknownXidException(xid, e);
                         }
                         catch (Exception e)
                         {
@@ -317,7 +313,7 @@ public class MemoryTransactionManager implements TransactionManager
         Transaction tx = _xidMap.get(xid);
         if (tx == null)
         {
-            throw new UnknownXidException(xid, "", null);
+            throw new UnknownXidException(xid, null);
         }
 
         return tx;
