@@ -50,8 +50,6 @@ public class UnknownXidException extends Exception
      *
      * @param xid   The unknown xid.
      * @param cause The casue for the xid to be unknown
-     *
-     * @deprecated
      */
     public UnknownXidException(Xid xid, Throwable cause)
     {
@@ -66,10 +64,10 @@ public class UnknownXidException extends Exception
      *
      * @deprecated
      */
-    public UnknownXidException(Xid xid, String reason)
+    /*public UnknownXidException(Xid xid, String reason)
     {
         super("The Xid: " + xid + " is unknown, The reason is: " + reason);
-    }
+    }*/
 
     /**
      * Constructs a newr UnknownXidException with a reason message and cause
@@ -77,6 +75,8 @@ public class UnknownXidException extends Exception
      * @param reason The reason why the xid is unknown
      * @param xid    The unknown xid.
      * @param cause  The casue for the xid to be unknown
+     *
+     * @deprected
      */
     public UnknownXidException(Xid xid, String reason, Throwable cause)
     {
