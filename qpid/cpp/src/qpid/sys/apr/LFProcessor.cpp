@@ -20,6 +20,7 @@
  */
 #include <sstream>
 #include "qpid/QpidError.h"
+#include "qpid/sys/Mutex.h"
 #include "LFProcessor.h"
 #include "APRBase.h"
 #include "LFSessionContext.h"

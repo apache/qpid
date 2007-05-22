@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#include <iostream>
-#include <memory>
+
+#include "Broker.h"
 
 #include "qpid/framing/AMQFrame.h"
 #include "DirectExchange.h"
@@ -31,11 +31,15 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "RecoveryManagerImpl.h"
 #include "Connection.h"
+#include "qpid/sys/Acceptor.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
 
-#include "Broker.h"
+#include <iostream>
+#include <memory>
+
+using qpid::sys::Acceptor;
 
 namespace qpid {
 namespace broker {

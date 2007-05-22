@@ -30,6 +30,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 

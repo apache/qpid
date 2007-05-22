@@ -23,36 +23,76 @@
  */
 
 #include <stdint.h>
-
-#ifdef USE_APR
-#include <apr_time.h>
-#else
-#include <time.h>
-#endif
+#include <limits>
 
 namespace qpid {
 namespace sys {
 
-/** Time in nanoseconds */
-typedef int64_t Time;
+class Duration;
 
-Time now();
+/** Times in nanoseconds */
+class AbsTime {
+    int64_t time_ns;
+
+	friend class Duration;
+	
+public:
+	inline AbsTime() {}
+	inline AbsTime(const AbsTime& time0, const Duration& duration);
+	// Default asignment operation fine
+	// Default copy constructor fine
+	 
+	static AbsTime now();
+	inline static AbsTime FarFuture();
+};
+
+class Duration {
+    int64_t nanosecs;
+
+	friend class AbsTime;
+
+public:
+	inline Duration(int64_t time0);
+	inline explicit Duration(const AbsTime& time0);
+	inline explicit Duration(const AbsTime& start, const AbsTime& finish);
+	inline operator int64_t() const;
+};
+
+
+AbsTime::AbsTime(const AbsTime& time0, const Duration& duration0) :
+	time_ns(time0.time_ns+duration0.nanosecs)
+{}
+
+AbsTime AbsTime::FarFuture() { AbsTime ff; ff.time_ns = std::numeric_limits<int64_t>::max(); return ff;}
+
+inline AbsTime now() { return AbsTime::now(); }
+
+Duration::Duration(int64_t time0) :
+	nanosecs(time0)
+{}
+
+Duration::Duration(const AbsTime& time0) :
+	nanosecs(time0.time_ns)
+{}
+
+Duration::Duration(const AbsTime& start, const AbsTime& finish) :
+	nanosecs(finish.time_ns - start.time_ns)
+{}
+
+Duration::operator int64_t() const
+{ return nanosecs; }
 
 /** Nanoseconds per second. */
-const Time TIME_SEC  = 1000*1000*1000;
+const Duration TIME_SEC  = 1000*1000*1000;
 /** Nanoseconds per millisecond */
-const Time TIME_MSEC = 1000*1000;
+const Duration TIME_MSEC = 1000*1000;
 /** Nanoseconds per microseconds. */
-const Time TIME_USEC = 1000;
+const Duration TIME_USEC = 1000;
 /** Nanoseconds per nanosecond. */
-const Time TIME_NSEC = 1;
+const Duration TIME_NSEC = 1;
 
-#ifndef USE_APR
-struct timespec toTimespec(const Time& t);
-struct timespec& toTimespec(struct timespec& ts, const Time& t);
-Time toTime(const struct timespec& ts);
-#endif
-
+/** Time greater than any other time */
+const AbsTime FAR_FUTURE = AbsTime::FarFuture();
 }}
 
 #endif  /*!_sys_Time_h*/

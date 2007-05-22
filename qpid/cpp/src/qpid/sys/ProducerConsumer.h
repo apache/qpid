@@ -143,7 +143,7 @@ class ProducerConsumer
          * If isTimedOut() there was a timeout.
          * If neither then we were shutdown.
          */
-        ConsumerLock(ProducerConsumer& p, const Time& timeout);
+        ConsumerLock(ProducerConsumer& p, const Duration& timeout);
 
         /** Release locks */
         ~ConsumerLock();
