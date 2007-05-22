@@ -24,6 +24,8 @@ import org.apache.qpid.server.txn.TransactionManager;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.commons.configuration.Configuration;
 
 import javax.transaction.xa.Xid;
@@ -46,12 +48,14 @@ public interface MessageStore
             throws
             InternalErrorException;
 
-     /**
+    /**
      * Remove an exchange
-     * @param exchange  The exchange to be removed
+     *
+     * @param exchange The exchange to be removed
      * @throws InternalErrorException If an error occurs
      */
-     public void removeExchange(Exchange exchange) throws
+    public void removeExchange(Exchange exchange)
+            throws
             InternalErrorException;
 
     /**
@@ -69,7 +73,7 @@ public interface MessageStore
             throws
             InternalErrorException;
 
-      /**
+    /**
      * Unbind a queue from an exchange
      *
      * @param exchange   The exchange the queue was bound to
@@ -83,7 +87,7 @@ public interface MessageStore
                             StorableQueue queue, FieldTable args)
             throws
             InternalErrorException;
-    
+
     /**
      * Called after instantiation in order to configure the message store. A particular implementation can define
      * whatever parameters it wants.
@@ -174,6 +178,32 @@ public interface MessageStore
      * @throws MessageDoesntExistException If the message does not exist
      */
     public byte[] loadContent(StorableMessage m, int offset, int size)
+            throws
+            InternalErrorException,
+            MessageDoesntExistException;
+
+    /**
+     * Get the content header of this message
+     *
+     * @param m      The message 
+     * @return The message content
+     * @throws InternalErrorException      In case of internal message store problem
+     * @throws MessageDoesntExistException If the message does not exist
+     */
+    public ContentHeaderBody getContentHeaderBody(StorableMessage m)
+            throws
+            InternalErrorException,
+            MessageDoesntExistException;
+
+    /**
+     * Get the MessagePublishInfo of this message
+     *
+     * @param m      The message
+     * @return The message content
+     * @throws InternalErrorException      In case of internal message store problem
+     * @throws MessageDoesntExistException If the message does not exist
+     */
+      public MessagePublishInfo getMessagePublishInfo(StorableMessage m)
             throws
             InternalErrorException,
             MessageDoesntExistException;
