@@ -26,6 +26,7 @@
 #include "BrokerQueue.h"
 #include "QueueRegistry.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/sys/Runnable.h"
 
 namespace qpid {
     namespace broker{
@@ -34,7 +35,7 @@ namespace qpid {
             qpid::sys::Monitor monitor;            
             std::queue<Queue::shared_ptr> queues;
             QueueRegistry* const registry;
-            uint32_t period;
+            sys::Duration period;
             volatile bool stopped;
             qpid::sys::Thread runner;
             

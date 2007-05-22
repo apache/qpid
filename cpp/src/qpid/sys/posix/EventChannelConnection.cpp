@@ -140,7 +140,7 @@ void EventChannelConnection::startWrite() {
         writeFd, out.start(), out.available(),
         boost::bind(&EventChannelConnection::closeOnException,
                     this, &EventChannelConnection::endWrite));
-    threads->post(writeEvent);
+    threads->postEvent(writeEvent);
 }
 
 // ScopedBusy ctor increments busyThreads.
@@ -180,7 +180,7 @@ void EventChannelConnection::startRead() {
     // Non blocking read, as much as we can swallow.
     readEvent = ReadEvent(
         readFd, in.start(), in.available(), readCallback,true);
-    threads->post(readEvent);
+    threads->postEvent(readEvent);
 }
 
 // Completion of initial read, expect protocolInit.

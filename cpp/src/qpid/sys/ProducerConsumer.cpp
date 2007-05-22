@@ -103,7 +103,7 @@ ProducerConsumer::ConsumerLock::ConsumerLock(ProducerConsumer& p) : Lock(p)
 }
 
 ProducerConsumer::ConsumerLock::ConsumerLock(
-    ProducerConsumer& p, const Time& timeout) : Lock(p)
+    ProducerConsumer& p, const Duration& timeout) : Lock(p)
 {
     if (isOk()) {
         // Don't wait if timeout==0
@@ -113,7 +113,7 @@ ProducerConsumer::ConsumerLock::ConsumerLock(
             return;
         }
         else {
-            Time deadline = now() + timeout;
+            AbsTime deadline(now(), timeout);
             ScopedIncrement<size_t> inc(pc.waiters);
             while (pc.items == 0 && !pc.shutdownFlag) {
                 if (!pc.monitor.wait(deadline)) {

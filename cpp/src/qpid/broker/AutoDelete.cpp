@@ -25,7 +25,7 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 
 AutoDelete::AutoDelete(QueueRegistry* const _registry, uint32_t _period)
-    : registry(_registry), period(_period), stopped(true) { }
+    : registry(_registry), period(_period*TIME_MSEC), stopped(true) { }
 
 void AutoDelete::add(Queue::shared_ptr const queue){
     Mutex::ScopedLock l(lock);
@@ -63,7 +63,7 @@ void AutoDelete::run(){
     Monitor::ScopedLock l(monitor);
     while(!stopped){
         process();
-        monitor.wait(period*TIME_MSEC);
+        monitor.wait(AbsTime(now(), period));
     }
 }
 

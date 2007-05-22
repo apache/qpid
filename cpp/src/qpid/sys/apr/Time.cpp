@@ -1,6 +1,3 @@
-#ifndef _sys_Monitor_h
-#define _sys_Monitor_h
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -22,30 +19,18 @@
  *
  */
 
-#include <sys/errno.h>
-#include "Condition.h"
+#include "qpid/sys/Time.h"
+
+#include <apr_time.h>
 
 namespace qpid {
 namespace sys {
-
-/**
- * A monitor is a condition variable and a mutex
- */
-class Monitor : public Mutex, public Condition {
-  public:
-    using Condition::wait;
-    inline void wait();
-    inline bool wait(const AbsTime& absoluteTime);
-};
-
-
-void Monitor::wait() {
-    Condition::wait(*this);
-}
-
-bool Monitor::wait(const AbsTime& absoluteTime) {
-    return Condition::wait(*this, absoluteTime);
+	
+AbsTime AbsTime::now() {
+    AbsTime time_now;
+    time_now.time_ns = apr_time_now() * TIME_USEC;
+    return time_now;
 }
 
 }}
-#endif  /*!_sys_Monitor_h*/
+
