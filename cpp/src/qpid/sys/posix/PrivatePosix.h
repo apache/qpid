@@ -1,5 +1,5 @@
-#ifndef _sys_Monitor_h
-#define _sys_Monitor_h
+#ifndef _sys_posix_PrivatePosix_h
+#define _sys_posix_PrivatePosix_h
 
 /*
  *
@@ -22,30 +22,18 @@
  *
  */
 
-#include <sys/errno.h>
-#include "Condition.h"
+#include "qpid/sys/Time.h"
+
+struct timespec;
+struct timeval;
 
 namespace qpid {
 namespace sys {
 
-/**
- * A monitor is a condition variable and a mutex
- */
-class Monitor : public Mutex, public Condition {
-  public:
-    using Condition::wait;
-    inline void wait();
-    inline bool wait(const AbsTime& absoluteTime);
-};
-
-
-void Monitor::wait() {
-    Condition::wait(*this);
-}
-
-bool Monitor::wait(const AbsTime& absoluteTime) {
-    return Condition::wait(*this, absoluteTime);
-}
+struct timespec& toTimespec(struct timespec& ts, const Duration& t);
+struct timeval& toTimeval(struct timeval& tv, const Duration& t);
+Duration toTime(const struct timespec& ts);
 
 }}
-#endif  /*!_sys_Monitor_h*/
+
+#endif  /*!_sys_posix_PrivatePosix_h*/

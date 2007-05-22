@@ -51,9 +51,9 @@ class EventChannelAcceptor : public Acceptor {
         int16_t port_, int backlog, int nThreads, bool trace_
     );
         
-    int getPort() const;
+    uint16_t getPort() const;
     
-    void run(ConnectionInputHandlerFactory& factory);
+    void run(ConnectionInputHandlerFactory* factory);
 
     void shutdown();
 
@@ -96,17 +96,17 @@ EventChannelAcceptor::EventChannelAcceptor(
     threads(EventChannelThreads::create(EventChannel::create(), nThreads))
 { }
     
-int EventChannelAcceptor::getPort() const {
+uint16_t EventChannelAcceptor::getPort() const {
     return port;                // Immutable no need for lock.
 }
     
-void EventChannelAcceptor::run(ConnectionInputHandlerFactory& f) {
+void EventChannelAcceptor::run(ConnectionInputHandlerFactory* f) {
     {
         Mutex::ScopedLock l(lock);
         if (!isRunning && !isShutdown) {
             isRunning = true;
-            factory = &f;
-            threads->post(acceptEvent);
+            factory = f;
+            threads->postEvent(acceptEvent);
         }
     }
     threads->join();            // Wait for shutdown.
@@ -143,7 +143,7 @@ void EventChannelAcceptor::accept()
     int fd = acceptEvent.getAcceptedDesscriptor();
     connections.push_back(
         new EventChannelConnection(threads, *factory, fd, fd, isTrace));
-    threads->post(acceptEvent); // Keep accepting.
+    threads->postEvent(acceptEvent); // Keep accepting.
 }
 
 }} // namespace qpid::sys

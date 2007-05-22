@@ -19,42 +19,39 @@
  *
  */
 
-#include "Time.h"
+#include "PrivatePosix.h"
+
+#include "qpid/sys/Time.h"
+
+#include <time.h>
+#include <sys/time.h>
 
 namespace qpid {
 namespace sys {
 
-// APR ================================================================
-#if USE_APR
-
-Time now() { return apr_time_now() * TIME_USEC; }
-
-// POSIX================================================================
-#else 
-
-Time now() {
+AbsTime AbsTime::now() {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    return toTime(ts);
+    AbsTime time_now;
+    time_now.time_ns = toTime(ts).nanosecs;
+    return time_now;
 }
 
-struct timespec toTimespec(const Time& t) {
-    struct timespec ts;
-    toTimespec(ts, t);
+struct timespec& toTimespec(struct timespec& ts, const Duration& t) {
+    ts.tv_sec  = t / TIME_SEC;
+    ts.tv_nsec = t % TIME_SEC;
     return ts;
 }
 
-struct timespec& toTimespec(struct timespec& ts, const Time& t) {
-    ts.tv_sec  = t / TIME_SEC;
-    ts.tv_nsec = t % TIME_SEC;
-    return  ts;
+struct timeval& toTimeval(struct timeval& tv, const Duration& t) {
+    tv.tv_sec = t/TIME_SEC;
+    tv.tv_usec = (t%TIME_SEC)/TIME_USEC;
+    return tv;
 }
 
-Time toTime(const struct timespec& ts) {
+Duration toTime(const struct timespec& ts) {
     return ts.tv_sec*TIME_SEC + ts.tv_nsec;
 }
 
-
-#endif
 }}
 

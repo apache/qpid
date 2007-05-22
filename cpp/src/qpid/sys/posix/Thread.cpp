@@ -19,7 +19,8 @@
  *
  */
 
-#include "qpid/sys/Thread.h"
+#include "Thread.h"
+#include "qpid/sys/Runnable.h"
 
 void* qpid::sys::Thread::runRunnable(void* p)
 {

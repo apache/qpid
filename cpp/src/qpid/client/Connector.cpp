@@ -37,7 +37,6 @@ Connector::Connector(
     send_buffer_size(buffer_size),
     version(ver), 
     closed(true),
-    lastIn(0), lastOut(0),
     timeout(0),
     idleIn(0), idleOut(0), 
     timeoutHandler(0),
@@ -100,7 +99,7 @@ void Connector::writeToSocket(char* data, size_t available){
     while(written < available && !closed){
 	ssize_t sent = socket.send(data + written, available-written);
         if(sent > 0) {
-            lastOut = now() * TIME_MSEC;
+            lastOut = now();
             written += sent;
         }
     }
@@ -124,9 +123,9 @@ bool Connector::markClosed(){
 
 void Connector::checkIdle(ssize_t status){
     if(timeoutHandler){
-        Time t = now() * TIME_MSEC;
+        AbsTime t = now();
         if(status == Socket::SOCKET_TIMEOUT) {
-            if(idleIn && (t - lastIn > idleIn)){
+            if(idleIn && (Duration(lastIn, t) > idleIn)){
                 timeoutHandler->idleIn();
             }
         }
@@ -136,14 +135,14 @@ void Connector::checkIdle(ssize_t status){
         else {
             lastIn = t;
         }
-        if(idleOut && (t - lastOut > idleOut)){
+        if(idleOut && (Duration(lastOut, t) > idleOut)){
             timeoutHandler->idleOut();
         }
     }
 }
 
 void Connector::setReadTimeout(uint16_t t){
-    idleIn = t * 1000;//t is in secs
+    idleIn = t * TIME_SEC;//t is in secs
     if(idleIn && (!timeout || idleIn < timeout)){
         timeout = idleIn;
         setSocketTimeout();
@@ -152,7 +151,7 @@ void Connector::setReadTimeout(uint16_t t){
 }
 
 void Connector::setWriteTimeout(uint16_t t){
-    idleOut = t * 1000;//t is in secs
+    idleOut = t * TIME_SEC;//t is in secs
     if(idleOut && (!timeout || idleOut < timeout)){
         timeout = idleOut;
         setSocketTimeout();
@@ -160,7 +159,7 @@ void Connector::setWriteTimeout(uint16_t t){
 }
 
 void Connector::setSocketTimeout(){
-    socket.setTimeout(timeout*TIME_MSEC);
+    socket.setTimeout(timeout);
 }
 
 void Connector::setTimeoutHandler(TimeoutHandler* handler){

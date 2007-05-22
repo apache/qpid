@@ -56,7 +56,7 @@ class Listener : public MessageListener{
     const bool transactional;
     bool init;
     int count;
-    Time start;
+    AbsTime start;
     
     void shutdown();
     void report();
@@ -159,8 +159,8 @@ void Listener::shutdown(){
 }
 
 void Listener::report(){
-    Time finish = now();
-    Time time = finish - start;
+    AbsTime finish = now();
+    Duration time(start, finish);
     stringstream reportstr;
     reportstr << "Received " << count << " messages in "
               << time/TIME_MSEC << " ms.";
