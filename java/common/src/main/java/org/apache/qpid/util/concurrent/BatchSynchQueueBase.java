@@ -37,11 +37,6 @@ import org.apache.log4j.Logger;
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * </table>
- *
- * @todo To create zero garbage collecting implemention will need to adapt the queue element containers
- *       (SynchRefImpl) in such a way that one is needed per array element, they can be taken from/put back/cleared in
- *       the queue without actually being moved from the array and they implement a way of forming them into a
- *       collection (or Iterable) to pass to consumers (using a linked list scheme?). May not be worth the trouble.
  */
 public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements BatchSynchQueue<E>
 {
@@ -350,7 +345,7 @@ public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements
      * Tries a synchronous put into the queue. If a consumer encounters an exception condition whilst processing the
      * data that is put, then this is returned to the caller wrapped inside a {@link SynchException}.
      *
-     * @param e The data element to put into the queue.
+     * @param e The data element to put into the queue. Cannot be null.
      *
      * @throws InterruptedException If the thread is interrupted whilst waiting to write to the queue or whilst waiting
      *                              on its entry in the queue being consumed.
@@ -390,7 +385,7 @@ public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements
      * Retrieves and removes the head of this queue, waiting if no elements are present on this queue.
      * Any producer that has its data element taken by this call will be immediately unblocked. To keep the
      * producer blocked whilst taking just a single item, use the
-     * {@link #drainTo(java.util.Collection<uk.co.thebadgerset.common.util.concurrent.SynchRecord<E>>, int, boolean)}
+     * {@link #drainTo(java.util.Collection<org.apache.qpid.util.concurrent.SynchRecord<E>>, int, boolean)}
      * method. There is no take method to do that because there is not usually any advantage in a synchronous hand
      * off design that consumes data one item at a time. It is normal to consume data in chunks to ammortize consumption
      * latencies accross many producers where possible.
