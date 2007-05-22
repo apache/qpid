@@ -48,6 +48,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.QueueAlreadyExistsException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -56,12 +58,10 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.ManagedBroker;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.exception.InternalErrorException;
-import org.apache.qpid.server.exception.QueueAlreadyExistsException;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -113,8 +113,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 Exchange exchange = _exchangeRegistry.getExchange(new AMQShortString(exchangeName));
                 if (exchange == null)
                 {
-                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type),
-                                                               durable, false, 0);
+                    exchange =
+                        _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type), durable,
+                            false, 0);
                     _exchangeRegistry.registerExchange(exchange);
                 }
                 else
@@ -183,9 +184,12 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 try
                 {
                     _messageStore.createQueue(queue);
-                } catch (Exception e)
+                }
+                catch (Exception e)
                 {
-                    throw new JMException("problem creating queue " + queue.getName());
+                    JMException jme = new JMException("problem creating queue " + queue.getName());
+                    jme.initCause(e);
+                    throw jme;
                 }
             }
 
@@ -200,9 +204,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         }
         catch (AMQException ex)
         {
-            JMException jme = new JMException(ex.getMessage());
-            jme.initCause(ex);
-            throw new MBeanException(jme, "Error in creating queue " + queueName);
+            throw new MBeanException(ex, "Error in creating queue " + queueName);
         }
     }
 
@@ -228,17 +230,16 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            if( queue.isDurable() )
+            if (queue.isDurable())
             {
                 _messageStore.destroyQueue(queue);
             }
         }
         catch (Exception ex)
         {
-           ex.printStackTrace();
-            JMException jme = new JMException(ex.getMessage());
-            jme.initCause(ex);
-            throw new MBeanException(jme, "Error in deleting queue " + queueName);
+            /*ex.printStackTrace();
+            JMException jme = new JMException(ex.getMessage());*/
+            throw new MBeanException(ex, "Error in deleting queue " + queueName);
         }
     }
 

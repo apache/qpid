@@ -27,20 +27,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.management.JMException;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.configuration.PropertyUtils;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.PropertyException;
+import org.apache.qpid.configuration.PropertyUtils;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.access.AMQUserManagementMBean;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
-import org.apache.qpid.server.security.access.AMQUserManagementMBean;
-import org.apache.qpid.AMQException;
-
-import javax.management.JMException;
 
 public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatabaseManager
 {
@@ -107,7 +107,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
     }
 
     private void initialisePrincipalDatabase(PrincipalDatabase principalDatabase, Configuration config, int index)
-            throws FileNotFoundException, ConfigurationException
+        throws FileNotFoundException, ConfigurationException
     {
         String baseName = _base + "(" + index + ").attributes.attribute.";
         List<String> argumentNames = config.getList(baseName + "name");
@@ -139,9 +139,9 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             if (method == null)
             {
                 throw new ConfigurationException("No method " + methodName + " found in class "
-                                                 + principalDatabase.getClass()
-                                                 + " hence unable to configure principal database. The method must be public and "
-                                                 + "have a single String argument with a void return type");
+                    + principalDatabase.getClass()
+                    + " hence unable to configure principal database. The method must be public and "
+                    + "have a single String argument with a void return type");
             }
 
             try
@@ -152,7 +152,7 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             {
                 if (ite instanceof ConfigurationException)
                 {
-                    throw(ConfigurationException) ite;
+                    throw (ConfigurationException) ite;
                 }
                 else
                 {
@@ -178,7 +178,8 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 
             if (principalDBs.size() == 0)
             {
-                throw new ConfigurationException("No principal-database specified for jmx security(" + baseSecurity + ".principal-database)");
+                throw new ConfigurationException("No principal-database specified for jmx security(" + baseSecurity
+                    + ".principal-database)");
             }
 
             String databaseName = principalDBs.get(0);
@@ -196,18 +197,19 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
 
             if (jmxaccesslist.size() == 0)
             {
-                throw new ConfigurationException("No access control files specified for jmx security(" + baseSecurity + ".access)");
+                throw new ConfigurationException("No access control files specified for jmx security(" + baseSecurity
+                    + ".access)");
             }
 
             String jmxaccesssFile = null;
-            
+
             try
             {
                 jmxaccesssFile = PropertyUtils.replaceProperties(jmxaccesslist.get(0));
             }
             catch (PropertyException e)
             {
-                throw new ConfigurationException("Unable to parse access control filename '" + jmxaccesssFile + "'");
+                throw new ConfigurationException("Unable to parse access control filename '" + jmxaccesssFile + "'", e);
             }
 
             try
