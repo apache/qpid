@@ -19,16 +19,18 @@
  *
  */
 
+#include "qpid/sys/Socket.h"
+
+#include "qpid/QpidError.h"
+#include "check.h"
+#include "PrivatePosix.h"
+
 #include <sys/socket.h>
 #include <sys/errno.h>
 #include <netinet/in.h>
 #include <netdb.h>
 
 #include <boost/format.hpp>
-
-#include "qpid/QpidError.h"
-#include "check.h"
-#include "qpid/sys/Socket.h"
 
 using namespace qpid::sys;
 
@@ -41,11 +43,10 @@ Socket Socket::createTcp()
 
 Socket::Socket(int descriptor) : socket(descriptor) {}
 
-void Socket::setTimeout(Time interval)
+void Socket::setTimeout(const Duration& interval)
 {
     struct timeval tv;
-    tv.tv_sec = interval/TIME_SEC;
-    tv.tv_usec = (interval%TIME_SEC)/TIME_USEC;
+    toTimeval(tv, interval);
     setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }

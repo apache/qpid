@@ -58,7 +58,7 @@ namespace qpid {
             typedef std::queue<Message::shared_ptr> Messages;
             
             const string name;
-            const uint32_t autodelete;
+            const sys::Duration autodelete;
             MessageStore* const store;
             const ConnectionToken* const owner;
             Consumers consumers;
@@ -67,7 +67,7 @@ namespace qpid {
             bool dispatching;
             int next;
             mutable qpid::sys::Mutex lock;
-            int64_t lastUsed;
+            sys::AbsTime lastUsed;
             Consumer* exclusive;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;

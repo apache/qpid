@@ -74,9 +74,9 @@ class WatchedCounter : public Monitor {
         return count;
     }
 
-    bool waitFor(int i, Time timeout=TIME_SEC) {
+    bool waitFor(int i, Duration timeout=TIME_SEC) {
         Lock l(*this);
-        Time deadline = timeout+now();
+        AbsTime deadline(now(), timeout);
         while (count != i) {
             if (!wait(deadline))
                 return false;
@@ -116,8 +116,8 @@ class ProducerConsumerTest : public CppUnit::TestCase
 
     struct ConsumeTimeoutRunnable : public Runnable {
         ProducerConsumerTest& test;
-        Time timeout;
-        ConsumeTimeoutRunnable(ProducerConsumerTest& test_, const Time& t)
+        Duration timeout;
+        ConsumeTimeoutRunnable(ProducerConsumerTest& test_, const Duration& t)
             : test(test_), timeout(t) {}
         void run() { test.consumeTimeout(timeout); }
     };
@@ -143,7 +143,7 @@ class ProducerConsumerTest : public CppUnit::TestCase
         consumeInternal(consumer);
     };
 
-    void consumeTimeout(const Time& timeout) {
+    void consumeTimeout(const Duration& timeout) {
         ProducerConsumer::ConsumerLock consumer(pc, timeout);
         consumeInternal(consumer);
     };

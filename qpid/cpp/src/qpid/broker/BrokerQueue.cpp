@@ -44,11 +44,10 @@ Queue::Queue(const string& _name, uint32_t _autodelete,
     queueing(false),
     dispatching(false),
     next(0),
-    lastUsed(0),
     exclusive(0),
     persistenceId(0)
 {
-    if(autodelete) lastUsed = now()/TIME_MSEC;
+    if(autodelete) lastUsed = now();
 }
 
 Queue::~Queue(){}
@@ -135,7 +134,7 @@ void Queue::consume(Consumer* c, bool requestExclusive){
                             "Exclusive access denied.") %getName());
         exclusive = c;
     }
-    if(autodelete && consumers.empty()) lastUsed = 0;
+    if(autodelete && consumers.empty()) lastUsed = FAR_FUTURE;
     consumers.push_back(c);
 }
 
@@ -144,7 +143,7 @@ void Queue::cancel(Consumer* c){
     Consumers::iterator i = std::find(consumers.begin(), consumers.end(), c);
     if (i != consumers.end()) 
         consumers.erase(i);
-    if(autodelete && consumers.empty()) lastUsed = now()*TIME_MSEC;
+    if(autodelete && consumers.empty()) lastUsed = now();
     if(exclusive == c) exclusive = 0;
 }
 
@@ -193,7 +192,7 @@ uint32_t Queue::getConsumerCount() const{
 
 bool Queue::canAutoDelete() const{
     Mutex::ScopedLock locker(lock);
-    return lastUsed && (now()*TIME_MSEC - lastUsed > autodelete);
+    return Duration(lastUsed, now()) > autodelete;
 }
 
 void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg)

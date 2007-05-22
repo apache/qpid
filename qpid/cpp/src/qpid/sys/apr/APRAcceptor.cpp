@@ -20,6 +20,7 @@
  */
 #include "qpid/sys/Acceptor.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
+#include "qpid/sys/Mutex.h"
 #include "LFProcessor.h"
 #include "LFSessionContext.h"
 #include "APRBase.h"

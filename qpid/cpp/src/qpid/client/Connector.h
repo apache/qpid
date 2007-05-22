@@ -30,8 +30,10 @@
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/Thread.h"
+#include "qpid/sys/Runnable.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Socket.h"
+#include "qpid/sys/Time.h"
 
 namespace qpid {
 
@@ -48,11 +50,11 @@ class Connector : public framing::OutputHandler,
     bool closed;
     sys::Mutex closedLock;
 
-    int64_t lastIn;
-    int64_t lastOut;
-    int64_t timeout;
-    uint32_t idleIn;
-    uint32_t idleOut;
+    sys::AbsTime lastIn;
+    sys::AbsTime lastOut;
+    sys::Duration timeout;
+    sys::Duration idleIn;
+    sys::Duration idleOut;
 
     sys::TimeoutHandler* timeoutHandler;
     sys::ShutdownHandler* shutdownHandler;

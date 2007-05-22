@@ -20,7 +20,7 @@
  */
 
 
-#include "qpid/sys/Socket.h"
+#include "Socket.h"
 #include "APRBase.h"
 #include "APRPool.h"
 
@@ -40,7 +40,7 @@ Socket::Socket(apr_socket_t* s) {
     socket = s;
 }
 
-void Socket::setTimeout(Time interval) {
+void Socket::setTimeout(const Duration& interval) {
     apr_socket_timeout_set(socket, interval/TIME_USEC);
 }
 

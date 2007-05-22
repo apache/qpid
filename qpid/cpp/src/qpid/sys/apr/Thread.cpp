@@ -19,7 +19,8 @@
  *
  */
 
-#include "qpid/sys/Thread.h"
+#include "Thread.h"
+#include "qpid/sys/Runnable.h"
 
 using namespace qpid::sys;
 using qpid::sys::Runnable;

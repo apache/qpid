@@ -183,7 +183,7 @@ void Publisher::waitForCompletion(int msgs){
 int64_t Publisher::publish(int msgs, int listeners, int size){
     Message msg;
     msg.setData(generateData(size));
-    Time start = now();
+    AbsTime start = now();
     {
         Monitor::ScopedLock l(monitor);
         for(int i = 0; i < msgs; i++){
@@ -201,8 +201,8 @@ int64_t Publisher::publish(int msgs, int listeners, int size){
         waitForCompletion(listeners);
     }
 
-    Time finish = now();
-    return finish - start; 
+    AbsTime finish = now();
+    return Duration(start, finish); 
 }
 
 string Publisher::generateData(int size){
