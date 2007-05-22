@@ -29,6 +29,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.exception.*;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.txn.MemoryDequeueRecord;
@@ -248,5 +250,24 @@ public class MemoryMessageStore implements MessageStore
     public long getNewMessageId()
     {
         return _messageID++;
+    }
+
+
+    public ContentHeaderBody getContentHeaderBody(StorableMessage m)
+            throws
+            InternalErrorException,
+            MessageDoesntExistException
+    {
+        // do nothing this is only used during recovery
+        return null;
+    }
+
+    public MessagePublishInfo getMessagePublishInfo(StorableMessage m)
+            throws
+            InternalErrorException,
+            MessageDoesntExistException
+    {
+       // do nothing this is only used during recovery
+        return null;
     }
 }
