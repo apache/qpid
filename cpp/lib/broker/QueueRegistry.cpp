@@ -28,7 +28,9 @@ using namespace qpid::sys;
 
 QueueRegistry::QueueRegistry(MessageStore* const _store) : counter(1), store(_store){}
 
-QueueRegistry::~QueueRegistry(){}
+QueueRegistry::~QueueRegistry()
+{
+}
 
 std::pair<Queue::shared_ptr, bool>
 QueueRegistry::declare(const string& declareName, bool durable, 

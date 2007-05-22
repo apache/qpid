@@ -26,3 +26,6 @@ void* qpid::sys::Thread::runRunnable(void* p)
     static_cast<Runnable*>(p)->run();
     return 0;
 }
+
+Thread::~Thread() {
+}

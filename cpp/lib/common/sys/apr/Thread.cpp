@@ -20,6 +20,7 @@
  */
 
 #include <sys/Thread.h>
+#include "APRPool.h"
 
 using namespace qpid::sys;
 using qpid::sys::Runnable;
@@ -29,5 +30,8 @@ void* APR_THREAD_FUNC Thread::runRunnable(apr_thread_t* thread, void *data) {
     CHECK_APR_SUCCESS(apr_thread_exit(thread, APR_SUCCESS));
     return NULL;
 } 
+
+Thread::~Thread() {
+}
 
 

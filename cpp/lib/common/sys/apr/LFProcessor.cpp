@@ -22,6 +22,7 @@
 #include <QpidError.h>
 #include "LFProcessor.h"
 #include "APRBase.h"
+#include "APRPool.h"
 #include "LFSessionContext.h"
 
 using namespace qpid::sys;
@@ -30,7 +31,7 @@ using qpid::QpidError;
 // TODO aconway 2006-10-12: stopped is read outside locks.
 //
 
-LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout) :
+LFProcessor::LFProcessor(int _workers, int _size, int _timeout) :
     size(_size),
     timeout(_timeout), 
     signalledCount(0),
@@ -41,7 +42,7 @@ LFProcessor::LFProcessor(apr_pool_t* pool, int _workers, int _size, int _timeout
     workers(new Thread[_workers]),
     stopped(false)
 {
-
+    pool = APRPool::get();
     CHECK_APR_SUCCESS(apr_pollset_create(&pollset, size, pool, APR_POLLSET_THREADSAFE));
 }
 
@@ -50,6 +51,7 @@ LFProcessor::~LFProcessor(){
     if (!stopped) stop();
     delete[] workers;
     CHECK_APR_SUCCESS(apr_pollset_destroy(pollset));
+    APRPool::free(pool);
 }
 
 void LFProcessor::start(){

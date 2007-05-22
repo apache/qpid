@@ -104,7 +104,9 @@ template <class T> Module<T>::~Module() throw()
 
 template <class T> void Module<T>::load(const std::string& name)
 {
-    CHECK_APR_SUCCESS(apr_dso_load(&handle, name.c_str(), APRPool::get()));
+    apr_pool_t* pool = APRPool::get();
+    CHECK_APR_SUCCESS(apr_dso_load(&handle, name.c_str(), pool));
+    APRPool::free(pool);
 }
 
 template <class T> void Module<T>::unload()

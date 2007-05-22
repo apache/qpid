@@ -20,6 +20,7 @@
  */
 #include <sys/Acceptor.h>
 #include <sys/SessionHandlerFactory.h>
+#include <apr_pools.h>
 #include "LFProcessor.h"
 #include "LFSessionContext.h"
 #include "APRBase.h"
@@ -32,6 +33,7 @@ class APRAcceptor : public Acceptor
 {
   public:
     APRAcceptor(int16_t port, int backlog, int threads, bool trace);
+    ~APRAcceptor();
     virtual int16_t getPort() const;
     virtual void run(qpid::sys::SessionHandlerFactory* factory);
     virtual void shutdown();
@@ -46,6 +48,7 @@ class APRAcceptor : public Acceptor
     apr_socket_t* socket;
     volatile bool running;
     Mutex shutdownLock;
+    apr_pool_t* pool;
 };
 
 // Define generic Acceptor::create() to return APRAcceptor.
@@ -54,16 +57,22 @@ Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads, bo
     return Acceptor::shared_ptr(new APRAcceptor(port, backlog, threads, trace));
 }
 // Must define Acceptor virtual dtor.
-Acceptor::~Acceptor() {}
+Acceptor::~Acceptor() {
+}
 
-    APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
+APRAcceptor::~APRAcceptor() {
+    APRPool::free(pool);
+}
+
+APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
     port(port_),
     trace(trace_),
-    processor(APRPool::get(), threads, 1000, 5000000)
+    processor(threads, 1000, 5000000)
 {
+    pool = APRPool::get();
     apr_sockaddr_t* address;
-    CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, APR_ANYADDR, APR_UNSPEC, port, APR_IPV4_ADDR_OK, APRPool::get()));
-    CHECK_APR_SUCCESS(apr_socket_create(&socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP, APRPool::get()));
+    CHECK_APR_SUCCESS(apr_sockaddr_info_get(&address, APR_ANYADDR, APR_UNSPEC, port, APR_IPV4_ADDR_OK, pool));
+    CHECK_APR_SUCCESS(apr_socket_create(&socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP, pool));
     CHECK_APR_SUCCESS(apr_socket_opt_set(socket, APR_SO_REUSEADDR, 1));
     CHECK_APR_SUCCESS(apr_socket_bind(socket, address));
     CHECK_APR_SUCCESS(apr_socket_listen(socket, backlog));
@@ -81,7 +90,7 @@ void APRAcceptor::run(SessionHandlerFactory* factory) {
     std::cout << "Listening on port " << getPort() << "..." << std::endl;
     while(running){
         apr_socket_t* client;
-        apr_status_t status = apr_socket_accept(&client, socket, APRPool::get());
+        apr_status_t status = apr_socket_accept(&client, socket, pool);
         if(status == APR_SUCCESS){
             //make this socket non-blocking:
             CHECK_APR_SUCCESS(apr_socket_timeout_set(client, 0));
@@ -89,7 +98,7 @@ void APRAcceptor::run(SessionHandlerFactory* factory) {
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_TCP_NODELAY, 1));
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_SO_SNDBUF, 32768));
             CHECK_APR_SUCCESS(apr_socket_opt_set(client, APR_SO_RCVBUF, 32768));
-            LFSessionContext* session = new LFSessionContext(APRPool::get(), client, &processor, trace);
+            LFSessionContext* session = new LFSessionContext(client, &processor, trace);
             session->init(factory->create(session));
         }else{
             Mutex::ScopedLock locker(shutdownLock);                

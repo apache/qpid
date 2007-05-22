@@ -23,6 +23,8 @@
  */
 #include <boost/noncopyable.hpp>
 #include <apr_pools.h>
+#include <apr_thread_mutex.h>
+#include <stack>
 
 namespace qpid {
 namespace sys {
@@ -33,12 +35,21 @@ class APRPool : private boost::noncopyable {
   public:
     APRPool();
     ~APRPool();
+    
+    apr_pool_t* allocate_pool();
+    
+    void free_pool(apr_pool_t* pool);
 
-    /** Get singleton instance */
+    /** Allocate pool */
     static apr_pool_t* get();
+    
+    /** Free pool */
+    static void free(apr_pool_t* pool);
 
   private:
     apr_pool_t* pool;
+    apr_thread_mutex_t* poolGuard;
+    std::stack<apr_pool_t*>* allocated_pools;
 };
 
 }}

@@ -44,11 +44,10 @@ class Thread
     inline static void yield();
 
     inline Thread();
-    inline explicit Thread(qpid::sys::Runnable*);
-    inline explicit Thread(qpid::sys::Runnable&);
-    
+    inline Thread(qpid::sys::Runnable*);
+    inline Thread(qpid::sys::Runnable&);
+    ~Thread();
     inline void join();
-
     inline long id();
         
   private:
@@ -70,13 +69,17 @@ Thread::Thread() : thread(0) {}
 #ifdef USE_APR
 
 Thread::Thread(Runnable* runnable) {
+    apr_pool_t* tmp_pool = APRPool::get();
     CHECK_APR_SUCCESS(
-        apr_thread_create(&thread, 0, runRunnable, runnable, APRPool::get()));
+        apr_thread_create(&thread, 0, runRunnable, runnable, tmp_pool));
+    APRPool::free(tmp_pool);
 }
 
 Thread::Thread(Runnable& runnable) {
+    apr_pool_t* tmp_pool = APRPool::get();
     CHECK_APR_SUCCESS(
-        apr_thread_create(&thread, 0, runRunnable, &runnable, APRPool::get()));
+        apr_thread_create(&thread, 0, runRunnable, &runnable, tmp_pool));
+    APRPool::free(tmp_pool);
 }
 
 void Thread::join(){
@@ -92,9 +95,11 @@ long Thread::id() {
 Thread::Thread(apr_thread_t* t) : thread(t) {}
 
 Thread Thread::current(){
+    apr_pool_t* tmp_pool = APRPool::get();
     apr_thread_t* thr;
     apr_os_thread_t osthr = apr_os_thread_current();
-    CHECK_APR_SUCCESS(apr_os_thread_put(&thr, &osthr, APRPool::get()));
+    CHECK_APR_SUCCESS(apr_os_thread_put(&thr, &osthr, tmp_pool));
+    APRPool::free(tmp_pool);
     return Thread(thr);
 }
 
@@ -121,6 +126,9 @@ void Thread::join(){
 
 long Thread::id() {
     return long(thread);
+}
+
+Thread::~Thread() {
 }
 
 Thread::Thread(pthread_t thr) : thread(thr) {}

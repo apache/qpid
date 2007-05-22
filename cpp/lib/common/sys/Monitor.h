@@ -60,7 +60,9 @@ class Monitor : public Mutex
 #ifdef USE_APR
 
 Monitor::Monitor() {
-    CHECK_APR_SUCCESS(apr_thread_cond_create(&condition, APRPool::get()));
+    apr_pool_t* pool = APRPool::get();
+    CHECK_APR_SUCCESS(apr_thread_cond_create(&condition, pool));
+    APRPool::free(pool);
 }
 
 Monitor::~Monitor() {

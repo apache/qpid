@@ -20,6 +20,7 @@
  */
 #include "LFSessionContext.h"
 #include "APRBase.h"
+#include "APRPool.h"
 #include <QpidError.h>
 #include <assert.h>
 
@@ -27,7 +28,7 @@ using namespace qpid::sys;
 using namespace qpid::sys;
 using namespace qpid::framing;
 
-LFSessionContext::LFSessionContext(apr_pool_t* _pool, apr_socket_t* _socket, 
+LFSessionContext::LFSessionContext(apr_socket_t* _socket, 
                                    LFProcessor* const _processor,
                                    bool _debug) :
     debug(_debug),
@@ -40,7 +41,7 @@ LFSessionContext::LFSessionContext(apr_pool_t* _pool, apr_socket_t* _socket,
     closing(false)
 {
     
-    fd.p = _pool;
+    fd.p = APRPool::get();
     fd.desc_type = APR_POLL_SOCKET;
     fd.reqevents = APR_POLLIN;
     fd.client_data = this;
@@ -156,6 +157,7 @@ void LFSessionContext::close(){
 
 void LFSessionContext::handleClose(){
     handler->closed();
+    APRPool::free(fd.p);
     std::cout << "Session closed [" << &socket << "]" << std::endl;
     delete handler;
     delete this;

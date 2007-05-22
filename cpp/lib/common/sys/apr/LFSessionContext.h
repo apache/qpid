@@ -66,7 +66,7 @@ class LFSessionContext : public virtual qpid::sys::SessionContext
         
 
   public:
-    LFSessionContext(apr_pool_t* pool, apr_socket_t* socket, 
+    LFSessionContext(apr_socket_t* socket, 
                      LFProcessor* const processor, 
                      bool debug = false);
     virtual ~LFSessionContext();

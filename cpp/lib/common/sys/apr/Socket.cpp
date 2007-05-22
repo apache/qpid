@@ -30,10 +30,12 @@ using namespace qpid::sys;
 
 Socket Socket::createTcp() {
     Socket s;
+    apr_pool_t* pool = APRPool::get();
     CHECK_APR_SUCCESS(
         apr_socket_create(
             &s.socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP,
-            APRPool::get()));
+            pool));
+    APRPool::free(pool);
     return s;
 }
 
@@ -47,11 +49,13 @@ void Socket::setTimeout(Time interval) {
 
 void Socket::connect(const std::string& host, int port) {
     apr_sockaddr_t* address;
+    apr_pool_t* pool = APRPool::get();
     CHECK_APR_SUCCESS(
         apr_sockaddr_info_get(
             &address, host.c_str(), APR_UNSPEC, port, APR_IPV4_ADDR_OK,
-            APRPool::get()));
+            pool));
     CHECK_APR_SUCCESS(apr_socket_connect(socket, address));
+    APRPool::free(pool);
 }
 
 void Socket::close() {

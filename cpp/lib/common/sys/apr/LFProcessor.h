@@ -57,6 +57,7 @@ namespace sys {
         qpid::sys::Mutex countLock;
         std::vector<LFSessionContext*> sessions;
         volatile bool stopped;
+        apr_pool_t* pool;
 
         const apr_pollfd_t* getNextEvent();
         void waitToLead();
@@ -65,7 +66,7 @@ namespace sys {
         virtual void run();        
 
     public:
-        LFProcessor(apr_pool_t* pool, int workers, int size, int timeout);
+        LFProcessor(int workers, int size, int timeout);
         /**
          * Add the fd to the poll set. Relies on the client_data being
          * an instance of LFSessionContext.

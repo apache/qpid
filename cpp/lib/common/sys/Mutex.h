@@ -21,8 +21,9 @@
 
 #ifdef USE_APR
 #  include <apr_thread_mutex.h>
-#  include <apr/APRBase.h>
-#  include <apr/APRPool.h>
+#  include <apr_pools.h>
+#  include "apr/APRBase.h"
+#  include "apr/APRPool.h"
 #else
 #  include <pthread.h>
 #  include <posix/check.h>
@@ -62,6 +63,7 @@ class Mutex : private boost::noncopyable {
   protected:
 #ifdef USE_APR
     apr_thread_mutex_t* mutex;
+    apr_pool_t* pool;
 #else
     pthread_mutex_t mutex;
 #endif
@@ -71,11 +73,13 @@ class Mutex : private boost::noncopyable {
 // APR ================================================================
 
 Mutex::Mutex() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_create(&mutex, APR_THREAD_MUTEX_NESTED, APRPool::get()));
+    pool = APRPool::get();
+    CHECK_APR_SUCCESS(apr_thread_mutex_create(&mutex, APR_THREAD_MUTEX_NESTED, pool));
 }
 
 Mutex::~Mutex(){
     CHECK_APR_SUCCESS(apr_thread_mutex_destroy(mutex));
+    APRPool::free(pool);    
 }
 
 void Mutex::lock() {
