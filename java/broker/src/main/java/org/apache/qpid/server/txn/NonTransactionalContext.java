@@ -93,7 +93,10 @@ public class NonTransactionalContext implements TransactionalContext
     {
         try
         {
-            message.getMessageHandle().enqueue(_storeContext, message.getMessageId(), queue);
+            if( ! deliverFirst )
+            {
+                message.getMessageHandle().enqueue(_storeContext, message.getMessageId(), queue);
+            }
             queue.process(_storeContext, message, deliverFirst);
             //following check implements the functionality
             //required by the 'immediate' flag:

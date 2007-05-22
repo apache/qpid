@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,7 +24,11 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.messageStore.StorableMessage;
+import org.apache.qpid.server.messageStore.JDBCStore;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.MessageDoesntExistException;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.log4j.Logger;
 
 import javax.transaction.xa.Xid;
@@ -65,7 +69,7 @@ public class StorableMessageHandle implements AMQMessageHandle
     // MessagePublishInfo
     private MessagePublishInfo _messagePublishInfo;
     // list of chunks
-    private List<ContentChunk> _chunks = new LinkedList<ContentChunk>();
+    private List<ContentChunk> _chunks;
 
     //========================================================================
     // Constructors
@@ -84,6 +88,17 @@ public class StorableMessageHandle implements AMQMessageHandle
             throws
             AMQException
     {
+        if (_contentHeaderBody == null)
+        {
+            // load it from the store
+            try
+            {
+                _contentHeaderBody = _messageStore.getContentHeaderBody(_message);
+            } catch (Exception e)
+            {
+                throw new AMQException(AMQConstant.INTERNAL_ERROR, e.getMessage(), e);
+            }
+        }
         return _contentHeaderBody;
     }
 
@@ -91,6 +106,17 @@ public class StorableMessageHandle implements AMQMessageHandle
             throws
             AMQException
     {
+       if (_chunks == null )
+       {
+           if(_message.isStaged() )
+           {
+              loadChunks();
+           }
+           else
+           {
+               return 0;
+           }
+      }
         return _chunks.size();
     }
 
@@ -106,13 +132,57 @@ public class StorableMessageHandle implements AMQMessageHandle
             IllegalArgumentException,
             AMQException
     {
+        if (_chunks == null)
+        {
+            loadChunks();
+        }
         return _chunks.get(index);
+    }
+
+    private void loadChunks()
+            throws
+            AMQException
+    {
+        try
+            {
+                _chunks = new LinkedList<ContentChunk>();
+            byte[] underlying = _messageStore.loadContent(_message, 1, 0);
+            final int size = underlying.length;
+            final org.apache.mina.common.ByteBuffer data =
+                    org.apache.mina.common.ByteBuffer.wrap(underlying);
+            ContentChunk cb = new ContentChunk()
+            {
+
+                public int getSize()
+                {
+                    return size;
+                }
+
+                public org.apache.mina.common.ByteBuffer getData()
+                {
+                    return data;
+                }
+
+                public void reduceToFit()
+                {
+
+                }
+            };
+            _chunks.add(cb);
+        } catch (Exception e)
+        {
+            throw new AMQException(AMQConstant.INTERNAL_ERROR, e.getMessage(), e);
+        }
     }
 
     public void addContentBodyFrame(StoreContext storeContext, Long messageId, ContentChunk contentBody, boolean isLastContentBody)
             throws
             AMQException
     {
+        if (_chunks == null)
+        {
+            _chunks = new LinkedList<ContentChunk>();
+        }
         _chunks.add(contentBody);
         // if rquired this message can be added to the store
         //_messageStore.appendContent(_message, _payload, 0, 10);
@@ -123,6 +193,17 @@ public class StorableMessageHandle implements AMQMessageHandle
             throws
             AMQException
     {
+        if (_messagePublishInfo == null)
+        {
+            // read it from the store
+            try
+            {
+                _messagePublishInfo = _messageStore.getMessagePublishInfo(_message);
+            } catch (Exception e)
+            {
+                throw new AMQException(AMQConstant.INTERNAL_ERROR, e.getMessage(), e);
+            }
+        }
         return _messagePublishInfo;
     }
 
