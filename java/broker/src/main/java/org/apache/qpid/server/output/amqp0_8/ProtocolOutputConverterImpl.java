@@ -182,10 +182,8 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                                 deliveryTag, pb.getExchange(), messageHandle.isRedelivered(),
                                                                 pb.getRoutingKey());
 
-        ByteBuffer buf = ByteBuffer.allocate((int) deliverFrame.getSize()); // XXX: Could cast be a problem?
-        deliverFrame.writePayload(buf);
-        buf.flip();
-        return buf;
+
+        return deliverFrame.toByteBuffer();
     }
 
     private ByteBuffer createEncodedGetOkFrame(AMQMessage message, int channelId, long deliveryTag, int queueSize)
@@ -201,10 +199,8 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                                 queueSize,
                                                                 messageHandle.isRedelivered(),
                                                                 pb.getRoutingKey());
-        ByteBuffer buf = ByteBuffer.allocate((int) getOkFrame.getSize()); // XXX: Could cast be a problem?
-        getOkFrame.writePayload(buf);
-        buf.flip();
-        return buf;
+
+        return getOkFrame.toByteBuffer();
     }
 
     public byte getProtocolMinorVersion()
@@ -225,10 +221,8 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                                                               message.getMessagePublishInfo().getExchange(),
                                                               replyCode, replyText,
                                                               message.getMessagePublishInfo().getRoutingKey());
-        ByteBuffer buf = ByteBuffer.allocate((int) returnFrame.getSize()); // XXX: Could cast be a problem?
-        returnFrame.writePayload(buf);
-        buf.flip();
-        return buf;
+
+        return returnFrame.toByteBuffer();
     }
 
     public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText)

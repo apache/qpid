@@ -777,6 +777,8 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNamehasMaxLength()
     {
+        String oldVal =System.getProperty("STRICT_AMQP");
+        System.setProperty("STRICT_AMQP","true");
         FieldTable table = new FieldTable();
 
         StringBuffer longPropertyName = new StringBuffer(129);
@@ -797,6 +799,14 @@ public class PropertyFieldTableTest extends TestCase
         }
         // so length should be zero
         Assert.assertEquals(0, table.getEncodedSize());
+        if(oldVal != null)
+        {
+            System.setProperty("STRICT_AMQP",oldVal);
+        }
+        else
+        {
+            System.clearProperty("STRICT_AMQP");
+        }
     }
 
 
@@ -805,12 +815,14 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameStartCharacterIsLetter()
     {
+        String oldVal =System.getProperty("STRICT_AMQP");
+        System.setProperty("STRICT_AMQP","true");
         FieldTable table = new FieldTable();
 
         //Try a name that starts with a number
         try
         {
-            table.setObject("1", "String");
+            table.setObject("1", "String");                               
             fail("property name must start with a letter");
         }
         catch (IllegalArgumentException iae)
@@ -819,6 +831,14 @@ public class PropertyFieldTableTest extends TestCase
         }
         // so length should be zero
         Assert.assertEquals(0, table.getEncodedSize());
+        if(oldVal != null)
+        {
+            System.setProperty("STRICT_AMQP",oldVal);
+        }
+        else
+        {
+            System.clearProperty("STRICT_AMQP");
+        }
     }
 
 
@@ -827,6 +847,8 @@ public class PropertyFieldTableTest extends TestCase
      */
     public void testCheckPropertyNameStartCharacterIsHashorDollar()
     {
+        String oldVal =System.getProperty("STRICT_AMQP");
+        System.setProperty("STRICT_AMQP","true");
         FieldTable table = new FieldTable();
 
         //Try a name that starts with a number
@@ -839,7 +861,16 @@ public class PropertyFieldTableTest extends TestCase
         {
             fail("property name are allowed to start with # and $s");
         }
+        if(oldVal != null)
+        {
+            System.setProperty("STRICT_AMQP",oldVal);
+        }
+        else
+        {
+            System.clearProperty("STRICT_AMQP");
+        }
     }
+
 
 
     /**

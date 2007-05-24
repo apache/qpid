@@ -37,6 +37,8 @@ import org.apache.qpid.AMQPInvalidClassException;
 public class FieldTable
 {
     private static final Logger _logger = Logger.getLogger(FieldTable.class);
+    private static final String STRICT_AMQP = "STRICT_AMQP";
+    private final boolean _strictAMQP = Boolean.valueOf(System.getProperty(STRICT_AMQP,"false"));
 
     private ByteBuffer _encodedForm;
     private LinkedHashMap<AMQShortString, AMQTypedValue> _properties;
@@ -407,74 +409,74 @@ public class FieldTable
 
 
     // ************  Setters
-    public Object setBoolean(String string, boolean b)
+    public Object setBoolean(String string, Boolean b)
     {
         return setBoolean(new AMQShortString(string), b);
     }
 
-    public Object setBoolean(AMQShortString string, boolean b)
+    public Object setBoolean(AMQShortString string, Boolean b)
     {
         return setProperty(string, AMQType.BOOLEAN.asTypedValue(b));
     }
 
-    public Object setByte(String string, byte b)
+    public Object setByte(String string, Byte b)
     {
         return setByte(new AMQShortString(string), b);
     }
 
-    public Object setByte(AMQShortString string, byte b)
+    public Object setByte(AMQShortString string, Byte b)
     {
         return setProperty(string, AMQType.BYTE.asTypedValue(b));
     }
 
-    public Object setShort(String string, short i)
+    public Object setShort(String string, Short i)
     {
         return setShort(new AMQShortString(string), i);
     }
 
-    public Object setShort(AMQShortString string, short i)
+    public Object setShort(AMQShortString string, Short i)
     {
         return setProperty(string, AMQType.SHORT.asTypedValue(i));
     }
 
 
-    public Object setInteger(String string, int i)
+    public Object setInteger(String string, Integer i)
     {
         return setInteger(new AMQShortString(string), i);
     }
 
-    public Object setInteger(AMQShortString string, int i)
+    public Object setInteger(AMQShortString string, Integer i)
     {
         return setProperty(string, AMQType.INT.asTypedValue(i));
     }
 
 
-    public Object setLong(String string, long l)
+    public Object setLong(String string, Long l)
     {
         return setLong(new AMQShortString(string), l);
     }
 
-    public Object setLong(AMQShortString string, long l)
+    public Object setLong(AMQShortString string, Long l)
     {
         return setProperty(string, AMQType.LONG.asTypedValue(l));
     }
 
-    public Object setFloat(String string, float f)
+    public Object setFloat(String string, Float f)
     {
         return setFloat(new AMQShortString(string), f);
     }
 
-    public Object setFloat(AMQShortString string, float v)
+    public Object setFloat(AMQShortString string, Float v)
     {
         return setProperty(string, AMQType.FLOAT.asTypedValue(v));
     }
 
-    public Object setDouble(String string, double d)
+    public Object setDouble(String string, Double d)
     {
         return setDouble(new AMQShortString(string), d);
     }
 
-    public Object setDouble(AMQShortString string, double v)
+    public Object setDouble(AMQShortString string, Double v)
     {
         return setProperty(string, AMQType.DOUBLE.asTypedValue(v));
     }
@@ -668,7 +670,10 @@ public class FieldTable
             throw new IllegalArgumentException("Property name must not be the empty string");
         }
 
-        checkIdentiferFormat(propertyName);
+        if(_strictAMQP)
+        {
+            checkIdentiferFormat(propertyName);
+        }
     }
 
     protected static void checkIdentiferFormat(AMQShortString propertyName)

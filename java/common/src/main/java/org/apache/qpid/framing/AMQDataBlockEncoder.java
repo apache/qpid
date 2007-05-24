@@ -42,17 +42,14 @@ public final class AMQDataBlockEncoder implements MessageEncoder
     public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception
     {
         final AMQDataBlock frame = (AMQDataBlock) message;
-        int frameSize = (int)frame.getSize();
-        final ByteBuffer buffer = ByteBuffer.allocate(frameSize);
-        //buffer.setAutoExpand(true);
-        frame.writePayload(buffer);
+
+        final ByteBuffer buffer = frame.toByteBuffer();
 
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Encoded frame byte-buffer is '" + EncodingUtils.convertToHexString(buffer) + "'");
         }
 
-        buffer.flip();
         out.write(buffer);
     }
 

@@ -15,7 +15,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private final ByteBuffer _data;
     private int _hashCode;
-    final int _length;
+    private final int _length;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
 
     public AMQShortString(byte[] data)

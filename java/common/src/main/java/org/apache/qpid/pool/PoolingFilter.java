@@ -138,7 +138,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
      */
     public void init()
     {
-        _logger.info("Init called on PoolingFilter " + toString());
+        _logger.debug("Init called on PoolingFilter " + toString());
 
         // Called when the filter is initialised in the chain. If the reference count is
         // zero this acquire will initialise the pool.
@@ -150,7 +150,7 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
      */
     public void destroy()
     {
-        _logger.info("Destroy called on PoolingFilter " + toString());
+        _logger.debug("Destroy called on PoolingFilter " + toString());
 
         // When the reference count gets to zero we release the executor service.
         _poolReference.releaseExecutorService();

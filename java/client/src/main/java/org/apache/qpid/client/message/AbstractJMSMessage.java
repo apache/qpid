@@ -79,24 +79,22 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         this(contentHeader, deliveryTag);
 
         Integer type = contentHeader.getHeaders().getInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
-        int contentType = (type == null) ? AMQDestination.UNKNOWN_TYPE : type.intValue();
+
 
         AMQDestination dest;
 
-        switch (contentType)
+
+        if(AMQDestination.QUEUE_TYPE.equals(type))
         {
-
-            case AMQDestination.QUEUE_TYPE:
                 dest = new AMQQueue(exchange, routingKey, routingKey);
-                break;
-
-            case AMQDestination.TOPIC_TYPE:
+        }
+        else if(AMQDestination.TOPIC_TYPE.equals(type))
+        {
                 dest = new AMQTopic(exchange, routingKey, null);
-                break;
-
-            default:
+        }
+        else
+        {
                 dest = new AMQUndefinedDestination(exchange, routingKey, null);
-                break;
         }
         //Destination dest = AMQDestination.createDestination(url);
         setJMSDestination(dest);
