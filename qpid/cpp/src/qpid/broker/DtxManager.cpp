@@ -29,14 +29,6 @@ DtxManager::~DtxManager() {}
 
 void DtxManager::start(std::string xid, DtxBuffer::shared_ptr ops)
 {
-    /*
-    WorkMap::iterator i = work.find(xid);
-    if (i == work.end()) {
-        i = work.insert(xid, new DtxWorkRecord(xid, store)).first;
-    }
-    i->add(ops);
-    */
-
     getOrCreateWork(xid)->add(ops);
 }
 
