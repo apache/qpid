@@ -37,11 +37,13 @@ class DtxManager{
     TransactionalStore* const store;
 
     WorkMap::iterator getWork(const std::string& xid);
+    WorkMap::iterator getOrCreateWork(std::string& xid);
 
 public:
     DtxManager(TransactionalStore* const store);
     ~DtxManager();
     void start(std::string xid, DtxBuffer::shared_ptr work);
+    void recover(std::string xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr work);
     void prepare(const std::string& xid);
     void commit(const std::string& xid);
     void rollback(const std::string& xid);

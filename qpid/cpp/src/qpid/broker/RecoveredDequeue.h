@@ -1,6 +1,3 @@
-#ifndef _broker_RecoverableExchange_h
-#define _broker_RecoverableExchange_h
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,30 +18,33 @@
  * under the License.
  *
  */
+#ifndef _RecoveredDequeue_
+#define _RecoveredDequeue_
 
-#include <boost/shared_ptr.hpp>
-#include "qpid/framing/FieldTable.h"
+#include <algorithm>
+#include <functional>
+#include <list>
+#include "Deliverable.h"
+#include "BrokerMessage.h"
+#include "MessageStore.h"
+#include "BrokerQueue.h"
+#include "TxOp.h"
 
 namespace qpid {
-namespace broker {
+    namespace broker {
+        class RecoveredDequeue : public TxOp{
+            Queue::shared_ptr queue;
+            Message::shared_ptr msg;
 
-/**
- * The interface through which bindings are recovered.
- */
-class RecoverableExchange
-{
-public:
-    typedef boost::shared_ptr<RecoverableExchange> shared_ptr;
-
-    virtual void setPersistenceId(uint64_t id) = 0;
-    /**
-     * Recover binding. Nb: queue must have been recovered earlier.
-     */
-    virtual void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args) = 0;
-    virtual ~RecoverableExchange() {};
-};
-
-}}
+        public:
+            RecoveredDequeue(Queue::shared_ptr queue, Message::shared_ptr msg);
+            virtual bool prepare(TransactionContext* ctxt) throw();
+            virtual void commit() throw();
+            virtual void rollback() throw();
+            virtual ~RecoveredDequeue(){}
+        };
+    }
+}
 
 
 #endif

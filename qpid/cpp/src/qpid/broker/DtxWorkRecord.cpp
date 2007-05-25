@@ -105,3 +105,9 @@ void DtxWorkRecord::abort()
     }
     for_each(work.begin(), work.end(), mem_fn(&TxBuffer::rollback));
 }
+
+void DtxWorkRecord::recover(std::auto_ptr<TPCTransactionContext> _txn, DtxBuffer::shared_ptr ops)
+{
+    add(ops);
+    txn = _txn;
+}

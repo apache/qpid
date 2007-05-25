@@ -23,6 +23,8 @@
 #include "BrokerMessage.h"
 #include "BrokerMessageMessage.h"
 #include "BrokerQueue.h"
+#include "RecoveredEnqueue.h"
+#include "RecoveredDequeue.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -32,8 +34,9 @@ using boost::dynamic_pointer_cast;
 static const uint8_t BASIC = 1;
 static const uint8_t MESSAGE = 2;
 
-RecoveryManagerImpl::RecoveryManagerImpl(QueueRegistry& _queues, ExchangeRegistry& _exchanges, uint64_t _stagingThreshold) 
-    : queues(_queues), exchanges(_exchanges), stagingThreshold(_stagingThreshold) {}
+RecoveryManagerImpl::RecoveryManagerImpl(QueueRegistry& _queues, ExchangeRegistry& _exchanges, 
+                                         DtxManager& _dtxMgr, uint64_t _stagingThreshold) 
+    : queues(_queues), exchanges(_exchanges), dtxMgr(_dtxMgr), stagingThreshold(_stagingThreshold) {}
 
 RecoveryManagerImpl::~RecoveryManagerImpl() {}
 
@@ -49,6 +52,8 @@ public:
     bool loadContent(uint64_t available);
     void decodeContent(framing::Buffer& buffer);
     void recover(Queue::shared_ptr queue);
+    void enqueue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue);
+    void dequeue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue);
 };
 
 class RecoverableQueueImpl : public RecoverableQueue
@@ -59,6 +64,8 @@ public:
     ~RecoverableQueueImpl() {};
     void setPersistenceId(uint64_t id);
     void recover(RecoverableMessage::shared_ptr msg);
+    void enqueue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
+    void dequeue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
 };
 
 class RecoverableExchangeImpl : public RecoverableExchange
@@ -69,6 +76,15 @@ public:
     RecoverableExchangeImpl(Exchange::shared_ptr _exchange, QueueRegistry& _queues) : exchange(_exchange), queues(_queues) {}
     void setPersistenceId(uint64_t id);
     void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args);
+};
+
+class RecoverableTransactionImpl : public RecoverableTransaction
+{
+    DtxBuffer::shared_ptr buffer;
+public:
+    RecoverableTransactionImpl(DtxBuffer::shared_ptr _buffer) : buffer(_buffer) {}
+    void enqueue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message);
+    void dequeue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message);
 };
 
 RecoverableExchange::shared_ptr RecoveryManagerImpl::recoverExchange(framing::Buffer& buffer)
@@ -100,6 +116,14 @@ RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buff
     buffer.restore();
     message->decodeHeader(buffer);
     return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message, stagingThreshold));    
+}
+
+RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid, 
+                                                                           std::auto_ptr<TPCTransactionContext> txn)
+{
+    DtxBuffer::shared_ptr buffer(new DtxBuffer());
+    dtxMgr.recover(xid, txn, buffer);
+    return RecoverableTransaction::shared_ptr(new RecoverableTransactionImpl(buffer));
 }
 
 void RecoveryManagerImpl::recoveryComplete()
@@ -161,4 +185,34 @@ void RecoverableExchangeImpl::bind(string& queueName, string& key, framing::Fiel
 {
     Queue::shared_ptr queue = queues.find(queueName);
     exchange->bind(queue, key, &args);
+}
+
+void RecoverableMessageImpl::dequeue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue)
+{
+    buffer->enlist(TxOp::shared_ptr(new RecoveredDequeue(queue, msg)));
+}
+
+void RecoverableMessageImpl::enqueue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue)
+{
+    buffer->enlist(TxOp::shared_ptr(new RecoveredEnqueue(queue, msg)));
+}
+
+void RecoverableQueueImpl::dequeue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr message)
+{
+    dynamic_pointer_cast<RecoverableMessageImpl>(message)->dequeue(buffer, queue);
+}
+
+void RecoverableQueueImpl::enqueue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr message)
+{
+    dynamic_pointer_cast<RecoverableMessageImpl>(message)->enqueue(buffer, queue);
+}
+
+void RecoverableTransactionImpl::dequeue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message)
+{
+    dynamic_pointer_cast<RecoverableQueueImpl>(queue)->dequeue(buffer, message);
+}
+
+void RecoverableTransactionImpl::enqueue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message)
+{
+    dynamic_pointer_cast<RecoverableQueueImpl>(queue)->enqueue(buffer, message);
 }
