@@ -29,11 +29,20 @@ DtxManager::~DtxManager() {}
 
 void DtxManager::start(std::string xid, DtxBuffer::shared_ptr ops)
 {
+    /*
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
         i = work.insert(xid, new DtxWorkRecord(xid, store)).first;
     }
     i->add(ops);
+    */
+
+    getOrCreateWork(xid)->add(ops);
+}
+
+void DtxManager::recover(std::string xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops)
+{
+    getOrCreateWork(xid)->recover(txn, ops);
 }
 
 void DtxManager::prepare(const std::string& xid) 
@@ -54,6 +63,17 @@ void DtxManager::rollback(const std::string& xid)
 DtxManager::WorkMap::iterator DtxManager::getWork(const std::string& xid)
 {
     WorkMap::iterator i = work.find(xid);
-    if (i == work.end()) throw ConnectionException(503, boost::format("Unrecognised xid %1%!") % xid);
+    if (i == work.end()) {
+        throw ConnectionException(503, boost::format("Unrecognised xid %1%!") % xid);
+    }
+    return i;
+}
+
+DtxManager::WorkMap::iterator DtxManager::getOrCreateWork(std::string& xid)
+{
+    WorkMap::iterator i = work.find(xid);
+    if (i == work.end()) {
+        i = work.insert(xid, new DtxWorkRecord(xid, store)).first;
+    }
     return i;
 }

@@ -92,8 +92,8 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges.declare(amq_match, HeadersExchange::typeName);
 
     if(store.get()) {
-        RecoveryManagerImpl recoverer(
-            queues, exchanges, conf.stagingThreshold);
+        RecoveryManagerImpl recoverer(queues, exchanges, dtxManager, 
+                                      conf.stagingThreshold);
         store->recover(recoverer);
     }
 

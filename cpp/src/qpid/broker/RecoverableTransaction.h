@@ -1,5 +1,5 @@
-#ifndef _broker_RecoverableExchange_h
-#define _broker_RecoverableExchange_h
+#ifndef _broker_RecoverableTransaction_h
+#define _broker_RecoverableTransaction_h
 
 /*
  *
@@ -23,25 +23,24 @@
  */
 
 #include <boost/shared_ptr.hpp>
-#include "qpid/framing/FieldTable.h"
+
+#include "RecoverableMessage.h"
+#include "RecoverableQueue.h"
 
 namespace qpid {
 namespace broker {
 
 /**
- * The interface through which bindings are recovered.
+ * The interface through which prepared 2pc transactions are
+ * recovered.
  */
-class RecoverableExchange
+class RecoverableTransaction
 {
 public:
-    typedef boost::shared_ptr<RecoverableExchange> shared_ptr;
-
-    virtual void setPersistenceId(uint64_t id) = 0;
-    /**
-     * Recover binding. Nb: queue must have been recovered earlier.
-     */
-    virtual void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args) = 0;
-    virtual ~RecoverableExchange() {};
+    typedef boost::shared_ptr<RecoverableTransaction> shared_ptr;
+    virtual void enqueue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message) = 0;
+    virtual void dequeue(RecoverableQueue::shared_ptr queue, RecoverableMessage::shared_ptr message) = 0;
+    virtual ~RecoverableTransaction() {};
 };
 
 }}
