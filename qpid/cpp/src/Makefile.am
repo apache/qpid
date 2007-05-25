@@ -181,6 +181,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueuePolicy.cpp \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/RecoveryManagerImpl.cpp \
+  qpid/broker/RecoveredEnqueue.cpp \
+  qpid/broker/RecoveredDequeue.cpp \
   qpid/broker/Reference.cpp \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TxAck.cpp \
@@ -234,7 +236,10 @@ nobase_include_HEADERS = \
   qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \
   qpid/broker/RecoverableQueue.h \
+  qpid/broker/RecoverableTransaction.h \
   qpid/broker/RecoveryManager.h \
+  qpid/broker/RecoveredEnqueue.h \
+  qpid/broker/RecoveredDequeue.h \
   qpid/broker/Reference.h \
   qpid/broker/TxBuffer.h \
   qpid/broker/TxOp.h \

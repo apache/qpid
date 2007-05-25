@@ -56,6 +56,7 @@ public:
     void commit();
     void rollback();
     void add(DtxBuffer::shared_ptr ops);
+    void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
 };
 
 }

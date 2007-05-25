@@ -1,6 +1,3 @@
-#ifndef _broker_RecoverableExchange_h
-#define _broker_RecoverableExchange_h
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,30 +18,21 @@
  * under the License.
  *
  */
+#include "RecoveredEnqueue.h"
 
-#include <boost/shared_ptr.hpp>
-#include "qpid/framing/FieldTable.h"
+using namespace qpid::broker;
 
-namespace qpid {
-namespace broker {
+RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, Message::shared_ptr _msg) : queue(_queue), msg(_msg) {}
 
-/**
- * The interface through which bindings are recovered.
- */
-class RecoverableExchange
-{
-public:
-    typedef boost::shared_ptr<RecoverableExchange> shared_ptr;
+bool RecoveredEnqueue::prepare(TransactionContext*) throw(){
+    //should never be called; transaction has already prepared if an enqueue is recovered
+    return false;
+}
 
-    virtual void setPersistenceId(uint64_t id) = 0;
-    /**
-     * Recover binding. Nb: queue must have been recovered earlier.
-     */
-    virtual void bind(std::string& queue, std::string& routingKey, qpid::framing::FieldTable& args) = 0;
-    virtual ~RecoverableExchange() {};
-};
+void RecoveredEnqueue::commit() throw(){
+    queue->process(msg);
+}
 
-}}
+void RecoveredEnqueue::rollback() throw(){
+}
 
-
-#endif

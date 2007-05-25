@@ -22,6 +22,7 @@
 #define _RecoveryManagerImpl_
 
 #include <list>
+#include "DtxManager.h"
 #include "ExchangeRegistry.h"
 #include "QueueRegistry.h"
 #include "RecoveryManager.h"
@@ -32,14 +33,17 @@ namespace broker {
     class RecoveryManagerImpl : public RecoveryManager{
         QueueRegistry& queues;
         ExchangeRegistry& exchanges;
+        DtxManager& dtxMgr;
         const uint64_t stagingThreshold;
     public:
-        RecoveryManagerImpl(QueueRegistry& queues, ExchangeRegistry& exchanges, uint64_t stagingThreshold);
+        RecoveryManagerImpl(QueueRegistry& queues, ExchangeRegistry& exchanges, DtxManager& dtxMgr, uint64_t stagingThreshold);
         ~RecoveryManagerImpl();
 
         RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer);
         RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer);
         RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer);
+        RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
+                                                              std::auto_ptr<TPCTransactionContext> txn);
         void recoveryComplete();
 
         static uint8_t decodeMessageType(framing::Buffer& buffer);
