@@ -19,6 +19,7 @@
 #include "CommonOptions.h"
 #include <fstream>
 #include <algorithm>
+#include <iostream>
 
 namespace qpid {
 namespace program_options {
@@ -28,10 +29,9 @@ char env2optchar(char env) {
 }
     
 const std::string envPrefix("QPID_");
-const std::string ignore("QPID_DIR");//temporary hack - this env var is used in other ways; not an option
 
 std::string env2option(const std::string& env) {
-    if (env != ignore /*temp hack, see above*/ && env.find(envPrefix) == 0) {
+    if (env.find(envPrefix) == 0) {
         std::string opt = env.substr(envPrefix.size());
         std::transform(opt.begin(), opt.end(), opt.begin(), env2optchar);
         return opt;
@@ -62,6 +62,9 @@ void parseOptions(
     try { 
         po::store(po::parse_environment(desc, po::env2option), vm);
     }
+    catch (const po::unknown_option& e) {
+        std::cerr << e.what() << std::endl;
+    } 
     catch (const po::error& e) {
         throw po::error(std::string("parsing environment variables: ")
                           + e.what());
