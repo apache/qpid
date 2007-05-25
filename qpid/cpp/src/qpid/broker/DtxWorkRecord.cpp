@@ -110,4 +110,6 @@ void DtxWorkRecord::recover(std::auto_ptr<TPCTransactionContext> _txn, DtxBuffer
 {
     add(ops);
     txn = _txn;
+    ops->markEnded();
+    completed = true;
 }
