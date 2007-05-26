@@ -23,7 +23,7 @@
             <include name="${build.dir}/Qpid.Codec.dll" />	
             <include name="${build.dir}/Qpid.Common.dll" />	
             <include name="${build.dir}/Qpid.Messaging.dll" />	
-            <include name="${build.dir}/Org.Mentalis.Security.dll" />	
+            <include name="${build.dir}/Org.Mentalis.Security.dll" />
          </references>
         </csc>
     </target>

@@ -120,6 +120,7 @@
     <Compile Include="Client\Transport\Socket\Blocking\SslSocketConnector.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\SocketConnector.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\ISocketConnector.cs" />
+    <Compile Include="Client\Util\FlowControlQueue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="qms\BrokerInfo.cs" />
     <Compile Include="qms\ConnectionInfo.cs" />

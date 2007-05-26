@@ -326,7 +326,7 @@ namespace Qpid.Client.Message
             // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
             if (_channel != null)
             {
-                // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
+                // we set multiple to true here since acknowledgement implies acknowledge of all count messages
                 // received on the session
                 _channel.AcknowledgeMessage((ulong)DeliveryTag, true);
             }

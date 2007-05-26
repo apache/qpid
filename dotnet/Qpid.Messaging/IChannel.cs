@@ -43,10 +43,23 @@ namespace Qpid.Messaging
         bool Transacted { get; }
 
         /// <summary>
-        /// Prefetch value to be used as the default for consumers created on this channel.
+        /// Prefetch value to be used as the default for 
+        /// consumers created on this channel.
         /// </summary>
-        int DefaultPrefetch { get; set; }
-        
+        int DefaultPrefetch { get; }
+
+        /// <summary>
+        /// Prefetch low value to be used as the default for 
+        /// consumers created on this channel.
+        /// </summary>
+        int DefaultPrefetchLow { get; }
+
+        /// <summary>
+        /// Prefetch high value to be used as the default for 
+        /// consumers created on this channel.
+        /// </summary>
+        int DefaultPrefetchHigh { get; }
+
         /// <summary>
         /// Declare a new exchange
         /// </summary>

@@ -47,6 +47,7 @@ namespace Qpid.Messaging
 
         IChannel CreateChannel(bool transacted, AcknowledgeMode acknowledgeMode);
         IChannel CreateChannel(bool transacted, AcknowledgeMode acknowledgeMode, int prefetch);
+        IChannel CreateChannel(bool transacted, AcknowledgeMode acknowledgeMode, int prefetchHigh, int prefetchLow);
 
         void Start();
         void Stop();

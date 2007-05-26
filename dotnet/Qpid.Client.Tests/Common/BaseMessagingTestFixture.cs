@@ -56,7 +56,7 @@ namespace Qpid.Client.Tests
             {
                 IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
                 _connection = new AMQConnection(connectionInfo);
-                _channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge, 1);
+                _channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge, 500, 300);
             }
             catch (QpidException e)
             {

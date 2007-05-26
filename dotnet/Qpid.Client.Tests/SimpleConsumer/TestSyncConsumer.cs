@@ -96,7 +96,7 @@ namespace Qpid.Client.Tests
             _publisher.Send(msg);
          }
 
-         _logger.Error("All messages sent");
+         _logger.Debug("All messages sent");
          // receive all messages
          for ( int i = 0; i < MESSAGE_COUNT; i++ )
          {
