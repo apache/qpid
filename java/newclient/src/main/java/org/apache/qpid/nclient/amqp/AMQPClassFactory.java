@@ -21,10 +21,6 @@
 package org.apache.qpid.nclient.amqp;
 
 import org.apache.qpid.nclient.amqp.event.AMQPEventManager;
-import org.apache.qpid.nclient.amqp.qpid.QpidAMQPChannel;
-import org.apache.qpid.nclient.amqp.qpid.QpidAMQPExchange;
-import org.apache.qpid.nclient.amqp.qpid.QpidAMQPMessage;
-import org.apache.qpid.nclient.amqp.qpid.QpidAMQPQueue;
 import org.apache.qpid.nclient.amqp.state.AMQPStateManager;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.transport.ConnectionURL;
@@ -40,19 +36,19 @@ public interface AMQPClassFactory
 
 	public abstract AMQPChannel createChannelClass(int channel) throws AMQPException;
 
-	public abstract void destroyChannelClass(int channel, QpidAMQPChannel amqpChannel) throws AMQPException;
+	public abstract void destroyChannelClass(int channel, AMQPChannel amqpChannel) throws AMQPException;
 
 	public abstract AMQPExchange createExchangeClass(int channel) throws AMQPException;
 
-	public abstract void destoryExchangeClass(int channel, QpidAMQPExchange amqpExchange) throws AMQPException;
+	public abstract void destoryExchangeClass(int channel, AMQPExchange amqpExchange) throws AMQPException;
 
 	public abstract AMQPQueue createQueueClass(int channel) throws AMQPException;
 
-	public abstract void destroyQueueClass(int channel, QpidAMQPQueue amqpQueue) throws AMQPException;
+	public abstract void destroyQueueClass(int channel, AMQPQueue amqpQueue) throws AMQPException;
 
 	public abstract AMQPMessage createMessageClass(int channel, AMQPMessageCallBack messageCb) throws AMQPException;
 
-	public abstract void destoryMessageClass(int channel, QpidAMQPMessage amqpMessage) throws AMQPException;
+	public abstract void destoryMessageClass(int channel, AMQPMessage amqpMessage) throws AMQPException;
 
 	/**
 	 * Extention point

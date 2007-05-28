@@ -45,6 +45,7 @@ import org.apache.qpid.framing.ConnectionTuneBody;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
 import org.apache.qpid.framing.Content;
 import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.MessageCancelBody;
@@ -58,6 +59,7 @@ import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.framing.QueuePurgeBody;
 import org.apache.qpid.framing.QueuePurgeOkBody;
+import org.apache.qpid.framing.QueueUnbindBody;
 import org.apache.qpid.nclient.amqp.AMQPCallBack;
 import org.apache.qpid.nclient.amqp.AMQPChannel;
 import org.apache.qpid.nclient.amqp.AMQPClassFactory;
@@ -67,6 +69,7 @@ import org.apache.qpid.nclient.amqp.AMQPMessage;
 import org.apache.qpid.nclient.amqp.AMQPQueue;
 import org.apache.qpid.nclient.amqp.AbstractAMQPClassFactory;
 import org.apache.qpid.nclient.amqp.state.AMQPStateType;
+import org.apache.qpid.nclient.impl.SecurityHelper;
 import org.apache.qpid.nclient.transport.AMQPConnectionURL;
 import org.apache.qpid.nclient.transport.ConnectionURL;
 import org.apache.qpid.nclient.transport.TransportConnectionFactory.ConnectionType;
@@ -193,7 +196,7 @@ public class TestClient
 		// Blocking for response
 		while (!cb.isComplete())
 		{
-		}
+		}	 
 	}
 
 	public void createAndBindQueue() throws Exception
@@ -245,7 +248,7 @@ public class TestClient
 		//Blocking for response
 		while (!cb.isComplete())
 		{
-		}
+		}		
 	}
 
 	public void purgeQueue() throws Exception

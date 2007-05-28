@@ -21,6 +21,7 @@
 
 package org.apache.qpid.nclient.message;
 
+import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -81,6 +82,17 @@ public class AMQPApplicationMessage {
     public List<byte[]> getContents()
     {
         return contents;
+    }
+    
+    public byte[] getContentsAsBytes()
+    {
+    	ByteBuffer buf = ByteBuffer.allocate(bytesReceived);
+    	for (byte[] bytes: contents)
+    	{
+    		buf.put(bytes);
+    	}
+    	
+    	return buf.array();
     }
 
     public long getDeliveryTag()

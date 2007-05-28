@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.nclient.amqp.state.AMQPStateChangedEvent;
 import org.apache.qpid.nclient.amqp.state.AMQPStateListener;
 import org.apache.qpid.nclient.amqp.state.AMQPStateManager;
@@ -40,7 +39,7 @@ public class QpidStateManager implements AMQPStateManager
 
     private Map<AMQPStateType, List<AMQPStateListener>> _listernerMap = new ConcurrentHashMap<AMQPStateType, List<AMQPStateListener>>();
 
-    public void addListener(AMQPStateType stateType, AMQPStateListener l) throws AMQException
+    public void addListener(AMQPStateType stateType, AMQPStateListener l) throws AMQPException
     {
     	List<AMQPStateListener> list;
     	if(_listernerMap.containsKey(stateType))
@@ -55,7 +54,7 @@ public class QpidStateManager implements AMQPStateManager
     	list.add(l);
     }
 
-    public void removeListener(AMQPStateType stateType, AMQPStateListener l) throws AMQException
+    public void removeListener(AMQPStateType stateType, AMQPStateListener l) throws AMQPException
     {    	
     	if(_listernerMap.containsKey(stateType))
     	{

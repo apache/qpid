@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.nclient.amqp.sample;
+package org.apache.qpid.nclient.impl;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashSet;

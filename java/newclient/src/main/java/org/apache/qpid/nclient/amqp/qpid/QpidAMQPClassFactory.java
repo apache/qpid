@@ -152,14 +152,15 @@ public class QpidAMQPClassFactory implements AMQPClassFactory
 	/* (non-Javadoc)
 	 * @see org.apache.qpid.nclient.amqp.AMQPClassFactory#destroyChannelClass(int, org.apache.qpid.nclient.amqp.AMQPChannel)
 	 */
-	public void destroyChannelClass(int channel, QpidAMQPChannel amqpChannel) throws AMQPException
+	public void destroyChannelClass(int channel, AMQPChannel amqpChannel) throws AMQPException
 	{
-		_eventManager.removeMethodEventListener(channel, ChannelOpenOkBody.class, amqpChannel);
-		_eventManager.removeMethodEventListener(channel, ChannelCloseBody.class, amqpChannel);
-		_eventManager.removeMethodEventListener(channel, ChannelCloseOkBody.class, amqpChannel);
-		_eventManager.removeMethodEventListener(channel, ChannelFlowBody.class, amqpChannel);
-		_eventManager.removeMethodEventListener(channel, ChannelFlowOkBody.class, amqpChannel);
-		_eventManager.removeMethodEventListener(channel, ChannelOkBody.class, amqpChannel);
+		QpidAMQPChannel qpidAMQPChannel = (QpidAMQPChannel)amqpChannel;
+		_eventManager.removeMethodEventListener(channel, ChannelOpenOkBody.class, qpidAMQPChannel);
+		_eventManager.removeMethodEventListener(channel, ChannelCloseBody.class, qpidAMQPChannel);
+		_eventManager.removeMethodEventListener(channel, ChannelCloseOkBody.class, qpidAMQPChannel);
+		_eventManager.removeMethodEventListener(channel, ChannelFlowBody.class, qpidAMQPChannel);
+		_eventManager.removeMethodEventListener(channel, ChannelFlowOkBody.class, qpidAMQPChannel);
+		_eventManager.removeMethodEventListener(channel, ChannelOkBody.class, qpidAMQPChannel);
 	}
 
 	/* (non-Javadoc)
@@ -177,10 +178,11 @@ public class QpidAMQPClassFactory implements AMQPClassFactory
 	/* (non-Javadoc)
 	 * @see org.apache.qpid.nclient.amqp.AMQPClassFactory#destoryExchangeClass(int, org.apache.qpid.nclient.amqp.AMQPExchange)
 	 */
-	public void destoryExchangeClass(int channel, QpidAMQPExchange amqpExchange) throws AMQPException
+	public void destoryExchangeClass(int channel, AMQPExchange amqpExchange) throws AMQPException
 	{
-		_eventManager.removeMethodEventListener(channel, ExchangeDeclareOkBody.class, amqpExchange);
-		_eventManager.removeMethodEventListener(channel, ExchangeDeleteOkBody.class, amqpExchange);
+		QpidAMQPExchange qpidAMQPExchange = (QpidAMQPExchange)amqpExchange;
+		_eventManager.removeMethodEventListener(channel, ExchangeDeclareOkBody.class, qpidAMQPExchange);
+		_eventManager.removeMethodEventListener(channel, ExchangeDeleteOkBody.class, qpidAMQPExchange);
 	}
 
 	/* (non-Javadoc)
@@ -201,13 +203,14 @@ public class QpidAMQPClassFactory implements AMQPClassFactory
 	/* (non-Javadoc)
 	 * @see org.apache.qpid.nclient.amqp.AMQPClassFactory#destroyQueueClass(int, org.apache.qpid.nclient.amqp.AMQPQueue)
 	 */
-	public void destroyQueueClass(int channel, QpidAMQPQueue amqpQueue) throws AMQPException
+	public void destroyQueueClass(int channel, AMQPQueue amqpQueue) throws AMQPException
 	{
-		_eventManager.removeMethodEventListener(channel, QueueDeclareOkBody.class, amqpQueue);
-		_eventManager.removeMethodEventListener(channel, QueueBindOkBody.class, amqpQueue);
-		_eventManager.removeMethodEventListener(channel, QueueUnbindOkBody.class, amqpQueue);
-		_eventManager.removeMethodEventListener(channel, QueuePurgeOkBody.class, amqpQueue);
-		_eventManager.removeMethodEventListener(channel, QueueDeleteOkBody.class, amqpQueue);
+		QpidAMQPQueue qpidAMQPQueue = (QpidAMQPQueue)amqpQueue;
+		_eventManager.removeMethodEventListener(channel, QueueDeclareOkBody.class, qpidAMQPQueue);
+		_eventManager.removeMethodEventListener(channel, QueueBindOkBody.class, qpidAMQPQueue);
+		_eventManager.removeMethodEventListener(channel, QueueUnbindOkBody.class, qpidAMQPQueue);
+		_eventManager.removeMethodEventListener(channel, QueuePurgeOkBody.class, qpidAMQPQueue);
+		_eventManager.removeMethodEventListener(channel, QueueDeleteOkBody.class, qpidAMQPQueue);
 	}
 
 	/* (non-Javadoc)
@@ -237,21 +240,22 @@ public class QpidAMQPClassFactory implements AMQPClassFactory
 	/* (non-Javadoc)
 	 * @see org.apache.qpid.nclient.amqp.AMQPClassFactory#destoryMessageClass(int, org.apache.qpid.nclient.amqp.AMQPMessage)
 	 */
-	public void destoryMessageClass(int channel, QpidAMQPMessage amqpMessage) throws AMQPException
+	public void destoryMessageClass(int channel, AMQPMessage amqpMessage) throws AMQPException
 	{
-		_eventManager.removeMethodEventListener(channel, MessageAppendBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageCancelBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageCheckpointBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageCloseBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageGetBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageOffsetBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageOkBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageOpenBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageRecoverBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageRejectBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageResumeBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageQosBody.class, amqpMessage);
-		_eventManager.removeMethodEventListener(channel, MessageTransferBody.class, amqpMessage);
+		QpidAMQPMessage qpidAMQPMessage = (QpidAMQPMessage) amqpMessage;
+		_eventManager.removeMethodEventListener(channel, MessageAppendBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageCancelBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageCheckpointBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageCloseBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageGetBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageOffsetBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageOkBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageOpenBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageRecoverBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageRejectBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageResumeBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageQosBody.class, qpidAMQPMessage);
+		_eventManager.removeMethodEventListener(channel, MessageTransferBody.class, qpidAMQPMessage);
 	}
 
 	//This class should register as a state listener for AMQPConnection
