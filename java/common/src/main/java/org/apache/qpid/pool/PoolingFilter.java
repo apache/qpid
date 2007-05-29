@@ -22,13 +22,10 @@ package org.apache.qpid.pool;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 import org.apache.log4j.Logger;
-
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoFilterAdapter;
 import org.apache.mina.common.IoSession;
-
 import org.apache.qpid.pool.Event.CloseEvent;
 
 /**
@@ -201,19 +198,6 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
         return (Job) session.getAttribute(_name);
     }
 
-    /*private Job createJobForSession(IoSession session)
-    {
-        return addJobForSession(session, new Job(session, this, _maxEvents));
-    }*/
-
-    /*private Job addJobForSession(IoSession session, Job job)
-    {
-        // atomic so ensures all threads agree on the same job
-        Job existing = _jobs.putIfAbsent(session, job);
-
-        return (existing == null) ? job : existing;
-    }*/
-
     /**
      * Implements a terminal continuation for the {@link Job} for this filter. Whenever the Job completes its processing
      * of a batch of events this is called. This method simply re-activates the job, if it has more events to process.
@@ -223,15 +207,6 @@ public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCo
      */
     public void completed(IoSession session, Job job)
     {
-        // if (job.isComplete())
-        // {
-        // job.release();
-        // if (!job.isReferenced())
-        // {
-        // _jobs.remove(session);
-        // }
-        // }
-        // else
         if (!job.isComplete())
         {
             // ritchiem : 2006-12-13 Do we need to perform the additional checks here?
