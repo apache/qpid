@@ -23,15 +23,11 @@ package org.apache.qpid.interop.coordinator;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
-
 import javax.jms.*;
-
 import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
-
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase1DummyRun;
 import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase2BasicP2P;
 import org.apache.qpid.interop.coordinator.testcases.CoordinatingTestCase3BasicPubSub;
@@ -39,7 +35,6 @@ import org.apache.qpid.interop.testclient.TestClient;
 import org.apache.qpid.util.CommandLineParser;
 import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
-
 import uk.co.thebadgerset.junit.extensions.TKTestResult;
 import uk.co.thebadgerset.junit.extensions.TKTestRunner;
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
@@ -119,7 +114,7 @@ public class Coordinator extends TKTestRunner
         try
         {
             // Use the command line parser to evaluate the command line with standard handling behaviour (print errors
-            // and usage then exist if there are errors).
+            // and usage then exit if there are errors).
             Properties options =
                 CommandLineParser.processCommandLine(args,
                     new CommandLineParser(

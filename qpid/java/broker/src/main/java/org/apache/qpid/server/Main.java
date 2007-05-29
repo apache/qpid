@@ -26,8 +26,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.List;
-import java.util.StringTokenizer;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
@@ -36,17 +34,14 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.apache.commons.configuration.ConfigurationException;
-
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
-
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
@@ -66,7 +61,10 @@ import org.apache.qpid.url.URLSyntaxException;
 @SuppressWarnings({ "AccessStaticViaInstance" })
 public class Main
 {
+    /** Used for debugging. */
     private static final Logger _logger = Logger.getLogger(Main.class);
+
+    /** Used for logging operator messages. */
     public static final Logger _brokerLogger = Logger.getLogger("Qpid.Broker");
 
     private static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
@@ -74,8 +72,8 @@ public class Main
     private static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
     private static final int IPV4_ADDRESS_LENGTH = 4;
-    
-    private static final char IPV4_LITERAL_SEPARATOR = '.';    
+
+    private static final char IPV4_LITERAL_SEPARATOR = '.';
 
     protected static class InitException extends Exception
     {
@@ -88,6 +86,9 @@ public class Main
     protected final Options options = new Options();
     protected CommandLine commandLine;
 
+    /**
+     * @todo Side-effecting constructor; eliminate. Put the processing sequence in the main method.
+     */
     protected Main(String[] args)
     {
         setOptions(options);
@@ -115,30 +116,35 @@ public class Main
         }
     }
 
+    /**
+     * Sets up the command line options, with usage help, ready for parsing the command line against.
+     *
+     * @param options The object to store the configured command line options in.
+     */
     protected void setOptions(Options options)
     {
         Option help = new Option("h", "help", false, "print this message");
         Option version = new Option("v", "version", false, "print the version information and exit");
         Option configFile =
-                OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
-                        .create("c");
+            OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
+                         .create("c");
         Option port =
-                OptionBuilder.withArgName("port").hasArg()
-                        .withDescription("listen on the specified port. Overrides any value in the config file")
-                        .withLongOpt("port").create("p");
+            OptionBuilder.withArgName("port").hasArg()
+                         .withDescription("listen on the specified port. Overrides any value in the config file")
+                         .withLongOpt("port").create("p");
         Option bind =
-                OptionBuilder.withArgName("bind").hasArg()
-                        .withDescription("bind to the specified address. Overrides any value in the config file")
-                        .withLongOpt("bind").create("b");
+            OptionBuilder.withArgName("bind").hasArg()
+                         .withDescription("bind to the specified address. Overrides any value in the config file")
+                         .withLongOpt("bind").create("b");
         Option logconfig =
-                OptionBuilder.withArgName("logconfig").hasArg()
-                        .withDescription("use the specified log4j xml configuration file. By "
-                                         + "default looks for a file named " + DEFAULT_LOG_CONFIG_FILENAME
-                                         + " in the same directory as the configuration file").withLongOpt("logconfig").create("l");
+            OptionBuilder.withArgName("logconfig").hasArg()
+                         .withDescription("use the specified log4j xml configuration file. By "
+                + "default looks for a file named " + DEFAULT_LOG_CONFIG_FILENAME
+                + " in the same directory as the configuration file").withLongOpt("logconfig").create("l");
         Option logwatchconfig =
-                OptionBuilder.withArgName("logwatch").hasArg()
-                        .withDescription("monitor the log file configuration file for changes. Units are seconds. "
-                                         + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
+            OptionBuilder.withArgName("logwatch").hasArg()
+                         .withDescription("monitor the log file configuration file for changes. Units are seconds. "
+                + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
 
         options.addOption(help);
         options.addOption(version);
@@ -149,6 +155,11 @@ public class Main
         options.addOption(bind);
     }
 
+    /**
+     * @todo Handles command line, but there is already a parse command line method. Put all command line handling
+     *       in a single flow of control. Also part implements the top-level handler, which would more neatly be kept
+     *       together in one place.
+     */
     protected void execute()
     {
         // note this understands either --help or -h. If an option only has a long name you can use that but if
@@ -204,6 +215,14 @@ public class Main
         }
     }
 
+    /**
+     * Reads the configuration file and performs configuration specified in it. Then hands over to bind to do the
+     * actual broker start-up.
+     *
+     * @todo A bit confusing, seperate out configuration from start-up. Call config method to handle the configuration
+     *       from the config file, in the main flow of control (possibly #main method). Then call #startup or #bind
+     *       to start the broker.
+     */
     protected void startup() throws InitException, ConfigurationException, Exception
     {
         final String QpidHome = System.getProperty(QPID_HOME);
@@ -241,14 +260,14 @@ public class Main
 
         ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(configFile));
 
-        //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
+        // fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
         // that are causing the broker build to pick up the wrong properties file and hence say
-        // Starting Qpid Client 
-        _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion()
-                           + " build: " + QpidProperties.getBuildVersion());
+        // Starting Qpid Client
+        _brokerLogger.info("Starting Qpid Broker " + QpidProperties.getReleaseVersion() + " build: "
+            + QpidProperties.getBuildVersion());
 
         ConnectorConfiguration connectorConfig =
-                ApplicationRegistry.getInstance().getConfiguredObject(ConnectorConfiguration.class);
+            ApplicationRegistry.getInstance().getConfiguredObject(ConnectorConfiguration.class);
 
         ByteBuffer.setUseDirectBuffers(connectorConfig.enableDirectBuffers);
 
@@ -295,11 +314,10 @@ public class Main
         }
 
         bind(port, connectorConfig);
-
     }
 
     protected void setupVirtualHosts(String configFileParent, String configFilePath)
-            throws ConfigurationException, AMQException, URLSyntaxException
+        throws ConfigurationException, AMQException, URLSyntaxException
     {
         String configVar = "${conf}";
 
@@ -326,13 +344,19 @@ public class Main
                 if (fileNames[each].endsWith(".xml"))
                 {
                     VirtualHostConfiguration vHostConfig =
-                            new VirtualHostConfiguration(configFilePath + "/" + fileNames[each]);
+                        new VirtualHostConfiguration(configFilePath + "/" + fileNames[each]);
                     vHostConfig.performBindings();
                 }
             }
         }
     }
 
+    /**
+     * Assembles/configures the components that Mina needs, then start Mina running to accept connections.
+     *
+     * @todo Partially implements top-level error handler. Better to let these errors fall through to a single
+     *       top-level handler.
+     */
     protected void bind(int port, ConnectorConfiguration connectorConfig)
     {
         String bindAddr = commandLine.getOptionValue("b");
@@ -373,7 +397,7 @@ public class Main
                 }
 
                 acceptor.bind(bindAddress, handler, sconfig);
-                //fixme  qpid.AMQP should be using qpidproperties to get value
+                // fixme  qpid.AMQP should be using qpidproperties to get value
                 _brokerLogger.info("Qpid.AMQP listening on non-SSL address " + bindAddress);
             }
 
@@ -383,8 +407,8 @@ public class Main
                 try
                 {
 
-                   acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
-                    //fixme  qpid.AMQP should be using qpidproperties to get value
+                    acceptor.bind(new InetSocketAddress(connectorConfig.sslPort), handler, sconfig);
+                    // fixme  qpid.AMQP should be using qpidproperties to get value
                     _brokerLogger.info("Qpid.AMQP listening on SSL port " + connectorConfig.sslPort);
 
                 }
@@ -394,9 +418,9 @@ public class Main
                 }
             }
 
-            //fixme  qpid.AMQP should be using qpidproperties to get value            
-            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
-                               + " build: " + QpidProperties.getBuildVersion());
+            // fixme  qpid.AMQP should be using qpidproperties to get value
+            _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion() + " build: "
+                + QpidProperties.getBuildVersion());
         }
         catch (Exception e)
         {
@@ -404,38 +428,60 @@ public class Main
         }
     }
 
+    /**
+     * Processes the command line and starts the broker running. This method acts as a top-level error handler for
+     * any exceptions that fall out of the code below this point. These exceptions are logged before System.exit is
+     * called with an error code.
+     *
+     * @param args The command line arguments.
+     */
     public static void main(String[] args)
     {
+        // Use a try block so that any exceptions that fall through to the top-level are logged before the application
+        // exits with an error code.
+        // try
+        {
+            // Parse the command line.
+
+            // Create an instance of the Main broker entry point class and start it running.
+        }
+        // catch ()
+        {
+            // Log the exception as an error.
+
+            // Exit with an error code.
+        }
 
         new Main(args);
     }
 
     private byte[] parseIP(String address) throws Exception
     {
-        char[] literalBuffer = address.toCharArray();    
+        char[] literalBuffer = address.toCharArray();
         int byteCount = 0;
         int currByte = 0;
         byte[] ip = new byte[IPV4_ADDRESS_LENGTH];
-        for (int i = 0 ; i < literalBuffer.length ; i++) 
+        for (int i = 0; i < literalBuffer.length; i++)
         {
             char currChar = literalBuffer[i];
-            if ((currChar >= '0') && (currChar <= '9')) 
+            if ((currChar >= '0') && (currChar <= '9'))
             {
-            	currByte = (currByte * 10) + (Character.digit(currChar, 10) & 0xFF);
-            } 
+                currByte = (currByte * 10) + (Character.digit(currChar, 10) & 0xFF);
+            }
 
-            if (currChar == IPV4_LITERAL_SEPARATOR || (i + 1 == literalBuffer.length)) 
+            if ((currChar == IPV4_LITERAL_SEPARATOR) || ((i + 1) == literalBuffer.length))
             {
-                ip[byteCount++] = (byte)currByte;
+                ip[byteCount++] = (byte) currByte;
                 currByte = 0;
-            } 
+            }
         }
 
         if (byteCount != 4)
         {
             throw new Exception("Invalid IP address: " + address);
-        }     
-        return ip;        
+        }
+
+        return ip;
     }
 
     private void configureLogging(File logConfigFile, String logWatchConfig)
@@ -448,7 +494,7 @@ public class Main
         catch (NumberFormatException e)
         {
             System.err.println("Log watch configuration value of " + logWatchConfig + " is invalid. Must be "
-                               + "a non-negative integer. Using default of zero (no watching configured");
+                + "a non-negative integer. Using default of zero (no watching configured");
         }
 
         if (logConfigFile.exists() && logConfigFile.canRead())
@@ -457,7 +503,7 @@ public class Main
             if (logWatchTime > 0)
             {
                 System.out.println("log file " + logConfigFile.getAbsolutePath() + " will be checked for changes every "
-                                   + logWatchTime + " seconds");
+                    + logWatchTime + " seconds");
                 // log4j expects the watch interval in milliseconds
                 DOMConfigurator.configureAndWatch(logConfigFile.getAbsolutePath(), logWatchTime * 1000);
             }

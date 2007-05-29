@@ -603,12 +603,21 @@ public class CommandLineParser
     }
 
     /**
-     * Extracts all name=value pairs from the command line, sets them all as system properties and also returns
-     * a map of properties containing them.
+     * Parses the command line arguments against the specified command line format, printing errors and usage
+     * instrucitons and calling System.exit on errors. Extracts all trailing name=value pairs from the command line,
+     * and sets them all as system properties and also returns a map of properties containing them.
      *
      * @param args The command line.
      *
      * @return A set of properties containing all name=value pairs from the command line.
+     *
+     * @todo Replace the call to System.exit with throwing an exception. Gives caller the option to decide how to
+     *       handle the error.
+     *
+     * @todo Pass in the location to write the usage to as an argument, instead of hard-coding System.out.
+     *
+     * @todo Allow the Properties to add trailing options to be specified as an argument rather than hard coding
+     *       system properties. Again, gives the caller the option to decide.
      */
     public static Properties processCommandLine(String[] args, CommandLineParser commandLine)
     {
