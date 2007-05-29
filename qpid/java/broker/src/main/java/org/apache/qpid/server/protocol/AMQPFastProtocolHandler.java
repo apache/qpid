@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,7 +22,6 @@ package org.apache.qpid.server.protocol;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IdleStatus;
@@ -31,7 +30,6 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.util.SessionUtil;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -60,10 +58,9 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     private final IApplicationRegistry _applicationRegistry;
 
-
     public AMQPFastProtocolHandler(Integer applicationRegistryInstance)
     {
-    	this(ApplicationRegistry.getInstance(applicationRegistryInstance));
+        this(ApplicationRegistry.getInstance(applicationRegistryInstance));
     }
 
     public AMQPFastProtocolHandler(IApplicationRegistry applicationRegistry)
@@ -87,41 +84,43 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
         final ProtocolCodecFilter pcf = new ProtocolCodecFilter(codecFactory);
 
-        ConnectorConfiguration connectorConfig = ApplicationRegistry.getInstance().
-                getConfiguredObject(ConnectorConfiguration.class);
+        ConnectorConfiguration connectorConfig =
+            ApplicationRegistry.getInstance().getConfiguredObject(ConnectorConfiguration.class);
         if (connectorConfig.enableExecutorPool)
         {
             if (connectorConfig.enableSSL && isSSLClient(connectorConfig, protocolSession))
             {
-            	String keystorePath = connectorConfig.keystorePath;
-            	String keystorePassword = connectorConfig.keystorePassword;
-            	String certType = connectorConfig.certType;
-            	SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+                String keystorePath = connectorConfig.keystorePath;
+                String keystorePassword = connectorConfig.keystorePassword;
+                String certType = connectorConfig.certType;
+                SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
                 protocolSession.getFilterChain().addAfter("AsynchronousReadFilter", "sslFilter",
-                                                          new SSLFilter(sslContextFactory.buildServerContext()));
+                    new SSLFilter(sslContextFactory.buildServerContext()));
             }
+
             protocolSession.getFilterChain().addBefore("AsynchronousWriteFilter", "protocolFilter", pcf);
         }
         else
         {
-        	protocolSession.getFilterChain().addLast("protocolFilter", pcf);
+            protocolSession.getFilterChain().addLast("protocolFilter", pcf);
             if (connectorConfig.enableSSL && isSSLClient(connectorConfig, protocolSession))
             {
-            	String keystorePath = connectorConfig.keystorePath;
-            	String keystorePassword = connectorConfig.keystorePassword;
-            	String certType = connectorConfig.certType;
-            	SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+                String keystorePath = connectorConfig.keystorePath;
+                String keystorePassword = connectorConfig.keystorePassword;
+                String certType = connectorConfig.certType;
+                SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
                 protocolSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
-                                                          new SSLFilter(sslContextFactory.buildServerContext()));
-            }        	
-            
+                    new SSLFilter(sslContextFactory.buildServerContext()));
+            }
+
         }
     }
 
     /**
      * Separated into its own, protected, method to allow easier reuse
      */
-    protected void createSession(IoSession session, IApplicationRegistry applicationRegistry, AMQCodecFactory codec) throws AMQException
+    protected void createSession(IoSession session, IApplicationRegistry applicationRegistry, AMQCodecFactory codec)
+        throws AMQException
     {
         new AMQMinaProtocolSession(session, applicationRegistry.getVirtualHostRegistry(), codec);
     }
@@ -135,8 +134,8 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
     {
         _logger.info("Protocol Session closed");
         final AMQProtocolSession amqProtocolSession = AMQMinaProtocolSession.getAMQProtocolSession(protocolSession);
-        //fixme  -- this can be null
-        if(amqProtocolSession != null)
+        // fixme  -- this can be null
+        if (amqProtocolSession != null)
         {
             amqProtocolSession.closeSession();
         }
@@ -145,14 +144,14 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception
     {
         _logger.debug("Protocol Session [" + this + "] idle: " + status);
-        if(IdleStatus.WRITER_IDLE.equals(status))
+        if (IdleStatus.WRITER_IDLE.equals(status))
         {
-            //write heartbeat frame:
+            // write heartbeat frame:
             session.write(HeartbeatBody.FRAME);
         }
-        else if(IdleStatus.READER_IDLE.equals(status))
+        else if (IdleStatus.READER_IDLE.equals(status))
         {
-            //failover:
+            // failover:
             throw new IOException("Timed out while waiting for heartbeat from peer.");
         }
 
@@ -170,22 +169,21 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
             _logger.error("Error in protocol initiation " + session + ": " + throwable.getMessage(), throwable);
         }
-        else if(throwable instanceof IOException)
+        else if (throwable instanceof IOException)
         {
             _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable, throwable);
         }
         else
         {
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
-            
+
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
-            	session.getProtocolMajorVersion(),
-                session.getProtocolMinorVersion(),	// AMQP version (major, minor)
-            	0,	// classId
-                0,	// methodId
-                200,	// replyCode
-                new AMQShortString(throwable.getMessage())	// replyText
+            protocolSession.write(ConnectionCloseBody.createAMQFrame(0, session.getProtocolMajorVersion(),
+                    session.getProtocolMinorVersion(), // AMQP version (major, minor)
+                    0, // classId
+                    0, // methodId
+                    200, // replyCode
+                    new AMQShortString(throwable.getMessage()) // replyText
                 ));
             protocolSession.close();
         }
@@ -212,7 +210,8 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         }
         else
         {
-            throw new IllegalStateException("Handed unhandled message. message.class = " + message.getClass() + " message = " + message);
+            throw new IllegalStateException("Handed unhandled message. message.class = " + message.getClass() + " message = "
+                + message);
         }
     }
 
@@ -230,11 +229,11 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
             _logger.debug("Message sent: " + object);
         }
     }
-    
-    protected boolean isSSLClient(ConnectorConfiguration connectionConfig,
-    		IoSession protocolSession) 
+
+    protected boolean isSSLClient(ConnectorConfiguration connectionConfig, IoSession protocolSession)
     {
-    	InetSocketAddress addr = (InetSocketAddress) protocolSession.getLocalAddress();
-    	return addr.getPort() == connectionConfig.sslPort;
+        InetSocketAddress addr = (InetSocketAddress) protocolSession.getLocalAddress();
+
+        return addr.getPort() == connectionConfig.sslPort;
     }
 }
