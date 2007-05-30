@@ -32,6 +32,7 @@ public class QpidExchangeHelperImpl extends AbstractResource implements QpidExch
 	 */
 	public void declareExchange(boolean autoDelete, boolean durable, String exchangeName,boolean internal, boolean nowait, boolean passive,String exchangeClass) throws QpidException
 	{	
+		checkClosed();
 		final ExchangeDeclareBody exchangeDeclareBody = ExchangeDeclareBody.createMethodBody(
 				_session.getMajor(), 
 				_session.getMinor(), 
@@ -61,6 +62,7 @@ public class QpidExchangeHelperImpl extends AbstractResource implements QpidExch
 
 	public void deleteExchange(String exchangeName, boolean ifUnused, boolean nowait) throws QpidException
 	{
+		checkClosed();
 		final ExchangeDeleteBody exchangeDeclareBody = ExchangeDeleteBody.createMethodBody(
 				_session.getMajor(), 
 				_session.getMinor(),
@@ -88,12 +90,12 @@ public class QpidExchangeHelperImpl extends AbstractResource implements QpidExch
 	 * Methods introduced by AbstractResource
 	 * -----------------------------------------------------
 	 */
-	protected void openResource() throws AMQPException
+	protected void openResource() throws AMQPException, QpidException
 	{
 		_exchange = _session.getClassFactory().createExchangeClass(_session.getChannel());
 	}
 	
-	protected void closeResource() throws AMQPException
+	protected void closeResource() throws AMQPException, QpidException
 	{
 		_session.getClassFactory().destoryExchangeClass(_session.getChannel(), _exchange);
 	}

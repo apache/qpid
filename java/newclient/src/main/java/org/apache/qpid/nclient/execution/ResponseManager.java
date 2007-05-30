@@ -33,7 +33,7 @@ import org.apache.qpid.framing.AMQResponseBody;
 import org.apache.qpid.framing.RequestResponseMappingException;
 import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
 import org.apache.qpid.nclient.config.ClientConfiguration;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 
 public class ResponseManager
 {
@@ -99,7 +99,7 @@ public class ResponseManager
         this.connectionId = connectionId;
         responseIdCount = 1L;
         lastReceivedRequestId = 0L;
-        maxAccumulatedResponses = ClientConfiguration.get().getInt(QpidConstants.MAX_ACCUMILATED_RESPONSES);
+        maxAccumulatedResponses = ClientConfiguration.get().getInt(AMQPConstants.MAX_ACCUMILATED_RESPONSES);
         responseMap = new ConcurrentHashMap<Long, ResponseStatus>();
     }
 

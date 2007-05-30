@@ -41,7 +41,7 @@ public interface QpidSession
 	
 	public QpidMessageProducer createProducer() throws QpidException;
 	
-	public QpidMessageConsumer createConsumer() throws QpidException;
+	public QpidMessageConsumer createConsumer(String queueName, boolean noLocal, boolean exclusive) throws QpidException;
 	
 	public QpidMessageHelper getMessageHelper() throws QpidException;
 	

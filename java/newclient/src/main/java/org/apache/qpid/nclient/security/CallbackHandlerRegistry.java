@@ -26,7 +26,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.nclient.config.ClientConfiguration;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 
 public class CallbackHandlerRegistry
 {
@@ -62,9 +62,9 @@ public class CallbackHandlerRegistry
 
     private void parseProperties()
     {
-	String key = QpidConstants.AMQP_SECURITY + "." + 
-        QpidConstants.AMQP_SECURITY_MECHANISMS + "." +
-        QpidConstants.AMQP_SECURITY_MECHANISM_HANDLER;
+	String key = AMQPConstants.AMQP_SECURITY + "." + 
+        AMQPConstants.AMQP_SECURITY_MECHANISMS + "." +
+        AMQPConstants.AMQP_SECURITY_MECHANISM_HANDLER;
         
         int index = ClientConfiguration.get().getMaxIndex(key);                                       
         	

@@ -22,13 +22,13 @@ package org.apache.qpid.nclient.amqp;
 
 import org.apache.qpid.nclient.config.ClientConfiguration;
 import org.apache.qpid.nclient.core.AMQPException;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 
 public class AbstractAMQPClassFactory
 {
 	public static AMQPClassFactory getFactoryInstance() throws AMQPException
 	{
-		String className = ClientConfiguration.get().getString(QpidConstants.AMQP_CLASS_FACTORY);
+		String className = ClientConfiguration.get().getString(AMQPConstants.AMQP_CLASS_FACTORY);
 		try
 		{
 			return (AMQPClassFactory)Class.forName(className).newInstance();

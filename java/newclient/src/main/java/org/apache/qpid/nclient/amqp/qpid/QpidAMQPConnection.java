@@ -48,7 +48,7 @@ import org.apache.qpid.nclient.amqp.state.AMQPStateType;
 import org.apache.qpid.nclient.config.ClientConfiguration;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.Phase;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 import org.apache.qpid.nclient.transport.TransportConnection;
 import org.apache.qpid.nclient.util.AMQPValidator;
 
@@ -107,7 +107,7 @@ public class QpidAMQPConnection extends AMQPStateMachine implements AMQPMethodLi
 		_connection = connection;
 		_stateManager = stateManager;
 		_currentState = AMQPState.CONNECTION_UNDEFINED;
-		_serverTimeOut = ClientConfiguration.get().getLong(QpidConstants.SERVER_TIMEOUT_IN_MILLISECONDS);
+		_serverTimeOut = ClientConfiguration.get().getLong(AMQPConstants.SERVER_TIMEOUT_IN_MILLISECONDS);
 	}
 
 	/**
@@ -159,7 +159,7 @@ public class QpidAMQPConnection extends AMQPStateMachine implements AMQPMethodLi
 		{
 			_connectionSecureBody = null;
 			checkIfValidStateTransition(AMQPState.CONNECTION_NOT_STARTED, _currentState, AMQPState.CONNECTION_NOT_SECURE);
-			AMQPMethodEvent msg = new AMQPMethodEvent(QpidConstants.CHANNEL_ZERO, connectionStartOkBody, _correlationId);
+			AMQPMethodEvent msg = new AMQPMethodEvent(AMQPConstants.CHANNEL_ZERO, connectionStartOkBody, _correlationId);
 			_phase.messageSent(msg);
 			// _connectionNotSecure.await(_serverTimeOut,TimeUnit.MILLISECONDS);
 			_connectionNotSecure.await();
@@ -205,7 +205,7 @@ public class QpidAMQPConnection extends AMQPStateMachine implements AMQPMethodLi
 			checkIfValidStateTransition(AMQPState.CONNECTION_NOT_SECURE, _currentState, AMQPState.CONNECTION_NOT_TUNED);
 
 			_connectionSecureBody = null; // The server could send a fresh challenge
-			AMQPMethodEvent msg = new AMQPMethodEvent(QpidConstants.CHANNEL_ZERO, connectionSecureOkBody, _correlationId);
+			AMQPMethodEvent msg = new AMQPMethodEvent(AMQPConstants.CHANNEL_ZERO, connectionSecureOkBody, _correlationId);
 			_phase.messageSent(msg);
 
 			//_connectionNotTuned.await(_serverTimeOut, TimeUnit.MILLISECONDS);
@@ -249,7 +249,7 @@ public class QpidAMQPConnection extends AMQPStateMachine implements AMQPMethodLi
 		{
 			checkIfValidStateTransition(AMQPState.CONNECTION_NOT_TUNED, _currentState, AMQPState.CONNECTION_NOT_OPENED);
 			_connectionSecureBody = null;
-			AMQPMethodEvent msg = new AMQPMethodEvent(QpidConstants.CHANNEL_ZERO, connectionTuneOkBody, _correlationId);
+			AMQPMethodEvent msg = new AMQPMethodEvent(AMQPConstants.CHANNEL_ZERO, connectionTuneOkBody, _correlationId);
 			_phase.messageSent(msg);
 			notifyState(AMQPState.CONNECTION_NOT_OPENED);
 			_currentState = AMQPState.CONNECTION_NOT_OPENED;
@@ -274,7 +274,7 @@ public class QpidAMQPConnection extends AMQPStateMachine implements AMQPMethodLi
 
 			_connectionOpenOkBody = null;
 			checkIfValidStateTransition(AMQPState.CONNECTION_NOT_OPENED, _currentState, AMQPState.CONNECTION_OPEN);
-			AMQPMethodEvent msg = new AMQPMethodEvent(QpidConstants.CHANNEL_ZERO, connectionOpenBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(AMQPConstants.CHANNEL_ZERO, connectionOpenBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_connectionNotOpened.await(_serverTimeOut, TimeUnit.MILLISECONDS);
@@ -306,7 +306,7 @@ public class QpidAMQPConnection extends AMQPStateMachine implements AMQPMethodLi
 		{
 			_connectionCloseOkBody = null;
 			checkIfValidStateTransition(_validCloseStates, _currentState, AMQPState.CONNECTION_CLOSED);
-			AMQPMethodEvent msg = new AMQPMethodEvent(QpidConstants.CHANNEL_ZERO, connectioncloseBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(AMQPConstants.CHANNEL_ZERO, connectioncloseBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 			_connectionNotClosed.await(_serverTimeOut, TimeUnit.MILLISECONDS);
 			AMQPValidator.throwExceptionOnNull(_connectionCloseOkBody, "The broker didn't send the ConnectionCloseOkBody in time");

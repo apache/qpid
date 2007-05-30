@@ -31,4 +31,10 @@ public interface QpidMessageConsumer
 	public AMQPApplicationMessage receive()throws QpidException;
 
 	public AMQPApplicationMessage receive(long timeout, TimeUnit tu)throws QpidException;
+	
+	public void messageArrived(AMQPApplicationMessage msg)throws QpidException;
+	
+	public void open() throws QpidException;
+	
+	public void close() throws QpidException;
 }

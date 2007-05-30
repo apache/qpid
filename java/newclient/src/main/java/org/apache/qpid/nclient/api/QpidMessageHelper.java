@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.nclient.api;
 
+import org.apache.qpid.nclient.amqp.AMQPMessage;
+
 /**
  * used as a helper class to support the Session class
  * This reduces the clutter and makes the session class
@@ -31,15 +33,7 @@ package org.apache.qpid.nclient.api;
  */
 public interface QpidMessageHelper
 {
-	public void declareQueue(boolean autoDelete, boolean durable, boolean exclusive,boolean nowait,boolean passive,String queueName) throws QpidException;
-	
-	public void bindQueue(String exchangeName,boolean nowait,String queueName,String routingKey)throws QpidException;
-	
-	public void unbindQueue(String exchangeName,String queueName,String routingKey)throws QpidException;
-	
-	public void purgeQueue(boolean nowait,String queueName)throws QpidException;
-	
-	public void deleteQueue(boolean ifEmpty, boolean ifUnused, boolean nowait,String queueName)throws QpidException;
+    public AMQPMessage getMessageClass() throws QpidException;
 	
 	public void open() throws QpidException;
 	

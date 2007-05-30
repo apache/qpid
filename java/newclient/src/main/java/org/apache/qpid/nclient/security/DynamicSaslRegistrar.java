@@ -29,7 +29,7 @@ import javax.security.sasl.SaslClientFactory;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.nclient.config.ClientConfiguration;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 
 public class DynamicSaslRegistrar
 {
@@ -47,12 +47,12 @@ public class DynamicSaslRegistrar
 
     private static Map<String, Class<? extends SaslClientFactory>> parseProperties()
     {
-        List<String> mechanisms = ClientConfiguration.get().getList(QpidConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY_TYPES);
+        List<String> mechanisms = ClientConfiguration.get().getList(AMQPConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY_TYPES);
         TreeMap<String, Class<? extends SaslClientFactory>> factoriesToRegister =
                 new TreeMap<String, Class<? extends SaslClientFactory>>();
         for (String mechanism: mechanisms)
         {
-            String className = ClientConfiguration.get().getString(QpidConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY + "_" + mechanism);
+            String className = ClientConfiguration.get().getString(AMQPConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY + "_" + mechanism);
             try
             {
                 Class<?> clazz = Class.forName(className);

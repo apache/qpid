@@ -46,7 +46,7 @@ import org.apache.qpid.nclient.amqp.state.AMQPStateType;
 import org.apache.qpid.nclient.config.ClientConfiguration;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.Phase;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 import org.apache.qpid.nclient.util.AMQPValidator;
 
 /**
@@ -106,7 +106,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 		_phase = phase;
 		_stateManager = stateManager;
 		_currentState = AMQPState.CHANNEL_NOT_OPENED;
-		_serverTimeOut = ClientConfiguration.get().getLong(QpidConstants.SERVER_TIMEOUT_IN_MILLISECONDS);
+		_serverTimeOut = ClientConfiguration.get().getLong(AMQPConstants.SERVER_TIMEOUT_IN_MILLISECONDS);
 	}
 
 	/**
@@ -125,7 +125,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 		{
 			_channelOpenOkBody = null;
 			checkIfValidStateTransition(AMQPState.CHANNEL_NOT_OPENED, _currentState, AMQPState.CHANNEL_OPENED);
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelOpenBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelOpenBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_channelNotOpend.await(_serverTimeOut, TimeUnit.MILLISECONDS);
@@ -156,7 +156,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 		{
 			_channelCloseOkBody = null;
 			checkIfValidStateTransition(_validCloseStates, _currentState, AMQPState.CHANNEL_CLOSED);
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelCloseBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelCloseBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_channelNotClosed.await(_serverTimeOut, TimeUnit.MILLISECONDS);
@@ -193,7 +193,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 			{
 				checkIfValidStateTransition(AMQPState.CHANNEL_OPENED, _currentState, AMQPState.CHANNEL_SUSPEND);
 			}
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelFlowBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelFlowBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_channelFlowNotResponded.await(_serverTimeOut, TimeUnit.MILLISECONDS);
@@ -223,7 +223,7 @@ public class QpidAMQPChannel extends AMQPStateMachine implements AMQPMethodListe
 		{
 			_channelOkBody = null;
 			checkIfValidStateTransition(_validResumeStates, _currentState, AMQPState.CHANNEL_OPENED);
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelResumeBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, channelResumeBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_channelNotResumed.await(_serverTimeOut, TimeUnit.MILLISECONDS);

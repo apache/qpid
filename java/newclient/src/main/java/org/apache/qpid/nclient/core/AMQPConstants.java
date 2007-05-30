@@ -1,6 +1,6 @@
 package org.apache.qpid.nclient.core;
 
-public interface QpidConstants
+public interface AMQPConstants
 {
 
 	// Common properties

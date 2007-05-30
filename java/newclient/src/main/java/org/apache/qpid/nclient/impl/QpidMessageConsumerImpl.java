@@ -24,35 +24,34 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.qpid.framing.Content;
-import org.apache.qpid.framing.MessageAppendBody;
-import org.apache.qpid.framing.MessageCheckpointBody;
-import org.apache.qpid.framing.MessageCloseBody;
-import org.apache.qpid.framing.MessageOpenBody;
-import org.apache.qpid.framing.MessageRecoverBody;
-import org.apache.qpid.framing.MessageResumeBody;
-import org.apache.qpid.framing.MessageTransferBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.MessageCancelBody;
+import org.apache.qpid.framing.MessageConsumeBody;
 import org.apache.qpid.nclient.amqp.AMQPMessage;
-import org.apache.qpid.nclient.amqp.AMQPMessageCallBack;
 import org.apache.qpid.nclient.api.QpidException;
 import org.apache.qpid.nclient.api.QpidMessageConsumer;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.message.AMQPApplicationMessage;
-import org.apache.qpid.nclient.message.MessageHeaders;
-import org.apache.qpid.nclient.message.MessageStore;
-import org.apache.qpid.nclient.message.TransientMessageStore;
 
-public class QpidMessageConsumerImpl extends AbstractResource implements QpidMessageConsumer, AMQPMessageCallBack
+public class QpidMessageConsumerImpl extends AbstractResource implements QpidMessageConsumer
 {
-	private MessageStore _msgStore = new TransientMessageStore();
 	private final BlockingQueue<AMQPApplicationMessage> _queue = new LinkedBlockingQueue<AMQPApplicationMessage>();
 	private QpidSessionImpl _session;
 	private AMQPMessage _amqpMessage;
+	private String _consumerTag;
+	private String _queueName;
+	private boolean _noLocal;
+	private boolean _exclusive;
 	
-	protected QpidMessageConsumerImpl(QpidSessionImpl session)
+	protected QpidMessageConsumerImpl(QpidSessionImpl session,String consumerTag,String queueName,boolean noLocal,boolean exclusive) throws QpidException
 	{
-		super("Message Class");
+		super("Message Consuer");
 		_session = session;		
+		_amqpMessage = session.getMessageHelper().getMessageClass();
+		_consumerTag = consumerTag;
+		_queueName = queueName;
+		_noLocal = noLocal;
+		_exclusive = exclusive;
 	}
 	
 	/**
@@ -63,17 +62,20 @@ public class QpidMessageConsumerImpl extends AbstractResource implements QpidMes
 	
 	public AMQPApplicationMessage get() throws QpidException
 	{
+		checkClosed();
 		// I want this to do a message.get
 		return null;
 	}
 
 	public AMQPApplicationMessage receive()throws QpidException
 	{
+		checkClosed();
 		return _queue.poll();
 	}
 	
 	public AMQPApplicationMessage receive(long timeout, TimeUnit tu)throws QpidException
 	{
+		checkClosed();
 		try
 		{
 			return _queue.poll(timeout, tu);
@@ -83,109 +85,8 @@ public class QpidMessageConsumerImpl extends AbstractResource implements QpidMes
 			throw new QpidException("Error retrieving message from queue",e);
 		}		
 	}
-
-	/**
-	 * -----------------------------------------------
-	 * Abstract methods from AbstractResource class
-	 * -----------------------------------------------
-	 */
-	protected void openResource() throws AMQPException
-	{
-		_amqpMessage = _session.getClassFactory().createMessageClass(_session.getChannel(),null);
-	}
 	
-	protected void closeResource() throws AMQPException
-	{
-		_session.getClassFactory().destoryMessageClass(_session.getChannel(), _amqpMessage);
-	}
-
-	/**
-	 * -----------------------------------------------
-	 * Methods from AMQPMessageCallback class
-	 * -----------------------------------------------
-	 */
-	public void append(MessageAppendBody messageAppendBody, long correlationId) throws AMQPException
-	{ 
-		String reference = new String(messageAppendBody.getReference());
-		AMQPApplicationMessage msg = _msgStore.getMessage(reference);
-		msg.addContent(messageAppendBody.getBytes());	
-	}
-
-	public void checkpoint(MessageCheckpointBody messageCheckpointBody, long correlationId) throws AMQPException
-	{
-		// TODO Auto-generated method stub
-	}
-
-	public void close(MessageCloseBody messageCloseBody, long correlationId) throws AMQPException
-	{
-		String reference = new String(messageCloseBody.getReference());
-		AMQPApplicationMessage msg = _msgStore.getMessage(reference);
-		enQueue(msg);
-		_msgStore.removeMessage(reference);
-	}
-
-	public void open(MessageOpenBody messageOpenBody, long correlationId) throws AMQPException
-	{
-		String reference = new String(messageOpenBody.getReference());
-		AMQPApplicationMessage msg = new AMQPApplicationMessage(_session.getChannel(), messageOpenBody.getReference());
-		_msgStore.storeMessage(reference, msg);
-	}
-
-	public void recover(MessageRecoverBody messageRecoverBody, long correlationId) throws AMQPException
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	public void resume(MessageResumeBody messageResumeBody, long correlationId) throws AMQPException
-	{
-		// TODO Auto-generated method stub
-
-	}
-
-	public void transfer(MessageTransferBody messageTransferBody, long correlationId) throws AMQPException
-	{
-		MessageHeaders messageHeaders = new MessageHeaders();
-        messageHeaders.setMessageId(messageTransferBody.getMessageId());
-        messageHeaders.setAppId(messageTransferBody.getAppId());
-        messageHeaders.setContentType(messageTransferBody.getContentType());
-        messageHeaders.setEncoding(messageTransferBody.getContentEncoding());
-        messageHeaders.setCorrelationId(messageTransferBody.getCorrelationId());
-        messageHeaders.setDestination(messageTransferBody.getDestination());
-        messageHeaders.setExchange(messageTransferBody.getExchange());
-        messageHeaders.setExpiration(messageTransferBody.getExpiration());
-        messageHeaders.setReplyTo(messageTransferBody.getReplyTo());
-        messageHeaders.setRoutingKey(messageTransferBody.getRoutingKey());
-        messageHeaders.setTransactionId(messageTransferBody.getTransactionId());
-        messageHeaders.setUserId(messageTransferBody.getUserId());
-        messageHeaders.setPriority(messageTransferBody.getPriority());
-        messageHeaders.setDeliveryMode(messageTransferBody.getDeliveryMode());
-        messageHeaders.setApplicationHeaders(messageTransferBody.getApplicationHeaders());
-		
-        
-        
-		if (messageTransferBody.getBody().getContentType() == Content.TypeEnum.INLINE_T)
-		{
-			AMQPApplicationMessage msg = new AMQPApplicationMessage(_session.getChannel(), 
-																	correlationId,
-                                                                    messageHeaders,
-                                                                    messageTransferBody.getBody().getContentAsByteArray(), 
-                                                                    messageTransferBody.getRedelivered());
-			
-			enQueue(msg);
-		}
-		else
-		{
-			byte[] referenceId = messageTransferBody.getBody().getContentAsByteArray();
-			AMQPApplicationMessage msg = new AMQPApplicationMessage(_session.getChannel(),referenceId);
-			msg.setMessageHeaders(messageHeaders);
-			msg.setRedeliveredFlag(messageTransferBody.getRedelivered());
-			
-			_msgStore.storeMessage(new String(referenceId), msg);
-		}
-	}
-	
-	private void enQueue(AMQPApplicationMessage msg)throws AMQPException
+	public void messageArrived(AMQPApplicationMessage msg)throws QpidException
 	{
 		try
 		{	
@@ -193,8 +94,95 @@ public class QpidMessageConsumerImpl extends AbstractResource implements QpidMes
 		}
 		catch(Exception e)
 		{
-			throw new AMQPException("Error queueing the messsage",e);
+			throw new QpidException("Error queueing the messsage",e);
 		}
 	}
 
+	/**
+	 * -----------------------------------------------
+	 * Abstract methods from AbstractResource class
+	 * -----------------------------------------------
+	 */
+	protected void openResource() throws AMQPException, QpidException
+	{
+		// Will wait till the dust settles on the message selectors
+		
+		final MessageConsumeBody messageConsumeBody = 
+			MessageConsumeBody.createMethodBody(
+			    _session.getMajor(),
+			     _session.getMinor(),
+			     new AMQShortString(_consumerTag),// destination/deliveryTag/consumerTag
+				_exclusive, //exclusive
+				null, //filter
+				false, //noAck,
+				_noLocal, //noLocal, 
+				new AMQShortString(_queueName), //queue
+				_session.getAccessTicket() //ticket
+				);
+		
+		final AMQPCallbackHelper cb = new AMQPCallbackHelper();
+		HelperTemplate template = new HelperTemplate(){
+			
+			public void amqpMethodCall() throws AMQPException
+			{
+				_amqpMessage.consume(messageConsumeBody, cb);
+			}
+		};
+		
+		template.invokeAMQPMethodCall("Message consume failed due to");
+		
+		template.evaulateResponse(cb);
+	}
+	
+	protected void closeResource() throws AMQPException, QpidException
+	{
+		((QpidMessageHelperImpl)_session.getMessageHelper()).deregisterConsumer(_consumerTag);
+		
+		final MessageCancelBody messageCancelBody = 
+			MessageCancelBody.createMethodBody(
+			   			 _session.getMajor(),
+					     _session.getMinor(), 
+					     new AMQShortString(_queueName));
+		
+		final AMQPCallbackHelper cb = new AMQPCallbackHelper();
+		HelperTemplate template = new HelperTemplate(){
+			
+			public void amqpMethodCall() throws AMQPException
+			{
+				_amqpMessage.cancel(messageCancelBody, cb);
+			}
+		};
+		
+		template.invokeAMQPMethodCall("Message cancel failed due to");
+		
+		template.evaulateResponse(cb);
+	}
+
+	/**
+	 * ----------------------------------------------
+	 * Getters for Message Consumer properties
+	 * No setters are allowed. Once these properties
+	 * are set in the constructor they are not allowed
+	 * to be modifed.
+	 * ----------------------------------------------
+	 */
+	public String getConsumerTag()
+	{
+		return _consumerTag;
+	}
+
+	public boolean isExclusive()
+	{
+		return _exclusive;
+	}
+
+	public boolean isNoLocal()
+	{
+		return _noLocal;
+	}
+	
+	public String getQueueName()
+	{
+		return _queueName;
+	}
 }

@@ -13,7 +13,7 @@ import org.apache.qpid.framing.AMQResponseBody;
 import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.AbstractPhase;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 
 /**
  * Corressponds to the Layer 2 in AMQP.
@@ -83,7 +83,7 @@ public class ExecutionPhase extends AbstractPhase
     public void messageSent(Object msg) throws AMQPException
     {
 	AMQPMethodEvent evt = (AMQPMethodEvent) msg;
-	if (evt.getCorrelationId() == QpidConstants.EMPTY_CORRELATION_ID)
+	if (evt.getCorrelationId() == AMQPConstants.EMPTY_CORRELATION_ID)
 	{
 	    // This is a request
 	    AMQFrame frame = handleRequest(evt);

@@ -65,7 +65,7 @@ import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.DefaultPhaseContext;
 import org.apache.qpid.nclient.core.Phase;
 import org.apache.qpid.nclient.core.PhaseContext;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 import org.apache.qpid.nclient.transport.AMQPConnectionURL;
 import org.apache.qpid.nclient.transport.ConnectionURL;
 import org.apache.qpid.nclient.transport.TransportConnection;
@@ -119,16 +119,16 @@ public class QpidAMQPClassFactory implements AMQPClassFactory
 		if (_amqpConnection == null)
 		{
 			PhaseContext ctx = new DefaultPhaseContext();
-			ctx.setProperty(QpidConstants.EVENT_MANAGER, _eventManager);
+			ctx.setProperty(AMQPConstants.EVENT_MANAGER, _eventManager);
 
 			TransportConnection conn = TransportConnectionFactory.createTransportConnection(url, type, ctx);
 			_amqpConnection = new QpidAMQPConnection(conn, _stateManager);
-			_eventManager.addMethodEventListener(QpidConstants.CHANNEL_ZERO, ConnectionStartBody.class, _amqpConnection);
-			_eventManager.addMethodEventListener(QpidConstants.CHANNEL_ZERO, ConnectionSecureBody.class, _amqpConnection);
-			_eventManager.addMethodEventListener(QpidConstants.CHANNEL_ZERO, ConnectionTuneBody.class, _amqpConnection);
-			_eventManager.addMethodEventListener(QpidConstants.CHANNEL_ZERO, ConnectionOpenOkBody.class, _amqpConnection);
-			_eventManager.addMethodEventListener(QpidConstants.CHANNEL_ZERO, ConnectionCloseBody.class, _amqpConnection);
-			_eventManager.addMethodEventListener(QpidConstants.CHANNEL_ZERO, ConnectionCloseOkBody.class, _amqpConnection);
+			_eventManager.addMethodEventListener(AMQPConstants.CHANNEL_ZERO, ConnectionStartBody.class, _amqpConnection);
+			_eventManager.addMethodEventListener(AMQPConstants.CHANNEL_ZERO, ConnectionSecureBody.class, _amqpConnection);
+			_eventManager.addMethodEventListener(AMQPConstants.CHANNEL_ZERO, ConnectionTuneBody.class, _amqpConnection);
+			_eventManager.addMethodEventListener(AMQPConstants.CHANNEL_ZERO, ConnectionOpenOkBody.class, _amqpConnection);
+			_eventManager.addMethodEventListener(AMQPConstants.CHANNEL_ZERO, ConnectionCloseBody.class, _amqpConnection);
+			_eventManager.addMethodEventListener(AMQPConstants.CHANNEL_ZERO, ConnectionCloseOkBody.class, _amqpConnection);
 		}
 		return _amqpConnection;
 	}

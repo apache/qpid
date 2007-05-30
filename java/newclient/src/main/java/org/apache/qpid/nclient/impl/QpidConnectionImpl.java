@@ -23,6 +23,7 @@ package org.apache.qpid.nclient.impl;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -48,7 +49,6 @@ import org.apache.qpid.nclient.amqp.AMQPChannel;
 import org.apache.qpid.nclient.amqp.AMQPClassFactory;
 import org.apache.qpid.nclient.amqp.AMQPConnection;
 import org.apache.qpid.nclient.amqp.AbstractAMQPClassFactory;
-import org.apache.qpid.nclient.amqp.qpid.QpidAMQPChannel;
 import org.apache.qpid.nclient.amqp.state.AMQPState;
 import org.apache.qpid.nclient.amqp.state.AMQPStateChangedEvent;
 import org.apache.qpid.nclient.amqp.state.AMQPStateListener;
@@ -66,7 +66,7 @@ import org.apache.qpid.nclient.transport.TransportConnectionFactory.ConnectionTy
  * replaced by the session methods.
  *
  */
-public class QpidConnectionImpl implements QpidConnection, AMQPStateListener
+public class QpidConnectionImpl extends AbstractResource implements QpidConnection, AMQPStateListener
 {
 	private static final Logger _logger = Logger.getLogger(QpidConnectionImpl.class);
 	
@@ -89,18 +89,70 @@ public class QpidConnectionImpl implements QpidConnection, AMQPStateListener
 	
 	private Lock _lock = new ReentrantLock();
 	
+	private AtomicBoolean _closed;
+	
+	private AtomicBoolean _opened;
+
+	public QpidConnectionImpl()
+	{
+		super("Connection");
+	}
+	
+	/**
+	 * -----------------------------------------------------
+	 * Methods introduced by AbstractResource
+	 * -----------------------------------------------------
+	 */
+	protected void openResource() throws AMQPException, QpidException
+	{
+		throw new UnsupportedOperationException("open is not defined for this resource");
+	}	
+	
+	protected void closeResource() throws AMQPException, QpidException
+	{
+		_classFactory = null;
+	}
+	
+	@Override
+	public void checkClosed() throws QpidException
+	{
+		if(_closed.get())
+		{
+			throw new QpidException("The resource you are trying to access is closed");
+		}
+	}
+	
 	/** ---------------------------------------------
 	 * Methods from o.a.qpid.client.Connection
 	 * ----------------------------------------------
 	 */
-	
-	public void close()
-	{
-		// handle failover
-	}
 
-	public void connect(String url) throws QpidException 
+	@Override
+	public void close() throws QpidException
 	{
+		if (!_closed.getAndSet(true))
+		{
+			_lock.lock();
+			try
+			{
+				super.close();
+				_opened.set(false);
+				initiateFailover();
+			}
+			finally
+			{
+				_lock.unlock();
+			}
+		}
+	}	
+	
+	public void connect(String url) throws QpidException 
+	{		
+		if (_opened.get())
+		{
+			throw new QpidException("The connection is already opened");
+		}
+		
 		try
 		{
 			_classFactory = AbstractAMQPClassFactory.getFactoryInstance();
@@ -128,10 +180,13 @@ public class QpidConnectionImpl implements QpidConnection, AMQPStateListener
 		{
 			throw new QpidException("Connection negotiation failed due to " + e.getMessage(),e);
 		}
+		
+		_opened.set(true);
 	}
 
 	public QpidSession createSession(int expiryInSeconds) throws QpidException
 	{
+		checkClosed();
 		AMQPChannel channel = null;
 		_lock.lock();
 		try
@@ -165,20 +220,7 @@ public class QpidConnectionImpl implements QpidConnection, AMQPStateListener
 		
 		if(event.getNewState() == AMQPState.CONNECTION_CLOSED)
 		{
-			//We need to notify the sessions that they need to
-			//kick in the fail over logic
-			for (Integer sessionId : _sessionMap.keySet())
-			{
-				QpidSession session = _sessionMap.get(sessionId);
-				try
-				{
-					session.failover();
-				}
-				catch(Exception e)
-				{
-					_logger.error("Error executing failover logic for session : " + sessionId, e);
-				}
-			}
+			initiateFailover();
 		}
 
 	}
@@ -188,7 +230,7 @@ public class QpidConnectionImpl implements QpidConnection, AMQPStateListener
 	 * ----------------------------------------------
 	 */
 	
-	public void handleConnectionNegotiation() throws Exception
+	private void handleConnectionNegotiation() throws Exception
 	{
 		_classFactory.getStateManager().addListener(AMQPStateType.CONNECTION_STATE, this);
 
@@ -239,4 +281,21 @@ public class QpidConnectionImpl implements QpidConnection, AMQPStateListener
 		ConnectionOpenOkBody connectionOpenOkBody = _amqpConnection.open(connectionOpenBody);
 	}
 	
+	private void initiateFailover()
+	{
+		//We need to notify the sessions that they need to
+		//kick in the fail over logic
+		for (Integer sessionId : _sessionMap.keySet())
+		{
+			QpidSession session = _sessionMap.get(sessionId);
+			try
+			{
+				session.failover();
+			}
+			catch(Exception e)
+			{
+				_logger.error("Error executing failover logic for session : " + sessionId, e);
+			}
+		}
+	}
 }

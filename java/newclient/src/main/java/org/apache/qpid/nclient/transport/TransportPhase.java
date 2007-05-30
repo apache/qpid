@@ -44,7 +44,7 @@ import org.apache.qpid.framing.ProtocolVersionList;
 import org.apache.qpid.nclient.config.ClientConfiguration;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.AbstractPhase;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.ssl.BogusSSLContextFactory;
 
@@ -72,8 +72,8 @@ public class TransportPhase extends AbstractPhase implements IoHandler, Protocol
     
     public void start()throws AMQPException
     {
-	_brokerDetails = (BrokerDetails)_ctx.getProperty(QpidConstants.AMQP_BROKER_DETAILS);
-	IoConnector ioConnector = (IoConnector)_ctx.getProperty(QpidConstants.MINA_IO_CONNECTOR);        
+	_brokerDetails = (BrokerDetails)_ctx.getProperty(AMQPConstants.AMQP_BROKER_DETAILS);
+	IoConnector ioConnector = (IoConnector)_ctx.getProperty(AMQPConstants.MINA_IO_CONNECTOR);        
         
 	final SocketAddress address;
 	if (ioConnector instanceof VmPipeConnector)
@@ -179,7 +179,7 @@ public class TransportPhase extends AbstractPhase implements IoHandler, Protocol
                 new AMQCodecFactory(false));
 
         if (ClientConfiguration.get().getBoolean(
-                QpidConstants.USE_SHARED_READ_WRITE_POOL))
+                AMQPConstants.USE_SHARED_READ_WRITE_POOL))
         {
             session.getFilterChain().addBefore("AsynchronousWriteFilter",
                     "protocolFilter", pcf);

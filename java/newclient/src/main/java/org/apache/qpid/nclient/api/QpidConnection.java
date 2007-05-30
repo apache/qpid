@@ -22,9 +22,6 @@ package org.apache.qpid.nclient.api;
 
 public interface QpidConnection
 {
-	public static final int SESSION_EXPIRY_MAX_TIME = Integer.MAX_VALUE;
-	public static final int SESSION_EXPIRY_TIED_TO_CHANNEL = 0;
-	
 	public void connect(String url) throws QpidException;
 	
 	public QpidSession createSession(int expiryInSeconds) throws QpidException;

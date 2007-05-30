@@ -25,4 +25,8 @@ import org.apache.qpid.nclient.message.AMQPApplicationMessage;
 public interface QpidMessageProducer
 {
 	public void send(boolean disableMessageId,boolean inline,AMQPApplicationMessage msg)throws QpidException;
+	
+	public void open() throws QpidException;
+	
+	public void close() throws QpidException;
 }

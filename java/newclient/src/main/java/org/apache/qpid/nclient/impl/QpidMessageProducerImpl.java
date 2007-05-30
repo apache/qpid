@@ -18,10 +18,11 @@ public class QpidMessageProducerImpl extends AbstractResource implements QpidMes
 	private QpidSessionImpl _session;
 	private AMQPMessage _amqpMessage;
 	
-	protected QpidMessageProducerImpl(QpidSessionImpl session)
+	protected QpidMessageProducerImpl(QpidSessionImpl session) throws QpidException
 	{
-		super("Message Class");
+		super("Message Producer");
 		_session = session;		
+		_amqpMessage = session.getMessageHelper().getMessageClass();
 	}
 
 	/**
@@ -31,6 +32,7 @@ public class QpidMessageProducerImpl extends AbstractResource implements QpidMes
 	 */
 	public void send(boolean disableMessageId,boolean inline,AMQPApplicationMessage msg)throws QpidException
 	{
+		checkClosed();
 		// need to handle the inline and reference case
 		final MessageTransferBody messageTransferBody = prepareTransfer(disableMessageId,msg);
 		final AMQPCallbackHelper cb = new AMQPCallbackHelper();
@@ -52,14 +54,14 @@ public class QpidMessageProducerImpl extends AbstractResource implements QpidMes
 	 * Methods introduced by AbstractResource
 	 * -----------------------------------------------------
 	 */
-	protected void openResource() throws AMQPException
+	protected void openResource() throws AMQPException, QpidException
 	{
-		_amqpMessage = _session.getClassFactory().createMessageClass(_session.getChannel(),null);
+		
 	}
 	
-	protected void closeResource() throws AMQPException
+	protected void closeResource() throws AMQPException, QpidException
 	{
-		_session.getClassFactory().destoryMessageClass(_session.getChannel(), _amqpMessage);
+		
 	}
 	
 	/**

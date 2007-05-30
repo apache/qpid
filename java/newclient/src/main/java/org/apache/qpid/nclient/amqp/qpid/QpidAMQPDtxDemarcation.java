@@ -43,7 +43,7 @@ import org.apache.qpid.nclient.amqp.state.AMQPStateType;
 import org.apache.qpid.nclient.config.ClientConfiguration;
 import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.Phase;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 import org.apache.qpid.nclient.util.AMQPValidator;
 
 public class QpidAMQPDtxDemarcation extends AMQPStateMachine implements AMQPMethodListener, AMQPDtxDemarcation
@@ -89,7 +89,7 @@ public class QpidAMQPDtxDemarcation extends AMQPStateMachine implements AMQPMeth
 		_phase = phase;
 		_stateManager = stateManager;
 		_currentState = AMQPState.DTX_CHANNEL_NOT_SELECTED;
-		_serverTimeOut = ClientConfiguration.get().getLong(QpidConstants.SERVER_TIMEOUT_IN_MILLISECONDS);
+		_serverTimeOut = ClientConfiguration.get().getLong(AMQPConstants.SERVER_TIMEOUT_IN_MILLISECONDS);
 	}	
 
 	/**
@@ -104,7 +104,7 @@ public class QpidAMQPDtxDemarcation extends AMQPStateMachine implements AMQPMeth
 		{
 			_dtxDemarcationSelectOkBody = null;
 			checkIfValidStateTransition(AMQPState.DTX_CHANNEL_NOT_SELECTED, _currentState, AMQPState.DTX_NOT_STARTED);
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, dtxDemarcationSelectBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, dtxDemarcationSelectBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_dtxNotSelected.await(_serverTimeOut, TimeUnit.MILLISECONDS);
@@ -131,7 +131,7 @@ public class QpidAMQPDtxDemarcation extends AMQPStateMachine implements AMQPMeth
 		{
 			_dtxDemarcationStartOkBody = null;
 			checkIfValidStateTransition(_validStartStates, _currentState, AMQPState.DTX_STARTED);
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, _dtxDemarcationStartOkBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, _dtxDemarcationStartOkBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_dtxNotStarted.await(_serverTimeOut, TimeUnit.MILLISECONDS);
@@ -158,7 +158,7 @@ public class QpidAMQPDtxDemarcation extends AMQPStateMachine implements AMQPMeth
 		{
 			_dtxDemarcationEndOkBody = null;
 			checkIfValidStateTransition(_validEndStates, _currentState, AMQPState.DTX_END);
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, _dtxDemarcationEndOkBody, QpidConstants.EMPTY_CORRELATION_ID);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId, _dtxDemarcationEndOkBody, AMQPConstants.EMPTY_CORRELATION_ID);
 			_phase.messageSent(msg);
 
 			//_dtxNotEnd.await(_serverTimeOut, TimeUnit.MILLISECONDS);

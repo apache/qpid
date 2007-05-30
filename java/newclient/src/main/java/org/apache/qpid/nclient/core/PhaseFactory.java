@@ -24,7 +24,7 @@ public class PhaseFactory
      */
     public static Phase createPhasePipe(PhaseContext ctx) throws AMQPException
     {
-	String key = QpidConstants.PHASE_PIPE + "." + QpidConstants.PHASE;
+	String key = AMQPConstants.PHASE_PIPE + "." + AMQPConstants.PHASE;
 	Map<Integer,Phase> phaseMap = new HashMap<Integer,Phase>();
 	List<String> list = ClientConfiguration.get().getList(key);
 	int index = 0;
@@ -33,7 +33,7 @@ public class PhaseFactory
 	    try
 	    {
 		Phase temp = (Phase)Class.forName(s).newInstance();
-		phaseMap.put(ClientConfiguration.get().getInt(key + "(" + index +  ")." + QpidConstants.INDEX),temp) ;
+		phaseMap.put(ClientConfiguration.get().getInt(key + "(" + index +  ")." + AMQPConstants.INDEX),temp) ;
 	    }
 	    catch(Exception e)
 	    {

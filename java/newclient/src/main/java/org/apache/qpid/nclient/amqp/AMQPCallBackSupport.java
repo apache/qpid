@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.nclient.amqp.event.AMQPMethodEvent;
 import org.apache.qpid.nclient.core.AMQPException;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 
 public abstract class AMQPCallBackSupport 
 {
@@ -52,14 +52,14 @@ public abstract class AMQPCallBackSupport
 	{
 		if(noWait)
 		{
-		    	AMQPMethodEvent msg = new AMQPMethodEvent(_channelId,methodBody,QpidConstants.EMPTY_CORRELATION_ID);
+		    	AMQPMethodEvent msg = new AMQPMethodEvent(_channelId,methodBody,AMQPConstants.EMPTY_CORRELATION_ID);
 			return msg;
 		}
 		else
 		{
 		    	//  u only need to register if u are expecting a response
 			long localCorrelationId = getNextCorrelationId();
-			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId,methodBody,QpidConstants.EMPTY_CORRELATION_ID,localCorrelationId);
+			AMQPMethodEvent msg = new AMQPMethodEvent(_channelId,methodBody,AMQPConstants.EMPTY_CORRELATION_ID,localCorrelationId);
 			_cbMap.put(localCorrelationId, cb);
 			return msg;						
 		}
@@ -68,7 +68,7 @@ public abstract class AMQPCallBackSupport
 	protected AMQPMethodEvent handleAsynchronousCall(AMQMethodBody methodBody,AMQPCallBack cb)
 	{
 		long localCorrelationId = getNextCorrelationId();
-		AMQPMethodEvent msg = new AMQPMethodEvent(_channelId,methodBody,QpidConstants.EMPTY_CORRELATION_ID,localCorrelationId);
+		AMQPMethodEvent msg = new AMQPMethodEvent(_channelId,methodBody,AMQPConstants.EMPTY_CORRELATION_ID,localCorrelationId);
 		_cbMap.put(localCorrelationId, cb);
 		return msg;
 	}

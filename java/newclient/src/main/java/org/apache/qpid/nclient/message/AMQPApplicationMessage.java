@@ -31,7 +31,7 @@ public class AMQPApplicationMessage {
 	private int channelId;
     private byte[] referenceId;
 	private List<byte[]> contents = new LinkedList<byte[]>();
-	private long deliveryTag;
+	private String deliveryTag;
     private boolean redeliveredFlag;
 	private MessageHeaders messageHeaders;
     
@@ -41,7 +41,7 @@ public class AMQPApplicationMessage {
         this.referenceId = referenceId;
     }
     
-    public AMQPApplicationMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders, boolean redeliveredFlag)
+    public AMQPApplicationMessage(int channelId, String deliveryTag, MessageHeaders messageHeaders, boolean redeliveredFlag)
     {
         this.channelId = channelId;
         this.deliveryTag = deliveryTag;
@@ -49,7 +49,7 @@ public class AMQPApplicationMessage {
         this.redeliveredFlag = redeliveredFlag;
     }
     
-    public AMQPApplicationMessage(int channelId, long deliveryTag, MessageHeaders messageHeaders, byte[] content, boolean redeliveredFlag)
+    public AMQPApplicationMessage(int channelId, String deliveryTag, MessageHeaders messageHeaders, byte[] content, boolean redeliveredFlag)
     {
         this.channelId = channelId;
         this.deliveryTag = deliveryTag;
@@ -95,7 +95,7 @@ public class AMQPApplicationMessage {
     	return buf.array();
     }
 
-    public long getDeliveryTag()
+    public String getDeliveryTag()
     {
         return deliveryTag;
     }
@@ -117,7 +117,7 @@ public class AMQPApplicationMessage {
             new String(contents.get(0));
     }
 
-    public void setDeliveryTag(long deliveryTag)
+    public void setDeliveryTag(String deliveryTag)
     {
         this.deliveryTag = deliveryTag;
     }

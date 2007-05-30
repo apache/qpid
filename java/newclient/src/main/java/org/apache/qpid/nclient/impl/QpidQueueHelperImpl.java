@@ -29,6 +29,7 @@ public class QpidQueueHelperImpl extends AbstractResource implements QpidQueueHe
 	 */
 	public void bindQueue(String exchangeName, boolean nowait, String queueName, String routingKey) throws QpidException
 	{
+		checkClosed();
 		final QueueBindBody queueBindBody = QueueBindBody.createMethodBody(
 				_session.getMajor(),
 				_session.getMinor(), 
@@ -57,6 +58,7 @@ public class QpidQueueHelperImpl extends AbstractResource implements QpidQueueHe
 	public void declareQueue(boolean autoDelete, boolean durable, boolean exclusive, boolean nowait, boolean passive, String queueName)
 			throws QpidException
 	{
+		checkClosed();
 		final QueueDeclareBody queueDeclareBody = QueueDeclareBody.createMethodBody(
 				_session.getMajor(),
 				_session.getMinor(), 
@@ -86,6 +88,7 @@ public class QpidQueueHelperImpl extends AbstractResource implements QpidQueueHe
 
 	public void deleteQueue(boolean ifEmpty, boolean ifUnused, boolean nowait, String queueName) throws QpidException
 	{
+		checkClosed();
 		final QueueDeleteBody queueDeleteBody = QueueDeleteBody.createMethodBody(
 				_session.getMajor(),
 				_session.getMinor(), 
@@ -112,6 +115,7 @@ public class QpidQueueHelperImpl extends AbstractResource implements QpidQueueHe
 
 	public void purgeQueue(boolean nowait, String queueName) throws QpidException
 	{
+		checkClosed();
 		final QueuePurgeBody queuePurgeBody = QueuePurgeBody.createMethodBody(
 				_session.getMajor(),
 				_session.getMinor(), 
@@ -136,6 +140,7 @@ public class QpidQueueHelperImpl extends AbstractResource implements QpidQueueHe
 
 	public void unbindQueue(String exchangeName, String queueName, String routingKey) throws QpidException
 	{
+		checkClosed();
 		final QueueUnbindBody queueUnbindBody = QueueUnbindBody.createMethodBody(
 				_session.getMajor(),
 				_session.getMinor(), 
@@ -166,12 +171,12 @@ public class QpidQueueHelperImpl extends AbstractResource implements QpidQueueHe
 	 * Methods introduced by AbstractResource
 	 * -----------------------------------------------------
 	 */
-	protected void openResource() throws AMQPException
+	protected void openResource() throws AMQPException, QpidException
 	{
 		_queueClass = _session.getClassFactory().createQueueClass(_session.getChannel());
 	}
 	
-	protected void closeResource() throws AMQPException
+	protected void closeResource() throws AMQPException, QpidException
 	{
 		_session.getClassFactory().destroyQueueClass(_session.getChannel(), _queueClass);
 	}

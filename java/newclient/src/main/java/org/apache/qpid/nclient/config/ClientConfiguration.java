@@ -13,7 +13,7 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 import org.apache.qpid.nclient.security.AMQPCallbackHandler;
 
 /**
@@ -48,11 +48,11 @@ public class ClientConfiguration extends CombinedConfiguration {
 	
 	private InputStream getInputStream()
 	{
-		if (System.getProperty(QpidConstants.CONFIG_FILE_PATH) != null)
+		if (System.getProperty(AMQPConstants.CONFIG_FILE_PATH) != null)
 		{
 			try
 			{
-				return new FileInputStream((String)System.getProperty(QpidConstants.CONFIG_FILE_PATH));
+				return new FileInputStream((String)System.getProperty(AMQPConstants.CONFIG_FILE_PATH));
 			}
 			catch(Exception e)
 			{
@@ -68,9 +68,9 @@ public class ClientConfiguration extends CombinedConfiguration {
 	
 	public static void main(String[] args)
 	{
-	    String key = QpidConstants.AMQP_SECURITY + "." + 
-	        QpidConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY_TYPES + "." +
-	        QpidConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY;
+	    String key = AMQPConstants.AMQP_SECURITY + "." + 
+	        AMQPConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY_TYPES + "." +
+	        AMQPConstants.AMQP_SECURITY_SASL_CLIENT_FACTORY;
 	        
 	    TreeMap<String, Class<? extends SaslClientFactory>> factoriesToRegister =
                 new TreeMap<String, Class<? extends SaslClientFactory>>();

@@ -15,7 +15,7 @@ import org.apache.qpid.nclient.core.DefaultPhaseContext;
 import org.apache.qpid.nclient.core.Phase;
 import org.apache.qpid.nclient.core.PhaseContext;
 import org.apache.qpid.nclient.core.PhaseFactory;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 import org.apache.qpid.pool.PoolingFilter;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
@@ -48,8 +48,8 @@ public class VMConnection implements TransportConnection
     {		
 	createVMBroker();	      
         
-        _ctx.setProperty(QpidConstants.AMQP_BROKER_DETAILS,_brokerDetails);
-        _ctx.setProperty(QpidConstants.MINA_IO_CONNECTOR,_ioConnector);
+        _ctx.setProperty(AMQPConstants.AMQP_BROKER_DETAILS,_brokerDetails);
+        _ctx.setProperty(AMQPConstants.MINA_IO_CONNECTOR,_ioConnector);
 	
 	_phase = PhaseFactory.createPhasePipe(_ctx);
 	_phase.start();
@@ -86,7 +86,7 @@ public class VMConnection implements TransportConnection
     
     private IoHandlerAdapter createBrokerInstance(int port) throws AMQPException
     {
-        String protocolProviderClass = ClientConfiguration.get().getString(QpidConstants.QPID_VM_BROKER_CLASS);        
+        String protocolProviderClass = ClientConfiguration.get().getString(AMQPConstants.QPID_VM_BROKER_CLASS);        
         _logger.info("Creating Qpid protocol provider: " + protocolProviderClass);
 
         // can't use introspection to get Provider as it is a server class.

@@ -11,7 +11,7 @@ import org.apache.qpid.nclient.core.AMQPException;
 import org.apache.qpid.nclient.core.AbstractPhase;
 import org.apache.qpid.nclient.core.Phase;
 import org.apache.qpid.nclient.core.PhaseContext;
-import org.apache.qpid.nclient.core.QpidConstants;
+import org.apache.qpid.nclient.core.AMQPConstants;
 
 /**
  * This Phase handles Layer 3 functionality of the AMQP spec.
@@ -59,7 +59,7 @@ public class ModelPhase extends AbstractPhase {
 	
 	public void notifyMethodListerners(AMQPMethodEvent event) throws AMQPException
 	{
-	    AMQPEventManager eventManager = (AMQPEventManager)_ctx.getProperty(QpidConstants.EVENT_MANAGER);
+	    AMQPEventManager eventManager = (AMQPEventManager)_ctx.getProperty(AMQPConstants.EVENT_MANAGER);
 	    eventManager.notifyEvent(event);	    
 	}
 	
