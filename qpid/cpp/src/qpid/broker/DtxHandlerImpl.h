@@ -32,8 +32,8 @@ class DtxDemarcationHandler{};
 
 class DtxHandlerImpl 
     : public CoreRefs,
-      public /*framing::AMQP_ServerOperations::*/DtxCoordinationHandler,
-      public /*framing::AMQP_ServerOperations::*/DtxDemarcationHandler
+      public framing::AMQP_ServerOperations::DtxCoordinationHandler,
+      public framing::AMQP_ServerOperations::DtxDemarcationHandler
 {    
 public:
     DtxHandlerImpl(CoreRefs& parent);
@@ -60,9 +60,6 @@ public:
                          u_int16_t ticket,
                          bool startscan,
                          u_int32_t endscan );
-
-    void recoverOk(const framing::MethodContext& context,
-                           const framing::FieldTable& xids );
 
     void rollback(const framing::MethodContext& context,
                           u_int16_t ticket,
