@@ -19,12 +19,15 @@
  *
  */
 #include "qpid/broker/Broker.h"
+#include "qpid/sys/posix/check.h"
+#include "qpid/broker/Daemon.h"
+#include "qpid/log/Statement.h"
+#include "qpid/log/Options.h"
+#include "qpid/log/Logger.h"
+#include "config.h"
 #include <iostream>
 #include <fstream>
 #include <signal.h>
-#include "config.h"
-#include "qpid/sys/posix/check.h"
-#include "qpid/broker/Daemon.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -34,15 +37,16 @@ using namespace std;
 Broker::shared_ptr brokerPtr;
 
 void handle_signal(int /*signal*/){
-    std::cerr << "Shutting down..." << std::endl;
+    QPID_LOG(notice, "Shutting down...");
     brokerPtr->shutdown();
 }
 
 
 /** Command line options */
-struct QpiddOptions : public Broker::Options
+struct QpiddOptions : public Broker::Options, public log::Options
 {
     bool help;
+    bool longHelp;
     bool version;
     bool daemon;
     bool quit;
@@ -51,50 +55,56 @@ struct QpiddOptions : public Broker::Options
     bool ppid;
     int wait;
     string config;
-    po::options_description desc;
+    po::options_description mainOpts;
+    po::options_description allOpts;
+    po::options_description logOpts;
     
     QpiddOptions() :
         help(false), version(false), daemon(false),
         quit(false), kill(false), check(false), ppid(false), wait(10),
         config("/etc/qpidd.conf"),
-        desc("Options")
+        mainOpts("Options"),
+        logOpts("Logging Options")
     {
         using namespace po;
-        desc.add_options()
+        mainOpts.add_options()
             ("daemon,d", optValue(daemon), "Run as a daemon.")
             ("quit,q", optValue(quit), "Stop the running daemon politely.")
             ("kill,k", optValue(kill), "Kill the running daemon harshly.")
             ("check,c", optValue(check), "If daemon is running return 0.")
             ("wait", optValue(wait, "SECONDS"),
              "Maximum wait for daemon response.")
-            ("ppid", optValue(ppid), "Print daemon pid to stdout" );
+            ("ppid", optValue(ppid), "Print daemon pid to stdout." );
         po::options_description brokerOpts;
-        Broker::Options::addTo(desc);
-        desc.add_options()
-            ("config", optValue(config, "FILE"), "Configuration file")
-            ("help,h", optValue(help), "Print help message")
-            ("version,v", optValue(version), "Print version information");
+        Broker::Options::addTo(mainOpts);
+        mainOpts.add_options()
+            ("config", optValue(config, "FILE"), "Configuation file.")
+            ("help,h", optValue(help), "Print help message.")
+            ("long-help", optValue(longHelp), "Show complete list of options.")
+            ("version,v", optValue(version), "Print version information.");
+
+        log::Options::addTo(logOpts);
+        allOpts.add(mainOpts).add(logOpts);
     }
 
     void parse(int argc, char* argv[]) {
-        parseOptions(desc, argc, argv, config);
+        parseOptions(allOpts, argc, argv, config);
     }
     
-    void usage(ostream& out) const {
-        out << "Usage: qpidd [OPTIONS]" << endl << endl
-            << desc << endl;
+    void usage(const po::options_description& opts) const {
+        cout << "Usage: qpidd [OPTIONS]" << endl << endl
+                  << opts << endl;
     };
 };
-
-ostream& operator<<(ostream& out, const QpiddOptions& config)  {
-    config.usage(out); return out;
-}
 
 int main(int argc, char* argv[])
 {
     QpiddOptions config;
     try {
         config.parse(argc, argv);
+        if (config.trace)
+            config.selectors.push_back("trace");
+        log::Logger::instance().configure(config, argv[0]);
         string name=(boost::format("%s.%d")
                      % Daemon::nameFromArgv0(argv[0])
                      % (config.port)).str();
@@ -102,17 +112,18 @@ int main(int argc, char* argv[])
         Daemon demon(name, config.wait);
 
         // Options that just print information.
-        if(config.help) {
-            config.usage(cout);
-            return 0;
-        }
-        if (config.version) {
-            cout << "qpidd (" << PACKAGE_NAME << ") version "
-                 << PACKAGE_VERSION << endl;
+        if(config.help || config.longHelp || config.version) {
+            if (config.version) 
+                cout << "qpidd (" << PACKAGE_NAME << ") version "
+                     << PACKAGE_VERSION << endl;
+            if (config.longHelp)
+                config.usage(config.allOpts);
+            else if (config.help)
+                config.usage(config.mainOpts);
             return 0;
         }
 
-        // Options that affect an already running daemon.
+        // Options that act on an already running daemon.
         if (config.quit || config.kill || config.check) {
             pid_t pid = demon.check();
             if (config.ppid && pid > 0)
@@ -136,8 +147,7 @@ int main(int argc, char* argv[])
                     demon.ready();   // Notify parent we're ready.
                     brokerPtr->run();
                 } catch (const exception& e) {
-                    // TODO aconway 2007-04-26: Log this, cerr is lost.
-                    cerr << "Broker daemon failed: " << e.what() << endl;
+                    QPID_LOG(critical, "Broker daemon startup failed: " << e.what());
                     demon.failed(); // Notify parent we failed.
                     return 1;
                 }
@@ -147,7 +157,7 @@ int main(int argc, char* argv[])
                     cout << pid << endl;
                 return 0;
             }
-            else { // pid < 0
+            else { // pid < 0 
                 throw Exception("fork failed"+strError(errno));
             }
         } // Non-daemon broker.
@@ -163,6 +173,8 @@ int main(int argc, char* argv[])
              << "Type 'qpidd --help' for usage." << endl;
     }
     catch(const exception& e) {
+        // Could be child or parent so log and print.
+        QPID_LOG(error, e.what());
         cerr << "Error: " << e.what() << endl;
     }
     return 1;

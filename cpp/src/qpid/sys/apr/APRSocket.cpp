@@ -20,6 +20,7 @@
  */
 #include "APRBase.h"
 #include "APRSocket.h"
+#include "qpid/log/Statement.h"
 #include <assert.h>
 #include <iostream>
 
@@ -53,7 +54,7 @@ void APRSocket::write(qpid::framing::Buffer& buffer){
 
 void APRSocket::close(){
     if(!closed){
-        std::cout << "Closing socket " << socket << "@" << this << std::endl;
+        QPID_LOG(warning, "Closing socket " << socket << "@" << this);
         CHECK_APR_SUCCESS(apr_socket_close(socket));
         closed = true;
     }

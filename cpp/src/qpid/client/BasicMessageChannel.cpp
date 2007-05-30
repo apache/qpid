@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+#include "qpid/log/Statement.h"
 #include "BasicMessageChannel.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "ClientChannel.h"
@@ -320,12 +321,11 @@ void BasicMessageChannel::run() {
             }
         }
         catch (const ShutdownException&) {
-            /* Orderly shutdown */
+            // Orderly shutdown.
         }
         catch (const Exception& e) {
             // FIXME aconway 2007-02-20: Report exception to user.
-            cout << "client::BasicMessageChannel::run() terminated by: "
-                 << e.toString() << endl;
+            QPID_LOG(error,  e.what());
         }
     }
 }

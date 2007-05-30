@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/log/Statement.h"
 #include <iostream>
 #include <assert.h>
 
@@ -99,8 +100,8 @@ void Connection::closed(){
             exclusiveQueues.erase(exclusiveQueues.begin());
         }
     } catch(std::exception& e) {
-        std::cout << "Caught unhandled exception while closing session: " <<
-            e.what() << std::endl;
+        QPID_LOG(error, " Unhandled exception while closing session: " <<
+                 e.what());
         assert(0);
     }
 }

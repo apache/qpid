@@ -26,6 +26,7 @@
 #include "InMemoryContent.h"
 #include "LazyLoadedContent.h"
 #include "MessageStore.h"
+#include "qpid/log/Statement.h"
 #include "qpid/framing/BasicDeliverBody.h"
 #include "qpid/framing/BasicGetOkBody.h"
 #include "qpid/framing/AMQContentBody.h"
@@ -76,8 +77,6 @@ void BasicMessage::deliver(ChannelAdapter& channel,
                            const string& consumerTag, uint64_t deliveryTag, 
                            uint32_t framesize)
 {
-    // CCT -- TODO - Update code generator to take pointer/ not
-    // instance to avoid extra contruction
     channel.send(
     	new BasicDeliverBody(
             channel.getVersion(), consumerTag, deliveryTag,
@@ -91,8 +90,6 @@ void BasicMessage::sendGetOk(const MethodContext& context,
                              uint64_t deliveryTag, 
                              uint32_t framesize)
 {
-    // CCT -- TODO - Update code generator to take pointer/ not
-    // instance to avoid extra contruction
     context.channel->send(
         new BasicGetOkBody(
             context.channel->getVersion(),
@@ -155,7 +152,7 @@ void BasicMessage::decodeContent(Buffer& buffer, uint32_t chunkSize)
 {    
     uint64_t expected = expectedContentSize();
     if (expected != buffer.available()) {
-        std::cout << "WARN: Expected " << expectedContentSize() << " bytes, got " << buffer.available() << std::endl;
+        QPID_LOG(error, "Expected " << expectedContentSize() << " bytes, got " << buffer.available());
         throw Exception("Cannot decode content, buffer not large enough.");
     }
 

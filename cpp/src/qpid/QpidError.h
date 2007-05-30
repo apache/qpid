@@ -69,6 +69,8 @@ class QpidError : public Exception
 
 #define THROW_QPID_ERROR(CODE, MESSAGE) throw QPID_ERROR(CODE,MESSAGE)
 
+#define THROW_QPID_ERRNO_IF(cond) if (cond) QPID_ERROR(INTERNAL, strError(errno));
+
 const int PROTOCOL_ERROR = 10000;
 const int APR_ERROR = 20000;
 const int FRAMING_ERROR = 30000;

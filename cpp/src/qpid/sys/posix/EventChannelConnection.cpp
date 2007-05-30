@@ -24,6 +24,7 @@
 #include "EventChannelConnection.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/QpidError.h"
+#include "qpid/log/Statement.h"
 
 using namespace std;
 using namespace qpid;
@@ -132,8 +133,7 @@ void EventChannelConnection::startWrite() {
     }
     // No need to lock here - only one thread can be writing at a time.
     out.clear();
-    if (isTrace)
-        cout << "Send on socket " << writeFd << ": " << *frame << endl;
+    QPID_LOG(trace, "Send on socket " << writeFd << ": " << *frame);
     frame->encode(out);
     out.flip();
     writeEvent = WriteEvent(
@@ -215,10 +215,8 @@ void EventChannelConnection::endRead() {
         in.flip();
         AMQFrame frame;
         while (frame.decode(in)) {
-            // TODO aconway 2006-11-30: received should take Frame&
-            if (isTrace)
-                cout << "Received on socket " << readFd
-                     << ": " << frame << endl;
+            QPID_LOG(trace, "Received on socket " << readFd
+                     << ": " << frame);
             handler->received(&frame); 
         }
         in.compact();

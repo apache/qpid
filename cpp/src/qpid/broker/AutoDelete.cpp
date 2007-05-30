@@ -19,6 +19,7 @@
  *
  */
 #include "AutoDelete.h"
+#include "qpid/log/Statement.h"
 #include "qpid/sys/Time.h"
 
 using namespace qpid::broker;
@@ -51,7 +52,7 @@ void AutoDelete::process(){
         }else if(q->canAutoDelete()){
             std::string name(q->getName());
             registry->destroy(name);
-            std::cout << "INFO: Auto-deleted queue named " << name << std::endl;
+            QPID_LOG(info, "Auto-deleted queue named " << name);
         }else{
             add(q);
             if(!seen) seen = q;

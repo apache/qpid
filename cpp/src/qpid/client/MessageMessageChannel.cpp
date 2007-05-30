@@ -381,7 +381,7 @@ void MessageMessageChannel::run() {
 //                 }
 //                 if(handler == 0) {
 //                     // TODO aconway 2007-02-20: proper logging.
-//                     cout << "Message returned: " << msg.getData() << endl;
+//                     QPID_LOG(warn, "No handler for message.");
 //                 }
 //                 else 
 //                     handler->returned(msg);
@@ -407,9 +407,7 @@ void MessageMessageChannel::run() {
 //             /* Orderly shutdown */
 //         }
 //         catch (const Exception& e) {
-//             // FIXME aconway 2007-02-20: Report exception to user.
-//             cout << "client::Message::run() terminated by: " << e.toString()
-//                  << "(" << typeid(e).name() << ")" << endl;
+//             QPID_LOG(error, e.what());
 //         }
 //     }
 }

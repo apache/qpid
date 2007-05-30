@@ -21,6 +21,7 @@
 
 #include <boost/format.hpp>
 
+#include "qpid/log/Statement.h"
 #include "BrokerQueue.h"
 #include "MessageStore.h"
 #include "qpid/sys/Monitor.h"
@@ -78,7 +79,7 @@ bool Queue::dispatch(Message::shared_ptr& msg){
         return false;
     }else if(exclusive){
         if(!exclusive->deliver(msg)){
-            std::cout << "WARNING: Dropping undeliverable message from queue with exclusive consumer." << std::endl;
+            QPID_LOG(warning, "Dropping undeliverable message from queue with exclusive consumer.");
         }
         return true;
     }else{
