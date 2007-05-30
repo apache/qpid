@@ -26,10 +26,6 @@
 namespace qpid {
 namespace broker {
 
-/* dummy interfaces until real ones are generated from published spec */
-class DtxCoordinationHandler{};
-class DtxDemarcationHandler{};
-
 class DtxHandlerImpl 
     : public CoreRefs,
       public framing::AMQP_ServerOperations::DtxCoordinationHandler,
