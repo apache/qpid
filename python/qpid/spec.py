@@ -85,6 +85,7 @@ class Spec(Metadata):
     self.minor = minor
     self.file = file
     self.constants = SpecContainer()
+    self.domains = SpecContainer()
     self.classes = SpecContainer()
     # methods indexed by classname_methname
     self.methods = {}
@@ -137,6 +138,19 @@ class Constant(Metadata):
     self.name = name
     self.id = id
     self.klass = klass
+    self.docs = docs
+
+class Domain(Metadata):
+
+  PRINT=["name", "type"]
+
+  def __init__(self, spec, id, name, type, description, docs):
+    Metadata.__init__(self)
+    self.spec = spec
+    self.id = id
+    self.name = name
+    self.type = type
+    self.description = description
     self.docs = docs
 
 class Class(Metadata):
@@ -251,12 +265,22 @@ class Field(Metadata):
 
   PRINT=["name", "id", "type"]
 
-  def __init__(self, name, id, type, docs):
+  def __init__(self, name, id, type, domain, description, docs):
     Metadata.__init__(self)
     self.name = name
     self.id = id
     self.type = type
+    self.domain = domain
+    self.description = description
     self.docs = docs
+
+def get_desc(nd):
+  label = nd.get("@label")
+  if not label:
+    label = nd.text
+  if label:
+    label = label.strip()
+  return label
 
 def get_docs(nd):
   return [n.text for n in nd["doc"]]
@@ -267,9 +291,13 @@ def load_fields(nd, l, domains):
       type = f_nd["@domain"]
     except KeyError:
       type = f_nd["@type"]
-    while domains.has_key(type) and domains[type] != type:
-      type = domains[type]
-    l.add(Field(pythonize(f_nd["@name"]), f_nd.index(), type, get_docs(f_nd)))
+    type = pythonize(type)
+    domain = None
+    while domains.has_key(type) and domains[type].type != type:
+      domain = domains[type]
+      type = domain.type
+    l.add(Field(pythonize(f_nd["@name"]), f_nd.index(), type, domain,
+                get_desc(f_nd), get_docs(f_nd)))
 
 def load(specfile, *errata):
   doc = xmlutil.parse(specfile)
@@ -284,9 +312,10 @@ def load(specfile, *errata):
       spec.constants.add(const)
 
     # domains are typedefs
-    domains = {}
     for nd in root["domain"]:
-      domains[nd["@name"]] = nd["@type"]
+      spec.domains.add(Domain(spec, nd.index(), pythonize(nd["@name"]),
+                              pythonize(nd["@type"]), get_desc(nd),
+                              get_docs(nd)))
 
     # classes
     for c_nd in root["class"]:
@@ -299,7 +328,7 @@ def load(specfile, *errata):
         klass = spec.classes.byname[cname]
 
       added_methods = []
-      load_fields(c_nd, klass.fields, domains)
+      load_fields(c_nd, klass.fields, spec.domains.byname)
       for m_nd in c_nd["method"]:
         mname = pythonize(m_nd["@name"])
         if root == spec_root:
@@ -308,13 +337,13 @@ def load(specfile, *errata):
                         m_nd.get_bool("@content", False),
                         [pythonize(nd["@name"]) for nd in m_nd["response"]],
                         m_nd.get_bool("@synchronous", False),
-                        m_nd.text,
+                        get_desc(m_nd),
                         get_docs(m_nd))
           klass.methods.add(meth)
           added_methods.append(meth)
         else:
           meth = klass.methods.byname[mname]
-        load_fields(m_nd, meth.fields, domains)
+        load_fields(m_nd, meth.fields, spec.domains.byname)
       # resolve the responses
       for m in added_methods:
         m.responses = [klass.methods.byname[r] for r in m.responses]
