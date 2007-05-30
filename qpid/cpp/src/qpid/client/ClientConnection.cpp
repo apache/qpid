@@ -25,6 +25,7 @@
 #include "Connection.h"
 #include "ClientChannel.h"
 #include "ClientMessage.h"
+#include "qpid/log/Statement.h"
 #include "qpid/QpidError.h"
 #include <iostream>
 #include <sstream>
@@ -78,7 +79,7 @@ void Connection::shutdown() {
     //this indicates that the socket to the server has closed we do
     //not want to send a close request (or any other requests)
     if(markClosed()) {
-        std::cout << "Connection to peer closed!" << std::endl;
+        QPID_LOG(info, "Connection to peer closed!");
         closeChannels();
     }
 }
@@ -88,11 +89,13 @@ void Connection::close(
 )
 {
     if(markClosed()) {
-        // TODO aconway 2007-01-29: Exception handling - could end up
-        // partly closed with threads left unjoined.
-        channel0.sendAndReceive<ConnectionCloseOkBody>(
-            make_shared_ptr(new ConnectionCloseBody(
-                getVersion(), code, msg, classId, methodId)));
+        try {
+            channel0.sendAndReceive<ConnectionCloseOkBody>(
+                make_shared_ptr(new ConnectionCloseBody(
+                                    getVersion(), code, msg, classId, methodId)));
+        } catch (const std::exception& e) {
+            QPID_LOG(error, "Exception closing channel: " << e.what());
+        }
         closeChannels();
         connector->close();
     }

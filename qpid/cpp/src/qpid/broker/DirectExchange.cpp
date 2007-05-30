@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/log/Statement.h"
 #include "DirectExchange.h"
 #include <iostream>
 
@@ -64,7 +65,7 @@ void DirectExchange::route(Deliverable& msg, const string& routingKey, const Fie
         msg.deliverTo(*i);
     }
     if(!count){
-        std::cout << "WARNING: DirectExchange " << getName() << " could not route message with key " << routingKey << std::endl;
+        QPID_LOG(warning, "DirectExchange " << getName() << " could not route message with key " << routingKey);
     }
 }
 

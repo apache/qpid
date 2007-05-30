@@ -18,6 +18,7 @@
 
 #include "EventChannelThreads.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/log/Statement.h"
 #include <iostream>
 using namespace std;
 #include <boost/bind.hpp>
@@ -106,13 +107,10 @@ void EventChannelThreads::run()
         }
     }
     catch (const std::exception& e) {
-        // TODO aconway 2006-11-15: need better logging across the board.
-        std::cerr << "EventChannelThreads::run() caught: " << e.what()
-                  << std::endl;
+        QPID_LOG(error, e.what());
     }
     catch (...) {
-        std::cerr << "EventChannelThreads::run() caught unknown exception."
-                  << std::endl;
+        QPID_LOG(error, "unknown exception");
     }
 }
 

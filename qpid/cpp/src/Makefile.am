@@ -21,7 +21,7 @@ EXTRA_DIST=generate.sh $(generated_cpp) $(generated_h) $(platform_dist)
 
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
-INCLUDES = -I$(builddir)/gen -I$(srcdir)/gen
+INCLUDES = -Igen -I$(srcdir)/gen
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
@@ -103,11 +103,22 @@ endif
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
+# The logger library uses boost::date_time to format time.
+# We have to disable the unused parameters warning to get around
+# unused parameters in boost::date_time headers. So we build it
+# in a convenience library to link into libqpid_common.
+# 
+noinst_LTLIBRARIES=libLogger.la
+libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h  
+libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
+
 libqpidcommon_la_LIBADD = \
   -lboost_program_options \
+  libLogger.la \
   $(APR_LIBS) \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
+
 libqpidcommon_la_SOURCES = \
   $(platform_src) \
   qpid/framing/AMQBody.cpp \
@@ -143,8 +154,14 @@ libqpidcommon_la_SOURCES = \
   qpid/QpidError.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/ProducerConsumer.cpp \
-  qpid/CommonOptions.cpp
-
+  qpid/CommonOptions.cpp \
+  qpid/log/Options.cpp \
+  qpid/log/Options.h \
+  qpid/log/Selector.cpp \
+  qpid/log/Selector.h \
+  qpid/log/Statement.cpp \
+  qpid/log/Statement.h \
+  qpid/memory.h
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -ldaemon -lboost_filesystem
 libqpidbroker_la_SOURCES = \

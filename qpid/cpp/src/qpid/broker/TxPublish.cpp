@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/log/Statement.h"
 #include "TxPublish.h"
 
 using namespace qpid::broker;
@@ -29,7 +30,7 @@ bool TxPublish::prepare(TransactionContext* ctxt) throw(){
         for_each(queues.begin(), queues.end(), Prepare(ctxt, msg));
         return true;
     }catch(...){
-        std::cout << "TxPublish::prepare() - Failed to prepare" << std::endl;
+        QPID_LOG(error, "Failed to prepare");
         return false;
     }
 }

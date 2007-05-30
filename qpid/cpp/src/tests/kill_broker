@@ -1,3 +1,2 @@
 #!/bin/sh
-PID=qpidd.pid
-if [ -f $PID ] ; then kill -9 `cat $PID` ; rm -f $PID ; fi
+../qpidd --quit

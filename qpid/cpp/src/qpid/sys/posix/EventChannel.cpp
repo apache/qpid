@@ -33,6 +33,7 @@
 
 #include "qpid/QpidError.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/log/Statement.h"
 
 #include "check.h"
 #include "EventChannel.h"
@@ -190,9 +191,8 @@ Event* EventChannel::getEvent()
                                     &epollEvent, 1, infiniteTimeout);
         if (eventCount < 0) {
             if (errno != EINTR) {
-                // TODO aconway 2006-11-28: Proper handling/logging of errors.
-                cerr << BOOST_CURRENT_FUNCTION << " ignoring error "
-                     << PosixError::getMessage(errno) << endl;
+                QPID_LOG(warn, "Ignoring error: "
+                         << PosixError::getMessage(errno));
                 assert(0);
             }
         }

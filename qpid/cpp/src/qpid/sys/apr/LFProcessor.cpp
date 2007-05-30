@@ -19,6 +19,7 @@
  *
  */
 #include <sstream>
+#include "qpid/log/Statement.h"
 #include "qpid/QpidError.h"
 #include "qpid/sys/Mutex.h"
 #include "LFProcessor.h"
@@ -136,7 +137,7 @@ void LFProcessor::run(){
             }
         }
     }catch(std::exception e){
-	std::cout << e.what() << std::endl;
+	QPID_LOG(error,  e.what());
     }
 }
 

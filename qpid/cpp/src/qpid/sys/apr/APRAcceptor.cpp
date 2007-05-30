@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/log/Statement.h"
 #include "qpid/sys/Acceptor.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/Mutex.h"
@@ -80,7 +81,7 @@ uint16_t APRAcceptor::getPort() const {
 void APRAcceptor::run(ConnectionInputHandlerFactory* factory) {
     running = true;
     processor.start();
-    std::cout << "Listening on port " << getPort() << "..." << std::endl;
+    QPID_LOG(info, "Listening on port " << getPort());
     while(running) {
             apr_socket_t* client;
             apr_status_t status = apr_socket_accept(&client, socket, APRPool::get());
@@ -97,7 +98,7 @@ void APRAcceptor::run(ConnectionInputHandlerFactory* factory) {
             Mutex::ScopedLock locker(shutdownLock);                
             if(running) {
                 if(status != APR_EINTR){
-                    std::cout << "ERROR: " << get_desc(status) << std::endl;
+                    QPID_LOG(error, get_desc(status));
                 }
                 shutdownImpl();
             }
