@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from qpid import spec
+import qpid
 from qpid.connection import Connection, listen
 from qpid.delegate import Delegate
 from qpid.peer import Peer
@@ -18,7 +18,7 @@ class Server(Delegate):
     msg.ok()
 
 
-spec = spec.load("../specs/amqp.0-9.xml")
+spec = qpid.spec.load("../specs/amqp.0-9.xml")
 
 for io in listen("0.0.0.0", 5672):
   c = Connection(io, spec)
