@@ -867,7 +867,7 @@
 
     <!-- - - - SETTIMEOUT-OK - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
-    <method name = "select-ok" synchronous = "1" index = "71" label = "confirm timeout set">
+    <method name = "set-timeout-ok" synchronous = "1" index = "71" label = "confirm timeout set">
       <doc>
         This method confirms that the timeout has been set. 
       </doc>
