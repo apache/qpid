@@ -619,8 +619,10 @@ under the License.
             <id>fastinstall</id>
             <properties>
                 <maven.test.skip>true</maven.test.skip>
+                <skip.python.tests>true</skip.python.tests>
             </properties>
         </profile>
+
         <profile>
             <id>nochecks</id>
         </profile>

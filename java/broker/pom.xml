@@ -34,9 +34,6 @@
 
     <properties>
         <topDirectoryLocation>..</topDirectoryLocation>
-
-        <!-- Can override this in settings.xml -->
-        <skip.python.tests>false</skip.python.tests>
     </properties>
 
     <dependencies>
@@ -177,10 +174,8 @@
                                     </condition>
 
                                     <condition property="skip-python-tests" value="true">
-                                        <contains string="${skip.python.tests}" substring="true"/>>
+                                        <isset property="skip.python.tests"/>
                                     </condition>
-
-                                    <!--<property name="skip-python-tests" value="${skip.python.tests}"/>-->
 
                                     <property name="command" 
                                               value="python run-tests -v -I java_failing.txt"/>
