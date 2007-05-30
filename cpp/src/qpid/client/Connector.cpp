@@ -19,6 +19,7 @@
  *
  */
 #include <iostream>
+#include "qpid/log/Statement.h"
 #include "qpid/QpidError.h"
 #include "qpid/sys/Time.h"
 #include "Connector.h"
@@ -82,7 +83,7 @@ void Connector::send(AMQFrame* f){
     std::auto_ptr<AMQFrame> frame(f);
     AMQBody::shared_ptr body = frame->getBody();
     writeBlock(frame.get());
-    if(debug) std::cout << "SENT: " << *frame << std::endl; 
+    QPID_LOG(trace, "SENT: " << *frame);
 }
 
 void Connector::writeBlock(AMQDataBlock* data){
@@ -182,7 +183,7 @@ void Connector::run(){
 		
 		AMQFrame frame(version);
 		while(frame.decode(inbuf)){
-                    if(debug) std::cout << "RECV: " << frame << std::endl; 
+                    QPID_LOG(trace, "RECV: " << frame);
 		    input->received(&frame);
 		}
                 //need to compact buffer to preserve any 'extra' data
@@ -190,7 +191,7 @@ void Connector::run(){
 	    }
 	}
     } catch (const std::exception& e) {
-	std::cout << e.what() << std::endl;
+        QPID_LOG(error, e.what());
         handleClosed();
     }
 }

@@ -1,6 +1,17 @@
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS)   $(APR_CXXFLAGS)
 INCLUDES =  -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
 
+
+# Unit test programs
+UNIT_TESTS=
+
+UNIT_TESTS+=logging
+logging_SOURCES=unit/logging.cpp unit/test_tools.h
+logging_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common)
+
+# NB: CppUnit test libraries below will be migrated to boost test programs.
+# UNIT_TESTS+= ...
+
 # Unit tests
 broker_unit_tests =	\
   AccumulatedAckTest	\
@@ -52,19 +63,24 @@ testprogs =		\
   topic_listener	\
   topic_publisher
 
-noinst_PROGRAMS = $(testprogs)
+check_PROGRAMS = $(UNIT_TESTS) $(testprogs)
 
+# FIXME aconway 2007-05-30: TESTS_ENVIRONMENT should have ./run_test
+# as below to run valgrind on all test programs.
+# Disabled temporarily till leaks in client_test are fixed.
+#
+#TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) ./run_test
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
 
-CLIENT_TESTS = client_test quick_topictest
-TESTS = run-unit-tests start_broker $(CLIENT_TESTS) python_tests kill_broker daemon_test
+SYSTEM_TESTS = client_test quick_topictest
+TESTS = $(UNIT_TESTS) run-unit-tests start_broker $(SYSTEM_TESTS) python_tests kill_broker daemon_test
 
 EXTRA_DIST =								\
   test_env								\
   run-unit-tests start_broker python_tests kill_broker daemon_test	\
   quick_topictest							\
   topictest								\
-  .valgrind.supp							\
+  .valgrind.supp-default						\
   .valgrindrc-default							\
   InProcessBroker.h							\
   MockChannel.h								\
@@ -103,20 +119,21 @@ gen.mk: Makefile.am
 	> $@-t
 	mv $@-t $@
 
-check: .valgrindrc ../qpidd
+check: .valgrindrc .valgrind.supp
 
 check-unit:
-	$(MAKE) check TESTS=run-unit-tests
+	$(MAKE) check TESTS=$(UNIT_TESTS) run-unit-tests
 
 # Create a copy so that can be modified without risk of committing the changes.
 .valgrindrc: .valgrindrc-default
-	cp $(srcdir)/.valgrindrc-default .valgrindrc
+	cp $^ $@
+.valgrind.supp: .valgrind.supp-default
+	cp $^ $@
 
 # Tell GNU make not to build targets in this directory in parallel.
 # This is necessary because with two or more identical and simultaneous
 # ltmain invocations, one may corrupt the temporaries of the other.
 .NOTPARALLEL:
 
-CLEANFILES=valgrind.out qpidd.log
-DISTCLEANFILES=.valgrindrc 
+CLEANFILES=valgrind.out qpidd.log .valgrindrc .valgrind.supp
 MAINTAINERCLEANFILES=gen.mk
