@@ -122,10 +122,11 @@ Options:
         print "Using specification from:", self.specfile
         self.spec = qpid.spec.load(self.specfile, *self.errata)
         if len(self.tests) == 0:
+            self.tests=findmodules("tests")
             if self.use08spec():
-                self.tests=findmodules("tests_0-8")
+                self.tests+=findmodules("tests_0-8")
             else:
-                self.tests=findmodules("tests_0-9")
+                self.tests+=findmodules("tests_0-9")
 
     def testSuite(self):
         class IgnoringTestSuite(unittest.TestSuite):
