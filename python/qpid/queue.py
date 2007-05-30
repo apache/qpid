@@ -31,15 +31,29 @@ class Queue(BaseQueue):
 
   END = object()
 
+  def __init__(self, *args, **kwargs):
+    BaseQueue.__init__(self, *args, **kwargs)
+    self._real_put = self.put
+    self.listener = self._real_put
+
   def close(self):
     self.put(Queue.END)
 
   def get(self, block = True, timeout = None):
-    result = BaseQueue.get(self, block, timeout)
-    if result == Queue.END:
-      # this guarantees that any other waiting threads or any future
-      # calls to get will also result in a Closed exception
-      self.put(Queue.END)
-      raise Closed()
-    else:
-      return result
+    self.put = self._real_put
+    try:
+      result = BaseQueue.get(self, block, timeout)
+      if result == Queue.END:
+        # this guarantees that any other waiting threads or any future
+        # calls to get will also result in a Closed exception
+        self.put(Queue.END)
+        raise Closed()
+      else:
+        return result
+    finally:
+      self.put = self.listener
+      pass
+
+  def listen(self, listener):
+    self.listener = listener
+    self.put = self.listener
