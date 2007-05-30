@@ -21,8 +21,11 @@
 Delegate implementation intended for use with the peer module.
 """
 
-import threading, inspect
+import threading, inspect, traceback, sys
 from connection import Method, Request, Response
+
+def _handler_name(method):
+  return "%s_%s" % (method.klass.name, method.name)
 
 class Delegate:
 
@@ -36,11 +39,15 @@ class Delegate:
     try:
       handler = self.handlers[method]
     except KeyError:
-      name = "%s_%s" % (method.klass.name, method.name)
+      name = _handler_name(method)
       handler = getattr(self, name)
       self.handlers[method] = handler
 
-    return handler(channel, frame)
+    try:
+      return handler(channel, frame)
+    except:
+      print >> sys.stderr, "Error in handler: %s\n\n%s" % \
+            (_handler_name(method), traceback.format_exc())
 
   def close(self, reason):
     print "Connection closed: %s" % reason
