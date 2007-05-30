@@ -7,7 +7,7 @@ set -e
 
 gentools_dir="$srcdir/../gentools"
 specs_dir="$srcdir/../../specs"
-specs="$specs_dir/amqp.0-9.xml $specs_dir/amqp-errata.0-9.xml"
+specs="$specs_dir/amqp.0-9.xml $specs_dir/amqp-errata.0-9.xml  $specs_dir/amqp-dtx-preview.xml"
 test -z "$JAVA" && JAVA=java ; 
 test -z "$JAVAC" && JAVAC=javac ; 
 
