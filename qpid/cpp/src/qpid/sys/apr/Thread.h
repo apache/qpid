@@ -37,6 +37,12 @@ class Thread
 {
   public:
     inline static Thread current();
+
+    /** ID of current thread for logging.
+     * Workaround for broken Thread::current() in APR 
+     */
+    inline static long logId();
+
     inline static void yield();
 
     inline Thread();
@@ -46,7 +52,7 @@ class Thread
     inline void join();
 
     inline long id();
-        
+
   private:
     static void* APR_THREAD_FUNC runRunnable(apr_thread_t* thread, void *data);
     inline Thread(apr_thread_t* t);
@@ -73,6 +79,13 @@ void Thread::join(){
 
 long Thread::id() {
     return long(thread);
+}
+
+/** ID of current thread for logging.
+ * Workaround for broken Thread::current() in APR
+ */
+long Thread::logId() {
+    return static_cast<long>(apr_os_thread_current());
 }
 
 Thread::Thread(apr_thread_t* t) : thread(t) {}

@@ -15,6 +15,6 @@ SUFFIXES = .x .1
 .x.1:
 	@rm -f $@
 	@echo "Updating man page $@"
-	$(HELP2MAN) --no-info --include=$(srcdir)/$*.x --output=$@-t ../../src/$*
+	$(HELP2MAN) --no-info --include=$(srcdir)/$*.x --output=$@-t -h --long-help ../../src/$*
 	@chmod a-w $@-t
 	@mv $@-t $@

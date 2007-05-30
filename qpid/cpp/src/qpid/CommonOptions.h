@@ -24,6 +24,9 @@
 
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <sstream>
+#include <iterator>
+#include <algorithm>
 
 namespace qpid { 
 
@@ -43,9 +46,12 @@ class OptionValue : public typed_value<T> {
     std::string argName;
 };
 
+///@internal
+std::string prettyArg(const std::string& name, const std::string& value);
+
 /**
  * Like boost::program_options::value() with more convenient signature
- * for updating a value by reference and nicer help formatting.
+ * for updating a value by reference and prettier help formatting.
  * 
  *@param value displayed as default in help, updated from options.
  * Must support ostream << operator.
@@ -54,12 +60,20 @@ class OptionValue : public typed_value<T> {
  *@see CommonOptions.cpp for example of use.
  */ 
 template<class T>
-value_semantic* optValue(T& value, const char* arg) {
-    std::string val(boost::lexical_cast<std::string>(value));
-    std::string argName(
-        val.empty() ? std::string(arg) :
-        (boost::format("%s (=%s) ") % arg % val).str());
-    return new OptionValue<T>(value, argName);
+value_semantic* optValue(T& value, const char* name) {
+    std::string valstr(boost::lexical_cast<std::string>(value));
+    return new OptionValue<T>(value, prettyArg(name, valstr));
+}
+
+template <class T>
+value_semantic* optValue(std::vector<T>& value, const char* name) {
+    using namespace std;
+    ostringstream os;
+    copy(value.begin(), value.end(), ostream_iterator<T>(os, " "));
+    string val=os.str();
+    if (!val.empty())
+        val.erase(val.end()-1); // Remove trailing " "
+    return (new OptionValue<vector<T> >(value, prettyArg(name, val)));
 }
 
 /** Environment-to-option name mapping.

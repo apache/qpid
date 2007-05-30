@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/log/Statement.h"
 #include <iostream>
 #include "ClientChannel.h"
 #include "qpid/sys/Monitor.h"
@@ -112,8 +113,7 @@ void Channel::protocolInit(
         //ignore for now
         ConnectionRedirectBody::shared_ptr redirect(
             shared_polymorphic_downcast<ConnectionRedirectBody>(openResponse));
-        cout << "Received redirection to " << redirect->getHost()
-             << endl;
+        QPID_LOG(error, "Ignoring redirect to " << redirect->getHost());
     } else {
         THROW_QPID_ERROR(PROTOCOL_ERROR, "Bad response to Connection.open");
     }
@@ -189,9 +189,8 @@ void Channel::rollback(){
 void Channel::handleMethodInContext(
     AMQMethodBody::shared_ptr method, const MethodContext&)
 {
-    // TODO aconway 2007-03-23: Special case for consume OK as it
-    // is both an expected response and needs handling in this thread.
-    // Need to review & reationalize the client-side processing model.
+    // Special case for consume OK as it is both an expected response
+    // and needs handling in this thread.
     if (method->isA<BasicConsumeOkBody>()) {
         messaging->handle(method);
         responses.signalResponse(method);

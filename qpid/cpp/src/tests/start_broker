@@ -1,14 +1,5 @@
 #!/bin/sh
-set -e
-
-LOG=`pwd`/qpidd.log
-PID=`pwd`/qpidd.pid
-
-rm -rf $LOG $PID
-
-# Start the daemon, recording its PID.
-../qpidd > $LOG 2>&1 & echo $! > $PID
-
-# FIXME aconway 2007-01-18: qpidd should not return till it is accepting
-# connections, remove arbitrary sleep.
-sleep 30
+fail() { echo FAIL: $0:$* 1>&2; exit 1; }
+qpidd=../qpidd
+PID=`$qpidd --check --ppid` && fail $qpidd already running $PID
+$qpidd --log.output qpidd.log --daemon || fail $qpidd startup: `cat qpidd.log`

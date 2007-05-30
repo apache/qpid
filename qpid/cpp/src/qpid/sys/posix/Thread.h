@@ -34,6 +34,12 @@ class Thread
 {
   public:
     inline static Thread current();
+
+    /** ID of current thread for logging.
+     * Workaround for broken Thread::current() in APR
+     */
+    static long logId() { return current().id(); }
+
     inline static void yield();
 
     inline Thread();

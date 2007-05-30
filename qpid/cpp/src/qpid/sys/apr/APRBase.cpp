@@ -19,6 +19,7 @@
  *
  */
 #include <iostream>
+#include "qpid/log/Statement.h"
 #include "qpid/QpidError.h"
 #include "APRBase.h"
 
@@ -73,9 +74,8 @@ void APRBase::_decrement(){
 
 void APRBase::increment(){
     int count = 0;
-    while(count++ < 2 && !getInstance()->_increment()){
-        std::cout << "WARNING: APR initialization triggered concurrently with termination." << std::endl;
-    }
+    while(count++ < 2 && !getInstance()->_increment())
+        QPID_LOG(warning, "APR initialization triggered concurrently with termination.");
 }
 
 void APRBase::decrement(){

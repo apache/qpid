@@ -17,6 +17,7 @@
  */
 
 #include "CommonOptions.h"
+#include "qpid/Exception.h"
 #include <fstream>
 #include <algorithm>
 #include <iostream>
@@ -38,6 +39,10 @@ std::string env2option(const std::string& env) {
     }
     return std::string();
 } 
+
+std::string prettyArg(const std::string& name, const std::string& value) {
+    return value.empty() ? name : name+" (="+value+")";
+}
 
 } // namespace program_options
 
@@ -69,13 +74,19 @@ void parseOptions(
         throw po::error(std::string("parsing environment variables: ")
                           + e.what());
     }
-    po::notify(vm);         // So we can use the value of config.
-    try {
-        std::ifstream conf(configFile.c_str());
-        po::store(po::parse_config_file(conf, desc), vm);
-    }
-    catch (const po::error& e) {
-        throw po::error(std::string("parsing config file: ")+ e.what());
+    po::notify(vm);         // configFile may be updated from arg/env options.
+    if (!configFile.empty()) {
+        try {
+            using namespace std;
+            ifstream conf(configFile.c_str());
+            if (conf.good()) {
+                conf.exceptions(ifstream::failbit|ifstream::badbit);
+                po::store(po::parse_config_file(conf, desc), vm);
+            }
+        }
+        catch (const std::exception& e) {
+            throw Exception(std::string("error parsing config file: ")+ e.what());
+        }
     }
     po::notify(vm);
 }

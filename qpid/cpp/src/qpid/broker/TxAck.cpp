@@ -19,6 +19,7 @@
  *
  */
 #include "TxAck.h"
+#include "qpid/log/Statement.h"
 
 using std::bind1st;
 using std::bind2nd;
@@ -40,7 +41,7 @@ bool TxAck::prepare(TransactionContext* ctxt) throw(){
         }
         return true;
     }catch(...){
-        std::cout << "TxAck::prepare() - Failed to prepare" << std::endl;
+        QPID_LOG(error, "Failed to prepare");
         return false;
     }
 }

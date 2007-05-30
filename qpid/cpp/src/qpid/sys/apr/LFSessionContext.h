@@ -61,11 +61,6 @@ class LFSessionContext : public virtual qpid::sys::ConnectionOutputHandler
     bool processing;
     bool closing;
 
-    static qpid::sys::Mutex logLock;
-    void log(const std::string& desc,
-             qpid::framing::AMQFrame* const frame);
-        
-
   public:
     LFSessionContext(apr_pool_t* pool, apr_socket_t* socket, 
                      LFProcessor* const processor, 

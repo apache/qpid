@@ -23,6 +23,7 @@
  */
  
 #include "qpid/QpidError.h"
+#include "qpid/log/Statement.h"
 
 #include <boost/noncopyable.hpp>
 #include <iostream>
@@ -83,7 +84,7 @@ template <class T> Module<T>::~Module() throw()
         }
         if (handle) unload();
     } catch (std::exception& e) {
-        std::cout << "Error while destroying module: " << e.what() << std::endl;
+        QPID_LOG(error, "Error while destroying module: " << e.what());
     }
     destroy = 0;
     handle = 0;

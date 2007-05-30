@@ -21,6 +21,7 @@
 #include "LFSessionContext.h"
 #include "APRBase.h"
 #include "qpid/QpidError.h"
+#include "qpid/log/Statement.h"
 #include <assert.h>
 
 using namespace qpid::sys;
@@ -60,20 +61,18 @@ void LFSessionContext::read(){
         AMQFrame frame;
         try{
             while(frame.decode(in)){
-                if(debug) log("RECV", &frame);
+                QPID_LOG(debug, "RECV: " << frame);
                 handler->received(&frame);
             }
-        }catch(QpidError error){
-            std::cout << "Error [" << error.code << "] " << error.msg
-                      << " (" << error.loc.file << ":" << error.loc.line
-                      << ")" << std::endl;
+        }catch(const std::exception& e){
+            QPID_LOG(error, e.what());
         }
     }else{
         ProtocolInitiation protocolInit;
         if(protocolInit.decode(in)){
             handler->initiated(protocolInit);
             initiated = true;
-            if(debug) std::cout << "INIT [" << &socket << "]" << std::endl;
+            QPID_LOG(debug, "INIT [" << &socket << "]");
         }
     }
     in.compact();
@@ -99,7 +98,7 @@ void LFSessionContext::write(){
                 while(frame && out.available() >= frame->size()){
                     encoded = true;
                     frame->encode(out);
-                    if(debug) log("SENT", frame);
+                    QPID_LOG(debug, "SENT: " << frame);
                     delete frame;
                     framesToWrite.pop();
                     frame = framesToWrite.empty() ? 0 : framesToWrite.front();
@@ -156,7 +155,7 @@ void LFSessionContext::close(){
 
 void LFSessionContext::handleClose(){
     handler->closed();
-    std::cout << "Session closed [" << &socket << "]" << std::endl;
+    QPID_LOG(info, "Session closed [" << &socket << "]");
     delete handler;
     delete this;
 }
@@ -171,9 +170,3 @@ void LFSessionContext::init(ConnectionInputHandler* _handler){
     processor->add(&fd);
 }
 
-void LFSessionContext::log(const std::string& desc, AMQFrame* const frame){
-    Mutex::ScopedLock l(logLock);
-    std::cout << desc << " [" << &socket << "]: " << *frame << std::endl;
-}
-
-Mutex LFSessionContext::logLock;
