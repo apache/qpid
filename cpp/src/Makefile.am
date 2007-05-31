@@ -181,6 +181,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/DeliverableMessage.cpp \
   qpid/broker/DeliveryRecord.cpp \
   qpid/broker/DirectExchange.cpp \
+  qpid/broker/DtxAck.cpp \
   qpid/broker/DtxBuffer.cpp \
   qpid/broker/DtxHandlerImpl.cpp \
   qpid/broker/DtxManager.cpp \
@@ -234,6 +235,7 @@ nobase_include_HEADERS = \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.h \
   qpid/broker/DirectExchange.h \
+  qpid/broker/DtxAck.h \
   qpid/broker/DtxBuffer.h \
   qpid/broker/DtxHandlerImpl.h \
   qpid/broker/DtxManager.h \

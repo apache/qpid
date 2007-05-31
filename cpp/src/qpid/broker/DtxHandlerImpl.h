@@ -31,6 +31,8 @@ class DtxHandlerImpl
       public framing::AMQP_ServerOperations::DtxCoordinationHandler,
       public framing::AMQP_ServerOperations::DtxDemarcationHandler
 {    
+    framing::AMQP_ClientProxy::DtxDemarcation dClient;
+    framing::AMQP_ClientProxy::DtxCoordination cClient;
 public:
     DtxHandlerImpl(CoreRefs& parent);
 

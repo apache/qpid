@@ -38,8 +38,8 @@ namespace qpid {
         class DeliveryRecord{
             mutable Message::shared_ptr msg;
             mutable Queue::shared_ptr queue;
-            std::string consumerTag;
-            uint64_t deliveryTag;
+            const std::string consumerTag;
+            const uint64_t deliveryTag;
             bool pull;
 
         public:
