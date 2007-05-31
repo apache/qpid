@@ -22,23 +22,29 @@
 #include "BrokerChannel.h"
 
 using namespace qpid::broker;
+using qpid::framing::AMQP_ClientProxy;
 using qpid::framing::FieldTable;
 using qpid::framing::MethodContext;
 using std::string;
 
-DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : CoreRefs(parent) {}
+DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : 
+    CoreRefs(parent),
+    dClient(AMQP_ClientProxy::DtxDemarcation::get(proxy)),
+    cClient(AMQP_ClientProxy::DtxCoordination::get(proxy))
+
+{
+}
 
 
 // DtxDemarcationHandler:
 
 
-void DtxHandlerImpl::select(const MethodContext& /*context*/ )
+void DtxHandlerImpl::select(const MethodContext& context )
 {
-    //don't need to do anything here really
-    //send select-ok
+    dClient.selectOk(context.getRequestId());
 }
 
-void DtxHandlerImpl::end(const MethodContext& /*context*/,
+void DtxHandlerImpl::end(const MethodContext& context,
                          u_int16_t /*ticket*/,
                          const string& xid,
                          bool fail,
@@ -54,10 +60,10 @@ void DtxHandlerImpl::end(const MethodContext& /*context*/,
     } else {
         channel.endDtx(xid);
     }
-    //send end-ok
+    dClient.endOk(0/*TODO - set flags*/, context.getRequestId());
 }
 
-void DtxHandlerImpl::start(const MethodContext& /*context*/,
+void DtxHandlerImpl::start(const MethodContext& context,
                            u_int16_t /*ticket*/,
                            const string& xid,
                            bool /*join*/,
@@ -69,36 +75,36 @@ void DtxHandlerImpl::start(const MethodContext& /*context*/,
     } else {
         channel.startDtx(xid, broker.getDtxManager());
     }
-    //send start-ok
+    dClient.startOk(0/*TODO - set flags*/, context.getRequestId());
 }
 
 // DtxCoordinationHandler:
 
-void DtxHandlerImpl::prepare(const MethodContext& /*context*/,
+void DtxHandlerImpl::prepare(const MethodContext& context,
                              u_int16_t /*ticket*/,
                              const string& xid )
 {
     broker.getDtxManager().prepare(xid);
-    //send prepare-ok
+    cClient.prepareOk(0/*TODO - set flags*/, context.getRequestId());
 }
 
-void DtxHandlerImpl::commit(const MethodContext& /*context*/,
+void DtxHandlerImpl::commit(const MethodContext& context,
                             u_int16_t /*ticket*/,
                             const string& xid,
                             bool /*onePhase*/ )
 {
-    broker.getDtxManager().commit(xid);
-    //send commit-ok
     //TODO use onePhase flag to validate correct sequence
+    broker.getDtxManager().commit(xid);
+    cClient.commitOk(0/*TODO - set flags*/, context.getRequestId());
 }
 
 
-void DtxHandlerImpl::rollback(const MethodContext& /*context*/,
+void DtxHandlerImpl::rollback(const MethodContext& context,
                               u_int16_t /*ticket*/,
                               const string& xid )
 {
     broker.getDtxManager().rollback(xid);
-    //send rollback-ok
+    cClient.rollbackOk(0/*TODO - set flags*/, context.getRequestId());
 }
 
 void DtxHandlerImpl::recover(const MethodContext& /*context*/,

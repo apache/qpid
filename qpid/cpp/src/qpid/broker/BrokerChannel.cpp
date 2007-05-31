@@ -28,17 +28,19 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
-#include "BrokerChannel.h"
 #include "qpid/framing/ChannelAdapter.h"
 #include "qpid/QpidError.h"
-#include "DeliverableMessage.h"
-#include "BrokerQueue.h"
+
+#include "BrokerAdapter.h"
+#include "BrokerChannel.h"
 #include "BrokerMessage.h"
+#include "BrokerQueue.h"
+#include "Connection.h"
+#include "DeliverableMessage.h"
+#include "DtxAck.h"
 #include "MessageStore.h"
 #include "TxAck.h"
 #include "TxPublish.h"
-#include "BrokerAdapter.h"
-#include "Connection.h"
 
 using std::mem_fun_ref;
 using std::bind2nd;
@@ -133,7 +135,8 @@ void Channel::endDtx(const std::string& xid){
                                   % dtxBuffer->getXid() % xid);
     }
 
-    TxOp::shared_ptr txAck(new TxAck(accumulatedAck, unacked));
+    TxOp::shared_ptr txAck(new DtxAck(accumulatedAck, unacked));
+    accumulatedAck.clear();
     dtxBuffer->enlist(txAck);    
     dtxBuffer->markEnded();
     
