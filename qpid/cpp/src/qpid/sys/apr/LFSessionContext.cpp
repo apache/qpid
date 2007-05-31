@@ -98,7 +98,7 @@ void LFSessionContext::write(){
                 while(frame && out.available() >= frame->size()){
                     encoded = true;
                     frame->encode(out);
-                    QPID_LOG(debug, "SENT: " << frame);
+                    QPID_LOG(debug, "SENT: " << *frame);
                     delete frame;
                     framesToWrite.pop();
                     frame = framesToWrite.empty() ? 0 : framesToWrite.front();
