@@ -20,6 +20,7 @@
  */
 #include "DtxManager.h"
 #include <boost/format.hpp>
+#include <iostream>
 
 using namespace qpid::broker;
 
