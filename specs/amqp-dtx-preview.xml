@@ -109,7 +109,7 @@
   <!-- ==  dtx-demarcation  ========================================================== -->
 
  
-  <class name = "dtx-demarcation" handler = "channel" index = "100" label = "demarcates distributed transaction branches">
+  <class name = "dtx-demarcation" handler = "channel" index = "101" label = "demarcates distributed transaction branches">
     <doc>
  	This class is part of the X-Open XA distributed transaction protocol support. It allows a channel to be 
 	selected for use with distributed transactions and the transactional boundaries for work on that channel
