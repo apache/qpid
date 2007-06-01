@@ -35,6 +35,12 @@ public class AMQPApplicationMessage {
     private boolean redeliveredFlag;
 	private MessageHeaders messageHeaders;
     
+	public AMQPApplicationMessage(MessageHeaders messageHeaders,byte[] content)
+	{
+		this.messageHeaders = messageHeaders;
+        addContent(content);
+	}
+	
     public AMQPApplicationMessage(int channelId, byte[] referenceId)
     {
         this.channelId = channelId;

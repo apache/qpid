@@ -66,8 +66,8 @@ public class QpidSessionImpl extends AbstractResource implements QpidSession
     private QpidQueueHelperImpl _qpidQueueHelper;
     private QpidMessageHelperImpl _qpidMessageHelper;
     private List<QpidMessageProducerImpl> _producers = new ArrayList<QpidMessageProducerImpl>();
-    private AtomicBoolean _closed;
-    private AtomicInteger _consumerTag;
+    private AtomicBoolean _closed = new AtomicBoolean(true);
+    private AtomicInteger _consumerTag = new AtomicInteger();
     private Lock _sessionCloseLock = new ReentrantLock();
         
     // this will be used as soon as Session class is finalized
@@ -92,6 +92,7 @@ public class QpidSessionImpl extends AbstractResource implements QpidSession
 	 */
 	protected void openResource() throws AMQPException, QpidException
 	{
+		_closed.set(false);
 		// These methods will be changed to session methods
 		openChannel();
 		

@@ -57,6 +57,7 @@ import org.apache.qpid.nclient.api.QpidConnection;
 import org.apache.qpid.nclient.api.QpidException;
 import org.apache.qpid.nclient.api.QpidSession;
 import org.apache.qpid.nclient.core.AMQPException;
+import org.apache.qpid.nclient.transport.AMQPConnectionURL;
 import org.apache.qpid.nclient.transport.ConnectionURL;
 import org.apache.qpid.nclient.transport.TransportConnectionFactory.ConnectionType;
 
@@ -89,9 +90,9 @@ public class QpidConnectionImpl extends AbstractResource implements QpidConnecti
 	
 	private Lock _lock = new ReentrantLock();
 	
-	private AtomicBoolean _closed;
+	private AtomicBoolean _closed = new AtomicBoolean(true);
 	
-	private AtomicBoolean _opened;
+	private AtomicBoolean _opened = new AtomicBoolean(false);
 
 	public QpidConnectionImpl()
 	{
@@ -164,8 +165,8 @@ public class QpidConnectionImpl extends AbstractResource implements QpidConnecti
 		
 		try
 		{
-			//_url = new AMQPConnectionURL("amqp://guest:guest@test/test?brokerlist='tcp://localhost:5672?'");
-			_amqpConnection = _classFactory.createConnectionClass(url, ConnectionType.TCP);
+			_url = new AMQPConnectionURL(url);
+			_amqpConnection = _classFactory.createConnectionClass(_url, ConnectionType.TCP);
 		}
 		catch(Exception e)
 		{
@@ -181,6 +182,7 @@ public class QpidConnectionImpl extends AbstractResource implements QpidConnecti
 			throw new QpidException("Connection negotiation failed due to " + e.getMessage(),e);
 		}
 		
+		_closed.set(false);
 		_opened.set(true);
 	}
 
