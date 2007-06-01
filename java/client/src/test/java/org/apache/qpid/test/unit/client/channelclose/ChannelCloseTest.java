@@ -14,42 +14,43 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
 import junit.framework.TestCase;
 
-import javax.jms.Connection;
-import javax.jms.Session;
+import org.apache.log4j.Logger;
 
-import javax.jms.JMSException;
-import javax.jms.ExceptionListener;
-import javax.jms.MessageProducer;
-import javax.jms.MessageConsumer;
-import javax.jms.Message;
-import javax.jms.TextMessage;
-import javax.jms.Queue;
-
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.framing.ChannelOpenBody;
-import org.apache.qpid.framing.ChannelOpenOkBody;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ExchangeDeclareBody;
-import org.apache.qpid.framing.ExchangeDeclareOkBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ChannelOpenBody;
+import org.apache.qpid.framing.ChannelOpenOkBody;
+import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.framing.ExchangeDeclareOkBody;
 import org.apache.qpid.jms.ConnectionListener;
-import org.apache.log4j.Logger;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.url.URLSyntaxException;
+
+import javax.jms.Connection;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
 
 public class ChannelCloseTest extends TestCase implements ExceptionListener, ConnectionListener
 {
@@ -73,15 +74,14 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
         TransportConnection.killAllVMBrokers();
     }
 
-
     /*
           close channel, use chanel with same id ensure error.
-       */
-    public void testReusingChannelAfterFullClosure()
+     */
+    public void testReusingChannelAfterFullClosure() throws Exception
     {
         _connection = newConnection();
 
-        //Create Producer
+        // Create Producer
         try
         {
             _connection.start();
@@ -113,6 +113,7 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
                 {
                     _logger.info("Exception occured was:" + e.getErrorCode());
                 }
+
                 assertEquals("Connection should be closed", AMQConstant.CHANNEL_ERROR, e.getErrorCode());
 
                 _connection = newConnection();
@@ -134,29 +135,27 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
     /*
     close channel and send guff then send ok no errors
      */
-    public void testSendingMethodsAfterClose()
+    public void testSendingMethodsAfterClose() throws Exception
     {
         try
         {
-            _connection = new AMQConnection("amqp://guest:guest@CCTTest/test?brokerlist='"
-                                            + _brokerlist + "'");
+            _connection = new AMQConnection("amqp://guest:guest@CCTTest/test?brokerlist='" + _brokerlist + "'");
 
             ((AMQConnection) _connection).setConnectionListener(this);
 
-
             _connection.setExceptionListener(this);
 
-            //Change the StateManager for one that doesn't respond with Close-OKs
+            // Change the StateManager for one that doesn't respond with Close-OKs
             AMQStateManager oldStateManager = ((AMQConnection) _connection).getProtocolHandler().getStateManager();
 
             _session = _connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
             _connection.start();
 
-            //Test connection
+            // Test connection
             checkSendingMessage();
 
-            //Set StateManager to manager that ignores Close-oks
+            // Set StateManager to manager that ignores Close-oks
             AMQProtocolSession protocolSession = ((AMQConnection) _connection).getProtocolHandler().getProtocolSession();
             AMQStateManager newStateManager = new NoCloseOKStateManager(protocolSession);
             newStateManager.changeState(oldStateManager.getCurrentState());
@@ -214,7 +213,7 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
 
             createChannelAndTest(TEST_CHANNEL);
 
-            //Test connection is still ok
+            // Test connection is still ok
 
             checkSendingMessage();
 
@@ -248,9 +247,9 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
         }
     }
 
-    private void createChannelAndTest(int channel)
+    private void createChannelAndTest(int channel) throws FailoverException
     {
-        //Create A channel
+        // Create A channel
         try
         {
             createChannel(channel);
@@ -274,13 +273,13 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
 
     private void sendClose(int channel)
     {
-        AMQFrame frame = ChannelCloseOkBody.createAMQFrame(channel,
-                                                           ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                                                           ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion());
+        AMQFrame frame =
+            ChannelCloseOkBody.createAMQFrame(channel,
+                ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
+                ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion());
 
         ((AMQConnection) _connection).getProtocolHandler().writeFrame(frame);
     }
-
 
     private void checkSendingMessage() throws JMSException
     {
@@ -307,8 +306,7 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
         AMQConnection connection = null;
         try
         {
-            connection = new AMQConnection("amqp://guest:guest@CCTTest/test?brokerlist='"
-                                           + _brokerlist + "'");
+            connection = new AMQConnection("amqp://guest:guest@CCTTest/test?brokerlist='" + _brokerlist + "'");
 
             connection.setConnectionListener(this);
 
@@ -330,24 +328,24 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
             fail("Creating new connection when:" + e.getMessage());
         }
 
-
         return connection;
     }
 
-    private void declareExchange(int channelId, String _type, String _name, boolean nowait) throws AMQException
+    private void declareExchange(int channelId, String _type, String _name, boolean nowait)
+        throws AMQException, FailoverException
     {
-        AMQFrame exchangeDeclare = ExchangeDeclareBody.createAMQFrame(channelId,
-                                                                      ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                                                                      ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(),
-                                                                      null,    // arguments
-                                                                      false,    // autoDelete
-                                                                      false,    // durable
-                                                                      new AMQShortString(_name),    // exchange
-                                                                      false,    // internal
-                                                                      nowait,    // nowait
-                                                                      true,    // passive
-                                                                      0,    // ticket
-                                                                      new AMQShortString(_type));    // type
+        AMQFrame exchangeDeclare =
+            ExchangeDeclareBody.createAMQFrame(channelId,
+                ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
+                ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(), null, // arguments
+                false, // autoDelete
+                false, // durable
+                new AMQShortString(_name), // exchange
+                false, // internal
+                nowait, // nowait
+                true, // passive
+                0, // ticket
+                new AMQShortString(_type)); // type
 
         if (nowait)
         {
@@ -355,36 +353,31 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
         }
         else
         {
-            ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class, SYNC_TIMEOUT);
+            ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeclareOkBody.class,
+                SYNC_TIMEOUT);
         }
     }
 
-    private void createChannel(int channelId) throws AMQException
+    private void createChannel(int channelId) throws AMQException, FailoverException
     {
-        ((AMQConnection) _connection).getProtocolHandler().syncWrite(
-                ChannelOpenBody.createAMQFrame(channelId,
-                                               ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
-                                               ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(),
-                                               null),    // outOfBand
-                                                         ChannelOpenOkBody.class);
+        ((AMQConnection) _connection).getProtocolHandler().syncWrite(ChannelOpenBody.createAMQFrame(channelId,
+                ((AMQConnection) _connection).getProtocolHandler().getProtocolMajorVersion(),
+                ((AMQConnection) _connection).getProtocolHandler().getProtocolMinorVersion(), null), // outOfBand
+            ChannelOpenOkBody.class);
 
     }
 
-
     public void onException(JMSException jmsException)
     {
-        //_logger.info("CCT" + jmsException);
+        // _logger.info("CCT" + jmsException);
         fail(jmsException.getMessage());
     }
 
     public void bytesSent(long count)
-    {
-    }
+    { }
 
     public void bytesReceived(long count)
-    {
-
-    }
+    { }
 
     public boolean preFailover(boolean redirect)
     {
@@ -397,6 +390,5 @@ public class ChannelCloseTest extends TestCase implements ExceptionListener, Con
     }
 
     public void failoverComplete()
-    {
-    }
+    { }
 }

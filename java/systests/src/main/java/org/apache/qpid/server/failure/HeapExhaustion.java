@@ -1,7 +1,7 @@
 package org.apache.qpid.server.failure;
 
 import junit.framework.TestCase;
-import org.apache.qpid.testutil.QpidClientConnection;
+import org.apache.qpid.testutil.QpidClientConnectionHelper;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -17,7 +17,7 @@ public class HeapExhaustion extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(HeapExhaustion.class);
 
-    protected QpidClientConnection conn;
+    protected QpidClientConnectionHelper conn;
     protected final String BROKER = "localhost";
     protected final String vhost = "/test";
     protected final String queue = "direct://amq.direct//queue";
@@ -32,7 +32,7 @@ public class HeapExhaustion extends TestCase
 
     protected void setUp() throws Exception
     {
-        conn = new QpidClientConnection(BROKER);
+        conn = new QpidClientConnectionHelper(BROKER);
         conn.setVirtualHost(vhost);
 
         conn.connect();
