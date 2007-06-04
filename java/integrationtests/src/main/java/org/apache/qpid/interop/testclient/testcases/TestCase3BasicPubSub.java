@@ -5,7 +5,6 @@ import javax.jms.*;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.interop.testclient.InteropClientTestCase;
-import org.apache.qpid.interop.testclient.TestClient;
 
 /**
  * Implements test case 3, basic pub/sub. Sends/received a specified number of messages to a specified route on the
@@ -120,8 +119,8 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
             session = new Session[1];
 
             connection[0] =
-                TestClient.createConnection(TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, TestClient.brokerUrl,
-                    TestClient.virtualHost);
+                org.apache.qpid.interop.testclient.TestClient.createConnection(org.apache.qpid.interop.testclient.TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, org.apache.qpid.interop.testclient.TestClient.brokerUrl,
+                    org.apache.qpid.interop.testclient.TestClient.virtualHost);
             session[0] = connection[0].createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Extract and retain the test parameters.
@@ -140,8 +139,8 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
             for (int i = 0; i < numReceivers; i++)
             {
                 connection[i] =
-                    TestClient.createConnection(TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, TestClient.brokerUrl,
-                        TestClient.virtualHost);
+                    org.apache.qpid.interop.testclient.TestClient.createConnection(org.apache.qpid.interop.testclient.TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, org.apache.qpid.interop.testclient.TestClient.brokerUrl,
+                        org.apache.qpid.interop.testclient.TestClient.virtualHost);
                 session[i] = connection[i].createSession(false, Session.AUTO_ACKNOWLEDGE);
 
                 sendDestination = session[i].createTopic(sendKey);

@@ -21,10 +21,7 @@
  */
 package org.apache.qpid.interop.coordinator;
 
-import java.util.Collection;
 import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.jms.*;
 
@@ -74,13 +71,13 @@ public abstract class CoordinatingTestCase extends TestCase
     private static final Logger log = Logger.getLogger(CoordinatingTestCase.class);
 
     /** Holds the contact details for the sending test client. */
-    TestClientDetails sender;
+    protected TestClientDetails sender;
 
     /** Holds the contact details for the receving test client. */
-    TestClientDetails receiver;
+    protected TestClientDetails receiver;
 
     /** Holds the conversation factory over which to coordinate the test. */
-    ConversationFactory conversationFactory;
+    protected ConversationFactory conversationFactory;
 
     /**
      * Creates a new coordinating test case with the specified name.

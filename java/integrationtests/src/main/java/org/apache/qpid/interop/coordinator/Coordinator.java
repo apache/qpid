@@ -65,28 +65,28 @@ public class Coordinator extends TKTestRunner
     public static final String DEFAULT_CONNECTION_PROPS_RESOURCE = "org/apache/qpid/interop/connection.properties";
 
     /** Holds the URL of the broker to coordinate the tests on. */
-    String brokerUrl;
+    protected String brokerUrl;
 
     /** Holds the virtual host to coordinate the tests on. If <tt>null</tt>, then the default virtual host is used. */
-    String virtualHost;
+    protected String virtualHost;
 
     /** Holds the list of all clients that enlisted, when the compulsory invite was issued. */
-    Set<TestClientDetails> enlistedClients = new HashSet<TestClientDetails>();
+    protected Set<TestClientDetails> enlistedClients = new HashSet<TestClientDetails>();
 
     /** Holds the conversation helper for the control conversation. */
-    private ConversationFactory conversationFactory;
+    protected ConversationFactory conversationFactory;
 
     /** Holds the connection that the coordinating messages are sent over. */
-    private Connection connection;
+    protected Connection connection;
 
     /**
      * Holds the name of the class of the test currently being run. Ideally passed into the {@link #createTestResult}
      * method, but as the signature is already fixed for this, the current value gets pushed here as a member variable.
      */
-    private String currentTestClassName;
+    protected String currentTestClassName;
 
     /** Holds the path of the directory to output test results too, if one is defined. */
-    private static String reportDir;
+    protected static String _reportDir;
 
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
@@ -94,7 +94,7 @@ public class Coordinator extends TKTestRunner
      * @param brokerUrl   The URL of the broker to connect to.
      * @param virtualHost The virtual host to run all tests on. Optional, may be <tt>null</tt>.
      */
-    Coordinator(String brokerUrl, String virtualHost)
+    public Coordinator(String brokerUrl, String virtualHost)
     {
         log.debug("Coordinator(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
 
@@ -121,38 +121,36 @@ public class Coordinator extends TKTestRunner
             // Use the command line parser to evaluate the command line with standard handling behaviour (print errors
             // and usage then exist if there are errors).
             Properties options =
-                CommandLineParser.processCommandLine(args,
-                    new CommandLineParser(
-                        new String[][]
-                        {
-                            { "b", "The broker URL.", "broker", "false" },
-                            { "h", "The virtual host to use.", "virtual host", "false" },
-                            { "o", "The name of the directory to output test timings to.", "dir", "false" }
-                        }));
+                    CommandLineParser.processCommandLine(args,
+                                                         new CommandLineParser(
+                                                                 new String[][]
+                                                                         {
+                                                                                 {"b", "The broker URL.", "broker", "false"},
+                                                                                 {"h", "The virtual host to use.", "virtual host", "false"},
+                                                                                 {"o", "The name of the directory to output test timings to.", "dir", "false"}
+                                                                         }));
 
             // Extract the command line options.
             String brokerUrl = options.getProperty("b");
             String virtualHost = options.getProperty("h");
-            reportDir = options.getProperty("o");
-            reportDir = (reportDir == null) ? "." : reportDir;
+            _reportDir = options.getProperty("o");
+            _reportDir = (_reportDir == null) ? "." : _reportDir;
 
             // Scan for available test cases using a classpath scanner.
             Collection<Class<? extends CoordinatingTestCase>> testCaseClasses =
-                new ArrayList<Class<? extends CoordinatingTestCase>>();
+                    new ArrayList<Class<? extends CoordinatingTestCase>>();
             // ClasspathScanner.getMatches(CoordinatingTestCase.class, "^Test.*", true);
             // Hard code the test classes till the classpath scanner is fixed.
             Collections.addAll(testCaseClasses,
-                new Class[]
-                {
-                    CoordinatingTestCase1DummyRun.class, CoordinatingTestCase2BasicP2P.class,
-                    CoordinatingTestCase3BasicPubSub.class
-                });
+                               CoordinatingTestCase1DummyRun.class,
+                               CoordinatingTestCase2BasicP2P.class,
+                               CoordinatingTestCase3BasicPubSub.class);
 
             // Check that some test classes were actually found.
-            if ((testCaseClasses == null) || testCaseClasses.isEmpty())
+            if (testCaseClasses.isEmpty())
             {
                 throw new RuntimeException(
-                    "No test classes implementing CoordinatingTestCase were found on the class path.");
+                        "No test classes implementing CoordinatingTestCase were found on the class path.");
             }
 
             int i = 0;
@@ -199,7 +197,7 @@ public class Coordinator extends TKTestRunner
     public TestResult start(String[] testClassNames) throws Exception
     {
         log.debug("public TestResult start(String[] testClassNames = " + PrettyPrintingUtils.printArray(testClassNames)
-            + ": called");
+                  + ": called");
 
         // Connect to the broker.
         connection = TestClient.createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
@@ -233,7 +231,7 @@ public class Coordinator extends TKTestRunner
             // Record the current test class, so that the test results can be output to a file incorporating this name.
             this.currentTestClassName = testClassName;
 
-            result = super.start(new String[] { testClassName });
+            result = super.start(new String[]{testClassName});
         }
 
         // At this point in time, all tests have completed. Broadcast the shutdown message.
@@ -257,7 +255,7 @@ public class Coordinator extends TKTestRunner
     public static Set<TestClientDetails> extractEnlists(Collection<Message> enlists) throws JMSException
     {
         log.debug("public static Set<TestClientDetails> extractEnlists(Collection<Message> enlists = " + enlists
-            + "): called");
+                  + "): called");
 
         Set<TestClientDetails> enlistedClients = new HashSet<TestClientDetails>();
 
@@ -315,9 +313,9 @@ public class Coordinator extends TKTestRunner
             targetTest = new WrappedSuiteTestDecorator(suite);
             log.debug("Wrapped with a WrappedSuiteTestDecorator.");
         }
-
         // Wrap the tests in an inviting test decorator, to perform the invite/test cycle.
-        targetTest = new InvitingTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
+
+        targetTest = newTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
 
         TestSuite suite = new TestSuite();
         suite.addTest(targetTest);
@@ -326,6 +324,11 @@ public class Coordinator extends TKTestRunner
         // targetTest = new ScaledTestDecorator(targetTest, new int[] { 1 });
 
         return super.doRun(suite, wait);
+    }
+
+    protected WrappedSuiteTestDecorator newTestDecorator(WrappedSuiteTestDecorator targetTest, Set<TestClientDetails> enlistedClients, ConversationFactory conversationFactory, Connection connection)
+    {
+        return new InvitingTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
     }
 
     /**
@@ -340,10 +343,10 @@ public class Coordinator extends TKTestRunner
         TKTestResult result = new TKTestResult(fPrinter.getWriter(), delay, verbose, testCaseName);
 
         // Check if a directory to output reports to has been specified and attach test listeners if so.
-        if (reportDir != null)
+        if (_reportDir != null)
         {
             // Create the report directory if it does not already exist.
-            File reportDirFile = new File(reportDir);
+            File reportDirFile = new File(_reportDir);
 
             if (!reportDirFile.exists())
             {
@@ -381,5 +384,10 @@ public class Coordinator extends TKTestRunner
         }
 
         return result;
+    }
+
+    public void setReportDir(String reportDir)
+    {
+        _reportDir = reportDir;
     }
 }
