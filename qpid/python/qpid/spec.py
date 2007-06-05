@@ -309,8 +309,10 @@ def load(specfile, *errata):
     for nd in root["constant"]:
       const = Constant(spec, pythonize(nd["@name"]), int(nd["@value"]),
                        nd.get("@class"), get_docs(nd))
-      spec.constants.add(const)
-
+      try:
+        spec.constants.add(const)
+      except ValueError, e:  
+        print "Warning:", e
     # domains are typedefs
     for nd in root["domain"]:
       spec.domains.add(Domain(spec, nd.index(), pythonize(nd["@name"]),
@@ -320,18 +322,20 @@ def load(specfile, *errata):
     # classes
     for c_nd in root["class"]:
       cname = pythonize(c_nd["@name"])
-      if root == spec_root:
+      if spec.classes.byname.has_key(cname):
+        klass = spec.classes.byname[cname]
+      else:
         klass = Class(spec, cname, int(c_nd["@index"]), c_nd["@handler"],
                       get_docs(c_nd))
         spec.classes.add(klass)
-      else:
-        klass = spec.classes.byname[cname]
 
       added_methods = []
       load_fields(c_nd, klass.fields, spec.domains.byname)
       for m_nd in c_nd["method"]:
         mname = pythonize(m_nd["@name"])
-        if root == spec_root:
+        if klass.methods.byname.has_key(mname):
+          meth = klass.methods.byname[mname]
+        else:
           meth = Method(klass, mname,
                         int(m_nd["@index"]),
                         m_nd.get_bool("@content", False),
@@ -341,8 +345,6 @@ def load(specfile, *errata):
                         get_docs(m_nd))
           klass.methods.add(meth)
           added_methods.append(meth)
-        else:
-          meth = klass.methods.byname[mname]
         load_fields(m_nd, meth.fields, spec.domains.byname)
       # resolve the responses
       for m in added_methods:

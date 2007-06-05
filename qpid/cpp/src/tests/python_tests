@@ -1,7 +1,7 @@
 #!/bin/sh
 # Run the python tests.
 if test -d ../../../python ;  then
-    cd ../../../python && ./run-tests -v -s "0-9" -I cpp_failing_0-9.txt $PYTHON_TESTS
+    cd ../../../python && ./run-tests -v -s "0-9" -e ../specs/amqp-dtx-preview.0-9.xml -I cpp_failing_0-9.txt $PYTHON_TESTS
 else
     echo Warning: python tests not found.
 fi

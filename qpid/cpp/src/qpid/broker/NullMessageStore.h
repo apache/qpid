@@ -21,6 +21,7 @@
 #ifndef _NullMessageStore_
 #define _NullMessageStore_
 
+#include <set>
 #include "BrokerMessage.h"
 #include "MessageStore.h"
 #include "BrokerQueue.h"
@@ -33,6 +34,7 @@ namespace broker {
  */
 class NullMessageStore : public MessageStore
 {
+    std::set<std::string> prepared;
     const bool warn;
 public:
     NullMessageStore(bool warn = false);

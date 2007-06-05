@@ -25,6 +25,26 @@
 
 #include <iostream>
 
+namespace qpid{
+namespace broker{
+
+const std::string nullxid = "";
+
+class DummyCtxt : public TPCTransactionContext 
+{
+    const std::string xid;
+public:
+    DummyCtxt(const std::string& _xid) : xid(_xid) {}
+    static std::string getXid(TransactionContext& ctxt) 
+    {
+        DummyCtxt* c(dynamic_cast<DummyCtxt*>(&ctxt));
+        return c ? c->xid : nullxid;
+    }
+};
+
+}
+}
+
 using namespace qpid::broker;
 
 NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
@@ -92,24 +112,27 @@ std::auto_ptr<TransactionContext> NullMessageStore::begin()
     return std::auto_ptr<TransactionContext>();
 }
 
-std::auto_ptr<TPCTransactionContext> NullMessageStore::begin(const std::string&)
+std::auto_ptr<TPCTransactionContext> NullMessageStore::begin(const std::string& xid)
 {
-    return std::auto_ptr<TPCTransactionContext>();
+    return std::auto_ptr<TPCTransactionContext>(new DummyCtxt(xid));
 }
 
-void NullMessageStore::prepare(TPCTransactionContext&)
+void NullMessageStore::prepare(TPCTransactionContext& ctxt)
 {
+    prepared.insert(DummyCtxt::getXid(ctxt));
 }
 
-void NullMessageStore::commit(TransactionContext&)
+void NullMessageStore::commit(TransactionContext& ctxt)
 {
+    prepared.erase(DummyCtxt::getXid(ctxt));
 }
 
-void NullMessageStore::abort(TransactionContext&)
+void NullMessageStore::abort(TransactionContext& ctxt)
 {
+    prepared.erase(DummyCtxt::getXid(ctxt));
 }
 
-void NullMessageStore::collectPreparedXids(std::set<string>&)
+void NullMessageStore::collectPreparedXids(std::set<string>& out)
 {
-
+    out.insert(prepared.begin(), prepared.end());
 }

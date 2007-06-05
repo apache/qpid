@@ -26,6 +26,7 @@
 #include "DtxWorkRecord.h"
 #include "TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/sys/Mutex.h"
 
 namespace qpid {
 namespace broker {
@@ -35,17 +36,20 @@ class DtxManager{
 
     WorkMap work;
     TransactionalStore* const store;
+    qpid::sys::Mutex lock;
 
+    void remove(const std::string& xid);
     WorkMap::iterator getWork(const std::string& xid);
-    WorkMap::iterator getOrCreateWork(std::string& xid);
+    WorkMap::iterator createWork(std::string& xid);
 
 public:
     DtxManager(TransactionalStore* const store);
     ~DtxManager();
     void start(std::string xid, DtxBuffer::shared_ptr work);
+    void join(std::string xid, DtxBuffer::shared_ptr work);
     void recover(std::string xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr work);
-    void prepare(const std::string& xid);
-    void commit(const std::string& xid);
+    bool prepare(const std::string& xid);
+    bool commit(const std::string& xid, bool onePhase);
     void rollback(const std::string& xid);
 };
 
