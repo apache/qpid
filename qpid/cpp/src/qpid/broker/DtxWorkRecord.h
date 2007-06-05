@@ -27,6 +27,7 @@
 #include "DtxBuffer.h"
 #include "TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/sys/Mutex.h"
 
 namespace qpid {
 namespace broker {
@@ -43,17 +44,20 @@ class DtxWorkRecord
     const std::string xid;
     TransactionalStore* const store;
     bool completed;
+    bool rolledback;
+    bool prepared;
     Work work;
     std::auto_ptr<TPCTransactionContext> txn;
+    qpid::sys::Mutex lock;
 
-    void checkCompletion();
+    bool check();
     void abort();
     bool prepare(TransactionContext* txn);
 public:
     DtxWorkRecord(const std::string& xid, TransactionalStore* const store);
     ~DtxWorkRecord();
     bool prepare();
-    void commit();
+    bool commit(bool onePhase);
     void rollback();
     void add(DtxBuffer::shared_ptr ops);
     void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
