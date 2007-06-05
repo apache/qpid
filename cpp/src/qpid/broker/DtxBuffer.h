@@ -31,6 +31,8 @@ namespace qpid {
             const std::string xid;
             bool ended;
             bool suspended;           
+            bool failed;
+
         public:
             typedef boost::shared_ptr<DtxBuffer> shared_ptr;
 
@@ -40,6 +42,8 @@ namespace qpid {
             bool isEnded();
             void setSuspended(bool suspended);
             bool isSuspended();
+            void fail();
+            bool isRollbackOnly();
             const std::string& getXid();
         };
     }

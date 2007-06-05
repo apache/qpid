@@ -99,7 +99,7 @@ Options:
         self.specfile = "0-8"
         self.errata = []
         try:
-            opts, self.tests = getopt(args, "s:b:h?dvi:I:", ["help", "spec", "server", "verbose", "ignore", "ignore-file"])
+            opts, self.tests = getopt(args, "s:e:b:h?dvi:I:", ["help", "spec", "errata=", "server", "verbose", "ignore", "ignore-file"])
         except GetoptError, e:
             self._die(str(e))
         for opt, value in opts:
@@ -278,14 +278,14 @@ class TestBase(unittest.TestCase):
         self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
 
     def assertChannelException(self, expectedCode, message):
-        if not isinstance(message, Message): self.fail("expected channel_close method")
+        if not isinstance(message, Message): self.fail("expected channel_close method, got %s" % (message))
         self.assertEqual("channel", message.method.klass.name)
         self.assertEqual("close", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)
 
 
     def assertConnectionException(self, expectedCode, message): 
-        if not isinstance(message, Message): self.fail("expected connection_close method")
+        if not isinstance(message, Message): self.fail("expected connection_close method, got %s" % (message))
         self.assertEqual("connection", message.method.klass.name)
         self.assertEqual("close", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)

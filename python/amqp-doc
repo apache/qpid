@@ -37,15 +37,17 @@ Options:
 """ % (msg, sys.argv[0])).strip()
 
 try:
-  opts, args = getopt(sys.argv[1:], "s:e", ["regexp", "spec="])
+  opts, args = getopt(sys.argv[1:], "s:ea:", ["regexp", "spec=", "additional="])
 except GetoptError, e:
   die(str(e))
 
 regexp = False
 spec = "../specs/amqp.0-9.xml"
+errata = []
 for k, v in opts:
   if k == "-e" or k == "--regexp": regexp = True
   if k == "-s" or k == "--spec": spec = v
+  if k == "-a" or k == "--additional": errata.append(v)
 
 if regexp:
   def match(pattern, value):
@@ -57,7 +59,7 @@ else:
   def match(pattern, value):
     return fnmatch(value, pattern)
 
-spec = load(spec)
+spec = load(spec, *errata)
 methods = {}
 patterns = args
 for pattern in patterns:
