@@ -59,7 +59,7 @@ class DtxWorkRecordTest : public CppUnit::TestCase
         work.add(bufferA);
         work.add(bufferB);
 
-        work.commit();
+        work.commit(true);
 
         store.check();
         CPPUNIT_ASSERT(store.isCommitted());
@@ -93,7 +93,7 @@ class DtxWorkRecordTest : public CppUnit::TestCase
         work.add(bufferB);
         work.add(bufferC);
 
-        work.commit();
+        work.commit(true);
 
         CPPUNIT_ASSERT(store.isAborted());
         store.check();
@@ -125,7 +125,7 @@ class DtxWorkRecordTest : public CppUnit::TestCase
 
         CPPUNIT_ASSERT(work.prepare());
         CPPUNIT_ASSERT(store.isPrepared());
-        work.commit();
+        work.commit(false);
         store.check();
         CPPUNIT_ASSERT(store.isCommitted());
         opA->check();

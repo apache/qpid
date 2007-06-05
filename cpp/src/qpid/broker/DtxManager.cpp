@@ -21,6 +21,7 @@
 #include "DtxManager.h"
 #include <boost/format.hpp>
 #include <iostream>
+using qpid::sys::Mutex;
 
 using namespace qpid::broker;
 
@@ -30,31 +31,40 @@ DtxManager::~DtxManager() {}
 
 void DtxManager::start(std::string xid, DtxBuffer::shared_ptr ops)
 {
-    getOrCreateWork(xid)->add(ops);
+    createWork(xid)->add(ops);
+}
+
+void DtxManager::join(std::string xid, DtxBuffer::shared_ptr ops)
+{
+    getWork(xid)->add(ops);
 }
 
 void DtxManager::recover(std::string xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops)
 {
-    getOrCreateWork(xid)->recover(txn, ops);
+    createWork(xid)->recover(txn, ops);
 }
 
-void DtxManager::prepare(const std::string& xid) 
+bool DtxManager::prepare(const std::string& xid) 
 { 
-    getWork(xid)->prepare();
+    return getWork(xid)->prepare();
 }
 
-void DtxManager::commit(const std::string& xid) 
+bool DtxManager::commit(const std::string& xid, bool onePhase) 
 { 
-    getWork(xid)->commit();
+    bool result = getWork(xid)->commit(onePhase);
+    remove(xid);
+    return result;
 }
 
 void DtxManager::rollback(const std::string& xid) 
 { 
     getWork(xid)->rollback();
+    remove(xid);
 }
 
 DtxManager::WorkMap::iterator DtxManager::getWork(const std::string& xid)
 {
+    Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
         throw ConnectionException(503, boost::format("Unrecognised xid %1%!") % xid);
@@ -62,11 +72,24 @@ DtxManager::WorkMap::iterator DtxManager::getWork(const std::string& xid)
     return i;
 }
 
-DtxManager::WorkMap::iterator DtxManager::getOrCreateWork(std::string& xid)
+void DtxManager::remove(const std::string& xid)
 {
+    Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
-        i = work.insert(xid, new DtxWorkRecord(xid, store)).first;
+        throw ConnectionException(503, boost::format("Unrecognised xid %1%!") % xid);
+    } else {
+        work.erase(i);
     }
-    return i;
+}
+
+DtxManager::WorkMap::iterator DtxManager::createWork(std::string& xid)
+{
+    Mutex::ScopedLock locker(lock); 
+    WorkMap::iterator i = work.find(xid);
+    if (i != work.end()) {
+        throw ConnectionException(503, boost::format("Xid %1% is already known (use 'join' to add work to an existing xid)!") % xid);
+    } else {
+        return work.insert(xid, new DtxWorkRecord(xid, store)).first;
+    }
 }

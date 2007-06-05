@@ -92,6 +92,7 @@ class Channel : public framing::ChannelAdapter,
     sys::Mutex deliveryLock;
     TxBuffer::shared_ptr txBuffer;
     DtxBuffer::shared_ptr dtxBuffer;
+    bool dtxSelected;
     AccumulatedAck accumulatedAck;
     MessageStore* const store;
     MessageBuilder messageBuilder;//builder for in-progress message
@@ -137,8 +138,9 @@ class Channel : public framing::ChannelAdapter,
     void startTx();
     void commit();
     void rollback();
-    void startDtx(const std::string& xid, DtxManager& mgr);
-    void endDtx(const std::string& xid);
+    void selectDtx();
+    void startDtx(const std::string& xid, DtxManager& mgr, bool join);
+    void endDtx(const std::string& xid, bool fail);
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
     void ack();
