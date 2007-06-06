@@ -114,3 +114,20 @@ class BrokerTests(TestBase):
         self.assertEqual(reply.method.klass.name, "channel")
         self.assertEqual(reply.method.name, "ok")
         #todo: provide a way to get notified of incoming pongs...
+
+    def test_channel_flow(self):
+        channel = self.channel
+        channel.queue_declare(queue="flow_test_queue", exclusive=True)
+        channel.message_consume(destination="my-tag", queue="flow_test_queue")
+        incoming = self.client.queue("my-tag")
+        
+        channel.channel_flow(active=False)        
+        channel.message_transfer(routing_key="flow_test_queue", body="abcdefghijklmnopqrstuvwxyz")
+        try:
+            incoming.get(timeout=1) 
+            self.fail("Received message when flow turned off.")
+        except Empty: None
+        
+        channel.channel_flow(active=True)
+        msg = incoming.get(timeout=1)
+        self.assertEqual("abcdefghijklmnopqrstuvwxyz", msg.body)
