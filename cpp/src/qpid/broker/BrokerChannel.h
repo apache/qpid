@@ -97,6 +97,7 @@ class Channel : public framing::ChannelAdapter,
     MessageStore* const store;
     MessageBuilder messageBuilder;//builder for in-progress message
     bool opened;
+    bool flowActive;
     boost::scoped_ptr<BrokerAdapter> adapter;
 
 	// completion handler for MessageBuilder
@@ -147,6 +148,7 @@ class Channel : public framing::ChannelAdapter,
     void ack(uint64_t deliveryTag, bool multiple);
     void ack(uint64_t deliveryTag, uint64_t endTag);
     void recover(bool requeue);
+    void flow(bool active);
     void deliver(Message::shared_ptr& msg, const string& consumerTag, uint64_t deliveryTag);            
     void handlePublish(Message* msg);
     void handleHeader(boost::shared_ptr<framing::AMQHeaderBody>);
