@@ -199,7 +199,8 @@ class Channel : public framing::ChannelAdapter
      * is received from the broker
      */
     void bind(const Exchange& exchange, const Queue& queue,
-              const std::string& key, const framing::FieldTable& args,
+              const std::string& key,
+              const framing::FieldTable& args=framing::FieldTable(),
               bool synch = true);
 
     /**
