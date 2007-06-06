@@ -66,6 +66,7 @@ Channel::Channel(
     store(_store),
     messageBuilder(this, _store, _stagingThreshold),
     opened(id == 0),//channel 0 is automatically open, other must be explicitly opened
+    flowActive(true),
     adapter(new BrokerAdapter(*this, con, con.broker))
 {
     outstanding.reset();
@@ -221,7 +222,7 @@ Channel::ConsumerImpl::ConsumerImpl(Channel* _parent, const string& _tag,
 
 bool Channel::ConsumerImpl::deliver(Message::shared_ptr& msg){
     if(!connection || connection != msg->getPublisher()){//check for no_local
-        if(ackExpected && !parent->checkPrefetch(msg)){
+        if(!parent->flowActive || (ackExpected && !parent->checkPrefetch(msg))){
             blocked = true;
         }else{
             blocked = false;
@@ -394,5 +395,16 @@ void Channel::handleMethodInContext(
         connection.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());
     }catch(std::exception& e){
         connection.close(541/*internal error*/, e.what(), method->amqpClassId(), method->amqpMethodId());
+    }
+}
+
+void Channel::flow(bool active)
+{
+    Mutex::ScopedLock locker(deliveryLock);
+    bool requestDelivery(!flowActive && active);
+    flowActive = active;
+    if (requestDelivery) {
+        //there may be messages that can be now be delivered
+        std::for_each(consumers.begin(), consumers.end(), boost::bind(&ConsumerImpl::requestDispatch, _1));
     }
 }

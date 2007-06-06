@@ -78,10 +78,7 @@ bool Queue::dispatch(Message::shared_ptr& msg){
     if(consumers.empty()){
         return false;
     }else if(exclusive){
-        if(!exclusive->deliver(msg)){
-            QPID_LOG(warning, "Dropping undeliverable message from queue with exclusive consumer.");
-        }
-        return true;
+        return exclusive->deliver(msg);
     }else{
         //deliver to next consumer
         next = next % consumers.size();
