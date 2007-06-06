@@ -1,0 +1,17 @@
+<!-- This is an assembly descriptor that produces a jar file that contains all the
+     dependencies, fully expanded into a single jar, required to run the tests of
+     a maven project. 
+ -->
+<assembly>
+  <id>source</id>
+  <formats>
+    <format>jar</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>src/main/java</directory>
+      <outputDirectory></outputDirectory>
+    </fileSet>
+  </fileSets>
+</assembly>
