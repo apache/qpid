@@ -100,7 +100,11 @@ void BrokerAdapter::ChannelHandlerImpl::open(
         std::string()/* ID */, context.getRequestId());
 } 
         
-void BrokerAdapter::ChannelHandlerImpl::flow(const MethodContext&, bool /*active*/){}         
+void BrokerAdapter::ChannelHandlerImpl::flow(const MethodContext& context, bool active){
+    channel.flow(active);
+    client.flowOk(active, context.getRequestId());
+}         
+
 void BrokerAdapter::ChannelHandlerImpl::flowOk(const MethodContext&, bool /*active*/){} 
         
 void BrokerAdapter::ChannelHandlerImpl::close(

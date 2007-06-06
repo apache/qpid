@@ -63,7 +63,7 @@ testprogs =		\
   topic_listener	\
   topic_publisher
 
-check_PROGRAMS = $(UNIT_TESTS) $(testprogs)
+check_PROGRAMS = $(UNIT_TESTS) $(testprogs) interop_runner
 
 # FIXME aconway 2007-05-30: TESTS_ENVIRONMENT should have ./run_test
 # as below to run valgrind on all test programs.
@@ -137,3 +137,15 @@ check-unit:
 
 CLEANFILES=valgrind.out qpidd.log .valgrindrc .valgrind.supp
 MAINTAINERCLEANFILES=gen.mk
+
+interop_runner_SOURCES = 	\
+  interop_runner.cpp	 	\
+  SimpleTestCaseBase.cpp	\
+  BasicP2PTest.cpp		\
+  BasicPubSubTest.cpp		\
+  SimpleTestCaseBase.h		\
+  BasicP2PTest.h		\
+  BasicPubSubTest.h		\
+  TestCase.h			\
+  TestOptions.h
+interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
