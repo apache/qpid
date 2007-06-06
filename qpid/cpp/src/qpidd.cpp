@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
     try {
         config.parse(argc, argv);
         if (config.trace)
-            config.selectors.push_back("trace");
+            config.selectors.push_back("trace+");
         log::Logger::instance().configure(config, argv[0]);
         string name=(boost::format("%s.%d")
                      % Daemon::nameFromArgv0(argv[0])
