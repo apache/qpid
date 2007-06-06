@@ -34,7 +34,6 @@
 #include "qpid/client/ClientMessage.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/framing/FieldTable.h"
 
 using namespace qpid::client;
 using namespace qpid::sys;
@@ -90,8 +89,7 @@ int main(int argc, char**)
 	if (verbose) std::cout << "Declared queue." << std::endl;
 
         //now bind the queue to the exchange
-	qpid::framing::FieldTable args;
-	channel.bind(exchange, queue, "MyTopic", args);
+	channel.bind(exchange, queue, "MyTopic");
 	if (verbose) std::cout << "Bound queue to exchange." << std::endl;
 
 	//Set up a message listener to receive any messages that
