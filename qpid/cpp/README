@@ -39,6 +39,8 @@ Qpid is compiled against libraries:
  * boost   <http://www.boost.org>           (1.33.1)
  * cppunit <http://cppunit.sourceforge.net> (1.11.4)
  * libdaemon <http://www.stud.uni-hamburg.de/users/lennart/projects/libdaemon> (0.10)
+ * opeais <http://www.openais.org/>         (0.80.2)
+
 Using tools:
 
  * boost-jam  <http://boost.sourceforge.net/>          (3.1.13)
@@ -52,30 +54,30 @@ Using tools:
  * graphviz   <http://www.graphviz.org/>               (2.12)
  * JDK 5.0    <http://java.sun.com/j2se/1.5.0/>        (1.5.0.11)
 
-=== Optional tools ===
+=== Optional tools an libraries ===
 
-Building from a source distribution does not require:
+If openais is not installed the broker will be built without cluster
+functionality.
 
- * autoconf
- * automake
- * JDK 5.0
-
-Building without testing does not require:
-
- * cppunit
-
-Building without documentaion does not require:
-
+The following are only required if you generate documentation.
+(Source distributions contain pre-generated documentation.)
  * help2man
  * doxygen
  * graphviz
+
+cppunit is not required if you do not build/run the tests.
+
+If building from a source distribution you do not need:
+ * autoconf
+ * automake
+ * JDK 5.0
 
 === Installing as root ===
 
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
 
-  # yum install apr-devel boost-devel cppunit-devel libdaemon-devel
+  # yum install apr-devel boost-devel cppunit-devel libdaemon-devel openais-devel
   # yum install pkgconfig doxygen graphviz help2man
 
 
