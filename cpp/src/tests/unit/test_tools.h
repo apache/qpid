@@ -19,7 +19,6 @@
  *
  */
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/regex.hpp>
@@ -51,3 +50,4 @@ inline bool regexPredicate(const std::string& re, const std::string& text) {
     BOOST_CHECK_PREDICATE(regexPredicate, (re)(text))
 
 #endif  /*!TEST_TOOLS_H*/
+
