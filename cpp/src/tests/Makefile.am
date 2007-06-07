@@ -1,13 +1,18 @@
 AM_CXXFLAGS = $(WARNING_CFLAGS) $(CPPUNIT_CXXFLAGS)   $(APR_CXXFLAGS)
 INCLUDES =  -I$(srcdir)/.. -I$(srcdir)/../gen -I$(top_builddir)/src/gen
 
-
-# Unit test programs
+#
+# Unit test programs.
+# 
 UNIT_TESTS=
 
 UNIT_TESTS+=logging
 logging_SOURCES=unit/logging.cpp unit/test_tools.h
 logging_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common)
+
+if CLUSTER
+include cluster.mk
+endif
 
 # NB: CppUnit test libraries below will be migrated to boost test programs.
 # UNIT_TESTS+= ...
@@ -63,7 +68,8 @@ testprogs =		\
   topic_listener	\
   topic_publisher
 
-check_PROGRAMS = $(UNIT_TESTS) $(testprogs) interop_runner
+
+check_PROGRAMS = $(UNIT_TESTS) $(AIS_UNIT_TESTS) $(testprogs) interop_runner
 
 # FIXME aconway 2007-05-30: TESTS_ENVIRONMENT should have ./run_test
 # as below to run valgrind on all test programs.
@@ -73,7 +79,7 @@ check_PROGRAMS = $(UNIT_TESTS) $(testprogs) interop_runner
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
 
 SYSTEM_TESTS = client_test quick_topictest
-TESTS = $(UNIT_TESTS) run-unit-tests start_broker $(SYSTEM_TESTS) python_tests kill_broker daemon_test
+TESTS = $(UNIT_TESTS) run-unit-tests $(RUN_AIS_TESTS) start_broker $(SYSTEM_TESTS) python_tests kill_broker daemon_test
 
 EXTRA_DIST =								\
   test_env								\

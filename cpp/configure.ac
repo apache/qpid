@@ -158,10 +158,20 @@ AC_SUBST(DOWNLOAD_URL)
 
 # Check for headers from required devel kits.
 missing=""
-AC_CHECK_HEADERS([libdaemon/daemon.h],,[missing="$missing libdaemon development files"])
-AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost developement files"])
+AC_CHECK_HEADERS([libdaemon/daemon.h],,[missing="$missing libdaemon"])
+AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost"])
 test -z "$missing" ||
     AC_MSG_ERROR([Missing required headers. Install the folowing packages or -devel rpms: $missing.])
+
+# Enable/disable cluster functionality based on presence of openais
+AC_CHECK_HEADER([openais/cpg.h],[cluster=yes],[cluster=no])
+AM_CONDITIONAL([CLUSTER], test x$cluster = xyes)
+if test x$cluster = xyes; then
+   LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
+   CPPFLAGS+=-DCLUSTER
+   AC_CHECK_LIB([cpg], [cpg_initialize], [],
+     [AC_MSG_ERROR([Cannot find library -lcpg. Install openais.])])
+fi
 
 AC_CONFIG_FILES([
   qpidc.spec

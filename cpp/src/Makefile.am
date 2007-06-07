@@ -103,6 +103,10 @@ endif
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
+if CLUSTER
+include cluster.mk
+endif
+
 # The logger library uses boost::date_time to format time.
 # We have to disable the unused parameters warning to get around
 # unused parameters in boost::date_time headers. So we build it
@@ -209,16 +213,16 @@ libqpidbroker_la_SOURCES = \
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
-  qpid/client/ClientConnection.cpp				\
-  qpid/client/ClientChannel.cpp				\
-  qpid/client/ClientExchange.cpp				\
-  qpid/client/ClientQueue.cpp				\
-  qpid/client/BasicMessageChannel.cpp			\
-  qpid/client/MessageMessageChannel.cpp			\
-  qpid/client/Connector.cpp				\
-  qpid/client/IncomingMessage.cpp				\
-  qpid/client/MessageListener.cpp				\
-  qpid/client/ResponseHandler.cpp				\
+  qpid/client/ClientConnection.cpp		\
+  qpid/client/ClientChannel.cpp			\
+  qpid/client/ClientExchange.cpp		\
+  qpid/client/ClientQueue.cpp			\
+  qpid/client/BasicMessageChannel.cpp		\
+  qpid/client/MessageMessageChannel.cpp		\
+  qpid/client/Connector.cpp			\
+  qpid/client/IncomingMessage.cpp		\
+  qpid/client/MessageListener.cpp		\
+  qpid/client/ResponseHandler.cpp		\
   qpid/client/ReturnedMessageHandler.cpp
 
 nobase_include_HEADERS = \

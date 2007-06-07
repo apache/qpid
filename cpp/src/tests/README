@@ -57,7 +57,7 @@ They are listed in the TESTS make variable, which can be over-ridden.
 The ./start_broker "test" launches the broker, ./kill_broker" kills it.
 Tests in between assume the broker is running.
 
-./run-python-tests: runs ../python/run_tests. This is the main set of
+./python_tests: runs ../python/run_tests. This is the main set of
 system testss for the broker.
 
 Other C++ client test executables and scripts under client/test are
