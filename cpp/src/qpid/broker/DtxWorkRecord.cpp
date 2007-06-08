@@ -27,9 +27,14 @@ using qpid::sys::Mutex;
 using namespace qpid::broker;
 
 DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const _store) : 
-    xid(_xid), store(_store), completed(false), rolledback(false), prepared(false) {}
+    xid(_xid), store(_store), completed(false), rolledback(false), prepared(false), expired(false) {}
 
-DtxWorkRecord::~DtxWorkRecord() {}
+DtxWorkRecord::~DtxWorkRecord() 
+{
+    if (timeout.get()) {  
+        timeout->cancelled = true;
+    }
+}
 
 bool DtxWorkRecord::prepare()
 {
@@ -110,6 +115,9 @@ void DtxWorkRecord::rollback()
 void DtxWorkRecord::add(DtxBuffer::shared_ptr ops)
 {
     Mutex::ScopedLock locker(lock); 
+    if (expired) {
+        throw DtxTimeoutException();
+    }
     if (completed) {
         throw ConnectionException(503, boost::format("Branch with xid %1% has been completed!") % xid);
     }
@@ -118,6 +126,9 @@ void DtxWorkRecord::add(DtxBuffer::shared_ptr ops)
 
 bool DtxWorkRecord::check()
 {
+    if (expired) {
+        throw DtxTimeoutException();
+    }
     if (!completed) {
         //iterate through all DtxBuffers and ensure they are all ended
         for (Work::iterator i = work.begin(); i != work.end(); i++) {
@@ -148,4 +159,19 @@ void DtxWorkRecord::recover(std::auto_ptr<TPCTransactionContext> _txn, DtxBuffer
     ops->markEnded();
     completed = true;
     prepared = true;
+}
+
+void DtxWorkRecord::timedout()
+{
+    Mutex::ScopedLock locker(lock); 
+    expired = true;
+    rolledback = true;
+    if (!completed) {
+        for (Work::iterator i = work.begin(); i != work.end(); i++) {
+            if (!(*i)->isEnded()) {
+                (*i)->timedout();
+            }
+        }
+    }
+    abort();
 }

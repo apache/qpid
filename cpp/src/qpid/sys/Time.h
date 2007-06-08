@@ -44,6 +44,9 @@ public:
 	 
 	static AbsTime now();
 	inline static AbsTime FarFuture();
+
+        friend bool operator<(const AbsTime& a, const AbsTime& b);
+        friend bool operator>(const AbsTime& a, const AbsTime& b);
 };
 
 class Duration {
@@ -66,6 +69,9 @@ AbsTime::AbsTime(const AbsTime& time0, const Duration& duration0) :
 AbsTime AbsTime::FarFuture() { AbsTime ff; ff.time_ns = std::numeric_limits<int64_t>::max(); return ff;}
 
 inline AbsTime now() { return AbsTime::now(); }
+
+inline bool operator<(const AbsTime& a, const AbsTime& b) { return a.time_ns < b.time_ns; }
+inline bool operator>(const AbsTime& a, const AbsTime& b) { return a.time_ns > b.time_ns; }
 
 Duration::Duration(int64_t time0) :
 	nanosecs(time0)

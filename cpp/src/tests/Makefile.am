@@ -32,6 +32,7 @@ broker_unit_tests =	\
   QueueRegistryTest	\
   QueueTest		\
   QueuePolicyTest	\
+  TimerTest		\
   TopicExchangeTest	\
   TxAckTest		\
   TxBufferTest		\

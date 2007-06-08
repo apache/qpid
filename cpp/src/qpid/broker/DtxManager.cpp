@@ -19,6 +19,8 @@
  *
  */
 #include "DtxManager.h"
+#include "DtxTimeout.h"
+#include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <iostream>
 using qpid::sys::Mutex;
@@ -29,37 +31,52 @@ DtxManager::DtxManager(TransactionalStore* const _store) : store(_store) {}
 
 DtxManager::~DtxManager() {}
 
-void DtxManager::start(std::string xid, DtxBuffer::shared_ptr ops)
+void DtxManager::start(const std::string& xid, DtxBuffer::shared_ptr ops)
 {
     createWork(xid)->add(ops);
 }
 
-void DtxManager::join(std::string xid, DtxBuffer::shared_ptr ops)
+void DtxManager::join(const std::string& xid, DtxBuffer::shared_ptr ops)
 {
     getWork(xid)->add(ops);
 }
 
-void DtxManager::recover(std::string xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops)
+void DtxManager::recover(const std::string& xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops)
 {
     createWork(xid)->recover(txn, ops);
 }
 
 bool DtxManager::prepare(const std::string& xid) 
 { 
-    return getWork(xid)->prepare();
+    try {
+        return getWork(xid)->prepare();
+    } catch (DtxTimeoutException& e) {
+        remove(xid);
+        throw e;
+    }
 }
 
 bool DtxManager::commit(const std::string& xid, bool onePhase) 
 { 
-    bool result = getWork(xid)->commit(onePhase);
-    remove(xid);
-    return result;
+    try {
+        bool result = getWork(xid)->commit(onePhase);
+        remove(xid);
+        return result;
+    } catch (DtxTimeoutException& e) {
+        remove(xid);
+        throw e;
+    }
 }
 
 void DtxManager::rollback(const std::string& xid) 
 { 
-    getWork(xid)->rollback();
-    remove(xid);
+    try {
+        getWork(xid)->rollback();
+        remove(xid);
+    } catch (DtxTimeoutException& e) {
+        remove(xid);
+        throw e;
+    }
 }
 
 DtxManager::WorkMap::iterator DtxManager::getWork(const std::string& xid)
@@ -83,7 +100,7 @@ void DtxManager::remove(const std::string& xid)
     }
 }
 
-DtxManager::WorkMap::iterator DtxManager::createWork(std::string& xid)
+DtxManager::WorkMap::iterator DtxManager::createWork(std::string xid)
 {
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
@@ -91,5 +108,50 @@ DtxManager::WorkMap::iterator DtxManager::createWork(std::string& xid)
         throw ConnectionException(503, boost::format("Xid %1% is already known (use 'join' to add work to an existing xid)!") % xid);
     } else {
         return work.insert(xid, new DtxWorkRecord(xid, store)).first;
+    }
+}
+
+void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
+{
+    WorkMap::iterator record = getWork(xid);
+    DtxTimeout::shared_ptr timeout = record->getTimeout();
+    if (timeout.get()) {
+        if (timeout->timeout == secs) return;//no need to do anything further if timeout hasn't changed
+        timeout->cancelled = true;
+    }
+    timeout = DtxTimeout::shared_ptr(new DtxTimeout(secs, *this, xid));
+    record->setTimeout(timeout);
+    timer.add(boost::static_pointer_cast<TimerTask>(timeout));
+    
+}
+
+uint32_t DtxManager::getTimeout(const std::string& xid)
+{
+    DtxTimeout::shared_ptr timeout = getWork(xid)->getTimeout();
+    return !timeout ? 0 : timeout->timeout;
+}
+
+void DtxManager::timedout(const std::string& xid)
+{
+    Mutex::ScopedLock locker(lock); 
+    WorkMap::iterator i = work.find(xid);
+    if (i == work.end()) {
+        QPID_LOG(warning, "Transaction timeout failed: no record for xid");
+    } else {
+        i->timedout();
+        //TODO: do we want to have a timed task to cleanup, or can we rely on an explicit completion?
+        //timer.add(TimerTask::shared_ptr(new DtxCleanup(60*30/*30 mins*/, *this, xid)));
+    }
+}
+
+DtxManager::DtxCleanup::DtxCleanup(uint32_t _timeout, DtxManager& _mgr, const std::string& _xid) 
+    : TimerTask(qpid::sys::Duration(_timeout * qpid::sys::TIME_SEC)), mgr(_mgr), xid(_xid) {}
+
+void DtxManager::DtxCleanup::fire()
+{
+    try {
+        mgr.remove(xid);
+    } catch (ConnectionException& e) {
+        //assume it was explicitly cleaned up after a call to prepare, commit or rollback
     }
 }
