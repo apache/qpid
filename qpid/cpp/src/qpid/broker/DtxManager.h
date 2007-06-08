@@ -24,6 +24,7 @@
 #include <boost/ptr_container/ptr_map.hpp>
 #include "DtxBuffer.h"
 #include "DtxWorkRecord.h"
+#include "Timer.h"
 #include "TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
@@ -34,23 +35,37 @@ namespace broker {
 class DtxManager{
     typedef boost::ptr_map<std::string, DtxWorkRecord> WorkMap;
 
+
+    struct DtxCleanup : public TimerTask
+    {
+        DtxManager& mgr;
+        const std::string& xid;
+        
+        DtxCleanup(uint32_t timeout, DtxManager& mgr, const std::string& xid);    
+        void fire();
+    };
+
     WorkMap work;
     TransactionalStore* const store;
     qpid::sys::Mutex lock;
+    Timer timer;
 
     void remove(const std::string& xid);
     WorkMap::iterator getWork(const std::string& xid);
-    WorkMap::iterator createWork(std::string& xid);
+    WorkMap::iterator createWork(std::string xid);
 
 public:
     DtxManager(TransactionalStore* const store);
     ~DtxManager();
-    void start(std::string xid, DtxBuffer::shared_ptr work);
-    void join(std::string xid, DtxBuffer::shared_ptr work);
-    void recover(std::string xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr work);
+    void start(const std::string& xid, DtxBuffer::shared_ptr work);
+    void join(const std::string& xid, DtxBuffer::shared_ptr work);
+    void recover(const std::string& xid, std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr work);
     bool prepare(const std::string& xid);
     bool commit(const std::string& xid, bool onePhase);
     void rollback(const std::string& xid);
+    void setTimeout(const std::string& xid, uint32_t secs);
+    uint32_t getTimeout(const std::string& xid);
+    void timedout(const std::string& xid);
 };
 
 }

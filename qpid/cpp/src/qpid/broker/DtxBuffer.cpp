@@ -23,7 +23,8 @@
 using namespace qpid::broker;
 using qpid::sys::Mutex;
 
-DtxBuffer::DtxBuffer(const std::string& _xid) : xid(_xid), ended(false), suspended(false), failed(false) {}
+DtxBuffer::DtxBuffer(const std::string& _xid) 
+    : xid(_xid), ended(false), suspended(false), failed(false), expired(false) {}
 
 DtxBuffer::~DtxBuffer() {}
 
@@ -68,3 +69,15 @@ const std::string& DtxBuffer::getXid()
     return xid;
 }
 
+void DtxBuffer::timedout()
+{
+    Mutex::ScopedLock locker(lock); 
+    expired = true;
+    fail();
+}
+
+bool DtxBuffer::isExpired()
+{
+    Mutex::ScopedLock locker(lock); 
+    return expired;
+}

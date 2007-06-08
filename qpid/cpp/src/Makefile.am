@@ -189,6 +189,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/DtxBuffer.cpp \
   qpid/broker/DtxHandlerImpl.cpp \
   qpid/broker/DtxManager.cpp \
+  qpid/broker/DtxTimeout.cpp \
   qpid/broker/DtxWorkRecord.cpp \
   qpid/broker/ExchangeRegistry.cpp \
   qpid/broker/FanOutExchange.cpp \
@@ -206,6 +207,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
   qpid/broker/Reference.cpp \
+  qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TxAck.cpp \
   qpid/broker/TxBuffer.cpp \
@@ -243,6 +245,7 @@ nobase_include_HEADERS = \
   qpid/broker/DtxBuffer.h \
   qpid/broker/DtxHandlerImpl.h \
   qpid/broker/DtxManager.h \
+  qpid/broker/DtxTimeout.h \
   qpid/broker/DtxWorkRecord.h \
   qpid/broker/ExchangeRegistry.h \
   qpid/broker/FanOutExchange.h \
@@ -285,6 +288,7 @@ nobase_include_HEADERS = \
   qpid/broker/PersistableQueue.h \
   qpid/broker/QueuePolicy.h \
   qpid/broker/RecoveryManagerImpl.h \
+  qpid/broker/Timer.h \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \
   qpid/broker/TxAck.h \

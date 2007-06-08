@@ -106,6 +106,8 @@ class Channel : public framing::ChannelAdapter,
     void deliver(Message::shared_ptr& msg, const string& tag,
                  Queue::shared_ptr& queue, bool ackExpected);            
     bool checkPrefetch(Message::shared_ptr& msg);
+
+    void checkDtxTimeout();
         
   public:
     Channel(Connection& parent,

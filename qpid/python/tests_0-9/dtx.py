@@ -21,6 +21,7 @@ from qpid.queue import Empty
 from qpid.content import Content
 from qpid.testlib import testrunner, TestBase
 from struct import pack, unpack
+from time import sleep
 
 class DtxTests(TestBase):
     """
@@ -37,6 +38,7 @@ class DtxTests(TestBase):
     """
 
     XA_RBROLLBACK = 1
+    XA_RBTIMEOUT = 2
     XA_OK = 8
 
     def test_simple_commit(self):
@@ -450,6 +452,51 @@ class DtxTests(TestBase):
 
         self.assertEqual(self.XA_RBROLLBACK, channel1.dtx_coordination_prepare(xid=tx).flags)
         channel1.dtx_coordination_rollback(xid=tx)
+
+    def test_get_timeout(self):
+        """        
+        Check that get-timeout returns the correct value, (and that a
+        transaction with a timeout can complete normally)        
+        """
+        channel = self.channel
+        tx = self.xid("dummy")
+
+        channel.dtx_demarcation_select()
+        channel.dtx_demarcation_start(xid=tx)
+        self.assertEqual(0, channel.dtx_coordination_get_timeout(xid=tx).timeout)
+        channel.dtx_coordination_set_timeout(xid=tx, timeout=60)
+        self.assertEqual(60, channel.dtx_coordination_get_timeout(xid=tx).timeout)
+        self.assertEqual(self.XA_OK, channel.dtx_demarcation_end(xid=tx).flags)
+        self.assertEqual(self.XA_OK, channel.dtx_coordination_rollback(xid=tx).flags)        
+        
+    def test_set_timeout(self):
+        """        
+        Test the timeout of a transaction results in the expected
+        behaviour        
+        """
+        #open new channel to allow self.channel to be used in checking te queue
+        channel = self.client.channel(2)
+        channel.channel_open()
+        #setup:
+        tx = self.xid("dummy")
+        channel.queue_declare(queue="queue-a", exclusive=True)
+        channel.queue_declare(queue="queue-b", exclusive=True)
+        channel.message_transfer(routing_key="queue-a", message_id="timeout", body="DtxMessage")
+
+        channel.dtx_demarcation_select()
+        channel.dtx_demarcation_start(xid=tx)
+        self.swap(channel, "queue-a", "queue-b")
+        channel.dtx_coordination_set_timeout(xid=tx, timeout=2)
+        sleep(3)
+        #check that the work has been rolled back already
+        self.assertMessageCount(1, "queue-a")
+        self.assertMessageCount(0, "queue-b")
+        self.assertMessageId("timeout", "queue-a")
+        #check the correct codes are returned when we try to complete the txn
+        self.assertEqual(self.XA_RBTIMEOUT, channel.dtx_demarcation_end(xid=tx).flags)
+        self.assertEqual(self.XA_RBTIMEOUT, channel.dtx_coordination_rollback(xid=tx).flags)        
+
+
 
     def test_recover(self):
         """
