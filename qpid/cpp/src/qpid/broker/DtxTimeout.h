@@ -18,38 +18,36 @@
  * under the License.
  *
  */
-#ifndef _DtxBuffer_
-#define _DtxBuffer_
+#ifndef _DtxTimeout_
+#define _DtxTimeout_
 
-#include "TxBuffer.h"
-#include "qpid/sys/Mutex.h"
+#include "qpid/Exception.h"
+#include "Timer.h"
 
 namespace qpid {
-    namespace broker {
-        class DtxBuffer : public TxBuffer{
-            sys::Mutex lock;
-            const std::string xid;
-            bool ended;
-            bool suspended;           
-            bool failed;
-            bool expired;
+namespace broker {
 
-        public:
-            typedef boost::shared_ptr<DtxBuffer> shared_ptr;
+class DtxManager;
 
-            DtxBuffer(const std::string& xid = "");
-            ~DtxBuffer();
-            void markEnded();
-            bool isEnded();
-            void setSuspended(bool suspended);
-            bool isSuspended();
-            void fail();
-            bool isRollbackOnly();
-            void timedout();
-            bool isExpired();
-            const std::string& getXid();
-        };
-    }
+
+struct DtxTimeoutException : public Exception 
+{
+    DtxTimeoutException() {}
+};
+
+
+struct DtxTimeout : public TimerTask
+{
+    typedef boost::shared_ptr<DtxTimeout> shared_ptr;
+    const uint32_t timeout;
+    DtxManager& mgr;
+    const std::string xid;
+    
+    DtxTimeout(uint32_t timeout, DtxManager& mgr, const std::string& xid);    
+    void fire();
+};
+
+}
 }
 
 

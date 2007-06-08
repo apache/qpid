@@ -61,21 +61,24 @@ void DtxHandlerImpl::end(const MethodContext& context,
                          bool fail,
                          bool suspend)
 {
-
-    if (fail) {
-        channel.endDtx(xid, true);
-        if (suspend) {
-            throw ConnectionException(503, "End and suspend cannot both be set.");
+    try {
+        if (fail) {
+            channel.endDtx(xid, true);
+            if (suspend) {
+                throw ConnectionException(503, "End and suspend cannot both be set.");
+            } else {
+                dClient.endOk(XA_RBROLLBACK, context.getRequestId());
+            }
         } else {
-            dClient.endOk(XA_RBROLLBACK, context.getRequestId());
+            if (suspend) {
+                channel.suspendDtx(xid);
+            } else {
+                channel.endDtx(xid, false);
+            }
+            dClient.endOk(XA_OK, context.getRequestId());
         }
-    } else {
-        if (suspend) {
-            channel.suspendDtx(xid);
-        } else {
-            channel.endDtx(xid, false);
-        }
-        dClient.endOk(XA_OK, context.getRequestId());
+    } catch (DtxTimeoutException e) {
+        dClient.endOk(XA_RBTIMEOUT, context.getRequestId());        
     }
 }
 
@@ -88,12 +91,16 @@ void DtxHandlerImpl::start(const MethodContext& context,
     if (join && resume) {
         throw ConnectionException(503, "Join and resume cannot both be set.");
     }
-    if (resume) {
-        channel.resumeDtx(xid);
-    } else {
-        channel.startDtx(xid, broker.getDtxManager(), join);
+    try {
+        if (resume) {
+            channel.resumeDtx(xid);
+        } else {
+            channel.startDtx(xid, broker.getDtxManager(), join);
+        }
+        dClient.startOk(XA_OK, context.getRequestId());
+    } catch (DtxTimeoutException e) {
+        dClient.startOk(XA_RBTIMEOUT, context.getRequestId());        
     }
-    dClient.startOk(XA_OK, context.getRequestId());
 }
 
 // DtxCoordinationHandler:
@@ -102,8 +109,12 @@ void DtxHandlerImpl::prepare(const MethodContext& context,
                              u_int16_t /*ticket*/,
                              const string& xid)
 {
-    bool ok = broker.getDtxManager().prepare(xid);
-    cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
+    try {
+        bool ok = broker.getDtxManager().prepare(xid);
+        cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
+    } catch (DtxTimeoutException e) {
+        cClient.prepareOk(XA_RBTIMEOUT, context.getRequestId());        
+    }
 }
 
 void DtxHandlerImpl::commit(const MethodContext& context,
@@ -111,8 +122,12 @@ void DtxHandlerImpl::commit(const MethodContext& context,
                             const string& xid,
                             bool onePhase)
 {
-    bool ok = broker.getDtxManager().commit(xid, onePhase);
-    cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
+    try {
+        bool ok = broker.getDtxManager().commit(xid, onePhase);
+        cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
+    } catch (DtxTimeoutException e) {
+        cClient.commitOk(XA_RBTIMEOUT, context.getRequestId());        
+    }
 }
 
 
@@ -120,8 +135,12 @@ void DtxHandlerImpl::rollback(const MethodContext& context,
                               u_int16_t /*ticket*/,
                               const string& xid )
 {
-    broker.getDtxManager().rollback(xid);
-    cClient.rollbackOk(XA_OK, context.getRequestId());
+    try {
+        broker.getDtxManager().rollback(xid);
+        cClient.rollbackOk(XA_OK, context.getRequestId());
+    } catch (DtxTimeoutException e) {
+        cClient.rollbackOk(XA_RBTIMEOUT, context.getRequestId());        
+    }
 }
 
 void DtxHandlerImpl::recover(const MethodContext& context,
@@ -129,8 +148,6 @@ void DtxHandlerImpl::recover(const MethodContext& context,
                              bool /*startscan*/,
                              u_int32_t /*endscan*/ )
 {
-    //TODO
-
     //TODO: what do startscan and endscan actually mean?
 
     // response should hold on key value pair with key = 'xids' and
@@ -171,19 +188,21 @@ void DtxHandlerImpl::forget(const MethodContext& /*context*/,
     throw ConnectionException(503, boost::format("Forget is invalid. Branch with xid %1% not heuristically completed!") % xid);
 }
 
-void DtxHandlerImpl::getTimeout(const MethodContext& /*context*/,
-                                const string& /*xid*/ )
+void DtxHandlerImpl::getTimeout(const MethodContext& context,
+                                const string& xid)
 {
-    //TODO
+    uint32_t timeout = broker.getDtxManager().getTimeout(xid);
+    cClient.getTimeoutOk(timeout, context.getRequestId());    
 }
 
 
-void DtxHandlerImpl::setTimeout(const MethodContext& /*context*/,
+void DtxHandlerImpl::setTimeout(const MethodContext& context,
                                 u_int16_t /*ticket*/,
-                                const string& /*xid*/,
-                                u_int32_t /*timeout*/ )
+                                const string& xid,
+                                u_int32_t timeout)
 {
-    //TODO
+    broker.getDtxManager().setTimeout(xid, timeout);
+    cClient.setTimeoutOk(context.getRequestId());    
 }
 
 

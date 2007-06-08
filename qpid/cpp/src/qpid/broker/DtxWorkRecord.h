@@ -25,6 +25,7 @@
 #include <functional>
 #include <vector>
 #include "DtxBuffer.h"
+#include "DtxTimeout.h"
 #include "TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
@@ -46,6 +47,8 @@ class DtxWorkRecord
     bool completed;
     bool rolledback;
     bool prepared;
+    bool expired;
+    DtxTimeout::shared_ptr timeout;
     Work work;
     std::auto_ptr<TPCTransactionContext> txn;
     qpid::sys::Mutex lock;
@@ -61,6 +64,9 @@ public:
     void rollback();
     void add(DtxBuffer::shared_ptr ops);
     void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
+    void timedout();
+    void setTimeout(DtxTimeout::shared_ptr t) { timeout = t; }
+    DtxTimeout::shared_ptr getTimeout() { return timeout; }
 };
 
 }
