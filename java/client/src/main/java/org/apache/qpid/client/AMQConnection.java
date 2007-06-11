@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
@@ -48,6 +46,9 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.url.URLSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 import javax.naming.NamingException;
@@ -71,7 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
-    private static final Logger _logger = Logger.getLogger(AMQConnection.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
 
     private AtomicInteger _idFactory = new AtomicInteger(0);
 

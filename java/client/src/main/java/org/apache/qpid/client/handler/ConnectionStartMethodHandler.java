@@ -20,16 +20,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import java.io.UnsupportedEncodingException;
-import java.util.HashSet;
-import java.util.StringTokenizer;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.security.AMQCallbackHandler;
@@ -47,9 +37,20 @@ import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+
+import java.io.UnsupportedEncodingException;
+import java.util.HashSet;
+import java.util.StringTokenizer;
+
 public class ConnectionStartMethodHandler implements StateAwareMethodListener
 {
-    private static final Logger _log = Logger.getLogger(ConnectionStartMethodHandler.class);
+    private static final Logger _log = LoggerFactory.getLogger(ConnectionStartMethodHandler.class);
 
     private static final ConnectionStartMethodHandler _instance = new ConnectionStartMethodHandler();
 
@@ -62,15 +63,14 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
     { }
 
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-                        throws AMQException
+        throws AMQException
     {
         _log.debug("public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, "
-                   + "AMQMethodEvent evt): called");
+            + "AMQMethodEvent evt): called");
 
         ConnectionStartBody body = (ConnectionStartBody) evt.getMethod();
 
-        ProtocolVersion pv = new ProtocolVersion((byte) body.versionMajor,(byte) body.versionMinor);
-
+        ProtocolVersion pv = new ProtocolVersion((byte) body.versionMajor, (byte) body.versionMinor);
 
         // For the purposes of interop, we can make the client accept the broker's version string.
         // If it does, it then internally records the version as being the latest one that it understands.
@@ -110,7 +110,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 {
                     SaslClient sc =
                         Sasl.createSaslClient(new String[] { mechanism }, null, "AMQP", "localhost", null,
-                                              createCallbackHandler(mechanism, protocolSession));
+                            createCallbackHandler(mechanism, protocolSession));
                     if (sc == null)
                     {
                         throw new AMQException(
@@ -149,23 +149,22 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
                 FieldTable clientProperties = FieldTableFactory.newFieldTable();
 
                 clientProperties.setString(new AMQShortString(ClientProperties.instance.toString()),
-                                           protocolSession.getClientID());
+                    protocolSession.getClientID());
                 clientProperties.setString(new AMQShortString(ClientProperties.product.toString()),
-                                           QpidProperties.getProductName());
+                    QpidProperties.getProductName());
                 clientProperties.setString(new AMQShortString(ClientProperties.version.toString()),
-                                           QpidProperties.getReleaseVersion());
+                    QpidProperties.getReleaseVersion());
                 clientProperties.setString(new AMQShortString(ClientProperties.platform.toString()), getFullSystemInfo());
 
                 // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                 // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                 // Be aware of possible changes to parameter order as versions change.
                 protocolSession.writeFrame(ConnectionStartOkBody.createAMQFrame(evt.getChannelId(),
-                                                                                protocolSession.getProtocolMajorVersion(),
-                                                                                protocolSession.getProtocolMinorVersion(),
-                                                                                clientProperties, // clientProperties
-                                                                                new AMQShortString(selectedLocale), // locale
-                                                                                new AMQShortString(mechanism), // mechanism
-                                                                                saslResponse)); // response
+                        protocolSession.getProtocolMajorVersion(), protocolSession.getProtocolMinorVersion(),
+                        clientProperties, // clientProperties
+                        new AMQShortString(selectedLocale), // locale
+                        new AMQShortString(mechanism), // mechanism
+                        saslResponse)); // response
 
             }
             catch (UnsupportedEncodingException e)
@@ -176,13 +175,12 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
         else
         {
             _log.error("Broker requested Protocol [" + body.versionMajor + "-" + body.versionMinor
-                       + "] which is not supported by this version of the client library");
+                + "] which is not supported by this version of the client library");
 
             protocolSession.closeProtocolSession();
         }
     }
 
-  
     private String getFullSystemInfo()
     {
         StringBuffer fullSystemInfo = new StringBuffer();
@@ -222,7 +220,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener
     }
 
     private AMQCallbackHandler createCallbackHandler(String mechanism, AMQProtocolSession protocolSession)
-                                              throws AMQException
+        throws AMQException
     {
         Class mechanismClass = CallbackHandlerRegistry.getInstance().getCallbackHandlerClass(mechanism);
         try

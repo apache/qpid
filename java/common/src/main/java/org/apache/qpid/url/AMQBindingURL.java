@@ -20,18 +20,19 @@
  */
 package org.apache.qpid.url;
 
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-
 public class AMQBindingURL implements BindingURL
 {
-    private static final Logger _logger = Logger.getLogger(AMQBindingURL.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQBindingURL.class);
 
     String _url;
     AMQShortString _exchangeClass;

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,28 +20,32 @@
  */
 package org.apache.qpid.client.transport;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
-import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
+
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 public class SocketTransportConnection implements ITransportConnection
 {
-    private static final Logger _logger = Logger.getLogger(SocketTransportConnection.class);
+    private static final Logger _logger = LoggerFactory.getLogger(SocketTransportConnection.class);
     private static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
 
     private SocketConnectorFactory _socketConnectorFactory;
 
-    static interface SocketConnectorFactory {
+    static interface SocketConnectorFactory
+    {
         IoConnector newSocketConnector();
     }
 
@@ -50,8 +54,7 @@ public class SocketTransportConnection implements ITransportConnection
         _socketConnectorFactory = socketConnectorFactory;
     }
 
-    public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail)
-            throws IOException
+    public void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail) throws IOException
     {
         ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
 

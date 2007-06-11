@@ -19,17 +19,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.MessageNotWriteableException;
-import javax.jms.MessageProducer;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -39,11 +28,24 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSObjectMessage;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageNotWriteableException;
+import javax.jms.MessageProducer;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {
-    private static final Logger _logger = Logger.getLogger(ObjectMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ObjectMessageTest.class);
 
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -75,7 +77,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(connection,randomize("ObjectMessageTest"), true));
+        init(connection, new AMQQueue(connection, randomize("ObjectMessageTest"), true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception
@@ -84,7 +86,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         _destination = destination;
         _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
 
-        //set up a slow consumer
+        // set up a slow consumer
         _session.createConsumer(destination).setMessageListener(this);
         connection.start();
     }
@@ -101,7 +103,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     void send(int count) throws JMSException
     {
-        //create a publisher
+        // create a publisher
         MessageProducer producer = _session.createProducer(_destination);
         for (int i = 0; i < count; i++)
         {
@@ -113,7 +115,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     void waitFor(int count) throws InterruptedException
     {
-        synchronized(received)
+        synchronized (received)
         {
             while (received.size() < count)
             {
@@ -136,7 +138,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
             }
             catch (MessageNotWriteableException mnwe)
             {
-                //normal execution
+                // normal execution
             }
 
             m.clearBody();
@@ -150,7 +152,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
                 Assert.fail("Message should be writeable");
             }
 
-              //Check property write status
+            // Check property write status
             try
             {
                 m.setStringProperty("test", "test");
@@ -158,7 +160,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
             }
             catch (MessageNotWriteableException mnwe)
             {
-                //normal execution
+                // normal execution
             }
 
             m.clearProperties();
@@ -200,6 +202,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         {
             errors.add("Found " + actual.next() + " but no more expected values.");
         }
+
         if (!errors.isEmpty())
         {
             throw new RuntimeException(errors.toString());
@@ -216,7 +219,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        synchronized(received)
+        synchronized (received)
         {
             received.add((JMSObjectMessage) message);
             received.notify();
@@ -244,7 +247,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
         public boolean equals(Object o)
         {
-            return o instanceof Payload && ((Payload) o).data.equals(data);
+            return (o instanceof Payload) && ((Payload) o).data.equals(data);
         }
 
         public String toString()
@@ -256,12 +259,13 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     public static void main(String[] argv) throws Exception
     {
         ObjectMessageTest test = new ObjectMessageTest();
-        test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
+        test._connectionString = (argv.length == 0) ? "vm://:1" : argv[0];
         test.setUp();
         if (argv.length > 1)
         {
             test._count = Integer.parseInt(argv[1]);
         }
+
         test.test();
     }
 

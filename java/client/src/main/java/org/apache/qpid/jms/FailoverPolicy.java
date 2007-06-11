@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,22 +20,23 @@
  */
 package org.apache.qpid.jms;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.jms.failover.FailoverMethod;
 import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FailoverPolicy
 {
-    private static final Logger _logger = Logger.getLogger(FailoverPolicy.class);
+    private static final Logger _logger = LoggerFactory.getLogger(FailoverPolicy.class);
 
     private static final long MINUTE = 60000L;
 
     private static final long DEFAULT_METHOD_TIMEOUT = 1 * MINUTE;
     private static final long DEFAULT_FAILOVER_TIMEOUT = 4 * MINUTE;
 
-    private FailoverMethod _methods[] = new FailoverMethod[1];
+    private FailoverMethod[] _methods = new FailoverMethod[1];
 
     private int _currentMethod;
 
@@ -52,7 +53,7 @@ public class FailoverPolicy
     {
         FailoverMethod method;
 
-        //todo This should be integrated in to the connection url when it supports
+        // todo This should be integrated in to the connection url when it supports
         // multiple strategies.
 
         _methodsRetries = 0;
@@ -72,12 +73,12 @@ public class FailoverPolicy
         {
             String failoverMethod = connectionDetails.getFailoverMethod();
 
-/*
-            if (failoverMethod.equals(FailoverMethod.RANDOM))
-            {
-                //todo write a random connection Failover
-            }
-*/
+            /*
+                        if (failoverMethod.equals(FailoverMethod.RANDOM))
+                        {
+                            //todo write a random connection Failover
+                        }
+             */
             if (failoverMethod.equals(FailoverMethod.SINGLE_BROKER))
             {
                 method = new FailoverRoundRobinServers(connectionDetails);
@@ -92,12 +93,12 @@ public class FailoverPolicy
                 {
                     try
                     {
-                        Class[] constructorSpec = {ConnectionURL.class};
-                        Object [] params = {connectionDetails};
+                        Class[] constructorSpec = { ConnectionURL.class };
+                        Object[] params = { connectionDetails };
 
-                        method = (FailoverMethod) ClassLoader.getSystemClassLoader().
-                                loadClass(failoverMethod).
-                                getConstructor(constructorSpec).newInstance(params);
+                        method =
+                            (FailoverMethod) ClassLoader.getSystemClassLoader().loadClass(failoverMethod)
+                                                        .getConstructor(constructorSpec).newInstance(params);
                     }
                     catch (Exception cnfe)
                     {
@@ -157,13 +158,13 @@ public class FailoverPolicy
                     return false;
                 }
 
-
             }
             else
             {
                 if ((now - _lastFailTime) >= DEFAULT_FAILOVER_TIMEOUT)
                 {
                     _logger.info("Failover timeout");
+
                     return false;
                 }
                 else
@@ -179,7 +180,6 @@ public class FailoverPolicy
             _lastFailTime = _lastMethodTime;
         }
 
-
         if (_methods[_currentMethod].failoverAllowed())
         {
             failoverAllowed = true;
@@ -190,6 +190,7 @@ public class FailoverPolicy
             {
                 nextMethod();
                 _logger.info("Changing method to " + _methods[_currentMethod].methodName());
+
                 return failoverAllowed();
             }
             else
@@ -207,6 +208,7 @@ public class FailoverPolicy
         {
             _currentMethod++;
             _methods[_currentMethod].reset();
+
             return true;
         }
         else
@@ -225,11 +227,13 @@ public class FailoverPolicy
 
             _logger.info("Retrying methods starting with " + _methods[_currentMethod].methodName());
             _methods[_currentMethod].reset();
+
             return failoverAllowed();
         }
         else
         {
             _logger.debug("All failover methods exhausted");
+
             return false;
         }
     }
@@ -278,7 +282,7 @@ public class FailoverPolicy
 
     public FailoverMethod getCurrentMethod()
     {
-        if (_currentMethod >= 0 && _currentMethod < (_methods.length - 1))
+        if ((_currentMethod >= 0) && (_currentMethod < (_methods.length - 1)))
         {
             return _methods[_currentMethod];
         }
@@ -311,6 +315,7 @@ public class FailoverPolicy
             {
                 sb.append(">");
             }
+
             sb.append(_methods[i].toString());
         }
 

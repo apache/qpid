@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.client.security;
 
+import org.apache.qpid.util.FileUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.security.sasl.SaslClientFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Security;
@@ -27,13 +34,6 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
-
-import javax.security.sasl.SaslClientFactory;
-
-
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.util.FileUtils;
 
 /**
  * DynamicSaslRegistrar provides a collection of helper methods for reading a configuration file that contains a mapping
@@ -55,7 +55,7 @@ import org.apache.qpid.util.FileUtils;
  */
 public class DynamicSaslRegistrar
 {
-    private static final Logger _logger = Logger.getLogger(DynamicSaslRegistrar.class);
+    private static final Logger _logger = LoggerFactory.getLogger(DynamicSaslRegistrar.class);
 
     /** The name of the system property that holds the name of the SASL configuration properties. */
     private static final String FILE_PROPERTY = "amq.dynamicsaslregistrar.properties";
@@ -71,8 +71,8 @@ public class DynamicSaslRegistrar
         // Open the SASL properties file, using the default name is one is not specified.
         String filename = System.getProperty(FILE_PROPERTY);
         InputStream is =
-                FileUtils.openFileOrDefaultResource(filename, DEFAULT_RESOURCE_NAME,
-                                                    DynamicSaslRegistrar.class.getClassLoader());
+            FileUtils.openFileOrDefaultResource(filename, DEFAULT_RESOURCE_NAME,
+                DynamicSaslRegistrar.class.getClassLoader());
 
         try
         {
@@ -169,7 +169,7 @@ public class DynamicSaslRegistrar
         Enumeration e = props.propertyNames();
 
         TreeMap<String, Class<? extends SaslClientFactory>> factoriesToRegister =
-                new TreeMap<String, Class<? extends SaslClientFactory>>();
+            new TreeMap<String, Class<? extends SaslClientFactory>>();
 
         while (e.hasMoreElements())
         {

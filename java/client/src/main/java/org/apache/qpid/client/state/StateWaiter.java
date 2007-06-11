@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,15 +20,17 @@
  */
 package org.apache.qpid.client.state;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Waits for a particular state to be reached.
  */
 public class StateWaiter implements StateListener
 {
-    private static final Logger _logger = Logger.getLogger(StateWaiter.class);
+    private static final Logger _logger = LoggerFactory.getLogger(StateWaiter.class);
 
     private final AMQState _state;
 
@@ -52,13 +54,13 @@ public class StateWaiter implements StateListener
             // The guard is required in case we are woken up by a spurious
             // notify().
             //
-            while (!_newStateAchieved && _throwable == null)
+            while (!_newStateAchieved && (_throwable == null))
             {
                 try
                 {
                     _logger.debug("State " + _state + " not achieved so waiting...");
                     _monitor.wait(TIME_OUT);
-                    //fixme this won't cause the timeout to exit the loop. need to set _throwable
+                    // fixme this won't cause the timeout to exit the loop. need to set _throwable
                 }
                 catch (InterruptedException e)
                 {
@@ -72,7 +74,7 @@ public class StateWaiter implements StateListener
             _logger.debug("Throwable reached state waiter: " + _throwable);
             if (_throwable instanceof AMQException)
             {
-                throw(AMQException) _throwable;
+                throw (AMQException) _throwable;
             }
             else
             {
@@ -89,6 +91,7 @@ public class StateWaiter implements StateListener
             {
                 _logger.debug("stateChanged called changing from :" + oldState + " to :" + newState);
             }
+
             if (_state == newState)
             {
                 _newStateAchieved = true;
@@ -97,6 +100,7 @@ public class StateWaiter implements StateListener
                 {
                     _logger.debug("New state reached so notifying monitor");
                 }
+
                 _monitor.notifyAll();
             }
         }

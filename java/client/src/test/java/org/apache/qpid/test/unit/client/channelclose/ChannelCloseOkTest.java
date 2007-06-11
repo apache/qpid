@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,10 +20,17 @@
  */
 package org.apache.qpid.test.unit.client.channelclose;
 
-import java.util.ArrayList;
-import java.util.List;
+import junit.framework.TestCase;
 
-import javax.jms.Connection;
+import junit.textui.TestRunner;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.transport.TransportConnection;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.Destination;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -33,14 +40,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import junit.framework.TestCase;
-import junit.textui.TestRunner;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.transport.TransportConnection;
-
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Due to bizarre exception handling all sessions are closed if you get
@@ -66,9 +67,8 @@ public class ChannelCloseOkTest extends TestCase
     private final List<Message> _received1 = new ArrayList<Message>();
     private final List<Message> _received2 = new ArrayList<Message>();
 
-    private final static Logger _log = Logger.getLogger(ChannelCloseOkTest.class);
+    private static final Logger _log = LoggerFactory.getLogger(ChannelCloseOkTest.class);
     public String _connectionString = "vm://:1";
-
 
     protected void setUp() throws Exception
     {
@@ -77,34 +77,34 @@ public class ChannelCloseOkTest extends TestCase
         TransportConnection.createVMBroker(1);
         _connection = new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test");
 
-        _destination1 = new AMQQueue(_connection,"q1", true);
+        _destination1 = new AMQQueue(_connection, "q1", true);
         _destination2 = new AMQQueue(_connection, "q2", true);
         _session1 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _session1.createConsumer(_destination1).setMessageListener(new MessageListener()
-        {
-            public void onMessage(Message message)
             {
-                _log.debug("consumer 1 got message [" + getTextMessage(message) + "]");
-                synchronized(_received1)
+                public void onMessage(Message message)
                 {
-                    _received1.add(message);
-                    _received1.notify();
+                    _log.debug("consumer 1 got message [" + getTextMessage(message) + "]");
+                    synchronized (_received1)
+                    {
+                        _received1.add(message);
+                        _received1.notify();
+                    }
                 }
-            }
-        });
+            });
         _session2 = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         _session2.createConsumer(_destination2).setMessageListener(new MessageListener()
-        {
-            public void onMessage(Message message)
             {
-                _log.debug("consumer 2 got message [" + getTextMessage(message) + "]");
-                synchronized(_received2)
+                public void onMessage(Message message)
                 {
-                    _received2.add(message);
-                    _received2.notify();
+                    _log.debug("consumer 2 got message [" + getTextMessage(message) + "]");
+                    synchronized (_received2)
+                    {
+                        _received2.add(message);
+                        _received2.notify();
+                    }
                 }
-            }
-        });
+            });
 
         _connection.start();
     }
@@ -145,12 +145,12 @@ public class ChannelCloseOkTest extends TestCase
     public void testWithExceptionListener() throws Exception
     {
         _connection.setExceptionListener(new ExceptionListener()
-        {
-            public void onException(JMSException jmsException)
             {
-                _log.warn("onException - "+jmsException.getMessage());
-            }
-        });
+                public void onException(JMSException jmsException)
+                {
+                    _log.warn("onException - " + jmsException.getMessage());
+                }
+            });
 
         doTest();
     }
@@ -175,6 +175,7 @@ public class ChannelCloseOkTest extends TestCase
             send(_session1, _destination1, "" + i);
             send(_session2, _destination2, "" + i);
         }
+
         waitFor(_received1, num + 1);
         waitFor(_received2, num + 1);
 
@@ -184,7 +185,7 @@ public class ChannelCloseOkTest extends TestCase
     }
 
     private void sendAndWait(Session session, Destination destination, String message, List<Message> received, int count)
-            throws JMSException, InterruptedException
+        throws JMSException, InterruptedException
     {
         send(session, destination, message);
         waitFor(received, count);
@@ -199,7 +200,7 @@ public class ChannelCloseOkTest extends TestCase
 
     private void waitFor(List<Message> received, int count) throws InterruptedException
     {
-        synchronized(received)
+        synchronized (received)
         {
             while (received.size() < count)
             {

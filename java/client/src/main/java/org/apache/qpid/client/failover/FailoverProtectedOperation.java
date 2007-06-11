@@ -1,7 +1,5 @@
 package org.apache.qpid.client.failover;
 
-import org.apache.qpid.AMQException;
-
 /**
  * FailoverProtectedOperation is a continuation for an operation that may throw a {@link FailoverException} because
  * it has been interrupted by the fail-over process. The {@link FailoverRetrySupport} class defines support wrappers

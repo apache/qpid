@@ -22,8 +22,6 @@ package org.apache.qpid.test.unit.client.channelclose;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.AMQConnection;
@@ -42,6 +40,9 @@ import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -54,7 +55,7 @@ import javax.jms.TextMessage;
 
 public class ChannelCloseTest extends TestCase implements ExceptionListener, ConnectionListener
 {
-    private static final Logger _logger = Logger.getLogger(ChannelCloseTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseTest.class);
 
     Connection _connection;
     private String _brokerlist = "vm://:1";

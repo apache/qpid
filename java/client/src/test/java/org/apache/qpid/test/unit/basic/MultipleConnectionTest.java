@@ -19,12 +19,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
@@ -33,11 +27,19 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 
 public class MultipleConnectionTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(MultipleConnectionTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MultipleConnectionTest.class);
 
     public static final String _defaultBroker = "vm://:1";
     public String _connectionString = _defaultBroker;
@@ -64,6 +66,7 @@ public class MultipleConnectionTest extends TestCase
                 _counters[i] = new MessageCounter(_sessions[i].toString());
                 _sessions[i].createConsumer(dest).setMessageListener(_counters[i]);
             }
+
             _connection.start();
         }
 
@@ -128,8 +131,10 @@ public class MultipleConnectionTest extends TestCase
                 {
                     break;
                 }
+
                 wait(timeLeft);
             }
+
             return expected <= _count;
         }
 
@@ -143,7 +148,6 @@ public class MultipleConnectionTest extends TestCase
             return _name + ": " + _count;
         }
     }
-
 
     protected void setUp() throws Exception
     {
@@ -183,7 +187,7 @@ public class MultipleConnectionTest extends TestCase
 
     public static void main(String[] argv) throws Exception
     {
-        String broker = argv.length > 0 ? argv[0] : _defaultBroker;
+        String broker = (argv.length > 0) ? argv[0] : _defaultBroker;
 
         MultipleConnectionTest test = new MultipleConnectionTest();
         test._connectionString = broker;
@@ -195,12 +199,9 @@ public class MultipleConnectionTest extends TestCase
         String broker = _connectionString;
         int messages = 10;
 
-        AMQTopic topic = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME,"amq.topic");
+        AMQTopic topic = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, "amq.topic");
 
-        Receiver[] receivers = new Receiver[]{
-                new Receiver(broker, topic, 2),
-                new Receiver(broker, topic, 14)
-        };
+        Receiver[] receivers = new Receiver[] { new Receiver(broker, topic, 2), new Receiver(broker, topic, 14) };
 
         Publisher publisher = new Publisher(broker, topic);
         for (int i = 0; i < messages; i++)

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.client.protocol;
 
-import org.apache.log4j.Logger;
-
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
@@ -57,6 +55,9 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.ssl.SSLContextFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -123,7 +124,7 @@ import java.util.concurrent.CountDownLatch;
 public class AMQProtocolHandler extends IoHandlerAdapter
 {
     /** Used for debugging. */
-    private static final Logger _logger = Logger.getLogger(AMQProtocolHandler.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQProtocolHandler.class);
 
     /**
      * The connection that this protocol handler is associated with. There is a 1-1 mapping between connection

@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.client.state;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArraySet;
-
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.handler.BasicCancelOkMethodHandler;
 import org.apache.qpid.client.handler.BasicDeliverMethodHandler;
@@ -58,13 +52,22 @@ import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArraySet;
+
 /**
  * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler
  * there is a separate state manager.
  */
 public class AMQStateManager implements AMQMethodListener
 {
-    private static final Logger _logger = Logger.getLogger(AMQStateManager.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQStateManager.class);
+
     private AMQProtocolSession _protocolSession;
 
     /** The current state */
@@ -78,13 +81,12 @@ public class AMQStateManager implements AMQMethodListener
 
     private final CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
     private final Object _stateLock = new Object();
-    private static final long MAXIMUM_STATE_WAIT_TIME = 30000l;
+    private static final long MAXIMUM_STATE_WAIT_TIME = 30000L;
 
     public AMQStateManager()
     {
         this(null);
     }
-
 
     public AMQStateManager(AMQProtocolSession protocolSession)
     {
@@ -179,20 +181,22 @@ public class AMQStateManager implements AMQMethodListener
         if (handler != null)
         {
             handler.methodReceived(this, _protocolSession, evt);
+
             return true;
         }
+
         return false;
     }
 
-    protected StateAwareMethodListener findStateTransitionHandler(AMQState currentState,
-                                                                  AMQMethodBody frame)
-            // throws IllegalStateTransitionException
+    protected StateAwareMethodListener findStateTransitionHandler(AMQState currentState, AMQMethodBody frame)
+    // throws IllegalStateTransitionException
     {
         final Class clazz = frame.getClass();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Looking for state[" + currentState + "] transition handler for frame " + clazz);
         }
+
         final Map classToHandlerMap = (Map) _state2HandlersMap.get(currentState);
 
         if (classToHandlerMap == null)
@@ -201,12 +205,14 @@ public class AMQStateManager implements AMQMethodListener
             // handler registered for "all" states
             return findStateTransitionHandler(null, frame);
         }
+
         final StateAwareMethodListener handler = (StateAwareMethodListener) classToHandlerMap.get(clazz);
         if (handler == null)
         {
             if (currentState == null)
             {
                 _logger.debug("No state transition handler defined for receiving frame " + frame);
+
                 return null;
             }
             else
@@ -222,7 +228,6 @@ public class AMQStateManager implements AMQMethodListener
         }
     }
 
-
     public void attainState(final AMQState s) throws AMQException
     {
         synchronized (_stateLock)
@@ -230,7 +235,7 @@ public class AMQStateManager implements AMQMethodListener
             final long waitUntilTime = System.currentTimeMillis() + MAXIMUM_STATE_WAIT_TIME;
             long waitTime = MAXIMUM_STATE_WAIT_TIME;
 
-            while (_currentState != s && waitTime > 0)
+            while ((_currentState != s) && (waitTime > 0))
             {
                 try
                 {
@@ -240,15 +245,19 @@ public class AMQStateManager implements AMQMethodListener
                 {
                     _logger.warn("Thread interrupted");
                 }
+
                 if (_currentState != s)
                 {
                     waitTime = waitUntilTime - System.currentTimeMillis();
                 }
             }
+
             if (_currentState != s)
             {
-                _logger.warn("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
-                throw new AMQException("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
+                _logger.warn("State not achieved within permitted time.  Current state " + _currentState
+                    + ", desired state: " + s);
+                throw new AMQException("State not achieved within permitted time.  Current state " + _currentState
+                    + ", desired state: " + s);
             }
         }
 

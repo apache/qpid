@@ -20,15 +20,7 @@
  */
 package org.apache.qpid.client.protocol;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import javax.jms.JMSException;
-import javax.security.sasl.SaslClient;
-
 import org.apache.commons.lang.StringUtils;
-
-import org.apache.log4j.Logger;
 
 import org.apache.mina.common.CloseFuture;
 import org.apache.mina.common.IdleStatus;
@@ -53,16 +45,24 @@ import org.apache.qpid.framing.VersionSpecificRegistry;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.security.sasl.SaslClient;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes. <p/> The underlying protocol
  * session is still available but clients should not use it to obtain session attributes.
  */
 public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 {
-
     protected static final int LAST_WRITE_FUTURE_JOIN_TIMEOUT = 1000 * 60 * 2;
 
-    protected static final Logger _logger = Logger.getLogger(AMQProtocolSession.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(AMQProtocolSession.class);
 
     public static final String PROTOCOL_INITIATION_RECEIVED = "ProtocolInitiatiionReceived";
 

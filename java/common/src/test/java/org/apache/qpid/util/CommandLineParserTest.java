@@ -1,10 +1,11 @@
 package org.apache.qpid.util;
 
-import java.util.Properties;
-
 import junit.framework.*;
 
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Properties;
 
 /**
  * Unit tests the {@link CommandLineParser} class.
@@ -37,7 +38,7 @@ import org.apache.log4j.*;
  */
 public class CommandLineParserTest extends TestCase
 {
-    private static final Logger log = Logger.getLogger(CommandLineParserTest.class);
+    private static final Logger log = LoggerFactory.getLogger(CommandLineParserTest.class);
 
     public CommandLineParserTest(String name)
     {
@@ -56,11 +57,6 @@ public class CommandLineParserTest extends TestCase
         suite.addTestSuite(CommandLineParserTest.class);
 
         return suite;
-    }
-
-    public void setUp()
-    {
-        NDC.push(getName());
     }
 
     /** Check that get errors returns an empty string on no errors. */
@@ -533,10 +529,5 @@ public class CommandLineParserTest extends TestCase
 
         assertTrue("IllegalArgumentException not thrown for an unknown option when errors on unknowns mode is on.",
             testPassed);
-    }
-
-    protected void tearDown() throws Exception
-    {
-        NDC.pop();
     }
 }

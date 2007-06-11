@@ -43,9 +43,15 @@
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-common</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
         </dependency>
 
         <dependency>

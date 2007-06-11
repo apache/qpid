@@ -1,7 +1,5 @@
 package org.apache.qpid.client.failover;
 
-import org.apache.qpid.client.AMQConnection;
-
 /**
  * FailoverSupport defines an interface for different types of fail-over handlers, that provide different types of
  * behaviour for handling fail-overs during operations that can be interrupted by the fail-over process. For example,

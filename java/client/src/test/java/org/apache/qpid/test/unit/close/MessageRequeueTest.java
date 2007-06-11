@@ -22,34 +22,28 @@ package org.apache.qpid.test.unit.close;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.testutil.QpidClientConnection;
 import org.apache.qpid.url.URLSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.Connection;
-import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageRequeueTest extends TestCase
 {
-
-    private static final Logger _logger = Logger.getLogger(MessageRequeueTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MessageRequeueTest.class);
 
     protected static AtomicInteger consumerIds = new AtomicInteger(0);
     protected final Integer numTestMessages = 150;

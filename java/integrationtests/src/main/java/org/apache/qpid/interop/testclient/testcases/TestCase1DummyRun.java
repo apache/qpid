@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.interop.testclient.testcases;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Session;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.interop.testclient.InteropClientTestCase;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
 
 /**
  * Implements tet case 1, dummy run. This test case sends no test messages, it exists to confirm that the test harness

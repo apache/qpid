@@ -20,12 +20,10 @@
  */
 package org.apache.qpid.client.failover;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 
-import javax.jms.JMSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FailoverRetrySupport is a continuation that wraps another continuation, delaying its execution until it is notified
@@ -72,7 +70,7 @@ import javax.jms.JMSException;
 public class FailoverRetrySupport<T, E extends Exception> implements FailoverSupport<T, E>
 {
     /** Used for debugging. */
-    private static final Logger _log = Logger.getLogger(FailoverRetrySupport.class);
+    private static final Logger _log = LoggerFactory.getLogger(FailoverRetrySupport.class);
 
     /** The protected operation that is to be retried in the event of fail-over. */
     FailoverProtectedOperation<T, E> operation;
@@ -97,7 +95,7 @@ public class FailoverRetrySupport<T, E extends Exception> implements FailoverSup
      *
      * @return The result of executing the continuation.
      *
-     * @throws AMQException Any underlying exception is allowed to fall through.
+     * @throws E Any underlying exception is allowed to fall through.
      */
     public T execute() throws E
     {

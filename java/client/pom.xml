@@ -48,6 +48,12 @@
             <artifactId>qpid-common</artifactId>
         </dependency>
 
+        <dependency>  
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>  
+            <version>1.4.0</version> 
+        </dependency>
+
         <dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-jms_1.1_spec</artifactId>
@@ -56,13 +62,6 @@
         <dependency>
             <groupId>commons-collections</groupId>
             <artifactId>commons-collections</artifactId>
-            <!-- commons collection exports log4j v1.2.7 which doesn't have trace()-->
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -76,23 +75,17 @@
         </dependency>
 
         <!-- Test Dependencies -->
+        <dependency>  
+            <groupId>org.slf4j</groupId> 
+            <artifactId>slf4j-log4j12</artifactId>  
+            <version>1.4.0</version>  
+            <scope>test</scope> 
+        </dependency>
+
         <dependency> <!-- for inVm Broker -->
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>jmscts</groupId>
-            <artifactId>jmscts</artifactId>
-            <version>0.5-b2</version>
-            <scope>test</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>jms</groupId>
-                    <artifactId>jms</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>

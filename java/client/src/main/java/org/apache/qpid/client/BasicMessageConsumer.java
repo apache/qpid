@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -35,6 +33,9 @@ import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -51,7 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class BasicMessageConsumer extends Closeable implements MessageConsumer
 {
-    private static final Logger _logger = Logger.getLogger(BasicMessageConsumer.class);
+    private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
     /** The connection being used by this consumer */
     private AMQConnection _connection;

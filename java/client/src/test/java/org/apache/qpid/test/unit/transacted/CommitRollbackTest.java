@@ -22,12 +22,13 @@ package org.apache.qpid.test.unit.transacted;
 
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.URLSyntaxException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -54,7 +55,7 @@ public class CommitRollbackTest extends TestCase
     private MessageConsumer _consumer;
     Queue _jmsQueue;
 
-    private static final Logger _logger = Logger.getLogger(CommitRollbackTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
     private static final String BROKER = "vm://:1";
 
     protected void setUp() throws Exception

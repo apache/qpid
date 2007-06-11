@@ -7,11 +7,11 @@ import org.apache.qpid.client.AMQConnection;
  * at all. It wraps a {@link FailoverProtectedOperation} but should that operation throw {@link FailoverException} this
  * support class simply re-raises that exception as an IllegalStateException. This support wrapper should only be
  * used where the caller can be certain that the failover protected operation cannot acutally throw a failover exception,
- * for example, because the caller already holds locks preventing that condition from arising.
+ * for example, because the caller already holds a lock preventing that condition from arising.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Perform a fail-over protected operation with no handling of fail-over conditions.
+ * <tr><td> Perform a fail-over protected operation raising providing no handling of fail-over conditions.
  * </table>
  */
 public class FailoverNoopSupport<T, E extends Exception> implements FailoverSupport<T, E>
@@ -48,7 +48,7 @@ public class FailoverNoopSupport<T, E extends Exception> implements FailoverSupp
         catch (FailoverException e)
         {
             throw new IllegalStateException("Fail-over interupted no-op failover support. "
-                + "No-op support should only be used where the caller is certaing fail-over cannot occur.", e);
+                + "No-op support should only be used where the caller is certain fail-over cannot occur.", e);
         }
     }
 }

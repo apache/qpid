@@ -20,18 +20,10 @@
  */
 package org.apache.qpid.client.message;
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
-
 import org.apache.commons.collections.map.ReferenceMap;
+
 import org.apache.mina.common.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.*;
 import org.apache.qpid.framing.AMQShortString;
@@ -40,6 +32,16 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageNotReadableException;
+import javax.jms.MessageNotWriteableException;
+
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Map;
+import java.util.UUID;
 
 public abstract class AbstractJMSMessage extends AMQMessage implements org.apache.qpid.jms.Message
 {
@@ -70,33 +72,32 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _changedData = (data == null);
         _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
 
-        _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
+        _strictAMQP =
+            Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
     }
 
     protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-                                 AMQShortString routingKey, ByteBuffer data) throws AMQException
+        AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         this(contentHeader, deliveryTag);
 
         Integer type = contentHeader.getHeaders().getInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
 
-
         AMQDestination dest;
 
-
-        if(AMQDestination.QUEUE_TYPE.equals(type))
+        if (AMQDestination.QUEUE_TYPE.equals(type))
         {
-                dest = new AMQQueue(exchange, routingKey, routingKey);
+            dest = new AMQQueue(exchange, routingKey, routingKey);
         }
-        else if(AMQDestination.TOPIC_TYPE.equals(type))
+        else if (AMQDestination.TOPIC_TYPE.equals(type))
         {
-                dest = new AMQTopic(exchange, routingKey, null);
+            dest = new AMQTopic(exchange, routingKey, null);
         }
         else
         {
-                dest = new AMQUndefinedDestination(exchange, routingKey, null);
+            dest = new AMQUndefinedDestination(exchange, routingKey, null);
         }
-        //Destination dest = AMQDestination.createDestination(url);
+        // Destination dest = AMQDestination.createDestination(url);
         setJMSDestination(dest);
 
         _data = data;
@@ -200,7 +201,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (!(destination instanceof AMQDestination))
         {
             throw new IllegalArgumentException(
-                    "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
+                "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
         }
 
         final AMQDestination amqd = (AMQDestination) destination;
@@ -611,7 +612,6 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     {
         getContentHeaderProperties().setHeaders(messageProperties);
     }
-
 
     public JMSHeaderAdapter getJmsHeaders()
     {

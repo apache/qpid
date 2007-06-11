@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import java.util.Hashtable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -36,11 +40,9 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery queue
@@ -56,7 +58,7 @@ import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
  */
 public class DispatcherTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(DispatcherTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(DispatcherTest.class);
 
     Context _context;
 
@@ -68,8 +70,8 @@ public class DispatcherTest extends TestCase
     MessageProducer _producer;
     Session _clientSession, _producerSession;
 
-    private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(1); //all messages Sent Lock
-    private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(1); //all messages Sent Lock
+    private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(1); // all messages Sent Lock
+    private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(1); // all messages Sent Lock
 
     private volatile boolean _connectionStopped = false;
 
@@ -89,14 +91,14 @@ public class DispatcherTest extends TestCase
 
         Queue queue = (Queue) _context.lookup("queue");
 
-        //Create Client 1
+        // Create Client 1
         _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         _consumer = _clientSession.createConsumer(queue);
 
-        //Create Producer
+        // Create Producer
         _producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _producerConnection.start();
@@ -109,7 +111,6 @@ public class DispatcherTest extends TestCase
         {
             _producer.send(_producerSession.createTextMessage("Message " + msg));
         }
-
     }
 
     protected void tearDown() throws Exception
@@ -122,59 +123,55 @@ public class DispatcherTest extends TestCase
         TransportConnection.killAllVMBrokers();
     }
 
-
     public void testAsynchronousRecieve()
     {
-
         _logger.info("Test Start");
-
 
         assertTrue(!((AMQConnection) _clientConnection).started());
 
-        //Set default Message Listener
+        // Set default Message Listener
         try
         {
             _consumer.setMessageListener(new MessageListener()
-            {
-                public void onMessage(Message message)
                 {
-                    _logger.info("Client 1 ML 1 Received Message(" + _receivedCount + "):" + message);
-
-                    _receivedCount++;
-
-                    if (_receivedCount == MSG_COUNT)
+                    public void onMessage(Message message)
                     {
-                        _allFirstMessagesSent.countDown();
-                    }
+                        _logger.info("Client 1 ML 1 Received Message(" + _receivedCount + "):" + message);
 
-                    if (_connectionStopped)
-                    {
-                        _logger.info("Running with Message:" + _receivedCount);
-                    }
+                        _receivedCount++;
 
-                    if (_connectionStopped && _allFirstMessagesSent.getCount() == 0)
-                    {
-                        _receivedCountWhileStopped++;
-                    }
-
-                    if (_allFirstMessagesSent.getCount() == 0)
-                    {
-                        if (_receivedCount == MSG_COUNT * 2)
+                        if (_receivedCount == MSG_COUNT)
                         {
-                            _allSecondMessagesSent.countDown();
+                            _allFirstMessagesSent.countDown();
+                        }
+
+                        if (_connectionStopped)
+                        {
+                            _logger.info("Running with Message:" + _receivedCount);
+                        }
+
+                        if (_connectionStopped && (_allFirstMessagesSent.getCount() == 0))
+                        {
+                            _receivedCountWhileStopped++;
+                        }
+
+                        if (_allFirstMessagesSent.getCount() == 0)
+                        {
+                            if (_receivedCount == (MSG_COUNT * 2))
+                            {
+                                _allSecondMessagesSent.countDown();
+                            }
                         }
                     }
-                }
-            });
-            
+                });
+
             assertTrue("Connecion should not be started", !((AMQConnection) _clientConnection).started());
-            _clientConnection.start();            
+            _clientConnection.start();
         }
         catch (JMSException e)
         {
             _logger.error("Error Setting Default ML on consumer1");
         }
-
 
         try
         {
@@ -182,7 +179,7 @@ public class DispatcherTest extends TestCase
         }
         catch (InterruptedException e)
         {
-            //do nothing
+            // do nothing
         }
 
         try
@@ -195,7 +192,6 @@ public class DispatcherTest extends TestCase
         {
             _logger.error("Error stopping connection");
         }
-
 
         try
         {
@@ -211,14 +207,13 @@ public class DispatcherTest extends TestCase
             _logger.error("Unable to send additional messages", e);
         }
 
-
         try
         {
             Thread.sleep(1000);
         }
         catch (InterruptedException e)
         {
-            //ignore
+            // ignore
         }
 
         try
@@ -233,7 +228,6 @@ public class DispatcherTest extends TestCase
             _logger.error("Error Setting Better ML on consumer1", e);
         }
 
-
         _logger.info("Waiting upto 2 seconds for messages");
 
         try
@@ -242,16 +236,14 @@ public class DispatcherTest extends TestCase
         }
         catch (InterruptedException e)
         {
-            //do nothing
+            // do nothing
         }
 
         assertEquals("Messages not received correctly", 0, _allFirstMessagesSent.getCount());
         assertEquals("Messages not received correctly", 0, _allSecondMessagesSent.getCount());
         assertEquals("Client didn't get all messages", MSG_COUNT * 2, _receivedCount);
         assertEquals("Messages received while stopped is not 0", 0, _receivedCountWhileStopped);
-
     }
-
 
     public static junit.framework.Test suite()
     {

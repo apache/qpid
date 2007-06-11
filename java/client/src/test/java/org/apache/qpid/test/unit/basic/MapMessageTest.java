@@ -20,9 +20,17 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.message.JMSMapMessage;
+import org.apache.qpid.client.transport.TransportConnection;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -34,20 +42,13 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.transport.TransportConnection;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class MapMessageTest extends TestCase implements MessageListener
 {
-
-    private static final Logger _logger = Logger.getLogger(MapMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MapMessageTest.class);
 
     private AMQConnection _connection;
     private Destination _destination;
@@ -57,7 +58,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     private static final String MESSAGE = "Message ";
     private int _count = 100;
     public String _connectionString = "vm://:1";
-    private byte[] _bytes = {99, 98, 97, 96, 95};
+    private byte[] _bytes = { 99, 98, 97, 96, 95 };
     private static final float _smallfloat = 100.0f;
 
     protected void setUp() throws Exception
@@ -83,7 +84,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue(connection,randomize("MapMessageTest"), true);
+        Destination destination = new AMQQueue(connection, randomize("MapMessageTest"), true);
         init(connection, destination);
     }
 
@@ -93,7 +94,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         _destination = destination;
         _session = (AMQSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        //set up a slow consumer
+        // set up a slow consumer
         _session.createConsumer(destination).setMessageListener(this);
         connection.start();
     }
@@ -109,7 +110,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     void send(int count) throws JMSException
     {
-        //create a publisher
+        // create a publisher
         MessageProducer producer = _session.createProducer(_destination);
         for (int i = 0; i < count; i++)
         {
@@ -123,7 +124,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     private void setMapValues(MapMessage message, int i) throws JMSException
     {
-        message.setBoolean("odd", i / 2 == 0);
+        message.setBoolean("odd", (i / 2) == 0);
         message.setByte("byte", (byte) Byte.MAX_VALUE);
         message.setBytes("bytes", _bytes);
         message.setChar("char", (char) 'c');
@@ -136,7 +137,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         message.setShort("short", (short) Short.MAX_VALUE);
         message.setString("message", MESSAGE + i);
 
-        //Test Setting Object Values
+        // Test Setting Object Values
         message.setObject("object-bool", true);
         message.setObject("object-byte", Byte.MAX_VALUE);
         message.setObject("object-bytes", _bytes);
@@ -147,7 +148,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         message.setObject("object-long", Long.MAX_VALUE);
         message.setObject("object-short", Short.MAX_VALUE);
 
-        //Set a null String value
+        // Set a null String value
         message.setString("nullString", null);
         // Highlight protocol problem
         message.setString("emptyString", "");
@@ -159,10 +160,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         long waitTime = 30000L;
         long waitUntilTime = System.currentTimeMillis() + 30000L;
 
-
-        synchronized(received)
+        synchronized (received)
         {
-            while(received.size() < count && waitTime>0)
+            while ((received.size() < count) && (waitTime > 0))
             {
                 if (received.size() < count)
                 {
@@ -174,6 +174,7 @@ public class MapMessageTest extends TestCase implements MessageListener
                     waitTime = waitUntilTime - System.currentTimeMillis();
                 }
             }
+
             if (received.size() < count)
             {
                 throw new Exception("Timed-out.  Waiting for " + count + " only got " + received.size());
@@ -236,7 +237,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (NumberFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -246,10 +247,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (NumberFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("message");
@@ -257,7 +258,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -267,8 +268,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (NumberFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
+
         try
         {
             m.getLong("message");
@@ -276,10 +278,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (NumberFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("message");
@@ -287,9 +289,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (NumberFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("message");
@@ -297,9 +299,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (NumberFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("message");
@@ -307,7 +309,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals(MESSAGE + m.getInt("messageNumber"), m.getString("message"));
@@ -316,7 +318,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     private void testShort(JMSMapMessage m) throws JMSException
     {
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("short");
@@ -324,7 +326,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -334,12 +336,12 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals(Short.MAX_VALUE, m.getShort("short"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("short");
@@ -347,14 +349,14 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals(Short.MAX_VALUE, m.getInt("short"));
 
         Assert.assertEquals(Short.MAX_VALUE, m.getLong("short"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("short");
@@ -362,9 +364,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("short");
@@ -372,9 +374,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("short");
@@ -382,7 +384,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + Short.MAX_VALUE, m.getString("short"));
@@ -391,7 +393,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     private void testLong(JMSMapMessage m) throws JMSException
     {
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("long");
@@ -399,7 +401,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -409,7 +411,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -419,10 +421,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("long");
@@ -430,7 +432,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -440,12 +442,12 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals(Long.MAX_VALUE, m.getLong("long"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("long");
@@ -453,9 +455,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("long");
@@ -463,9 +465,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("long");
@@ -473,7 +475,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + Long.MAX_VALUE, m.getString("long"));
@@ -482,7 +484,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     private void testDouble(JMSMapMessage m) throws JMSException
     {
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("double");
@@ -490,7 +492,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -500,7 +502,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -510,10 +512,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("double");
@@ -521,7 +523,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -531,8 +533,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
+
         try
         {
             m.getLong("double");
@@ -540,10 +543,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("double");
@@ -551,13 +554,12 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-
 
         Assert.assertEquals(Double.MAX_VALUE, m.getDouble("double"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("double");
@@ -565,17 +567,16 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + Double.MAX_VALUE, m.getString("double"));
     }
 
-
     private void testFloat(JMSMapMessage m) throws JMSException
     {
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("float");
@@ -583,7 +584,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -593,7 +594,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -603,10 +604,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("float");
@@ -614,7 +615,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -624,8 +625,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
+
         try
         {
             m.getLong("float");
@@ -633,15 +635,14 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-
 
         Assert.assertEquals(Float.MAX_VALUE, m.getFloat("float"));
 
         Assert.assertEquals(_smallfloat, (float) m.getDouble("smallfloat"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("float");
@@ -649,17 +650,16 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + Float.MAX_VALUE, m.getString("float"));
     }
 
-
     private void testInt(JMSMapMessage m) throws JMSException
     {
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("int");
@@ -667,7 +667,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -677,7 +677,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -687,10 +687,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("int");
@@ -698,14 +698,14 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals(Integer.MAX_VALUE, m.getInt("int"));
 
         Assert.assertEquals(Integer.MAX_VALUE, (int) m.getLong("int"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("int");
@@ -713,9 +713,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("int");
@@ -723,9 +723,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("int");
@@ -733,17 +733,16 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + Integer.MAX_VALUE, m.getString("int"));
     }
 
-
     private void testChar(JMSMapMessage m) throws JMSException
     {
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("char");
@@ -751,7 +750,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -761,7 +760,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -771,7 +770,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals('c', m.getChar("char"));
@@ -783,8 +782,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
+
         try
         {
             m.getLong("char");
@@ -792,10 +792,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("char");
@@ -803,9 +803,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("char");
@@ -813,9 +813,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("char");
@@ -823,7 +823,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + 'c', m.getString("char"));
@@ -831,7 +831,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     private void testBytes(JMSMapMessage m) throws JMSException
     {
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("bytes");
@@ -839,7 +839,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -849,7 +849,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -859,10 +859,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("bytes");
@@ -870,7 +870,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -880,7 +880,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         try
@@ -890,10 +890,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("bytes");
@@ -901,9 +901,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("bytes");
@@ -911,9 +911,8 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-
 
         assertBytesEqual(_bytes, m.getBytes("bytes"));
 
@@ -924,15 +923,14 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-
 
     }
 
     private void testByte(JMSMapMessage m) throws JMSException
     {
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBoolean("byte");
@@ -940,14 +938,14 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals(Byte.MAX_VALUE, m.getByte("byte"));
 
         Assert.assertEquals((short) Byte.MAX_VALUE, m.getShort("byte"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("byte");
@@ -955,15 +953,15 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Reading a byte as an int is ok
+        // Reading a byte as an int is ok
         Assert.assertEquals((short) Byte.MAX_VALUE, m.getInt("byte"));
 
         Assert.assertEquals((short) Byte.MAX_VALUE, m.getLong("byte"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("byte");
@@ -971,9 +969,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("byte");
@@ -981,9 +979,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("byte");
@@ -991,7 +989,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + Byte.MAX_VALUE, m.getString("byte"));
@@ -1003,7 +1001,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
         Assert.assertEquals((m.getInt("messageNumber") / 2) == 0, m.getBoolean("odd"));
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getByte("odd");
@@ -1011,10 +1009,10 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getShort("odd");
@@ -1022,9 +1020,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getChar("odd");
@@ -1032,9 +1030,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException npe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getInt("odd");
@@ -1042,9 +1040,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getLong("odd");
@@ -1052,9 +1050,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getFloat("odd");
@@ -1062,9 +1060,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getDouble("odd");
@@ -1072,9 +1070,9 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
-        //Try bad reads
+        // Try bad reads
         try
         {
             m.getBytes("odd");
@@ -1082,16 +1080,15 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageFormatException nfe)
         {
-            //normal execution
+            // normal execution
         }
 
         Assert.assertEquals("" + ((m.getInt("messageNumber") / 2) == 0), m.getString("odd"));
     }
 
-
     private void testPropertyWriteStatus(JMSMapMessage m) throws JMSException
     {
-        //Check property write status
+        // Check property write status
         try
         {
             m.setStringProperty("test", "test");
@@ -1099,7 +1096,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageNotWriteableException mnwe)
         {
-            //normal execution
+            // normal execution
         }
 
         m.clearProperties();
@@ -1123,7 +1120,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
         catch (MessageNotWriteableException mnwe)
         {
-            //normal execution
+            // normal execution
         }
 
         m.clearBody();
@@ -1138,54 +1135,51 @@ public class MapMessageTest extends TestCase implements MessageListener
         }
     }
 
-    
-
-
     private void testMapValues(JMSMapMessage m, int count) throws JMSException
     {
-        //Test get<Primiative>
+        // Test get<Primiative>
 
-        //Boolean
-        assertEqual(count / 2 == 0, m.getBoolean("odd"));
-        assertEqual("" + (count / 2 == 0), m.getString("odd"));
+        // Boolean
+        assertEqual((count / 2) == 0, m.getBoolean("odd"));
+        assertEqual("" + ((count / 2) == 0), m.getString("odd"));
 
-        //Byte
+        // Byte
         assertEqual(Byte.MAX_VALUE, m.getByte("byte"));
         assertEqual("" + Byte.MAX_VALUE, m.getString("byte"));
 
-        //Bytes
+        // Bytes
         assertBytesEqual(_bytes, m.getBytes("bytes"));
 
-        //Char
+        // Char
         assertEqual('c', m.getChar("char"));
 
-        //Double
+        // Double
         assertEqual(Double.MAX_VALUE, m.getDouble("double"));
         assertEqual("" + Double.MAX_VALUE, m.getString("double"));
 
-        //Float
+        // Float
         assertEqual(Float.MAX_VALUE, m.getFloat("float"));
         assertEqual(_smallfloat, (float) m.getDouble("smallfloat"));
         assertEqual("" + Float.MAX_VALUE, m.getString("float"));
 
-        //Integer
+        // Integer
         assertEqual(Integer.MAX_VALUE, m.getInt("int"));
         assertEqual("" + Integer.MAX_VALUE, m.getString("int"));
         assertEqual(count, m.getInt("messageNumber"));
 
-        //long
+        // long
         assertEqual(Long.MAX_VALUE, m.getLong("long"));
         assertEqual("" + Long.MAX_VALUE, m.getString("long"));
 
-        //Short
+        // Short
         assertEqual(Short.MAX_VALUE, m.getShort("short"));
         assertEqual("" + Short.MAX_VALUE, m.getString("short"));
         assertEqual((int) Short.MAX_VALUE, m.getInt("short"));
 
-        //String
+        // String
         assertEqual(MESSAGE + count, m.getString("message"));
 
-        //Test getObjects
+        // Test getObjects
         assertEqual(true, m.getObject("object-bool"));
         assertEqual(Byte.MAX_VALUE, m.getObject("object-byte"));
         assertBytesEqual(_bytes, (byte[]) m.getObject("object-bytes"));
@@ -1196,7 +1190,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         assertEqual(Long.MAX_VALUE, m.getObject("object-long"));
         assertEqual(Short.MAX_VALUE, m.getObject("object-short"));
 
-        //Check Special values
+        // Check Special values
         assertTrue(m.getString("nullString") == null);
         assertEqual("", m.getString("emptyString"));
     }
@@ -1210,7 +1204,6 @@ public class MapMessageTest extends TestCase implements MessageListener
             Assert.assertEquals(expected[index], actual[index]);
         }
     }
-
 
     private static void assertEqual(Iterator expected, Iterator actual)
     {
@@ -1234,6 +1227,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         {
             errors.add("Found " + actual.next() + " but no more expected values.");
         }
+
         if (!errors.isEmpty())
         {
             throw new RuntimeException(errors.toString());
@@ -1250,7 +1244,7 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        synchronized(received)
+        synchronized (received)
         {
             _logger.info("****************** Recevied Messgage:" + (JMSMapMessage) message);
             received.add((JMSMapMessage) message);
@@ -1266,12 +1260,13 @@ public class MapMessageTest extends TestCase implements MessageListener
     public static void main(String[] argv) throws Exception
     {
         MapMessageTest test = new MapMessageTest();
-        test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
+        test._connectionString = (argv.length == 0) ? "vm://:1" : argv[0];
         test.setUp();
         if (argv.length > 1)
         {
             test._count = Integer.parseInt(argv[1]);
         }
+
         test.test();
     }
 

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
@@ -36,9 +35,12 @@ import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ChannelCloseMethodHandler implements StateAwareMethodListener
 {
-    private static final Logger _logger = Logger.getLogger(ChannelCloseMethodHandler.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseMethodHandler.class);
 
     private static ChannelCloseMethodHandler _handler = new ChannelCloseMethodHandler();
 
@@ -47,7 +49,8 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
         return _handler;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+        throws AMQException
     {
         _logger.debug("ChannelClose method received");
         ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
@@ -68,6 +71,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             {
                 _logger.debug("Channel close received with errorCode " + errorCode + ", and reason " + reason);
             }
+
             if (errorCode == AMQConstant.NO_CONSUMERS)
             {
                 throw new AMQNoConsumersException("Error: " + reason, null);
@@ -94,7 +98,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener
             }
 
         }
-        //fixme why is this only done when the close is expected...
+        // fixme why is this only done when the close is expected...
         // should the above forced closes not also cause a close?
         protocolSession.channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
     }

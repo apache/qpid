@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.client.failover;
 
-import org.apache.log4j.Logger;
-
 import org.apache.mina.common.IoSession;
 
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQStateManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -78,7 +79,7 @@ import java.util.concurrent.CountDownLatch;
 public class FailoverHandler implements Runnable
 {
     /** Used for debugging. */
-    private static final Logger _logger = Logger.getLogger(FailoverHandler.class);
+    private static final Logger _logger = LoggerFactory.getLogger(FailoverHandler.class);
 
     /** Holds the MINA session for the connection that has failed, not the connection that is being failed onto. */
     private final IoSession _session;

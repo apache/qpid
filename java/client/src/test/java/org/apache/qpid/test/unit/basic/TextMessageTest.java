@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,9 +20,18 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.testutil.VMBrokerSetup;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -32,20 +41,13 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.qpid.framing.AMQShortString;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class TextMessageTest extends TestCase implements MessageListener
 {
-    private static final Logger _logger = Logger.getLogger(TextMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(TextMessageTest.class);
 
     private AMQConnection _connection;
     private Destination _destination;
@@ -75,7 +77,8 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("TextMessageTest")), true);
+        Destination destination =
+            new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("TextMessageTest")), true);
         init(connection, destination);
     }
 
@@ -85,7 +88,7 @@ public class TextMessageTest extends TestCase implements MessageListener
         _destination = destination;
         _session = (AMQSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        //set up a slow consumer
+        // set up a slow consumer
         _session.createConsumer(destination).setMessageListener(this);
         connection.start();
     }
@@ -102,7 +105,7 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     void send(int count) throws JMSException
     {
-        //create a publisher
+        // create a publisher
         MessageProducer producer = _session.createProducer(_destination);
         for (int i = 0; i < count; i++)
         {
@@ -118,7 +121,7 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     void waitFor(int count) throws InterruptedException
     {
-        synchronized(received)
+        synchronized (received)
         {
             while (received.size() < count)
             {
@@ -134,7 +137,7 @@ public class TextMessageTest extends TestCase implements MessageListener
         {
             actual.add(m.getText());
 
-            //Check body write status            
+            // Check body write status
             try
             {
                 m.setText("Test text");
@@ -142,7 +145,7 @@ public class TextMessageTest extends TestCase implements MessageListener
             }
             catch (MessageNotWriteableException mnwe)
             {
-                //normal execution
+                // normal execution
             }
 
             m.clearBody();
@@ -156,7 +159,7 @@ public class TextMessageTest extends TestCase implements MessageListener
                 Assert.fail("Message should be writeable");
             }
 
-            //Check property write status
+            // Check property write status
             try
             {
                 m.setStringProperty("test", "test");
@@ -164,7 +167,7 @@ public class TextMessageTest extends TestCase implements MessageListener
             }
             catch (MessageNotWriteableException mnwe)
             {
-                //normal execution
+                // normal execution
             }
 
             m.clearProperties();
@@ -205,6 +208,7 @@ public class TextMessageTest extends TestCase implements MessageListener
         {
             errors.add("Found " + actual.next() + " but no more expected values.");
         }
+
         if (!errors.isEmpty())
         {
             throw new RuntimeException(errors.toString());
@@ -221,7 +225,7 @@ public class TextMessageTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        synchronized(received)
+        synchronized (received)
         {
             received.add((JMSTextMessage) message);
             received.notify();
@@ -236,12 +240,13 @@ public class TextMessageTest extends TestCase implements MessageListener
     public static void main(String[] argv) throws Exception
     {
         TextMessageTest test = new TextMessageTest();
-        test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
+        test._connectionString = (argv.length == 0) ? "vm://:1" : argv[0];
         test.setUp();
         if (argv.length > 1)
         {
             test._count = Integer.parseInt(argv[1]);
         }
+
         test.test();
     }
 

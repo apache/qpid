@@ -1,12 +1,13 @@
 package org.apache.qpid.testutil;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.JMSAMQException;
 import org.apache.qpid.url.URLSyntaxException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
@@ -20,7 +21,7 @@ import javax.jms.TextMessage;
 
 public class QpidClientConnection implements ExceptionListener
 {
-    private static final Logger _logger = Logger.getLogger(QpidClientConnection.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QpidClientConnection.class);
 
     private boolean transacted = true;
     private int ackMode = Session.CLIENT_ACKNOWLEDGE;

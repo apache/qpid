@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.client.message;
 
-import java.util.Enumeration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
@@ -31,7 +32,7 @@ import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 
-import org.apache.log4j.Logger;
+import java.util.Enumeration;
 
 public class MessageConverter
 {
@@ -39,7 +40,7 @@ public class MessageConverter
     /**
      * Log4J logger
      */
-    protected final Logger _logger = Logger.getLogger(getClass());
+    protected final Logger _logger = LoggerFactory.getLogger(getClass());
 
     /**
      * AbstractJMSMessage which will hold the converted message
@@ -81,6 +82,7 @@ public class MessageConverter
             String name = (String) mapNames.nextElement();
             nativeMessage.setObject(name, message.getObject(name));
         }
+
         _newMessage = (AbstractJMSMessage) nativeMessage;
         setMessageProperties(message);
     }
@@ -121,15 +123,16 @@ public class MessageConverter
         }
         catch (MessageEOFException e)
         {
-            //we're at the end so don't mind the exception
+            // we're at the end so don't mind the exception
         }
+
         _newMessage = (AbstractJMSMessage) nativeMessage;
         setMessageProperties(message);
     }
 
     public MessageConverter(Message message) throws JMSException
     {
-        //Send a message with just properties.
+        // Send a message with just properties.
         // Throwing away content
         BytesMessage nativeMessage = new JMSBytesMessage();
 
@@ -160,7 +163,7 @@ public class MessageConverter
         while (propertyNames.hasMoreElements())
         {
             String propertyName = String.valueOf(propertyNames.nextElement());
-            //TODO: Shouldn't need to check for JMS properties here as don't think getPropertyNames() should return them
+            // TODO: Shouldn't need to check for JMS properties here as don't think getPropertyNames() should return them
             if (!propertyName.startsWith("JMSX_"))
             {
                 Object value = message.getObjectProperty(propertyName);
@@ -190,6 +193,7 @@ public class MessageConverter
         {
             _newMessage.setJMSReplyTo(message.getJMSReplyTo());
         }
+
         _newMessage.setJMSType(message.getJMSType());
 
         _newMessage.setJMSCorrelationID(message.getJMSCorrelationID());

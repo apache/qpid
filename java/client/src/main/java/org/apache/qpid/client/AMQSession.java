@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
@@ -75,6 +73,9 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
@@ -111,14 +112,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td>
+ * </table>
+ *
+ * @todo Different FailoverSupport implementation are needed on the same method call, in different situations. For
+ *       example, when failing-over and reestablishing the bindings, the bind cannot be interrupted by a second
+ *       fail-over, if it fails with an exception, the fail-over process should also fail. When binding outside of
+ *       the fail-over process, the retry handler could be used to automatically retry the operation once the connection
+ *       has been reestablished. All fail-over protected operations should be placed in private methods, with
+ *       FailoverSupport passed in by the caller to provide the correct support for the calling context. Sometimes the
+ *       fail-over process sets a nowait flag and uses an async method call instead.
+ *
+ * @todo Two new objects created on every failover supported method call. Consider more efficient ways of doing this,
+ *       after looking at worse bottlenecks first.
  */
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
     /** Used for debugging. */
-    private static final Logger _logger = Logger.getLogger(AMQSession.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
 
     /** Used for debugging in the dispatcher. */
-    private static final Logger _dispatcherLogger = Logger.getLogger(Dispatcher.class);
+    private static final Logger _dispatcherLogger = LoggerFactory.getLogger(Dispatcher.class);
 
     /** The default maximum number of prefetched message at which to suspend the channel. */
     public static final int DEFAULT_PREFETCH_HIGH_MARK = 5000;
@@ -365,6 +382,28 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             defaultPrefetchLow);
     }
 
+    // ===== JMS Session methods.
+
+    /**
+     * Closes the session with no timeout.
+     *
+     * @throws JMSException If the JMS provider fails to close the session due to some internal error.
+     */
+    public void close() throws JMSException
+    {
+        close(-1);
+    }
+
+    public BytesMessage createBytesMessage() throws JMSException
+    {
+        synchronized (_connection.getFailoverMutex())
+        {
+            checkNotClosed();
+
+            return new JMSBytesMessage();
+        }
+    }
+
     /**
      * Acknowledges all unacknowledged messages on the session, for all message consumers on the session.
      *
@@ -444,16 +483,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     return null;
                 }
             }, _connection).execute();
-    }
-
-    /**
-     * Closes the session with no timeout.
-     *
-     * @throws JMSException If the JMS provider fails to close the session due to some internal error.
-     */
-    public void close() throws JMSException
-    {
-        close(-1);
     }
 
     /**
@@ -678,16 +707,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         return createConsumerImpl(destination, _defaultPrefetchHighMark, _defaultPrefetchLowMark, noLocal, false,
                 messageSelector, null, true, true);
-    }
-
-    public BytesMessage createBytesMessage() throws JMSException
-    {
-        synchronized (_connection.getFailoverMutex())
-        {
-            checkNotClosed();
-
-            return new JMSBytesMessage();
-        }
     }
 
     public MessageConsumer createConsumer(Destination destination) throws JMSException

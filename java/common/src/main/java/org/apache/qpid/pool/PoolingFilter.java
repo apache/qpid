@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.pool;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
-import org.apache.log4j.Logger;
-
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoFilterAdapter;
 import org.apache.mina.common.IoSession;
 
 import org.apache.qpid.pool.Event.CloseEvent;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * PoolingFilter, is a no-op pass through filter that hands all events down the Mina filter chain by default. As it
@@ -81,7 +82,7 @@ import org.apache.qpid.pool.Event.CloseEvent;
 public abstract class PoolingFilter extends IoFilterAdapter implements Job.JobCompletionHandler
 {
     /** Used for debugging purposes. */
-    private static final Logger _logger = Logger.getLogger(PoolingFilter.class);
+    private static final Logger _logger = LoggerFactory.getLogger(PoolingFilter.class);
 
     /** Holds a mapping from Mina sessions to batched jobs for execution. */
     private final ConcurrentMap<IoSession, Job> _jobs = new ConcurrentHashMap<IoSession, Job>();
