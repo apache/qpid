@@ -114,6 +114,8 @@ make check
 %defattr(-,root,root,-)
 %_libdir/libqpidbroker.so.0
 %_libdir/libqpidbroker.so.0.1.0
+%_libdir/libqpidcluster.so.0
+%_libdir/libqpidcluster.so.0.1.0
 %_sbindir/%{qpidd}
 %{_initrddir}/%{qpidd}
 %doc %_mandir/man1/%{qpidd}.*
