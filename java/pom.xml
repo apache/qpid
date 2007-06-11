@@ -41,11 +41,22 @@ under the License.
     </prerequisites>
 
     <distributionManagement>
+
         <snapshotRepository>
             <id>apache.snapshots</id>
             <name>Apache SNAPSHOT Repository</name>
             <url>scp://people.apache.org/www/people.apache.org/repo/m2-snapshot-repository</url>
         </snapshotRepository>
+
+        <!--
+        <snapshotRepository>
+            <uniqueVersion>true</uniqueVersion>
+            <id>snapshot-repo</id>
+            <name>Local Snapshot Repository</name>
+            <url>file://${basedir}/${topDirectoryLocation}/snapshots</url>
+            <layout>default</layout>
+        </snapshotRepository>
+        -->
 
         <!-- Qpid has a Wiki site, maven generated site not used. This is just so that it can be created locally for viewing the reports. -->
         <site>

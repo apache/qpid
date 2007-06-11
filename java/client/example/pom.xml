@@ -34,7 +34,7 @@
     </parent>
 
     <properties>
-        <topDirectoryLocation>..</topDirectoryLocation>
+        <topDirectoryLocation>../..</topDirectoryLocation>
         <amqj.logging.level>warn</amqj.logging.level>
     </properties>
 
