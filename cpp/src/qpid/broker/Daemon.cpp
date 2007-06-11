@@ -16,50 +16,35 @@
  *
  */
 #include "Daemon.h"
+#include "qpid/log/Statement.h"
 #include "qpid/QpidError.h"
 #include <libdaemon/daemon.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <signal.h>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
 
 namespace qpid {
 namespace broker {
 
 using namespace std;
 
-string Daemon::pidFile;
-string Daemon::name;
+boost::function<std::string()> qpid::broker::Daemon::pidFileFn;
 
-string Daemon::nameFromArgv0(const char* argv0) {
-    return string(daemon_ident_from_argv0(const_cast<char*>(argv0)));
+std::string Daemon::defaultPidFile(const std::string& identifier) {
+    daemon_pid_file_ident=identifier.c_str();
+    return daemon_pid_file_proc_default();
 }
 
-const char* Daemon::getPidFile() {
-    if (pidFile.empty()) {
-        const char* home=getenv("HOME");
-        if (!home)
-            throw(Exception("$HOME is not set, cant create $HOME/.qpidd."));
-        using namespace boost::filesystem;
-        path dir = path(home,native) / path(".qpidd", native);
-        create_directory(dir);
-        dir /= name;
-        pidFile = dir.string();
-    }
-    return pidFile.c_str();
+const char* Daemon::realPidFileFn() {
+    static std::string str = pidFileFn();
+    return str.c_str();
 }
 
-Daemon::Daemon(const string& name_, int secs) : pid(-1), timeout(secs)
+Daemon::Daemon(boost::function<std::string()> fn, int secs) : pid(-1), timeout(secs)
 {
-    name = name_;
-    daemon_pid_file_ident = daemon_log_ident = name.c_str();
-    if (getuid() != 0) {
-        // For normal users put pid file under $HOME/.qpid
-        daemon_pid_file_proc = getPidFile;
-    }
-    // For root use the libdaemon default: /var/run.    
+    pidFileFn = fn;
+    daemon_pid_file_proc = &realPidFileFn;
 }
 
 Daemon::~Daemon() {
@@ -77,44 +62,58 @@ class Daemon::Retval {
     bool completed;
 };
 
-pid_t Daemon::fork() {
+pid_t Daemon::fork(Function parent, Function child) {
     retval.reset(new Retval());
     pid = daemon_fork();
     if (pid < 0)
-            throw Exception("Failed to fork daemon: "+strError(errno));
-    else if (pid > 0) {
-        int ret = retval->wait(timeout); // parent, wait for child.
-        if (ret != 0) {
-            string err;
-            if (ret > 0)
-                err = strError(ret);
-            else if (ret == -1)
-                err= strError(errno);
-            else
-                err= "unknown error";
-            throw Exception("Deamon startup failed: "+err);
+        throw Exception("Failed to fork daemon: "+strError(errno));
+    else if (pid == 0) {
+        try {
+            child(*this);
+        } catch (const exception& e) {
+            QPID_LOG(debug, "Rethrowing: " << e.what());
+            failed();           // Notify parent
+            throw;
         }
     }
-    else if (pid == 0) { // child.
-        // TODO aconway 2007-04-26: Should log failures.
-        if (daemon_pid_file_create())
-            failed();
-    }
+    else
+        parent(*this);
     return pid;
 }
 
-void Daemon::notify(int i) {
+int Daemon::wait() {  // parent 
     assert(retval);
-    if (retval->send(i)) 
+    errno = 0;                  // Clear errno.
+    int ret = retval->wait(timeout); // wait for child.
+    if (ret == -1) {
+        if (errno)
+            throw Exception("Error waiting for daemon startup:"
+                            +strError(errno));
+        else
+            throw Exception("Error waiting for daemon startup, check logs.");
+    }
+    return ret;
+}
+
+void Daemon::notify(int value) { // child
+    assert(retval);
+    if (retval->send(value)) 
         throw Exception("Failed to notify parent: "+strError(errno));
 }
 
-void Daemon::ready() { notify(0); }
+void Daemon::ready(int value) { // child
+    if (value==-1)
+        throw Exception("Invalid value in Dameon::notify");
+    errno = 0;
+    if (daemon_pid_file_create() != 0)
+        throw Exception(string("Failed to create PID file ") +
+                        daemon_pid_file_proc()+": "+strError(errno));
+    notify(value);
+}
 
-// NB: Not -1, confused with failure of fork() on the parent side.
-void Daemon::failed() { notify(errno? errno:-2); }
+void Daemon::failed() { notify(-1); }
 
-void  Daemon::quit() {
+void  Daemon::quit() { 
     if (daemon_pid_file_kill_wait(SIGINT, timeout))
         throw Exception("Failed to stop daemon: " + strError(errno));
 }

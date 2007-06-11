@@ -19,7 +19,9 @@
  *
  */
 
+#include "qpid/log/Statement.h"
 #include "Exception.h"
+#include <typeinfo>
 #include <errno.h>
 
 namespace qpid {
@@ -28,12 +30,17 @@ std::string strError(int err) {
     char buf[512];
     return std::string(strerror_r(err, buf, sizeof(buf)));
 }
+
+static void ctorLog(const std::exception* e) {
+    QPID_LOG(trace, "Exception constructor " << typeid(e).name() << ": " << e->what());
+}
     
-Exception::Exception() throw() {}
+Exception::Exception() throw() { ctorLog(this); }
 
-Exception::Exception(const std::string& str) throw() : whatStr(str) {}
+Exception::Exception(const std::string& str) throw()
+    : whatStr(str) { ctorLog(this); }
 
-Exception::Exception(const char* str) throw() : whatStr(str) {}
+Exception::Exception(const char* str) throw() : whatStr(str) { ctorLog(this); }
 
 Exception::~Exception() throw() {}
 
