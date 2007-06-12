@@ -600,7 +600,17 @@ under the License.
                <enabled>true</enabled>
            </snapshots>
        </repository>
-    </repositories>
+    <repository>
+      <id>Codehaus Snapshots</id>
+      <url>http://snapshots.repository.codehaus.org/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+</repositories>
 
     <pluginRepositories>
         <pluginRepository>
