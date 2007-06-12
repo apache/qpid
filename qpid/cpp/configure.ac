@@ -176,6 +176,7 @@ fi
 AC_CONFIG_FILES([
   qpidc.spec
   Makefile
+  examples/Makefile
   src/Makefile
   src/tests/Makefile
   docs/man/Makefile
