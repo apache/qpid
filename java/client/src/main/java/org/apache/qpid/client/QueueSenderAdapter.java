@@ -2,12 +2,12 @@ package org.apache.qpid.client;
 
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.QueueSender;
-import javax.jms.InvalidDestinationException;
 
 public class QueueSenderAdapter implements QueueSender
 {
@@ -25,6 +25,7 @@ public class QueueSenderAdapter implements QueueSender
     public Queue getQueue() throws JMSException
     {
         checkPreConditions();
+
         return _queue;
     }
 
@@ -40,15 +41,13 @@ public class QueueSenderAdapter implements QueueSender
         _delegate.send(queue, msg);
     }
 
-    public void publish(Message msg, int deliveryMode, int priority, long timeToLive)
-            throws JMSException
+    public void publish(Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
         checkPreConditions();
         _delegate.send(msg, deliveryMode, priority, timeToLive);
     }
 
-    public void send(Queue queue, Message msg, int deliveryMode, int priority, long timeToLive)
-            throws JMSException
+    public void send(Queue queue, Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
         checkPreConditions(queue);
         _delegate.send(queue, msg, deliveryMode, priority, timeToLive);
@@ -63,36 +62,42 @@ public class QueueSenderAdapter implements QueueSender
     public int getDeliveryMode() throws JMSException
     {
         checkPreConditions();
+
         return _delegate.getDeliveryMode();
     }
 
     public Destination getDestination() throws JMSException
     {
         checkPreConditions();
+
         return _delegate.getDestination();
     }
 
     public boolean getDisableMessageID() throws JMSException
     {
         checkPreConditions();
+
         return _delegate.getDisableMessageID();
     }
 
     public boolean getDisableMessageTimestamp() throws JMSException
     {
         checkPreConditions();
+
         return _delegate.getDisableMessageTimestamp();
     }
 
     public int getPriority() throws JMSException
     {
         checkPreConditions();
+
         return _delegate.getPriority();
     }
 
     public long getTimeToLive() throws JMSException
     {
         checkPreConditions();
+
         return _delegate.getTimeToLive();
     }
 
@@ -102,8 +107,7 @@ public class QueueSenderAdapter implements QueueSender
         _delegate.send(dest, msg);
     }
 
-    public void send(Message msg, int deliveryMode, int priority, long timeToLive)
-            throws JMSException
+    public void send(Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
         checkPreConditions();
         _delegate.send(msg, deliveryMode, priority, timeToLive);
@@ -159,15 +163,21 @@ public class QueueSenderAdapter implements QueueSender
 
         AMQSession session = ((BasicMessageProducer) _delegate).getSession();
 
-        if (session == null || session.isClosed())
+        if ((session == null) || session.isClosed())
         {
             throw new javax.jms.IllegalStateException("Invalid Session");
+        }
+
+        if (queue == null)
+        {
+            throw new UnsupportedOperationException("Queue is null.");
         }
 
         if (!(queue instanceof AMQDestination))
         {
             throw new InvalidDestinationException("Queue: " + queue + " is not a valid Qpid queue");
         }
+
         AMQDestination destination = (AMQDestination) queue;
         if (!destination.isValidated() && checkQueueBeforePublish())
         {
@@ -185,7 +195,8 @@ public class QueueSenderAdapter implements QueueSender
                 }
                 else
                 {
-                    throw new InvalidDestinationException("Queue: " + queue + " is not a valid destination (no bindings on server");
+                    throw new InvalidDestinationException("Queue: " + queue
+                        + " is not a valid destination (no bindings on server");
                 }
             }
         }
