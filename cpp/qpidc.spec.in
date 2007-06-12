@@ -125,6 +125,7 @@ make check
 %doc rpm/README.qpidd-devel 
 %defattr(-,root,root,-)
 %_libdir/libqpidbroker.so
+%_libdir/libqpidcluster.so
 %_includedir/qpid/broker
 
 %post -p /sbin/ldconfig
