@@ -295,7 +295,6 @@ nobase_include_HEADERS = \
   qpid/broker/TxAck.h \
   qpid/client/AckMode.h \
   qpid/client/BasicMessageChannel.h \
-  qpid/client/ClientAdapter.h \
   qpid/client/ClientChannel.h \
   qpid/client/ClientExchange.h \
   qpid/client/ClientMessage.h \
