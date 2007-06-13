@@ -65,6 +65,7 @@ int main() {
     Connection connection;
     Channel channel;
     Message msg;
+    cout << "Hello" << endl;
     try {
         connection.open("127.0.0.1", 5672, "guest", "guest", "/test");
         connection.openChannel(channel);
@@ -85,9 +86,10 @@ int main() {
         channel.close();
         connection.close();
         return 0;
-    } catch(std::exception error) {
+    } catch(const std::exception& error) {
         cout << "Unexpected exception: " << error.what() << endl;
     }
+    connection.close();
     return 1;
 }
 
