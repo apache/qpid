@@ -49,7 +49,7 @@
 
 using namespace qpid::client;
 using namespace qpid::sys;
-using std::string;
+using namespace std;
 
 
 bool done = 0;
@@ -70,30 +70,29 @@ int main() {
         connection.openChannel(channel);
 
   //--------- Main body of program --------------------------------------------
-	Queue response("listener");
-        channel.bind(Exchange::STANDARD_DIRECT_EXCHANGE, response, "listener");
 
+        Queue response("listener");
         Listener listener;
         string routingKey="listener";
         channel.consume(response, routingKey, &listener);
 
         channel.start();
 
-	    while (!done)
-	        ;
+        while (!done)
+            ;
   //-----------------------------------------------------------------------------
 
         channel.close();
         connection.close();
         return 0;
-    } catch(qpid::QpidError error) {
-        // cout << error.what() << std::endl;
+    } catch(std::exception error) {
+        cout << "Unexpected exception: " << error.what() << endl;
     }
     return 1;
 }
 
 void Listener::received(Message& msg) {
-     std::cout << msg.getData();
+    cout << "Message: " << msg.getData() << endl;
      if (msg.getData() == "That's all, folks!")
        done = 1;
 }
