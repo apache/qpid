@@ -80,7 +80,7 @@ check_PROGRAMS = $(UNIT_TESTS) $(AIS_UNIT_TESTS) $(testprogs) interop_runner
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
 
 SYSTEM_TESTS = client_test quick_topictest
-TESTS = $(UNIT_TESTS) run-unit-tests ais_unit_tests start_broker $(SYSTEM_TESTS) python_tests kill_broker daemon_test
+TESTS = $(UNIT_TESTS) run-unit-tests $(RUN_AIS_TESTS) start_broker $(SYSTEM_TESTS) python_tests kill_broker daemon_test
 
 EXTRA_DIST =								\
   test_env run_test							\
