@@ -73,7 +73,7 @@ int main() {
         channel.close();
         connection.close();
         return 0;
-    } catch(qpid::QpidError error) {
+    } catch(const std::exception& error) {
         std::cout << error.what() << std::endl;
     }
     return 1;
