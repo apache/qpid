@@ -62,12 +62,11 @@ int main() {
 
   //--------- Main body of program --------------------------------------------
 
-// ## Alan: can I start the channel first, then declare the queue,
-// or does it need to be in this order?
         Queue response("listener");
         channel.declareQueue(response);
-
-        channel.start();
+        channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, response, "listener");
+        
+	channel.start();
 
   //-----------------------------------------------------------------------------
 
