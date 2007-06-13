@@ -1,5 +1,5 @@
 #!/bin/sh
 fail() { echo FAIL: $0:$* 1>&2; exit 1; }
 qpidd=../qpidd
-PID=`$qpidd --check --ppid` && fail $qpidd already running $PID
+PID=`$qpidd --check` && fail $qpidd already running $PID
 $qpidd --log.output qpidd.log --daemon || fail $qpidd startup: `cat qpidd.log`

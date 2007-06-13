@@ -76,6 +76,7 @@ posix_plat_src = \
 posix_plat_hdr = \
   qpid/sys/posix/check.h \
   qpid/sys/posix/Condition.h \
+  qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Module.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Socket.h \
