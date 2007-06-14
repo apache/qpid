@@ -202,6 +202,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NullMessageStore.cpp \
+  qpid/broker/QueueBindings.cpp \
   qpid/broker/QueuePolicy.cpp \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/RecoveryManagerImpl.cpp \
@@ -259,6 +260,7 @@ nobase_include_HEADERS = \
   qpid/broker/NullMessageStore.h \
   qpid/broker/Persistable.h \
   qpid/broker/Prefetch.h \
+  qpid/broker/QueueBindings.h \
   qpid/broker/QueueRegistry.h \
   qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \

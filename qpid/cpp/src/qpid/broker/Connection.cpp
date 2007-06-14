@@ -96,8 +96,10 @@ void Connection::idleIn(){}
 void Connection::closed(){
     try {
         while (!exclusiveQueues.empty()) {
-            broker.getQueues().destroy(exclusiveQueues.front()->getName());
+            Queue::shared_ptr q(exclusiveQueues.front());
+            broker.getQueues().destroy(q->getName());
             exclusiveQueues.erase(exclusiveQueues.begin());
+            q->unbind(broker.getExchanges(), q);
         }
     } catch(std::exception& e) {
         QPID_LOG(error, " Unhandled exception while closing session: " <<
