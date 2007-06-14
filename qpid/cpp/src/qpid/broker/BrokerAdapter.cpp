@@ -182,6 +182,7 @@ void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, uint
 
 	    //add default binding:
 	    broker.getExchanges().getDefault()->bind(queue, name, 0);
+            queue->bound(broker.getExchanges().getDefault()->getName(), name, arguments);
 
             //handle automatic cleanup:
 	    if (exclusive) {
@@ -212,8 +213,11 @@ void BrokerAdapter::QueueHandlerImpl::bind(const MethodContext& context, uint16_
     Exchange::shared_ptr exchange = broker.getExchanges().get(exchangeName);
     if(exchange){
         string exchangeRoutingKey = routingKey.empty() && queueName.empty() ? queue->getName() : routingKey;
-        if (exchange->bind(queue, exchangeRoutingKey, &arguments) && exchange->isDurable() && queue->isDurable()) {
-            broker.getStore().bind(*exchange, *queue, routingKey, arguments);
+        if (exchange->bind(queue, exchangeRoutingKey, &arguments)) {
+            queue->bound(exchangeName, routingKey, arguments);
+            if (exchange->isDurable() && queue->isDurable()) {
+                broker.getStore().bind(*exchange, *queue, routingKey, arguments);
+            }
         }
         if(!nowait) client.bindOk(context.getRequestId());    
     }else{
@@ -269,6 +273,7 @@ void BrokerAdapter::QueueHandlerImpl::delete_(const MethodContext& context, uint
         count = q->getMessageCount();
         q->destroy();
         broker.getQueues().destroy(queue);
+        q->unbind(broker.getExchanges(), q);
     }
 
     if(!nowait)

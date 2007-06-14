@@ -33,6 +33,7 @@
 #include "qpid/sys/Monitor.h"
 #include "PersistableQueue.h"
 #include "QueuePolicy.h"
+#include "QueueBindings.h"
 
 // TODO aconway 2007-02-06: Use auto_ptr and boost::ptr_vector to
 // enforce ownership of Consumers.
@@ -72,6 +73,7 @@ namespace qpid {
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
             std::auto_ptr<QueuePolicy> policy;            
+            QueueBindings bindings;
 
             void pop();
             void push(Message::shared_ptr& msg);
@@ -93,6 +95,8 @@ namespace qpid {
             void create(const qpid::framing::FieldTable& settings);
             void configure(const qpid::framing::FieldTable& settings);
             void destroy();
+            void bound(const string& exchange, const string& key, const qpid::framing::FieldTable& args);
+            void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
             /**
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
