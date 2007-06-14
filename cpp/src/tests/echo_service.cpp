@@ -135,7 +135,7 @@ int main(int argc, char** argv){
             }
             
             connection.close();
-        } catch(qpid::QpidError error) {
+        } catch(std::exception& error) {
             std::cout << error.what() << std::endl;
         }        
     } else {
@@ -164,7 +164,7 @@ int main(int argc, char** argv){
             channel.run();
             
             connection.close();
-        } catch(qpid::QpidError error) {
+        } catch(std::exception& error) {
             std::cout << error.what() << std::endl;
         }
     }

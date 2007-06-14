@@ -136,7 +136,7 @@ void LFProcessor::run(){
                 session->stopProcessing();
             }
         }
-    }catch(std::exception e){
+    }catch(const std::exception& e){
 	QPID_LOG(error,  e.what());
     }
 }
