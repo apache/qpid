@@ -18,13 +18,19 @@
  * under the License.
  *
  */
+#include "qpid/Exception.h"
 #include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/Deliverable.h"
+#include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include "MockChannel.h"
+#include "boost/format.hpp"
 
+using namespace qpid;
 using namespace qpid::broker;
+using namespace qpid::framing;
 using namespace qpid::sys;
 
 
@@ -35,6 +41,14 @@ public:
     virtual bool deliver(Message::shared_ptr& msg);
 };
 
+class FailOnDeliver : public Deliverable
+{
+public:
+    void deliverTo(Queue::shared_ptr& queue)
+    {
+        throw Exception(boost::format("Invalid delivery to %1%") % queue->getName());
+    }
+};
 
 class QueueTest : public CppUnit::TestCase  
 {
@@ -42,7 +56,9 @@ class QueueTest : public CppUnit::TestCase
     CPPUNIT_TEST(testConsumers);
     CPPUNIT_TEST(testRegistry);
     CPPUNIT_TEST(testDequeue);
+    CPPUNIT_TEST(testBound);
     CPPUNIT_TEST_SUITE_END();
+
 
   public:
     Message::shared_ptr message(std::string exchange, std::string routingKey) {
@@ -134,6 +150,40 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(!received);
         CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getMessageCount());
         
+    }
+
+    void testBound()
+    {
+        //test the recording of bindings, and use of those to allow a queue to be unbound
+        string key("my-key");
+        FieldTable args;
+
+        Queue::shared_ptr queue(new Queue("my-queue", true));
+        ExchangeRegistry exchanges;
+        //establish bindings from exchange->queue and notify the queue as it is bound:
+        Exchange::shared_ptr exchange1 = exchanges.declare("my-exchange-1", "direct").first;
+        exchange1->bind(queue, key, &args);
+        queue->bound(exchange1->getName(), key, args);
+
+        Exchange::shared_ptr exchange2 = exchanges.declare("my-exchange-2", "fanout").first;
+        exchange2->bind(queue, key, &args);
+        queue->bound(exchange2->getName(), key, args);
+
+        Exchange::shared_ptr exchange3 = exchanges.declare("my-exchange-3", "topic").first;
+        exchange3->bind(queue, key, &args);
+        queue->bound(exchange3->getName(), key, args);
+
+        //delete one of the exchanges:
+        exchanges.destroy(exchange2->getName());
+        exchange2.reset();
+
+        //unbind the queue from all exchanges it knows it has been bound to:
+        queue->unbind(exchanges, queue);
+
+        //ensure the remaining exchanges don't still have the queue bound to them:
+        FailOnDeliver deliverable;        
+        exchange1->route(deliverable, key, &args);
+        exchange3->route(deliverable, key, &args);
     }
 };
 

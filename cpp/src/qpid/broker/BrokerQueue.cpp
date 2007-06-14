@@ -238,6 +238,16 @@ void Queue::destroy()
     }
 }
 
+void Queue::bound(const string& exchange, const string& key, const FieldTable& args)
+{
+    bindings.add(exchange, key, args);
+}
+
+void Queue::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref)
+{
+    bindings.unbind(exchanges, shared_ref);
+}
+
 void Queue::setPolicy(std::auto_ptr<QueuePolicy> _policy)
 {
     policy = _policy;
