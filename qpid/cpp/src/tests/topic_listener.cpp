@@ -125,7 +125,7 @@ int main(int argc, char** argv){
             connection.close();
             cout << "topic_listener: normal exit" << endl;
             return 0;
-        }catch(qpid::QpidError error){
+        }catch(const std::exception& error){
             cout << "topic_listener: " << error.what() << endl;
         }
     }

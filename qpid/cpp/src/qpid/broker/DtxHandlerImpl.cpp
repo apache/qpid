@@ -77,7 +77,7 @@ void DtxHandlerImpl::end(const MethodContext& context,
             }
             dClient.endOk(XA_OK, context.getRequestId());
         }
-    } catch (DtxTimeoutException e) {
+    } catch (const DtxTimeoutException& e) {
         dClient.endOk(XA_RBTIMEOUT, context.getRequestId());        
     }
 }
@@ -98,7 +98,7 @@ void DtxHandlerImpl::start(const MethodContext& context,
             channel.startDtx(xid, broker.getDtxManager(), join);
         }
         dClient.startOk(XA_OK, context.getRequestId());
-    } catch (DtxTimeoutException e) {
+    } catch (const DtxTimeoutException& e) {
         dClient.startOk(XA_RBTIMEOUT, context.getRequestId());        
     }
 }
@@ -112,7 +112,7 @@ void DtxHandlerImpl::prepare(const MethodContext& context,
     try {
         bool ok = broker.getDtxManager().prepare(xid);
         cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
-    } catch (DtxTimeoutException e) {
+    } catch (const DtxTimeoutException& e) {
         cClient.prepareOk(XA_RBTIMEOUT, context.getRequestId());        
     }
 }
@@ -125,7 +125,7 @@ void DtxHandlerImpl::commit(const MethodContext& context,
     try {
         bool ok = broker.getDtxManager().commit(xid, onePhase);
         cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
-    } catch (DtxTimeoutException e) {
+    } catch (const DtxTimeoutException& e) {
         cClient.commitOk(XA_RBTIMEOUT, context.getRequestId());        
     }
 }
@@ -138,7 +138,7 @@ void DtxHandlerImpl::rollback(const MethodContext& context,
     try {
         broker.getDtxManager().rollback(xid);
         cClient.rollbackOk(XA_OK, context.getRequestId());
-    } catch (DtxTimeoutException e) {
+    } catch (const DtxTimeoutException& e) {
         cClient.rollbackOk(XA_RBTIMEOUT, context.getRequestId());        
     }
 }
