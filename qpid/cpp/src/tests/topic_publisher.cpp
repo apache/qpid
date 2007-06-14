@@ -157,7 +157,7 @@ int main(int argc, char** argv) {
             channel.close();
             connection.close();
             return 0;
-        }catch(qpid::QpidError error) {
+        }catch(std::exception& error) {
             std::cout << error.what() << std::endl;
         }
     }

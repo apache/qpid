@@ -116,7 +116,7 @@ int main(int argc, char** argv){
             
             channel.run();
             connection.close();
-        } catch(qpid::Exception error) {
+        } catch(const std::exception& error) {
             std::cout << error.what() << std::endl;
         }
     }
