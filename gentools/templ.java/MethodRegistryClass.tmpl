@@ -29,7 +29,8 @@
 package org.apache.qpid.framing;
 
 import java.util.HashMap;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.mina.common.ByteBuffer;
 
 public class MainRegistry
@@ -37,7 +38,7 @@ public class MainRegistry
 	private static final HashMap<Long, AMQMethodBodyInstanceFactory> classIDMethodIDVersionBodyMap = new HashMap<Long, AMQMethodBodyInstanceFactory>();
 
 	
-    private static final Logger _log = Logger.getLogger(MainRegistry.class);
+    private static final Logger _log = LoggerFactory.getLogger(MainRegistry.class);
 	
 
     private static final int DEFAULT_MINOR_VERSION_COUNT = 10;
