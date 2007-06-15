@@ -1,13 +1,14 @@
 package org.apache.qpid.server.failure;
 
 import junit.framework.TestCase;
-import org.apache.qpid.testutil.QpidClientConnection;
+import org.apache.qpid.testutil.QpidClientConnectionHelper;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.log4j.Logger;
 
 import javax.jms.JMSException;
+import javax.jms.DeliveryMode;
 import java.io.IOException;
 
 
@@ -16,7 +17,7 @@ public class HeapExhaustion extends TestCase
 {
     private static final Logger _logger = Logger.getLogger(HeapExhaustion.class);
 
-    protected QpidClientConnection conn;                         
+    protected QpidClientConnectionHelper conn;
     protected final String BROKER = "localhost";
     protected final String vhost = "/test";
     protected final String queue = "direct://amq.direct//queue";
@@ -31,7 +32,7 @@ public class HeapExhaustion extends TestCase
 
     protected void setUp() throws Exception
     {
-        conn = new QpidClientConnection(BROKER);
+        conn = new QpidClientConnectionHelper(BROKER);
         conn.setVirtualHost(vhost);
 
         try
@@ -68,7 +69,7 @@ public class HeapExhaustion extends TestCase
         int size = payload.getBytes().length;
         while (true)
         {
-            conn.put(queue, payload, 1);
+            conn.put(queue, payload, 1, DeliveryMode.NON_PERSISTENT);
             copies++;
             total += size;
             System.out.println("put copy " + copies + " OK for total bytes: " + total);
@@ -88,7 +89,7 @@ public class HeapExhaustion extends TestCase
         int size = payload.getBytes().length;
         while (true)
         {
-            conn.put(queue, payload, 1);
+            conn.put(queue, payload, 1, DeliveryMode.NON_PERSISTENT);
             copies++;
             total += size;
             System.out.println("put copy " + copies + " OK for total bytes: " + total);

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQAuthenticationException;
@@ -34,9 +33,12 @@ import org.apache.qpid.framing.ConnectionCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ConnectionCloseMethodHandler implements StateAwareMethodListener
 {
-    private static final Logger _logger = Logger.getLogger(ConnectionCloseMethodHandler.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ConnectionCloseMethodHandler.class);
 
     private static ConnectionCloseMethodHandler _handler = new ConnectionCloseMethodHandler();
 
@@ -46,16 +48,16 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
     }
 
     private ConnectionCloseMethodHandler()
-    {
-    }
+    { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+        throws AMQException
     {
         _logger.info("ConnectionClose frame received");
         ConnectionCloseBody method = (ConnectionCloseBody) evt.getMethod();
 
         // does it matter
-        //stateManager.changeState(AMQState.CONNECTION_CLOSING);
+        // stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
         AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
         AMQShortString reason = method.replyText;
@@ -64,7 +66,8 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         {
             // TODO: check whether channel id of zero is appropriate
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short) 0, method.getMajor(), method.getMinor()));
+            protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short) 0, method.getMajor(),
+                    method.getMinor()));
 
             if (errorCode != AMQConstant.REPLY_SUCCESS)
             {
@@ -74,7 +77,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
 
                     protocolSession.closeProtocolSession();
 
-                    //todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
+                    // todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
                     stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
 
                     throw new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString(), null);
@@ -82,7 +85,6 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
                 else
                 {
                     _logger.info("Connection close received with error code " + errorCode);
-
 
                     throw new AMQConnectionClosedException(errorCode, "Error: " + reason, null);
                 }

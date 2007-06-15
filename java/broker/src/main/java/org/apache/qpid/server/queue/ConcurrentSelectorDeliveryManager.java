@@ -717,7 +717,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     public void deliver(StoreContext context, AMQShortString name, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
-        if (_log.isDebugEnabled())
+
+        final boolean debugEnabled = _log.isDebugEnabled();
+        if (debugEnabled)
         {
             _log.debug(debugIdentity() + "deliver :first(" + deliverFirst + ") :" + msg);
         }
@@ -732,7 +734,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
             if (s == null) //no-one can take the message right now.
             {
-                if (_log.isDebugEnabled())
+                if (debugEnabled)
                 {
                     _log.debug(debugIdentity() + "Testing Message(" + msg + ") for Queued Delivery:" + currentStatus());
                 }
@@ -744,7 +746,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     _lock.unlock();
 
                     //Pre Deliver to all subscriptions
-                    if (_log.isDebugEnabled())
+                    if (debugEnabled)
                     {
                         _log.debug(debugIdentity() + "We have " + _subscriptions.getSubscriptions().size() +
                                    " subscribers to give the message to:" + currentStatus());
@@ -755,7 +757,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         // stop if the message gets delivered whilst PreDelivering if we have a shared queue.
                         if (_queue.isShared() && msg.getDeliveredToConsumer())
                         {
-                            if (_log.isDebugEnabled())
+                            if (debugEnabled)
                             {
                                 _log.debug(debugIdentity() + "Stopping PreDelivery as message(" + System.identityHashCode(msg) +
                                            ") is already delivered.");
@@ -766,7 +768,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         // Only give the message to those that want them.
                         if (sub.hasInterest(msg))
                         {
-                            if (_log.isDebugEnabled())
+                            if (debugEnabled)
                             {
                                 _log.debug(debugIdentity() + "Queuing message(" + System.identityHashCode(msg) +
                                            ") for PreDelivery for subscriber(" + System.identityHashCode(sub) + ")");
@@ -795,9 +797,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     }
                     else
                     {
-                        if (_log.isInfoEnabled())
+                        if (debugEnabled)
                         {
-                            _log.info(debugIdentity() + " Subscription(" + System.identityHashCode(s) + ") became " +
+                            _log.debug(debugIdentity() + " Subscription(" + System.identityHashCode(s) + ") became " +
                                       "suspended between nextSubscriber and send for message:" + msg.debugIdentity());
                         }
                     }
@@ -805,9 +807,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
                 if (!msg.isTaken(_queue))
                 {
-                    if (_log.isInfoEnabled())
+                    if (debugEnabled)
                     {
-                        _log.info(debugIdentity() + " Message(" + msg.debugIdentity() + ") has not been taken so recursing!:" +
+                        _log.debug(debugIdentity() + " Message(" + msg.debugIdentity() + ") has not been taken so recursing!:" +
                                   " Subscriber:" + System.identityHashCode(s));
                     }
 
@@ -815,7 +817,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 }
                 else
                 {
-                    if (_log.isDebugEnabled())
+                    if (debugEnabled)
                     {
                         _log.debug(debugIdentity() + " Message(" + msg.toString() +
                                    ") has been taken so disregarding deliver request to Subscriber:" +

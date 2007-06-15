@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,14 +20,19 @@
  */
 package org.apache.qpid.jndi;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
+import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQHeadersExchange;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.url.URLSyntaxException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
@@ -37,21 +42,18 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQHeadersExchange;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.exchange.ExchangeDefaults;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
-    protected final Logger _logger = Logger.getLogger(PropertiesFileInitialContextFactory.class);
+    protected final Logger _logger = LoggerFactory.getLogger(PropertiesFileInitialContextFactory.class);
 
     private String CONNECTION_FACTORY_PREFIX = "connectionfactory.";
     private String DESTINATION_PREFIX = "destination.";
@@ -78,7 +80,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (file != null)
             {
                 _logger.info("Loading Properties from:" + file);
-                //Load the properties specified
+                // Load the properties specified
                 Properties p = new Properties();
 
                 p.load(new BufferedInputStream(new FileInputStream(file)));
@@ -93,8 +95,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         }
         catch (IOException ioe)
         {
-            _logger.warn("Unable to load property file specified in Provider_URL:" +
-                         environment.get(Context.PROVIDER_URL));
+            _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL));
         }
 
         createConnectionFactories(data, environment);
@@ -109,7 +110,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     }
 
     // Implementation methods
-    //-------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     protected ReadOnlyContext createContext(Map data, Hashtable environment)
     {
         return new ReadOnlyContext(environment, data);
@@ -200,6 +201,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
             _logger.warn("Unable to createFactories:" + urlse);
         }
+
         return null;
     }
 
@@ -216,6 +218,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         catch (URLSyntaxException urlse)
         {
             _logger.warn("Unable to destination:" + urlse);
+
             return null;
         }
 
@@ -226,6 +229,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         catch (IllegalArgumentException iaw)
         {
             _logger.warn("Binding: '" + binding + "' not supported");
+
             return null;
         }
     }
@@ -235,17 +239,15 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
      */
     protected Queue createQueue(Object value)
     {
-        if(value instanceof AMQShortString)
+        if (value instanceof AMQShortString)
         {
             return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, (AMQShortString) value);
         }
         else if (value instanceof String)
-
         {
             return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, new AMQShortString((String) value));
         }
         else if (value instanceof BindingURL)
-
         {
             return new AMQQueue((BindingURL) value);
         }
@@ -258,16 +260,15 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
      */
     protected Topic createTopic(Object value)
     {
-        if(value instanceof AMQShortString)
+        if (value instanceof AMQShortString)
         {
-            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, (AMQShortString)value);
+            return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, (AMQShortString) value);
         }
         else if (value instanceof String)
         {
             return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, new AMQShortString((String) value));
         }
         else if (value instanceof BindingURL)
-
         {
             return new AMQTopic((BindingURL) value);
         }
@@ -293,7 +294,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     }
 
     // Properties
-    //-------------------------------------------------------------------------
+    // -------------------------------------------------------------------------
     public String getConnectionPrefix()
     {
         return CONNECTION_FACTORY_PREFIX;

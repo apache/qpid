@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,23 +20,25 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.testutil.VMBrokerSetup;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.log4j.Logger;
+import org.apache.qpid.testutil.VMBrokerSetup;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
 
 public class SessionStartTest extends TestCase implements MessageListener
 {
-    private static final Logger _logger = Logger.getLogger(SessionStartTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(SessionStartTest.class);
 
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -57,7 +59,8 @@ public class SessionStartTest extends TestCase implements MessageListener
 
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("SessionStartTest")), true));
+        init(connection,
+            new AMQQueue(connection.getDefaultQueueExchangeName(), new AMQShortString(randomize("SessionStartTest")), true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception
@@ -107,7 +110,7 @@ public class SessionStartTest extends TestCase implements MessageListener
     public static void main(String[] argv) throws Exception
     {
         SessionStartTest test = new SessionStartTest();
-        test._connectionString = argv.length == 0 ? "localhost:5672" : argv[0];
+        test._connectionString = (argv.length == 0) ? "localhost:5672" : argv[0];
         test.setUp();
         test.test();
     }

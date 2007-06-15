@@ -20,8 +20,23 @@
  */
 package org.apache.qpid.client;
 
-import java.io.UnsupportedEncodingException;
-import java.util.UUID;
+import org.apache.mina.common.ByteBuffer;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.MessageConverter;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.BasicConsumeBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.CompositeAMQDataBlock;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.ExchangeDeclareBody;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
@@ -36,24 +51,12 @@ import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
 
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.MessageConverter;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.BasicPublishBody;
-import org.apache.qpid.framing.CompositeAMQDataBlock;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
+import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 
 public class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {
-    protected final Logger _logger = Logger.getLogger(getClass());
+    protected final Logger _logger = LoggerFactory.getLogger(getClass());
 
     private AMQConnection _connection;
 
@@ -119,14 +122,14 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     private final boolean _mandatory;
 
     private final boolean _waitUntilSent;
-    
+
     private boolean _disableMessageId;
-        
+
     private static final ContentBody[] NO_CONTENT_BODIES = new ContentBody[0];
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
-                                   boolean immediate, boolean mandatory, boolean waitUntilSent)
+        AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
+        boolean waitUntilSent)
     {
         _connection = connection;
         _destination = destination;
@@ -160,15 +163,15 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // TODO: Be aware of possible changes to parameter order as versions change.
         AMQFrame declare =
             ExchangeDeclareBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
-                                               _protocolHandler.getProtocolMinorVersion(), null, // arguments
-                                               false, // autoDelete
-                                               false, // durable
-                                               destination.getExchangeName(), // exchange
-                                               false, // internal
-                                               true, // nowait
-                                               false, // passive
-                                               _session.getTicket(), // ticket
-                                               destination.getExchangeClass()); // type
+                _protocolHandler.getProtocolMinorVersion(), null, // arguments
+                false, // autoDelete
+                false, // durable
+                destination.getExchangeName(), // exchange
+                false, // internal
+                true, // nowait
+                false, // passive
+                _session.getTicket(), // ticket
+                destination.getExchangeClass()); // type
         _protocolHandler.writeFrame(declare);
     }
 
@@ -205,7 +208,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         if ((i != DeliveryMode.NON_PERSISTENT) && (i != DeliveryMode.PERSISTENT))
         {
             throw new JMSException("DeliveryMode must be either NON_PERSISTENT or PERSISTENT. Value of " + i
-                                   + " is illegal");
+                + " is illegal");
         }
 
         _deliveryMode = i;
@@ -317,12 +320,12 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         {
             validateDestination(destination);
             sendImpl((AMQDestination) destination, message, _deliveryMode, _messagePriority, _timeToLive, _mandatory,
-                     _immediate);
+                _immediate);
         }
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive)
-              throws JMSException
+        throws JMSException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -334,7 +337,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
-                     boolean mandatory) throws JMSException
+        boolean mandatory) throws JMSException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -346,7 +349,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
-                     boolean mandatory, boolean immediate) throws JMSException
+        boolean mandatory, boolean immediate) throws JMSException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -358,7 +361,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
-                     boolean mandatory, boolean immediate, boolean waitUntilSent) throws JMSException
+        boolean mandatory, boolean immediate, boolean waitUntilSent) throws JMSException
     {
         checkPreConditions();
         checkDestination(destination);
@@ -366,7 +369,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         {
             validateDestination(destination);
             sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, immediate,
-                     waitUntilSent);
+                waitUntilSent);
         }
     }
 
@@ -412,7 +415,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
             else
             {
                 throw new JMSException("Unable to send message, due to class conversion error: "
-                                       + message.getClass().getName());
+                    + message.getClass().getName());
             }
         }
     }
@@ -422,14 +425,14 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         if (!(destination instanceof AMQDestination))
         {
             throw new JMSException("Unsupported destination class: "
-                                   + ((destination != null) ? destination.getClass() : null));
+                + ((destination != null) ? destination.getClass() : null));
         }
 
         declareDestination((AMQDestination) destination);
     }
 
     protected void sendImpl(AMQDestination destination, Message message, int deliveryMode, int priority, long timeToLive,
-                            boolean mandatory, boolean immediate) throws JMSException
+        boolean mandatory, boolean immediate) throws JMSException
     {
         sendImpl(destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
     }
@@ -447,23 +450,23 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
      * @throws JMSException
      */
     protected void sendImpl(AMQDestination destination, Message origMessage, int deliveryMode, int priority, long timeToLive,
-                            boolean mandatory, boolean immediate, boolean wait) throws JMSException
+        boolean mandatory, boolean immediate, boolean wait) throws JMSException
     {
         checkTemporaryDestination(destination);
         origMessage.setJMSDestination(destination);
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
-        
-        if(_disableMessageId)
+
+        if (_disableMessageId)
         {
-        	message.setJMSMessageID(null);
+            message.setJMSMessageID(null);
         }
         else
         {
-        	if (message.getJMSMessageID() == null)
-        	{
-        		message.setJMSMessageID(UUID.randomUUID().toString());
-        	}
+            if (message.getJMSMessageID() == null)
+            {
+                message.setJMSMessageID(UUID.randomUUID().toString());
+            }
         }
 
         int type;
@@ -486,9 +489,8 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         AMQFrame publishFrame =
-            BasicPublishBody.createAMQFrame(
-                _channelId, _protocolHandler.getProtocolMajorVersion(), _protocolHandler.getProtocolMinorVersion(),
-                destination.getExchangeName(), // exchange
+            BasicPublishBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
+                _protocolHandler.getProtocolMinorVersion(), destination.getExchangeName(), // exchange
                 immediate, // immediate
                 mandatory, // mandatory
                 destination.getRoutingKey(), // routingKey
@@ -535,9 +537,8 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         AMQFrame contentHeaderFrame =
             ContentHeaderBody.createAMQFrame(_channelId,
-                                             BasicConsumeBody.getClazz(_protocolHandler.getProtocolMajorVersion(),
-                                                                       _protocolHandler.getProtocolMinorVersion()), 0,
-                                             contentHeaderProperties, size);
+                BasicConsumeBody.getClazz(_protocolHandler.getProtocolMajorVersion(),
+                    _protocolHandler.getProtocolMinorVersion()), 0, contentHeaderProperties, size);
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Sending content header frame to " + destination);
@@ -685,6 +686,6 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     public boolean isBound(AMQDestination destination) throws JMSException
     {
-        return _session.isQueueBound(destination.getExchangeName(),null,destination.getRoutingKey());
+        return _session.isQueueBound(destination.getExchangeName(), null, destination.getRoutingKey());
     }
 }

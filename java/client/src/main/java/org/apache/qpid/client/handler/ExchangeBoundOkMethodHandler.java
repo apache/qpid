@@ -17,7 +17,6 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
@@ -25,32 +24,33 @@ import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.ExchangeBoundOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author Apache Software Foundation
  */
 public class ExchangeBoundOkMethodHandler implements StateAwareMethodListener
 {
-     private static final Logger _logger = Logger.getLogger(ExchangeBoundOkMethodHandler.class);
-     private static final ExchangeBoundOkMethodHandler _instance = new ExchangeBoundOkMethodHandler();
+    private static final Logger _logger = LoggerFactory.getLogger(ExchangeBoundOkMethodHandler.class);
+    private static final ExchangeBoundOkMethodHandler _instance = new ExchangeBoundOkMethodHandler();
 
-     public static ExchangeBoundOkMethodHandler getInstance()
-     {
-         return _instance;
-     }
+    public static ExchangeBoundOkMethodHandler getInstance()
+    {
+        return _instance;
+    }
 
-     private ExchangeBoundOkMethodHandler()
-     {
-     }
+    private ExchangeBoundOkMethodHandler()
+    { }
 
-     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
-     {
-         if (_logger.isDebugEnabled())
-         {
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+        throws AMQException
+    {
+        if (_logger.isDebugEnabled())
+        {
             ExchangeBoundOkBody body = (ExchangeBoundOkBody) evt.getMethod();
-            _logger.debug("Received Exchange.Bound-Ok message, response code: " + body.replyCode + " text: " +
-                          body.replyText);
-         }
-     }
+            _logger.debug("Received Exchange.Bound-Ok message, response code: " + body.replyCode + " text: "
+                + body.replyText);
+        }
+    }
 }
-
-

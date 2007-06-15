@@ -20,26 +20,24 @@
  */
 package org.apache.qpid.client.security;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-import javax.security.sasl.RealmCallback;
 
-import com.sun.crypto.provider.HmacMD5;
-
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.client.protocol.AMQProtocolSession;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
 {
-    private static final Logger _logger = Logger.getLogger(UsernameHashedPasswordCallbackHandler.class);
+    private static final Logger _logger = LoggerFactory.getLogger(UsernameHashedPasswordCallbackHandler.class);
 
     private AMQProtocolSession _protocolSession;
 
@@ -91,11 +89,11 @@ public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
 
         byte[] digest = md.digest();
 
-        char[] hash = new char[digest.length ];
+        char[] hash = new char[digest.length];
 
         int index = 0;
         for (byte b : digest)
-        {            
+        {
             hash[index++] = (char) b;
         }
 

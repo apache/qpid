@@ -14,22 +14,23 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.util;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Queue;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQueueAtomicSize<E> implements MessageQueue<E>
 {
-    private static final Logger _logger = Logger.getLogger(ConcurrentLinkedMessageQueueAtomicSize.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ConcurrentLinkedMessageQueueAtomicSize.class);
 
     protected Queue<E> _messageHead = new ConcurrentLinkedQueueAtomicSize<E>();
 
@@ -62,7 +63,6 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
                 _logger.debug("Providing item(" + e + ")from message head");
             }
 
-
             if (e != null)
             {
                 _messageHeadSize.decrementAndGet();
@@ -85,6 +85,7 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
             if (_messageHead.remove(o))
             {
                 _messageHeadSize.decrementAndGet();
+
                 return true;
             }
 
@@ -101,25 +102,24 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
         }
         else
         {
-            //fixme this is super.removeAll but iterator here doesn't work
+            // fixme this is super.removeAll but iterator here doesn't work
             // we need to be able to correctly decrement _messageHeadSize
-//            boolean modified = false;
-//            Iterator<?> e = iterator();
-//            while (e.hasNext())
-//            {
-//                if (c.contains(e.next()))
-//                {
-//                    e.remove();
-//                    modified = true;
-//                    _size.decrementAndGet();
-//                }
-//            }
-//            return modified;
+            // boolean modified = false;
+            // Iterator<?> e = iterator();
+            // while (e.hasNext())
+            // {
+            // if (c.contains(e.next()))
+            // {
+            // e.remove();
+            // modified = true;
+            // _size.decrementAndGet();
+            // }
+            // }
+            // return modified;
 
             throw new RuntimeException("Not implemented");
         }
     }
-
 
     @Override
     public boolean isEmpty()
@@ -173,6 +173,7 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
             {
                 _logger.debug("Peeking item (" + o + ") from message head");
             }
+
             return o;
         }
 
@@ -182,36 +183,40 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
     public Iterator<E> iterator()
     {
         final Iterator<E> mainMessageIterator = super.iterator();
+
         return new Iterator<E>()
-        {
-            final Iterator<E> _headIterator = _messageHead.iterator();
-            final Iterator<E> _mainIterator = mainMessageIterator;
-
-            Iterator<E> last;
-
-            public boolean hasNext()
             {
-                return _headIterator.hasNext() || _mainIterator.hasNext();
-            }
+                final Iterator<E> _headIterator = _messageHead.iterator();
+                final Iterator<E> _mainIterator = mainMessageIterator;
 
-            public E next()
-            {
-                if (_headIterator.hasNext())
+                Iterator<E> last;
+
+                public boolean hasNext()
                 {
-                    last = _headIterator;
-                    return _headIterator.next();
+                    return _headIterator.hasNext() || _mainIterator.hasNext();
                 }
-                else
+
+                public E next()
                 {
-                    last = _mainIterator;
-                    return _mainIterator.next();
+                    if (_headIterator.hasNext())
+                    {
+                        last = _headIterator;
+
+                        return _headIterator.next();
+                    }
+                    else
+                    {
+                        last = _mainIterator;
+
+                        return _mainIterator.next();
+                    }
                 }
-            }
-            public void remove()
-            {
-                last.remove();
-            }
-        };
+
+                public void remove()
+                {
+                    last.remove();
+                }
+            };
     }
 
     @Override
@@ -232,11 +237,14 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
         {
             _logger.debug("Adding item(" + o + ") to head of queue");
         }
+
         if (_messageHead.offer(o))
         {
             _messageHeadSize.incrementAndGet();
+
             return true;
         }
+
         return false;
     }
 }

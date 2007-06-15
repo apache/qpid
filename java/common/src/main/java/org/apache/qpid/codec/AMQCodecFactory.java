@@ -37,10 +37,10 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 public class AMQCodecFactory implements ProtocolCodecFactory
 {
     /** Holds the protocol encoder. */
-    private AMQEncoder _encoder = new AMQEncoder();
+    private final AMQEncoder _encoder = new AMQEncoder();
 
     /** Holds the protocol decoder. */
-    private AMQDecoder _frameDecoder;
+    private final AMQDecoder _frameDecoder;
 
     /**
      * Creates a new codec factory, specifiying whether it is expected that the first frame of data should be an

@@ -22,34 +22,28 @@ package org.apache.qpid.test.unit.close;
 
 import junit.framework.TestCase;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
-
-import javax.jms.ExceptionListener;
-import javax.jms.Session;
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.Queue;
-import javax.jms.MessageProducer;
-import javax.jms.Message;
-import javax.jms.TextMessage;
-import javax.jms.MessageConsumer;
-
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.testutil.QpidClientConnection;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
+import org.apache.qpid.url.URLSyntaxException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Queue;
+import javax.jms.Session;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageRequeueTest extends TestCase
 {
-
-    private static final Logger _logger = Logger.getLogger(MessageRequeueTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MessageRequeueTest.class);
 
     protected static AtomicInteger consumerIds = new AtomicInteger(0);
     protected final Integer numTestMessages = 150;
@@ -86,7 +80,7 @@ public class MessageRequeueTest extends TestCase
     {
         super.tearDown();
 
-        if (!passed)   // clean up
+        if (!passed) // clean up
         {
             QpidClientConnection conn = new QpidClientConnection(BROKER);
 
@@ -96,6 +90,7 @@ public class MessageRequeueTest extends TestCase
 
             conn.disconnect();
         }
+
         TransportConnection.killVMBroker(1);
     }
 
@@ -117,7 +112,7 @@ public class MessageRequeueTest extends TestCase
         final MessageConsumer consumer = conn.getSession().createConsumer(q);
         int messagesReceived = 0;
 
-        long messageLog[] = new long[numTestMessages + 1];
+        long[] messageLog = new long[numTestMessages + 1];
 
         _logger.info("consuming...");
         Message msg = consumer.receive(1000);
@@ -130,15 +125,13 @@ public class MessageRequeueTest extends TestCase
             int msgindex = msg.getIntProperty("index");
             if (messageLog[msgindex] != 0)
             {
-                _logger.error("Received Message(" + msgindex + ":" + ((AbstractJMSMessage) msg).getDeliveryTag() +
-                              ") more than once.");
+                _logger.error("Received Message(" + msgindex + ":" + ((AbstractJMSMessage) msg).getDeliveryTag()
+                    + ") more than once.");
             }
 
             if (_logger.isInfoEnabled())
             {
-                _logger.info("Received Message(" + System.identityHashCode(msgindex) + ") " +
-                             "DT:" + dt +
-                             "IN:" + msgindex);
+                _logger.info("Received Message(" + System.identityHashCode(msgindex) + ") " + "DT:" + dt + "IN:" + msgindex);
             }
 
             if (dt == 0)
@@ -148,7 +141,7 @@ public class MessageRequeueTest extends TestCase
 
             messageLog[msgindex] = dt;
 
-            //get Next message
+            // get Next message
             msg = consumer.receive(1000);
         }
 
@@ -163,7 +156,7 @@ public class MessageRequeueTest extends TestCase
 
         for (long b : messageLog)
         {
-            if (b == 0 && index != 0) //delivery tag of zero shouldn't exist
+            if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist
             {
                 _logger.error("Index: " + index + " was not received.");
                 list.append(" ");
@@ -175,6 +168,7 @@ public class MessageRequeueTest extends TestCase
 
             index++;
         }
+
         assertEquals(list.toString(), 0, failed);
         _logger.info("consumed: " + messagesReceived);
         conn.disconnect();
@@ -199,7 +193,7 @@ public class MessageRequeueTest extends TestCase
         t1.start();
         t2.start();
         t3.start();
-//        t4.start();
+        // t4.start();
 
         try
         {
@@ -228,7 +222,7 @@ public class MessageRequeueTest extends TestCase
 
         for (long b : receieved)
         {
-            if (b == 0 && index != 0) //delivery tag of zero shouldn't exist (and we don't have msg 0)
+            if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist (and we don't have msg 0)
             {
                 _logger.error("Index: " + index + " was not received.");
                 list.append(" ");
@@ -237,8 +231,10 @@ public class MessageRequeueTest extends TestCase
                 list.append(b);
                 failed++;
             }
+
             index++;
         }
+
         assertEquals(list.toString() + "-" + numTestMessages + "-" + totalConsumed, 0, failed);
         assertEquals("number of consumed messages does not match initial data", numTestMessages, totalConsumed);
         passed = true;
@@ -278,15 +274,14 @@ public class MessageRequeueTest extends TestCase
                             int msgindex = result.getIntProperty("index");
                             if (receieved[msgindex] != 0)
                             {
-                                _logger.error("Received Message(" + msgindex + ":" + ((AbstractJMSMessage) result).getDeliveryTag() +
-                                              ") more than once.");
+                                _logger.error("Received Message(" + msgindex + ":"
+                                    + ((AbstractJMSMessage) result).getDeliveryTag() + ") more than once.");
                             }
 
                             if (_logger.isInfoEnabled())
                             {
-                                _logger.info("Received Message(" + System.identityHashCode(msgindex) + ") " +
-                                             "DT:" + dt +
-                                             "IN:" + msgindex);
+                                _logger.info("Received Message(" + System.identityHashCode(msgindex) + ") " + "DT:" + dt
+                                    + "IN:" + msgindex);
                             }
 
                             if (dt == 0)
@@ -297,9 +292,8 @@ public class MessageRequeueTest extends TestCase
                             receieved[msgindex] = dt;
                         }
 
-
                         count++;
-                        if (count % 100 == 0)
+                        if ((count % 100) == 0)
                         {
                             _logger.info("consumer-" + id + ": got " + result + ", new count is " + count);
                         }
@@ -328,11 +322,10 @@ public class MessageRequeueTest extends TestCase
         }
     }
 
-
     public void testRequeue() throws JMSException, AMQException, URLSyntaxException
     {
         int run = 0;
-//        while (run < 10)
+        // while (run < 10)
         {
             run++;
 
@@ -358,7 +351,6 @@ public class MessageRequeueTest extends TestCase
             Message msg = consumer.receive(2000);
 
             assertNotNull("Message should not be null", msg);
-
 
             // As we have not ack'd message will be requeued.
             _logger.debug("Close Consumer");

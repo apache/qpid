@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,16 +20,18 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.protocol.AMQMethodEvent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ChannelCloseOkMethodHandler implements StateAwareMethodListener
 {
-    private static final Logger _logger = Logger.getLogger(ChannelCloseOkMethodHandler.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseOkMethodHandler.class);
 
     private static final ChannelCloseOkMethodHandler _instance = new ChannelCloseOkMethodHandler();
 
@@ -38,10 +40,11 @@ public class ChannelCloseOkMethodHandler implements StateAwareMethodListener
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+        throws AMQException
     {
         _logger.info("Received channel-close-ok for channel-id " + evt.getChannelId());
 
-        //todo this should do the local closure
+        // todo this should do the local closure
     }
 }

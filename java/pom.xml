@@ -41,11 +41,22 @@ under the License.
     </prerequisites>
 
     <distributionManagement>
+
         <snapshotRepository>
             <id>apache.snapshots</id>
             <name>Apache SNAPSHOT Repository</name>
             <url>scp://people.apache.org/www/people.apache.org/repo/m2-snapshot-repository</url>
         </snapshotRepository>
+
+        <!--
+        <snapshotRepository>
+            <uniqueVersion>true</uniqueVersion>
+            <id>snapshot-repo</id>
+            <name>Local Snapshot Repository</name>
+            <url>file://${basedir}/${topDirectoryLocation}/snapshots</url>
+            <layout>default</layout>
+        </snapshotRepository>
+        -->
 
         <!-- Qpid has a Wiki site, maven generated site not used. This is just so that it can be created locally for viewing the reports. -->
         <site>
@@ -414,7 +425,7 @@ under the License.
             <dependency>
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
-                <version>3.1</version>
+                <version>3.2</version>
             </dependency>
             <dependency>
                 <groupId>commons-configuration</groupId>
@@ -591,7 +602,17 @@ under the License.
                <enabled>true</enabled>
            </snapshots>
        </repository>
-    </repositories>
+    <repository>
+      <id>Codehaus Snapshots</id>
+      <url>http://snapshots.repository.codehaus.org/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+</repositories>
 
     <pluginRepositories>
         <pluginRepository>
@@ -619,8 +640,10 @@ under the License.
             <id>fastinstall</id>
             <properties>
                 <maven.test.skip>true</maven.test.skip>
+                <skip.python.tests>true</skip.python.tests>
             </properties>
         </profile>
+
         <profile>
             <id>nochecks</id>
         </profile>

@@ -22,8 +22,6 @@ package org.apache.qpid.util;
 
 import java.io.*;
 
-import org.apache.log4j.Logger;
-
 /**
  * FileUtils provides some simple helper methods for working with files. It follows the convention of wrapping all
  * checked exceptions as runtimes, so code using these methods is free of try-catch blocks but does not expect to

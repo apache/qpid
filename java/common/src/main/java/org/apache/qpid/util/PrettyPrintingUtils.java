@@ -26,6 +26,8 @@ package org.apache.qpid.util;
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * </table>
+ *
+ * @todo Drop this. There are already array pretty printing methods it java.utils.Arrays.
  */
 public class PrettyPrintingUtils
 {
