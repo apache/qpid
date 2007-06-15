@@ -29,6 +29,7 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.PoolingFilter;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
+import org.apache.qpid.pool.ReadWriteThreadModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +51,8 @@ public class VmPipeTransportConnection implements ITransportConnection
     {
         final VmPipeConnector ioConnector = new VmPipeConnector();
         final IoServiceConfig cfg = ioConnector.getDefaultConfig();
-        ReferenceCountingExecutorService executorService = ReferenceCountingExecutorService.getInstance();
-        PoolingFilter asyncRead = PoolingFilter.createAynschReadPoolingFilter(executorService, "AsynchronousReadFilter");
-        cfg.getFilterChain().addFirst("AsynchronousReadFilter", asyncRead);
-        PoolingFilter asyncWrite = PoolingFilter.createAynschWritePoolingFilter(executorService, "AsynchronousWriteFilter");
-        cfg.getFilterChain().addLast("AsynchronousWriteFilter", asyncWrite);
+
+        cfg.setThreadModel(ReadWriteThreadModel.getInstance());             
 
         final VmPipeAddress address = new VmPipeAddress(_port);
         _logger.info("Attempting connection to " + address);
