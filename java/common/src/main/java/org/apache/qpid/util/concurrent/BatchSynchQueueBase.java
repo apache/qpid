@@ -1,11 +1,13 @@
 package org.apache.qpid.util.concurrent;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.apache.log4j.Logger;
 
 /**
  * Synchronous/Asynchronous puts. Asynchronous is easiest, just wait till can write to queue and deposit data.
@@ -41,7 +43,8 @@ import org.apache.log4j.Logger;
 public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements BatchSynchQueue<E>
 {
     /** Used for logging. */
-    private static final Logger log = Logger.getLogger(BatchSynchQueueBase.class);
+    private static final Logger log = LoggerFactory.getLogger(BatchSynchQueueBase.class);
+                                                       
 
     /** Holds a reference to the queue implementation that holds the buffer. */
     Queue<SynchRecordImpl<E>> buffer;
