@@ -20,13 +20,6 @@
  */
 package org.apache.qpid.client.transport;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
-import org.apache.log4j.Logger;
-
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
@@ -34,10 +27,17 @@ import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 
-import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * The TransportConnection is a helper class responsible for connecting to an AMQ server. It sets up the underlying
@@ -57,7 +57,7 @@ public class TransportConnection
     private static final int TCP = 0;
     private static final int VM = 1;
 
-    private static Logger _logger = Logger.getLogger(TransportConnection.class);
+    private static Logger _logger = LoggerFactory.getLogger(TransportConnection.class);
 
     private static final String DEFAULT_QPID_SERVER = "org.apache.qpid.server.protocol.AMQPFastProtocolHandler";
 
@@ -99,7 +99,7 @@ public class TransportConnection
                             // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
                             if (Boolean.getBoolean("qpidnio"))
                             {
-                                _logger.fatal("Using Qpid NIO - sysproperty 'qpidnio' is set.");
+                                _logger.error("Using Qpid NIO - sysproperty 'qpidnio' is set.");
                                 // result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
                             }
                             // else
@@ -193,7 +193,7 @@ public class TransportConnection
             }
             catch (IOException e)
             {
-                _logger.error(e);
+                _logger.error("Got IOException.", e);
 
                 // Try and unbind provider
                 try
@@ -262,7 +262,6 @@ public class TransportConnection
         catch (Exception e)
         {
             _logger.info("Unable to create InVM Qpid.AMQP on port " + port + ". Because: " + e.getCause());
-            _logger.error(e);
             String because;
             if (e.getCause() == null)
             {

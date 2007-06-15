@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,59 +20,108 @@
  */
 package org.apache.qpid.client.failover;
 
-import java.util.concurrent.CountDownLatch;
-
 import org.apache.log4j.Logger;
+
 import org.apache.mina.common.IoSession;
+
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQStateManager;
 
+import java.util.concurrent.CountDownLatch;
+
 /**
- * When failover is required, we need a separate thread to handle the establishment of the new connection and
- * the transfer of subscriptions.
- * </p>
- * The reason this needs to be a separate thread is because you cannot do this work inside the MINA IO processor
- * thread. One significant task is the connection setup which involves a protocol exchange until a particular state
- * is achieved. However if you do this in the MINA thread, you have to block until the state is achieved which means
- * the IO processor is not able to do anything at all.
+ * FailoverHandler is a continuation that performs the failover procedure on a protocol session. As described in the
+ * class level comment for {@link AMQProtocolHandler}, a protocol connection can span many physical transport
+ * connections, failing over to a new connection if the transport connection fails. The procedure to establish a new
+ * connection is expressed as a continuation, in order that it may be run in a seperate thread to the i/o thread that
+ * detected the failure and is used to handle the communication to establish a new connection.
+ *
+ * </p>The reason this needs to be a separate thread is because this work cannot be done inside the i/o processor
+ * thread. The significant task is the connection setup which involves a protocol exchange until a particular state
+ * is achieved. This procedure waits until the state is achieved which would prevent the i/o thread doing the work
+ * it needs to do to achieve the new state.
+ *
+ * <p/>The failover procedure does the following:
+ *
+ * <ol>
+ * <li>Sets the failing over condition to true.</li>
+ * <li>Creates a {@link FailoverException} and gets the protocol connection handler to propagate this event to all
+ *     interested parties.</li>
+ * <li>Takes the failover mutex on the protocol connection handler.</li>
+ * <li>Abandons the fail over if any of the interested parties vetoes it. The mutex is released and the condition
+ *     reset.</li>
+ * <li>Creates a new {@link AMQStateManager} and re-established the connection through it.</li>
+ * <li>Informs the AMQConnection if the connection cannot be re-established.</li>
+ * <li>Recreates all sessions from the old connection to the new.</li>
+ * <li>Resets the failing over condition and releases the mutex.</li>
+ * </ol>
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Update fail-over state <td> {@link AMQProtocolHandler}
+ * </table>
+ *
+ * @todo The failover latch and mutex are used like a lock and condition. If the retrotranlator supports lock/condition
+ *       then could change over to using them. 1.4 support still needed.
+ *
+ * @todo If the condition is set to null on a vetoes fail-over and there are already other threads waiting on the
+ *       condition, they will never be released. It might be an idea to reset the condition in a finally block.
+ *
+ * @todo Creates a {@link AMQDisconnectedException} and passes it to the AMQConnection. No need to use an
+ *       exception-as-argument here, could just as easily call a specific method for this purpose on AMQConnection.
+ *
+ * @todo Creates a {@link FailoverException} and propagates it to the MethodHandlers. No need to use an
+ *       exception-as-argument here, could just as easily call a specific method for this purpose on
+ *       {@link org.apache.qpid.protocol.AMQMethodListener}.
  */
 public class FailoverHandler implements Runnable
 {
+    /** Used for debugging. */
     private static final Logger _logger = Logger.getLogger(FailoverHandler.class);
 
+    /** Holds the MINA session for the connection that has failed, not the connection that is being failed onto. */
     private final IoSession _session;
+
+    /** Holds the protocol handler for the failed connection, upon which the new connection is to be set up. */
     private AMQProtocolHandler _amqProtocolHandler;
 
-    /**
-     * Used where forcing the failover host
-     */
+    /** Used to hold the host to fail over to. This is optional and if not set a reconnect to the previous host is tried. */
     private String _host;
 
-    /**
-     * Used where forcing the failover port
-     */
+    /** Used to hold the port to fail over to. */
     private int _port;
 
+    /**
+     * Creates a failover handler on a protocol session, for a particular MINA session (network connection).
+     *
+     * @param amqProtocolHandler The protocol handler that spans the failover.
+     * @param session            The MINA session, for the failing connection.
+     */
     public FailoverHandler(AMQProtocolHandler amqProtocolHandler, IoSession session)
     {
         _amqProtocolHandler = amqProtocolHandler;
         _session = session;
     }
 
+    /**
+     * Performs the failover procedure. See the class level comment, {@link FailoverHandler}, for a description of the
+     * failover procedure.
+     */
     public void run()
     {
         if (Thread.currentThread().isDaemon())
         {
             throw new IllegalStateException("FailoverHandler must run on a non-daemon thread.");
         }
-        //Thread.currentThread().setName("Failover Thread");
 
+        // Create a latch, upon which tasks that must not run in parallel with a failover can wait for completion of
+        // the fail over.
         _amqProtocolHandler.setFailoverLatch(new CountDownLatch(1));
 
         // We wake up listeners. If they can handle failover, they will extend the
-        // FailoverSupport class and will in turn block on the latch until failover
-        // has completed before retrying the operation
+        // FailoverRetrySupport class and will in turn block on the latch until failover
+        // has completed before retrying the operation.
         _amqProtocolHandler.propagateExceptionToWaiters(new FailoverException("Failing over about to start"));
 
         // Since failover impacts several structures we protect them all with a single mutex. These structures
@@ -99,8 +148,10 @@ public class FailoverHandler implements Runnable
                 {
                     _amqProtocolHandler.getConnection().exceptionReceived(new AMQDisconnectedException("Failover was vetoed by client", null));
                 }
+
                 _amqProtocolHandler.getFailoverLatch().countDown();
                 _amqProtocolHandler.setFailoverLatch(null);
+
                 return;
             }
 
@@ -119,6 +170,7 @@ public class FailoverHandler implements Runnable
             {
                 failoverSucceeded = _amqProtocolHandler.getConnection().attemptReconnection();
             }
+
             if (!failoverSucceeded)
             {
                 _amqProtocolHandler.setStateManager(existingStateManager);
@@ -140,6 +192,7 @@ public class FailoverHandler implements Runnable
                     {
                         _logger.info("Client vetoed automatic resubscription");
                     }
+
                     _amqProtocolHandler.getConnection().fireFailoverComplete();
                     _amqProtocolHandler.setFailoverState(FailoverState.NOT_STARTED);
                     _logger.info("Connection failover completed successfully");
@@ -148,35 +201,36 @@ public class FailoverHandler implements Runnable
                 {
                     _logger.info("Failover process failed - exception being propagated by protocol handler");
                     _amqProtocolHandler.setFailoverState(FailoverState.FAILED);
-                    try
-                    {
-                        _amqProtocolHandler.exceptionCaught(_session, e);
-                    }
+                    /*try
+                    {*/
+                    _amqProtocolHandler.exceptionCaught(_session, e);
+                    /*}
                     catch (Exception ex)
                     {
                         _logger.error("Error notifying protocol session of error: " + ex, ex);
-                    }
+                    }*/
                 }
             }
         }
+
         _amqProtocolHandler.getFailoverLatch().countDown();
     }
 
-    public String getHost()
-    {
-        return _host;
-    }
-
+    /**
+     * Sets the host name to fail over to. This is optional and if not set a reconnect to the previous host is tried.
+     *
+     * @param host The host name to fail over to.
+     */
     public void setHost(String host)
     {
         _host = host;
     }
 
-    public int getPort()
-    {
-        return _port;
-    }
-
+    /**
+     * Sets the port to fail over to.
+     *
+     * @param port The port to fail over to.
+     */
     public void setPort(int port)
     {
         _port = port;

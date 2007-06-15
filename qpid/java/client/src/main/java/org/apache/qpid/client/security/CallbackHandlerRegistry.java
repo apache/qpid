@@ -20,20 +20,17 @@
  */
 package org.apache.qpid.client.security;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import org.apache.qpid.util.FileUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.util.FileUtils;
 
 /**
  * CallbackHandlerRegistry is a registry for call back handlers for user authentication and interaction during user
@@ -60,7 +57,7 @@ import org.apache.qpid.util.FileUtils;
  */
 public class CallbackHandlerRegistry
 {
-    private static final Logger _logger = Logger.getLogger(CallbackHandlerRegistry.class);
+    private static final Logger _logger = LoggerFactory.getLogger(CallbackHandlerRegistry.class);
 
     /** The name of the system property that holds the name of the callback handler properties file. */
     private static final String FILE_PROPERTY = "amq.callbackhandler.properties";
@@ -121,7 +118,7 @@ public class CallbackHandlerRegistry
         String filename = System.getProperty(FILE_PROPERTY);
         InputStream is =
             FileUtils.openFileOrDefaultResource(filename, DEFAULT_RESOURCE_NAME,
-                                                CallbackHandlerRegistry.class.getClassLoader());
+                CallbackHandlerRegistry.class.getClassLoader());
 
         try
         {
@@ -167,12 +164,12 @@ public class CallbackHandlerRegistry
                 _logger.error("Unable to read from file " + filename + ": " + e, e);
             }
         }
-    
+
         if (useDefault)
         {
             is = CallbackHandlerRegistry.class.getResourceAsStream(DEFAULT_RESOURCE_NAME);
         }
-    
+
         return is;
     }*/
 
@@ -207,7 +204,7 @@ public class CallbackHandlerRegistry
                 if (!AMQCallbackHandler.class.isAssignableFrom(clazz))
                 {
                     _logger.warn("SASL provider " + clazz + " does not implement " + AMQCallbackHandler.class
-                                 + ". Skipping");
+                        + ". Skipping");
 
                     continue;
                 }

@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.client;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -30,12 +29,13 @@ import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
-import org.apache.log4j.Logger;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AMQQueueBrowser implements QueueBrowser
 {
-    private static final Logger _logger = Logger.getLogger(AMQQueueBrowser.class);
-
+    private static final Logger _logger = LoggerFactory.getLogger(AMQQueueBrowser.class);
 
     private AtomicBoolean _isClosed = new AtomicBoolean();
     private final AMQSession _session;
@@ -43,20 +43,21 @@ public class AMQQueueBrowser implements QueueBrowser
     private final ArrayList<BasicMessageConsumer> _consumers = new ArrayList<BasicMessageConsumer>();
     private final String _messageSelector;
 
-
     AMQQueueBrowser(AMQSession session, AMQQueue queue, String messageSelector) throws JMSException
     {
         _session = session;
         _queue = queue;
-        _messageSelector = (messageSelector == null) || (messageSelector.trim().length() == 0) ? null : messageSelector;
+        _messageSelector = ((messageSelector == null) || (messageSelector.trim().length() == 0)) ? null : messageSelector;
         // Create Consumer to verify message selector.
-        BasicMessageConsumer consumer = (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
-        consumer.close();        
+        BasicMessageConsumer consumer =
+            (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
+        consumer.close();
     }
 
     public Queue getQueue() throws JMSException
     {
         checkState();
+
         return _queue;
     }
 
@@ -66,6 +67,7 @@ public class AMQQueueBrowser implements QueueBrowser
         {
             throw new IllegalStateException("Queue Browser");
         }
+
         if (_session.isClosed())
         {
             throw new IllegalStateException("Session is closed");
@@ -77,47 +79,48 @@ public class AMQQueueBrowser implements QueueBrowser
     {
 
         checkState();
+
         return _messageSelector;
     }
 
     public Enumeration getEnumeration() throws JMSException
     {
         checkState();
-        final BasicMessageConsumer consumer = (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
+        final BasicMessageConsumer consumer =
+            (BasicMessageConsumer) _session.createBrowserConsumer(_queue, _messageSelector, false);
         _consumers.add(consumer);
 
         return new Enumeration()
-        {
-
-
-            Message _nextMessage = consumer.receive();
-
-
-            public boolean hasMoreElements()
             {
-                _logger.info("QB:hasMoreElements:" + (_nextMessage != null));
-                return (_nextMessage != null);
-            }
 
-            public Object nextElement()
-            {
-                Message msg = _nextMessage;
-                try
-                {
-                    _logger.info("QB:nextElement about to receive");
+                Message _nextMessage = consumer.receive();
 
-                    _nextMessage = consumer.receive();
-                    _logger.info("QB:nextElement received:" + _nextMessage);
-                }
-                catch (JMSException e)    
+                public boolean hasMoreElements()
                 {
-                    _logger.warn("Exception caught while queue browsing", e);
-                    _nextMessage = null;
+                    _logger.info("QB:hasMoreElements:" + (_nextMessage != null));
+
+                    return (_nextMessage != null);
                 }
 
-                return msg;
-            }
-        };
+                public Object nextElement()
+                {
+                    Message msg = _nextMessage;
+                    try
+                    {
+                        _logger.info("QB:nextElement about to receive");
+
+                        _nextMessage = consumer.receive();
+                        _logger.info("QB:nextElement received:" + _nextMessage);
+                    }
+                    catch (JMSException e)
+                    {
+                        _logger.warn("Exception caught while queue browsing", e);
+                        _nextMessage = null;
+                    }
+
+                    return msg;
+                }
+            };
     }
 
     public void close() throws JMSException
@@ -126,8 +129,8 @@ public class AMQQueueBrowser implements QueueBrowser
         {
             consumer.close();
         }
+
         _consumers.clear();
     }
-
 
 }

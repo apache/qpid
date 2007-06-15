@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 
 public class ServiceCreator implements Runnable
 {
-    private static final Logger _logger = Logger.getLogger(ServiceCreator.class);
-
+    private static final Logger _logger = LoggerFactory.getLogger(ServiceCreator.class);
 
     private static Thread[] threads;
     private static ServiceCreator[] _services;
@@ -67,7 +67,7 @@ public class ServiceCreator implements Runnable
             }
             catch (JMSException e)
             {
-                //ignore
+                // ignore
             }
         }
     }
@@ -77,7 +77,7 @@ public class ServiceCreator implements Runnable
         threads = new Thread[services];
         _services = new ServiceCreator[services];
         ServiceCreator runner = new ServiceCreator(broker);
-        //start services
+        // start services
         _logger.info("Starting " + services + " services...");
         for (int i = 0; i < services; i++)
         {
@@ -106,6 +106,7 @@ public class ServiceCreator implements Runnable
             connectionString = argv[0];
             services = Integer.parseInt(argv[1]);
         }
+
         start(connectionString, services);
     }
 }

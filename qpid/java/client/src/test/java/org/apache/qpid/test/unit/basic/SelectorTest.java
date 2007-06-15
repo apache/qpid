@@ -20,14 +20,8 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -35,10 +29,17 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.client.transport.TransportConnection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
 public class SelectorTest extends TestCase implements MessageListener
 {
-
-    private final static Logger _logger = org.apache.log4j.Logger.getLogger(SelectorTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(SelectorTest.class);
 
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -70,13 +71,12 @@ public class SelectorTest extends TestCase implements MessageListener
         _destination = destination;
         connection.start();
 
-
         String selector = null;
-//        selector = "Cost = 2 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
-//        selector = "JMSType = Special AND Cost = 2 AND AMQMessageID > 0 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
+        // selector = "Cost = 2 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
+        // selector = "JMSType = Special AND Cost = 2 AND AMQMessageID > 0 AND JMSDeliveryMode=" + DeliveryMode.NON_PERSISTENT;
 
         _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-        //_session.createConsumer(destination).setMessageListener(this);
+        // _session.createConsumer(destination).setMessageListener(this);
         _session.createConsumer(destination, selector).setMessageListener(this);
     }
 
@@ -103,7 +103,7 @@ public class SelectorTest extends TestCase implements MessageListener
             if (count == 0)
             {
                 fail("Did not get message!");
-                //throw new RuntimeException("Did not get message!");
+                // throw new RuntimeException("Did not get message!");
             }
         }
         finally
@@ -128,7 +128,7 @@ public class SelectorTest extends TestCase implements MessageListener
     public static void main(String[] argv) throws Exception
     {
         SelectorTest test = new SelectorTest();
-        test._connectionString = argv.length == 0 ? "localhost:5672" : argv[0];
+        test._connectionString = (argv.length == 0) ? "localhost:5672" : argv[0];
         test.setUp();
         test.test();
     }

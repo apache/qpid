@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,14 +20,16 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import javax.jms.Message;
-import javax.jms.MessageListener;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.Message;
+import javax.jms.MessageListener;
 
 /**
  * Declare a private temporary response queue,
@@ -37,8 +39,7 @@ import org.apache.log4j.Logger;
  */
 public class Client implements MessageListener
 {
-
-    private static final Logger _logger = Logger.getLogger(Client.class);
+    private static final Logger _logger = LoggerFactory.getLogger(Client.class);
 
     private final AMQConnection _connection;
     private final AMQSession _session;
@@ -55,10 +56,11 @@ public class Client implements MessageListener
         _connection = connection;
         _expected = expected;
         _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
-        AMQQueue response = new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("ResponseQueue"), true);
+        AMQQueue response =
+            new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("ResponseQueue"), true);
         _session.createConsumer(response).setMessageListener(this);
         _connection.start();
-        AMQQueue service = new SpecialQueue(_connection,"ServiceQueue");
+        AMQQueue service = new SpecialQueue(_connection, "ServiceQueue");
         Message request = _session.createTextMessage("Request!");
         request.setJMSReplyTo(response);
         _session.createProducer(service).send(request);
@@ -72,27 +74,27 @@ public class Client implements MessageListener
 
     public synchronized void onMessage(Message response)
     {
-       
-        _logger.info("Received " + (++_count) + " of " + _expected  + " responses.");
-        if(_count == _expected)
+
+        _logger.info("Received " + (++_count) + " of " + _expected + " responses.");
+        if (_count == _expected)
         {
 
             notifyAll();
         }
-
 
     }
 
     synchronized void waitUntilComplete() throws Exception
     {
 
-        if(_count < _expected)
+        if (_count < _expected)
         {
             wait(10000L);
         }
-        if(_count < _expected)
+
+        if (_count < _expected)
         {
-            throw new Exception("Didn't receive all messages... got " + _count + " expected " + _expected);    
+            throw new Exception("Didn't receive all messages... got " + _count + " expected " + _expected);
         }
     }
 
@@ -105,7 +107,8 @@ public class Client implements MessageListener
     {
         final String connectionString;
         final int expected;
-        if (argv.length == 0) {
+        if (argv.length == 0)
+        {
             connectionString = "localhost:5672";
             expected = 100;
         }

@@ -14,15 +14,19 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.client;
 
-import java.util.Hashtable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -35,13 +39,9 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
-import org.apache.qpid.url.BindingURL;
-import org.apache.qpid.url.AMQBindingURL;
+import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
@@ -54,7 +54,7 @@ import org.apache.qpid.url.AMQBindingURL;
  */
 public class MessageListenerTest extends TestCase implements MessageListener
 {
-    private static final Logger _logger = Logger.getLogger(MessageListenerTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MessageListenerTest.class);
 
     Context _context;
 
@@ -73,6 +73,7 @@ public class MessageListenerTest extends TestCase implements MessageListener
         {
             TransportConnection.createVMBroker(1);
         }
+
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
 
         Hashtable<String, String> env = new Hashtable<String, String>();
@@ -84,7 +85,7 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
         Queue queue = (Queue) _context.lookup("queue");
 
-        //Create Client
+        // Create Client
         _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _clientConnection.start();
@@ -93,7 +94,7 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
         _consumer = clientSession.createConsumer(queue);
 
-        //Create Producer
+        // Create Producer
 
         Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
@@ -123,7 +124,6 @@ public class MessageListenerTest extends TestCase implements MessageListener
         }
     }
 
-
     public void testSynchronousRecieve() throws Exception
     {
         for (int msg = 0; msg < MSG_COUNT; msg++)
@@ -144,9 +144,9 @@ public class MessageListenerTest extends TestCase implements MessageListener
         }
         catch (InterruptedException e)
         {
-            //do nothing
+            // do nothing
         }
-        //Should have recieved all async messages
+        // Should have recieved all async messages
         assertEquals(MSG_COUNT, receivedCount);
 
     }
@@ -156,11 +156,11 @@ public class MessageListenerTest extends TestCase implements MessageListener
 
         _logger.error("Test disabled as initial receive is not called first");
         // Perform initial receive to start connection
-//         assertTrue(_consumer.receive(2000) != null);
-//         receivedCount++;
+        // assertTrue(_consumer.receive(2000) != null);
+        // receivedCount++;
 
         // Sleep to ensure remaining 4 msgs end up on _synchronousQueue
-//         Thread.sleep(1000);
+        // Thread.sleep(1000);
 
         // Set the message listener and wait for the messages to come in.
         _consumer.setMessageListener(this);
@@ -173,13 +173,12 @@ public class MessageListenerTest extends TestCase implements MessageListener
         }
         catch (InterruptedException e)
         {
-            //do nothing
+            // do nothing
         }
-        //Should have recieved all async messages
+        // Should have recieved all async messages
         assertEquals(MSG_COUNT, receivedCount);
 
     }
-
 
     public void onMessage(Message message)
     {

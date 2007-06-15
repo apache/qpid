@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,9 +19,20 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
+import org.apache.mina.common.ByteBuffer;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.message.JMSBytesMessage;
+import org.apache.qpid.testutil.VMBrokerSetup;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.BytesMessage;
 import javax.jms.Connection;
@@ -34,21 +45,13 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.JMSBytesMessage;
-import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.log4j.Logger;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class BytesMessageTest extends TestCase implements MessageListener
 {
-    private static final Logger _logger = Logger.getLogger(BytesMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(BytesMessageTest.class);
 
     private Connection _connection;
     private Destination _destination;
@@ -102,7 +105,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
 
     void send(int count) throws JMSException
     {
-        //create a publisher
+        // create a publisher
         MessageProducer producer = _session.createProducer(_destination);
         for (int i = 0; i < count; i++)
         {
@@ -115,7 +118,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
             }
             catch (MessageNotReadableException mnwe)
             {
-                //normal execution
+                // normal execution
             }
 
             byte[] data = ("Message " + i).getBytes();
@@ -127,7 +130,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
 
     void waitFor(int count) throws InterruptedException
     {
-        synchronized(received)
+        synchronized (received)
         {
             while (received.size() < count)
             {
@@ -146,8 +149,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
             buffer.get(data);
             actual.add(data);
 
-
-            //Check Body Write Status
+            // Check Body Write Status
             try
             {
                 m.writeBoolean(true);
@@ -155,7 +157,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
             }
             catch (MessageNotWriteableException mnwe)
             {
-                //normal execution
+                // normal execution
             }
 
             m.clearBody();
@@ -169,8 +171,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
                 Assert.fail("Message should be writeable");
             }
 
-
-            //Check property write status
+            // Check property write status
             try
             {
                 m.setStringProperty("test", "test");
@@ -178,7 +179,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
             }
             catch (MessageNotWriteableException mnwe)
             {
-                //normal execution
+                // normal execution
             }
 
             m.clearProperties();
@@ -219,6 +220,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
         {
             errors.add("Found " + actual.next() + " but no more expected values.");
         }
+
         if (!errors.isEmpty())
         {
             throw new RuntimeException(errors.toString());
@@ -231,6 +233,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
         {
             throw new RuntimeException("Expected length " + expected.length + " got " + actual.length);
         }
+
         for (int i = 0; i < expected.length; i++)
         {
             if (expected[i] != actual[i])
@@ -242,7 +245,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        synchronized(received)
+        synchronized (received)
         {
             received.add((JMSBytesMessage) message);
             received.notify();

@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.common;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.Properties;
-
-import org.apache.log4j.Logger;
 
 /**
  * QpidProperties captures the project name, version number, and source code repository revision number from a properties
@@ -50,7 +51,7 @@ import org.apache.log4j.Logger;
 public class QpidProperties
 {
     /** Used for debugging purposes. */
-    private static final Logger _logger = Logger.getLogger(QpidProperties.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QpidProperties.class);
 
     /** The name of the version properties file to load from the class path. */
     public static final String VERSION_RESOURCE = "qpidversion.properties";

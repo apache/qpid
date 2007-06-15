@@ -14,32 +14,36 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.test.unit.basic;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Logger;
+
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.transport.TransportConnection;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Destination;
-import javax.jms.Session;
-import javax.jms.MessageConsumer;
 import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.Session;
 import javax.jms.TextMessage;
-import java.util.List;
+
 import java.util.ArrayList;
+import java.util.List;
 
 public class LargeMessageTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(LargeMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(LargeMessageTest.class);
 
     private AMQConnection _connection;
     private Destination _destination;
@@ -68,7 +72,7 @@ public class LargeMessageTest extends TestCase
 
     private void init(AMQConnection connection) throws Exception
     {
-        Destination destination = new AMQQueue(connection,"LargeMessageTest", true);
+        Destination destination = new AMQQueue(connection, "LargeMessageTest", true);
         init(connection, destination);
     }
 
@@ -84,7 +88,7 @@ public class LargeMessageTest extends TestCase
     // Test boundary of 1 packet to 2 packets
     public void test64kminus1()
     {
-        checkLargeMessage(64 * 1024 - 1);
+        checkLargeMessage((64 * 1024) - 1);
     }
 
     public void test64k()
@@ -94,13 +98,13 @@ public class LargeMessageTest extends TestCase
 
     public void test64kplus1()
     {
-        checkLargeMessage(64 * 1024 + 1);
+        checkLargeMessage((64 * 1024) + 1);
     }
 
-    //Test packet boundary of 3 packtes
+    // Test packet boundary of 3 packtes
     public void test128kminus1()
     {
-        checkLargeMessage(128 * 1024 - 1);
+        checkLargeMessage((128 * 1024) - 1);
     }
 
     public void test128k()
@@ -110,7 +114,7 @@ public class LargeMessageTest extends TestCase
 
     public void test128kplus1()
     {
-        checkLargeMessage(128 * 1024 + 1);
+        checkLargeMessage((128 * 1024) + 1);
     }
 
     // Testing larger messages
@@ -167,10 +171,10 @@ public class LargeMessageTest extends TestCase
         {
             builder.append(ch);
 
-            if (i % 1000 == 0)
+            if ((i % 1000) == 0)
             {
                 ch++;
-                if (ch == 'z' + 1)
+                if (ch == ('z' + 1))
                 {
                     ch = 'a';
                 }
@@ -179,7 +183,6 @@ public class LargeMessageTest extends TestCase
 
         return builder.toString();
     }
-
 
     public static junit.framework.Test suite()
     {

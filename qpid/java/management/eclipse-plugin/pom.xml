@@ -167,16 +167,27 @@
             <version>3.2.0</version>
             <scope>compile</scope>
         </dependency>
+
+        <!-- Test Dependencies -->
+        <dependency>  
+            <groupId>org.slf4j</groupId> 
+            <artifactId>slf4j-log4j12</artifactId>  
+            <version>1.4.0</version>  
+            <scope>test</scope> 
+        </dependency>
+
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-broker</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>        
