@@ -74,7 +74,7 @@ void NullMessageStore::unbind(const PersistableExchange&, const PersistableQueue
 
 void NullMessageStore::recover(RecoveryManager&)
 {
-    QPID_LOG(warning, "Persistence not enabled, no recovery of queues or messages.");
+    QPID_LOG(warning, "Persistence not enabled, no recovery attempted.");
 }
 
 void NullMessageStore::stage(PersistableMessage&)
@@ -94,7 +94,7 @@ void NullMessageStore::appendContent(PersistableMessage&, const string&)
 
 void NullMessageStore::loadContent(PersistableMessage&, string&, uint64_t, uint32_t)
 {
-    QPID_LOG(warning, "WARNING: Can't load content. Persistence not enabled.");
+    QPID_LOG(warning, "Can't load content. Persistence not enabled.");
 }
 
 void NullMessageStore::enqueue(TransactionContext*, PersistableMessage&, const PersistableQueue& queue)
