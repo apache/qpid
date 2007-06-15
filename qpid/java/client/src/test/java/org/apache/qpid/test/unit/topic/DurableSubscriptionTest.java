@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,14 +20,6 @@
  */
 package org.apache.qpid.test.unit.topic;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.TopicSubscriber;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
@@ -36,11 +28,21 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.TopicSubscriber;
 
 public class DurableSubscriptionTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(DurableSubscriptionTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(DurableSubscriptionTest.class);
 
     protected void setUp() throws Exception
     {
@@ -83,7 +85,6 @@ public class DurableSubscriptionTest extends TestCase
         _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(1000);
         assertEquals(null, msg);
-
 
         _logger.info("Receive message on consumer 1:expecting A");
         msg = consumer2.receive();

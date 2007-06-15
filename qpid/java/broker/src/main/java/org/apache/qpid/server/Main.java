@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.BindException;
 import java.util.Collection;
 import java.util.List;
 import org.apache.commons.cli.CommandLine;
@@ -171,7 +172,8 @@ public class Main
         }
         else if (commandLine.hasOption("v"))
         {
-            String ver = "Qpid 0.9.0.0";
+            String ver = QpidProperties.getVersionString();
+
             StringBuilder protocol = new StringBuilder("AMQP version(s) [major.minor]: ");
 
             boolean first = true;
@@ -357,7 +359,7 @@ public class Main
      * @todo Partially implements top-level error handler. Better to let these errors fall through to a single
      *       top-level handler.
      */
-    protected void bind(int port, ConnectorConfiguration connectorConfig)
+    protected void bind(int port, ConnectorConfiguration connectorConfig) throws BindException
     {
         String bindAddr = commandLine.getOptionValue("b");
         if (bindAddr == null)
@@ -425,6 +427,8 @@ public class Main
         catch (Exception e)
         {
             _logger.error("Unable to bind service to registry: " + e, e);
+            //fixme this need tidying up
+            throw new BindException(e.getMessage());
         }
     }
 

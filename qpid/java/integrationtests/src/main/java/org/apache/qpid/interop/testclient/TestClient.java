@@ -75,16 +75,17 @@ public class TestClient implements MessageListener
     /** Holds all the test cases loaded from the classpath. */
     Map<String, InteropClientTestCase> testCases = new HashMap<String, InteropClientTestCase>();
 
-    InteropClientTestCase currentTestCase;
+    protected InteropClientTestCase currentTestCase;
 
-    private MessageProducer producer;
-    private Session session;
+    protected Connection _connection;
+    protected MessageProducer producer;
+    protected Session session;
 
-    private String clientName = CLIENT_NAME;
+    protected String clientName = CLIENT_NAME;
 
     /**
-     * Creates a new interop test client, listenting to the specified broker and virtual host, with the specified
-     * client identifying name.
+     * Creates a new interop test client, listenting to the specified broker and virtual host, with the specified client
+     * identifying name.
      *
      * @param brokerUrl   The url of the broker to connect to.
      * @param virtualHost The virtual host to conect to.
@@ -93,7 +94,7 @@ public class TestClient implements MessageListener
     public TestClient(String brokerUrl, String virtualHost, String clientName)
     {
         log.debug("public TestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
-            + ", String clientName = " + clientName + "): called");
+                  + ", String clientName = " + clientName + "): called");
 
         // Retain the connection parameters.
         this.brokerUrl = brokerUrl;
@@ -117,13 +118,13 @@ public class TestClient implements MessageListener
     {
         // Use the command line parser to evaluate the command line.
         CommandLineParser commandLine =
-            new CommandLineParser(
-                new String[][]
-                {
-                    { "b", "The broker URL.", "broker", "false" },
-                    { "h", "The virtual host to use.", "virtual host", "false" },
-                    { "n", "The test client name.", "name", "false" }
-                });
+                new CommandLineParser(
+                        new String[][]
+                                {
+                                        {"b", "The broker URL.", "broker", "false"},
+                                        {"h", "The virtual host to use.", "virtual host", "false"},
+                                        {"n", "The test client name.", "name", "false"}
+                                });
 
         // Capture the command line arguments or display errors and correct usage and then exit.
         Properties options = null;
@@ -151,9 +152,17 @@ public class TestClient implements MessageListener
         // Create a test client and start it running.
         TestClient client = new TestClient(brokerUrl, virtualHost, (clientName == null) ? CLIENT_NAME : clientName);
 
+        // Use a class path scanner to find all the interop test case implementations.
+        Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
+                new ArrayList<Class<? extends InteropClientTestCase>>();
+        // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
+        // Hard code the test classes till the classpath scanner is fixed.
+        Collections.addAll(testCaseClasses,
+                           new Class[]{TestCase1DummyRun.class, TestCase2BasicP2P.class, TestClient.class});
+
         try
         {
-            client.start();
+            client.start(testCaseClasses);
         }
         catch (Exception e)
         {
@@ -165,19 +174,11 @@ public class TestClient implements MessageListener
     /**
      * Starts the interop test client running. This causes it to start listening for incoming test invites.
      *
-     * @throws JMSException Any underlying JMSExceptions are allowed to fall through.
+     * @throws JMSException Any underlying JMSExceptions are allowed to fall through. @param testCaseClasses
      */
-    private void start() throws JMSException
+    protected void start(Collection<Class<? extends InteropClientTestCase>> testCaseClasses) throws JMSException
     {
         log.debug("private void start(): called");
-
-        // Use a class path scanner to find all the interop test case implementations.
-        Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
-            new ArrayList<Class<? extends InteropClientTestCase>>();
-        // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
-        // Hard code the test classes till the classpath scanner is fixed.
-        Collections.addAll(testCaseClasses,
-            new Class[] { TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class });
 
         // Create all the test case implementations and index them by the test names.
         for (Class<? extends InteropClientTestCase> nextClass : testCaseClasses)
@@ -200,9 +201,9 @@ public class TestClient implements MessageListener
         }
 
         // Open a connection to communicate with the coordinator on.
-        Connection connection = createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
+        _connection = createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
 
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // Set this up to listen for control messages.
         MessageConsumer consumer = session.createConsumer(session.createTopic("iop.control." + clientName));
@@ -215,7 +216,7 @@ public class TestClient implements MessageListener
         producer = session.createProducer(null);
 
         // Start listening for incoming control messages.
-        connection.start();
+        _connection.start();
     }
 
     /**
@@ -232,22 +233,25 @@ public class TestClient implements MessageListener
      * @param virtualHost             The virtual host to connectio to, <tt>null</tt> to use the default.
      *
      * @return A JMS conneciton.
+     *
+     * @todo Make username/password configurable. Allow multiple urls for fail over. Once it feels right, move it to a
+     * Utils library class.
      */
     public static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
     {
         log.debug("public static Connection createConnection(String connectionPropsResource = " + connectionPropsResource
-            + ", String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
+                  + ", String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
 
         try
         {
             Properties connectionProps =
-                PropertiesUtils.getProperties(TestClient.class.getClassLoader().getResourceAsStream(
-                        connectionPropsResource));
+                    PropertiesUtils.getProperties(TestClient.class.getClassLoader().getResourceAsStream(
+                            connectionPropsResource));
 
             if (brokerUrl != null)
             {
                 String connectionString =
-                    "amqp://guest:guest/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
+                        "amqp://guest:guest/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
                 connectionProps.setProperty(CONNECTION_PROPERTY, connectionString);
             }
 
@@ -286,27 +290,31 @@ public class TestClient implements MessageListener
             String controlType = message.getStringProperty("CONTROL_TYPE");
             String testName = message.getStringProperty("TEST_NAME");
 
+            log.info("onMessage(Message message = " + message + "): for '" + controlType + "' to '" + testName + "'");
+
             // Check if the message is a test invite.
             if ("INVITE".equals(controlType))
             {
-                String testCaseName = message.getStringProperty("TEST_NAME");
-
                 // Flag used to indicate that an enlist should be sent. Only enlist to compulsory invites or invites
                 // for which test cases exist.
                 boolean enlist = false;
 
-                if (testCaseName != null)
+                if (testName != null)
                 {
-                    log.debug("Got an invite to test: " + testCaseName);
+                    log.debug("Got an invite to test: " + testName);
 
                     // Check if the requested test case is available.
-                    InteropClientTestCase testCase = testCases.get(testCaseName);
+                    InteropClientTestCase testCase = testCases.get(testName);
 
                     if (testCase != null)
                     {
                         // Make the requested test case the current test case.
                         currentTestCase = testCase;
                         enlist = true;
+                    }
+                    else
+                    {
+                        log.warn("'" + testName + "' not part of this clients tests.");
                     }
                 }
                 else
@@ -324,6 +332,8 @@ public class TestClient implements MessageListener
                     enlistMessage.setStringProperty("CLIENT_NAME", clientName);
                     enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + clientName);
                     enlistMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+
+                    log.info("Sending Message '" + enlistMessage + "'. to " + message.getJMSReplyTo());
 
                     producer.send(message.getJMSReplyTo(), enlistMessage);
                 }
@@ -369,9 +379,10 @@ public class TestClient implements MessageListener
             }
             else if ("TERMINATE".equals(controlType))
             {
-                System.out.println("Received termination instruction from coordinator.");
+                log.info("Received termination instruction from coordinator.");
 
                 // Is a cleaner shutdown needed?
+                _connection.close();
                 System.exit(0);
             }
             else

@@ -21,7 +21,6 @@
 package org.apache.qpid.interop.coordinator;
 
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -30,7 +29,6 @@ import javax.jms.Message;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
-import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
@@ -107,7 +105,7 @@ public class InvitingTestDecorator extends WrappedSuiteTestDecorator
             CoordinatingTestCase coordTest = (CoordinatingTestCase) test;
 
             // Broadcast the invitation to find out what clients are available to test.
-            Set<TestClientDetails> enlists = null;
+            Set<TestClientDetails> enlists;
             try
             {
                 Message invite = conversationFactory.getSession().createMessage();

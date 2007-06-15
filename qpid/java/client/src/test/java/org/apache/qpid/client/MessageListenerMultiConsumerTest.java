@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import java.util.Hashtable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -35,11 +39,9 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
@@ -52,7 +54,7 @@ import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
  */
 public class MessageListenerMultiConsumerTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(MessageListenerMultiConsumerTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MessageListenerMultiConsumerTest.class);
 
     Context _context;
 
@@ -64,8 +66,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
     private MessageConsumer _consumer2;
     private Session _clientSession1;
     private Queue _queue;
-    private final CountDownLatch _allMessagesSent = new CountDownLatch(2); //all messages Sent Lock
-
+    private final CountDownLatch _allMessagesSent = new CountDownLatch(2); // all messages Sent Lock
 
     protected void setUp() throws Exception
     {
@@ -77,13 +78,13 @@ public class MessageListenerMultiConsumerTest extends TestCase
         Hashtable<String, String> env = new Hashtable<String, String>();
 
         env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/test?brokerlist='vm://:1'");
-        env.put("queue.queue", "direct://amq.direct//"+this.getClass().getName());
+        env.put("queue.queue", "direct://amq.direct//" + this.getClass().getName());
 
         _context = factory.getInitialContext(env);
 
         _queue = (Queue) _context.lookup("queue");
 
-        //Create Client 1
+        // Create Client 1
         _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _clientConnection.start();
@@ -92,16 +93,15 @@ public class MessageListenerMultiConsumerTest extends TestCase
 
         _consumer1 = _clientSession1.createConsumer(_queue);
 
-        //Create Client 2
+        // Create Client 2
         Session clientSession2 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         _consumer2 = clientSession2.createConsumer(_queue);
 
-        //Create Producer
+        // Create Producer
         Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         producerConnection.start();
-
 
         Session producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -124,18 +124,18 @@ public class MessageListenerMultiConsumerTest extends TestCase
         TransportConnection.killAllVMBrokers();
     }
 
-
     public void testRecieveInterleaved() throws Exception
     {
         int msg = 0;
         int MAX_LOOPS = MSG_COUNT * 2;
-        for (int loops = 0; msg < MSG_COUNT || loops < MAX_LOOPS; loops++)
+        for (int loops = 0; (msg < MSG_COUNT) || (loops < MAX_LOOPS); loops++)
         {
 
             if (_consumer1.receive(100) != null)
             {
                 msg++;
             }
+
             if (_consumer2.receive(100) != null)
             {
                 msg++;
@@ -145,39 +145,37 @@ public class MessageListenerMultiConsumerTest extends TestCase
         assertEquals("Not all messages received.", MSG_COUNT, msg);
     }
 
-
     public void testAsynchronousRecieve() throws Exception
     {
         _consumer1.setMessageListener(new MessageListener()
-        {
-            public void onMessage(Message message)
             {
-                _logger.info("Client 1 Received Message(" + receivedCount1 + "):" + message);
-
-                receivedCount1++;
-
-                if (receivedCount1 == MSG_COUNT / 2)
+                public void onMessage(Message message)
                 {
-                    _allMessagesSent.countDown();
-                }
+                    _logger.info("Client 1 Received Message(" + receivedCount1 + "):" + message);
 
-            }
-        });
+                    receivedCount1++;
+
+                    if (receivedCount1 == (MSG_COUNT / 2))
+                    {
+                        _allMessagesSent.countDown();
+                    }
+
+                }
+            });
 
         _consumer2.setMessageListener(new MessageListener()
-        {
-            public void onMessage(Message message)
             {
-                _logger.info("Client 2 Received Message(" + receivedCount2 + "):" + message);
-
-                receivedCount2++;
-                if (receivedCount2 == MSG_COUNT / 2)
+                public void onMessage(Message message)
                 {
-                    _allMessagesSent.countDown();
-                }
-            }
-        });
+                    _logger.info("Client 2 Received Message(" + receivedCount2 + "):" + message);
 
+                    receivedCount2++;
+                    if (receivedCount2 == (MSG_COUNT / 2))
+                    {
+                        _allMessagesSent.countDown();
+                    }
+                }
+            });
 
         _logger.info("Waiting upto 2 seconds for messages");
 
@@ -187,7 +185,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
         }
         catch (InterruptedException e)
         {
-            //do nothing
+            // do nothing
         }
 
         assertEquals(MSG_COUNT, receivedCount1 + receivedCount2);
@@ -195,34 +193,37 @@ public class MessageListenerMultiConsumerTest extends TestCase
 
     public void testRecieveC2Only() throws Exception
     {
-        if (!Boolean.parseBoolean(System.getProperties().
-                getProperty(AMQSession.IMMEDIATE_PREFETCH, AMQSession.IMMEDIATE_PREFETCH_DEFAULT)))
+        if (
+            !Boolean.parseBoolean(
+                    System.getProperties().getProperty(AMQSession.IMMEDIATE_PREFETCH,
+                        AMQSession.IMMEDIATE_PREFETCH_DEFAULT)))
         {
             _logger.info("Performing Receive only on C2");
             for (int msg = 0; msg < MSG_COUNT; msg++)
             {
-                assertTrue(MSG_COUNT + " msg should be received. Only received:" + msg,
-                           _consumer2.receive(1000) != null);
+                assertTrue(MSG_COUNT + " msg should be received. Only received:" + msg, _consumer2.receive(1000) != null);
             }
         }
     }
 
     public void testRecieveBoth() throws Exception
     {
-        if (!Boolean.parseBoolean(System.getProperties().
-                getProperty(AMQSession.IMMEDIATE_PREFETCH, AMQSession.IMMEDIATE_PREFETCH_DEFAULT)))
+        if (
+            !Boolean.parseBoolean(
+                    System.getProperties().getProperty(AMQSession.IMMEDIATE_PREFETCH,
+                        AMQSession.IMMEDIATE_PREFETCH_DEFAULT)))
         {
             _logger.info("Performing Receive only with two consumers on one session ");
 
             MessageConsumer consumer2 = _clientSession1.createConsumer(_queue);
 
-            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
                 assertTrue(_consumer1.receive() != null);
             }
 
-            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
                 assertTrue(consumer2.receive() != null);
             }
@@ -231,19 +232,18 @@ public class MessageListenerMultiConsumerTest extends TestCase
         {
             _logger.info("Performing Receive only on both C1 and C2");
 
-            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
                 assertTrue(_consumer1.receive() != null);
             }
 
-            for (int msg = 0; msg < MSG_COUNT / 2; msg++)
+            for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
                 assertTrue(_consumer2.receive() != null);
             }
         }
     }
-
 
     public static junit.framework.Test suite()
     {

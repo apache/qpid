@@ -1,12 +1,7 @@
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
-
-import org.apache.log4j.Logger;
-
 public interface CommonContentHeaderProperties extends ContentHeaderProperties
 {
-
     AMQShortString getContentType();
 
     void setContentType(AMQShortString contentType);

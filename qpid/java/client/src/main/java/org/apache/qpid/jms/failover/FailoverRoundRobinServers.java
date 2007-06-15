@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,13 +20,15 @@
  */
 package org.apache.qpid.jms.failover;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FailoverRoundRobinServers implements FailoverMethod
 {
-    private static final Logger _logger = Logger.getLogger(FailoverRoundRobinServers.class);
+    private static final Logger _logger = LoggerFactory.getLogger(FailoverRoundRobinServers.class);
 
     /** The default number of times to cycle through all servers */
     public static final int DEFAULT_CYCLE_RETRIES = 0;
@@ -72,7 +74,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
         _connectionDetails = connectionDetails;
 
-        //There is no current broker at startup so set it to -1.
+        // There is no current broker at startup so set it to -1.
         _currentBrokerIndex = -1;
 
         String cycleRetries = _connectionDetails.getFailoverOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE);
@@ -104,9 +106,8 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
     public boolean failoverAllowed()
     {
-       return  ((_currentCycleRetries < _cycleRetries)
-                    || (_currentServerRetry < _serverRetries)
-                    || (_currentBrokerIndex < (_connectionDetails.getBrokerCount() - 1)));
+        return ((_currentCycleRetries < _cycleRetries) || (_currentServerRetry < _serverRetries)
+                || (_currentBrokerIndex < (_connectionDetails.getBrokerCount() - 1)));
     }
 
     public void attainedConnection()
@@ -125,8 +126,6 @@ public class FailoverRoundRobinServers implements FailoverMethod
         return _connectionDetails.getBrokerDetails(_currentBrokerIndex);
     }
 
-
-
     public BrokerDetails getNextBrokerDetails()
     {
         if (_currentBrokerIndex == (_connectionDetails.getBrokerCount() - 1))
@@ -137,7 +136,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
                 {
                     _currentBrokerIndex = 0;
 
-                    setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex ));
+                    setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex));
 
                     _logger.info("First run using " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
                 }
@@ -151,15 +150,15 @@ public class FailoverRoundRobinServers implements FailoverMethod
             else
             {
                 _currentCycleRetries++;
-                //failed to connect to first broker
+                // failed to connect to first broker
                 _currentBrokerIndex = 0;
 
-                setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex ));
+                setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex));
 
                 // This is zero rather than -1 as we are already retrieving the details.
                 _currentServerRetry = 0;
             }
-            //else - should force client to stop as max retries has been reached.
+            // else - should force client to stop as max retries has been reached.
         }
         else
         {
@@ -169,7 +168,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
                 {
                     _currentBrokerIndex = 0;
 
-                    setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex ));
+                    setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex));
 
                     _logger.info("First run using " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
                 }
@@ -177,13 +176,14 @@ public class FailoverRoundRobinServers implements FailoverMethod
                 {
                     _logger.info("Retrying " + _connectionDetails.getBrokerDetails(_currentBrokerIndex));
                 }
+
                 _currentServerRetry++;
             }
             else
             {
                 _currentBrokerIndex++;
 
-                 setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex ));
+                setBroker(_connectionDetails.getBrokerDetails(_currentBrokerIndex));
                 // This is zero rather than -1 as we are already retrieving the details.
                 _currentServerRetry = 0;
             }
@@ -191,7 +191,6 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
         return _connectionDetails.getBrokerDetails(_currentBrokerIndex);
     }
-
 
     public void setBroker(BrokerDetails broker)
     {
@@ -246,12 +245,13 @@ public class FailoverRoundRobinServers implements FailoverMethod
         sb.append(_currentBrokerIndex);
         sb.append("\n");
 
-        for(int i=0; i < _connectionDetails.getBrokerCount() ; i++)
+        for (int i = 0; i < _connectionDetails.getBrokerCount(); i++)
         {
             if (i == _currentBrokerIndex)
             {
                 sb.append(">");
             }
+
             sb.append(_connectionDetails.getBrokerDetails(i));
             sb.append("\n");
         }

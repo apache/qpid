@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,19 +20,10 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
-import javax.jms.BytesMessage;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -43,10 +34,21 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.testutil.VMBrokerSetup;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.BytesMessage;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+
+import java.io.IOException;
+import java.util.ArrayList;
+
 public class FieldTableMessageTest extends TestCase implements MessageListener
 {
-
-    private static final Logger _logger = Logger.getLogger(FieldTableMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(FieldTableMessageTest.class);
 
     private AMQConnection _connection;
     private AMQDestination _destination;
@@ -67,10 +69,9 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
         super.tearDown();
     }
 
-
     private void init(AMQConnection connection) throws Exception
     {
-        init(connection, new AMQQueue(connection,randomize("FieldTableMessageTest"), true));
+        init(connection, new AMQQueue(connection, randomize("FieldTableMessageTest"), true));
     }
 
     private void init(AMQConnection connection, AMQDestination destination) throws Exception
@@ -79,11 +80,11 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
         _destination = destination;
         _session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
 
-        //set up a slow consumer
+        // set up a slow consumer
         _session.createConsumer(destination).setMessageListener(this);
         connection.start();
 
-        //_expected = new FieldTableTest().load("FieldTableTest2.properties");
+        // _expected = new FieldTableTest().load("FieldTableTest2.properties");
         _expected = load();
     }
 
@@ -111,7 +112,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
 
     void send(int count) throws JMSException, IOException
     {
-        //create a publisher
+        // create a publisher
         MessageProducer producer = _session.createProducer(_destination);
         for (int i = 0; i < count; i++)
         {
@@ -123,7 +124,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
 
     void waitFor(int count) throws InterruptedException
     {
-        synchronized(received)
+        synchronized (received)
         {
             while (received.size() < count)
             {
@@ -139,7 +140,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
             ByteBuffer buffer = ((JMSBytesMessage) m).getData();
             FieldTable actual = FieldTableFactory.newFieldTable(buffer, buffer.remaining());
             for (String key : _expected.keys())
-            {                
+            {
                 assertEquals("Values for " + key + " did not match", _expected.getObject(key), actual.getObject(key));
             }
         }
@@ -147,7 +148,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
 
     public void onMessage(Message message)
     {
-        synchronized(received)
+        synchronized (received)
         {
             received.add((JMSBytesMessage) message);
             received.notify();
@@ -162,9 +163,9 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
     public static void main(String[] argv) throws Exception
     {
         FieldTableMessageTest test = new FieldTableMessageTest();
-        test._connectionString = argv.length == 0 ? "vm://:1" : argv[0];
+        test._connectionString = (argv.length == 0) ? "vm://:1" : argv[0];
         test.setUp();
-        test._count = argv.length > 1 ? Integer.parseInt(argv[1]) : 5;
+        test._count = (argv.length > 1) ? Integer.parseInt(argv[1]) : 5;
         test.test();
     }
 

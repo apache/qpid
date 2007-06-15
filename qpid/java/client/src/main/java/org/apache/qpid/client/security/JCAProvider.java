@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.client.security;
 
-import java.security.Provider;
-import java.security.Security;
-import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.sasl.SaslClientFactory;
 
-import org.apache.log4j.Logger;
+import java.security.Provider;
+import java.util.Map;
 
 /**
  * JCAProvider is a security provider for SASL client factories that is configured from a map of SASL mechanism names
@@ -40,7 +40,7 @@ import org.apache.log4j.Logger;
  */
 public class JCAProvider extends Provider
 {
-    private static final Logger log = Logger.getLogger(JCAProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(JCAProvider.class);
 
     /**
      * Creates the security provider with a map from SASL mechanisms to implementing factories.
@@ -50,9 +50,9 @@ public class JCAProvider extends Provider
     public JCAProvider(Map<String, Class<? extends SaslClientFactory>> providerMap)
     {
         super("AMQSASLProvider", 1.0, "A JCA provider that registers all "
-              + "AMQ SASL providers that want to be registered");
+            + "AMQ SASL providers that want to be registered");
         register(providerMap);
-//        Security.addProvider(this);
+        // Security.addProvider(this);
     }
 
     /**

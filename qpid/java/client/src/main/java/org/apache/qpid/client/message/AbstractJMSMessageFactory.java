@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,51 +20,53 @@
  */
 package org.apache.qpid.client.message;
 
-import java.util.Iterator;
-import java.util.List;
-
-import javax.jms.JMSException;
-
-import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+
+import java.util.Iterator;
+import java.util.List;
+
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
-    private static final Logger _logger = Logger.getLogger(AbstractJMSMessageFactory.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AbstractJMSMessageFactory.class);
 
+    protected abstract AbstractJMSMessage createMessage(long messageNbr, ByteBuffer data, AMQShortString exchange,
+        AMQShortString routingKey, ContentHeaderBody contentHeader) throws AMQException;
 
-    protected abstract AbstractJMSMessage createMessage(long messageNbr, ByteBuffer data,
-                                                        AMQShortString exchange, AMQShortString routingKey,
-                                                        ContentHeaderBody contentHeader) throws AMQException;
-
-    protected AbstractJMSMessage createMessageWithBody(long messageNbr,
-                                                       ContentHeaderBody contentHeader,
-                                                       AMQShortString exchange, AMQShortString routingKey,
-                                                       List bodies) throws AMQException
+    protected AbstractJMSMessage createMessageWithBody(long messageNbr, ContentHeaderBody contentHeader,
+        AMQShortString exchange, AMQShortString routingKey, List bodies) throws AMQException
     {
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
 
         // we optimise the non-fragmented case to avoid copying
-        if (bodies != null && bodies.size() == 1)
+        if ((bodies != null) && (bodies.size() == 1))
         {
-            if(debug)
+            if (debug)
             {
-                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize +")");
+                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize + ")");
             }
-            data = ((ContentBody)bodies.get(0)).payload;
+
+            data = ((ContentBody) bodies.get(0)).payload;
         }
         else if (bodies != null)
         {
-            if(debug)
+            if (debug)
             {
-                _logger.debug("Fragmented message body (" + bodies.size() + " frames, bodySize=" + contentHeader.bodySize + ")");
+                _logger.debug("Fragmented message body (" + bodies.size() + " frames, bodySize=" + contentHeader.bodySize
+                    + ")");
             }
-            data = ByteBuffer.allocate((int)contentHeader.bodySize); // XXX: Is cast a problem?
+
+            data = ByteBuffer.allocate((int) contentHeader.bodySize); // XXX: Is cast a problem?
             final Iterator it = bodies.iterator();
             while (it.hasNext())
             {
@@ -72,27 +74,29 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
                 data.put(cb.payload);
                 cb.payload.release();
             }
+
             data.flip();
         }
         else // bodies == null
         {
             data = ByteBuffer.allocate(0);
         }
-        if(debug)
+
+        if (debug)
         {
-            _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data.remaining());
+            _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining="
+                + data.remaining());
         }
 
         return createMessage(messageNbr, data, exchange, routingKey, contentHeader);
     }
 
-    public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered,
-                                            ContentHeaderBody contentHeader,
-                                            AMQShortString exchange, AMQShortString routingKey,
-                                            List bodies) throws JMSException, AMQException
+    public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, ContentHeaderBody contentHeader,
+        AMQShortString exchange, AMQShortString routingKey, List bodies) throws JMSException, AMQException
     {
         final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
         msg.setJMSRedelivered(redelivered);
+
         return msg;
     }
 

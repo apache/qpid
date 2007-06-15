@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.client.protocol;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class HeartbeatConfig
 {
-    private static final Logger _logger = Logger.getLogger(HeartbeatConfig.class);
+    private static final Logger _logger = LoggerFactory.getLogger(HeartbeatConfig.class);
     static final HeartbeatConfig CONFIG = new HeartbeatConfig();
 
     /**
@@ -35,13 +36,13 @@ class HeartbeatConfig
     HeartbeatConfig()
     {
         String property = System.getProperty("amqj.heartbeat.timeoutFactor");
-        if(property != null)
+        if (property != null)
         {
             try
             {
                 timeoutFactor = Float.parseFloat(property);
             }
-            catch(NumberFormatException e)
+            catch (NumberFormatException e)
             {
                 _logger.warn("Invalid timeout factor (amqj.heartbeat.timeoutFactor): " + property);
             }
