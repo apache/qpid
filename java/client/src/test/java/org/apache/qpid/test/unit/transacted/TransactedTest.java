@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,23 +20,23 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
-import javax.jms.Connection;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
-
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.Session;
 
 public class TransactedTest extends TestCase
 {
@@ -56,7 +56,7 @@ public class TransactedTest extends TestCase
     private Session testSession;
     private MessageConsumer testConsumer1;
     private MessageConsumer testConsumer2;
-    private static final Logger _logger = Logger.getLogger(TransactedTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(TransactedTest.class);
 
     protected void setUp() throws Exception
     {
@@ -68,13 +68,15 @@ public class TransactedTest extends TestCase
         _logger.info("Create Session");
         session = con.createSession(true, Session.SESSION_TRANSACTED);
         _logger.info("Create Q1");
-        queue1 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q1"), new AMQShortString("Q1"), false, true);
+        queue1 =
+            new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q1"), new AMQShortString("Q1"), false,
+                true);
         _logger.info("Create Q2");
         queue2 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q2"), false);
 
         _logger.info("Create Consumer of Q1");
         consumer1 = session.createConsumer(queue1);
-        //Dummy just to create the queue.
+        // Dummy just to create the queue.
         _logger.info("Create Consumer of Q2");
         MessageConsumer consumer2 = session.createConsumer(queue2);
         _logger.info("Close Consumer of Q2");
@@ -97,7 +99,6 @@ public class TransactedTest extends TestCase
 
         _logger.info("Create prep connection start");
         prepCon.start();
-
 
         _logger.info("Create test connection");
         testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
@@ -122,7 +123,7 @@ public class TransactedTest extends TestCase
 
     public void testCommit() throws Exception
     {
-        //add some messages
+        // add some messages
         _logger.info("Send prep A");
         prepProducer1.send(prepSession.createTextMessage("A"));
         _logger.info("Send prep B");
@@ -130,14 +131,13 @@ public class TransactedTest extends TestCase
         _logger.info("Send prep C");
         prepProducer1.send(prepSession.createTextMessage("C"));
 
-        //send and receive some messages
+        // send and receive some messages
         _logger.info("Send X to Q2");
         producer2.send(session.createTextMessage("X"));
         _logger.info("Send Y to Q2");
         producer2.send(session.createTextMessage("Y"));
         _logger.info("Send Z to Q2");
         producer2.send(session.createTextMessage("Z"));
-
 
         _logger.info("Read A from Q1");
         expect("A", consumer1.receive(1000));
@@ -146,13 +146,13 @@ public class TransactedTest extends TestCase
         _logger.info("Read C from Q1");
         expect("C", consumer1.receive(1000));
 
-        //commit
+        // commit
         _logger.info("session commit");
         session.commit();
         _logger.info("Start test Connection");
         testCon.start();
 
-        //ensure sent messages can be received and received messages are gone
+        // ensure sent messages can be received and received messages are gone
         _logger.info("Read X from Q2");
         expect("X", testConsumer2.receive(1000));
         _logger.info("Read Y from Q2");
@@ -170,7 +170,7 @@ public class TransactedTest extends TestCase
 
     public void testRollback() throws Exception
     {
-        //add some messages
+        // add some messages
         _logger.info("Send prep A");
         prepProducer1.send(prepSession.createTextMessage("A"));
         _logger.info("Send prep B");
@@ -178,7 +178,7 @@ public class TransactedTest extends TestCase
         _logger.info("Send prep C");
         prepProducer1.send(prepSession.createTextMessage("C"));
 
-        //Quick sleep to ensure all three get pre-fetched
+        // Quick sleep to ensure all three get pre-fetched
         Thread.sleep(500);
 
         _logger.info("Sending X Y Z");
@@ -188,14 +188,14 @@ public class TransactedTest extends TestCase
         _logger.info("Receiving A B");
         expect("A", consumer1.receive(1000));
         expect("B", consumer1.receive(1000));
-        //Don't consume 'C' leave it in the prefetch cache to ensure rollback removes it.
+        // Don't consume 'C' leave it in the prefetch cache to ensure rollback removes it.
 
-        //rollback
+        // rollback
         _logger.info("rollback");
         session.rollback();
 
         _logger.info("Receiving A B C");
-        //ensure sent messages are not visible and received messages are requeued
+        // ensure sent messages are not visible and received messages are requeued
         expect("A", consumer1.receive(1000), true);
         expect("B", consumer1.receive(1000), true);
         expect("C", consumer1.receive(1000), true);
@@ -211,7 +211,7 @@ public class TransactedTest extends TestCase
 
         _logger.info("Testing we have no messages left after commit");
         assertTrue(null == testConsumer1.receive(1000));
-        assertTrue(null == testConsumer2.receive(1000));        
+        assertTrue(null == testConsumer2.receive(1000));
     }
 
     public void testResendsMsgsAfterSessionClose() throws Exception

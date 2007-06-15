@@ -20,15 +20,16 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.log4j.Logger;
-
 import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class VersionSpecificRegistry
 {
-    private static final Logger _log = Logger.getLogger(VersionSpecificRegistry.class);
+    private static final Logger _log = LoggerFactory.getLogger(VersionSpecificRegistry.class);
 
     private final byte _protocolMajorVersion;
     private final byte _protocolMinorVersion;
@@ -152,16 +153,17 @@ public class VersionSpecificRegistry
         }
         catch (NullPointerException e)
         {
-            throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion
-                + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID + ".", e);
+            throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version "
+                + _protocolMajorVersion + "-" + _protocolMinorVersion + " (while trying to decode class " + classID
+                + " method " + methodID + ".", e);
         }
         catch (IndexOutOfBoundsException e)
         {
             if (classID >= _registry.length)
             {
-                throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version " + _protocolMajorVersion
-                    + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID
-                    + ".", e);
+                throw new AMQFrameDecodingException(null, "Class " + classID + " unknown in AMQP version "
+                    + _protocolMajorVersion + "-" + _protocolMinorVersion + " (while trying to decode class " + classID
+                    + " method " + methodID + ".", e);
 
             }
             else
@@ -175,8 +177,9 @@ public class VersionSpecificRegistry
 
         if (bodyFactory == null)
         {
-            throw new AMQFrameDecodingException(null, "Method " + methodID + " unknown in AMQP version " + _protocolMajorVersion
-                + "-" + _protocolMinorVersion + " (while trying to decode class " + classID + " method " + methodID + ".", null);
+            throw new AMQFrameDecodingException(null, "Method " + methodID + " unknown in AMQP version "
+                + _protocolMajorVersion + "-" + _protocolMinorVersion + " (while trying to decode class " + classID
+                + " method " + methodID + ".", null);
         }
 
         return bodyFactory.newInstance(_protocolMajorVersion, _protocolMinorVersion, classID, methodID, in, size);

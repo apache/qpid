@@ -28,7 +28,7 @@ import org.apache.qpid.framing.AMQMethodBody;
  *
  * <p/>An event listener may be associated with a particular context, usually an AMQP channel, and in addition to
  * receiving method events will be notified of errors on that context. This enables listeners to perform any clean
- * up that they need to do before the context is closed.
+ * up that they need to do before the context is closed or retried.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities
@@ -64,8 +64,6 @@ public interface AMQMethodListener
      * any necessary clean-up for the context.
      *
      * @param e The underlying exception that is the source of the error.
-     *
-     * @todo Consider narrowing the exception, or wrapping it.
      */
     void error(Exception e);
 }

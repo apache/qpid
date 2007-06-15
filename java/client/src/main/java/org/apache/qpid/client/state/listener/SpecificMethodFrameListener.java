@@ -34,7 +34,7 @@ public class SpecificMethodFrameListener extends BlockingMethodFrameListener
         _expectedClass = expectedClass;
     }
 
-    public boolean processMethod(int channelId, AMQMethodBody frame) throws AMQException
+    public boolean processMethod(int channelId, AMQMethodBody frame) //throws AMQException
     {
         return _expectedClass.isInstance(frame);
     }

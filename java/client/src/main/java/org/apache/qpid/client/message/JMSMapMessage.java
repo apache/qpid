@@ -14,11 +14,23 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.    
+ *  under the License.
  *
- * 
+ *
  */
 package org.apache.qpid.client.message;
+
+import org.apache.mina.common.ByteBuffer;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 
 import java.nio.charset.CharacterCodingException;
 import java.util.Collections;
@@ -26,24 +38,14 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-
-import org.apache.log4j.Logger;
-import org.apache.mina.common.ByteBuffer;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentHeaderBody;
-
 public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jms.MapMessage
 {
-    private static final Logger _logger = Logger.getLogger(JMSMapMessage.class);
-
+    private static final Logger _logger = LoggerFactory.getLogger(JMSMapMessage.class);
 
     public static final String MIME_TYPE = "jms/map-message";
     private static final AMQShortString MIME_TYPE_SHORT_STRING = new AMQShortString(MIME_TYPE);
 
-    private Map<String,Object> _map = new HashMap<String, Object>();
+    private Map<String, Object> _map = new HashMap<String, Object>();
 
     public JMSMapMessage() throws JMSException
     {
@@ -56,23 +58,21 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         populateMapFromData();
     }
 
-
-    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
-                  AMQShortString routingKey, ByteBuffer data) throws AMQException
+    JMSMapMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange, AMQShortString routingKey,
+        ByteBuffer data) throws AMQException
     {
         super(messageNbr, contentHeader, exchange, routingKey, data);
         try
         {
             populateMapFromData();
-        }                                                        
+        }
         catch (JMSException je)
         {
             throw new AMQException(null, "Error populating MapMessage from ByteBuffer", je);
-            
+
         }
 
     }
-
 
     public String toBodyString() throws JMSException
     {
@@ -84,15 +84,13 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         return MIME_TYPE_SHORT_STRING;
     }
 
-
     public ByteBuffer getData()
     {
-        //What if _data is null?
+        // What if _data is null?
         writeMapToData();
+
         return super.getData();
     }
-
-
 
     @Override
     public void clearBodyImpl() throws JMSException
@@ -105,18 +103,18 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Boolean)
+        if (value instanceof Boolean)
         {
-            return ((Boolean)value).booleanValue();
+            return ((Boolean) value).booleanValue();
         }
-        else if((value instanceof String) || (value == null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Boolean.valueOf((String)value);
+            return Boolean.valueOf((String) value);
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to boolean.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to boolean.");
         }
 
     }
@@ -125,18 +123,18 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Byte)
+        if (value instanceof Byte)
         {
-            return ((Byte)value).byteValue();
+            return ((Byte) value).byteValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Byte.valueOf((String)value).byteValue();
+            return Byte.valueOf((String) value).byteValue();
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to byte.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to byte.");
         }
     }
 
@@ -144,51 +142,50 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Short)
+        if (value instanceof Short)
         {
-            return ((Short)value).shortValue();
+            return ((Short) value).shortValue();
         }
-        else if(value instanceof Byte)
+        else if (value instanceof Byte)
         {
-            return ((Byte)value).shortValue();
+            return ((Byte) value).shortValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Short.valueOf((String)value).shortValue();
+            return Short.valueOf((String) value).shortValue();
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to short.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to short.");
         }
 
     }
-
 
     public int getInt(String propName) throws JMSException
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Integer)
+        if (value instanceof Integer)
         {
-            return ((Integer)value).intValue();
+            return ((Integer) value).intValue();
         }
-        else if(value instanceof Short)
+        else if (value instanceof Short)
         {
-            return ((Short)value).intValue();
+            return ((Short) value).intValue();
         }
-        else if(value instanceof Byte)
+        else if (value instanceof Byte)
         {
-            return ((Byte)value).intValue();
+            return ((Byte) value).intValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Integer.valueOf((String)value).intValue();
+            return Integer.valueOf((String) value).intValue();
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to int.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to int.");
         }
 
     }
@@ -197,30 +194,32 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Long)
+        if (value instanceof Long)
         {
-            return ((Long)value).longValue();
+            return ((Long) value).longValue();
         }
-        else if(value instanceof Integer)
+        else if (value instanceof Integer)
         {
-            return ((Integer)value).longValue();
+            return ((Integer) value).longValue();
         }
-        if(value instanceof Short)
+
+        if (value instanceof Short)
         {
-            return ((Short)value).longValue();
+            return ((Short) value).longValue();
         }
-        if(value instanceof Byte)
+
+        if (value instanceof Byte)
         {
-            return ((Byte)value).longValue();
+            return ((Byte) value).longValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Long.valueOf((String)value).longValue();
+            return Long.valueOf((String) value).longValue();
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to long.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to long.");
         }
 
     }
@@ -229,45 +228,43 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(!_map.containsKey(propName))
+        if (!_map.containsKey(propName))
         {
             throw new MessageFormatException("Property " + propName + " not present");
         }
-        else if(value instanceof Character)
+        else if (value instanceof Character)
         {
-            return ((Character)value).charValue();
+            return ((Character) value).charValue();
         }
         else if (value == null)
         {
-            throw new NullPointerException("Property " + propName + " has null value and therefore cannot " +
-                                           "be converted to char.");
+            throw new NullPointerException("Property " + propName + " has null value and therefore cannot "
+                + "be converted to char.");
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to boolan.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to boolan.");
         }
 
     }
-
-
 
     public float getFloat(String propName) throws JMSException
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Float)
+        if (value instanceof Float)
         {
-            return ((Float)value).floatValue();
+            return ((Float) value).floatValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Float.valueOf((String)value).floatValue();
+            return Float.valueOf((String) value).floatValue();
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to float.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to float.");
         }
     }
 
@@ -275,22 +272,22 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(value instanceof Double)
+        if (value instanceof Double)
         {
-            return ((Double)value).doubleValue();
+            return ((Double) value).doubleValue();
         }
-        else if(value instanceof Float)
+        else if (value instanceof Float)
         {
-            return ((Float)value).doubleValue();
+            return ((Float) value).doubleValue();
         }
-        else if((value instanceof String) || (value==null))
+        else if ((value instanceof String) || (value == null))
         {
-            return Double.valueOf((String)value).doubleValue();
+            return Double.valueOf((String) value).doubleValue();
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to double.");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to double.");
         }
     }
 
@@ -298,14 +295,13 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if((value instanceof String) || (value == null))
+        if ((value instanceof String) || (value == null))
         {
             return (String) value;
         }
-        else if(value instanceof byte[])
+        else if (value instanceof byte[])
         {
-            throw new MessageFormatException("Property " + propName + " of type byte[] " +
-                                             "cannot be converted to String.");
+            throw new MessageFormatException("Property " + propName + " of type byte[] " + "cannot be converted to String.");
         }
         else
         {
@@ -318,18 +314,18 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         Object value = _map.get(propName);
 
-        if(!_map.containsKey(propName))
+        if (!_map.containsKey(propName))
         {
-            throw new MessageFormatException("Property " + propName + " not present");                        
+            throw new MessageFormatException("Property " + propName + " not present");
         }
-        else if((value instanceof byte[]) || (value == null))
+        else if ((value instanceof byte[]) || (value == null))
         {
-            return (byte[])value;
+            return (byte[]) value;
         }
         else
         {
-            throw new MessageFormatException("Property " + propName + " of type " +
-                                             value.getClass().getName() + " cannot be converted to byte[].");
+            throw new MessageFormatException("Property " + propName + " of type " + value.getClass().getName()
+                + " cannot be converted to byte[].");
         }
     }
 
@@ -342,7 +338,6 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     {
         return Collections.enumeration(_map.keySet());
     }
-
 
     public void setBoolean(String propName, boolean b) throws JMSException
     {
@@ -416,46 +411,38 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
 
     public void setBytes(String propName, byte[] bytes, int offset, int length) throws JMSException
     {
-        if((offset == 0) && (length == bytes.length))
+        if ((offset == 0) && (length == bytes.length))
         {
-            setBytes(propName,bytes);
+            setBytes(propName, bytes);
         }
         else
         {
             byte[] newBytes = new byte[length];
-            System.arraycopy(bytes,offset,newBytes,0,length);
-            setBytes(propName,newBytes);
+            System.arraycopy(bytes, offset, newBytes, 0, length);
+            setBytes(propName, newBytes);
         }
     }
 
     public void setObject(String propName, Object value) throws JMSException
-    {                                                                                       
+    {
         checkWritable();
         checkPropertyName(propName);
-        if(value instanceof Boolean
-                || value instanceof Byte
-                || value instanceof Short
-                || value instanceof Integer
-                || value instanceof Long
-                || value instanceof Character
-                || value instanceof Float
-                || value instanceof Double
-                || value instanceof String
-                || value instanceof byte[]                
-                || value == null)
+        if ((value instanceof Boolean) || (value instanceof Byte) || (value instanceof Short) || (value instanceof Integer)
+                || (value instanceof Long) || (value instanceof Character) || (value instanceof Float)
+                || (value instanceof Double) || (value instanceof String) || (value instanceof byte[]) || (value == null))
         {
             _map.put(propName, value);
         }
         else
         {
-            throw new MessageFormatException("Cannot set property " + propName + " to value " + value +
-                                             "of type " + value.getClass().getName() + ".");
+            throw new MessageFormatException("Cannot set property " + propName + " to value " + value + "of type "
+                + value.getClass().getName() + ".");
         }
     }
 
     private void checkPropertyName(String propName)
     {
-        if(propName == null || propName.equals(""))
+        if ((propName == null) || propName.equals(""))
         {
             throw new IllegalArgumentException("Property name cannot be null, or the empty String.");
         }
@@ -466,19 +453,18 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         return _map.containsKey(propName);
     }
 
-
     private void populateMapFromData() throws JMSException
     {
-        if(_data != null)
+        if (_data != null)
         {
             _data.rewind();
 
             final int entries = readIntImpl();
-            for(int i = 0; i < entries; i++)
+            for (int i = 0; i < entries; i++)
             {
                 String propName = readStringImpl();
                 Object value = readObject();
-                _map.put(propName,value);
+                _map.put(propName, value);
             }
         }
         else
@@ -492,7 +478,7 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         allocateInitialBuffer();
         final int size = _map.size();
         writeIntImpl(size);
-        for(Map.Entry<String, Object> entry : _map.entrySet())
+        for (Map.Entry<String, Object> entry : _map.entrySet())
         {
             try
             {
@@ -500,10 +486,10 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
             }
             catch (CharacterCodingException e)
             {
-                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey(),e);
-
+                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey(), e);
 
             }
+
             try
             {
                 writeObject(entry.getValue());
@@ -511,14 +497,11 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
             catch (JMSException e)
             {
                 Object value = entry.getValue();
-                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey() +
-                        " value : " + value + " (type: " + value.getClass().getName() + ").",e);
+                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey() + " value : " + value
+                    + " (type: " + value.getClass().getName() + ").", e);
             }
         }
 
     }
-
-
-
 
 }

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BasicContentHeaderProperties implements CommonContentHeaderProperties
 {
-    private static final Logger _logger = Logger.getLogger(BasicContentHeaderProperties.class);
+    private static final Logger _logger = LoggerFactory.getLogger(BasicContentHeaderProperties.class);
 
     private static final AMQShortString ZERO_STRING = null;
 
@@ -96,8 +97,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     private static final int CLUSTER_ID_MASK = 1 << 2;
 
     public BasicContentHeaderProperties()
-    {
-    }
+    { }
 
     public int getPropertyListSize()
     {
@@ -113,30 +113,37 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
             {
                 size += EncodingUtils.encodedShortStringLength(_contentType);
             }
+
             if ((_propertyFlags & ENCONDING_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_encoding);
             }
+
             if ((_propertyFlags & HEADERS_MASK) > 0)
             {
                 size += EncodingUtils.encodedFieldTableLength(_headers);
             }
+
             if ((_propertyFlags & DELIVERY_MODE_MASK) > 0)
             {
                 size += 1;
             }
+
             if ((_propertyFlags & PROPRITY_MASK) > 0)
             {
                 size += 1;
             }
+
             if ((_propertyFlags & CORRELATION_ID_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_correlationId);
             }
+
             if ((_propertyFlags & REPLY_TO_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_replyTo);
             }
+
             if ((_propertyFlags & EXPIRATION_MASK) > 0)
             {
                 if (_expiration == 0L)
@@ -148,40 +155,48 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
                     size += EncodingUtils.encodedShortStringLength(_expiration);
                 }
             }
+
             if ((_propertyFlags & MESSAGE_ID_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_messageId);
             }
+
             if ((_propertyFlags & TIMESTAMP_MASK) > 0)
             {
                 size += 8;
             }
+
             if ((_propertyFlags & TYPE_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_type);
             }
+
             if ((_propertyFlags & USER_ID_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_userId);
             }
+
             if ((_propertyFlags & APPLICATION_ID_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_appId);
             }
+
             if ((_propertyFlags & CLUSTER_ID_MASK) > 0)
             {
                 size += EncodingUtils.encodedShortStringLength(_clusterId);
             }
+
             return size;
         }
     }
 
     private void clearEncodedForm()
     {
-        if (!_decoded && _encodedForm != null)
+        if (!_decoded && (_encodedForm != null))
         {
-            //decode();
+            // decode();
         }
+
         _encodedForm = null;
     }
 
@@ -208,30 +223,37 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
             {
                 EncodingUtils.writeShortStringBytes(buffer, _contentType);
             }
+
             if ((_propertyFlags & ENCONDING_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _encoding);
             }
+
             if ((_propertyFlags & HEADERS_MASK) != 0)
             {
                 EncodingUtils.writeFieldTableBytes(buffer, _headers);
             }
+
             if ((_propertyFlags & DELIVERY_MODE_MASK) != 0)
             {
                 buffer.put(_deliveryMode);
             }
+
             if ((_propertyFlags & PROPRITY_MASK) != 0)
             {
                 buffer.put(_priority);
             }
+
             if ((_propertyFlags & CORRELATION_ID_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _correlationId);
             }
+
             if ((_propertyFlags & REPLY_TO_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _replyTo);
             }
+
             if ((_propertyFlags & EXPIRATION_MASK) != 0)
             {
                 if (_expiration == 0L)
@@ -243,26 +265,32 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
                     EncodingUtils.writeShortStringBytes(buffer, String.valueOf(_expiration));
                 }
             }
+
             if ((_propertyFlags & MESSAGE_ID_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _messageId);
             }
+
             if ((_propertyFlags & TIMESTAMP_MASK) != 0)
             {
                 EncodingUtils.writeTimestamp(buffer, _timestamp);
             }
+
             if ((_propertyFlags & TYPE_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _type);
             }
+
             if ((_propertyFlags & USER_ID_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _userId);
             }
+
             if ((_propertyFlags & APPLICATION_ID_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _appId);
             }
+
             if ((_propertyFlags & CLUSTER_ID_MASK) != 0)
             {
                 EncodingUtils.writeShortStringBytes(buffer, _clusterId);
@@ -270,8 +298,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         }
     }
 
-    public void populatePropertiesFromBuffer(ByteBuffer buffer, int propertyFlags, int size)
-            throws AMQFrameDecodingException
+    public void populatePropertiesFromBuffer(ByteBuffer buffer, int propertyFlags, int size) throws AMQFrameDecodingException
     {
         _propertyFlags = propertyFlags;
 
@@ -279,6 +306,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         {
             _logger.debug("Property flags: " + _propertyFlags);
         }
+
         decode(buffer);
         /*_encodedForm = new byte[size];
         buffer.get(_encodedForm, 0, size);
@@ -289,7 +317,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     private void decode(ByteBuffer buffer)
     {
-        //ByteBuffer buffer = ByteBuffer.wrap(_encodedForm);
+        // ByteBuffer buffer = ByteBuffer.wrap(_encodedForm);
         int pos = buffer.position();
         try
         {
@@ -297,54 +325,67 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
             {
                 _contentType = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & ENCONDING_MASK) != 0)
             {
                 _encoding = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & HEADERS_MASK) != 0)
             {
                 _headers = EncodingUtils.readFieldTable(buffer);
             }
+
             if ((_propertyFlags & DELIVERY_MODE_MASK) != 0)
             {
                 _deliveryMode = buffer.get();
             }
+
             if ((_propertyFlags & PROPRITY_MASK) != 0)
             {
                 _priority = buffer.get();
             }
+
             if ((_propertyFlags & CORRELATION_ID_MASK) != 0)
             {
                 _correlationId = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & REPLY_TO_MASK) != 0)
             {
                 _replyTo = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & EXPIRATION_MASK) != 0)
             {
                 _expiration = EncodingUtils.readLongAsShortString(buffer);
             }
+
             if ((_propertyFlags & MESSAGE_ID_MASK) != 0)
             {
                 _messageId = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & TIMESTAMP_MASK) != 0)
             {
                 _timestamp = EncodingUtils.readTimestamp(buffer);
             }
+
             if ((_propertyFlags & TYPE_MASK) != 0)
             {
                 _type = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & USER_ID_MASK) != 0)
             {
                 _userId = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & APPLICATION_ID_MASK) != 0)
             {
                 _appId = EncodingUtils.readAMQShortString(buffer);
             }
+
             if ((_propertyFlags & CLUSTER_ID_MASK) != 0)
             {
                 _clusterId = EncodingUtils.readAMQShortString(buffer);
@@ -367,7 +408,6 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         _decoded = true;
     }
 
-
     private void decodeUpToHeaders()
     {
         ByteBuffer buffer = ByteBuffer.wrap(_encodedForm);
@@ -378,16 +418,19 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
                 byte length = buffer.get();
                 buffer.skip(length);
             }
+
             if ((_propertyFlags & ENCONDING_MASK) != 0)
             {
                 byte length = buffer.get();
                 buffer.skip(length);
             }
+
             if ((_propertyFlags & HEADERS_MASK) != 0)
             {
                 _headers = EncodingUtils.readFieldTable(buffer);
 
             }
+
             _decodedHeaders = true;
         }
         catch (AMQFrameDecodingException e)
@@ -412,7 +455,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     {
         if (!_decoded)
         {
-            //decode();
+            // decode();
         }
     }
 
@@ -435,14 +478,15 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public AMQShortString getContentType()
     {
         decodeContentTypeIfNecessary();
+
         return _contentType;
     }
-
 
     public String getContentTypeAsString()
     {
         decodeContentTypeIfNecessary();
-        return _contentType == null ? null : _contentType.toString();
+
+        return (_contentType == null) ? null : _contentType.toString();
     }
 
     public void setContentType(AMQShortString contentType)
@@ -452,21 +496,21 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         _contentType = contentType;
     }
 
-
     public void setContentType(String contentType)
     {
-        setContentType(contentType == null ? null : new AMQShortString(contentType));
+        setContentType((contentType == null) ? null : new AMQShortString(contentType));
     }
 
     public String getEncodingAsString()
     {
 
-        return getEncoding() == null ? null : getEncoding().toString();
+        return (getEncoding() == null) ? null : getEncoding().toString();
     }
 
     public AMQShortString getEncoding()
     {
         decodeIfNecessary();
+
         return _encoding;
     }
 
@@ -474,7 +518,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     {
         clearEncodedForm();
         _propertyFlags |= ENCONDING_MASK;
-        _encoding = encoding == null ? null : new AMQShortString(encoding);
+        _encoding = (encoding == null) ? null : new AMQShortString(encoding);
     }
 
     public void setEncoding(AMQShortString encoding)
@@ -483,7 +527,6 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         _propertyFlags |= ENCONDING_MASK;
         _encoding = encoding;
     }
-
 
     public FieldTable getHeaders()
     {
@@ -504,10 +547,10 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         _headers = headers;
     }
 
-
     public byte getDeliveryMode()
     {
         decodeIfNecessary();
+
         return _deliveryMode;
     }
 
@@ -521,6 +564,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public byte getPriority()
     {
         decodeIfNecessary();
+
         return _priority;
     }
 
@@ -534,18 +578,20 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public AMQShortString getCorrelationId()
     {
         decodeIfNecessary();
+
         return _correlationId;
     }
 
     public String getCorrelationIdAsString()
     {
         decodeIfNecessary();
-        return _correlationId == null ? null : _correlationId.toString();
+
+        return (_correlationId == null) ? null : _correlationId.toString();
     }
 
     public void setCorrelationId(String correlationId)
     {
-        setCorrelationId(correlationId == null ? null : new AMQShortString(correlationId));
+        setCorrelationId((correlationId == null) ? null : new AMQShortString(correlationId));
     }
 
     public void setCorrelationId(AMQShortString correlationId)
@@ -558,19 +604,20 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public String getReplyToAsString()
     {
         decodeIfNecessary();
-        return _replyTo == null ? null : _replyTo.toString();
+
+        return (_replyTo == null) ? null : _replyTo.toString();
     }
 
     public AMQShortString getReplyTo()
     {
         decodeIfNecessary();
+
         return _replyTo;
     }
 
-
     public void setReplyTo(String replyTo)
     {
-        setReplyTo(replyTo == null ? null : new AMQShortString(replyTo));
+        setReplyTo((replyTo == null) ? null : new AMQShortString(replyTo));
     }
 
     public void setReplyTo(AMQShortString replyTo)
@@ -584,6 +631,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public long getExpiration()
     {
         decodeIfNecessary();
+
         return _expiration;
     }
 
@@ -594,24 +642,25 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         _expiration = expiration;
     }
 
-
     public AMQShortString getMessageId()
     {
         decodeIfNecessary();
+
         return _messageId;
     }
 
     public String getMessageIdAsString()
     {
         decodeIfNecessary();
-        return _messageId == null ? null : _messageId.toString();
+
+        return (_messageId == null) ? null : _messageId.toString();
     }
 
     public void setMessageId(String messageId)
     {
         clearEncodedForm();
         _propertyFlags |= MESSAGE_ID_MASK;
-        _messageId = messageId == null ? null : new AMQShortString(messageId);
+        _messageId = (messageId == null) ? null : new AMQShortString(messageId);
     }
 
     public void setMessageId(AMQShortString messageId)
@@ -621,10 +670,10 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
         _messageId = messageId;
     }
 
-
     public long getTimestamp()
     {
         decodeIfNecessary();
+
         return _timestamp;
     }
 
@@ -638,20 +687,20 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public String getTypeAsString()
     {
         decodeIfNecessary();
-        return _type == null ? null : _type.toString();
-    }
 
+        return (_type == null) ? null : _type.toString();
+    }
 
     public AMQShortString getType()
     {
         decodeIfNecessary();
+
         return _type;
     }
 
-
     public void setType(String type)
     {
-        setType(type == null ? null : new AMQShortString(type));
+        setType((type == null) ? null : new AMQShortString(type));
     }
 
     public void setType(AMQShortString type)
@@ -664,18 +713,20 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public String getUserIdAsString()
     {
         decodeIfNecessary();
-        return _userId == null ? null : _userId.toString();
+
+        return (_userId == null) ? null : _userId.toString();
     }
 
     public AMQShortString getUserId()
     {
         decodeIfNecessary();
+
         return _userId;
     }
 
     public void setUserId(String userId)
     {
-        setUserId(userId == null ? null : new AMQShortString(userId));
+        setUserId((userId == null) ? null : new AMQShortString(userId));
     }
 
     public void setUserId(AMQShortString userId)
@@ -688,18 +739,20 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public String getAppIdAsString()
     {
         decodeIfNecessary();
-        return _appId == null ? null : _appId.toString();
+
+        return (_appId == null) ? null : _appId.toString();
     }
 
     public AMQShortString getAppId()
     {
         decodeIfNecessary();
+
         return _appId;
     }
 
     public void setAppId(String appId)
     {
-        setAppId(appId == null ? null : new AMQShortString(appId));
+        setAppId((appId == null) ? null : new AMQShortString(appId));
     }
 
     public void setAppId(AMQShortString appId)
@@ -712,18 +765,20 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public String getClusterIdAsString()
     {
         decodeIfNecessary();
-        return _clusterId == null ? null : _clusterId.toString();
+
+        return (_clusterId == null) ? null : _clusterId.toString();
     }
 
     public AMQShortString getClusterId()
     {
         decodeIfNecessary();
+
         return _clusterId;
     }
 
     public void setClusterId(String clusterId)
     {
-        setClusterId(clusterId == null ? null : new AMQShortString(clusterId));
+        setClusterId((clusterId == null) ? null : new AMQShortString(clusterId));
     }
 
     public void setClusterId(AMQShortString clusterId)
@@ -735,19 +790,10 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public String toString()
     {
-        return "reply-to = " + _replyTo +
-               ",propertyFlags = " + _propertyFlags +
-               ",ApplicationID = " + _appId +
-               ",ClusterID = " + _clusterId +
-               ",UserId = " + _userId +
-               ",JMSMessageID = " + _messageId +
-               ",JMSCorrelationID = " + _correlationId +
-               ",JMSDeliveryMode = " + _deliveryMode +
-               ",JMSExpiration = " + _expiration +
-               ",JMSPriority = " + _priority +
-               ",JMSTimestamp = " + _timestamp +
-               ",JMSType = " + _type;
+        return "reply-to = " + _replyTo + ",propertyFlags = " + _propertyFlags + ",ApplicationID = " + _appId
+            + ",ClusterID = " + _clusterId + ",UserId = " + _userId + ",JMSMessageID = " + _messageId
+            + ",JMSCorrelationID = " + _correlationId + ",JMSDeliveryMode = " + _deliveryMode + ",JMSExpiration = "
+            + _expiration + ",JMSPriority = " + _priority + ",JMSTimestamp = " + _timestamp + ",JMSType = " + _type;
     }
-
 
 }

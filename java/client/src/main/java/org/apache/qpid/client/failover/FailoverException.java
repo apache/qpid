@@ -21,14 +21,26 @@
 package org.apache.qpid.client.failover;
 
 /**
- * This exception is thrown when failover is taking place and otherparts of the client need to know about this.
+ * FailoverException is used to indicate that a synchronous request has failed to receive the reply that it is waiting
+ * for because the fail-over process has been started whilst it was waiting for its reply. Synchronous methods generally
+ * raise this exception to indicate that they must be re-tried once the fail-over process has completed.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Used to indicate failure of a synchronous request due to fail-over.
+ * </table>
  *
  * @todo This exception is created and passed as an argument to a method, rather than thrown. The exception is being
- *       used to represent a signal, passed out to other threads. Use of exceptions as arguments rather than as
- *       exceptions is extremly confusing. Eliminate. Use a Condition or set a flag and check it instead. Also
- *       FailoverException is Runtime but handled and should only use Runtimes for non-handleable conditions.
+ *       used to represent an event, passed out to other threads. Use of exceptions as arguments rather than as
+ *       exceptions is extremly confusing. Ideally use a condition or set a flag and check it instead.
+ *       This exceptions-as-events pattern seems to be in a similar style to Mina code, which is not pretty, but
+ *       potentially acceptable for that reason. We have the option of extending the mina model to add more events
+ *       to it, that is, anything that is interested in handling failover as an event occurs below the main
+ *       amq event handler, which knows the specific interface of the qpid handlers, which can pass this down as
+ *       an explicit event, without it being an exception. Add failover method to BlockingMethodFrameListener,
+ *       have it set a flag or interrupt the waiting thread, which then creates and raises this exception.
  */
-public class FailoverException extends RuntimeException
+public class FailoverException extends Exception
 {
     public FailoverException(String message)
     {

@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -27,8 +30,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.Properties;
-
-import org.apache.log4j.Logger;
 
 /**
  * PropertiesHelper defines some static methods which are useful when working with properties
@@ -46,7 +47,7 @@ import org.apache.log4j.Logger;
 public class PropertiesUtils
 {
     /** Used for logging. */
-    private static final Logger log = Logger.getLogger(PropertiesUtils.class);
+    private static final Logger log = LoggerFactory.getLogger(PropertiesUtils.class);
 
     /**
      * Get properties from an input stream.

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.client.protocol;
 
-import org.apache.log4j.Logger;
 import org.apache.mina.common.IoFilterAdapter;
 import org.apache.mina.common.IoSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A MINA filter that monitors the numbers of messages pending to be sent by MINA. It outputs a message
@@ -32,13 +34,13 @@ import org.apache.mina.common.IoSession;
  */
 public class ProtocolBufferMonitorFilter extends IoFilterAdapter
 {
-    private static final Logger _logger = Logger.getLogger(ProtocolBufferMonitorFilter.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ProtocolBufferMonitorFilter.class);
 
     public static long DEFAULT_FREQUENCY = 5000;
 
     public static int DEFAULT_THRESHOLD = 3000;
 
-    private int  _bufferedMessages = 0;
+    private int _bufferedMessages = 0;
 
     private int _threshold;
 
@@ -58,7 +60,7 @@ public class ProtocolBufferMonitorFilter extends IoFilterAdapter
         _outputFrequencyInMillis = frequency;
     }
 
-    public void messageReceived( NextFilter nextFilter, IoSession session, Object message ) throws Exception
+    public void messageReceived(NextFilter nextFilter, IoSession session, Object message) throws Exception
     {
         _bufferedMessages++;
         if (_bufferedMessages > _threshold)
@@ -66,8 +68,8 @@ public class ProtocolBufferMonitorFilter extends IoFilterAdapter
             long now = System.currentTimeMillis();
             if ((now - _lastMessageOutputTime) > _outputFrequencyInMillis)
             {
-                _logger.warn("Protocol message buffer exceeded threshold of " + _threshold + ". Current backlog: " +
-                             _bufferedMessages);
+                _logger.warn("Protocol message buffer exceeded threshold of " + _threshold + ". Current backlog: "
+                    + _bufferedMessages);
                 _lastMessageOutputTime = now;
             }
         }
@@ -75,7 +77,7 @@ public class ProtocolBufferMonitorFilter extends IoFilterAdapter
         nextFilter.messageReceived(session, message);
     }
 
-    public void messageSent( NextFilter nextFilter, IoSession session, Object message ) throws Exception
+    public void messageSent(NextFilter nextFilter, IoSession session, Object message) throws Exception
     {
         _bufferedMessages--;
         nextFilter.messageSent(session, message);

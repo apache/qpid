@@ -98,15 +98,17 @@
 
     <dependencies>
 
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
+        <dependency>  
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>  
+            <version>1.4.0</version> 
         </dependency>
 
-        <!-- This is a mina dependency but it isn't being picked up-->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+        <dependency>  
+            <groupId>org.slf4j</groupId> 
+            <artifactId>slf4j-log4j12</artifactId>  
+            <version>1.4.0</version>  
+            <scope>test</scope> 
         </dependency>
 
         <dependency>

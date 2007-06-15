@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import java.util.Hashtable;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -36,11 +40,9 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
-import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import java.util.Hashtable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * QPID-293 Setting MessageListener after connection has started can cause messages to be "lost" on a internal delivery
@@ -53,7 +55,7 @@ import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
  */
 public class ResetMessageListenerTest extends TestCase
 {
-    private static final Logger _logger = Logger.getLogger(ResetMessageListenerTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ResetMessageListenerTest.class);
 
     Context _context;
 
@@ -67,8 +69,8 @@ public class ResetMessageListenerTest extends TestCase
     MessageProducer _producer;
     Session _clientSession, _producerSession;
 
-    private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(2); //all messages Sent Lock
-    private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(2); //all messages Sent Lock
+    private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(2); // all messages Sent Lock
+    private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(2); // all messages Sent Lock
 
     protected void setUp() throws Exception
     {
@@ -88,17 +90,17 @@ public class ResetMessageListenerTest extends TestCase
 
         Queue queue = (Queue) _context.lookup("queue");
 
-        //Create Client 1
+        // Create Client 1
         _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         _consumer1 = _clientSession.createConsumer(queue);
 
-        //Create Client 2 on same session
+        // Create Client 2 on same session
         _consumer2 = _clientSession.createConsumer(queue);
 
-        //Create Producer
+        // Create Producer
         _producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _producerConnection.start();
@@ -129,57 +131,55 @@ public class ResetMessageListenerTest extends TestCase
         TransportConnection.killAllVMBrokers();
     }
 
-
     public void testAsynchronousRecieve()
     {
 
         _logger.info("Test Start");
 
-        //Set default Message Listener
+        // Set default Message Listener
         try
         {
             _consumer1.setMessageListener(new MessageListener()
-            {
-                public void onMessage(Message message)
                 {
-                    _logger.info("Client 1 ML 1 Received Message(" + receivedCount1ML1 + "):" + message);
-
-                    receivedCount1ML1++;
-                    if (receivedCount1ML1 == MSG_COUNT / 2)
+                    public void onMessage(Message message)
                     {
-                        _allFirstMessagesSent.countDown();
+                        _logger.info("Client 1 ML 1 Received Message(" + receivedCount1ML1 + "):" + message);
+
+                        receivedCount1ML1++;
+                        if (receivedCount1ML1 == (MSG_COUNT / 2))
+                        {
+                            _allFirstMessagesSent.countDown();
+                        }
                     }
-                }
-            });
+                });
         }
         catch (JMSException e)
         {
             _logger.error("Error Setting Default ML on consumer1");
         }
 
-
         try
         {
             _consumer2.setMessageListener(new MessageListener()
-            {
-                public void onMessage(Message message)
                 {
-                    _logger.info("Client 2 Received Message(" + receivedCount2 + "):" + message);
-
-                    receivedCount2++;
-                    if (receivedCount2 == MSG_COUNT / 2)
+                    public void onMessage(Message message)
                     {
-                        _logger.info("Client 2 received all its messages1");
-                        _allFirstMessagesSent.countDown();
-                    }
+                        _logger.info("Client 2 Received Message(" + receivedCount2 + "):" + message);
 
-                    if (receivedCount2 == MSG_COUNT)
-                    {
-                        _logger.info("Client 2 received all its messages2");
-                        _allSecondMessagesSent.countDown();
+                        receivedCount2++;
+                        if (receivedCount2 == (MSG_COUNT / 2))
+                        {
+                            _logger.info("Client 2 received all its messages1");
+                            _allFirstMessagesSent.countDown();
+                        }
+
+                        if (receivedCount2 == MSG_COUNT)
+                        {
+                            _logger.info("Client 2 received all its messages2");
+                            _allSecondMessagesSent.countDown();
+                        }
                     }
-                }
-            });
+                });
 
             _clientConnection.start();
         }
@@ -189,7 +189,6 @@ public class ResetMessageListenerTest extends TestCase
 
         }
 
-
         try
         {
             _allFirstMessagesSent.await(1000, TimeUnit.MILLISECONDS);
@@ -197,7 +196,7 @@ public class ResetMessageListenerTest extends TestCase
         }
         catch (InterruptedException e)
         {
-            //do nothing
+            // do nothing
         }
 
         try
@@ -213,18 +212,18 @@ public class ResetMessageListenerTest extends TestCase
         try
         {
             _consumer1.setMessageListener(new MessageListener()
-            {
-                public void onMessage(Message message)
                 {
-                    _logger.info("Client 1 ML2 Received Message(" + receivedCount1ML1 + "):" + message);
-
-                    receivedCount1ML2++;
-                    if (receivedCount1ML2 == MSG_COUNT / 2)
+                    public void onMessage(Message message)
                     {
-                        _allSecondMessagesSent.countDown();
+                        _logger.info("Client 1 ML2 Received Message(" + receivedCount1ML1 + "):" + message);
+
+                        receivedCount1ML2++;
+                        if (receivedCount1ML2 == (MSG_COUNT / 2))
+                        {
+                            _allSecondMessagesSent.countDown();
+                        }
                     }
-                }
-            });
+                });
 
             _clientConnection.start();
         }
@@ -260,10 +259,9 @@ public class ResetMessageListenerTest extends TestCase
         }
         catch (InterruptedException e)
         {
-            //do nothing
+            // do nothing
         }
     }
-
 
     public static junit.framework.Test suite()
     {

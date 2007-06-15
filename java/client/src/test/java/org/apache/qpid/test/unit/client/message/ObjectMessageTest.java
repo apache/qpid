@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,17 +20,6 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
@@ -38,11 +27,24 @@ import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.testutil.VMBrokerSetup;
-import org.apache.log4j.Logger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.ObjectMessage;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 
 public class ObjectMessageTest extends TestCase implements MessageListener
 {
-    private static final Logger _logger = Logger.getLogger(ObjectMessageTest.class);
+    private static final Logger _logger = LoggerFactory.getLogger(ObjectMessageTest.class);
 
     private AMQConnection connection;
     private AMQDestination destination;
@@ -59,15 +61,15 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     {
         super.setUp();
         connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "test");
-        destination = new AMQQueue(connection,randomize("LatencyTest"), true);
+        destination = new AMQQueue(connection, randomize("LatencyTest"), true);
         session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
 
-        //set up a consumer
+        // set up a consumer
         session.createConsumer(destination).setMessageListener(this);
         connection.start();
 
-        //create a publisher
-         producer = session.createProducer(destination, false, false, true);
+        // create a publisher
+        producer = session.createProducer(destination, false, false, true);
         A a1 = new A(1, "A");
         A a2 = new A(2, "a");
         B b = new B(1, "B");
@@ -77,7 +79,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         c.put("B", b);
         c.put("String", "String");
 
-        data = new Serializable[]{a1, a2, b, c, "Hello World!", new Integer(1001)};
+        data = new Serializable[] { a1, a2, b, c, "Hello World!", new Integer(1001) };
     }
 
     protected void tearDown() throws Exception
@@ -86,8 +88,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     }
 
     public ObjectMessageTest()
-    {
-    }
+    { }
 
     ObjectMessageTest(String broker) throws Exception
     {
@@ -118,59 +119,59 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     {
         String testStringProperty = "TestStringProperty";
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestStringProperty",testStringProperty);
+        msg.setObjectProperty("TestStringProperty", testStringProperty);
         assertEquals(testStringProperty, msg.getObjectProperty("TestStringProperty"));
     }
 
     public void testSetObjectPropertyForBoolean() throws Exception
     {
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestBooleanProperty",Boolean.TRUE);
+        msg.setObjectProperty("TestBooleanProperty", Boolean.TRUE);
         assertEquals(Boolean.TRUE, msg.getObjectProperty("TestBooleanProperty"));
     }
 
     public void testSetObjectPropertyForByte() throws Exception
     {
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestByteProperty",Byte.MAX_VALUE);
+        msg.setObjectProperty("TestByteProperty", Byte.MAX_VALUE);
         assertEquals(Byte.MAX_VALUE, msg.getObjectProperty("TestByteProperty"));
     }
 
     public void testSetObjectPropertyForShort() throws Exception
     {
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestShortProperty",Short.MAX_VALUE);
+        msg.setObjectProperty("TestShortProperty", Short.MAX_VALUE);
         assertEquals(Short.MAX_VALUE, msg.getObjectProperty("TestShortProperty"));
     }
+
     public void testSetObjectPropertyForInteger() throws Exception
     {
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestIntegerProperty",Integer.MAX_VALUE);
+        msg.setObjectProperty("TestIntegerProperty", Integer.MAX_VALUE);
         assertEquals(Integer.MAX_VALUE, msg.getObjectProperty("TestIntegerProperty"));
     }
 
     public void testSetObjectPropertyForDouble() throws Exception
     {
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestDoubleProperty",Double.MAX_VALUE);
+        msg.setObjectProperty("TestDoubleProperty", Double.MAX_VALUE);
         assertEquals(Double.MAX_VALUE, msg.getObjectProperty("TestDoubleProperty"));
     }
 
     public void testSetObjectPropertyForFloat() throws Exception
     {
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestFloatProperty",Float.MAX_VALUE);
+        msg.setObjectProperty("TestFloatProperty", Float.MAX_VALUE);
         assertEquals(Float.MAX_VALUE, msg.getObjectProperty("TestFloatProperty"));
     }
 
     public void testSetObjectPropertyForByteArray() throws Exception
     {
-        byte[] array = {1,2,3,4,5};
+        byte[] array = { 1, 2, 3, 4, 5 };
         ObjectMessage msg = session.createObjectMessage(data[0]);
-        msg.setObjectProperty("TestByteArrayProperty",array);
-        assertTrue(Arrays.equals(array,(byte[])msg.getObjectProperty("TestByteArrayProperty")));
+        msg.setObjectProperty("TestByteArrayProperty", array);
+        assertTrue(Arrays.equals(array, (byte[]) msg.getObjectProperty("TestByteArrayProperty")));
     }
-
 
     public void testSetObjectForNull() throws Exception
     {
@@ -179,13 +180,12 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         assertNull(msg.getObject());
     }
 
-
     private void send() throws Exception
     {
         for (int i = 0; i < data.length; i++)
         {
             ObjectMessage msg;
-            if (i % 2 == 0)
+            if ((i % 2) == 0)
             {
                 msg = session.createObjectMessage(data[i]);
             }
@@ -194,6 +194,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
                 msg = session.createObjectMessage();
                 msg.setObject(data[i]);
             }
+
             producer.send(msg);
         }
     }
@@ -205,23 +206,25 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         {
             throw new Exception("Expected " + data.length + " objects, got " + actual.length);
         }
+
         for (int i = 0; i < data.length; i++)
         {
             if (actual[i] instanceof Exception)
             {
                 throw new Exception("Error on receive of " + data[i], ((Exception) actual[i]));
             }
+
             if (actual[i] == null)
             {
                 throw new Exception("Expected " + data[i] + " got null");
             }
+
             if (!data[i].equals(actual[i]))
             {
                 throw new Exception("Expected " + data[i] + " got " + actual[i]);
             }
         }
     }
-
 
     private void close() throws Exception
     {
@@ -236,6 +239,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
         {
             wait();
         }
+
         waiting = false;
     }
 
@@ -260,21 +264,21 @@ public class ObjectMessageTest extends TestCase implements MessageListener
             items.add(e);
         }
 
-            synchronized(this)
-            {
-                received++;
-                notify();
-            }
+        synchronized (this)
+        {
+            received++;
+            notify();
+        }
     }
-
 
     public static void main(String[] argv) throws Exception
     {
-        String broker = argv.length > 0 ? argv[0] : "vm://:1";
+        String broker = (argv.length > 0) ? argv[0] : "vm://:1";
         if ("-help".equals(broker))
         {
             System.out.println("Usage: <broker>");
         }
+
         new ObjectMessageTest(broker).testSendAndReceive();
     }
 
@@ -296,12 +300,12 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
         public boolean equals(Object o)
         {
-            return o instanceof A && equals((A) o);
+            return (o instanceof A) && equals((A) o);
         }
 
         protected boolean equals(A a)
         {
-            return areEqual(a.sValue, sValue) && a.iValue == iValue;
+            return areEqual(a.sValue, sValue) && (a.iValue == iValue);
         }
     }
 
@@ -317,17 +321,16 @@ public class ObjectMessageTest extends TestCase implements MessageListener
 
         protected boolean equals(A a)
         {
-            return super.equals(a) && a instanceof B && time == ((B) a).time;
+            return super.equals(a) && (a instanceof B) && (time == ((B) a).time);
         }
     }
 
     private static class C extends HashMap implements Serializable
-    {
-    }
+    { }
 
     private static boolean areEqual(Object a, Object b)
     {
-        return a == null ? b == null : a.equals(b);
+        return (a == null) ? (b == null) : a.equals(b);
     }
 
     private static String randomize(String in)

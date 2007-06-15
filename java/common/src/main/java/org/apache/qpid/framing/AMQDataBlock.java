@@ -40,4 +40,14 @@ public abstract class AMQDataBlock implements EncodableAMQDataBlock
      * @param buffer
      */
     public abstract void writePayload(ByteBuffer buffer);
+
+    public ByteBuffer toByteBuffer()
+    {
+        final ByteBuffer buffer = ByteBuffer.allocate((int)getSize());
+
+        writePayload(buffer);    
+        buffer.flip();
+        return buffer;
+    }
+
 }

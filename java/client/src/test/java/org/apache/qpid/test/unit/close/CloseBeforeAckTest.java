@@ -20,21 +20,22 @@
  */
 package org.apache.qpid.test.unit.close;
 
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-import javax.jms.Session;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
-
-import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.transport.TransportConnection;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import uk.co.thebadgerset.junit.concurrency.TestRunnable;
 import uk.co.thebadgerset.junit.concurrency.ThreadTestCoordinator;
+
+import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+import javax.jms.Session;
 
 /**
  * This test forces the situation where a session is closed whilst a message consumer is still in its onMessage method.
@@ -46,7 +47,7 @@ import uk.co.thebadgerset.junit.concurrency.ThreadTestCoordinator;
  */
 public class CloseBeforeAckTest extends TestCase
 {
-    private static final Logger log = Logger.getLogger(CloseBeforeAckTest.class);
+    private static final Logger log = LoggerFactory.getLogger(CloseBeforeAckTest.class);
 
     Connection connection;
     Session session;
@@ -64,34 +65,34 @@ public class CloseBeforeAckTest extends TestCase
         public void onMessage(Message message)
         {
             // Give thread 2 permission to close the session.
-            allow(new int[]{1});
+            allow(new int[] { 1 });
 
             // Wait until thread 2 has closed the connection, or is blocked waiting for this to complete.
-            waitFor(new int[]{1}, true);
+            waitFor(new int[] { 1 }, true);
         }
     }
 
     TestThread1 testThread1 = new TestThread1();
 
     TestRunnable testThread2 =
-            new TestRunnable()
+        new TestRunnable()
+        {
+            public void runWithExceptions() throws Exception
             {
-                public void runWithExceptions() throws Exception
-                {
-                    // Send a message to be picked up by thread 1.
-                    session.createProducer(null).send(session.createQueue(TEST_QUEUE_NAME),
-                                                      session.createTextMessage("Hi there thread 1!"));
+                // Send a message to be picked up by thread 1.
+                session.createProducer(null).send(session.createQueue(TEST_QUEUE_NAME),
+                    session.createTextMessage("Hi there thread 1!"));
 
-                    // Wait for thread 1 to pick up the message and give permission to continue.
-                    waitFor(new int[]{0}, false);
+                // Wait for thread 1 to pick up the message and give permission to continue.
+                waitFor(new int[] { 0 }, false);
 
-                    // Close the connection.
-                    session.close();
+                // Close the connection.
+                session.close();
 
-                    // Allow thread 1 to continue to completion, if it is erronously still waiting.
-                    allow(new int[]{1});
-                }
-            };
+                // Allow thread 1 to continue to completion, if it is erronously still waiting.
+                allow(new int[] { 1 });
+            }
+        };
 
     public void testCloseBeforeAutoAck_QPID_397() throws Exception
     {

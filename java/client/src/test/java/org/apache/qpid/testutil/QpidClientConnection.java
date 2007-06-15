@@ -1,26 +1,27 @@
 package org.apache.qpid.testutil;
 
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.JMSAMQException;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.log4j.Logger;
 
-import javax.jms.ExceptionListener;
-import javax.jms.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.Connection;
+import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
-import javax.jms.Queue;
-import javax.jms.MessageProducer;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
 import javax.jms.TextMessage;
 
 public class QpidClientConnection implements ExceptionListener
 {
-
-    private static final Logger _logger = Logger.getLogger(QpidClientConnection.class);
+    private static final Logger _logger = LoggerFactory.getLogger(QpidClientConnection.class);
 
     private boolean transacted = true;
     private int ackMode = Session.CLIENT_ACKNOWLEDGE;
@@ -40,17 +41,16 @@ public class QpidClientConnection implements ExceptionListener
         setPrefetch(5000);
     }
 
-
     public void connect() throws JMSException
     {
         if (!connected)
         {
             /*
-            * amqp://[user:pass@][clientid]/virtualhost?
-            * brokerlist='[transport://]host[:port][?option='value'[&option='value']];'
-            * [&failover='method[?option='value'[&option='value']]']
-            * [&option='value']"
-            */
+             * amqp://[user:pass@][clientid]/virtualhost?
+             * brokerlist='[transport://]host[:port][?option='value'[&option='value']];'
+             * [&failover='method[?option='value'[&option='value']]']
+             * [&option='value']"
+             */
             String brokerUrl = "amqp://guest:guest@" + virtualHost + "?brokerlist='" + brokerlist + "'";
             try
             {
@@ -62,7 +62,6 @@ public class QpidClientConnection implements ExceptionListener
                 connection.setExceptionListener(this);
 
                 session = ((AMQConnection) connection).createSession(transacted, ackMode, prefetch);
-
 
                 _logger.info("starting connection");
                 connection.start();
@@ -123,7 +122,6 @@ public class QpidClientConnection implements ExceptionListener
     {
         this.prefetch = prefetch;
     }
-
 
     /** override as necessary */
     public void onException(JMSException exception)
@@ -266,4 +264,3 @@ public class QpidClientConnection implements ExceptionListener
         _logger.info("consumed: " + messagesReceived);
     }
 }
-
