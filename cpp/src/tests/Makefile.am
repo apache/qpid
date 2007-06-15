@@ -10,6 +10,10 @@ UNIT_TESTS+=logging
 logging_SOURCES=unit/logging.cpp unit/test_tools.h
 logging_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common)
 
+UNIT_TESTS+=Url
+Url_SOURCES=unit/Url.cpp unit/test_tools.h
+Url_LDADD=-lboost_unit_test_framework $(lib_common)
+
 if CLUSTER
 include cluster.mk
 endif
