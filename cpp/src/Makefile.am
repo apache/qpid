@@ -156,6 +156,8 @@ libqpidcommon_la_SOURCES = \
   gen/qpid/framing/AMQP_ServerProxy.cpp \
   qpid/Exception.cpp \
   qpid/ExceptionHolder.cpp \
+  qpid/Url.h \
+  qpid/Url.cpp \
   qpid/QpidError.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/ProducerConsumer.cpp \
