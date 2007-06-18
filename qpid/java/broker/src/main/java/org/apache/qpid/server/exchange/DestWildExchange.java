@@ -222,7 +222,6 @@ public class DestWildExchange extends AbstractExchange
             {
                 _logger.warn("No queues found for routing key " + routingKey);
                 _logger.warn("Routing map contains: " + _routingKey2queues);
-                //todo Check for valid topic - mritchie
                 return;
             }
         }
@@ -288,7 +287,7 @@ public class DestWildExchange extends AbstractExchange
         }
         if (queues.isEmpty())
         {
-            _routingKey2queues.remove(queues);
+            _routingKey2queues.remove(routingKey);
         }
     }
 
