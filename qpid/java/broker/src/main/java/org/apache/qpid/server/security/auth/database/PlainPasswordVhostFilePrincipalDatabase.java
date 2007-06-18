@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.access.AccessManager;
 import org.apache.qpid.server.security.access.AccessResult;
-import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.access.AccessRights;
+import org.apache.qpid.server.security.access.Accessable;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
 import java.security.Principal;
 
 /**
@@ -61,7 +61,7 @@ public class PlainPasswordVhostFilePrincipalDatabase extends PlainPasswordFilePr
                 reader = new BufferedReader(new FileReader(_passwordFile));
                 String line;
 
-                while ((line = reader.readLine()) != null)
+                while ((line = reader.readLine()) != null && !line.startsWith("#"))
                 {
                     String[] result = _regexp.split(line);
                     if (result == null || result.length < 3)

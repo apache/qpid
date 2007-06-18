@@ -29,18 +29,17 @@ import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.UnsupportedEncodingException;
-import java.util.regex.Pattern;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
-import java.util.LinkedList;
+import java.io.IOException;
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Represents a user database where the account information is stored in a simple flat file.
@@ -212,7 +211,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
             reader = new BufferedReader(new FileReader(_passwordFile));
             String line;
 
-            while ((line = reader.readLine()) != null)
+            while ((line = reader.readLine()) != null && !line.startsWith("#"))
             {
                 String[] result = _regexp.split(line);
                 if (result == null || result.length < 2)
