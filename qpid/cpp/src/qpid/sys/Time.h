@@ -97,8 +97,12 @@ const Duration TIME_USEC = 1000;
 /** Nanoseconds per nanosecond. */
 const Duration TIME_NSEC = 1;
 
+/** Value to represent an infinite timeout */
+const Duration TIME_INFINITE = std::numeric_limits<int64_t>::max();
+
 /** Time greater than any other time */
 const AbsTime FAR_FUTURE = AbsTime::FarFuture();
+
 }}
 
 #endif  /*!_sys_Time_h*/

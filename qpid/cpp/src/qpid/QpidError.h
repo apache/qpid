@@ -52,7 +52,7 @@ class QpidError : public Exception
     { init(); }
         
     ~QpidError() throw();
-    Exception* clone() const throw();
+    Exception::auto_ptr clone() const throw();
     void throwSelf() const;
 
   private:

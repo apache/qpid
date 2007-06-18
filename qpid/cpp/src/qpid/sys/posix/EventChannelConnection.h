@@ -34,7 +34,7 @@ namespace sys {
 class ConnectionInputHandlerFactory;
 
 /**
- * Implements ConnectionOutputHandler and delegates to a ConnectionInputHandler
+ * Implements SessionContext and delegates to a SessionHandler
  * for a connection via the EventChannel.
  *@param readDescriptor file descriptor for reading.
  *@param writeDescriptor file descriptor for writing,
@@ -50,7 +50,7 @@ class EventChannelConnection : public ConnectionOutputHandler {
         bool isTrace = false
     );
 
-    // TODO aconway 2006-11-30: ConnectionOutputHandler::send should take auto_ptr
+    // TODO aconway 2006-11-30: SessionContext::send should take auto_ptr
     virtual void send(qpid::framing::AMQFrame* frame) {
         send(std::auto_ptr<qpid::framing::AMQFrame>(frame));
     }

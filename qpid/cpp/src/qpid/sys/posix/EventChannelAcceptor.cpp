@@ -106,7 +106,7 @@ void EventChannelAcceptor::run(ConnectionInputHandlerFactory* f) {
         if (!isRunning && !isShutdown) {
             isRunning = true;
             factory = f;
-            threads->postEvent(acceptEvent);
+            threads->post(acceptEvent);
         }
     }
     threads->join();            // Wait for shutdown.
@@ -120,7 +120,7 @@ void EventChannelAcceptor::shutdown() {
         isShutdown = true;
     }
     if (doShutdown) {
-        ::close(acceptEvent.getDescriptor());
+        ::close(acceptEvent.getFDescriptor());
         threads->shutdown();
         for_each(connections.begin(), connections.end(),
                  boost::bind(&EventChannelConnection::close, _1));
@@ -139,11 +139,11 @@ void EventChannelAcceptor::accept()
         shutdown();
         return;
     }
-    // TODO aconway 2006-11-29: Need to reap closed connections also.
     int fd = acceptEvent.getAcceptedDesscriptor();
+    threads->post(acceptEvent); // Keep accepting.
+    // TODO aconway 2006-11-29: Need to reap closed connections also.
     connections.push_back(
         new EventChannelConnection(threads, *factory, fd, fd, isTrace));
-    threads->postEvent(acceptEvent); // Keep accepting.
 }
 
 }} // namespace qpid::sys
