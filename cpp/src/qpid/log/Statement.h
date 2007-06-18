@@ -19,7 +19,6 @@
  *
  */
 
-#include "qpid/log/Statement.h"
 #include <boost/current_function.hpp>
 #include <sstream>
 

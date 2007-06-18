@@ -21,13 +21,15 @@
  * under the License.
  *
  */
+
+#include "framing/amqp_types.h"
+
 #include <exception>
 #include <string>
 #include <memory>
 #include <boost/shared_ptr.hpp>
 #include <boost/lexical_cast.hpp>
-
-#include "framing/amqp_types.h"
+#include <boost/function.hpp>
 
 namespace qpid
 {
@@ -44,6 +46,10 @@ class Exception : public std::exception
     std::string whatStr;
 
   public:
+    typedef boost::shared_ptr<Exception> shared_ptr;
+    typedef boost::shared_ptr<const Exception> shared_ptr_const;
+    typedef std::auto_ptr<Exception> auto_ptr;
+
     Exception() throw();
     Exception(const std::string& str) throw();
     Exception(const char* str) throw();
@@ -59,10 +65,61 @@ class Exception : public std::exception
     virtual const char* what() const throw();
     virtual std::string toString() const throw();
 
-    virtual Exception* clone() const throw();
+    virtual auto_ptr clone() const throw();
     virtual void throwSelf() const;
 
-    typedef boost::shared_ptr<Exception> shared_ptr;
+    /** Default message: "Unknown exception" or something like it. */
+    static const char* defaultMessage;
+
+    /**
+     * Log a message of the form "message: what"
+     *@param what Exception's what() message.
+     *@param message Prefix message.
+     */
+    static void log(const char* what, const char* message = defaultMessage);
+
+    /**
+     * Log an exception.
+     *@param e Exception to log.
+
+     */
+    static void log(
+        const std::exception& e, const char* message = defaultMessage);
+    
+
+    /**
+     * Log an unknown exception - use in catch(...)
+     *@param message Prefix message.
+     */
+    static void logUnknown(const char* message = defaultMessage);
+
+    /**
+     * Wrapper template function to call another function inside
+     * try/catch and log any exception. Use boost::bind to wrap
+     * member function calls or functions with arguments.
+     * 
+     *@param f Function to call in try block.
+     *@param retrhow If true the exception is rethrown.
+     *@param message Prefix message.
+     */
+    template <class T>
+    static T tryCatchLog(boost::function0<T> f, bool rethrow=true,
+                         const char* message=defaultMessage)
+    {
+        try {
+            return f();
+        }
+        catch (const std::exception& e) {
+            log(e, message);
+            if (rethrow)
+                throw;
+        }
+        catch (...) {
+            logUnknown(message);
+            if (rethrow)
+                throw;
+        }
+    }
 };
 
 struct ChannelException : public Exception {

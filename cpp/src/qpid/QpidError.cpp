@@ -30,7 +30,7 @@ QpidError::QpidError() : code(0) {}
 
 QpidError::~QpidError() throw() {}
 
-Exception* QpidError::clone() const throw() { return new QpidError(*this); }
+Exception::auto_ptr QpidError::clone() const throw() { return Exception::auto_ptr(new QpidError(*this)); }
 
 void QpidError::throwSelf() const  { throw *this; }
 
