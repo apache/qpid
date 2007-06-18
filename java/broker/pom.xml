@@ -180,9 +180,9 @@
                                 <tasks>
 
                                     <condition property="broker.dir" 
-                                             value="${user.dir}${file.separator}..${file.separator}broker"
-                                             else="${user.dir}">
-                                        <equals arg1="${topDirectoryLocation}" arg2="." />
+                                             else="${user.dir}${file.separator}broker"
+                                             value="${user.dir}">
+                                        <contains string="${user.dir}" substring="broker" />
                                     </condition>
 
                                     <condition property="skip-python-tests" value="true">
@@ -191,7 +191,7 @@
 
                                     <property name="command" 
                                               value="python run-tests -v -I java_failing.txt"/>
-                                    <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
+                                              <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
 
                                     <ant antfile="python-test.xml" inheritRefs="true">
                                         <target name="run-tests" />

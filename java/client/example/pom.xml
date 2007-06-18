@@ -15,7 +15,7 @@
     KIND, either express or implied. See the License for the
     specific language governing permissions and limitations
     under the License.
-  -->
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -95,6 +95,57 @@
                     </systemProperties>
                 </configuration>
             </plugin>
+
+            <!-- Build a zip file with the source in it, this had to be done with the assembly plugin as the source plugin did not provide a way
+                 to exclude the .svn directories. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-SNAPSHOT</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>source-jar.xml</descriptor>
+                    </descriptors>
+                    <outputDirectory>target</outputDirectory>
+                    <workDirectory>target/assembly/work</workDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attached</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Publish the source as a build artifact. -->
+            <!--
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>target/${project.build.finalName}-source.jar</file>
+                                    <type>jar</type>
+                                    <classifier>source</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            -->
+
         </plugins>
     </build>
 </project>
