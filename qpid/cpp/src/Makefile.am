@@ -69,6 +69,7 @@ posix_netio_hdr = \
 
 posix_plat_src = \
   qpid/sys/posix/check.cpp \
+  qpid/sys/epoll/EpollPoller.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp
@@ -155,7 +156,6 @@ libqpidcommon_la_SOURCES = \
   gen/qpid/framing/AMQP_MethodVersionMap.cpp \
   gen/qpid/framing/AMQP_ServerProxy.cpp \
   qpid/Exception.cpp \
-  qpid/ExceptionHolder.cpp \
   qpid/Url.h \
   qpid/Url.cpp \
   qpid/QpidError.cpp \
@@ -345,6 +345,7 @@ nobase_include_HEADERS = \
   qpid/framing/amqp_types_full.h \
   qpid/sys/Acceptor.h \
   qpid/sys/AtomicCount.h \
+  qpid/sys/Dispatcher.h \
   qpid/sys/Condition.h \
   qpid/sys/ConnectionInputHandler.h \
   qpid/sys/ConnectionInputHandlerFactory.h \
@@ -352,6 +353,7 @@ nobase_include_HEADERS = \
   qpid/sys/Module.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
+  qpid/sys/Poller.h \
   qpid/sys/ProducerConsumer.h \
   qpid/sys/Runnable.h \
   qpid/sys/ScopedIncrement.h \

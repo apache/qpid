@@ -20,19 +20,27 @@
  */
 
 #include <boost/noncopyable.hpp>
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace sys {
 
-/** Increment counter in constructor and decrement in destructor. */
+/**
+ * Increment counter in constructor and decrement in destructor.
+ * Optionally call a function if the decremented counter value is 0.
+ * Note the function must not throw, it is called in the destructor.
+ */
 template <class T>
 class ScopedIncrement : boost::noncopyable
 {
   public:
-    ScopedIncrement(T& c) : count(c) { ++count; }
-    ~ScopedIncrement() { --count; }
+    ScopedIncrement(T& c, boost::function0<void> f=0)
+        : count(c), callback(f) { ++count; }
+    ~ScopedIncrement() { if (--count == 0 && callback) callback(); }
+
   private:
     T& count;
+    boost::function0<void> callback;
 };
 
 

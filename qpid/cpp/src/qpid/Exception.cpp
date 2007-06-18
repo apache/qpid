@@ -42,18 +42,34 @@ Exception::Exception(const std::string& str) throw()
 
 Exception::Exception(const char* str) throw() : whatStr(str) { ctorLog(this); }
 
+Exception::Exception(const std::exception& e) throw() : whatStr(e.what()) {}
+
 Exception::~Exception() throw() {}
 
 const char* Exception::what() const throw() { return whatStr.c_str(); }
 
 std::string Exception::toString() const throw() { return whatStr; }
 
-Exception* Exception::clone() const throw() { return new Exception(*this); }
+Exception::auto_ptr Exception::clone() const throw() { return Exception::auto_ptr(new Exception(*this)); }
 
 void Exception::throwSelf() const  { throw *this; }
 
 ShutdownException::ShutdownException() : Exception("Shut down.") {}
 
 EmptyException::EmptyException() : Exception("Empty.") {}
+
+const char* Exception::defaultMessage = "Unexpected exception";
+
+void Exception::log(const char* what, const char* message) {
+    QPID_LOG(error, message << ": " << what);
+}
+
+void Exception::log(const std::exception& e, const char* message) {
+    log(e.what(), message);
+}
+
+void Exception::logUnknown(const char* message) {
+    log("unknown exception.", message);
+}
 
 } // namespace qpid
