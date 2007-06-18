@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;

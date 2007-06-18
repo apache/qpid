@@ -149,7 +149,7 @@
                         <id>assembly-dist</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>assembly</goal>
+                            <goal>attached</goal>
                         </goals>
                         <configuration>
                             <descriptors>
@@ -167,7 +167,7 @@
                         <id>assembly-alltestdeps</id>
                         <phase>package</phase>
                         <goals>
-                            <goal>assembly</goal>
+                            <goal>attached</goal>
                         </goals>
                         <configuration>
                             <descriptors>
