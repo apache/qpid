@@ -43,7 +43,7 @@ class PosixError : public qpid::QpidError
     
     int getErrNo() { return errNo; }
 
-    Exception* clone() const throw() { return new PosixError(*this); }
+    Exception::auto_ptr clone() const throw() { return Exception::auto_ptr(new PosixError(*this)); }
         
     void throwSelf() const { throw *this; }
 
@@ -55,6 +55,10 @@ class PosixError : public qpid::QpidError
 
 /** Create a PosixError for the current file/line and errno. */
 #define QPID_POSIX_ERROR(errNo) ::qpid::sys::PosixError(errNo, SRCLINE)
+
+/** Throw QPID_POSIX_ERROR(errno) if RESULT is less than zero */
+#define QPID_POSIX_CHECK(RESULT)                        \
+    if ((RESULT) < 0) throw QPID_POSIX_ERROR((errno))
 
 /** Throw a posix error if errNo is non-zero */
 #define QPID_POSIX_THROW_IF(ERRNO)              \

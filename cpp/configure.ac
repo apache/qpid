@@ -121,7 +121,6 @@ if test "$enable_APR_NETIO" = yes -o "$enable_APR_PLATFORM" = yes; then
   PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
   APR_CXXFLAGS="$APR_CFLAGS"
   if test "$enable_APR_NETIO" = yes; then
-  	APR_CXXFLAGS+=" -DUSE_APR_NETIO=1"
 	USE_APR_NETIO=1
   fi
   if test "$enable_APR_PLATFORM" = yes; then
