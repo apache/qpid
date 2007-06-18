@@ -100,7 +100,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param exchangeName
      * @param type
      * @param durable
-     * @param autoDelete
      * @throws JMException
      */
     public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException
@@ -158,7 +157,6 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      * @param queueName
      * @param durable
      * @param owner
-     * @param autoDelete
      * @throws JMException
      */
     public void createNewQueue(String queueName, String owner, boolean durable) throws JMException
