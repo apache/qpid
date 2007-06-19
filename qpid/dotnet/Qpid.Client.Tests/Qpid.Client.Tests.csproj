@@ -47,6 +47,11 @@
     <Compile Include="BrokerDetails\BrokerDetailsTest.cs" />
     <Compile Include="Channel\ChannelMessageCreationTests.cs" />
     <Compile Include="Channel\ChannelQueueTest.cs" />
+    <Compile Include="interop\InteropClientTestCase.cs" />
+    <Compile Include="interop\TestCases\TestCase1DummyRun.cs" />
+    <Compile Include="interop\TestCases\TestCase2BasicP2P.cs" />
+    <Compile Include="interop\TestCases\TestCase3BasicPubSub.cs" />
+    <Compile Include="interop\TestClient.cs" />
     <Compile Include="Messages\MessageFactoryRegistryTests.cs" />
     <Compile Include="connection\ConnectionTest.cs" />
     <Compile Include="connection\SslConnectionTest.cs" />
