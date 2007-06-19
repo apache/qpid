@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
@@ -74,6 +74,9 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.jms.BytesMessage;
 import javax.jms.Destination;
 import javax.jms.IllegalStateException;
@@ -98,6 +101,7 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
+
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -109,14 +113,30 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td>
+ * </table>
+ *
+ * @todo Different FailoverSupport implementation are needed on the same method call, in different situations. For
+ *       example, when failing-over and reestablishing the bindings, the bind cannot be interrupted by a second
+ *       fail-over, if it fails with an exception, the fail-over process should also fail. When binding outside of
+ *       the fail-over process, the retry handler could be used to automatically retry the operation once the connection
+ *       has been reestablished. All fail-over protected operations should be placed in private methods, with
+ *       FailoverSupport passed in by the caller to provide the correct support for the calling context. Sometimes the
+ *       fail-over process sets a nowait flag and uses an async method call instead.
+ *
+ * @todo Two new objects created on every failover supported method call. Consider more efficient ways of doing this,
+ *       after looking at worse bottlenecks first.
  */
 public class AMQSession extends Closeable implements Session, QueueSession, TopicSession
 {
     /** Used for debugging. */
-    private static final Logger _logger = Logger.getLogger(AMQSession.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
 
     /** Used for debugging in the dispatcher. */
-    private static final Logger _dispatcherLogger = Logger.getLogger(Dispatcher.class);
+    private static final Logger _dispatcherLogger = LoggerFactory.getLogger(Dispatcher.class);
 
     /** The default maximum number of prefetched message at which to suspend the channel. */
     public static final int DEFAULT_PREFETCH_HIGH_MARK = 5000;
@@ -190,8 +210,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             new ConcurrentHashMap<String, TopicSubscriberAdaptor>();
 
     /**
-     * Holds a mapping from message consumers to their identifying names, so that their subscriptions may be looked up
-     * in the {@link #_subscriptions} map.
+     * Holds a mapping from message consumers to their identifying names, so that their subscriptions may be looked
+     * up in the {@link #_subscriptions} map.
      */
     private final ConcurrentHashMap<BasicMessageConsumer, String> _reverseSubscriptionMap =
             new ConcurrentHashMap<BasicMessageConsumer, String>();
@@ -253,8 +273,8 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     private boolean _suspended;
 
     /**
-     * Used to protect the suspension of this session, so that critical code can be executed during suspension, without
-     * the session being resumed by other threads.
+     * Used to protect the suspension of this session, so that critical code can be executed during suspension,
+     * without the session being resumed by other threads.
      */
     private final Object _suspensionLock = new Object();
 
@@ -350,18 +370,30 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     /**
      * Creates a new session on a connection with the default message factory factory.
      *
-     * @param con                 The connection on which to create the session.
-     * @param channelId           The unique identifier for the session.
-     * @param transacted          Indicates whether or not the session is transactional.
-     * @param acknowledgeMode     The acknoledgement mode for the session.
-     * @param defaultPrefetchHigh The maximum number of messages to prefetched before suspending the session.
-     * @param defaultPrefetchLow  The number of prefetched messages at which to resume the session.
+     * @param con                     The connection on which to create the session.
+     * @param channelId               The unique identifier for the session.
+     * @param transacted              Indicates whether or not the session is transactional.
+     * @param acknowledgeMode         The acknoledgement mode for the session.
+     * @param defaultPrefetchHigh     The maximum number of messages to prefetched before suspending the session.
+     * @param defaultPrefetchLow      The number of prefetched messages at which to resume the session.
      */
     AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetchHigh,
                int defaultPrefetchLow)
     {
         this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh,
              defaultPrefetchLow);
+    }
+
+    // ===== JMS Session methods.
+
+    /**
+     * Closes the session with no timeout.
+     *
+     * @throws JMSException If the JMS provider fails to close the session due to some internal error.
+     */
+    public void close() throws JMSException
+    {
+        close(-1);
     }
 
     /**
@@ -416,7 +448,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @param exchangeName The exchange to bind the queue on.
      *
      * @throws AMQException If the queue cannot be bound for any reason.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
+     *
      * @todo Document the additional arguments that may be passed in the field table. Are these for headers exchanges?
      */
     public void bindQueue(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
@@ -444,30 +478,24 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     }
 
     /**
-     * Closes the session with no timeout.
-     *
-     * @throws JMSException If the JMS provider fails to close the session due to some internal error.
-     */
-    public void close() throws JMSException
-    {
-        close(-1);
-    }
 
-    /**
      * Closes the session.
      *
-     * <p/>Note that this operation succeeds automatically if a fail-over interupts the sycnronous request to close the
-     * channel. This is because the channel is marked as closed before the request to close it is made, so the fail-over
-     * should not re-open it.
+     * <p/>Note that this operation succeeds automatically if a fail-over interupts the sycnronous request to close
+     * the channel. This is because the channel is marked as closed before the request to close it is made, so the
+     * fail-over should not re-open it.
      *
      * @param timeout The timeout in milliseconds to wait for the session close acknoledgement from the broker.
      *
      * @throws JMSException If the JMS provider fails to close the session due to some internal error.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
-     * @todo Not certain about the logic of ignoring the failover exception, because the channel won't be re-opened. May
-     * need to examine this more carefully.
-     * @todo Note that taking the failover mutex doesn't prevent this operation being interrupted by a failover, because
-     * the failover process sends the failover event before acquiring the mutex itself.
+     *
+     * @todo Not certain about the logic of ignoring the failover exception, because the channel won't be
+     *       re-opened. May need to examine this more carefully.
+     *
+     * @todo Note that taking the failover mutex doesn't prevent this operation being interrupted by a failover,
+     *       because the failover process sends the failover event before acquiring the mutex itself.
      */
     public void close(long timeout) throws JMSException
     {
@@ -556,12 +584,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * Commits all messages done in this transaction and releases any locks currently held.
      *
      * <p/>If the commit fails, because the commit itself is interrupted by a fail-over between requesting that the
-     * commit be done, and receiving an acknowledgement that it has been done, then a JMSException will be thrown. The
-     * client will be unable to determine whether or not the commit actually happened on the broker in this case.
+     * commit be done, and receiving an acknowledgement that it has been done, then a JMSException will be thrown.
+     * The client will be unable to determine whether or not the commit actually happened on the broker in this case.
      *
      * @throws JMSException If the JMS provider fails to commit the transaction due to some internal error. This does
      *                      not mean that the commit is known to have failed, merely that it is not known whether it
      *                      failed or not.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     public void commit() throws JMSException
@@ -917,6 +946,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @param exclusive  Flag to indicate that the queue is exclusive to this client.
      *
      * @throws AMQException If the queue cannot be declared for any reason.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     public void createQueue(final AMQShortString name, final boolean autoDelete, final boolean durable,
@@ -1257,9 +1287,12 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *
      * <p/>Restarting a session causes it to take the following actions:
      *
-     * <ul> <li>Stop message delivery.</li> <li>Mark all messages that might have been delivered but not acknowledged as
-     * "redelivered". <li>Restart the delivery sequence including all unacknowledged messages that had been previously
-     * delivered. Redelivered messages do not have to be delivered in exactly their original delivery order.</li> </ul>
+     * <ul>
+     * <li>Stop message delivery.</li>
+     * <li>Mark all messages that might have been delivered but not acknowledged as "redelivered".
+     * <li>Restart the delivery sequence including all unacknowledged messages that had been previously delivered.
+     *     Redelivered messages do not have to be delivered in exactly their original delivery order.</li>
+     * </ul>
      *
      * <p/>If the recover operation is interrupted by a fail-over, between asking that the broker begin recovery and
      * receiving acknolwedgement that it hasm then a JMSException will be thrown. In this case it will not be possible
@@ -1373,12 +1406,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * Commits all messages done in this transaction and releases any locks currently held.
      *
      * <p/>If the rollback fails, because the rollback itself is interrupted by a fail-over between requesting that the
-     * rollback be done, and receiving an acknowledgement that it has been done, then a JMSException will be thrown. The
-     * client will be unable to determine whether or not the rollback actually happened on the broker in this case.
+     * rollback be done, and receiving an acknowledgement that it has been done, then a JMSException will be thrown.
+     * The client will be unable to determine whether or not the rollback actually happened on the broker in this case.
      *
      * @throws JMSException If the JMS provider fails to rollback the transaction due to some internal error. This does
      *                      not mean that the rollback is known to have failed, merely that it is not known whether it
      *                      failed or not.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     public void rollback() throws JMSException
@@ -1650,6 +1684,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @return <tt>true</tt> if the queue is bound to the exchange and routing key, <tt>false</tt> if not.
      *
      * @throws JMSException If the query fails for any reason.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName, final AMQShortString routingKey)
@@ -1722,9 +1757,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * Starts the session, which ensures that it is not suspended and that its event dispatcher is running.
      *
      * @throws AMQException If the session cannot be started for any reason.
+     *
      * @todo This should be controlled by _stopped as it pairs with the stop method fixme or check the
-     * FlowControlledBlockingQueue _queue to see if we have flow controlled. will result in sending Flow messages for
-     * each subsequent call to flow.. only need to do this if we have called stop.
+     *       FlowControlledBlockingQueue _queue to see if we have flow controlled. will result in sending Flow messages
+     *       for each subsequent call to flow.. only need to do this if we have called stop.
      */
     void start() throws AMQException
     {
@@ -2084,6 +2120,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @param nowait
      *
      * @throws AMQException If the exchange cannot be declared for any reason.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     private void declareExchange(final AMQShortString name, final AMQShortString type,
@@ -2128,7 +2165,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *         the client.
      *
      * @throws AMQException If the queue cannot be declared for any reason.
+     *
      * @todo Verify the destiation is valid or throw an exception.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     private AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
@@ -2172,6 +2211,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @param queueName The name of the queue to delete.
      *
      * @throws JMSException If the queue could not be deleted for any reason.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     private void deleteQueue(final AMQShortString queueName) throws JMSException
@@ -2460,6 +2500,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *                should be unsuspended.
      *
      * @throws AMQException If the session cannot be suspended for any reason.
+     *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
     private void suspendChannel(boolean suspend) throws AMQException // , FailoverException

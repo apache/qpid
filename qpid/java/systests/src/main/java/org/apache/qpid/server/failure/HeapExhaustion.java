@@ -82,7 +82,7 @@ public class HeapExhaustion extends TestCase
      *
      * @throws Exception on error
      */
-    public void testUntilFailure() throws Exception
+    public void testUntilFailureTransient() throws Exception
     {
         int copies = 0;
         int total = 0;
@@ -102,7 +102,7 @@ public class HeapExhaustion extends TestCase
      *
      * @throws Exception on error
      */
-    public void testUntilFailureWithDelays() throws Exception
+    public void testUntilFailureWithDelaysTransient() throws Exception
     {
         int copies = 0;
         int total = 0;
@@ -137,7 +137,7 @@ public class HeapExhaustion extends TestCase
             _logger.info("Running testUntilFailure");
             try
             {
-                he.testUntilFailure();
+                he.testUntilFailureTransient();
             }
             catch (FailoverException fe)
             {
@@ -186,7 +186,7 @@ public class HeapExhaustion extends TestCase
             _logger.info("Running testUntilFailure");
             try
             {
-                he.testUntilFailureWithDelays();
+                he.testUntilFailureWithDelaysTransient();
             }
             catch (FailoverException fe)
             {
