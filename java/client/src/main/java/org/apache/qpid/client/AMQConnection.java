@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUndeliveredException;
@@ -48,6 +47,10 @@ import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 import javax.jms.ConnectionConsumer;
 import javax.jms.ConnectionMetaData;
 import javax.jms.Destination;
@@ -65,6 +68,7 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
@@ -81,7 +85,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class AMQConnection extends Closeable implements Connection, QueueConnection, TopicConnection, Referenceable
 {
-    private static final Logger _logger = Logger.getLogger(AMQConnection.class);
+    private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
 
     private AtomicInteger _idFactory = new AtomicInteger(0);
 
@@ -237,8 +241,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     }
 
     /**
-     * @todo Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception was
-     * thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
+     * @todo Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception
+     *       was thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
      */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
@@ -1067,6 +1071,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public void exceptionReceived(Throwable cause)
     {
+
         if (_logger.isDebugEnabled())
         {
             _logger.debug("exceptionReceived done by:" + Thread.currentThread().getName(), cause);
