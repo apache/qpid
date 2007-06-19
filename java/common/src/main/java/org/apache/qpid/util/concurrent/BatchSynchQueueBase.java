@@ -1,12 +1,12 @@
 package org.apache.qpid.util.concurrent;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -44,7 +44,6 @@ public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements
 {
     /** Used for logging. */
     private static final Logger log = LoggerFactory.getLogger(BatchSynchQueueBase.class);
-                                                       
 
     /** Holds a reference to the queue implementation that holds the buffer. */
     Queue<SynchRecordImpl<E>> buffer;
