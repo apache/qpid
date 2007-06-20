@@ -119,7 +119,7 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
                 final String encoding = getContentHeaderProperties().getEncodingAsString();
                 if (encoding == null)
                 {
-                    _data.put(text.getBytes());
+                    _data.put(text.getBytes(DEFAULT_CHARSET.name()));
                 }
                 else
                 {
