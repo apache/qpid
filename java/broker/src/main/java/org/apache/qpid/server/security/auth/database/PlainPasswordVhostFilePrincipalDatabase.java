@@ -61,17 +61,20 @@ public class PlainPasswordVhostFilePrincipalDatabase extends PlainPasswordFilePr
                 reader = new BufferedReader(new FileReader(_passwordFile));
                 String line;
 
-                while ((line = reader.readLine()) != null && !line.startsWith("#"))
+                while ((line = reader.readLine()) != null)
                 {
-                    String[] result = _regexp.split(line);
-                    if (result == null || result.length < 3)
+                    if (!line.startsWith("#"))
                     {
-                        continue;
-                    }
+                        String[] result = _regexp.split(line);
+                        if (result == null || result.length < 3)
+                        {
+                            continue;
+                        }
 
-                    if (user.equals(result[0]))
-                    {
-                        return result[2].split(",");
+                        if (user.equals(result[0]))
+                        {
+                            return result[2].split(",");
+                        }
                     }
                 }
                 return null;

@@ -211,17 +211,20 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
             reader = new BufferedReader(new FileReader(_passwordFile));
             String line;
 
-            while ((line = reader.readLine()) != null && !line.startsWith("#"))
+            while ((line = reader.readLine()) != null)
             {
-                String[] result = _regexp.split(line);
-                if (result == null || result.length < 2)
+                if (!line.startsWith("#"))
                 {
-                    continue;
-                }
+                    String[] result = _regexp.split(line);
+                    if (result == null || result.length < 2)
+                    {
+                        continue;
+                    }
 
-                if (name.equals(result[0]))
-                {
-                    return result[1].toCharArray();
+                    if (name.equals(result[0]))
+                    {
+                        return result[1].toCharArray();
+                    }
                 }
             }
             return null;
