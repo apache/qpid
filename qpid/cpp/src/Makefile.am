@@ -105,9 +105,7 @@ endif
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
-if CLUSTER
 include cluster.mk
-endif
 
 # The logger library uses boost::date_time to format time.
 # We have to disable the unused parameters warning to get around
