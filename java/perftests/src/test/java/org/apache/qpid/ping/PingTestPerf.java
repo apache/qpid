@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.ping;
 
-import javax.jms.*;
-
 import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -34,6 +32,8 @@ import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 import uk.co.thebadgerset.junit.extensions.TestThreadAware;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+
+import javax.jms.*;
 
 /**
  * PingTestPerf is a ping test, that has been written with the intention of being scaled up to run many times
@@ -72,39 +72,6 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
         super(name);
 
         _logger.debug("testParameters = " + testParameters);
-
-        // Sets up the test parameters with defaults.
-        /*testParameters.setPropertyIfNull(PingPongProducer.TX_BATCH_SIZE_PROPNAME, PingPongProducer.TX_BATCH_SIZE_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.MESSAGE_SIZE_PROPNAME, PingPongProducer.MESSAGE_SIZE_DEAFULT);
-        testParameters.setPropertyIfNull(PingPongProducer.PING_QUEUE_NAME_PROPNAME,
-            PingPongProducer.PING_QUEUE_NAME_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.PERSISTENT_MODE_PROPNAME,
-            PingPongProducer.PERSISTENT_MODE_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.TRANSACTED_PROPNAME, PingPongProducer.TRANSACTED_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.BROKER_PROPNAME, PingPongProducer.BROKER_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.USERNAME_PROPNAME, PingPongProducer.USERNAME_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.PASSWORD_PROPNAME, PingPongProducer.PASSWORD_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.VIRTUAL_HOST_PROPNAME, PingPongProducer.VIRTUAL_HOST_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.VERBOSE_PROPNAME, PingPongProducer.VERBOSE_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.RATE_PROPNAME, PingPongProducer.RATE_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.PUBSUB_PROPNAME, PingPongProducer.PUBSUB_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.TX_BATCH_SIZE_PROPNAME, PingPongProducer.TX_BATCH_SIZE_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.TIMEOUT_PROPNAME, PingPongProducer.TIMEOUT_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.DESTINATION_COUNT_PROPNAME,
-            PingPongProducer.DESTINATION_COUNT_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.FAIL_AFTER_COMMIT_PROPNAME,
-            PingPongProducer.FAIL_AFTER_COMMIT_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.FAIL_BEFORE_COMMIT_PROPNAME,
-            PingPongProducer.FAIL_BEFORE_COMMIT_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.FAIL_AFTER_SEND_PROPNAME,
-            PingPongProducer.FAIL_AFTER_SEND_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.FAIL_BEFORE_SEND_PROPNAME,
-            PingPongProducer.FAIL_BEFORE_SEND_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.FAIL_ONCE_PROPNAME, PingPongProducer.FAIL_ONCE_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.UNIQUE_DESTS_PROPNAME, PingPongProducer.UNIQUE_DESTS_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.ACK_MODE_PROPNAME, PingPongProducer.ACK_MODE_DEFAULT);
-        testParameters.setPropertyIfNull(PingPongProducer.PAUSE_AFTER_BATCH_PROPNAME,
-            PingPongProducer.PAUSE_AFTER_BATCH_DEFAULT);*/
     }
 
     /**

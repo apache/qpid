@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.util;
 
+import org.apache.log4j.Logger;
+
+import javax.jms.*;
+
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-
-import javax.jms.*;
-
-import org.apache.log4j.Logger;
 
 /**
  * A conversation helper, uses a message correlation id pattern to match up sent and received messages as a conversation
@@ -153,7 +153,7 @@ public class ConversationFactory
      *                           queue.
      * @param queueClass         The queue implementation class.
      *
-     * @throws JMSException All undelying JMSExceptions are allowed to fall through.
+     * @throws JMSException All underlying JMSExceptions are allowed to fall through.
      */
     public ConversationFactory(Connection connection, Destination receiveDestination,
         Class<? extends BlockingQueue> queueClass) throws JMSException
