@@ -256,3 +256,13 @@ around the code, especially for newcomers.
 To try it out "make doxygen" then open doxygen/html/index.html
 This README describes how to build the Qpid C++ broker and client, either
 from a checkout of the source or from a source distribution.
+
+=== Troubleshooting ===
+
+When building, get the following on configure
+  configure: error: Package requirements (apr-1 >= 1.2.2) were not met:
+  No package 'apr-1' foun
+  
+The following has not been set 
+  export PKG_CONFIG_PATH=$HOME/qpid-tools/lib/pkgconfig:/usr/lib/pkgconfig 
+  
