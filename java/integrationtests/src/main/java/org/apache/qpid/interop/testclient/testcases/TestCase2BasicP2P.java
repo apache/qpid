@@ -170,6 +170,11 @@ public class TestCase2BasicP2P implements InteropClientTestCase
         }
     }
 
+    public void terminate() throws JMSException
+    {
+        //todo
+    }
+
     /**
      * Gets a report on the actions performed by the test case in its assigned role.
      *

@@ -38,6 +38,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Implements test case 3, basic pub/sub. Sends/received a specified number of messages to a specified route on the
@@ -52,7 +53,10 @@ import java.util.Map;
 public class SustainedTestClient extends TestCase3BasicPubSub implements ExceptionListener
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(SustainedTestClient.class);
+    private static final Logger debugLog = Logger.getLogger(SustainedTestClient.class);
+
+    private static final Logger log = Logger.getLogger("SustainedTest");
+
 
     /** The role to be played by the test. */
     private Roles role;
@@ -83,9 +87,11 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
     SustainedRateAdapter _rateAdapter;
 
     /**  */
-    int updateInterval;
+    int _batchSize;
 
-    private boolean _running = true;
+
+    private static final long TEN_MILLI_SEC = 10000000;
+    private static final long FIVE_MILLI_SEC = 5000000;
 
     /**
      * Should provide the name of the test case that this class implements. The exact names are defined in the interop
@@ -95,7 +101,7 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
      */
     public String getName()
     {
-        log.debug("public String getName(): called");
+        debugLog.debug("public String getName(): called");
 
         return "Perf_SustainedPubSub";
     }
@@ -111,31 +117,34 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
      */
     public void assignRole(Roles role, Message assignRoleMessage) throws JMSException
     {
-        log.debug("public void assignRole(Roles role = " + role + ", Message assignRoleMessage = " + assignRoleMessage
-                  + "): called");
+        debugLog.debug("public void assignRole(Roles role = " + role + ", Message assignRoleMessage = " + assignRoleMessage
+                       + "): called");
 
         // Take note of the role to be played.
         this.role = role;
 
         // Extract and retain the test parameters.
         numReceivers = assignRoleMessage.getIntProperty("SUSTAINED_NUM_RECEIVERS");
-        updateInterval = assignRoleMessage.getIntProperty("SUSTAINED_UPDATE_INTERVAL");
+        _batchSize = assignRoleMessage.getIntProperty("SUSTAINED_UPDATE_INTERVAL");
         String sendKey = assignRoleMessage.getStringProperty("SUSTAINED_KEY");
         String sendUpdateKey = assignRoleMessage.getStringProperty("SUSTAINED_UPDATE_KEY");
         int ackMode = assignRoleMessage.getIntProperty("ACKNOWLEDGE_MODE");
 
-        log.debug("numReceivers = " + numReceivers);
-        log.debug("updateInterval = " + updateInterval);
-        log.debug("ackMode = " + ackMode);
-        log.debug("sendKey = " + sendKey);
-        log.debug("sendUpdateKey = " + sendUpdateKey);
-        log.debug("role = " + role);
+        if (debugLog.isDebugEnabled())
+        {
+            debugLog.debug("numReceivers = " + numReceivers);
+            debugLog.debug("_batchSize = " + _batchSize);
+            debugLog.debug("ackMode = " + ackMode);
+            debugLog.debug("sendKey = " + sendKey);
+            debugLog.debug("sendUpdateKey = " + sendUpdateKey);
+            debugLog.debug("role = " + role);
+        }
 
         switch (role)
         {
             // Check if the sender role is being assigned, and set up a single message producer if so.
             case SENDER:
-                log.info("*********** Creating SENDER");
+                log.info("Creating Sender");
                 // Create a new connection to pass the test messages on.
                 connection = new Connection[1];
                 session = new Session[1];
@@ -164,7 +173,7 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
                 // Otherwise the receiver role is being assigned, so set this up to listen for messages on the required number
                 // of receiver connections.
             case RECEIVER:
-                log.info("*********** Creating RECEIVER");
+                log.info("Creating Receiver");
                 // Create the required number of receiver connections.
                 connection = new Connection[numReceivers];
                 session = new Session[numReceivers];
@@ -183,7 +192,7 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
 
                     MessageConsumer consumer = session[i].createConsumer(sendDestination);
 
-                    consumer.setMessageListener(new SustainedListener(TestClient.CLIENT_NAME + "-" + i, updateInterval, session[i], sendUpdateDestination));
+                    consumer.setMessageListener(new SustainedListener(TestClient.CLIENT_NAME + "-" + i, _batchSize, session[i], sendUpdateDestination));
                 }
 
                 break;
@@ -196,28 +205,31 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
         }
     }
 
+
     /** Performs the test case actions. */
     public void start() throws JMSException
     {
-        log.debug("public void start(): called");
+        debugLog.debug("public void start(): called");
 
         // Check that the sender role is being performed.
         switch (role)
         {
             // Check if the sender role is being assigned, and set up a single message producer if so.
             case SENDER:
-                Message testMessage = session[0].createTextMessage("test");
-
-//            for (int i = 0; i < numMessages; i++)
-                while (_running)
-                {
-                    producer.send(testMessage);
-
-                    _rateAdapter.sentMessage();
-                }
+                _rateAdapter.run();
                 break;
             case RECEIVER:
 
+        }
+
+        //return from here when you have finished the test.. this will signal the controller and
+    }
+
+    public void terminate() throws JMSException, InterruptedException
+    {
+        if (_rateAdapter != null)
+        {
+            _rateAdapter.stop();
         }
     }
 
@@ -232,7 +244,7 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
      */
     public Message getReport(Session session) throws JMSException
     {
-        log.debug("public Message getReport(Session session): called");
+        debugLog.debug("public Message getReport(Session session): called");
 
         // Close the test connections.
         for (int i = 0; i < connection.length; i++)
@@ -252,89 +264,100 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
 
         if (linked != null)
         {
-            if (linked instanceof AMQNoRouteException)
+            if (debugLog.isDebugEnabled())
             {
-                log.warn("No route .");
+                debugLog.debug("Linked Exception:" + linked);
             }
-            else if (linked instanceof AMQNoConsumersException)
+            if ((linked instanceof AMQNoRouteException)
+                || (linked instanceof AMQNoConsumersException))
             {
-                log.warn("No clients currently available for message:" + ((AMQNoConsumersException) linked).getUndeliveredMessage());
-            }
-            else
-            {
+                if (debugLog.isDebugEnabled())
+                {
+                    if (linked instanceof AMQNoConsumersException)
+                    {
+                        debugLog.warn("No clients currently available for message:" + ((AMQNoConsumersException) linked).getUndeliveredMessage());
+                    }
+                    else
+                    {
+                        debugLog.warn("No route for message");
+                    }
+                }
 
-                log.warn("LinkedException:" + linked);
+                // Tell the rate adapter that there are no clients ready yet
+                _rateAdapter.NO_CLIENTS = true;
             }
-
-            _rateAdapter.NO_CLIENTS = true;
         }
         else
         {
-            log.warn("Exception:" + linked);
+            debugLog.warn("Exception:" + linked);
         }
     }
 
+    /**
+     * Inner class that listens for messages and sends a report for the time taken between receiving the 'start' and
+     * 'end' messages.
+     */
     class SustainedListener implements MessageListener
     {
-        private int _received = 0;
-        private int _updateInterval = 0;
-        private Long _time;
+        /** Number of messages received */
+        private long _received = 0;
+        /** The number of messages in the batch */
+        private int _batchSize = 0;
+        /** Record of the when the 'start' messagse was sen */
+        private Long _startTime;
+        /** Message producer to use to send reports */
         MessageProducer _updater;
+        /** Session to create the report message on */
         Session _session;
+        /** Record of the client ID used for this SustainedListnener */
         String _client;
 
 
-        public SustainedListener(String clientname, int updateInterval, Session session, Destination sendDestination) throws JMSException
+        /**
+         * Main Constructor
+         *
+         * @param clientname      The _client id used to identify this connection.
+         * @param batchSize       The number of messages that are to be sent per batch. Note: This is not used to
+         *                        control the interval between sending reports.
+         * @param session         The session used for communication.
+         * @param sendDestination The destination that update reports should be sent to.
+         *
+         * @throws JMSException My occur if creatingthe Producer fails
+         */
+        public SustainedListener(String clientname, int batchSize, Session session, Destination sendDestination) throws JMSException
         {
-            _updateInterval = updateInterval;
+            _batchSize = batchSize;
             _client = clientname;
             _session = session;
             _updater = session.createProducer(sendDestination);
         }
 
-        public void setReportInterval(int reportInterval)
-        {
-            _updateInterval = reportInterval;
-            _received = 0;
-        }
-
         public void onMessage(Message message)
         {
-            if (log.isDebugEnabled())
+            if (debugLog.isTraceEnabled())
             {
-                log.debug("Message " + _received + "received in listener");
+                debugLog.trace("Message " + _received + "received in listener");
             }
+
 
             if (message instanceof TextMessage)
             {
-
                 try
                 {
-                    if (((TextMessage) message).getText().equals("test"))
+                    _received++;
+                    if (((TextMessage) message).getText().equals("start"))
                     {
-                        if (_received == 0)
+                        debugLog.info("Starting Batch");
+                        _startTime = System.nanoTime();
+                    }
+                    else if (((TextMessage) message).getText().equals("end"))
+                    {
+                        if (_startTime != null)
                         {
-                            _time = System.nanoTime();
-                            sendStatus(0, _received);
+                            long currentTime = System.nanoTime();
+                            sendStatus(currentTime - _startTime, _received);
+                            debugLog.info("End Batch");
                         }
-
-                        _received++;
-
-                        if (_received % _updateInterval == 0)
-                        {
-                            Long currentTime = System.nanoTime();
-
-                            try
-                            {
-                                sendStatus(currentTime - _time, _received);
-                                _time = currentTime;
-                            }
-                            catch (JMSException e)
-                            {
-                                log.error("Unable to send update.");
-                            }
-                        }
-
                     }
                 }
                 catch (JMSException e)
@@ -342,37 +365,68 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
                     //ignore error
                 }
             }
+
         }
 
-        private void sendStatus(long time, int received) throws JMSException
+        /**
+         * sendStatus creates and sends the report back to the publisher
+         *
+         * @param time     taken for the the last batch
+         * @param received Total number of messages received.
+         *
+         * @throws JMSException if an error occurs during the send
+         */
+        private void sendStatus(long time, long received) throws JMSException
         {
             Message updateMessage = _session.createTextMessage("update");
-            updateMessage.setStringProperty("CLIENT_ID", _client);
+            updateMessage.setStringProperty("CLIENT_ID", ":" + _client);
             updateMessage.setStringProperty("CONTROL_TYPE", "UPDATE");
             updateMessage.setLongProperty("RECEIVED", received);
             updateMessage.setLongProperty("DURATION", time);
 
-            log.info("**** SENDING **** CLIENT_ID:" + _client + " RECEIVED:" + received + " DURATION:" + time);
+            if (debugLog.isInfoEnabled())
+            {
+                debugLog.info("**** SENDING [" + received / _batchSize + "]**** "
+                              + "CLIENT_ID:" + _client + " RECEIVED:" + received + " DURATION:" + time);
+            }
+
+            // Output on the main log.info the details of this batch
+            if (received / _batchSize % 10 == 0)
+            {
+                log.info("Sending Report [" + received / _batchSize + "] "
+                         + "CLIENT_ID:" + _client + " RECEIVED:" + received + " DURATION:" + time);
+            }
 
             _updater.send(updateMessage);
         }
-
     }
 
-    class SustainedRateAdapter implements MessageListener
+
+    /**
+     * This class is used here to adjust the _delay value which in turn is used to control the number of messages/second
+     * that are sent through the test system.
+     *
+     * By keeping a record of the messages recevied and the average time taken to process the batch size can be
+     * calculated and so the delay can be adjusted to maintain that rate.
+     *
+     * Given that delays of < 10ms can be rounded up the delay is only used between messages if the _delay > 10ms * no
+     * messages in the batch. Otherwise the delay is used at the end of the batch.
+     */
+    class SustainedRateAdapter implements MessageListener, Runnable
     {
         private SustainedTestClient _client;
-        private long _variance = 250; //no. messages to allow drifting
+        private long _messageVariance = 500; //no. messages to allow drifting
+        private long _timeVariance = TEN_MILLI_SEC * 5; // no. nanos between send and report delay (10ms)
         private volatile long _delay;   //in nanos
         private long _sent;
         private Map<String, Long> _slowClients = new HashMap<String, Long>();
-        private static final long PAUSE_SLEEP = 10; // 10 ms
-        private static final long NO_CLIENT_SLEEP = 1000; // 1s 
-        private static final long MAX_MESSAGE_DRIFT = 1000; // no messages drifted from producer
+        private static final long PAUSE_SLEEP = TEN_MILLI_SEC / 1000; // 10 ms
+        private static final long NO_CLIENT_SLEEP = 1000; // 1s
         private volatile boolean NO_CLIENTS = true;
         private int _delayShifting;
-        private static final int REPORTS_WITHOUT_CHANGE = 10;
-        private static final double MAXIMUM_DELAY_SHIFT = .02; //2% 
+        private static final int REPORTS_WITHOUT_CHANGE = 5;
+        private boolean _warmedup = false;
+        private static final long EXPECTED_TIME_PER_BATCH = 100000L;
 
         SustainedRateAdapter(SustainedTestClient client)
         {
@@ -381,9 +435,9 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
 
         public void onMessage(Message message)
         {
-            if (log.isDebugEnabled())
+            if (debugLog.isDebugEnabled())
             {
-                log.debug("SustainedRateAdapter onMessage(Message message = " + message + "): called");
+                debugLog.debug("SustainedRateAdapter onMessage(Message message = " + message + "): called");
             }
 
             try
@@ -395,15 +449,25 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
                 {
                     NO_CLIENTS = false;
                     long duration = message.getLongProperty("DURATION");
-                    long received = message.getLongProperty("RECEIVED");
+                    long totalReceived = message.getLongProperty("RECEIVED");
                     String client = message.getStringProperty("CLIENT_ID");
 
-                    log.info("**** SENDING **** CLIENT_ID:" + client + " RECEIVED:" + received + " DURATION:" + duration);
+                    if (debugLog.isInfoEnabled())
+                    {
+                        debugLog.info("Update Report: CLIENT_ID:" + client + " RECEIVED:" + totalReceived + " DURATION:" + duration);
+                    }
+
+                    recordSlow(client, totalReceived);
+
+                    adjustDelay(client, totalReceived, duration);
 
 
-                    recordSlow(client, received);
+                    if (!_warmedup && _totalReceived / _batchSize / delays.size() == _warmUpBatches / 2)
+                    {
+                        _warmedup = true;
+                        _warmup.countDown();
 
-                    adjustDelay(client, received, duration);
+                    }
                 }
             }
             catch (JMSException e)
@@ -412,72 +476,220 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
             }
         }
 
-        class Pair<X, Y>
+        CountDownLatch _warmup = new CountDownLatch(1);
+
+        int _warmUpBatches = 20;
+
+        int _numBatches = 10000;
+
+        //        long[] _timings = new long[_numBatches];
+        private boolean _running = true;
+
+
+        public void run()
         {
-            X item1;
-            Y item2;
+            log.info("Warming up");
 
-            Pair(X i1, Y i2)
+            doBatch(_warmUpBatches);
+
+            try
             {
-                item1 = i1;
-                item2 = i2;
+                //wait for warmup to complete.
+                _warmup.await();
+
+                //set delay to the average length of the batches
+                _delay = _totalDuration / _warmUpBatches / delays.size();
+
+                log.info("Warmup complete delay set : " + _delay
+                         + " based on _totalDuration: " + _totalDuration
+                         + " over no. batches: " + _warmUpBatches
+                         + " with client count: " + delays.size());
+
+                _totalDuration = 0L;
+                _totalReceived = 0L;
+                _sent = 0L;
+            }
+            catch (InterruptedException e)
+            {
+                //
             }
 
-            X getItem1()
-            {
-                return item1;
-            }
 
-            Y getItem2()
+            doBatch(_numBatches);
+
+        }
+
+        private void doBatch(int batchSize)  // long[] timings,
+        {
+            TextMessage testMessage = null;
+            try
             {
-                return item2;
+                testMessage = _client.session[0].createTextMessage("start");
+
+
+                for (int batch = 0; batch < batchSize; batch++)
+//                while (_running)
+                {
+                    long start = System.nanoTime();
+
+                    testMessage.setText("start");
+                    _client.producer.send(testMessage);
+                    _rateAdapter.sentMessage();
+
+                    testMessage.setText("test");
+                    //start at 2 so start and end count as part of batch
+                    for (int m = 2; m < _batchSize; m++)
+                    {
+                        _client.producer.send(testMessage);
+                        _rateAdapter.sentMessage();
+                    }
+
+                    testMessage.setText("end");
+                    _client.producer.send(testMessage);
+                    _rateAdapter.sentMessage();
+
+                    long end = System.nanoTime();
+
+                    long sendtime = end - start;
+
+                    debugLog.info("Sent batch[" + batch + "](" + _batchSize + ") in " + sendtime);//timings[batch]);
+
+                    if (batch % 10 == 0)
+                    {
+                        log.info("Sent Batch[" + batch + "](" + _batchSize + ")" + status());
+                    }
+
+                    _rateAdapter.sleepBatch();
+
+                }
+            }
+            catch (JMSException e)
+            {
+                log.error("Runner ended");
             }
         }
 
-        Map<String, Pair<Long, Long>> delays = new HashMap<String, Pair<Long, Long>>();
-        Long totalReceived = 0L;
-        Long totalDuration = 0L;
-
-        private void adjustDelay(String client, long received, long duration)
+        private String status()
         {
-            Pair<Long, Long> current = delays.get(client);
+            return " TotalDuration: " + _totalDuration + " for " + delays.size() + " consumers"
+                   + " Delay is " + _delay + " resulting in "
+                   + ((_delay > TEN_MILLI_SEC * _batchSize) ? (_delay / _batchSize) + "/msg" : _delay + "/batch");
+        }
 
-            if (current == null)
+        private void sleepBatch()
+        {
+            if (checkForSlowClients())
+            {//if there werwe slow clients we have already slept so don't sleep anymore again.
+                return;
+            }
+
+            //Slow down if gap between send and received is too large
+            if (_sent - _totalReceived / delays.size() > _messageVariance)
             {
-                delays.put(client, new Pair<Long, Long>(received, duration));
+                //pause between batches.
+                debugLog.info("Sleeping to keep sent in check with received");
+                log.debug("Increaseing _delay as sending more than receiving");
+                _delay += TEN_MILLI_SEC;
+            }
+
+            //per batch sleep.. if sleep is to small to spread over the batch.
+            if (_delay <= TEN_MILLI_SEC * _batchSize)
+            {
+                sleepLong(_delay);
             }
             else
             {
-                //reduce totals
-                totalReceived -= current.getItem1();
-                totalDuration -= current.getItem2();
+                debugLog.info("Not sleeping _delay > ten*batch is:" + _delay);
+            }
+        }
+
+        public void stop()
+        {
+            _running = false;
+        }
+
+        Map<String, Long> delays = new HashMap<String, Long>();
+        Long _totalReceived = 0L;
+        Long _totalDuration = 0L;
+        int _skipUpdate = 0;
+
+        /**
+         * Adjust the delay for sending messages based on this update from the client
+         *
+         * @param client        The client that send this update
+         * @param totalReceived The number of messages that this client has received.
+         * @param duration      The time taken for the last batch of messagse
+         */
+        private void adjustDelay(String client, long totalReceived, long duration)
+        {
+            //Retrieve the current total time taken for this client.
+            Long currentTime = delays.get(client);
+
+            // Add the new duration time to this client
+            if (currentTime == null)
+            {
+                currentTime = duration;
+            }
+            else
+            {
+                currentTime += duration;
             }
 
-            totalReceived += received;
-            totalDuration += duration;
+            delays.put(client, currentTime);
 
-            long averageDuration = totalDuration / delays.size();
 
-            long diff = Math.abs(_delay - averageDuration);
+            _totalReceived += _batchSize;
+            _totalDuration += duration;
+
+            // Calculate the number of messages in the batch.
+            long batchCount = (_totalReceived / _batchSize);
+
+            //calculate average duration accross clients per batch
+            long averageDuration = _totalDuration / delays.size() / batchCount;
+
+            //calculate the difference between current send delay and average report delay
+            long diff = (duration) - averageDuration;
+
+            if (debugLog.isInfoEnabled())
+            {
+                debugLog.info("TotalDuration:" + _totalDuration + " for " + delays.size() + " consumers"
+                              + " on batch: " + batchCount
+                              + " Batch Duration: " + duration
+                              + " Average: " + averageDuration
+                              + " so diff: " + diff + " for : " + client
+                              + " Delay is " + _delay + " resulting in "
+                              + ((_delay > TEN_MILLI_SEC * _batchSize)
+                                 ? (_delay / _batchSize) + "/msg" : _delay + "/batch"));
+            }
 
             //if the averageDuration differs from the current by more than the specified variane then adjust delay.
-            if (diff > _variance)
+            if (Math.abs(diff) > _timeVariance)
             {
-                if (averageDuration > _delay)
+
+                // if the the _delay is larger than the required duration to send report
+                // speed up
+                if (diff > TEN_MILLI_SEC)
                 {
-                    // we can go faster
-                    _delay -= diff;
+                    _delay -= TEN_MILLI_SEC;
+
                     if (_delay < 0)
                     {
                         _delay = 0;
+                        debugLog.info("Reset _delay to 0");
+                        delayStable();
                     }
+                    else
+                    {
+                        delayChanged();
+                    }
+
                 }
-                else
+                else if (diff < 0) // diff < 0 diff cannot be 0 as it is > _timeVariance
                 {
-                    // we need to slow down
-                    _delay += diff;
+                    // the report took longer
+                    _delay += TEN_MILLI_SEC;
+                    delayChanged();
                 }
-                delayChanged();
             }
             else
             {
@@ -486,11 +698,16 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
 
         }
 
+        /** Reset the number of iterations before we say the delay has stabilised. */
         private void delayChanged()
         {
             _delayShifting = REPORTS_WITHOUT_CHANGE;
         }
 
+        /**
+         * Record the fact that delay has stabilised If delay has stablised for REPORTS_WITHOUT_CHANGE then it will
+         * output Delay stabilised
+         */
         private void delayStable()
         {
             _delayShifting--;
@@ -498,14 +715,20 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
             if (_delayShifting < 0)
             {
                 _delayShifting = 0;
-                log.info("Delay stabilised:" + _delay);
+                log.debug("Delay stabilised:" + _delay);
             }
         }
 
-        // Record Slow clients
+        /**
+         * Checks that the client has received enough messages. If the client has fallen behind then they are put in the
+         * _slowClients lists which will increase the delay.
+         *
+         * @param client   The client identifier to check
+         * @param received the number of messages received by that client
+         */
         private void recordSlow(String client, long received)
         {
-            if (received < (_sent - _variance))
+            if (received < (_sent - _messageVariance))
             {
                 _slowClients.put(client, received);
             }
@@ -515,20 +738,49 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
             }
         }
 
+        /** Incrment the number of sent messages and then sleep, if required. */
         public void sentMessage()
         {
-            if (_sent % updateInterval == 0)
-            {
 
+            _sent++;
+
+            if (_delay > TEN_MILLI_SEC * _batchSize)
+            {
+                long batchDelay = _delay / _batchSize;
+                // less than 10ms sleep doesn't always work.
+                // _delay is in nano seconds
+//                if (batchDelay < (TEN_MILLI_SEC))
+//                {
+//                    sleep(0, (int) batchDelay);
+//                }
+//                else
+                {
+//                    if (batchDelay < 30000000000L)
+                    {
+                        sleepLong(batchDelay);
+                    }
+                }
+            }
+        }
+
+
+        /**
+         * Check at the end of each batch and pause sending messages to allow slow clients to catch up.
+         *
+         * @return true if there were slow clients that caught up.
+         */
+        private boolean checkForSlowClients()
+        {
+            if (_sent % _batchSize == 0)
+            {
                 // Cause test to pause when we have slow
                 if (!_slowClients.isEmpty() || NO_CLIENTS)
                 {
-                    log.info("Pausing for slow clients");
-
-                    //_delay <<= 1;
+                    debugLog.info("Pausing for slow clients:" + _slowClients.entrySet().toArray());
 
                     while (!_slowClients.isEmpty())
                     {
+                        debugLog.info(_slowClients.size() + " slow clients.");
                         sleep(PAUSE_SLEEP);
                     }
 
@@ -537,45 +789,67 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
                         sleep(NO_CLIENT_SLEEP);
                     }
 
-                    log.debug("Continuing");
-                    return;
+                    debugLog.debug("Continuing");
+                    return true;
                 }
                 else
                 {
-                    log.info("Delay:" + _delay);
+                    debugLog.info("Delay:" + _delay);
                 }
+
             }
 
-            _sent++;
-
-            if (_delay > 0)
-            {
-                // less than 10ms sleep doesn't work.
-                // _delay is in nano seconds
-                if (_delay < 1000000)
-                {
-                    sleep(0, (int) _delay);
-                }
-                else
-                {
-                    if (_delay < 30000000000L)
-                    {
-                        sleep(_delay / 1000000, (int) (_delay % 1000000));
-                    }
-                }
-            }
+            return false;
         }
 
+        /**
+         * Sleep normally takes micro-seconds this allows the use of a nano-second value.
+         *
+         * @param delay nanoseconds to sleep for.
+         */
+        private void sleepLong(long delay)
+        {
+            sleep(delay / 1000000, (int) (delay % 1000000));
+        }
+
+        /**
+         * Sleep for the specified micro-seconds.
+         * @param sleep microseconds to sleep for.
+         */
         private void sleep(long sleep)
         {
             sleep(sleep, 0);
         }
 
+        /**
+         * Perform the sleep , swallowing any InteruptException.
+         *
+         * NOTE: If a sleep request is > 10s then reset only sleep for 5s
+         *  
+         * @param milli to sleep for
+         * @param nano sub miliseconds to sleep for
+         */
         private void sleep(long milli, int nano)
         {
             try
             {
-                log.debug("Sleep:" + milli + ":" + nano);
+                debugLog.debug("Sleep:" + milli + ":" + nano);
+                if (milli > 10000)
+                {
+
+                    if (_delay == milli)
+                    {
+                        _totalDuration = _totalReceived / _batchSize * EXPECTED_TIME_PER_BATCH;
+                        debugLog.error("Sleeping for more than 10 seconds adjusted to 5s!:" + milli / 1000 + "s. Reset _totalDuration:" + _totalDuration);
+                    }
+                    else
+                    {
+                        debugLog.error("Sleeping for more than 10 seconds adjusted to 5s!:" + milli / 1000 + "s");
+                    }
+
+                    milli = 5000;
+                }
+
                 Thread.sleep(milli, nano);
             }
             catch (InterruptedException e)
@@ -583,6 +857,12 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
                 //
             }
         }
+
+        public void setClient(SustainedTestClient client)
+        {
+            _client = client;
+        }
     }
 
 }
+

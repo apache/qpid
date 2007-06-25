@@ -78,11 +78,12 @@ public class SustainedTestCoordinator extends CoordinatingTestCase3BasicPubSub i
         Map<String, Object> testConfig = new HashMap<String, Object>();
         testConfig.put("TEST_NAME", "Perf_SustainedPubSub");
         testConfig.put("SUSTAINED_KEY", SUSTAINED_KEY);
-        //testConfig.put("SUSTAINED_MSG_RATE", 10);
-        testConfig.put("SUSTAINED_NUM_RECEIVERS", 2);
-        testConfig.put("SUSTAINED_UPDATE_INTERVAL", 25);
+        testConfig.put("SUSTAINED_NUM_RECEIVERS", Integer.getInteger("numReceives", 2));
+        testConfig.put("SUSTAINED_UPDATE_INTERVAL", Integer.getInteger("batchSize", 1000));
         testConfig.put("SUSTAINED_UPDATE_KEY", SUSTAINED_KEY + ".UPDATE");
-        testConfig.put("ACKNOWLEDGE_MODE", AMQSession.NO_ACKNOWLEDGE);
+        testConfig.put("ACKNOWLEDGE_MODE", Integer.getInteger("ackMode", AMQSession.AUTO_ACKNOWLEDGE));
+
+        log.info("Created Config: " + testConfig.entrySet().toArray());
 
         sequenceTest(testConfig);
     }
