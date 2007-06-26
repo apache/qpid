@@ -89,12 +89,7 @@ testprogs =		\
 
 check_PROGRAMS += $(unit_progs) $(testprogs) interop_runner
 
-# FIXME aconway 2007-05-30: TESTS_ENVIRONMENT should have ./run_test
-# as below to run valgrind on all test programs.
-# Disabled temporarily till leaks in client_test are fixed.
-#
-#TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) ./run_test
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir)
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) ./run_test
 
 system_tests = client_test quick_topictest
 TESTS = dummy_test $(unit_progs) $(unit_wrappers) run-unit-tests start_broker $(system_tests) python_tests kill_broker daemon_test

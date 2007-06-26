@@ -6,16 +6,20 @@ lib_cluster = $(abs_builddir)/../libqpidcluster.la
 
 # NOTE: Programs using the openais library must be run with gid=ais
 # Such programs are built as *.ais, with a wrapper script *.sh that
-# runs the program under sudo -u ais.
+# runs the program with newgrp ais.
 # 
 
-# Rule to generate wrappers.
-# The chmod is a horrible hack to allow libtools annoying wrapers to
-# relink the executable when run as user ais.
+# Rule to generate wrapper scripts for tests that require gid=ais.
+run_test="env VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test"
 .ais.sh:
-	echo sudo -u ais env VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test ./$<  >$@; chmod a+x $@
-	chmod a+rwx . .libs
+	echo "if groups | grep '\bais\b' >/dev/null;" > $@_t
+	echo "then echo $(run_test) ./$< \"$$@	\"| newgrp ais;" >>$@_t
+	echo "else echo WARNING: `whoami` not in group ais, skipping $<.;" >>$@_t
+	echo "fi"  >> $@_t
+	mv $@_t $@
+	chmod a+x $@
 
+#
 # Cluster tests.
 # 
 check_PROGRAMS+=Cpg.ais
