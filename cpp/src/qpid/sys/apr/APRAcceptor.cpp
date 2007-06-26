@@ -35,6 +35,7 @@ class APRAcceptor : public Acceptor
   public:
     APRAcceptor(int16_t port, int backlog, int threads, bool trace);
     virtual uint16_t getPort() const;
+    virtual std::string getHost() const;
     virtual void run(qpid::sys::ConnectionInputHandlerFactory* factory);
     virtual void shutdown();
 
@@ -70,6 +71,12 @@ APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
     CHECK_APR_SUCCESS(apr_socket_opt_set(socket, APR_SO_REUSEADDR, 1));
     CHECK_APR_SUCCESS(apr_socket_bind(socket, address));
     CHECK_APR_SUCCESS(apr_socket_listen(socket, backlog));
+}
+
+std::string APRAcceptor::getHost() const {
+    apr_sockaddr_t* address;
+    CHECK_APR_SUCCESS(apr_socket_addr_get(&address, APR_LOCAL, socket));
+    return address->hostname;
 }
 
 uint16_t APRAcceptor::getPort() const {

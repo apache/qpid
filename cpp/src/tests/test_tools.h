@@ -19,7 +19,7 @@
  *
  */
 
-#include <boost/test/auto_unit_test.hpp>
+#include <boost/test/test_tools.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/regex.hpp>
 #include <vector>
@@ -48,6 +48,9 @@ inline bool regexPredicate(const std::string& re, const std::string& text) {
 /** Check for regular expression match. You must #include <boost/regex.hpp> */
 #define BOOST_CHECK_REGEX(re, text) \
     BOOST_CHECK_PREDICATE(regexPredicate, (re)(text))
+
+/** Check if types of two objects (as given by typeinfo::name()) match. */
+#define BOOST_CHECK_TYPEID_EQUAL(a,b) BOOST_CHECK_EQUAL(typeid(a).name(),typeid(b).name())
 
 #endif  /*!TEST_TOOLS_H*/
 

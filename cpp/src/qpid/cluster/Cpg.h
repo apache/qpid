@@ -19,7 +19,9 @@
  *
  */
 
-#include <stdexcept>
+#include "qpid/Exception.h"
+#include "qpid/cluster/Dispatchable.h"
+#include <boost/function.hpp>
 #include <cassert>
 #ifdef CLUSTER
 extern "C" {
@@ -34,11 +36,10 @@ namespace cluster {
  * Manages a single CPG handle, initialized in ctor, finialzed in destructor.
  * On error all functions throw Cpg::Exception
  */
-class Cpg {
+class Cpg : public Dispatchable {
   public:
-    // FIXME aconway 2007-06-01: qpid::Exception
-    struct Exception : public std::runtime_error {
-        Exception(const std::string& msg) : runtime_error(msg) {}
+    struct Exception : public ::qpid::Exception {
+        Exception(const std::string& msg) : ::qpid::Exception(msg) {}
     };
 
     struct Name : public cpg_name {
@@ -54,26 +55,45 @@ class Cpg {
         std::string str() const { return std::string(value, length); }
     };
     
-    static inline std::string str(const cpg_name& n) {
+    struct Id {
+        uint64_t id;
+        Id() : id(0) {}
+        Id(uint32_t nodeid, uint32_t pid) { id=(uint64_t(nodeid)<<32)+ pid; }
+        Id(const cpg_address& addr) : id(Id(addr.nodeid, addr.pid)) {}
+
+        operator uint64_t() const { return id; }
+        uint32_t nodeId() const { return id >> 32; }
+        pid_t pid() const { return id & 0xFFFF; }
+    };
+
+    static std::string str(const cpg_name& n) {
         return std::string(n.value, n.length);
     }
 
-    // TODO aconway 2007-06-01: when cpg handle supports a context pointer
-    // use callback objects (boost::function) instead of free functions.
-    // 
+    typedef boost::function<void (
+        cpg_handle_t /*handle*/,
+        struct cpg_name *group,
+        uint32_t /*nodeid*/,
+        uint32_t /*pid*/,
+        void* /*msg*/,
+        int /*msg_len*/)> DeliverFn;
+
+    typedef boost::function<void (
+        cpg_handle_t /*handle*/,
+        struct cpg_name */*group*/,
+        struct cpg_address */*members*/, int /*nMembers*/,
+        struct cpg_address */*left*/, int /*nLeft*/,
+        struct cpg_address */*joined*/, int /*nJoined*/
+    )> ConfigChangeFn;
+
     /** Open a CPG handle.
      *@param deliver - free function called when a message is delivered.
      *@param reconfig - free function called when CPG configuration changes.
      */
-    Cpg(cpg_deliver_fn_t deliver, cpg_confchg_fn_t reconfig) {
-        cpg_callbacks_t callbacks = { deliver, reconfig };
-        check(cpg_initialize(&handle, &callbacks), "Cannot initialize CPG");
-    }
+    Cpg(DeliverFn deliver, ConfigChangeFn reconfig);
 
-    /** Disconnect */
-    ~Cpg() {
-        check(cpg_finalize(handle), "Cannot finalize CPG");
-    }
+    /** Disconnect from CPG. */
+    ~Cpg();
 
     /** Dispatch CPG events.
      *@param type one of
@@ -84,6 +104,10 @@ class Cpg {
     void dispatch(cpg_dispatch_t type) {
         check(cpg_dispatch(handle,type), "Error in CPG dispatch");
     }
+
+    void dispatchOne() { dispatch(CPG_DISPATCH_ONE); }
+    void dispatchAll() { dispatch(CPG_DISPATCH_ALL); }
+    void dispatchBlocking() { dispatch(CPG_DISPATCH_BLOCKING); }
 
     void join(const Name& group) {
         check(cpg_join(handle, const_cast<Name*>(&group)),cantJoinMsg(group));
@@ -99,7 +123,14 @@ class Cpg {
               cantMcastMsg(group));
     }
 
+    cpg_handle_t getHandle() const { return handle; }
+
+    uint32_t getLocalNoideId() const;
+    
   private:
+    class Handles;
+  friend class Handles;
+    
     static std::string errorStr(cpg_error_t err, const std::string& msg);
     static std::string cantJoinMsg(const Name&);
     static std::string cantLeaveMsg(const Name&);
@@ -110,9 +141,31 @@ class Cpg {
         if (result != CPG_OK) 
             throw Exception(errorStr(result, msg));
     }
+
+    static void globalDeliver(
+        cpg_handle_t /*handle*/,
+        struct cpg_name *group,
+        uint32_t /*nodeid*/,
+        uint32_t /*pid*/,
+        void* /*msg*/,
+        int /*msg_len*/);
+
+    static void globalConfigChange(
+        cpg_handle_t /*handle*/,
+        struct cpg_name */*group*/,
+        struct cpg_address */*members*/, int /*nMembers*/,
+        struct cpg_address */*left*/, int /*nLeft*/,
+        struct cpg_address */*joined*/, int /*nJoined*/
+    );
+
+    static Handles handles;
     cpg_handle_t handle;
+    DeliverFn deliver;
+    ConfigChangeFn configChange;
 };
 
+std::ostream& operator <<(std::ostream& out, const Cpg::Id& id);
+std::ostream& operator <<(std::ostream& out, const std::pair<cpg_address*,int> addresses);
 
 
 }} // namespace qpid::cluster
