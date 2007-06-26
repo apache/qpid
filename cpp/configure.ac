@@ -173,7 +173,8 @@ if test x$libcpg = xyes -a x$cpg_h = xyes; then
    AM_CONDITIONAL([CLUSTER], true)
    CPPFLAGS+=-DCLUSTER
 else
-  LDFLAGS=LDFLAGS_save	   
+  AM_CONDITIONAL([CLUSTER], false)	
+  LDFLAGS=$LDFLAGS_save	   
 fi
 if test x$libcpg = xno -a x$cpg_h = xyes; then
    AC_MSG_WARN([Found cpg.h but libcpg is missing or does not contain cpg_local_get. Need build of openais whitetank branch head as of 2007-06-20])
