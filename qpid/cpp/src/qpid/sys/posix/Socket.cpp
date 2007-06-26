@@ -112,7 +112,21 @@ int Socket::listen(int port, int backlog)
     return ntohs(name.sin_port);
 }
 
-
+std::string getHost() const {
+    // TODO aconway 2007-06-11: Won't work for ip6
+    struct sockaddr_in name;    
+    socklen_t namelen = sizeof(name);
+    if (::getsockname(socket, (struct sockaddr*)&name, &namelen) < 0)
+        throw QPID_POSIX_ERROR(errno);
+    uint32_t addr = name.sin_host.s_addr;
+    ostringstream os;
+    os << uint8_t(addr >> 24) << '.'
+       << uint8_t(addr >> 16) << '.' 
+       << uint8_t(addr >> 8) << '.' 
+       << uint8_t(addr);
+    return os.str();
+}
+    
 int Socket::fd() 
 {
     return socket;

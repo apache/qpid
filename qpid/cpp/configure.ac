@@ -162,15 +162,22 @@ AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost"])
 test -z "$missing" ||
     AC_MSG_ERROR([Missing required headers. Install the folowing packages or -devel rpms: $missing.])
 
-# Enable/disable cluster functionality based on presence of openais
-AC_CHECK_HEADER([openais/cpg.h],[cluster=yes],[cluster=no])
-AM_CONDITIONAL([CLUSTER], test x$cluster = xyes)
-if test x$cluster = xyes; then
-   LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
+# Enable/disable cluster functionality based on presence of usable openais
+# and devel libs.
+# cpg_local_get is not yet in a packaged release as of 2007-06-20
+LDFLAGS_save=$LDFLAGS				
+LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
+AC_CHECK_LIB([cpg], [cpg_local_get], [libcpg=yes], [libcpg=no])
+AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes],[cpg_h=no])
+if test x$libcpg = xyes -a x$cpg_h = xyes; then
+   AM_CONDITIONAL([CLUSTER], true)
    CPPFLAGS+=-DCLUSTER
-   AC_CHECK_LIB([cpg], [cpg_initialize], [],
-     [AC_MSG_ERROR([Cannot find library -lcpg. Install openais.])])
+else
+  LDFLAGS=LDFLAGS_save	   
 fi
+if test x$libcpg = xno -a x$cpg_h = xyes; then
+   AC_MSG_WARN([Found cpg.h but libcpg is missing or does not contain cpg_local_get. Need build of openais whitetank branch head as of 2007-06-20])
+fi   
 
 AC_CONFIG_FILES([
   qpidc.spec

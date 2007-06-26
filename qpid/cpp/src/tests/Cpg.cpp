@@ -17,8 +17,11 @@
  */
 
 #define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
+#include <boost/test/auto_unit_test.hpp>
 #include "test_tools.h"
 #include "qpid/cluster/Cpg.h"
+#include "qpid/framing/AMQBody.h"
+#include <boost/bind.hpp>
 #include <string>
 #include <iostream>
 #include <iterator>
@@ -27,6 +30,7 @@
 
 using namespace std;
 using namespace qpid::cluster;
+using namespace qpid::framing;
 
 // For debugging: op << for CPG types.
 
@@ -47,51 +51,57 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
     return o;
 }
 
-const string testGroup("foo");
-vector<string> delivered;
-vector<int> configChanges;
+struct Callback {
+    Callback(const string group_) : group(group_) {}
+    string group;
+    vector<string> delivered;
+    vector<int> configChanges;
 
-void testDeliver (
-    cpg_handle_t /*handle*/,
-    struct cpg_name *group,
-    uint32_t /*nodeid*/,
-    uint32_t /*pid*/,
-    void* msg,
-    int msg_len)
-{
-    BOOST_CHECK_EQUAL(testGroup, Cpg::str(*group));
-    delivered.push_back(string((char*)msg,msg_len));
-}
+    void deliver (
+        cpg_handle_t /*handle*/,
+        struct cpg_name *grp,
+        uint32_t /*nodeid*/,
+        uint32_t /*pid*/,
+        void* msg,
+        int msg_len)
+    {
+        BOOST_CHECK_EQUAL(group, Cpg::str(*grp));
+        delivered.push_back(string((char*)msg,msg_len));
+    }
 
-void testConfigChange(
-    cpg_handle_t /*handle*/,
-    struct cpg_name *group,
-    struct cpg_address */*members*/, int nMembers,
-    struct cpg_address */*left*/, int /*nLeft*/,
-    struct cpg_address */*joined*/, int /*nJoined*/
-)
-{
-    BOOST_CHECK_EQUAL(testGroup, Cpg::str(*group));
-    configChanges.push_back(nMembers);
-}
+    void configChange(
+        cpg_handle_t /*handle*/,
+        struct cpg_name *grp,
+        struct cpg_address */*members*/, int nMembers,
+        struct cpg_address */*left*/, int /*nLeft*/,
+        struct cpg_address */*joined*/, int /*nJoined*/
+    )
+    {
+        BOOST_CHECK_EQUAL(group, Cpg::str(*grp));
+        configChanges.push_back(nMembers);
+    }
+};
 
-BOOST_AUTO_TEST_CASE(basic) {
+BOOST_AUTO_TEST_CASE(Cpg_basic) {
     // Verify basic functionality of cpg. This will catch any
     // openais configuration or permission errors.
-    // 
-    Cpg cpg(&testDeliver, &testConfigChange);
+    //
     Cpg::Name group("foo");
+    Callback cb(group.str());
+    Cpg::DeliverFn deliver=boost::bind(&Callback::deliver, &cb, _1, _2, _3, _4, _5, _6);
+    Cpg::ConfigChangeFn reconfig=boost::bind<void>(&Callback::configChange, &cb, _1, _2, _3, _4, _5, _6, _7, _8);
 
+    Cpg cpg(deliver, reconfig);
     cpg.join(group);
     iovec iov = { (void*)"Hello!", 6 };
     cpg.mcast(group, &iov, 1);
     cpg.leave(group);
+    cpg.dispatchSome();
 
-    cpg.dispatch(CPG_DISPATCH_ONE); // Wait for at least one.
-    cpg.dispatch(CPG_DISPATCH_ALL);
-    BOOST_REQUIRE_EQUAL(1u, delivered.size());
-    BOOST_CHECK_EQUAL("Hello!", delivered.front());
-    BOOST_REQUIRE_EQUAL(2u, configChanges.size());
-    BOOST_CHECK_EQUAL(1, configChanges[0]);
-    BOOST_CHECK_EQUAL(0, configChanges[1]);
+    BOOST_REQUIRE_EQUAL(1u, cb.delivered.size());
+    BOOST_CHECK_EQUAL("Hello!", cb.delivered.front());
+    BOOST_REQUIRE_EQUAL(2u, cb.configChanges.size());
+    BOOST_CHECK_EQUAL(1, cb.configChanges[0]);
+    BOOST_CHECK_EQUAL(0, cb.configChanges[1]);
 }
+

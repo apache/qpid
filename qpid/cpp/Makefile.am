@@ -7,7 +7,8 @@ EXTRA_DIST = \
   LICENSE NOTICE README \
   etc/qpidd \
   $(SPEC) $(SPEC).in \
-  rpm/README.qpidd-devel 
+  rpm/README.qpidd-devel \
+  xml/cluster.xml
 
 SUBDIRS = src docs/api docs/man examples
 

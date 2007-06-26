@@ -1,3 +1,5 @@
+#ifndef QPID_FRAMING_FRAMEHANDLER_H
+#define QPID_FRAMING_FRAMEHANDLER_H
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,31 +21,19 @@
  *
  */
 
-#include "qpid/sys/Acceptor.h"
-#include "qpid/Exception.h"
+#include <boost/noncopyable.hpp>
 
 namespace qpid {
-namespace sys {
+namespace framing {
+class AMQFrame;
 
-namespace {
-void fail() { throw qpid::Exception("PosixAcceptor not implemented"); }
-}
-
-class PosixAcceptor : public Acceptor {
+class FrameHandler : private boost::noncopyable {
   public:
-    virtual uint16_t getPort() const { fail(); return 0; }
-    virtual std::string getPort() const { fail(); return std::string(); }
-    virtual void run(qpid::sys::ConnectionInputHandlerFactory* ) { fail(); }
-    virtual void shutdown() { fail(); }
+    virtual ~FrameHandler() {}
+    virtual void handle(AMQFrame& frame) = 0;
 };
 
-// Define generic Acceptor::create() to return APRAcceptor.
-    Acceptor::shared_ptr Acceptor::create(int16_t , int, int, bool)
-{
-    return Acceptor::shared_ptr(new PosixAcceptor());
-}
-
-// Must define Acceptor virtual dtor.
-Acceptor::~Acceptor() {}
-
 }}
+
+
+#endif  /*!QPID_FRAMING_FRAMEHANDLER_H*/
