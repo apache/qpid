@@ -46,7 +46,9 @@ Connector::Connector(
     outbuf(send_buffer_size)
 { }
 
-Connector::~Connector(){ }
+Connector::~Connector(){
+    receiver.join();
+}
 
 void Connector::connect(const std::string& host, int port){
     socket = Socket::createTcp();
