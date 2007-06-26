@@ -49,6 +49,10 @@ import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
  *          connected.
  * <tr><td> Check that a mandatory message results in no route code, upon transaction commit, when a consumer is
  *          connected.
+ * <tr><td> Check that a mandatory message is sent succesfully, not using transactions, when a consumer is
+ *          disconnected but the route exists.
+ * <tr><dt> Check that a mandatory message is send successfully, in a transactions, when a consumer is
+ *          disconnected but when the route exists.
  * </table>
  */
 public class MandatoryMessageTest extends TestCase
@@ -57,63 +61,227 @@ public class MandatoryMessageTest extends TestCase
     private static final Logger log = LoggerFactory.getLogger(MandatoryMessageTest.class);
 
     /** Used to read the tests configurable properties through. */
-    ParsedProperties testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
-
-    /** All these tests should have the mandatory flag on. */
-    // private boolean mandatoryFlag = testProps.setProperty(IMMEDIATE_PROPNAME, true);
-    private boolean mandatoryFlag = testProps.setProperty(MANDATORY_PROPNAME, true);
+    ParsedProperties testProps;
 
     /** Check that an mandatory message is sent succesfully not using transactions when a consumer is connected. */
-    public void test_QPID_508_MandatoryOkNoTx() throws Exception
+    public void test_QPID_508_MandatoryOkNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
 
         // Send one message with no errors.
-        ImmediateMessageTest.PublisherReceiverImpl.testNoExceptions(testProps);
+        testClients.testNoExceptions(testProps);
     }
 
     /** Check that an mandatory message is committed succesfully in a transaction when a consumer is connected. */
-    public void test_QPID_508_MandatoryOkTx() throws Exception
+    public void test_QPID_508_MandatoryOkTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
 
         // Send one message with no errors.
-        ImmediateMessageTest.PublisherReceiverImpl.testNoExceptions(testProps);
+        testClients.testNoExceptions(testProps);
     }
 
     /** Check that an mandatory message results in no route code, not using transactions, when no consumer is connected. */
-    public void test_QPID_508_MandatoryFailsNoRouteNoTx() throws Exception
+    public void test_QPID_508_MandatoryFailsNoRouteNoTxP2P() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
 
         // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
         // collect its messages).
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
         // Send one message and get a linked no consumers exception.
-        ImmediateMessageTest.PublisherReceiverImpl.testWithAssertions(testProps, AMQNoRouteException.class);
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
     }
 
     /** Check that an mandatory message results in no route code, upon transaction commit, when a consumer is connected. */
-    public void test_QPID_508_MandatoryFailsNoRouteTx() throws Exception
+    public void test_QPID_508_MandatoryFailsNoRouteTxP2P() throws Exception
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
 
         // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
         // collect its messages).
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
         // Send one message and get a linked no consumers exception.
-        ImmediateMessageTest.PublisherReceiverImpl.testWithAssertions(testProps, AMQNoRouteException.class);
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
+    }
+
+    /**
+     * Check that a mandatory message is sent succesfully, not using transactions, when a consumer is disconnected but
+     * the route exists.
+     */
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedNoTxP2P() throws Exception
+    {
+        // Ensure transactional sessions are off.
+        testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Disconnect the consumer.
+        testClients.getReceiver().getConsumer().close();
+
+        // Send one message with no errors.
+        testClients.testNoExceptions(testProps);
+    }
+
+    /**
+     * Check that a mandatory message is sent succesfully, in a transaction, when a consumer is disconnected but
+     * the route exists.
+     */
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedTxP2P() throws Exception
+    {
+        // Ensure transactional sessions are on.
+        testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Disconnect the consumer.
+        testClients.getReceiver().getConsumer().close();
+
+        // Send one message with no errors.
+        testClients.testNoExceptions(testProps);
+    }
+
+    /** Check that an mandatory message is sent succesfully not using transactions when a consumer is connected. */
+    public void test_QPID_508_MandatoryOkNoTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are off.
+        testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message with no errors.
+        testClients.testNoExceptions(testProps);
+    }
+
+    /** Check that an mandatory message is committed succesfully in a transaction when a consumer is connected. */
+    public void test_QPID_508_MandatoryOkTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are off.
+        testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message with no errors.
+        testClients.testNoExceptions(testProps);
+    }
+
+    /** Check that an mandatory message results in no route code, not using transactions, when no consumer is connected. */
+    public void test_QPID_508_MandatoryFailsNoRouteNoTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are off.
+        testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // collect its messages).
+        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message and get a linked no consumers exception.
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
+    }
+
+    /** Check that an mandatory message results in no route code, upon transaction commit, when a consumer is connected. */
+    public void test_QPID_508_MandatoryFailsNoRouteTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are on.
+        testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // collect its messages).
+        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message and get a linked no consumers exception.
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
+    }
+
+    /**
+     * Check that a mandatory message is sent succesfully, not using transactions, when a consumer is disconnected but
+     * the route exists.
+     */
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedNoTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are off.
+        testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Disconnect the consumer.
+        testClients.getReceiver().getConsumer().close();
+
+        // Send one message with no errors.
+        testClients.testNoExceptions(testProps);
+    }
+
+    /**
+     * Check that a mandatory message is sent succesfully, in a transaction, when a consumer is disconnected but
+     * the route exists.
+     */
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are on.
+        testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        ImmediateMessageTest.PublisherReceiver testClients =
+            ImmediateMessageTest.PublisherReceiverImpl.connectClients(testProps);
+
+        // Disconnect the consumer.
+        testClients.getReceiver().getConsumer().close();
+
+        // Send one message with no errors.
+        testClients.testNoExceptions(testProps);
     }
 
     protected void setUp() throws Exception
     {
         NDC.push(getName());
+
+        testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
+
+        /** All these tests should have the mandatory flag on. */
+        testProps.setProperty(MANDATORY_PROPNAME, true);
+
+        /** Bind the receivers consumer by default. */
+        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, true);
 
         // Ensure that the in-vm broker is created.
         TransportConnection.createVMBroker(1);
