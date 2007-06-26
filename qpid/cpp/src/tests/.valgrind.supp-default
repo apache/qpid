@@ -1,1 +1,10 @@
+{
+   Benign error in libcpg.
+
+   Memcheck:Param
+   socketcall.sendmsg(msg.msg_iov[i])
+   obj:*/libpthread-2.5.so
+   obj:*/libcpg.so.2.0.0
+}
+
 

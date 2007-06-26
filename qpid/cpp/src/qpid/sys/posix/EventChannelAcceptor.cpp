@@ -52,6 +52,7 @@ class EventChannelAcceptor : public Acceptor {
     );
         
     uint16_t getPort() const;
+    std::string getHost() const;
     
     void run(ConnectionInputHandlerFactory* factory);
 
@@ -95,6 +96,10 @@ EventChannelAcceptor::EventChannelAcceptor(
     isShutdown(false),
     threads(EventChannelThreads::create(EventChannel::create(), nThreads))
 { }
+    
+uint16_t EventChannelAcceptor::getPort() const {
+    return port;                // Immutable no need for lock.
+}
     
 uint16_t EventChannelAcceptor::getPort() const {
     return port;                // Immutable no need for lock.

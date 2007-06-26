@@ -133,6 +133,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/AMQHeaderBody.cpp \
   qpid/framing/AMQHeartbeatBody.cpp \
   qpid/framing/AMQMethodBody.cpp \
+  qpid/framing/FrameHandler.h \
   qpid/framing/MethodContext.cpp \
   qpid/framing/BasicHeaderProperties.cpp \
   qpid/framing/BodyHandler.cpp \

@@ -39,7 +39,6 @@ Qpid is compiled against libraries:
  * boost   <http://www.boost.org>           (1.33.1)
  * cppunit <http://cppunit.sourceforge.net> (1.11.4)
  * libdaemon <http://www.stud.uni-hamburg.de/users/lennart/projects/libdaemon> (0.10)
- * opeais <http://www.openais.org/>         (0.80.2)
 
 Using tools:
 
@@ -54,10 +53,7 @@ Using tools:
  * graphviz   <http://www.graphviz.org/>               (2.12)
  * JDK 5.0    <http://java.sun.com/j2se/1.5.0/>        (1.5.0.11)
 
-=== Optional tools an libraries ===
-
-If openais is not installed the broker will be built without cluster
-functionality.
+=== Optional tools and libraries ===
 
 The following are only required if you generate documentation.
 (Source distributions contain pre-generated documentation.)
@@ -77,9 +73,8 @@ If building from a source distribution you do not need:
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
 
-  # yum install apr-devel boost-devel cppunit-devel libdaemon-devel openais-devel
+  # yum install apr-devel boost-devel cppunit-devel libdaemon-devel 
   # yum install pkgconfig doxygen graphviz help2man
-
 
 Follow the manual installation instruction below for any packages not
 available through yum.
@@ -96,7 +91,8 @@ It is recommended that you create a directory to install them to, for example,
   # make install
 
  The exceptions to this are boost and JDK 5.0.
- To build the boost library:
+
+==== To build the boost library ====
 
  1. Unpack boost-jam.
  2. Add bjam in the unpacked directory to your path.
@@ -105,7 +101,8 @@ It is recommended that you create a directory to install them to, for example,
 
   # bjam -sTOOLS=gcc --prefix=~/qpid-tools
 
-To install JDK 5.0 download and run its install script, or whatever
+==== To install JDK 5.0 ====
+Download and run its install script, or whatever
 alternative instructions may be on the sun website.
 
 Ensure that all the build tools are available on your path, when they are
