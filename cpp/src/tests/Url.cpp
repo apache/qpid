@@ -17,6 +17,7 @@
  */
 
 #define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
+#include <boost/test/auto_unit_test.hpp>
 #include "test_tools.h"
 #include "qpid/Url.h"
 #include <boost/assign.hpp>
