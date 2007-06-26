@@ -20,16 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.management.JMException;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -43,6 +33,16 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.management.JMException;
+
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like that. It is described
@@ -590,7 +590,7 @@ public class AMQQueue implements Managable, Comparable
         delete();
     }
 
-    public void processGet(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
+    /*public void processGet(StoreContext storeContext, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
         // fixme not sure what this is doing. should we be passing deliverFirst through here?
         // This code is not used so when it is perhaps it should
@@ -606,7 +606,7 @@ public class AMQQueue implements Managable, Comparable
             // from the queue:
             dequeue(storeContext, msg);
         }
-    }
+    }*/
 
     // public DeliveryManager getDeliveryManager()
     // {

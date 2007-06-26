@@ -25,6 +25,7 @@ import junit.framework.TestCase;
 import org.apache.log4j.NDC;
 
 import org.apache.qpid.client.AMQNoConsumersException;
+import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import static org.apache.qpid.server.exchange.MessagingTestConfigProperties.*;
@@ -113,40 +114,6 @@ public class ImmediateMessageTest extends TestCase
         testClients.testNoExceptions(testProps);
     }
 
-    /** Check that an immediate message results in no consumers code, not using transactions, when no consumer is connected. */
-    public void test_QPID_517_ImmediateFailsNoConsumerNoTxP2P() throws Exception
-    {
-        // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
-
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
-        // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
-
-        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
-
-        // Send one message and get a linked no consumers exception.
-        testClients.testWithAssertions(testProps, AMQNoConsumersException.class);
-    }
-
-    /** Check that an immediate message results in no consumers code, upon transaction commit, when a consumer is connected. */
-    public void test_QPID_517_ImmediateFailsNoConsumerTxP2P() throws Exception
-    {
-        // Ensure transactional sessions are on.
-        testProps.setProperty(TRANSACTED_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, false);
-
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
-        // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
-
-        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
-
-        // Send one message and get a linked no consumers exception.
-        testClients.testWithAssertions(testProps, AMQNoConsumersException.class);
-    }
-
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
     public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P() throws Exception
     {
@@ -179,6 +146,40 @@ public class ImmediateMessageTest extends TestCase
         testClients.testWithAssertions(testProps, AMQNoConsumersException.class);
     }
 
+    /** Check that an immediate message results in no consumers code, not using transactions, when no consumer is connected. */
+    public void test_QPID_517_ImmediateFailsNoRouteNoTxP2P() throws Exception
+    {
+        // Ensure transactional sessions are off.
+        testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
+
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // collect its messages).
+        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+
+        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message and get a linked no consumers exception.
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
+    }
+
+    /** Check that an immediate message results in no consumers code, upon transaction commit, when a consumer is connected. */
+    public void test_QPID_517_ImmediateFailsNoRouteTxP2P() throws Exception
+    {
+        // Ensure transactional sessions are on.
+        testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, false);
+
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // collect its messages).
+        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+
+        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message and get a linked no consumers exception.
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
+    }
+
     /** Check that an immediate message is sent succesfully not using transactions when a consumer is connected. */
     public void test_QPID_517_ImmediateOkNoTxPubSub() throws Exception
     {
@@ -205,46 +206,15 @@ public class ImmediateMessageTest extends TestCase
         testClients.testNoExceptions(testProps);
     }
 
-    /** Check that an immediate message results in no consumers code, not using transactions, when no consumer is connected. */
-    public void test_QPID_517_ImmediateFailsNoConsumerNoTxPubSub() throws Exception
-    {
-        // Ensure transactional sessions are off.
-        testProps.setProperty(TRANSACTED_PROPNAME, false);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
-
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
-        // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
-
-        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
-
-        // Send one message and get a linked no consumers exception.
-        testClients.testWithAssertions(testProps, AMQNoConsumersException.class);
-    }
-
-    /** Check that an immediate message results in no consumers code, upon transaction commit, when a consumer is connected. */
-    public void test_QPID_517_ImmediateFailsNoConsumerTxPubSub() throws Exception
-    {
-        // Ensure transactional sessions are on.
-        testProps.setProperty(TRANSACTED_PROPNAME, true);
-        testProps.setProperty(PUBSUB_PROPNAME, true);
-
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
-        // collect its messages).
-        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
-
-        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
-
-        // Send one message and get a linked no consumers exception.
-        testClients.testWithAssertions(testProps, AMQNoConsumersException.class);
-    }
-
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
     public void test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxPubSub() throws Exception
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PROPNAME, false);
         testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        // Use durable subscriptions, so that the route remains open with no subscribers.
+        testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
 
         PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
 
@@ -262,6 +232,9 @@ public class ImmediateMessageTest extends TestCase
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
+        // Use durable subscriptions, so that the route remains open with no subscribers.
+        testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
+
         PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
 
         // Disconnect the consumer.
@@ -269,6 +242,40 @@ public class ImmediateMessageTest extends TestCase
 
         // Send one message and get a linked no consumers exception.
         testClients.testWithAssertions(testProps, AMQNoConsumersException.class);
+    }
+
+    /** Check that an immediate message results in no consumers code, not using transactions, when no consumer is connected. */
+    public void test_QPID_517_ImmediateFailsNoRouteNoTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are off.
+        testProps.setProperty(TRANSACTED_PROPNAME, false);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // collect its messages).
+        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+
+        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message and get a linked no consumers exception.
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
+    }
+
+    /** Check that an immediate message results in no consumers code, upon transaction commit, when a consumer is connected. */
+    public void test_QPID_517_ImmediateFailsNoRouteTxPubSub() throws Exception
+    {
+        // Ensure transactional sessions are on.
+        testProps.setProperty(TRANSACTED_PROPNAME, true);
+        testProps.setProperty(PUBSUB_PROPNAME, true);
+
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // collect its messages).
+        testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
+
+        PublisherReceiver testClients = PublisherReceiverImpl.connectClients(testProps);
+
+        // Send one message and get a linked no consumers exception.
+        testClients.testWithAssertions(testProps, AMQNoRouteException.class);
     }
 
     protected void setUp() throws Exception
@@ -425,6 +432,14 @@ public class ImmediateMessageTest extends TestCase
         }
     }
 
+    public static class MessageMonitor implements MessageListener
+    {
+        public void onMessage(Message message)
+        {
+            log.debug("public void onMessage(Message message): called");
+        }
+    }
+
     /**
      * Establishes a JMS connection using a properties file and qpids built in JNDI implementation. This is a simple
      * convenience method for code that does anticipate handling connection failures. All exceptions that indicate
@@ -505,13 +520,14 @@ public class ImmediateMessageTest extends TestCase
             int ackMode = messagingProps.getPropertyAsInteger(ACK_MODE_PROPNAME);
             boolean useTopics = messagingProps.getPropertyAsBoolean(PUBSUB_PROPNAME);
             boolean transactional = messagingProps.getPropertyAsBoolean(TRANSACTED_PROPNAME);
+            boolean durableSubscription = messagingProps.getPropertyAsBoolean(DURABLE_SUBSCRIPTION_PROPNAME);
 
             // Check if any Qpid/AMQP specific flags or options need to be set.
             boolean immediate = messagingProps.getPropertyAsBoolean(IMMEDIATE_PROPNAME);
             boolean mandatory = messagingProps.getPropertyAsBoolean(MANDATORY_PROPNAME);
             boolean needsQpidOptions = immediate | mandatory;
 
-            log.debug("ackMode = " + ackMode);
+            /*log.debug("ackMode = " + ackMode);
             log.debug("useTopics = " + useTopics);
             log.debug("destinationSendRoot = " + destinationSendRoot);
             log.debug("destinationReceiveRoot = " + destinationReceiveRoot);
@@ -522,7 +538,7 @@ public class ImmediateMessageTest extends TestCase
             log.debug("transactional = " + transactional);
             log.debug("immediate = " + immediate);
             log.debug("mandatory = " + mandatory);
-            log.debug("needsQpidOptions = " + needsQpidOptions);
+            log.debug("needsQpidOptions = " + needsQpidOptions);*/
 
             // Create connection, sessions and producer/consumer pairs on each session.
             Connection connection = createConnection(messagingProps);
@@ -535,7 +551,7 @@ public class ImmediateMessageTest extends TestCase
             Session receiverSession = connection.createSession(transactional, ackMode);
 
             Destination publisherProducerDestination =
-                useTopics ? publisherSession.createTopic(destinationSendRoot)
+                useTopics ? (Destination) publisherSession.createTopic(destinationSendRoot)
                           : publisherSession.createQueue(destinationSendRoot);
 
             MessageProducer publisherProducer =
@@ -548,13 +564,29 @@ public class ImmediateMessageTest extends TestCase
                 createPublisherConsumer
                 ? publisherSession.createConsumer(publisherSession.createQueue(destinationReceiveRoot)) : null;
 
+            if (publisherConsumer != null)
+            {
+                publisherConsumer.setMessageListener(new MessageMonitor());
+            }
+
             MessageProducer receiverProducer =
                 createReceiverProducer ? receiverSession.createProducer(receiverSession.createQueue(destinationReceiveRoot))
                                        : null;
 
+            Destination receiverConsumerDestination =
+                useTopics ? (Destination) receiverSession.createTopic(destinationSendRoot)
+                          : receiverSession.createQueue(destinationSendRoot);
+
             MessageConsumer receiverConsumer =
-                createReceiverConsumer ? receiverSession.createConsumer(receiverSession.createQueue(destinationSendRoot))
-                                       : null;
+                createReceiverConsumer
+                ? ((durableSubscription && useTopics)
+                    ? receiverSession.createDurableSubscriber((Topic) receiverConsumerDestination, "testsub")
+                    : receiverSession.createConsumer(receiverConsumerDestination)) : null;
+
+            if (receiverConsumer != null)
+            {
+                receiverConsumer.setMessageListener(new MessageMonitor());
+            }
 
             // Start listening for incoming messages.
             connection.start();
@@ -578,7 +610,8 @@ public class ImmediateMessageTest extends TestCase
 
     public static Message createTestMessage(ProducerConsumerPair client, ParsedProperties testProps) throws JMSException
     {
-        return client.getSession().createMessage();
+        return client.getSession().createTextMessage("Hello");
+            // return client.getSession().createMessage();
     }
 
     /**
@@ -868,9 +901,7 @@ public class ImmediateMessageTest extends TestCase
         public static PublisherReceiver connectClients(ParsedProperties testProps)
         {
             // Create a standard publisher/receiver test client pair on a shared connection, individual sessions.
-            PublisherReceiver testClients = createPublisherReceiverPairSharedConnection(testProps);
-
-            return testClients;
+            return createPublisherReceiverPairSharedConnection(testProps);
         }
     }
 

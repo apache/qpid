@@ -20,17 +20,8 @@
  */
 package org.apache.qpid.server;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
@@ -53,6 +44,16 @@ import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class AMQChannel
 {
     public static final int DEFAULT_PREFETCH = 5000;
@@ -61,7 +62,7 @@ public class AMQChannel
 
     private final int _channelId;
 
-    //private boolean _transactional;
+    // private boolean _transactional;
 
     private long _prefetch_HighWaterMark;
 
@@ -113,13 +114,12 @@ public class AMQChannel
 
     private Set<Long> _browsedAcks = new HashSet<Long>();
 
-    //Why do we need this reference ? - ritchiem
+    // Why do we need this reference ? - ritchiem
     private final AMQProtocolSession _session;
     private boolean _closing;
 
-
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore, MessageRouter exchanges)
-            throws AMQException
+        throws AMQException
     {
         _session = session;
         _channelId = channelId;
@@ -166,7 +166,6 @@ public class AMQChannel
         return _prefetchSize;
     }
 
-
     public void setPrefetchSize(long prefetchSize)
     {
         _prefetchSize = prefetchSize;
@@ -192,18 +191,15 @@ public class AMQChannel
         _prefetch_HighWaterMark = prefetchCount;
     }
 
-
     public void setPublishFrame(MessagePublishInfo info, AMQProtocolSession publisher) throws AMQException
     {
 
-
-        _currentMessage = new AMQMessage(_messageStore.getNewMessageId(), info,
-                                         _txnContext);
+        _currentMessage = new AMQMessage(_messageStore.getNewMessageId(), info, _txnContext);
         _currentMessage.setPublisher(publisher);
     }
 
-    public void publishContentHeader(ContentHeaderBody contentHeaderBody)
-            throws AMQException
+    public void publishContentHeader(ContentHeaderBody contentHeaderBody, AMQProtocolSession protocolSession)
+        throws AMQException
     {
         if (_currentMessage == null)
         {
@@ -215,6 +211,7 @@ public class AMQChannel
             {
                 _log.trace(debugIdentity() + "Content header received on channel " + _channelId);
             }
+
             _currentMessage.setContentHeaderBody(contentHeaderBody);
             _currentMessage.setExpiration();
 
@@ -224,13 +221,13 @@ public class AMQChannel
             // check and deliver if header says body length is zero
             if (contentHeaderBody.bodySize == 0)
             {
+                _txnContext.messageProcessed(protocolSession);
                 _currentMessage = null;
             }
         }
     }
 
-    public void publishContentBody(ContentBody contentBody, AMQProtocolSession protocolSession)
-            throws AMQException
+    public void publishContentBody(ContentBody contentBody, AMQProtocolSession protocolSession) throws AMQException
     {
         if (_currentMessage == null)
         {
@@ -241,12 +238,15 @@ public class AMQChannel
         {
             _log.trace(debugIdentity() + "Content body received on channel " + _channelId);
         }
+
         try
         {
 
             // returns true iff the message was delivered (i.e. if all data was
             // received
-            if (_currentMessage.addContentBodyFrame(_storeContext, protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToContentChunk(contentBody)))
+            if (_currentMessage.addContentBodyFrame(_storeContext,
+                        protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToContentChunk(
+                            contentBody)))
             {
                 // callback to allow the context to do any post message processing
                 // primary use is to allow message return processing in the non-tx case
@@ -303,12 +303,13 @@ public class AMQChannel
      * @throws AMQException                  if something goes wrong
      */
     public AMQShortString subscribeToQueue(AMQShortString tag, AMQQueue queue, AMQProtocolSession session, boolean acks,
-                                           FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException, ConsumerTagNotUniqueException
+        FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException, ConsumerTagNotUniqueException
     {
         if (tag == null)
         {
             tag = new AMQShortString("sgen_" + getNextConsumerTag());
         }
+
         if (_consumerTag2QueueMap.containsKey(tag))
         {
             throw new ConsumerTagNotUniqueException();
@@ -316,9 +317,9 @@ public class AMQChannel
 
         queue.registerProtocolSession(session, _channelId, tag, acks, filters, noLocal, exclusive);
         _consumerTag2QueueMap.put(tag, queue);
+
         return tag;
     }
-
 
     public void unsubscribeConsumer(AMQProtocolSession session, AMQShortString consumerTag) throws AMQException
     {
@@ -326,19 +327,18 @@ public class AMQChannel
         {
             _log.debug("Unacked Map Dump size:" + _unacknowledgedMessageMap.size());
             _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
-            {
-
-                public boolean callback(UnacknowledgedMessage message) throws AMQException
                 {
-                    _log.debug(message);
 
-                    return true;
-                }
+                    public boolean callback(UnacknowledgedMessage message) throws AMQException
+                    {
+                        _log.debug(message);
 
-                public void visitComplete()
-                {
-                }
-            });
+                        return true;
+                    }
+
+                    public void visitComplete()
+                    { }
+                });
         }
 
         AMQQueue q = _consumerTag2QueueMap.remove(consumerTag);
@@ -382,14 +382,17 @@ public class AMQChannel
                 _log.info("No consumers to unsubscribe on channel " + toString());
             }
         }
+
         for (Map.Entry<AMQShortString, AMQQueue> me : _consumerTag2QueueMap.entrySet())
         {
             if (_log.isInfoEnabled())
             {
                 _log.info("Unsubscribing consumer '" + me.getKey() + "' on channel " + toString());
             }
+
             me.getValue().unregisterProtocolSession(session, _channelId, me.getKey());
         }
+
         _consumerTag2QueueMap.clear();
     }
 
@@ -414,8 +417,8 @@ public class AMQChannel
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(debugIdentity() + " Adding unacked message(" + message.toString() + " DT:" + deliveryTag +
-                               ") with a queue(" + queue + ") for " + consumerTag);
+                    _log.debug(debugIdentity() + " Adding unacked message(" + message.toString() + " DT:" + deliveryTag
+                        + ") with a queue(" + queue + ") for " + consumerTag);
                 }
             }
         }
@@ -458,10 +461,10 @@ public class AMQChannel
 
             if (!(_txnContext instanceof NonTransactionalContext))
             {
-//                if (_nonTransactedContext == null)
+                // if (_nonTransactedContext == null)
                 {
-                    _nonTransactedContext = new NonTransactionalContext(_messageStore, _storeContext, this,
-                                                                        _returnMessages, _browsedAcks);
+                    _nonTransactedContext =
+                        new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
                 }
 
                 deliveryContext = _nonTransactedContext;
@@ -471,7 +474,6 @@ public class AMQChannel
                 deliveryContext = _txnContext;
             }
         }
-
 
         for (UnacknowledgedMessage unacked : messagesToBeDelivered)
         {
@@ -488,7 +490,7 @@ public class AMQChannel
 
                 // Should we allow access To the DM to directy deliver the message?
                 // As we don't need to check for Consumers or worry about incrementing the message count?
-//                unacked.queue.getDeliveryManager().deliver(_storeContext, unacked.queue.getName(), unacked.message, false);
+                // unacked.queue.getDeliveryManager().deliver(_storeContext, unacked.queue.getName(), unacked.message, false);
             }
         }
 
@@ -522,10 +524,10 @@ public class AMQChannel
             TransactionalContext deliveryContext;
             if (!(_txnContext instanceof NonTransactionalContext))
             {
-//                if (_nonTransactedContext == null)
+                // if (_nonTransactedContext == null)
                 {
-                    _nonTransactedContext = new NonTransactionalContext(_messageStore, _storeContext, this,
-                                                                        _returnMessages, _browsedAcks);
+                    _nonTransactedContext =
+                        new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
                 }
 
                 deliveryContext = _nonTransactedContext;
@@ -537,50 +539,48 @@ public class AMQChannel
 
             if (unacked.queue != null)
             {
-                //Redeliver the messages to the front of the queue
+                // Redeliver the messages to the front of the queue
                 deliveryContext.deliver(unacked.message, unacked.queue, true);
-                //Deliver increments the message count but we have already deliverted this once so don't increment it again
+                // Deliver increments the message count but we have already deliverted this once so don't increment it again
                 // this was because deliver did an increment changed this.
             }
             else
             {
-                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.message.debugIdentity() + "):" + deliveryTag +
-                          " but no queue defined and no DeadLetter queue so DROPPING message.");
-//                _log.error("Requested requeue of message:" + deliveryTag +
-//                           " but no queue defined using DeadLetter queue:" + getDeadLetterQueue());
-//
-//                deliveryContext.deliver(unacked.message, getDeadLetterQueue(), false);
-//
+                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.message.debugIdentity()
+                    + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
+                // _log.error("Requested requeue of message:" + deliveryTag +
+                // " but no queue defined using DeadLetter queue:" + getDeadLetterQueue());
+                //
+                // deliveryContext.deliver(unacked.message, getDeadLetterQueue(), false);
+                //
             }
         }
         else
         {
-            _log.warn("Requested requeue of message:" + deliveryTag + " but no such delivery tag exists." + _unacknowledgedMessageMap.size());
+            _log.warn("Requested requeue of message:" + deliveryTag + " but no such delivery tag exists."
+                + _unacknowledgedMessageMap.size());
 
             if (_log.isDebugEnabled())
             {
                 _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
-                {
-                    int count = 0;
-
-                    public boolean callback(UnacknowledgedMessage message) throws AMQException
                     {
-                        _log.debug((count++) + ": (" + message.message.debugIdentity() + ")" +
-                                   "[" + message.deliveryTag + "]");
-                        return false;  // Continue
-                    }
+                        int count = 0;
 
-                    public void visitComplete()
-                    {
+                        public boolean callback(UnacknowledgedMessage message) throws AMQException
+                        {
+                            _log.debug(
+                                (count++) + ": (" + message.message.debugIdentity() + ")" + "[" + message.deliveryTag + "]");
 
-                    }
-                });
+                            return false; // Continue
+                        }
+
+                        public void visitComplete()
+                        { }
+                    });
             }
         }
 
-
     }
-
 
     /**
      * Called to resend all outstanding unacknowledged messages to this same channel.
@@ -603,54 +603,53 @@ public class AMQChannel
         // Marking messages who still have a consumer for to be resent
         // and those that don't to be requeued.
         _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
-        {
-            public boolean callback(UnacknowledgedMessage message) throws AMQException
             {
-                AMQShortString consumerTag = message.consumerTag;
-                AMQMessage msg = message.message;
-                msg.setRedelivered(true);
-                if (consumerTag != null)
+                public boolean callback(UnacknowledgedMessage message) throws AMQException
                 {
-                    // Consumer exists
-                    if (_consumerTag2QueueMap.containsKey(consumerTag))
+                    AMQShortString consumerTag = message.consumerTag;
+                    AMQMessage msg = message.message;
+                    msg.setRedelivered(true);
+                    if (consumerTag != null)
                     {
-                        msgToResend.add(message);
-                    }
-                    else // consumer has gone
-                    {
-                        msgToRequeue.add(message);
-                    }
-                }
-                else
-                {
-                    // Message has no consumer tag, so was "delivered" to a GET
-                    // or consumer no longer registered
-                    // cannot resend, so re-queue.
-                    if (message.queue != null)
-                    {
-                        if (requeue)
+                        // Consumer exists
+                        if (_consumerTag2QueueMap.containsKey(consumerTag))
+                        {
+                            msgToResend.add(message);
+                        }
+                        else // consumer has gone
                         {
                             msgToRequeue.add(message);
-                        }
-                        else
-                        {
-                            _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
                         }
                     }
                     else
                     {
-                        _log.info("Message.queue is null and no DeadLetter Queue so dropping message:" + message);
+                        // Message has no consumer tag, so was "delivered" to a GET
+                        // or consumer no longer registered
+                        // cannot resend, so re-queue.
+                        if (message.queue != null)
+                        {
+                            if (requeue)
+                            {
+                                msgToRequeue.add(message);
+                            }
+                            else
+                            {
+                                _log.info("No DeadLetter Queue and requeue not requested so dropping message:" + message);
+                            }
+                        }
+                        else
+                        {
+                            _log.info("Message.queue is null and no DeadLetter Queue so dropping message:" + message);
+                        }
                     }
+
+                    // false means continue processing
+                    return false;
                 }
 
-                // false means continue processing
-                return false;
-            }
-
-            public void visitComplete()
-            {
-            }
-        });
+                public void visitComplete()
+                { }
+            });
 
         // Process Messages to Resend
         if (_log.isInfoEnabled())
@@ -664,6 +663,7 @@ public class AMQChannel
                 _log.info("No message to resend.");
             }
         }
+
         for (UnacknowledgedMessage message : msgToResend)
         {
             AMQMessage msg = message.message;
@@ -672,21 +672,20 @@ public class AMQChannel
             // If the client has requested the messages be resent then it is
             // their responsibility to ensure that thay are capable of receiving them
             // i.e. The channel hasn't been server side suspended.
-//            if (isSuspended())
-//            {
-//                _log.info("Channel is suspended so requeuing");
-//                //move this message to requeue
-//                msgToRequeue.add(message);
-//            }
-//            else
-//            {
-            //release to allow it to be delivered
+            // if (isSuspended())
+            // {
+            // _log.info("Channel is suspended so requeuing");
+            // //move this message to requeue
+            // msgToRequeue.add(message);
+            // }
+            // else
+            // {
+            // release to allow it to be delivered
             msg.release(message.queue);
 
             // Without any details from the client about what has been processed we have to mark
             // all messages in the unacked map as redelivered.
             msg.setRedelivered(true);
-
 
             Subscription sub = msg.getDeliveredSubscription(message.queue);
 
@@ -704,17 +703,20 @@ public class AMQChannel
                     {
                         if (_log.isDebugEnabled())
                         {
-                            _log.debug("Subscription(" + System.identityHashCode(sub) + ") closed during resend so requeuing message");
+                            _log.debug("Subscription(" + System.identityHashCode(sub)
+                                + ") closed during resend so requeuing message");
                         }
-                        //move this message to requeue
+                        // move this message to requeue
                         msgToRequeue.add(message);
                     }
                     else
                     {
                         if (_log.isDebugEnabled())
                         {
-                            _log.debug("Requeuing " + msg.debugIdentity() + " for resend via sub:" + System.identityHashCode(sub));
+                            _log.debug("Requeuing " + msg.debugIdentity() + " for resend via sub:"
+                                + System.identityHashCode(sub));
                         }
+
                         sub.addToResendQueue(msg);
                         _unacknowledgedMessageMap.remove(message.deliveryTag);
                     }
@@ -725,13 +727,14 @@ public class AMQChannel
 
                 if (_log.isInfoEnabled())
                 {
-                    _log.info("DeliveredSubscription not recorded so just requeueing(" + message.toString() + ")to prevent loss");
+                    _log.info("DeliveredSubscription not recorded so just requeueing(" + message.toString()
+                        + ")to prevent loss");
                 }
-                //move this message to requeue
+                // move this message to requeue
                 msgToRequeue.add(message);
             }
         } // for all messages
-//        } else !isSuspend
+        // } else !isSuspend
 
         if (_log.isInfoEnabled())
         {
@@ -748,8 +751,8 @@ public class AMQChannel
         {
             if (_nonTransactedContext == null)
             {
-                _nonTransactedContext = new NonTransactionalContext(_messageStore, _storeContext, this,
-                                                                    _returnMessages, _browsedAcks);
+                _nonTransactedContext =
+                    new NonTransactionalContext(_messageStore, _storeContext, this, _returnMessages, _browsedAcks);
             }
 
             deliveryContext = _nonTransactedContext;
@@ -783,29 +786,29 @@ public class AMQChannel
     public void queueDeleted(final AMQQueue queue) throws AMQException
     {
         _unacknowledgedMessageMap.visit(new UnacknowledgedMessageMap.Visitor()
-        {
-            public boolean callback(UnacknowledgedMessage message) throws AMQException
             {
-                if (message.queue == queue)
+                public boolean callback(UnacknowledgedMessage message) throws AMQException
                 {
-                    try
+                    if (message.queue == queue)
                     {
-                        message.discard(_storeContext);
-                        message.queue = null;
+                        try
+                        {
+                            message.discard(_storeContext);
+                            message.queue = null;
+                        }
+                        catch (AMQException e)
+                        {
+                            _log.error(
+                                "Error decrementing ref count on message " + message.message.getMessageId() + ": " + e, e);
+                        }
                     }
-                    catch (AMQException e)
-                    {
-                        _log.error("Error decrementing ref count on message " + message.message.getMessageId() + ": " +
-                                   e, e);
-                    }
-                }
-                return false;
-            }
 
-            public void visitComplete()
-            {
-            }
-        });
+                    return false;
+                }
+
+                public void visitComplete()
+                { }
+            });
     }
 
     /**
@@ -834,6 +837,7 @@ public class AMQChannel
             }
 
         }
+
         checkSuspension();
     }
 
@@ -851,8 +855,9 @@ public class AMQChannel
     {
         boolean suspend;
 
-        suspend = ((_prefetch_HighWaterMark != 0) && _unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark)
-                  || ((_prefetchSize != 0) && _prefetchSize < _unacknowledgedMessageMap.getUnacknowledgeBytes());
+        suspend =
+            ((_prefetch_HighWaterMark != 0) && (_unacknowledgedMessageMap.size() >= _prefetch_HighWaterMark))
+            || ((_prefetchSize != 0) && (_prefetchSize < _unacknowledgedMessageMap.getUnacknowledgeBytes()));
 
         setSuspended(suspend);
     }
@@ -873,7 +878,7 @@ public class AMQChannel
             if (wasSuspended)
             {
                 _log.debug("Unsuspending channel " + this);
-                //may need to deliver queued messages
+                // may need to deliver queued messages
                 for (AMQQueue q : _consumerTag2QueueMap.values())
                 {
                     q.deliverAsync();
@@ -897,6 +902,7 @@ public class AMQChannel
         {
             throw new AMQException("Fatal error: commit called on non-transactional channel");
         }
+
         _txnContext.commit();
     }
 
@@ -911,6 +917,7 @@ public class AMQChannel
         sb.append("Channel: id ").append(_channelId).append(", transaction mode: ").append(isTransactional());
         sb.append(", prefetch marks: ").append(_prefetch_LowWaterMark);
         sb.append("/").append(_prefetch_HighWaterMark);
+
         return sb.toString();
     }
 
@@ -934,13 +941,12 @@ public class AMQChannel
         for (RequiredDeliveryException bouncedMessage : _returnMessages)
         {
             AMQMessage message = bouncedMessage.getAMQMessage();
-            session.getProtocolOutputConverter().writeReturn(message, _channelId,
-                                                             bouncedMessage.getReplyCode().getCode(),
-                                                             new AMQShortString(bouncedMessage.getMessage()));
+            session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
+                new AMQShortString(bouncedMessage.getMessage()));
         }
+
         _returnMessages.clear();
     }
-
 
     public boolean wouldSuspend(AMQMessage msg)
     {
@@ -950,19 +956,20 @@ public class AMQChannel
         }
         else
         {
-            boolean willSuspend = ((_prefetch_HighWaterMark != 0) && _unacknowledgedMessageMap.size() + 1 > _prefetch_HighWaterMark);
+            boolean willSuspend =
+                ((_prefetch_HighWaterMark != 0) && ((_unacknowledgedMessageMap.size() + 1) > _prefetch_HighWaterMark));
             if (!willSuspend)
             {
                 final long unackedSize = _unacknowledgedMessageMap.getUnacknowledgeBytes();
 
-                willSuspend = (_prefetchSize != 0) && (unackedSize != 0) && (_prefetchSize < msg.getSize() + unackedSize);
+                willSuspend = (_prefetchSize != 0) && (unackedSize != 0) && (_prefetchSize < (msg.getSize() + unackedSize));
             }
-
 
             if (willSuspend)
             {
                 setSuspended(true);
             }
+
             return willSuspend;
         }
 
