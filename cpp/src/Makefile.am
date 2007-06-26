@@ -150,6 +150,8 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Correlator.cpp \
   qpid/framing/Value.cpp \
   qpid/framing/Proxy.cpp \
+  qpid/framing/Handler.h \
+  qpid/framing/FrameHandler.h \
   gen/qpid/framing/AMQP_ClientProxy.cpp \
   gen/qpid/framing/AMQP_HighestVersion.h \
   gen/qpid/framing/AMQP_MethodVersionMap.cpp \

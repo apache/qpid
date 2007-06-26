@@ -21,18 +21,12 @@
  *
  */
 
-#include <boost/noncopyable.hpp>
+#include "Handler.h"
 
 namespace qpid {
 namespace framing {
 class AMQFrame;
-
-class FrameHandler : private boost::noncopyable {
-  public:
-    virtual ~FrameHandler() {}
-    virtual void handle(AMQFrame& frame) = 0;
-};
-
+typedef Handler<AMQFrame&> FrameHandler;
 }}
 
 
