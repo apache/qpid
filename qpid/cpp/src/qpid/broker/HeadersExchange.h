@@ -54,9 +54,12 @@ class HeadersExchange : public virtual Exchange {
 
     virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args);
 
+    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+
     virtual ~HeadersExchange();
 
     static bool match(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
+    static bool equal(const qpid::framing::FieldTable& bindArgs, const qpid::framing::FieldTable& msgArgs);
 };
 
 

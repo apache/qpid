@@ -80,6 +80,17 @@ void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, cons
     }
 }
 
+
+bool HeadersExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const args)
+{
+    for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
+        if ( (!args || equal(i->first, *args)) && i->second == queue) {
+            return true;
+        }
+    }
+    return false;
+}
+
 HeadersExchange::~HeadersExchange() {}
 
 const std::string HeadersExchange::typeName("headers");
@@ -127,6 +138,19 @@ bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
     } else {
         return false;
     }
+}
+
+bool HeadersExchange::equal(const FieldTable& a, const FieldTable& b) {
+    typedef FieldTable::ValueMap Map;
+    for (Map::const_iterator i = a.getMap().begin();
+         i != a.getMap().end();
+         ++i)
+    {
+        Map::const_iterator j = b.getMap().find(i->first);
+        if (j == b.getMap().end()) return false;
+        if (!match_values(*(i->second), *(j->second))) return false;
+    }
+    return true;
 }
 
 

@@ -31,3 +31,7 @@ void DeliverableMessage::deliverTo(Queue::shared_ptr& queue)
     queue->deliver(msg);    
 }
 
+Message& DeliverableMessage::getMessage()
+{
+    return *msg;
+}

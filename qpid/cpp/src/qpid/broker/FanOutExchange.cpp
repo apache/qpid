@@ -58,6 +58,12 @@ void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const
     }
 }
 
+bool FanOutExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const)
+{
+    return std::find(bindings.begin(), bindings.end(), queue) != bindings.end();
+}
+
+
 FanOutExchange::~FanOutExchange() {}
 
 const std::string FanOutExchange::typeName("fanout");

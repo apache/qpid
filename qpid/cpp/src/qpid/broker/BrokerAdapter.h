@@ -63,6 +63,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     ConnectionHandler* getConnectionHandler() { return &connectionHandler; }
     BasicHandler* getBasicHandler() { return &basicHandler; }
     ExchangeHandler* getExchangeHandler() { return &exchangeHandler; }
+    BindingHandler* getBindingHandler() { return &bindingHandler; }
     QueueHandler* getQueueHandler() { return &queueHandler; }
     TxHandler* getTxHandler() { return &txHandler;  }
     MessageHandler* getMessageHandler() { return &messageHandler;  }
@@ -142,6 +143,24 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
                      const qpid::framing::FieldTable& arguments); 
         void delete_(const framing::MethodContext& context, uint16_t ticket,
                      const std::string& exchange, bool ifUnused, bool nowait); 
+        void query(const framing::MethodContext& context,
+                   u_int16_t ticket,
+                   const string& name);
+    };
+
+    class BindingHandlerImpl : 
+        public BindingHandler,
+            public HandlerImpl<framing::AMQP_ClientProxy::Binding>
+    {
+    public:
+        BindingHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+
+        void query(const framing::MethodContext& context,
+                   u_int16_t ticket,
+                   const std::string& exchange,
+                   const std::string& queue,
+                   const std::string& routingKey,
+                   const framing::FieldTable& arguments);
     };
 
     class QueueHandlerImpl :
@@ -214,6 +233,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     ChannelHandlerImpl channelHandler;
     ConnectionHandlerImpl connectionHandler;
     ExchangeHandlerImpl exchangeHandler;
+    BindingHandlerImpl bindingHandler;
     MessageHandlerImpl messageHandler;
     QueueHandlerImpl queueHandler;
     TxHandlerImpl txHandler;

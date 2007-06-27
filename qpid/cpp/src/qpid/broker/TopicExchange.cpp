@@ -162,6 +162,31 @@ void TopicExchange::route(Deliverable& msg, const string& routingKey, const Fiel
     }
 }
 
+bool TopicExchange::isBound(Queue::shared_ptr queue, const string* const routingKey, const FieldTable* const)
+{
+    if (routingKey && queue) {
+        TopicPattern key(*routingKey);
+        return isBound(queue, key);
+    } else if (!routingKey && !queue) {
+        return bindings.size() > 0;
+    } else if (routingKey) {
+        for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
+            if (i->first.match(*routingKey)) {
+                return true;
+            }
+        }            
+        return false;
+    } else {
+        for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
+            Queue::vector& qv(i->second);
+            if (find(qv.begin(), qv.end(), queue) != qv.end()) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 TopicExchange::~TopicExchange() {}
 
 const std::string TopicExchange::typeName("topic");

@@ -39,6 +39,8 @@ namespace qpid {
             const string name;
             const bool durable;
             qpid::framing::FieldTable args;
+            boost::shared_ptr<Exchange> alternate;
+            uint32_t alternateUsers;
             mutable uint64_t persistenceId;
 
         public:
@@ -53,9 +55,15 @@ namespace qpid {
             bool isDurable() { return durable; }
             qpid::framing::FieldTable& getArgs() { return args; }
 
+            Exchange::shared_ptr getAlternate() { return alternate; }
+            void setAlternate(Exchange::shared_ptr _alternate) { alternate = _alternate; }
+            void incAlternateUsers() { alternateUsers++; }
+            void decAlternateUsers() { alternateUsers--; }
+
             virtual string getType() const = 0;
             virtual bool bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
             virtual bool unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
+            virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
             virtual void route(Deliverable& msg, const string& routingKey, const qpid::framing::FieldTable* args) = 0;
 
             //PersistableExchange:
