@@ -22,75 +22,29 @@
  *
  */
 #include "qpid/shared_ptr.h"
-#include <vector>
 #include <assert.h>
 
 namespace qpid {
 namespace framing {
 
-/** Handler for objects of type T. */
+/** Interface for handler for values of type T.
+ * Handlers can be linked into chains via the next pointer.
+ */
 template <class T> struct Handler {
-    typedef T Type;
-    typedef shared_ptr<Handler> Ptr;
+    typedef T ParamType;
+    typedef shared_ptr<Handler> Chain;
+
+    /** Handler chains for incoming and outgoing traffic. */
+    struct Chains {
+        Chain in;
+        Chain out;
+    };
 
     virtual ~Handler() {}
     virtual void handle(T) = 0;
-    virtual void link(Ptr next_) { next=next_; }
-  protected:
-    void nextHandler(T data) { if (next) next->handle(data); }
-  private:
-    Ptr next;
+    Chain next;
 };
 
-
-/** Factory interface that takes a context of type C */
-template <class T, class C> struct HandlerFactory {
-    virtual ~HandlerFactory() {}
-    typedef typename Handler<T>::Ptr Ptr;
-
-    /** Create a handler */
-    virtual Ptr create(C context) = 0;
-
-    /** Create a handler and link it to next */
-    Ptr create(C context, Ptr next) {
-        Ptr h=create(context);
-        h->link(next);
-    }
-};
-
-/** Factory implementation template */
-template <class FH, class C>
-struct HandlerFactoryImpl : public HandlerFactory<typename FH::Type, C> {
-    shared_ptr<Handler<typename FH::Type> > create(C context) {
-        return typename FH::Ptr(new FH(context));
-    }
-};
-
-/** A factory chain is a vector of handler factories used to create
- * handler chains. The chain does not own the factories.
- */
-template <class T, class C>
-struct HandlerFactoryChain : public std::vector<HandlerFactory<T,C>* > {
-    typedef typename Handler<T>::Ptr Ptr;
-    
-    /** Create a handler chain, return the first handler.
-     *@param context - passed to each factory.
-     */
-    Ptr create(C context) {
-        return this->create(context, this->begin());
-    }
-
-  private:
-    typedef typename std::vector<HandlerFactory<T,C>*>::iterator iterator;
-    Ptr create(C context, iterator i) {
-        if (i != this->end()) {
-            Ptr h=(*i)->create(context);
-            h->link(create(context, i+1));
-            return h;
-        }
-        return Ptr();
-    }
-};
 
 }}
 

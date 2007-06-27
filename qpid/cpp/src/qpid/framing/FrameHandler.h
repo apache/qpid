@@ -20,14 +20,14 @@
  * under the License.
  *
  */
-
 #include "Handler.h"
 
 namespace qpid {
 namespace framing {
+
 class AMQFrame;
 typedef Handler<AMQFrame&> FrameHandler;
+
+
 }}
-
-
 #endif  /*!QPID_FRAMING_FRAMEHANDLER_H*/

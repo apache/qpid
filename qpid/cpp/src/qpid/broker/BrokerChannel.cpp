@@ -55,7 +55,7 @@ Channel::Channel(
     uint32_t _framesize, MessageStore* const _store,
     uint64_t _stagingThreshold
 ) :
-    ChannelAdapter(id, &con.getOutput(), con.getVersion()),
+    ChannelAdapter(),
     connection(con),
     currentDeliveryTag(1),
     prefetchSize(0),
@@ -70,6 +70,7 @@ Channel::Channel(
     flowActive(true),
     adapter(new BrokerAdapter(*this, con, con.broker))
 {
+    init(id, con.getOutput(), con.getVersion());
     outstanding.reset();
 }
 
