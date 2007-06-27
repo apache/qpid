@@ -32,6 +32,7 @@ namespace qpid {
         public:
             DeliverableMessage(Message::shared_ptr& msg);
             virtual void deliverTo(Queue::shared_ptr& queue);
+            Message& getMessage();
             virtual ~DeliverableMessage(){}
         };
     }

@@ -51,6 +51,8 @@ class FanOutExchange : public virtual Exchange {
 
     virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
+    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+
     virtual ~FanOutExchange();
 };
 

@@ -40,6 +40,7 @@ BrokerAdapter::BrokerAdapter(Channel& ch, Connection& c, Broker& b) :
     channelHandler(*this),
     connectionHandler(*this),
     exchangeHandler(*this),
+    bindingHandler(*this),
     messageHandler(*this),
     queueHandler(*this),
     txHandler(*this),
@@ -159,6 +160,49 @@ void BrokerAdapter::ExchangeHandlerImpl::delete_(const MethodContext& context, u
     broker.getExchanges().destroy(name);
     if(!nowait) client.deleteOk(context.getRequestId());
 } 
+
+void BrokerAdapter::ExchangeHandlerImpl::query(const MethodContext& context, u_int16_t /*ticket*/, const string& name)
+{
+    try {
+        Exchange::shared_ptr exchange(broker.getExchanges().get(name));
+        client.queryOk(exchange->getType(), exchange->isDurable(), false, exchange->getArgs(), context.getRequestId());
+    } catch (const ChannelException& e) {
+        client.queryOk("", false, true, FieldTable(), context.getRequestId());        
+    }
+}
+
+void BrokerAdapter::BindingHandlerImpl::query(const framing::MethodContext& context,
+                                               u_int16_t /*ticket*/,
+                                               const std::string& exchangeName,
+                                               const std::string& queueName,
+                                               const std::string& key,
+                                               const framing::FieldTable& args)
+{
+    Exchange::shared_ptr exchange;
+    try {
+        exchange = broker.getExchanges().get(exchangeName);
+    } catch (const ChannelException&) {}
+
+    Queue::shared_ptr queue;
+    if (!queueName.empty()) {
+        queue = broker.getQueues().find(queueName);
+    }
+
+    if (!exchange) {
+        client.queryOk(true, false, false, false, false, context.getRequestId());
+    } else if (!queueName.empty() && !queue) {
+        client.queryOk(false, true, false, false, false, context.getRequestId());
+    } else if (exchange->isBound(queue, key.empty() ? 0 : &key, args.count() > 0 ? &args : &args)) {
+            client.queryOk(false, false, false, false, false, context.getRequestId());
+    } else {
+        //need to test each specified option individually
+        bool queueMatched = queueName.empty() || exchange->isBound(queue, 0, 0);
+        bool keyMatched = key.empty() || exchange->isBound(Queue::shared_ptr(), &key, 0);
+        bool argsMatched = args.count() == 0 || exchange->isBound(Queue::shared_ptr(), 0, &args);
+
+        client.queryOk(false, false, !queueMatched, !keyMatched, !argsMatched, context.getRequestId());
+    }
+}
 
 void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, uint16_t /*ticket*/, const string& name, 
                                               bool passive, bool durable, bool exclusive, 

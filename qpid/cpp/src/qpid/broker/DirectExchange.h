@@ -32,7 +32,9 @@
 namespace qpid {
 namespace broker {
     class DirectExchange : public virtual Exchange{
-        std::map<string, std::vector<Queue::shared_ptr> > bindings;
+        typedef std::vector<Queue::shared_ptr> Queues;
+        typedef std::map<string, Queues > Bindings;
+        Bindings bindings;
         qpid::sys::Mutex lock;
 
     public:
@@ -49,6 +51,8 @@ namespace broker {
         virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
         virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
+
+        virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
 
         virtual ~DirectExchange();
     };

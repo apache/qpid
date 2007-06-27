@@ -42,6 +42,7 @@ namespace qpid {
     namespace broker {
         class MessageStore;
         class QueueRegistry;
+        class Exchange;
 
         /**
          * Thrown when exclusive access would be violated.
@@ -74,6 +75,7 @@ namespace qpid {
             framing::FieldTable settings;
             std::auto_ptr<QueuePolicy> policy;            
             QueueBindings bindings;
+            boost::shared_ptr<Exchange> alternateExchange;
 
             void pop();
             void push(Message::shared_ptr& msg);
@@ -141,6 +143,9 @@ namespace qpid {
             Message::shared_ptr dequeue();
 
             const QueuePolicy* const getPolicy();
+
+            void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
+
 
             //PersistableQueue support:
             uint64_t getPersistenceId() const;
