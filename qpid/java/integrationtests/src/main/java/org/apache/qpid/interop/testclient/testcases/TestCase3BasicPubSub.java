@@ -202,6 +202,11 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
         }
     }
 
+    public void terminate() throws JMSException, InterruptedException
+    {
+        //todo
+    }
+
     /**
      * Gets a report on the actions performed by the test case in its assigned role.
      *
