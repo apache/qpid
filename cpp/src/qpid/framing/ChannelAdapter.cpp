@@ -19,6 +19,7 @@
 
 #include "ChannelAdapter.h"
 #include "AMQFrame.h"
+#include "FrameHandler.h"
 #include "qpid/Exception.h"
 
 using boost::format;
@@ -26,13 +27,21 @@ using boost::format;
 namespace qpid {
 namespace framing {
 
-void ChannelAdapter::init(
-    ChannelId i, OutputHandler& o, ProtocolVersion v)
+/** Framehandler that feeds into the channel. */
+struct ChannelAdapter::ChannelAdapterHandler : public FrameHandler {
+    ChannelAdapterHandler(ChannelAdapter& channel_) : channel(channel_) {}
+    void handle(AMQFrame& frame) { channel.handleBody(frame.getBody()); }
+    ChannelAdapter& channel;
+};
+
+void ChannelAdapter::init(ChannelId i, OutputHandler& out, ProtocolVersion v)
 {
     assertChannelNotOpen();
     id = i;
-    out = &o;
     version = v;
+
+    handlers.in = make_shared_ptr(new ChannelAdapterHandler(*this));
+    handlers.out= make_shared_ptr(new OutputHandlerFrameHandler(out));
 }
 
 RequestId ChannelAdapter::send(
@@ -58,7 +67,8 @@ RequestId ChannelAdapter::send(
       }
         // No action required for other body types.
     }
-    out->send(new AMQFrame(getVersion(), getId(), body));
+    AMQFrame frame(getVersion(), getId(), body);
+    handlers.out->handle(frame);
     return requestId;
 }
 

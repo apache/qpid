@@ -22,6 +22,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/QpidError.h"
 #include "qpid/sys/Time.h"
+#include "qpid/framing/AMQFrame.h"
 #include "Connector.h"
 
 namespace qpid {
@@ -91,11 +92,9 @@ OutputHandler* Connector::getOutputHandler(){
     return this; 
 }
 
-void Connector::send(AMQFrame* f){
-    std::auto_ptr<AMQFrame> frame(f);
-    AMQBody::shared_ptr body = frame->getBody();
-    writeBlock(frame.get());
-    QPID_LOG(trace, "SENT: " << *frame);
+void Connector::send(AMQFrame& frame){
+    writeBlock(&frame);
+    QPID_LOG(trace, "SENT: " << frame);
 }
 
 void Connector::writeBlock(AMQDataBlock* data){
@@ -185,7 +184,7 @@ void Connector::run(){
 		AMQFrame frame(version);
 		while(frame.decode(inbuf)){
                     QPID_LOG(trace, "RECV: " << frame);
-		    input->received(&frame);
+		    input->received(frame);
 		}
                 //need to compact buffer to preserve any 'extra' data
                 inbuf.compact();

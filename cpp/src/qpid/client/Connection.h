@@ -159,8 +159,8 @@ class Connection : public ConnectionForChannel
 
 
     // TODO aconway 2007-01-26: can these be private?
-    void send(framing::AMQFrame*);
-    void received(framing::AMQFrame*);
+    void send(framing::AMQFrame&);
+    void received(framing::AMQFrame&);
     void idleOut();
     void idleIn();
     void shutdown();

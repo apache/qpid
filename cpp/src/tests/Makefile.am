@@ -25,10 +25,6 @@ unit_progs+=Url
 Url_SOURCES=Url.cpp test_tools.h
 Url_LDADD=-lboost_unit_test_framework $(lib_common) 
 
-unit_progs+=Handler
-Handler_SOURCES=Handler.cpp test_tools.h
-Handler_LDADD=-lboost_unit_test_framework $(lib_common) 
-
 include cluster.mk
 
 # NB: CppUnit test libraries below will be migrated to boost test programs.

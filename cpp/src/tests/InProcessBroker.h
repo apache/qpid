@@ -48,15 +48,15 @@ class InProcessBroker : public client::Connector {
 
     /** A frame tagged with the sender */
     struct TaggedFrame {
-        TaggedFrame(Sender e, framing::AMQFrame* f) : frame(f), sender(e) {}
+        TaggedFrame(Sender e, framing::AMQFrame& f) : frame(f), sender(e) {}
         bool fromBroker() const { return sender == BROKER; }
         bool fromClient() const { return sender == CLIENT; }
 
         template <class MethodType>
         MethodType* asMethod() {
-            return dynamic_cast<MethodType*>(frame->getBody().get());
+            return dynamic_cast<MethodType*>(frame.getBody().get());
         }
-        shared_ptr<framing::AMQFrame> frame;
+        framing::AMQFrame frame;
         Sender sender;
     };
     
@@ -85,7 +85,7 @@ class InProcessBroker : public client::Connector {
     }
 
     /** Called by client to send a frame */
-    void send(framing::AMQFrame* frame) {
+    void send(framing::AMQFrame& frame) {
         clientOut.send(frame);
     }
 
@@ -100,7 +100,7 @@ class InProcessBroker : public client::Connector {
             framing::InputHandler* ih=0
         ) : sender(sender_), conversation(conversation_), in(ih) {}
 
-        void send(framing::AMQFrame* frame) {
+        void send(framing::AMQFrame& frame) {
             conversation.push_back(TaggedFrame(sender, frame));
             in->received(frame);
         }
@@ -122,7 +122,7 @@ class InProcessBroker : public client::Connector {
 std::ostream& operator<<(
     std::ostream& out, const InProcessBroker::TaggedFrame& tf)
 {
-    return out << (tf.fromBroker()? "BROKER: ":"CLIENT: ") << *tf.frame;
+    return out << (tf.fromBroker()? "BROKER: ":"CLIENT: ") << tf.frame;
 }
 
 std::ostream& operator<<(

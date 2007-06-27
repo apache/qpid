@@ -133,25 +133,22 @@ void Connection::erase(ChannelId id) {
     channels.erase(id);
 }
 
-void Connection::received(AMQFrame* frame){
-    // FIXME aconway 2007-01-25: Mutex 
-    ChannelId id = frame->getChannel();
+void Connection::received(AMQFrame& frame){
+    ChannelId id = frame.getChannel();
     Channel* channel = channels[id];
-    // FIXME aconway 2007-01-26: Exception thrown here is hanging the
-    // client. Need to review use of exceptions.
     if (channel == 0)
         THROW_QPID_ERROR(
             PROTOCOL_ERROR+504,
             (boost::format("Invalid channel number %g") % id).str());
     try{
-        channel->handleBody(frame->getBody());
+        channel->getHandlers().in->handle(frame);
     }catch(const qpid::QpidError& e){
         channelException(
-            *channel, dynamic_cast<AMQMethodBody*>(frame->getBody().get()), e);
+            *channel, dynamic_cast<AMQMethodBody*>(frame.getBody().get()), e);
     }
 }
 
-void Connection::send(AMQFrame* frame) {
+void Connection::send(AMQFrame& frame) {
     out->send(frame);
 }
 
@@ -172,7 +169,8 @@ void Connection::idleIn(){
 }
 
 void Connection::idleOut(){
-    out->send(new AMQFrame(version, 0, new AMQHeartbeatBody()));
+    AMQFrame frame(version, 0, new AMQHeartbeatBody());
+    out->send(frame);
 }
 
 }} // namespace qpid::client

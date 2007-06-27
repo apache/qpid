@@ -1,3 +1,6 @@
+
+
+
 #ifndef _ChannelAdapter_
 #define _ChannelAdapter_
 
@@ -28,39 +31,38 @@
 #include "Responder.h"
 #include "Correlator.h"
 #include "amqp_types.h"
+#include "FrameHandler.h"
 
 namespace qpid {
 namespace framing {
 
 class MethodContext;
 
-// FIXME aconway 2007-02-20: Rename as ChannelBase or just Channel.
-
 /**
  * Base class for client and broker channels.
  *
- * - receives frame bodies from the network.
- * - Updates request/response data.
- * - Dispatches requests with a MethodContext for responses.
+ * Provides in/out handler chains containing channel handlers.
+ * Chains may be modified by ChannelUpdaters registered with the broker.
+ * 
+ * The handlers provided by the ChannelAdapter update request/response data.
  *
- * send()
- * - Updates request/resposne ID data.
- * - Forwards frame to the peer.
+ * send() constructs a frame, updates request/resposne ID and forwards it
+ * to the out() chain.
  *
  * Thread safety: OBJECT UNSAFE. Instances must not be called
  * concurrently. AMQP defines channels to be serialized.
  */
-class ChannelAdapter : public BodyHandler {
+class ChannelAdapter : private BodyHandler {
   public:
     /**
      *@param output Processed frames are forwarded to this handler.
      */
-    ChannelAdapter(ChannelId id_=0, OutputHandler* out_=0,
-                   ProtocolVersion ver=ProtocolVersion())
-        : id(id_), out(out_), version(ver)  {}
+    ChannelAdapter() : id(0) {}
 
     /** Initialize the channel adapter. */
     void init(ChannelId, OutputHandler&, ProtocolVersion);
+
+    FrameHandler::Chains& getHandlers() { return handlers; }
 
     ChannelId getId() const { return id; }
     ProtocolVersion getVersion() const { return version; }
@@ -79,10 +81,6 @@ class ChannelAdapter : public BodyHandler {
     /**@deprecated Use make_shared_ptr with the other send() override */
     RequestId send(AMQBody* body) { return send(AMQBody::shared_ptr(body)); }
 
-    void handleMethod(shared_ptr<AMQMethodBody>);
-    void handleRequest(shared_ptr<AMQRequestBody>);
-    void handleResponse(shared_ptr<AMQResponseBody>);
-
     virtual bool isOpen() const = 0;
     
   protected:
@@ -99,12 +97,19 @@ class ChannelAdapter : public BodyHandler {
     RequestId getNextSendRequestId() { return requester.getNextId(); }
 
   private:
+    class ChannelAdapterHandler;
+  friend class ChannelAdapterHandler;
+    
+    void handleMethod(shared_ptr<AMQMethodBody>);
+    void handleRequest(shared_ptr<AMQRequestBody>);
+    void handleResponse(shared_ptr<AMQResponseBody>);
+
     ChannelId id;
-    OutputHandler* out;
     ProtocolVersion version;
     Requester requester;
     Responder responder;
     Correlator correlator;
+    FrameHandler::Chains handlers;
 };
 
 }}

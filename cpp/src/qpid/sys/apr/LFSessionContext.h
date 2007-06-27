@@ -28,6 +28,7 @@
 #include <apr_time.h>
 
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Mutex.h"
@@ -55,7 +56,7 @@ class LFSessionContext : public virtual qpid::sys::ConnectionOutputHandler
 
     apr_pollfd_t fd;
 
-    std::queue<qpid::framing::AMQFrame*> framesToWrite;
+    std::queue<qpid::framing::AMQFrame> framesToWrite;
     qpid::sys::Mutex writeLock;
         
     bool processing;
@@ -66,7 +67,7 @@ class LFSessionContext : public virtual qpid::sys::ConnectionOutputHandler
                      LFProcessor* const processor, 
                      bool debug = false);
     virtual ~LFSessionContext();
-    virtual void send(qpid::framing::AMQFrame* frame);
+    virtual void send(framing::AMQFrame& frame);
     virtual void close();        
     void read();
     void write();

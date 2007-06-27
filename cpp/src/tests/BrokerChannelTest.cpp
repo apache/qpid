@@ -31,7 +31,7 @@
 #include "MockChannel.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/framing/ProtocolInitiation.h"
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <vector>
 
 using namespace boost;
 using namespace qpid::broker;
@@ -41,9 +41,9 @@ using std::string;
 using std::queue;
 
 struct MockHandler : ConnectionOutputHandler{
-    boost::ptr_vector<AMQFrame> frames; 
+    std::vector<AMQFrame> frames; 
 
-    void send(AMQFrame* frame){ frames.push_back(frame); }
+    void send(AMQFrame& frame){ frames.push_back(frame); }
 
     void close() {};
 };
