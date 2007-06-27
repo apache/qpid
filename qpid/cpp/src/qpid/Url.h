@@ -30,19 +30,19 @@ namespace qpid {
 
 /** TCP address of a broker - host:port */
 struct TcpAddress {
-    static const uint16_t defaultPort=5672;
+    static const uint16_t DEFAULT_PORT=5672;
     TcpAddress(const std::string& host_=std::string(),
-               uint16_t port_=defaultPort)
+               uint16_t port_=DEFAULT_PORT)
         : host(host_), port(port_) {}
     std::string host;
     uint16_t port;
 };
 
-bool operator==(const TcpAddress& x, const TcpAddress& y) {
+inline bool operator==(const TcpAddress& x, const TcpAddress& y) {
     return y.host==x.host && y.port == x.port;
 }
 
-std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
+inline std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
     return os << "tcp:" << a.host << ":" << a.port;
 }
 

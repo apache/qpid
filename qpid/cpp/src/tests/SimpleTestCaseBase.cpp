@@ -70,7 +70,7 @@ void SimpleTestCaseBase::Sender::start(){
 SimpleTestCaseBase::Worker::Worker(TestOptions& options, const int _messages) : 
     connection(options.trace), messages(_messages), count(0)
 {
-    connection.open(options.broker, options.port);
+    connection.open(options.host, options.port);
     connection.openChannel(channel);
 }
             

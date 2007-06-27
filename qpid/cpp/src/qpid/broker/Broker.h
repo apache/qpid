@@ -23,6 +23,7 @@
  */
 
 #include "ConnectionFactory.h"
+#include "qpid/Url.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Acceptor.h"
 #include "qpid/SharedObject.h"
@@ -35,7 +36,7 @@
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "QueueRegistry.h"
-#include "qpid/CommonOptions.h"
+#include "qpid/Options.h"
 
 namespace qpid { 
 namespace broker {
@@ -46,9 +47,10 @@ class Broker : public sys::Runnable,
                public SharedObject<Broker>
 {
   public:
-    struct Options : public CommonOptions {
-        Options();
-        void addTo(po::options_description&);
+    struct Options : public qpid::Options {
+        Options(const std::string& name="Broker Options");
+        
+        uint16_t port;
         int workerThreads;
         int maxConnections;
         int connectionBacklog;
@@ -62,7 +64,7 @@ class Broker : public sys::Runnable,
      * Create a broker.
      * @param port Port to listen on or 0 to pick a port dynamically.
      */
-    static shared_ptr create(int16_t port = CommonOptions::DEFAULT_PORT);
+    static shared_ptr create(int16_t port = TcpAddress::DEFAULT_PORT);
 
     /**
      * Create a broker with the options in config.

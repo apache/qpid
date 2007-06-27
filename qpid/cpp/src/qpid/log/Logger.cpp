@@ -188,8 +188,11 @@ void Logger::remove(Statement& s) {
     statements.erase(&s);
 }
 
-void Logger::configure(const Options& o, const std::string& prog)
+void Logger::configure(const Options& opts, const std::string& prog)
 {
+    Options o(opts);
+    if (o.trace)
+        o.selectors.push_back("trace+");
     {
         ScopedLock l(lock);
         syslogName=prog;
