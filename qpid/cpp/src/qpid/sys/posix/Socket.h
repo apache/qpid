@@ -63,7 +63,7 @@ class Socket
     int listen(int port = 0, int backlog = 10);
 
     /** Get file descriptor */
-    int fd(); 
+    int fd() const; 
     
   private:
     void init() const;
