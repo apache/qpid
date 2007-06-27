@@ -18,13 +18,7 @@
  * under the License.
  *
  */
-#include <iostream>
-
-#include <boost/assert.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/ptr_container/ptr_deque.hpp>
-#include <boost/bind.hpp>
-#include <boost/scoped_ptr.hpp>
+#include "EventChannelConnection.h"
 
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionInputHandler.h"
@@ -35,7 +29,16 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/Exception.h"
 
-#include "EventChannelConnection.h"
+#include <sys/socket.h>
+#include <netdb.h>
+
+#include <boost/assert.hpp>
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/ptr_container/ptr_deque.hpp>
+#include <boost/bind.hpp>
+#include <boost/scoped_ptr.hpp>
+
+#include <iostream>
 
 namespace qpid {
 namespace sys {
@@ -100,11 +103,19 @@ EventChannelAcceptor::EventChannelAcceptor(
 uint16_t EventChannelAcceptor::getPort() const {
     return port;                // Immutable no need for lock.
 }
+
+std::string EventChannelAcceptor::getHost() const {
+    ::sockaddr_storage name; // big enough for any socket address    
+    ::socklen_t namelen = sizeof(name);
+    if (::getsockname(listener.fd(), (::sockaddr*)&name, &namelen) < 0)
+        throw QPID_POSIX_ERROR(errno);
     
-uint16_t EventChannelAcceptor::getPort() const {
-    return port;                // Immutable no need for lock.
+    char dispName[NI_MAXHOST];
+    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName), 0, 0, NI_NUMERICHOST) != 0)
+    	throw QPID_POSIX_ERROR(rc);
+    return dispName;
 }
-    
+  
 void EventChannelAcceptor::run(ConnectionInputHandlerFactory* f) {
     {
         Mutex::ScopedLock l(lock);
