@@ -20,17 +20,8 @@
  */
 package org.apache.qpid.server;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.log4j.Logger;
+
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -51,6 +42,16 @@ import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.queue.Subscription;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.*;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQChannel
 {
@@ -208,7 +209,8 @@ public class AMQChannel
         _currentMessage.setPublisher(publisher);
     }
 
-    public void publishContentHeader(ContentHeaderBody contentHeaderBody) throws AMQException
+    public void publishContentHeader(ContentHeaderBody contentHeaderBody, AMQProtocolSession protocolSession)
+        throws AMQException
     {
         if (_currentMessage == null)
         {
@@ -230,6 +232,7 @@ public class AMQChannel
             // check and deliver if header says body length is zero
             if (contentHeaderBody.bodySize == 0)
             {
+                _txnContext.messageProcessed(protocolSession);
                 _currentMessage = null;
             }
         }
