@@ -71,10 +71,10 @@ void ExchangeRegistry::destroy(const string& name){
 
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){
     Mutex::ScopedLock locker(lock);
-    Exchange::shared_ptr exchange =exchanges[name];
-    if (!exchange) 
+    ExchangeMap::iterator i =  exchanges.find(name);
+    if (i == exchanges.end()) 
         throw ChannelException(404, "Exchange not found:" + name);
-    return exchange;
+    return i->second;
 }
 
 namespace 
