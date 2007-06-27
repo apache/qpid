@@ -1,4 +1,3 @@
-/* Copyright Rupert Smith, 2005 to 2006, all rights reserved. */
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,15 +20,15 @@
  */
 package org.apache.qpid.interop.coordinator;
 
-import java.util.Map;
-
-import javax.jms.*;
-
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.util.ConversationFactory;
+
+import javax.jms.*;
+
+import java.util.Map;
 
 /**
  * A CoordinatingTestCase is a JUnit test case extension that knows how to coordinate test clients that take part in a

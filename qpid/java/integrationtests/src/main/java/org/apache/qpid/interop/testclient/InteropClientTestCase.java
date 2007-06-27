@@ -79,10 +79,17 @@ public interface InteropClientTestCase extends MessageListener
 
     /**
      * Performs the test case actions.
-     *
+     * return from here when you have finished the test.. this will signal the controller that the test has ended. 
      * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.
      */
     public void start() throws JMSException;
+
+    /**
+     * Gives notice of termination of the test case actions.
+     *
+     * @throws JMSException Any JMSException resulting from allowed to fall through.
+     */
+    public void terminate() throws JMSException, InterruptedException;
 
     /**
      * Gets a report on the actions performed by the test case in its assigned role.
