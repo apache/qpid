@@ -22,7 +22,7 @@
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/memory.h"
-#include "qpid/CommonOptions.h"
+#include "qpid/Options.h"
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/format.hpp>
 #include <exception>
@@ -255,14 +255,6 @@ Statement statement(
 }
 
 
-struct TestOptions : public Options {
-    TestOptions(int argc, char** argv) {
-        qpid::po::options_description desc;
-        addTo(desc);
-        qpid::parseOptions(desc, argc, argv);
-    }
-};
-
 #define ARGC(argv) (sizeof(argv)/sizeof(char*))
 
 BOOST_AUTO_TEST_CASE(testOptionsParse) {
@@ -278,7 +270,8 @@ BOOST_AUTO_TEST_CASE(testOptionsParse) {
         "--log.thread", "true",
         "--log.function", "YES"
     };
-    TestOptions opts(ARGC(argv), argv);
+    qpid::log::Options opts;
+    opts.parse(ARGC(argv), argv);
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
     expect=list_of("x")("y");
@@ -306,7 +299,8 @@ BOOST_AUTO_TEST_CASE(testSelectorFromOptions) {
         "--log.enable", "debug:bar",
         "--log.enable", "info"
     };
-    TestOptions opts(ARGC(argv), argv);
+    qpid::log::Options opts;
+    opts.parse(ARGC(argv), argv);
     vector<string> expect=list_of("error+:foo")("debug:bar")("info");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
     Selector s(opts);
@@ -319,36 +313,35 @@ BOOST_AUTO_TEST_CASE(testSelectorFromOptions) {
 
 BOOST_AUTO_TEST_CASE(testOptionsFormat) {
     Logger& l = clearLogger();
-    Options opts;
-    BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
-    char* argv[]={
-        0,
-        "--log.time", "no", 
-        "--log.level", "no",
-        "--log.source", "1",
-        "--log.thread",  "1"
-    };
-    qpid::po::options_description desc;
-    opts.addTo(desc);
-    qpid::parseOptions(desc, ARGC(argv), argv);
-    BOOST_CHECK_EQUAL(
-        Logger::FILE|Logger::LINE|Logger::THREAD, l.format(opts));
-    opts = Options();           // Clear.
-    char* argv2[]={
-        0,
-        "--log.level", "no",
-        "--log.thread", "true",
-        "--log.function", "YES",
-        "--log.time", "YES"
-    };
-    qpid::po::options_description desc2;
-    opts.addTo(desc2);
-    qpid::parseOptions(desc2, ARGC(argv2), argv2);
-    BOOST_CHECK_EQUAL(
-        Logger::THREAD|Logger::FUNCTION|Logger::TIME,
-        l.format(opts));
+    {
+        Options opts;
+        BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
+        char* argv[]={
+            0,
+            "--log.time", "no", 
+            "--log.level", "no",
+            "--log.source", "1",
+            "--log.thread",  "1"
+        };
+        opts.parse(ARGC(argv), argv);
+        BOOST_CHECK_EQUAL(
+            Logger::FILE|Logger::LINE|Logger::THREAD, l.format(opts));
+    }
+    {
+        Options opts;           // Clear.
+        char* argv[]={
+            0,
+            "--log.level", "no",
+            "--log.thread", "true",
+            "--log.function", "YES",
+            "--log.time", "YES"
+        };
+        opts.parse(ARGC(argv), argv);
+        BOOST_CHECK_EQUAL(
+            Logger::THREAD|Logger::FUNCTION|Logger::TIME,
+            l.format(opts));
+    }
 }
-
 
 BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     Logger& l = clearLogger();
@@ -360,9 +353,7 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
         "--log.output", "logging.tmp",
         "--log.enable", "critical"
     };
-    qpid::po::options_description desc;
-    opts.addTo(desc);
-    qpid::parseOptions(desc, ARGC(argv), argv);
+    opts.parse(ARGC(argv), argv);
     l.configure(opts, "test");
     QPID_LOG(critical, "foo"); int srcline=__LINE__;
     ifstream log("logging.tmp");

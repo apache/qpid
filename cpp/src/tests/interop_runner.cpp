@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpid/CommonOptions.h"
+#include "qpid/Options.h"
 #include "qpid/Exception.h"
 #include "qpid/QpidError.h"
 #include "qpid/client/ClientChannel.h"
@@ -47,13 +47,13 @@ using namespace qpid::sys;
 using qpid::TestCase;
 using qpid::TestOptions;
 using qpid::framing::FieldTable;
-using std::string;
+using namespace std;
 
 class DummyRun : public TestCase
 {
 public:
     DummyRun() {}
-    void assign(const std::string&, FieldTable&, TestOptions&) {}
+    void assign(const string&, FieldTable&, TestOptions&) {}
     void start() {}
     void stop() {}
     void report(qpid::client::Message&) {}
@@ -64,7 +64,7 @@ string parse_next_word(const string& input, const string& delims, string::size_t
 /**
  */
 class Listener : public MessageListener, private Runnable{    
-    typedef boost::ptr_map<std::string, TestCase> TestMap;
+    typedef boost::ptr_map<string, TestCase> TestMap;
 
     Channel& channel;
     TestOptions& options;
@@ -72,7 +72,7 @@ class Listener : public MessageListener, private Runnable{
     const string name;
     const string topic;
     TestMap::iterator test;
-    std::auto_ptr<Thread> runner;
+    auto_ptr<Thread> runner;
     string reportTo;
     string reportCorrelator;    
 
@@ -88,44 +88,41 @@ public:
     Listener(Channel& channel, TestOptions& options);
     void received(Message& msg);
     void bindAndConsume();
-    void registerTest(std::string name, TestCase* test);
+    void registerTest(string name, TestCase* test);
 };
 
-/**
- */
-int main(int argc, char** argv){
-    TestOptions options;
-    options.parse(argc, argv);
-
-    if (options.help) {
-        options.usage();
-    } else {
-        try{
+int main(int argc, char** argv) {
+    try {
+        TestOptions options;
+        options.parse(argc, argv);
+        if (options.help) 
+            cout << options;
+        else {
             Connection connection(options.trace);
-            connection.open(options.broker, options.port, "guest", "guest", options.virtualhost);
+            connection.open(options.host, options.port, "guest", "guest", options.virtualhost);
             
-            Channel channel;
-            connection.openChannel(channel);
+                Channel channel;
+                connection.openChannel(channel);
             
-            Listener listener(channel, options);
-            listener.registerTest("TC1_DummyRun", new DummyRun());
-            listener.registerTest("TC2_BasicP2P", new qpid::BasicP2PTest());
-            listener.registerTest("TC3_BasicPubSub", new qpid::BasicPubSubTest());
+                Listener listener(channel, options);
+                listener.registerTest("TC1_DummyRun", new DummyRun());
+                listener.registerTest("TC2_BasicP2P", new qpid::BasicP2PTest());
+                listener.registerTest("TC3_BasicPubSub", new qpid::BasicPubSubTest());
 
-            listener.bindAndConsume();
+                listener.bindAndConsume();
             
-            channel.run();
-            connection.close();
-        } catch(const std::exception& error) {
-            std::cout << error.what() << std::endl;
+                channel.run();
+                connection.close();
         }
+    } catch(const exception& error) {
+        cout << error.what() << endl << "Type " << argv[0] << " --help for help" << endl;
     }
 }
 
 Listener::Listener(Channel& _channel, TestOptions& _options) : channel(_channel), options(_options), name(options.clientid), topic("iop.control." + name)
 {}
 
-void Listener::registerTest(std::string name, TestCase* test)
+void Listener::registerTest(string name, TestCase* test)
 {
     tests.insert(name, test);
 }
@@ -139,7 +136,7 @@ void Listener::bindAndConsume()
     channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, control, "iop.control", bindArgs);
     channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, control, topic, bindArgs);
     
-    std::string tag;
+    string tag;
     channel.consume(control, tag, this);
 }
 
@@ -178,14 +175,14 @@ void Listener::sendResponse(Message& response, string replyTo)
 
 void Listener::received(Message& message)
 {
-    std::string type(message.getHeaders().getString("CONTROL_TYPE"));
+    string type(message.getHeaders().getString("CONTROL_TYPE"));
 
     if (type == "INVITE") {
-        std::string name(message.getHeaders().getString("TEST_NAME"));
+        string name(message.getHeaders().getString("TEST_NAME"));
         if (name.empty() || invite(name)) {
             sendSimpleResponse("ENLIST", message);
         } else {
-            std::cout << "Can't take part in '" << name << "'" << std::endl;
+            cout << "Can't take part in '" << name << "'" << endl;
         }
     } else if (type == "ASSIGN_ROLE") {        
         test->assign(message.getHeaders().getString("ROLE"), message.getHeaders(), options);
@@ -193,7 +190,7 @@ void Listener::received(Message& message)
     } else if (type == "START") {        
         reportTo = message.getReplyTo();
         reportCorrelator = message.getCorrelationId();
-        runner = std::auto_ptr<Thread>(new Thread(this));
+        runner = auto_ptr<Thread>(new Thread(this));
     } else if (type == "STATUS_REQUEST") {
         reportTo = message.getReplyTo();
         reportCorrelator = message.getCorrelationId();
@@ -203,7 +200,7 @@ void Listener::received(Message& message)
         if (test != tests.end()) test->stop();
         shutdown();
     } else {        
-        std::cerr <<"ERROR!: Received unknown control message: " << type << std::endl;
+        cerr <<"ERROR!: Received unknown control message: " << type << endl;
         shutdown();
     }
 }

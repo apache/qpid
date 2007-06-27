@@ -28,7 +28,7 @@ subscribe() {
 }
 
 publish() {
-    ./topic_publisher -messages $MESSAGES -batches $BATCHES -subscribers $SUBSCRIBERS
+    ./topic_publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS
 }
 
 for ((i=$SUBSCRIBERS ; i--; )); do
