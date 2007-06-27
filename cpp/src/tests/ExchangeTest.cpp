@@ -19,10 +19,12 @@
  *
  */
 
-#include "qpid/broker/DeliverableMessage.h"
-#include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/BrokerExchange.h"
 #include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/DeliverableMessage.h"
+#include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/TopicExchange.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
@@ -36,6 +38,7 @@ class ExchangeTest : public CppUnit::TestCase
 {
     CPPUNIT_TEST_SUITE(ExchangeTest);
     CPPUNIT_TEST(testMe);
+    CPPUNIT_TEST(testIsBound);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -65,6 +68,95 @@ class ExchangeTest : public CppUnit::TestCase
         topic.route(msg, "abc", 0);
         direct.route(msg, "abc", 0);
 
+    }
+
+    void testIsBound()
+    {
+        Queue::shared_ptr a(new Queue("a", true));
+        Queue::shared_ptr b(new Queue("b", true));
+        Queue::shared_ptr c(new Queue("c", true));
+        Queue::shared_ptr d(new Queue("d", true));
+        
+        string k1("abc");
+        string k2("def");
+        string k3("xyz");
+
+        FanOutExchange fanout("fanout");
+        fanout.bind(a, "", 0);
+        fanout.bind(b, "", 0);
+        fanout.bind(c, "", 0);
+
+        CPPUNIT_ASSERT(fanout.isBound(a, 0, 0));
+        CPPUNIT_ASSERT(fanout.isBound(b, 0, 0));
+        CPPUNIT_ASSERT(fanout.isBound(c, 0, 0));
+        CPPUNIT_ASSERT(!fanout.isBound(d, 0, 0));
+
+        DirectExchange direct("direct");
+        direct.bind(a, k1, 0);
+        direct.bind(a, k3, 0);
+        direct.bind(b, k2, 0);
+        direct.bind(c, k1, 0);
+
+        CPPUNIT_ASSERT(direct.isBound(a, 0, 0));
+        CPPUNIT_ASSERT(direct.isBound(a, &k1, 0));
+        CPPUNIT_ASSERT(direct.isBound(a, &k3, 0));
+        CPPUNIT_ASSERT(!direct.isBound(a, &k2, 0));
+        CPPUNIT_ASSERT(direct.isBound(b, 0, 0));
+        CPPUNIT_ASSERT(direct.isBound(b, &k2, 0));
+        CPPUNIT_ASSERT(direct.isBound(c, &k1, 0));
+        CPPUNIT_ASSERT(!direct.isBound(d, 0, 0));
+        CPPUNIT_ASSERT(!direct.isBound(d, &k1, 0));
+        CPPUNIT_ASSERT(!direct.isBound(d, &k2, 0));
+        CPPUNIT_ASSERT(!direct.isBound(d, &k3, 0));
+
+        TopicExchange topic("topic");
+        topic.bind(a, k1, 0);
+        topic.bind(a, k3, 0);
+        topic.bind(b, k2, 0);
+        topic.bind(c, k1, 0);
+
+        CPPUNIT_ASSERT(topic.isBound(a, 0, 0));
+        CPPUNIT_ASSERT(topic.isBound(a, &k1, 0));
+        CPPUNIT_ASSERT(topic.isBound(a, &k3, 0));
+        CPPUNIT_ASSERT(!topic.isBound(a, &k2, 0));
+        CPPUNIT_ASSERT(topic.isBound(b, 0, 0));
+        CPPUNIT_ASSERT(topic.isBound(b, &k2, 0));
+        CPPUNIT_ASSERT(topic.isBound(c, &k1, 0));
+        CPPUNIT_ASSERT(!topic.isBound(d, 0, 0));
+        CPPUNIT_ASSERT(!topic.isBound(d, &k1, 0));
+        CPPUNIT_ASSERT(!topic.isBound(d, &k2, 0));
+        CPPUNIT_ASSERT(!topic.isBound(d, &k3, 0));
+
+        HeadersExchange headers("headers");
+        FieldTable args1;
+        args1.setString("x-match", "all");
+        args1.setString("a", "A");
+        args1.setInt("b", 1);
+        FieldTable args2;
+        args2.setString("x-match", "any");
+        args2.setString("a", "A");
+        args2.setInt("b", 1);
+        FieldTable args3;
+        args3.setString("x-match", "any");
+        args3.setString("c", "C");
+        args3.setInt("b", 6);
+
+        headers.bind(a, "", &args1);
+        headers.bind(a, "", &args3);
+        headers.bind(b, "", &args2);
+        headers.bind(c, "", &args1);
+        
+        CPPUNIT_ASSERT(headers.isBound(a, 0, 0));
+        CPPUNIT_ASSERT(headers.isBound(a, 0, &args1));
+        CPPUNIT_ASSERT(headers.isBound(a, 0, &args3));
+        CPPUNIT_ASSERT(!headers.isBound(a, 0, &args2));
+        CPPUNIT_ASSERT(headers.isBound(b, 0, 0));
+        CPPUNIT_ASSERT(headers.isBound(b, 0, &args2));
+        CPPUNIT_ASSERT(headers.isBound(c, 0, &args1));
+        CPPUNIT_ASSERT(!headers.isBound(d, 0, 0));
+        CPPUNIT_ASSERT(!headers.isBound(d, 0, &args1));
+        CPPUNIT_ASSERT(!headers.isBound(d, 0, &args2));
+        CPPUNIT_ASSERT(!headers.isBound(d, 0, &args3));
     }
 };
     
