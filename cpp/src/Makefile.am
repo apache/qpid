@@ -217,7 +217,10 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TxAck.cpp \
   qpid/broker/TxBuffer.cpp \
-  qpid/broker/TxPublish.cpp
+  qpid/broker/TxPublish.cpp \
+  qpid/broker/Plugin.h \
+  qpid/broker/Plugin.cpp \
+  qpid/broker/ChannelInitializer.h
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
