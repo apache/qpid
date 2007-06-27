@@ -875,4 +875,169 @@
     </method> 
    </class>
 
+<!-- Some other 0-10 previews: -->
+
+  <class name="binding" handler="binding" index="130"
+    label="provides the ability to query bindings">
+    <doc>
+      This is a utility class for querying and exchange about its bindings to queues.
+    </doc>
+
+    <chassis name="server" implement="MUST" />
+    <chassis name="client" implement="MAY" />
+
+    <method name="query" synchronous="1" index="10"
+      label="request information about bindings to an exchange">
+      <doc>
+        This method is used to request information on the bindings to a particular exchange.  That
+        information is conveyed in a query-ok method.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+      <response name="query-ok" />
+
+      <field name="ticket" domain="access-ticket">
+        <rule name="validity" on-failure="access-refused">
+          <doc>
+            A valid ticket should be provided.
+          </doc>
+        </rule>
+      </field>
+
+      <field name="exchange" domain="shortstr" label="the exchange name">
+        <doc>
+           The name of the exchange for which binding information is being requested. If not
+           specified explicitly the default exchange is implied.
+        </doc>
+      </field>
+
+      <field name="queue" domain="shortstr" label="a queue name">
+        <doc>
+          If populated then determine whether the given queue is bound to the exchange.
+        </doc>
+      </field>
+
+      <field name="routing-key" domain="shortstr" label="a routing-key">
+        <doc>
+         If populated defines the routing key of the binding of interest, if not populated the
+         request will ignore the routing key on bindings when searching for a match.
+        </doc>
+      </field>
+
+      <field name="arguments" domain="table" label="a set of binding arguments">
+        <doc>
+          If populated defines the arguments of the binding of interest if not populated the request
+          will ignore the arguments on bindings when searching for a match
+        </doc>
+      </field>
+    </method>
+
+    <method name="query-ok" synchronous="1" index="11"
+      label="returns information about bindings to exchange">
+      <doc>
+        This method is used in response to a query and conveys information on the bindings to a
+        particular exchange.
+      </doc>
+
+      <chassis name="client" implement="MUST" />
+
+      <field name="exchange-not-found" domain="bit" label="indicate an unknown exchange">
+        <doc>
+           If set, the exchange for which information was requested is not known.
+        </doc>
+      </field>
+
+      <field name="queue-not-found" domain="bit" label="indicate an unknown queue">
+        <doc>
+           If set, the queue specified is not known.
+        </doc>
+      </field>
+
+      <field name="queue-not-matched" domain="bit" label="indicate no matching queue">
+        <doc>
+          A bit which if set indicates that no binding was found from the specified exchange to the
+          specified queue.
+        </doc>
+      </field>
+
+      <field name="key-not-matched" domain="bit" label="indicate no matching routing key">
+        <doc>
+          A bit which if set indicates that no binding was found from the specified exchange with
+          the specified routing key.
+        </doc>
+      </field>
+
+      <field name="args-not-matched" domain="bit" label="indicate no matching args">
+        <doc>
+          A bit which if set indicates that no binding was found from the specified exchange with
+          the specified arguments.
+        </doc>
+      </field>
+     </method>
+  </class>
+
+
+
+  <class name="exchange" handler="channel" index="40" label="work with exchanges">
+    <method name="query" synchronous="1" index="30" label="request information about an exchange">
+      <doc>
+        This method is used to request information on a particular exchange. That information is
+        conveyed by an query-ok method.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+      <response name="query-ok" />
+
+      <field name="ticket" domain="access-ticket">
+        <rule name="validity" on-failure="access-refused">
+          <doc>
+            A valid ticket should be provided.
+          </doc>
+        </rule>
+      </field>
+
+      <field name="name" domain="shortstr" label="the exchange name">
+        <doc>
+           The name of the exchange for which information is requested. If not specified explicitly
+           the default exchange is implied.
+        </doc>
+      </field>
+    </method>
+
+    <method name="query-ok" synchronous="1" index="31" label="return exchange information">
+      <doc>
+        This method is used in response to a query request and conveys information on a particular
+        exchange.
+      </doc>
+
+      <chassis name="client" implement="MUST" />
+
+      <field name="type" domain="shortstr" label="indicate the exchange type">
+        <doc>
+           The type of the exchange. Will be empty if the exchange is not found.
+        </doc>
+      </field>
+
+      <field name="durable" domain="bit" label="indicate the durability">
+        <doc>
+           The durability of the exchange, i.e. if set the exchange is durable. Will not be set if
+           the exchange is not found.
+        </doc>
+      </field>
+
+      <field name="not-found" domain="bit" label="indicate an unknown exchange">
+        <doc>
+           If set, the exchange for which information was requested is not known.
+        </doc>
+      </field>
+
+      <field name="arguments" domain="table" label="other unspecified exchange properties">
+        <doc>
+          A set of properties of the exchange whose syntax and semantics depends on the server
+          implementation. Will be empty if the exchange is not found.
+        </doc>
+      </field>
+    </method>
+  </class>
+
 </amqp>
