@@ -80,7 +80,7 @@ class Connection : public sys::ConnectionInputHandler,
     std::vector<Queue::shared_ptr> exclusiveQueues;
 
     // ConnectionInputHandler methods
-    void received(framing::AMQFrame* frame);
+    void received(framing::AMQFrame& frame);
     void initiated(const framing::ProtocolInitiation& header);
     void idleOut();
     void idleIn();

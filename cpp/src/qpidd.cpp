@@ -57,7 +57,7 @@ struct DaemonOptions : public qpid::Options {
 struct QpiddOptions : public qpid::Options {
     DaemonOptions daemon;
     Broker::Options broker;
-    log::Options log;
+    qpid::log::Options log;
     CommonOptions common;
     
     QpiddOptions() : qpid::Options("Options") {
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
 
     try {
         options.parse(argc, argv, options.common.config);
-        log::Logger::instance().configure(options.log, argv[0]);
+        qpid::log::Logger::instance().configure(options.log, argv[0]);
 
         // Options that just print information.
         if(options.common.help || options.common.version) {

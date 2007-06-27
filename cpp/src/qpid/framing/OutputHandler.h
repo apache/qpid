@@ -22,16 +22,31 @@
  *
  */
 #include <boost/noncopyable.hpp>
+#include "FrameHandler.h"
 
 namespace qpid {
 namespace framing {
-class AMQFrame;
 
 class OutputHandler : private boost::noncopyable {
   public:
     virtual ~OutputHandler() {}
-    virtual void send(AMQFrame* frame) = 0;
+    virtual void send(AMQFrame&) = 0;
 };
+
+/** OutputHandler that delegates to a FrameHandler */
+struct FrameHandlerOutputHandler : public OutputHandler {
+    FrameHandlerOutputHandler(shared_ptr<FrameHandler> h) : handler(h) {}
+    void received(AMQFrame& frame) { handler->handle(frame); }
+    FrameHandler::Chain handler;
+};
+
+/** FrameHandler that delegates to an OutputHandler */
+struct OutputHandlerFrameHandler : public FrameHandler {
+    OutputHandlerFrameHandler(OutputHandler& out_) : out(out_) {}
+    void handle(ParamType frame) { out.send(frame); }
+    OutputHandler& out;
+};
+
 
 }}
 

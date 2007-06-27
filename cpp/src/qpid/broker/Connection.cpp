@@ -66,8 +66,8 @@ Exchange::shared_ptr Connection::findExchange(const string& name){
 }
 
 
-void Connection::received(framing::AMQFrame* frame){
-    getChannel(frame->getChannel()).handleBody(frame->getBody());
+void Connection::received(framing::AMQFrame& frame){
+    getChannel((frame.getChannel())).getHandlers().in->handle(frame);
 }
 
 void Connection::close(

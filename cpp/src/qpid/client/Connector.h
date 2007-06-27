@@ -91,7 +91,7 @@ class Connector : public framing::OutputHandler,
     virtual void setTimeoutHandler(sys::TimeoutHandler* handler);
     virtual void setShutdownHandler(sys::ShutdownHandler* handler);
     virtual framing::OutputHandler* getOutputHandler();
-    virtual void send(framing::AMQFrame* frame);
+    virtual void send(framing::AMQFrame& frame);
     virtual void setReadTimeout(uint16_t timeout);
     virtual void setWriteTimeout(uint16_t timeout);
 };

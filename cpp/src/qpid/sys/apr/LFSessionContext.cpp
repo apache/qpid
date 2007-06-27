@@ -62,7 +62,7 @@ void LFSessionContext::read(){
         try{
             while(frame.decode(in)){
                 QPID_LOG(debug, "RECV: " << frame);
-                handler->received(&frame);
+                handler->received(frame);
             }
         }catch(const std::exception& e){
             QPID_LOG(error, e.what());
@@ -94,14 +94,12 @@ void LFSessionContext::write(){
             if(!framesToWrite.empty()){
                 out.clear();
                 bool encoded(false);
-                AMQFrame* frame = framesToWrite.front();
-                while(frame && out.available() >= frame->size()){
+                while(!framesToWrite.empty() && out.available() >= framesToWrite.front().size()){
+                    AMQFrame& frame = framesToWrite.front();
                     encoded = true;
-                    frame->encode(out);
-                    QPID_LOG(debug, "SENT: " << *frame);
-                    delete frame;
+                    frame.encode(out);
+                    QPID_LOG(debug, "SENT: " << frame);
                     framesToWrite.pop();
-                    frame = framesToWrite.empty() ? 0 : framesToWrite.front();
                 }
                 if(!encoded) THROW_QPID_ERROR(FRAMING_ERROR, "Could not write frame, too large for buffer.");
                 out.flip();
@@ -118,7 +116,7 @@ void LFSessionContext::write(){
     }
 }
 
-void LFSessionContext::send(AMQFrame* frame){
+void LFSessionContext::send(AMQFrame& frame){
     Mutex::ScopedLock l(writeLock);
     if(!closing){
         framesToWrite.push(frame);
