@@ -23,6 +23,8 @@
 
 #include "qpid/log/Statement.h"
 #include "BrokerQueue.h"
+#include "BrokerExchange.h"
+#include "DeliverableMessage.h"
 #include "MessageStore.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
@@ -233,6 +235,16 @@ void Queue::configure(const FieldTable& _settings)
 
 void Queue::destroy()
 {
+    if (alternateExchange.get()) {
+        Mutex::ScopedLock locker(lock);
+        while(!messages.empty()){
+            DeliverableMessage msg(messages.front());
+            alternateExchange->route(msg, msg.getMessage().getRoutingKey(),
+                                     &(msg.getMessage().getApplicationHeaders()));
+            pop();
+        }
+    }
+
     if (store) {
         store->destroy(*this);
     }
@@ -289,3 +301,8 @@ Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)
     return result.first;
 }
 
+
+void Queue::setAlternateExchange(boost::shared_ptr<Exchange> exchange)
+{
+    alternateExchange = exchange;
+}

@@ -69,6 +69,25 @@ void DirectExchange::route(Deliverable& msg, const string& routingKey, const Fie
     }
 }
 
+
+bool DirectExchange::isBound(Queue::shared_ptr queue, const string* const routingKey, const FieldTable* const)
+{
+    if (routingKey) {
+        Bindings::iterator i = bindings.find(*routingKey);
+        return i != bindings.end() && (!queue || find(i->second.begin(), i->second.end(), queue) != i->second.end());
+    } else if (!queue) {
+        //if no queue or routing key is specified, just report whether any bindings exist
+        return bindings.size() > 0;
+    } else {
+        for (Bindings::iterator i = bindings.begin(); i != bindings.end(); i++) {
+            if (find(i->second.begin(), i->second.end(), queue) != i->second.end()) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
 DirectExchange::~DirectExchange(){
 
 }
