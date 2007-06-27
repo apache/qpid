@@ -113,6 +113,7 @@ public class SustainedTestCoordinator extends CoordinatingTestCase3BasicPubSub i
         setPropertiesOnMessage(assignSender, testProperties);
         assignSender.setStringProperty("CONTROL_TYPE", "ASSIGN_ROLE");
         assignSender.setStringProperty("ROLE", "SENDER");
+        assignSender.setStringProperty("CLIENT_NAME", "Sustained_SENDER");
 
         senderConversation.send(senderControlTopic, assignSender);
 
@@ -170,6 +171,7 @@ public class SustainedTestCoordinator extends CoordinatingTestCase3BasicPubSub i
             setPropertiesOnMessage(assignReceiver, _testProperties);
             assignReceiver.setStringProperty("CONTROL_TYPE", "ASSIGN_ROLE");
             assignReceiver.setStringProperty("ROLE", "RECEIVER");
+            assignReceiver.setStringProperty("CLIENT_NAME", "Sustained_RECEIVER_" + receiver.clientName);
 
             receiverConversation.send(receiverControlTopic, assignReceiver);
 

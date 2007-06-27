@@ -169,7 +169,7 @@ public class DestNameExchange extends AbstractExchange
         if (queues == null || queues.isEmpty())
         {
             String msg = "Routing key " + routingKey + " is not known to " + this;
-            if (info.isMandatory())
+            if (info.isMandatory() || info.isImmediate())
             {
                 throw new NoRouteException(msg, payload, null);
             }
