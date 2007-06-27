@@ -337,7 +337,14 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             if ((message == null) || message.equals(""))
             {
-                message = "Unable to Connect";
+                if (message == null)
+                {
+                    message = "Unable to Connect";
+                }
+                else // can only be "" if getMessage() returned it therfore lastException != null
+                {
+                    message = "Unable to Connect:" + lastException.getClass();
+                }
             }
 
             AMQException e = new AMQConnectionFailureException(message, null);

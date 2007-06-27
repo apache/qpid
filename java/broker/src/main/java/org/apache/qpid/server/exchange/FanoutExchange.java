@@ -1,27 +1,36 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  *
  */
-
 package org.apache.qpid.server.exchange;
 
-import java.util.concurrent.CopyOnWriteArraySet;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -36,16 +45,7 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class FanoutExchange extends AbstractExchange
 {
@@ -63,7 +63,7 @@ public class FanoutExchange extends AbstractExchange
     private final class FanoutExchangeMBean extends ExchangeMBean
     {
         @MBeanConstructor("Creates an MBean for AMQ fanout exchange")
-        public FanoutExchangeMBean()  throws JMException
+        public FanoutExchangeMBean() throws JMException
         {
             super();
             _exchangeType = "fanout";
@@ -79,9 +79,7 @@ public class FanoutExchange extends AbstractExchange
             {
                 String queueName = queue.getName().toString();
 
-
-
-                Object[] bindingItemValues = {queueName, new String[] {queueName}};
+                Object[] bindingItemValues = { queueName, new String[] { queueName } };
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
@@ -98,7 +96,7 @@ public class FanoutExchange extends AbstractExchange
             }
 
             try
-            {                
+            {
                 queue.bind(new AMQShortString(binding), null, FanoutExchange.this);
             }
             catch (AMQException ex)
@@ -107,8 +105,7 @@ public class FanoutExchange extends AbstractExchange
             }
         }
 
-    }// End of MBean class
-
+    } // End of MBean class
 
     protected ExchangeMBean createMBean() throws AMQException
     {
@@ -147,7 +144,6 @@ public class FanoutExchange extends AbstractExchange
     {
         assert queue != null;
 
-
         if (!_queues.remove(queue))
         {
             throw new AMQException(null, "Queue " + queue + " was not registered with exchange " + this.getName() +
@@ -159,10 +155,10 @@ public class FanoutExchange extends AbstractExchange
     {
         final MessagePublishInfo publishInfo = payload.getMessagePublishInfo();
         final AMQShortString routingKey = publishInfo.getRoutingKey();
-        if (_queues == null || _queues.isEmpty())
+        if ((_queues == null) || _queues.isEmpty())
         {
             String msg = "No queues bound to " + this;
-            if (publishInfo.isMandatory())
+            if (publishInfo.isMandatory() || publishInfo.isImmediate())
             {
                 throw new NoRouteException(msg, payload, null);
             }
@@ -193,12 +189,11 @@ public class FanoutExchange extends AbstractExchange
     public boolean isBound(AMQShortString routingKey) throws AMQException
     {
 
-        return _queues != null && !_queues.isEmpty();
+        return (_queues != null) && !_queues.isEmpty();
     }
 
     public boolean isBound(AMQQueue queue) throws AMQException
     {
-
 
         return _queues.contains(queue);
     }

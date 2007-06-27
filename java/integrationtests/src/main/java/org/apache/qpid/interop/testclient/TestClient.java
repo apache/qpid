@@ -252,7 +252,8 @@ public class TestClient implements MessageListener
     public static Connection createConnection(String connectionPropsResource, String clientID, String brokerUrl, String virtualHost)
     {
         log.debug("public static Connection createConnection(String connectionPropsResource = " + connectionPropsResource
-                  + ", String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
+                  + ", String brokerUrl = " + brokerUrl + ", String clientID = " + clientID
+                  + ", String virtualHost = " + virtualHost + " ): called");
 
         try
         {
