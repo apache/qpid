@@ -229,7 +229,7 @@ public class HeadersExchange extends AbstractExchange
 
             String msg = "Exchange " + getName() + ": message not routable.";
 
-            if (payload.getMessagePublishInfo().isMandatory())
+            if (payload.getMessagePublishInfo().isMandatory() || payload.getMessagePublishInfo().isImmediate())
             {
                 throw new NoRouteException(msg, payload, null);
             }
