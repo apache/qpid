@@ -19,10 +19,12 @@
  *
  */
 
+#include "qpid/Exception.h"
 #include "qpid/broker/BrokerExchange.h"
 #include "qpid/broker/BrokerQueue.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/DirectExchange.h"
+#include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/TopicExchange.h"
@@ -33,12 +35,14 @@
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
+using namespace qpid;
 
 class ExchangeTest : public CppUnit::TestCase
 {
     CPPUNIT_TEST_SUITE(ExchangeTest);
     CPPUNIT_TEST(testMe);
     CPPUNIT_TEST(testIsBound);
+    CPPUNIT_TEST(testDeleteGetAndRedeclare);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -157,6 +161,18 @@ class ExchangeTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(!headers.isBound(d, 0, &args1));
         CPPUNIT_ASSERT(!headers.isBound(d, 0, &args2));
         CPPUNIT_ASSERT(!headers.isBound(d, 0, &args3));
+    }
+
+    void testDeleteGetAndRedeclare() {
+        ExchangeRegistry exchanges;
+        exchanges.declare("my-exchange", "direct", false, FieldTable());
+        exchanges.destroy("my-exchange");
+        try {
+            exchanges.get("my-exchange");
+        } catch (const ChannelException&) {}
+        std::pair<Exchange::shared_ptr, bool> response = exchanges.declare("my-exchange", "direct", false, FieldTable());
+        CPPUNIT_ASSERT_EQUAL(string("direct"), response.first->getType());
+  
     }
 };
     
