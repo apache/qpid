@@ -84,7 +84,7 @@ void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, cons
 bool HeadersExchange::isBound(Queue::shared_ptr queue, const string* const, const FieldTable* const args)
 {
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-        if ( (!args || equal(i->first, *args)) && i->second == queue) {
+        if ( (!args || equal(i->first, *args)) && (!queue || i->second == queue)) {
             return true;
         }
     }

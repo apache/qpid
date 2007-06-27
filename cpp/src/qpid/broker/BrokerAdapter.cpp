@@ -153,7 +153,6 @@ void BrokerAdapter::ExchangeHandlerImpl::declare(const MethodContext& context, u
                 
 void BrokerAdapter::ExchangeHandlerImpl::delete_(const MethodContext& context, uint16_t /*ticket*/, 
                                                  const string& name, bool /*ifUnused*/, bool nowait){
-
     //TODO: implement unused
     Exchange::shared_ptr exchange(broker.getExchanges().get(name));
     if (exchange->isDurable()) broker.getStore().destroy(*exchange);
