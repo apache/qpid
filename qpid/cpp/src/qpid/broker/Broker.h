@@ -40,6 +40,8 @@
 
 namespace qpid { 
 namespace broker {
+class ChannelInitializer;
+
 /**
  * A broker instance. 
  */
@@ -85,6 +87,9 @@ class Broker : public sys::Runnable,
      */
     virtual void run();
 
+    /** Plug-in a channel initializer. */
+    void plugin(const qpid::shared_ptr<ChannelInitializer>&);
+    
     /** Shut down the broker */
     virtual void shutdown();
 
