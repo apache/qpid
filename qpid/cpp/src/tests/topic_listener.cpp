@@ -33,6 +33,7 @@
  */
 
 #include "qpid/QpidError.h"
+#include "TestOptions.h"
 #include "qpid/client/ClientChannel.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ClientExchange.h"
@@ -42,6 +43,7 @@
 #include <iostream>
 #include <sstream>
 
+using namespace qpid;
 using namespace qpid::client;
 using namespace qpid::sys;
 using namespace std;
@@ -68,27 +70,18 @@ public:
 /**
  * A utility class for managing the options passed in.
  */
-class Args{
-    string host;
-    int port;
-    AckMode ackMode;
+struct Args : public qpid::TestOptions {
+    int ackmode;
     bool transactional;
     int prefetch;
-    bool trace;
-    bool help;
-public:
-    inline Args() : host("localhost"), port(5672), ackMode(NO_ACK), transactional(false), prefetch(1000), trace(false), help(false){}
-    void parse(int argc, char** argv);
-    void usage();
-
-    const string& getHost() const { return host;}
-    int getPort() const { return port; }
-    AckMode getAckMode(){ return ackMode; }
-    bool getTransactional() const { return transactional; }
-    int getPrefetch(){ return prefetch; }
-    bool getTrace() const { return trace; }
-    bool getHelp() const { return help; }
+    Args() : ackmode(NO_ACK), transactional(false), prefetch(1000) {
+        addOptions()
+            ("ack", optValue(ackmode, "MODE"), "Ack mode: 0=NO_ACK, 1=AUTO_ACK, 2=LAZY_ACK")
+            ("transactional", optValue(transactional), "Use transactions")
+            ("prefetch", optValue(prefetch, "N"), "prefetch count");
+    }
 };
+
 
 /**
  * The main routine creates a Listener instance and sets it up to
@@ -96,16 +89,16 @@ public:
  * appropriate topic name.
  */
 int main(int argc, char** argv){
-    Args args;
-    args.parse(argc, argv);
-    if(args.getHelp()){
-        args.usage();
-    }else{
-        try{
+    try{
+        Args args;
+        args.parse(argc, argv);
+        if(args.help)
+            cout << args << endl;
+        else {
             cout << "topic_listener: Started." << endl;
-            Connection connection(args.getTrace());
-            connection.open(args.getHost(), args.getPort(), "guest", "guest", "/test");
-            Channel channel(args.getTransactional(), args.getPrefetch());
+            Connection connection(args.trace);
+            connection.open(args.host, args.port, args.username, args.password, args.virtualhost);
+            Channel channel(args.transactional, args.prefetch);
             connection.openChannel(channel);
         
             //declare exchange, queue and bind them:
@@ -117,17 +110,17 @@ int main(int argc, char** argv){
             qpid::framing::FieldTable bindArgs;
             channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, control, "topic_control", bindArgs);
             //set up listener
-            Listener listener(&channel, response.getName(), args.getTransactional());
+            Listener listener(&channel, response.getName(), args.transactional);
             string tag;
-            channel.consume(control, tag, &listener, args.getAckMode());
+            channel.consume(control, tag, &listener, AckMode(args.ackmode));
             cout << "topic_listener: Consuming." << endl;
             channel.run();
             connection.close();
             cout << "topic_listener: normal exit" << endl;
-            return 0;
-        }catch(const std::exception& error){
-            cout << "topic_listener: " << error.what() << endl;
         }
+        return 0;
+    } catch (const std::exception& error) {
+        cout << "topic_listener: " << error.what() << endl;
     }
     return 1;
 }
@@ -172,46 +165,3 @@ void Listener::report(){
     }
 }
 
-
-void Args::parse(int argc, char** argv){
-    for(int i = 1; i < argc; i++){
-        string name(argv[i]);
-        if("-help" == name){
-            help = true;
-            break;
-        }else if("-host" == name){
-            host = argv[++i];
-        }else if("-port" == name){
-            port = atoi(argv[++i]);
-        }else if("-ack_mode" == name){
-            ackMode = AckMode(atoi(argv[++i]));
-        }else if("-transactional" == name){
-            transactional = true;
-        }else if("-prefetch" == name){
-            prefetch = atoi(argv[++i]);
-        }else if("-trace" == name){
-            trace = true;
-        }else{
-            cout << "Warning: unrecognised option " << name << endl;
-        }
-    }
-}
-
-void Args::usage(){
-    cout << "Options:" << endl;
-    cout << "    -help" << endl;
-    cout << "            Prints this usage message" << endl;
-    cout << "    -host <host>" << endl;
-    cout << "            Specifies host to connect to (default is localhost)" << endl;
-    cout << "    -port <port>" << endl;
-    cout << "            Specifies port to conect to (default is 5762)" << endl;
-    cout << "    -ack_mode <mode>" << endl;
-    cout << "            Sets the acknowledgement mode" << endl;
-    cout << "            0=NO_ACK (default), 1=AUTO_ACK, 2=LAZY_ACK" << endl;
-    cout << "    -transactional" << endl;
-    cout << "            Indicates the client should use transactions" << endl;
-    cout << "    -prefetch <count>" << endl;
-    cout << "            Specifies the prefetch count (default is 1000)" << endl;
-    cout << "    -trace" << endl;
-    cout << "            Indicates that the frames sent and received should be logged" << endl;
-}

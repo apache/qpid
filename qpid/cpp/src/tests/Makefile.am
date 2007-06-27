@@ -89,14 +89,14 @@ testprogs =		\
 
 check_PROGRAMS += $(unit_progs) $(testprogs) interop_runner
 
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) ./run_test
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
 system_tests = client_test quick_topictest
-TESTS = dummy_test $(unit_progs) $(unit_wrappers) run-unit-tests start_broker $(system_tests) python_tests kill_broker daemon_test
+TESTS = dummy_test $(unit_progs) $(unit_wrappers) run-unit-tests start_broker $(system_tests) python_tests kill_broker 
 
 EXTRA_DIST =								\
   test_env run_test							\
-  run-unit-tests start_broker python_tests kill_broker daemon_test	\
+  run-unit-tests start_broker python_tests kill_broker 			\
   quick_topictest							\
   topictest								\
   .valgrind.supp-default						\

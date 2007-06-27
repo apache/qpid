@@ -18,36 +18,34 @@
 
 #include "Options.h"
 #include "Statement.h"
-#include "qpid/CommonOptions.h"
+#include "qpid/Options.h"
 
 namespace qpid {
 namespace log {
 
 using namespace std;
 
-Options::Options() :
-    time(true), level(true), thread(false), source(false), function(false)
+Options::Options(const std::string& name) : qpid::Options(name),
+    time(true), level(true), thread(false), source(false), function(false), trace(false)
 {
     outputs.push_back("stderr");
     selectors.push_back("error+");
-}
 
-void Options::addTo(po::options_description& desc) {
-    using namespace po;
     ostringstream levels;
     levels << LevelTraits::name(Level(0));
     for (int i = 1; i < LevelTraits::COUNT; ++i)
         levels << " " << LevelTraits::name(Level(i));
-    desc.add_options()
+    addOptions()
+        ("trace,t", optValue(trace), "Enable full debug tracing." )
         ("log.enable", optValue(selectors, "RULE"),
-         "You can specify this option mutliple times.\n"
+         ("You can specify this option mutliple times.\n"
          "RULE is of the form 'LEVEL[+][:COMPONENT]'"
-         "Levels are: trace, debug, info, notice, warning, error, critical."
+         "Levels are: "+levels.str()+"\n"
          "For example:\n"
          "\t'--log.enable warning+' "
          "enables all warning, error and critical messages.\n"
          "\t'--log.enable debug:framing' "
-         "enables debug messages from the framing component.")
+          "enables debug messages from the framing component.").c_str())
         ("log.output", optValue(outputs, "FILE"),
          "File to receive log output, or one of these special values: "
          "'stderr', 'stdout', 'syslog'.")
@@ -61,9 +59,6 @@ void Options::addTo(po::options_description& desc) {
          "Include thread ID in log messages")
         ("log.function", optValue(function,"yes|no"),
          "Include function signature in log messages");
-    
 }        
         
-
-
 }} // namespace qpid::log

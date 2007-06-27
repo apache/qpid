@@ -18,20 +18,20 @@
  * limitations under the License.
  *
  */
-#include "qpid/CommonOptions.h"
+#include "qpid/Options.h"
 
 
 namespace qpid {
 namespace log {
 
 /** Logging options for config parser. */
-struct Options {
-    Options();
-    void addTo(po::options_description&);
+struct Options : public qpid::Options {
+    Options(const std::string& name="Logging options");
 
     std::vector<std::string> selectors;
     std::vector<std::string> outputs;
     bool time, level, thread, source, function;
+    bool trace;
 };
 
 

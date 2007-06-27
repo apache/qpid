@@ -35,6 +35,7 @@
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
+#include "qpid/Url.h"
 
 #include <iostream>
 #include <memory>
@@ -44,19 +45,17 @@ using qpid::sys::Acceptor;
 namespace qpid {
 namespace broker {
 
-Broker::Options::Options() :
+Broker::Options::Options(const std::string& name) :
+    qpid::Options(name),
+    port(TcpAddress::DEFAULT_PORT),
     workerThreads(5),
     maxConnections(500),
     connectionBacklog(10),
     store(),
     stagingThreshold(5000000)
-{}
-
-void Broker::Options::addTo(po::options_description& desc)
 {
-    using namespace po;
-    CommonOptions::addTo(desc);
-    desc.add_options()
+    addOptions()
+        ("port,p", optValue(port,"PORT"), "Use PORT for AMQP connections.")
         ("worker-threads", optValue(workerThreads, "N"),
          "Broker thread pool size")
         ("max-connections", optValue(maxConnections, "N"),
@@ -114,7 +113,7 @@ Broker::shared_ptr Broker::create(const Options& config) {
 
 MessageStore* Broker::createStore(const Options& config) {
     if (config.store.empty())
-        return new NullMessageStore(config.trace);
+        return new NullMessageStore(false);
     else
         return new MessageStoreModule(config.store);
 }
@@ -141,7 +140,7 @@ Acceptor& Broker::getAcceptor() const {
             Acceptor::create(config.port,
                              config.connectionBacklog,
                              config.workerThreads,
-                             config.trace);
+                             false);
     return *acceptor;
 }
 
