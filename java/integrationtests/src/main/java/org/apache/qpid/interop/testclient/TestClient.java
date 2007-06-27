@@ -20,22 +20,30 @@
  */
 package org.apache.qpid.interop.testclient;
 
-import java.io.IOException;
-import java.util.*;
+import org.apache.log4j.Logger;
+import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
+import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
+import org.apache.qpid.util.CommandLineParser;
+import org.apache.qpid.util.PropertiesUtils;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
-import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
-import org.apache.qpid.interop.testclient.testcases.TestCase3BasicPubSub;
-import org.apache.qpid.util.ClasspathScanner;
-import org.apache.qpid.util.CommandLineParser;
-import org.apache.qpid.util.PropertiesUtils;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Implements a test client as described in the interop testing spec
@@ -201,7 +209,7 @@ public class TestClient implements MessageListener
         }
 
         // Open a connection to communicate with the coordinator on.
-        _connection = createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, brokerUrl, virtualHost);
+        _connection = createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, clientName, brokerUrl, virtualHost);
 
         session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
@@ -219,17 +227,21 @@ public class TestClient implements MessageListener
         _connection.start();
     }
 
+
+    public static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
+    {
+        return createConnection(connectionPropsResource, "clientID", brokerUrl, virtualHost);
+    }
+
     /**
      * Establishes a JMS connection using a properties file and qpids built in JNDI implementation. This is a simple
-     * convenience method for code that does anticipate handling connection failures. All exceptions that indicate
-     * that the connection has failed, are wrapped as rutime exceptions, preumably handled by a top level failure
-     * handler.
-     *
-     * @todo Make username/password configurable. Allow multiple urls for fail over. Once it feels right, move it
-     *       to a Utils library class.
+     * convenience method for code that does anticipate handling connection failures. All exceptions that indicate that
+     * the connection has failed, are wrapped as rutime exceptions, preumably handled by a top level failure handler.
      *
      * @param connectionPropsResource The name of the connection properties file.
-     * @param brokerUrl               The broker url to connect to, <tt>null</tt> to use the default from the properties.
+     * @param clientID
+     * @param brokerUrl               The broker url to connect to, <tt>null</tt> to use the default from the
+     *                                properties.
      * @param virtualHost             The virtual host to connectio to, <tt>null</tt> to use the default.
      *
      * @return A JMS conneciton.
@@ -237,7 +249,7 @@ public class TestClient implements MessageListener
      * @todo Make username/password configurable. Allow multiple urls for fail over. Once it feels right, move it to a
      * Utils library class.
      */
-    public static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
+    public static Connection createConnection(String connectionPropsResource, String clientID, String brokerUrl, String virtualHost)
     {
         log.debug("public static Connection createConnection(String connectionPropsResource = " + connectionPropsResource
                   + ", String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
@@ -251,7 +263,7 @@ public class TestClient implements MessageListener
             if (brokerUrl != null)
             {
                 String connectionString =
-                        "amqp://guest:guest/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
+                        "amqp://guest:guest@" + clientID + "/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
                 connectionProps.setProperty(CONNECTION_PROPERTY, connectionString);
             }
 
@@ -381,6 +393,14 @@ public class TestClient implements MessageListener
             {
                 log.info("Received termination instruction from coordinator.");
 
+//                try
+//                {
+//                    currentTestCase.terminate();
+//                }
+//                catch (InterruptedException e)
+//                {
+//                    //
+//                }
                 // Is a cleaner shutdown needed?
                 _connection.close();
                 System.exit(0);

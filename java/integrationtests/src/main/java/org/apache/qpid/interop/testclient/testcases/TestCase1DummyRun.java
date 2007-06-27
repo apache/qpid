@@ -74,6 +74,11 @@ public class TestCase1DummyRun implements InteropClientTestCase
         // Do nothing.
     }
 
+    public void terminate() throws JMSException
+    {
+        //todo
+    }
+
     public Message getReport(Session session) throws JMSException
     {
         log.debug("public Message getReport(Session session): called");
