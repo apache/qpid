@@ -35,11 +35,12 @@
     <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
 
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+            <param name="ConversionPattern" value="%d %-5p (%F:%L) - %m%n"/>
+            <!--param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/-->
         </layout>
     </appender>
 
-     <category name="SustainedTest">
+    <category name="SustainedTest">
         <priority value="${sustained.level}"/>
     </category>
 
@@ -48,8 +49,8 @@
     </category>
 
     <category name="org.apache.qpid.interop">
-         <priority value="${interop.logging.level}"/>
-     </category>
+        <priority value="${interop.logging.level}"/>
+    </category>
 
 
     <category name="org.apache.qpid.sustained">
