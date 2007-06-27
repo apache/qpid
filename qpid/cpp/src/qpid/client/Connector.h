@@ -77,7 +77,7 @@ class Connector : public framing::OutputHandler,
 
     void run();
     void handleClosed();
-    bool markClosed();
+    bool closeInternal();
 
   friend class Channel;
   public:

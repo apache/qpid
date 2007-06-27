@@ -47,7 +47,9 @@ Connector::Connector(
 { }
 
 Connector::~Connector(){
-    close();
+    closeInternal();
+    if (receiver.id())
+        receiver.join();
 }
 
 void Connector::connect(const std::string& host, int port){
@@ -62,11 +64,19 @@ void Connector::init(){
     writeBlock(&init);
 }
 
-void Connector::close(){
-    if (markClosed()) {
+// Call with closedLock held
+bool Connector::closeInternal() {
+    Mutex::ScopedLock l(closedLock);
+    if (!closed) {
         socket.close();
-        receiver.join();
+        closed = true;
+        return true;
     }
+    return false;
+}
+        
+void Connector::close() {
+    closeInternal();
 }
 
 void Connector::setInputHandler(InputHandler* handler){
@@ -108,20 +118,9 @@ void Connector::writeToSocket(char* data, size_t available){
     }
 }
 
-void Connector::handleClosed(){
-    if (markClosed()) {
-        socket.close();
-        if(shutdownHandler) shutdownHandler->shutdown();
-    }
-}
-
-bool Connector::markClosed(){
-    if (closed) {
-        return false;
-    } else {
-        closed = true;
-        return true;
-    }
+void Connector::handleClosed() {
+    if (closeInternal() && shutdownHandler)
+        shutdownHandler->shutdown();
 }
 
 void Connector::checkIdle(ssize_t status){
