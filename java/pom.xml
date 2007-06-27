@@ -31,9 +31,9 @@ under the License.
     <packaging>pom</packaging>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/trunk</connection>
-        <developerConnection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/trunk</developerConnection>
-        <url>http://svn.apache.org/viewvc/incubator/qpid/trunk/</url>
+        <connection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/branches/M2/java</connection>
+        <developerConnection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/branches/M2/java</developerConnection>
+        <url>http://svn.apache.org/viewvc/incubator/qpid/branches/M2/java</url>
     </scm>
 
     <prerequisites>
@@ -103,7 +103,7 @@ under the License.
 
         <surefire.fork.mode>never</surefire.fork.mode>
         <surefire.format>brief</surefire.format>
-        <surefire.usefile>false</surefire.usefile>
+        <surefire.usefile>true</surefire.usefile>
         <compile.forked>false</compile.forked>
         <java.source.version>1.5</java.source.version>
         <compile.flags>-Xlint:fallthrough,finally</compile.flags>
@@ -554,30 +554,83 @@ under the License.
 
     <reporting>
         <plugins>
+            <!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
                 <version>${cobertura.version}</version>
             </plugin>
+            -->
+
+            <!-- Run the javadoc report. -->
+            <!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <tags>
+                        <tag>
+                            <name>todo</name>
+                            <placement>a</placement>
+                            <head>To do:</head>
+                        </tag>
+                    </tags>
+                </configuration>
+            </plugin>
+            -->
+
+            <!-- Generate the clover coverage report. -->
+            <!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clover-plugin</artifactId>
+            </plugin>
+            -->
+
+            <!-- Standard Maven project info reports. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-project-info-reports-plugin</artifactId>
                 <version>${mprojectinfo.version}</version>
             </plugin>
+
+            <!-- Generate the surefire test report. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <version>${surefire-report.version}</version>
             </plugin>
+
+            <!-- Generate the TODO lists. -->            
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>taglist-maven-plugin</artifactId>
+            </plugin>            
+
+            <!-- Generate the source code cross reference. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>${javadoc.version}</version>
+                <artifactId>maven-jxr-plugin</artifactId>
             </plugin>
+
+            <!-- Minimal checkstyle rules. -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-clover-plugin</artifactId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <configuration>
+                    <configLocation>${basedir}/${topDirectoryLocation}/etc/coding_standards.xml</configLocation>
+                    <headerLocation>${basedir}/${topDirectoryLocation}/etc/license_header.txt</headerLocation>
+                </configuration>
             </plugin>
+
+            <!-- Generate report on changed files. -->
+            <!--
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-changelog-plugin</artifactId>
+            </plugin>
+            -->
+
         </plugins>
     </reporting>
 
