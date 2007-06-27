@@ -28,6 +28,7 @@
 
 #include <iostream>
 
+#include "TestOptions.h"
 #include "qpid/QpidError.h"
 #include "qpid/client/ClientChannel.h"
 #include "qpid/client/Connection.h"
@@ -59,38 +60,39 @@ public:
     }
 };
 
-int main(int argc, char**)
+int main(int argc, char** argv)
 {
-    verbose = argc > 1;
     try {
+        qpid::TestOptions opts;
+        opts.parse(argc, argv);
+            
         //Use a custom exchange
 	Exchange exchange("MyExchange", Exchange::TOPIC_EXCHANGE);
         //Use a named, temporary queue
 	Queue queue("MyQueue", true);
 
  	
-	Connection con(verbose);
-	string host("localhost");	
-	con.open(host, 5672, "guest", "guest", "/test");
-	if (verbose)
+	Connection con(opts.trace);
+	con.open(opts.host, opts.port, opts.username, opts.password, opts.virtualhost);
+	if (opts.trace)
 	    std::cout << "Opened connection." << std::endl;
 
         //Create and open a channel on the connection through which
         //most functionality is exposed
 	Channel channel;      
 	con.openChannel(channel);
-	if (verbose) std::cout << "Opened channel." << std::endl;	
+	if (opts.trace) std::cout << "Opened channel." << std::endl;	
 
         //'declare' the exchange and the queue, which will create them
         //as they don't exist
 	channel.declareExchange(exchange);
-	if (verbose) std::cout << "Declared exchange." << std::endl;
+	if (opts.trace) std::cout << "Declared exchange." << std::endl;
 	channel.declareQueue(queue);
-	if (verbose) std::cout << "Declared queue." << std::endl;
+	if (opts.trace) std::cout << "Declared queue." << std::endl;
 
         //now bind the queue to the exchange
 	channel.bind(exchange, queue, "MyTopic");
-	if (verbose) std::cout << "Bound queue to exchange." << std::endl;
+	if (opts.trace) std::cout << "Bound queue to exchange." << std::endl;
 
 	//Set up a message listener to receive any messages that
 	//arrive in our queue on the broker. We only expect one, and
@@ -101,7 +103,7 @@ int main(int argc, char**)
 	SimpleListener listener(&monitor);
 	string tag("MyTag");
 	channel.consume(queue, tag, &listener);
-	if (verbose) std::cout << "Registered consumer." << std::endl;
+	if (opts.trace) std::cout << "Registered consumer." << std::endl;
 
         //we need to enable the message dispatching for this channel
         //and we want that to occur on another thread so we call
@@ -114,7 +116,7 @@ int main(int argc, char**)
 	string data("MyMessage");
 	msg.setData(data);
 	channel.publish(msg, exchange, "MyTopic");
-	if (verbose) std::cout << "Published message: " << data << std::endl;
+	if (opts.trace) std::cout << "Published message: " << data << std::endl;
 
 	{
             Monitor::ScopedLock l(monitor);
@@ -125,9 +127,9 @@ int main(int argc, char**)
         
         //close the channel & connection
 	channel.close();
-	if (verbose) std::cout << "Closed channel." << std::endl;
+	if (opts.trace) std::cout << "Closed channel." << std::endl;
 	con.close();	
-	if (verbose) std::cout << "Closed connection." << std::endl;
+	if (opts.trace) std::cout << "Closed connection." << std::endl;
     return 0;
     } catch(const std::exception& e) {
 	std::cout << e.what() << std::endl;

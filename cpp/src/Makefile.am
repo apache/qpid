@@ -162,7 +162,8 @@ libqpidcommon_la_SOURCES = \
   qpid/QpidError.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/ProducerConsumer.cpp \
-  qpid/CommonOptions.cpp \
+  qpid/Options.cpp \
+  qpid/Options.h \
   qpid/log/Options.cpp \
   qpid/log/Options.h \
   qpid/log/Selector.cpp \
@@ -368,8 +369,7 @@ nobase_include_HEADERS = \
   qpid/ExceptionHolder.h \
   qpid/QpidError.h \
   qpid/SharedObject.h \
-  qpid/shared_ptr.h \
-  qpid/CommonOptions.h
+  qpid/shared_ptr.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: qpidd

@@ -21,46 +21,35 @@
  *
  */
 
-#include "qpid/CommonOptions.h"
+#include "qpid/Options.h"
+#include "qpid/Url.h"
 
 namespace qpid {
 
-struct TestOptions : public qpid::CommonOptions
+struct TestOptions : public qpid::Options
 {
-    TestOptions() : desc("Options"), broker("localhost"), virtualhost(""), clientid("cpp"), help(false)
+    TestOptions() : Options("Test Options"), host("localhost"), port(TcpAddress::DEFAULT_PORT), clientid("cpp"), trace(false), help(false)
     {
-        using namespace qpid::program_options;
-        using namespace boost::program_options;
-        CommonOptions::addTo(desc);        
-        desc.add_options()
-            ("broker,b", optValue(broker, "HOSTNAME"), "the hostname to connect to")
-            ("virtualhost,v", optValue(virtualhost, "VIRTUAL_HOST"), "virtual host")
+        addOptions()
+            ("host,h", optValue(host, "HOST"), "Broker host to connect to")
+            // TODO aconway 2007-06-26: broker is synonym for host. Drop broker?
+            ("broker,b", optValue(host, "HOST"), "Broker host to connect to") 
+            ("port,p", optValue(port, "PORT"), "Broker port to connect to")
+            ("virtualhost,v", optValue(virtualhost, "VHOST"), "virtual host")
             ("clientname,n", optValue(clientid, "ID"), "unique client identifier")
-            ("help,h", optValue(help), "print this usage statement");
+            ("username", optValue(username, "USER"), "user name for broker log in.")
+            ("password", optValue(password, "USER"), "password for broker log in.")
+            ("trace,t", optValue(trace), "Turn on debug tracing.")
+            ("help", optValue(help), "print this usage statement");
     }
 
-    void parse(int argc, char** argv)
-    {
-        using namespace boost::program_options;
-        try {
-            variables_map vm;
-            store(parse_command_line(argc, argv, desc), vm);
-            notify(vm);
-        } catch(const error& e) {
-            std::cerr << "Error: " << e.what() << std::endl
-                      << "Specify '--help' for usage." << std::endl;
-        }
-    }
-
-    void usage()
-    {
-        std::cout << desc << std::endl; 
-    }
-
-    boost::program_options::options_description desc;
-    std::string broker;      
+    std::string host;
+    uint16_t port;
     std::string virtualhost;
-    std::string clientid;            
+    std::string clientid;
+    std::string username;
+    std::string password;
+    bool trace;
     bool help;
 };
 
