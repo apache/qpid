@@ -2307,6 +2307,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
+    public void declareAndBind(AMQDestination amqd)
+            throws
+            AMQException
+    {
+        AMQProtocolHandler protocolHandler = getProtocolHandler();
+        declareExchange(amqd, protocolHandler, false);
+        AMQShortString queueName = declareQueue(amqd, protocolHandler);
+        bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName());
+    }
+
     /**
      * Callers must hold the failover mutex before calling this method.
      *
