@@ -47,7 +47,7 @@ Connector::Connector(
 { }
 
 Connector::~Connector(){
-    receiver.join();
+    close();
 }
 
 void Connector::connect(const std::string& host, int port){
