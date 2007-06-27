@@ -1279,6 +1279,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
+   public void declareAndBind(AMQDestination amqd)
+            throws
+            AMQException
+    {
+        AMQProtocolHandler protocolHandler = getProtocolHandler();
+        declareExchange(amqd, protocolHandler, false);
+        AMQShortString queueName = declareQueue(amqd, protocolHandler);
+        bindQueue(queueName, amqd.getRoutingKey(), new FieldTable(), amqd.getExchangeName());
+    }
+
     /**
      * Stops message delivery in this session, and restarts message delivery with the oldest unacknowledged message.
      *
