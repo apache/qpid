@@ -89,16 +89,16 @@ namespace Qpid.Client.Handler
 
         private string GetFullSystemInfo()
         {
-            /*StringBuffer fullSystemInfo = new StringBuffer();
-            fullSystemInfo.append(System.getProperty("java.runtime.name"));
-            fullSystemInfo.append(", " + System.getProperty("java.runtime.version"));
-            fullSystemInfo.append(", " + System.getProperty("java.vendor"));
-            fullSystemInfo.append(", " + System.getProperty("os.arch"));
-            fullSystemInfo.append(", " + System.getProperty("os.name"));
-            fullSystemInfo.append(", " + System.getProperty("os.version"));
-            fullSystemInfo.append(", " + System.getProperty("sun.os.patch.level"));*/
-            // TODO: add in details here
-            return ".NET 1.1 Client";
+            StringBuilder sysInfo = new StringBuilder();
+            // check if we're running on mono or .net
+            Type monoRuntime = Type.GetType("Mono.Runtime");
+            if ( monoRuntime != null )
+               sysInfo.Append("Mono");
+            else
+               sysInfo.Append(".NET");
+            sysInfo.Append(" ").Append(Environment.Version);
+            sysInfo.Append(", ").Append(Environment.OSVersion);
+            return sysInfo.ToString();
         }
 
        private string ChooseMechanism(string mechanisms)

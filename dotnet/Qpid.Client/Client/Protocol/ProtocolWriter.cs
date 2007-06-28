@@ -23,6 +23,8 @@ using Qpid.Client.Protocol.Listener;
 using Qpid.Client.Transport;
 using Qpid.Framing;
 
+using log4net;
+
 namespace Qpid.Client.Protocol
 {
     /// <summary>
@@ -30,6 +32,9 @@ namespace Qpid.Client.Protocol
     /// </summary>
     public class ProtocolWriter
     {
+
+        private ILog _logger = LogManager.GetLogger(typeof(ProtocolWriter));
+
         IProtocolWriter _protocolWriter;
         IProtocolListener _protocolListener;
         
@@ -51,13 +56,15 @@ namespace Qpid.Client.Protocol
         /// </summary>
         /// <param name="frame">the frame</param>
         /// <param name="listener">the blocking listener. Note the calling thread will block.</param>         
-        private AMQMethodEvent SyncWrite(AMQFrame frame, BlockingMethodFrameListener listener)            
+        /// <param name="timeout">set the number of milliseconds to wait</param>
+        private AMQMethodEvent SyncWrite(AMQFrame frame, BlockingMethodFrameListener listener, int timeout)
         {
             try
             {
                 _protocolListener.AddFrameListener(listener);
                 _protocolWriter.Write(frame);
-                return listener.BlockForFrame();                
+                
+                return listener.BlockForFrame(timeout);
             }
             finally
             {
@@ -67,11 +74,32 @@ namespace Qpid.Client.Protocol
             // that matches the criteria defined in the blocking listener
         }
 
+        /// <summary>
+        /// Convenience method that writes a frame to the protocol session and waits for
+        /// a particular response. Equivalent to calling getProtocolSession().write() then
+        /// waiting for the response.
+        /// </summary>
+        /// <param name="frame">the frame</param>
+        /// <param name="responseType">the type of method response</param>
         public AMQMethodEvent SyncWrite(AMQFrame frame, Type responseType)
         {
             // TODO: If each frame knew it's response type, then the responseType argument would
             // TODO: not be neccesary.
-            return SyncWrite(frame, new SpecificMethodFrameListener(frame.Channel, responseType));
+            return SyncWrite(frame, responseType, DefaultTimeouts.MaxWaitForSyncWriter);
+        }
+
+        /// <summary>
+        /// Convenience method that writes a frame to the protocol session and waits for
+        /// a particular response. Equivalent to calling getProtocolSession().write() then
+        /// waiting for the response.
+        /// </summary>
+        /// <param name="frame">the frame</param>
+        /// <param name="responseType">the type of method response</param>
+        /// <param name="timeout">set the number of milliseconds to wait</param>
+        /// <returns>set the number of milliseconds to wait</returns>
+        public AMQMethodEvent SyncWrite(AMQFrame frame, Type responseType, int timeout)
+        {
+            return SyncWrite(frame, new SpecificMethodFrameListener(frame.Channel, responseType), timeout);
         }
     }
 }

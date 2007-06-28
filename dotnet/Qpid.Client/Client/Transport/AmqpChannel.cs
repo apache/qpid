@@ -82,10 +82,11 @@ namespace Qpid.Client.Transport
             _byteChannel.Write(Encode(o));
         }
 
-        private void OnAsyncWriteDone(IAsyncResult result)
-        {
-           _byteChannel.EndWrite(result);
-        }
+        // not used for now
+        //private void OnAsyncWriteDone(IAsyncResult result)
+        //{
+        //   _byteChannel.EndWrite(result);
+        //}
 
         private void Decode(ByteBuffer buffer)
         {

@@ -31,7 +31,7 @@ namespace Qpid.Client.Tests.Connection
    /// <summary>
    /// Test SSL/TLS connections to the broker
    /// </summary>
-   [TestFixture]
+   [TestFixture, Category("SSL")]
    public class SslConnectionTest
    {
       /// <summary>
@@ -48,20 +48,6 @@ namespace Qpid.Client.Tests.Connection
          MakeBrokerConnection(sslConfig);
       }
 
-      /// <summary>
-      /// Make a TLS connection to the broker with a 
-      /// client-side certificate
-      /// </summary>
-      [Test]
-      public void DoSslConnectionWithClientCert()
-      {
-         // because for tests we don't usually trust the server certificate
-         // we need here to tell the client to ignore certificate validation errors
-         SslOptions sslConfig = new SslOptions(LoadClientCert(), true);
-
-         MakeBrokerConnection(sslConfig);
-      }
-
       private static void MakeBrokerConnection(SslOptions options)
       {
          IConnectionInfo connectionInfo = new QpidConnectionInfo();
@@ -72,20 +58,6 @@ namespace Qpid.Client.Tests.Connection
          {
             Console.WriteLine("connection = " + connection);
          }
-      }
-
-      private static X509Certificate LoadClientCert()
-      {
-         // load a self-issued certificate from an embedded
-         // resource
-         const string name = "Qpid.Client.Tests.connection.QpidTestCert.pfx";
-         Assembly assembly = typeof(SslConnectionTest).Assembly;
-         
-         Stream res = assembly.GetManifestResourceStream(name);
-         byte[] buffer = new byte[res.Length];
-         res.Read(buffer, 0, buffer.Length);
-         
-         return new X509Certificate(buffer);
       }
    }
 }
