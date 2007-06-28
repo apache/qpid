@@ -44,7 +44,7 @@ namespace Qpid.Client
 
       /// <summary>
       /// Time to live of messages. Specified in milliseconds but AMQ has 1 second resolution.
-      ///
+      /// </summary>
       private long _timeToLive;
 
       /// <summary>
@@ -87,17 +87,6 @@ namespace Qpid.Client
       /// The session used to create this producer
       /// </summary>
       private AmqChannel _channel;
-
-      /// <summary>
-      /// Default value for immediate flag is false, i.e. a consumer does not need to be attached to a queue
-      /// </summary>
-      protected const bool DEFAULT_IMMEDIATE = false;
-
-      /// <summary>
-      /// Default value for mandatory flag is true, i.e. server will not silently drop messages where no queue is
-      /// connected to the exchange for the message
-      /// </summary>
-      protected const bool DEFAULT_MANDATORY = true;
 
       public BasicMessageProducer(string exchangeName, string routingKey,
           bool transacted,
@@ -206,15 +195,31 @@ namespace Qpid.Client
       public void Send(IMessage msg, DeliveryMode deliveryMode, int priority, long timeToLive)
       {
          CheckNotClosed();
-         SendImpl(_exchangeName, _routingKey, (AbstractQmsMessage)msg, deliveryMode, priority, (uint)timeToLive, DEFAULT_MANDATORY,
-                  DEFAULT_IMMEDIATE);
+         SendImpl(
+            _exchangeName, 
+            _routingKey, 
+            (AbstractQmsMessage)msg, 
+            deliveryMode, 
+            priority, 
+            (uint)timeToLive, 
+            _mandatory,
+            _immediate
+            );
       }
 
       public void Send(IMessage msg)
       {
          CheckNotClosed();
-         SendImpl(_exchangeName, _routingKey, (AbstractQmsMessage)msg, _deliveryMode, _messagePriority, (uint)_timeToLive,
-                  DEFAULT_MANDATORY, DEFAULT_IMMEDIATE);
+         SendImpl(
+            _exchangeName, 
+            _routingKey, 
+            (AbstractQmsMessage)msg, 
+            _deliveryMode, 
+            _messagePriority, 
+            (uint)_timeToLive,
+            _mandatory, 
+            _immediate
+            );
       }
 
       // This is a short-term hack (knowing that this code will be re-vamped sometime soon)
@@ -222,8 +227,16 @@ namespace Qpid.Client
       public void Send(IMessage msg, bool mandatory)
       {
          CheckNotClosed();
-         SendImpl(_exchangeName, _routingKey, (AbstractQmsMessage)msg, _deliveryMode, _messagePriority, (uint)_timeToLive,
-                  mandatory, DEFAULT_IMMEDIATE);
+         SendImpl(
+            _exchangeName, 
+            _routingKey, 
+            (AbstractQmsMessage)msg, 
+            _deliveryMode, 
+            _messagePriority, 
+            (uint)_timeToLive,
+            mandatory, 
+            _immediate
+            );
       }
 
       public long TimeToLive
@@ -248,6 +261,11 @@ namespace Qpid.Client
 
       public string MimeType
       {
+         get
+         {
+            CheckNotClosed();
+            return _mimeType;
+         }
          set
          {
             CheckNotClosed();
@@ -257,6 +275,11 @@ namespace Qpid.Client
 
       public string Encoding
       {
+         get
+         {
+            CheckNotClosed();
+            return _encoding;
+         }
          set
          {
             CheckNotClosed();

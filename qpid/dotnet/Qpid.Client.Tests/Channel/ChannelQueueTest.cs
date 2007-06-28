@@ -93,20 +93,6 @@ namespace Qpid.Client.Tests.Channel
         }
         
         [Test]
-        public void DeleteInExistentQueue()
-        {
-            try
-            {
-                _channel.DeleteQueue("Q1", false, false, true);
-                _logger.Info("queue deleted");
-            }
-            catch (AMQException e)
-            {
-                _logger.Info(e.ToString());
-            }
-        }
-
-        [Test]
         public void DeleteUsedQueue()
         {
             // Create the consumer
@@ -123,7 +109,7 @@ namespace Qpid.Client.Tests.Channel
         }
 
         [Test]
-        public void DeleteUnUsedQueue()
+        public void DeleteUnusedQueue()
         {
             // delete the queue
             _channel.DeleteQueue(_queueName, true, true, true);

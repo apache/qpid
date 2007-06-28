@@ -27,7 +27,7 @@ using Qpid.Messaging;
 
 namespace Qpid.Client.Tests.failover
 {
-    [TestFixture]
+    [TestFixture, Category("Failover")]
     public class FailoverTest : IConnectionListener
     {
         private static readonly ILog _logger = LogManager.GetLogger(typeof(FailoverTest));
