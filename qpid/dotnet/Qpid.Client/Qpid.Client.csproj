@@ -52,6 +52,7 @@
     <Compile Include="Client\Configuration\AuthenticationConfigurationSectionHandler.cs" />
     <Compile Include="Client\Handler\QueueDeleteOkMethodHandler.cs" />
     <Compile Include="Client\Handler\QueuePurgeOkMethodHandler.cs" />
+    <Compile Include="Client\Protocol\DefaultTimeouts.cs" />
     <Compile Include="Client\SslOptions.cs" />
     <Compile Include="Client\Message\QpidHeaders.cs" />
     <Compile Include="Client\QpidConnectionInfo.cs" />

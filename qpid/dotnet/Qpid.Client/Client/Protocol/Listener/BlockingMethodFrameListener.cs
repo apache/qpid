@@ -80,9 +80,10 @@ namespace Qpid.Client.Protocol.Listener
         /// <summary>
         /// This method is called by the thread that wants to wait for a frame.
         /// </summary>
-        public AMQMethodEvent BlockForFrame()
+        /// <param name="timeout">Set the number of milliseconds to wait</param>
+        public AMQMethodEvent BlockForFrame(int timeout)
         {
-            _resetEvent.WaitOne();
+            _resetEvent.WaitOne(timeout, true);
             //at this point the event will have been signalled. The error field might or might not be set
             // depending on whether an error occurred
             if (_error != null)

@@ -234,16 +234,21 @@ namespace Qpid.Client.Protocol
         {
             // FIXME: not sure if required as StateManager is in _frameListeners. Probably something to do with fail-over.
             _stateManager.Error(e);
-
-            foreach (IAMQMethodListener listener in _frameListeners)
+            lock ( _lock )
             {
-                listener.Error(e);
+               foreach ( IAMQMethodListener listener in _frameListeners )
+               {
+                  listener.Error(e);
+               }
             }
         }
 
         public void AddFrameListener(IAMQMethodListener listener)
         {
-            _frameListeners.Add(listener);
+           lock ( _lock )
+           {
+              _frameListeners.Add(listener);
+           }
         }
 
         public void RemoveFrameListener(IAMQMethodListener listener)
@@ -252,7 +257,10 @@ namespace Qpid.Client.Protocol
             {
                 _log.Debug("Removing frame listener: " + listener.ToString());
             }
-            _frameListeners.Remove(listener);
+            lock ( _lock )
+            {
+               _frameListeners.Remove(listener);
+            }
         }
 
         public void BlockUntilNotFailingOver()
