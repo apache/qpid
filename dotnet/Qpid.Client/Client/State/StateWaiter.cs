@@ -20,6 +20,7 @@
  */
 using System;
 using System.Threading;
+using Qpid.Client.Protocol;
 using log4net;
 
 namespace Qpid.Client.State
@@ -29,6 +30,7 @@ namespace Qpid.Client.State
         private static readonly ILog _logger = LogManager.GetLogger(typeof(StateWaiter));
 
         private readonly AMQState _state;
+        private AMQState _newState;
 
         private volatile bool _newStateAchieved;
 
@@ -42,7 +44,8 @@ namespace Qpid.Client.State
         }
 
         public void StateChanged(AMQState oldState, AMQState newState)
-        {            
+        {
+            _newState = newState;
             if (_logger.IsDebugEnabled)
             {
                 _logger.Debug("stateChanged called");
@@ -76,23 +79,42 @@ namespace Qpid.Client.State
             // The guard is required in case we are woken up by a spurious
             // notify().
             //
-            while (!_newStateAchieved && _exception == null)
-            {                    
+
+            TimeSpan waitTime = TimeSpan.FromMilliseconds(DefaultTimeouts.MaxWaitForState);
+            DateTime waitUntilTime = DateTime.Now + waitTime;
+
+            while ( !_newStateAchieved 
+               && _exception == null 
+               && waitTime.TotalMilliseconds > 0 )
+            {
                 _logger.Debug("State not achieved so waiting...");
-                _resetEvent.WaitOne();                    
+                try
+                {
+                    _resetEvent.WaitOne(waitTime, true);
+                }
+                finally
+                {
+                    if (!_newStateAchieved)
+                    {
+                        waitTime = waitUntilTime - DateTime.Now;
+                    }
+                }
             }
 
             if (_exception != null)
             {
                 _logger.Debug("Throwable reached state waiter: " + _exception);
                 if (_exception is AMQException)
-                {
                     throw _exception;
-                }
                 else
-                {
                     throw new AMQException("Error: "  + _exception, _exception);
-                }
+            }
+
+            if (!_newStateAchieved)
+            {
+                string error = string.Format("State not achieved within permitted time. Current state: {0}, desired state: {1}", _state, _newState);
+                _logger.Warn(error);
+                throw new AMQException(error);
             }
         }
     }

@@ -43,13 +43,15 @@ namespace Qpid.Client.State
         /// Maps from an AMQState instance to a Map from Class to StateTransitionHandler.
         /// The class must be a subclass of AMQFrame.
         /// </summary>
-        private readonly IDictionary _state2HandlersMap = new Hashtable();
-
-        //private CopyOnWriteArraySet _stateListeners = new CopyOnWriteArraySet();
-        private ArrayList _stateListeners = ArrayList.Synchronized(new ArrayList(5));
+        private readonly IDictionary _state2HandlersMap;
+        private ArrayList _stateListeners;
+        private object _syncLock;
         
         public AMQStateManager()
         {
+            _syncLock = new object();
+            _state2HandlersMap = new Hashtable();
+            _stateListeners = ArrayList.Synchronized(new ArrayList(5));
             _currentState = AMQState.CONNECTION_NOT_STARTED;
             RegisterListeners();
         }
@@ -132,18 +134,24 @@ namespace Qpid.Client.State
             AMQState oldState = _currentState;
             _currentState = newState;
 
-            foreach (IStateListener l in _stateListeners)
+            lock ( _syncLock )
             {
-                l.StateChanged(oldState, newState);
+               foreach ( IStateListener l in _stateListeners )
+               {
+                  l.StateChanged(oldState, newState);
+               }
             }
         }
 
         public void Error(Exception e)
         {
             _logger.Debug("State manager receive error notification: " + e);
-            foreach (IStateListener l in _stateListeners)
+            lock ( _syncLock )
             {
-                l.Error(e);
+               foreach ( IStateListener l in _stateListeners )
+               {
+                  l.Error(e);
+               }
             }
         }
 
@@ -206,23 +214,37 @@ namespace Qpid.Client.State
         public void AddStateListener(IStateListener listener)
         {
             _logger.Debug("Adding state listener");
-            _stateListeners.Add(listener);
+            lock ( _syncLock )
+            {
+               _stateListeners.Add(listener);
+            }
         }
 
         public void RemoveStateListener(IStateListener listener)
         {
-            _stateListeners.Remove(listener);
+           lock ( _syncLock )
+           {
+              _stateListeners.Remove(listener);
+           }
         }
 
         public void AttainState(AMQState s)
         {
             if (_currentState != s)
             {
-                _logger.Debug("Adding state wait to reach state " + s);
-                StateWaiter sw = new StateWaiter(s);
-                AddStateListener(sw);
-                sw.WaituntilStateHasChanged();
-                // at this point the state will have changed.
+                StateWaiter sw = null;
+                try
+                {
+                    _logger.Debug("Adding state wait to reach state " + s);
+                    sw = new StateWaiter(s);
+                    AddStateListener(sw);
+                    sw.WaituntilStateHasChanged();
+                    // at this point the state will have changed.
+                }
+                finally
+                { 
+                    RemoveStateListener(sw);
+                }
             }
         }        
     }

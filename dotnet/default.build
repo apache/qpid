@@ -26,10 +26,15 @@
       <include name="Qpid.Sasl.Tests/default.build" />
       <include name="Qpid.Common.Tests/default.build" />        
       <include name="Qpid.Client.Tests/default.build" />	
+   </fileset>
+
+   <!--
+      Other test or utility assemblies
+   -->
+   <fileset id='other.builds'>
       <include name="TopicListener/default.build" />	
       <include name="TopicPublisher/default.build" />	
    </fileset>
-    
    <!--
       Prepare environment for a debug build
    -->
@@ -80,7 +85,12 @@
 		<nant target="build">
 			<buildfiles refid="tests.builds" />
 		</nant>
-		-->
+		<!-- 
+         Compile test assemblies
+      -->
+		<nant target="build">
+			<buildfiles refid="other.builds" />
+		</nant>
 	</target>
 	
 	<!--
