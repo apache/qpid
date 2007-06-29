@@ -58,7 +58,7 @@ void BrokerAdapter::ConnectionHandlerImpl::startOk(
     const string& /*response*/, const string& /*locale*/)
 {
     client.tune(
-        100, connection.getFrameMax(), connection.getHeartbeat());
+        CHANNEL_MAX, connection.getFrameMax(), connection.getHeartbeat());
 }
         
 void BrokerAdapter::ConnectionHandlerImpl::secureOk(

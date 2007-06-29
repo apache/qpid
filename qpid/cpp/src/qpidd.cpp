@@ -74,7 +74,7 @@ struct QpiddOptions : public qpid::Options {
 };
 
 // Globals
-Broker::shared_ptr brokerPtr;
+shared_ptr<Broker> brokerPtr;
 QpiddOptions options;
 
 void handle_signal(int /*signal*/){
@@ -112,7 +112,7 @@ void parent(Daemon& demon) {
 
 /** Code for forked child */
 void child(Daemon& demon) {
-    brokerPtr=Broker::create(options.broker);
+    brokerPtr.reset(new Broker(options.broker));
     uint16_t realPort=brokerPtr->getPort();
     demon.ready(realPort);   // Notify parent.
     brokerPtr->run();
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
             demon.fork(parent, child);
         } 
         else {                  // Non-daemon broker.
-            brokerPtr = Broker::create(options.broker);
+            brokerPtr.reset(new Broker(options.broker));
             if (options.broker.port == 0)
                 cout << uint16_t(brokerPtr->getPort()) << endl; 
             brokerPtr->run(); 

@@ -22,6 +22,7 @@
 #include "Broker.h"
 
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/HandlerUpdater.h"
 #include "DirectExchange.h"
 #include "TopicExchange.h"
 #include "FanOutExchange.h"
@@ -41,6 +42,7 @@
 #include <memory>
 
 using qpid::sys::Acceptor;
+using qpid::framing::HandlerUpdater;
 
 namespace qpid {
 namespace broker {
@@ -100,16 +102,17 @@ Broker::Broker(const Broker::Options& conf) :
 }
 
 
-Broker::shared_ptr Broker::create(int16_t port) 
+shared_ptr<Broker> Broker::create(int16_t port) 
 {
     Options config;
     config.port=port;
     return create(config);
 }
 
-Broker::shared_ptr Broker::create(const Options& config) {
-    return Broker::shared_ptr(new Broker(config));
-}    
+shared_ptr<Broker> Broker::create(const Options& opts) 
+{
+    return shared_ptr<Broker>(new Broker(opts));
+}
 
 MessageStore* Broker::createStore(const Options& config) {
     if (config.store.empty())
@@ -134,6 +137,10 @@ Broker::~Broker() {
 
 int16_t Broker::getPort() const  { return getAcceptor().getPort(); }
 
+std::string Broker::getUrl() const {
+    return Url(TcpAddress(getAcceptor().getHost(), getPort())).str();
+}
+               
 Acceptor& Broker::getAcceptor() const {
     if (!acceptor) 
         const_cast<Acceptor::shared_ptr&>(acceptor) =
@@ -144,6 +151,14 @@ Acceptor& Broker::getAcceptor() const {
     return *acceptor;
 }
 
+void Broker::use(const shared_ptr<Plugin>& plugin) {
+    shared_ptr<HandlerUpdater> updater=
+        dynamic_pointer_cast<HandlerUpdater>(plugin);
+    if (updater) {
+        QPID_LOG(critical, "HandlerUpdater plugins not implemented");
+        // FIXME aconway 2007-06-28: hook into Connections.
+    }
+}
 
 }} // namespace qpid::broker
 

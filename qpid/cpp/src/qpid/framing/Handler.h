@@ -40,11 +40,21 @@ template <class T> struct Handler {
         Chain out;
     };
 
+    Handler() {}
+    Handler(Chain next_) : next(next_) {}
     virtual ~Handler() {}
-    virtual void handle(T) = 0;
-    Chain next;
-};
 
+    virtual void handle(T) = 0;
+
+    /** Next handler. Public so chains can be modified by altering next. */
+    Chain next;
+
+  protected:
+    /** Derived handle() implementations call nextHandler to invoke the
+     * next handler in the chain. */
+    void nextHandler(T data) { if (next) next->handle(data); }
+
+};
 
 }}
 

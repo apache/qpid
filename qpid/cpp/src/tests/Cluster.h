@@ -24,6 +24,7 @@
 #include "qpid/framing/ChannelOkBody.h"
 #include "qpid/framing/BasicGetOkBody.h"
 #include "qpid/log/Logger.h"
+#include <boost/bind.hpp>
 #include <iostream>
 #include <vector>
 
@@ -39,44 +40,44 @@ using namespace qpid::cluster;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-struct TestCluster : public Cluster {
-    TestCluster(const std::string& name,
-                const std::string& url,
-                framing::FrameHandler& next,
-                framing::ProtocolVersion ver) : Cluster(name,url,next, ver) {}
+void null_deleter(void*) {}
 
-    /** Wait for the cluster to be of expected size (exactly) */
-    bool waitFor(size_t n) {
-        Mutex::ScopedLock l(lock);
-        AbsTime deadline(now(),2*TIME_SEC);
-        while(size() != n && lock.wait(deadline))
-            ;
-        return size() == n;
-    }
-};
-    
-struct VectorFrameHandler :
+struct TestClusterHandler :
     public std::vector<AMQFrame>, public FrameHandler, public Monitor
     
 {
+    TestClusterHandler(Cluster& c) : cluster(c) {
+        cluster.join(make_shared_ptr(this, &null_deleter));
+        cluster.setCallback(boost::bind(&Monitor::notify, this));
+    }
+    
     void handle(AMQFrame& f) {
         ScopedLock l(*this);
         push_back(f);
         notifyAll();
     }
 
-    /** Wait for vector to reach size n exactly */
-    bool waitFor(size_t n) {
+    /** Wait for the vector to contain n frames. */
+    bool waitFrames(size_t n) {
         ScopedLock l(*this);
-        AbsTime deadline(now(), 1*TIME_SEC);
+        AbsTime deadline(now(), TIME_SEC);
         while (size() != n && wait(deadline))
             ;
         return size() == n;
     }
+
+    /** Wait for the cluster to have n members */
+    bool waitMembers(size_t n) {
+        ScopedLock l(*this);
+        AbsTime deadline(now(), TIME_SEC);
+        while (cluster.size() != n && wait(deadline))
+            ;
+        return cluster.size() == n;
+    }
+
+    Cluster& cluster;
 };
 
-
-// namespace 
 
 
 

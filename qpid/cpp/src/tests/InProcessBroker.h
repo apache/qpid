@@ -113,7 +113,7 @@ class InProcessBroker : public client::Connector {
     };
 
     framing::ProtocolInitiation protocolInit;
-    Broker::shared_ptr  broker;
+    shared_ptr<Broker>  broker;
     OutputToInputHandler brokerOut;
     broker::Connection brokerConnection;
     OutputToInputHandler clientOut;

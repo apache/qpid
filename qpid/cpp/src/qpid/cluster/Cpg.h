@@ -23,11 +23,10 @@
 #include "qpid/cluster/Dispatchable.h"
 #include <boost/function.hpp>
 #include <cassert>
-#ifdef CLUSTER
 extern "C" {
 #include <openais/cpg.h>
 }
-#endif
+
 namespace qpid {
 namespace cluster {
 

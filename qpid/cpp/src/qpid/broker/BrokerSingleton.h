@@ -32,17 +32,17 @@ namespace broker {
  * Useful for unit tests that want to share a broker between multiple
  * tests to reduce overhead of starting/stopping a broker for every test.
  *
- * Tests that need a new broker can call Broker::create directly.
+ * Tests that need a new broker can create it directly.
  *
  * THREAD UNSAFE.
  */
-class BrokerSingleton : public Broker::shared_ptr
+class BrokerSingleton : public shared_ptr<Broker>
 {
   public:
     BrokerSingleton();
     ~BrokerSingleton();
   private:
-    static Broker::shared_ptr broker;
+    static shared_ptr<Broker> broker;
 };
 
 }} // namespace qpid::broker
