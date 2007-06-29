@@ -219,7 +219,6 @@ void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, uint
 	assert(queue);
 	if (queue_created.second) { // This is a new queue
 	    channel.setDefaultQueue(queue);
-
             //apply settings & create persistent record if required
             queue_created.first->create(arguments);
 
@@ -232,6 +231,7 @@ void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, uint
 		connection.exclusiveQueues.push_back(queue);
 	    } else if(autoDelete){
 		broker.getCleaner().add(queue);
+		broker.getCleaner().clean(); // check if cleaning is needed
 	    }
 	}
     }
