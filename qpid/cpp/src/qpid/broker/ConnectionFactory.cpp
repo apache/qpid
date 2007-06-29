@@ -31,7 +31,7 @@ ConnectionFactory::ConnectionFactory(Broker& b) : broker(b)
 
 ConnectionFactory::~ConnectionFactory()
 {
-    broker.getCleaner().stop();
+
 }
 
 qpid::sys::ConnectionInputHandler*
