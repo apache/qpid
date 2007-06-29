@@ -53,5 +53,12 @@ typedef uint16_t ReplyCode;
 // Types represented by classes.
 class Content;
 class FieldTable;
+
+// Useful constants
+
+/** Maximum channel ID used by broker. Reserve high bit for internal use.*/
+const ChannelId CHANNEL_MAX=(ChannelId(~1))>>1;
+const ChannelId CHANNEL_HIGH_BIT= ChannelId(~CHANNEL_MAX);
+
 }} // namespace qpid::framing
 #endif

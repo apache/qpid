@@ -30,27 +30,33 @@ BOOST_AUTO_TEST_CASE(testUrl_str) {
     Url url;
     url.push_back(TcpAddress("foo.com"));
     url.push_back(TcpAddress("bar.com", 6789));
-    
-    BOOST_CHECK_EQUAL(
-        url.str(), "amqp:tcp:foo.com:5672,tcp:bar.com:6789");
-    BOOST_CHECK_EQUAL(Url().str(), "amqp:");
+    BOOST_CHECK_EQUAL("amqp:tcp:foo.com:5672,tcp:bar.com:6789", url.str());
+    BOOST_CHECK_EQUAL("amqp:", Url().str());
 }
 
 
-BOOST_AUTO_TEST_CASE(testUrl_ctor) {
-    BOOST_CHECK_EQUAL(
-        Url("amqp:foo.com,tcp:bar.com:1234").str(),
-        "amqp:tcp:foo.com:5672,tcp:bar.com:1234");
-    BOOST_CHECK_EQUAL(
-        Url("amqp:foo/ignorethis").str(),
-        "amqp:tcp:foo:5672");
-    BOOST_CHECK_EQUAL("amqp:tcp::5672", Url("amqp:").str());
-    BOOST_CHECK_EQUAL(0u, Url("xxx", nothrow).size());
+BOOST_AUTO_TEST_CASE(testUrl_parse) {
+    Url url;
+    url.parse("amqp:foo.com,tcp:bar.com:1234");
+    BOOST_CHECK_EQUAL(2u, url.size());
+    BOOST_CHECK_EQUAL("foo.com", boost::get<TcpAddress>(url[0]).host);
+    BOOST_CHECK_EQUAL("amqp:tcp:foo.com:5672,tcp:bar.com:1234", url.str());
+
+    url.parse("amqp:foo/ignorethis");
+    BOOST_CHECK_EQUAL("amqp:tcp:foo:5672", url.str());
+
+    url.parse("amqp:");
+    BOOST_CHECK_EQUAL("amqp:tcp::5672", url.str());
+
     try {
-        Url invalid("xxx");
+        url.parse("invalid url");
         BOOST_FAIL("Expected InvalidUrl exception");
     }
     catch (const Url::InvalidUrl&) {}
+
+    url.parseNoThrow("invalid url");
+    BOOST_CHECK(url.empty());
 }
+
 
 

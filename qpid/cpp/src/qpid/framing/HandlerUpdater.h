@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_CHANNELINITIALIZER_H
-#define QPID_BROKER_CHANNELINITIALIZER_H
+#ifndef QPID_FRAMING_HANDLERUPDATER_H
+#define QPID_FRAMING_HANDLERUPDATER_H
 
 /*
  *
@@ -19,25 +19,26 @@
  *
  */
 
-#include <boost/noncopyable.hpp>
+#include "qpid/Plugin.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
-namespace broker {
+namespace framing {
 
-/**
- * A ChannelInitializer is called each time a new Channel is created.
- */
-class ChannelInitializer : boost::noncopyable
-{
-  public:
-    virtual ~ChannelInitializer() {}
-
-    /** Called for each new channel */
-    virtual initialize(Channe&) = 0;
+/** Plugin object that can update handler chains. */
+struct HandlerUpdater : public Plugin {
+    /** Update the handler chains.
+     *@param id Unique identifier for channel or session.
+     *@param chains Handler chains to be updated.
+     */
+    virtual void update(ChannelId id, FrameHandler::Chains& chains) = 0;
 };
 
-}} // namespace qpid::broker
+}} // namespace qpid::framing
 
 
 
-#endif  /*!QPID_BROKER_CHANNELINITIALIZER_H*/
+
+
+#endif  /*!QPID_FRAMING_HANDLERUPDATER_H*/

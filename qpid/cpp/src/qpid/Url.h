@@ -31,7 +31,7 @@ namespace qpid {
 /** TCP address of a broker - host:port */
 struct TcpAddress {
     static const uint16_t DEFAULT_PORT=5672;
-    TcpAddress(const std::string& host_=std::string(),
+    explicit TcpAddress(const std::string& host_=std::string(),
                uint16_t port_=DEFAULT_PORT)
         : host(host_), port(port_) {}
     std::string host;
@@ -62,17 +62,26 @@ struct Url : public std::vector<Address> {
     /** Empty URL. */
     Url() {}
     
-    /** Parse an amqp URL string as defined in
+    /** URL containing a single address */
+    explicit Url(const Address& addr) { push_back(addr); }
+
+    /** Parse url, throw InvalidUrl if invalid. */
+    explicit Url(const std::string& url) { parse(url.c_str()); }
+
+    /** Parse url, throw InvalidUrl if invalid. */
+    explicit Url(const char* url) { parse(url); }
+
+    /** Replace contents with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
      *@exception InvalidUrl if the url is invalid.
      */
-    Url(const std::string& url);
+    void parse(const char* url);
 
-    /** Parse an amqp URL string as defined in
+    /** Replace contesnts with parsed URL as defined in
      * https://wiki.108.redhat.com/jira/browse/AMQP-95
-     * Results in empty URL if url is invalid.
+     * url.empty() will be true if url is invalid.
      */
-    Url(const std::string& url, const std::nothrow_t&);
+    void parseNoThrow(const char* url);
 };
 
 std::ostream& operator<<(std::ostream& os, const Url& url);
