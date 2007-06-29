@@ -19,24 +19,24 @@
 #include "Plugin.h"
 
 namespace qpid {
-namespace broker {
 
-std::vector<Plugin*> Plugin::plugins;
+std::vector<PluginProvider*> PluginProvider::providers;
 
-Plugin::Plugin() {
+PluginProvider::PluginProvider() {
     // Register myself.
-    plugins.push_back(this);
+    providers.push_back(this);
 }
 
-Plugin::~Plugin() {}
+PluginProvider::~PluginProvider() {}
 
-Options*  Plugin::getOptions() { return 0; }
+Options*  PluginProvider::getOptions() { return 0; }
 
-void  Plugin::start(Broker&) {}
+const std::vector<PluginProvider*>& PluginProvider::getProviders() {
+    return providers;
+}
+} // namespace qpid
 
-void  Plugin::finish(Broker&) {}
-
-const std::vector<Plugin*>& Plugin::getPlugins() { return plugins; }
+// TODO aconway 2007-06-28: GNU lib has portable dlopen if we go that way.
 
 #ifdef USE_APR_PLATFORM
 
@@ -44,24 +44,27 @@ const std::vector<Plugin*>& Plugin::getPlugins() { return plugins; }
 #include "qpid/sys/apr/APRPool.h"
 #include <apr_dso.h>
 
-void Plugin::dlopen(const std::string& name) {
+namespace qpid {
+void dlopen(const char* name) {
     apr_dso_handle_t* handle;
     CHECK_APR_SUCCESS(
-        apr_dso_load(&handle, name.c_str(), sys::APRPool::get()));
+        apr_dso_load(&handle, name, sys::APRPool::get()));
 }
+} // namespace qpid
 
 #else // Posix
 
 #include <dlfcn.h>
 
-void Plugin::dlopen(const std::string& name) {
+namespace qpid {
+void dlopen(const char* name) {
     dlerror();
-    dlopen(name.c_str(), RTLD_NOW);
+    dlopen(name, RTLD_NOW);
     const char* error = dlerror();
     if (error) {
         THROW_QPID_ERROR(INTERNAL_ERROR, error);
     }
 }
-#endif // USE_APR_PLATFORM
+} // namespace qpidpp
 
-}} // namespace qpid::broker
+#endif // USE_APR_PLATFORM

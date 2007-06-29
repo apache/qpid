@@ -39,19 +39,13 @@ version(_version)
      assert(version != ProtocolVersion(0,0));
  }
 
-AMQFrame::AMQFrame(ProtocolVersion _version, uint16_t _channel, AMQBody* _body) :
-version(_version), channel(_channel), body(_body)
-{}
+AMQFrame::AMQFrame(ProtocolVersion _version, uint16_t _channel, AMQBody* _body) : channel(_channel), body(_body),version(_version) {}
 
 AMQFrame::AMQFrame(ProtocolVersion _version, uint16_t _channel, const AMQBody::shared_ptr& _body) :
-version(_version), channel(_channel), body(_body)
+    channel(_channel), body(_body), version(_version)
 {}
 
 AMQFrame::~AMQFrame() {}
-
-uint16_t AMQFrame::getChannel(){
-    return channel;
-}
 
 AMQBody::shared_ptr AMQFrame::getBody(){
     return body;

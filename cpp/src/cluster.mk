@@ -10,9 +10,12 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/Cluster.h \
   qpid/cluster/Cpg.cpp \
   qpid/cluster/Cpg.h \
-  qpid/cluster/Dispatchable.h
+  qpid/cluster/Dispatchable.h \
+  qpid/cluster/ChannelManager.h \
+  qpid/cluster/ChannelManager.cpp \
+  qpid/cluster/ClusterPluginProvider.cpp
 
-libqpidcluster_la_LIBADD= -lcpg libqpidcommon.la
+libqpidcluster_la_LIBADD= -lcpg libqpidbroker.la
 
 else
 # Empty stub library to satisfy rpm spec file.

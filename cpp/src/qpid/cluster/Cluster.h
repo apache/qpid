@@ -25,47 +25,74 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/shared_ptr.h"
-#include "qpid/framing/ProtocolVersion.h"
+#include <boost/function.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <map>
 #include <vector>
 
 namespace qpid {
+
+namespace broker {
+class HandlerUpdater;
+}
+
 namespace cluster {
 
+class ChannelManager;
+
 /**
- * Represents a cluster. Creating an instance joins current process
- * to the cluster. 
+ * Represents a cluster, provides access to data about members.
+ *
+ * Implements a FrameHandler that multicasts frames to the cluster.
+ *
+ * Requires a handler for frames arriving from the cluster,
+ * normally a ChannelManager but other handlers could be interposed
+ * for testing, logging etc.
  */
 class Cluster : public framing::FrameHandler, private sys::Runnable {
   public:
     /** Details of a cluster member */
     struct Member {
-        Member(const std::string& url_) : url(url_) {}
-        std::string url;
-    };
+        typedef shared_ptr<const Member> Ptr;
+        /** Status of a cluster member. */
+        enum Status {
+            JOIN,               ///< Process joined the group.
+            LEAVE,              ///< Process left the group cleanly.
+            NODEDOWN,           ///< Process's node went down.
+            NODEUP,             ///< Process's node joined the cluster.
+            PROCDOWN,           ///< Process died without leaving.
+            BROKER              ///< Broker details are available.
+        };
 
-    typedef std::vector<shared_ptr<const Member> > MemberList;
+        Member(const cpg_address&);
+        std::string url;
+        Status status;
+    };
+    
+    typedef std::vector<Member::Ptr> MemberList;
     
     /**
-     * Join a cluster.
+     * Create a cluster object but do not joing.
      * @param name of the cluster.
      * @param url of this broker, sent to the cluster.
-     * @param next handler receives the frame when it has been
-     * acknowledged by the cluster.
      */
-    Cluster(const std::string& name,
-            const std::string& url,
-            framing::FrameHandler& next,
-            framing::ProtocolVersion);
+    Cluster(const std::string& name, const std::string& url);
 
     ~Cluster();
+
+    /** Join the cluster.
+     *@handler is the handler for frames arriving from the cluster.
+     */
+    void join(framing::FrameHandler::Chain handler);
     
     /** Multicast a frame to the cluster. */
     void handle(framing::AMQFrame&);
 
     /** Get the current cluster membership. */
     MemberList getMembers() const;
+
+    /** Called when membership changes. */
+    void setCallback(boost::function<void()>);
     
     /** Number of members in the cluster. */
     size_t size() const;
@@ -76,7 +103,6 @@ class Cluster : public framing::FrameHandler, private sys::Runnable {
 
     void run();
     void notify();
-    
     void cpgDeliver(
         cpg_handle_t /*handle*/,
         struct cpg_name *group,
@@ -93,18 +119,14 @@ class Cluster : public framing::FrameHandler, private sys::Runnable {
         struct cpg_address */*joined*/, int /*nJoined*/
     );
 
-    Id self;
+    mutable sys::Monitor lock;
     Cpg::Name name;
     std::string url;
-    framing::ProtocolVersion version;
     boost::scoped_ptr<Cpg> cpg;
-    framing::FrameHandler& next;
+    Id self;
     MemberMap members;
     sys::Thread dispatcher;
-    
-  protected:
-    // Allow access from ClusterTest subclass.
-    mutable sys::Monitor lock;
+    boost::function<void()> callback;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
 };

@@ -152,11 +152,14 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Proxy.cpp \
   qpid/framing/Handler.h \
   qpid/framing/FrameHandler.h \
+  qpid/framing/HandlerUpdater.h \
   gen/qpid/framing/AMQP_ClientProxy.cpp \
   gen/qpid/framing/AMQP_HighestVersion.h \
   gen/qpid/framing/AMQP_MethodVersionMap.cpp \
   gen/qpid/framing/AMQP_ServerProxy.cpp \
   qpid/Exception.cpp \
+  qpid/Plugin.h \
+  qpid/Plugin.cpp \
   qpid/Url.h \
   qpid/Url.cpp \
   qpid/QpidError.cpp \
@@ -217,10 +220,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TxAck.cpp \
   qpid/broker/TxBuffer.cpp \
-  qpid/broker/TxPublish.cpp \
-  qpid/broker/Plugin.h \
-  qpid/broker/Plugin.cpp \
-  qpid/broker/ChannelInitializer.h
+  qpid/broker/TxPublish.cpp 
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
