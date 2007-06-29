@@ -50,17 +50,11 @@ class EventChannelConnection : public ConnectionOutputHandler {
         bool isTrace = false
     );
 
-    // TODO aconway 2006-11-30: SessionContext::send should take auto_ptr
-    virtual void send(qpid::framing::AMQFrame* frame) {
-        send(std::auto_ptr<qpid::framing::AMQFrame>(frame));
-    }
-            
-    virtual void send(std::auto_ptr<qpid::framing::AMQFrame> frame);
-
+    virtual void send(qpid::framing::AMQFrame& frame);
     virtual void close();
 
   private:
-    typedef boost::ptr_deque<qpid::framing::AMQFrame> FrameQueue;
+    typedef std::deque<qpid::framing::AMQFrame> FrameQueue;
     typedef void (EventChannelConnection::*MemberFnPtr)();
     struct ScopedBusy;
 

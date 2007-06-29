@@ -22,9 +22,9 @@
  *
  */
 
-
 #include "Poller.h"
 #include "Runnable.h"
+#include "Mutex.h"
 
 #include <memory>
 #include <boost/function.hpp>
@@ -45,18 +45,25 @@ private:
     Callback readableCallback;
     Callback writableCallback;
     Poller::shared_ptr poller;
+    Mutex stateLock;
+    enum { IDLE, INACTIVE, ACTIVE_R, ACTIVE_W, ACTIVE_RW, CALLBACK, DELAYED_R, DELAYED_W, DELAYED_RW} state;
 
 public:
-    
     DispatchHandle(int fd, Callback rCb, Callback wCb) :
       PollerHandle(fd),
       readableCallback(rCb),
-      writableCallback(wCb)
+      writableCallback(wCb),
+      state(IDLE)
     {}
 
     void watch(Poller::shared_ptr poller);
     void rewatch();
+    void rewatchRead();
+    void rewatchWrite();
     void unwatch();
+
+private:
+    void dispatchCallbacks(Poller::Direction dir);
 };
 
 class Dispatcher : public Runnable {
