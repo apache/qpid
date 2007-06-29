@@ -68,9 +68,11 @@ posix_netio_hdr = \
   qpid/sys/posix/EventChannelThreads.h
 
 posix_plat_src = \
-  qpid/sys/posix/check.cpp \
+  qpid/sys/Dispatcher.cpp \
   qpid/sys/epoll/EpollPoller.cpp \
+  qpid/sys/posix/check.cpp \
   qpid/sys/posix/Socket.cpp \
+  qpid/sys/posix/AsynchIO.cpp \
   qpid/sys/posix/Time.cpp \
   qpid/sys/posix/Thread.cpp
 
@@ -349,6 +351,7 @@ nobase_include_HEADERS = \
   qpid/framing/amqp_types.h \
   qpid/framing/amqp_types_full.h \
   qpid/sys/Acceptor.h \
+  qpid/sys/AsynchIO.h \
   qpid/sys/AtomicCount.h \
   qpid/sys/Dispatcher.h \
   qpid/sys/Condition.h \
