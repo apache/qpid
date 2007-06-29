@@ -62,11 +62,10 @@ EventChannelConnection::EventChannelConnection(
 }
 
 
-void EventChannelConnection::send(std::auto_ptr<AMQFrame> frame) {
+void EventChannelConnection::send(AMQFrame& frame) {
     {
         Monitor::ScopedLock lock(monitor);
-        assert(frame.get());
-        writeFrames.push_back(frame.release());
+        writeFrames.push_back(frame);
     }
     closeOnException(&EventChannelConnection::startWrite);
 }
@@ -119,7 +118,6 @@ void EventChannelConnection::closeOnException(MemberFnPtr f)
 // Called by endWrite and send, but only one thread writes at a time.
 // 
 void EventChannelConnection::startWrite() {
-    FrameQueue::auto_type frame;
     {
         Monitor::ScopedLock lock(monitor);
         // Stop if closed or a write event is already in progress.
@@ -130,14 +128,15 @@ void EventChannelConnection::startWrite() {
             return;
         }
         isWriting = true;
-        frame = writeFrames.pop_front();
+        AMQFrame& frame = writeFrames.front();
+        writeFrames.pop_front();
+	    // No need to lock here - only one thread can be writing at a time.
+	    out.clear();
+	    if (isTrace)
+	        cout << "Send on socket " << writeFd << ": " << frame << endl;
+	    frame.encode(out);
+	    out.flip();
     }
-    // No need to lock here - only one thread can be writing at a time.
-    out.clear();
-    if (isTrace)
-        cout << "Send on socket " << writeFd << ": " << *frame << endl;
-    frame->encode(out);
-    out.flip();
     // TODO: AMS 1/6/07 This only works because we already have the correct fd
     // in the descriptor - change not to use assigment
     writeEvent = WriteEvent(
@@ -225,11 +224,10 @@ void EventChannelConnection::endRead() {
         in.flip();
         AMQFrame frame;
         while (frame.decode(in)) {
-            // TODO aconway 2006-11-30: received should take Frame&
             if (isTrace)
                 cout << "Received on socket " << readFd
                      << ": " << frame << endl;
-            handler->received(&frame); 
+            handler->received(frame); 
         }
         in.compact();
         startRead();
