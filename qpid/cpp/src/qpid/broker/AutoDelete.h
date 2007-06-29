@@ -30,24 +30,20 @@
 
 namespace qpid {
     namespace broker{
-        class AutoDelete : private qpid::sys::Runnable {
+        class AutoDelete {
             qpid::sys::Mutex lock;            
-            qpid::sys::Monitor monitor;            
             std::queue<Queue::shared_ptr> queues;
             QueueRegistry* const registry;
-            sys::Duration period;
-            volatile bool stopped;
-            qpid::sys::Thread runner;
-            
+            uint32_t high_water_mark;
+	    uint32_t water_mark;
+             
             Queue::shared_ptr const pop();
-            void process();
-            virtual void run();
 
         public:
-            AutoDelete(QueueRegistry* const registry, uint32_t period);
+            AutoDelete(QueueRegistry* const registry, uint32_t _water_mark);
             void add(Queue::shared_ptr const);
-            void start();
-            void stop();
+            void clean();
+	    void cleanNow();
         };
     }
 }
