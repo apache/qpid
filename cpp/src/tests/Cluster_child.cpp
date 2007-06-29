@@ -32,16 +32,14 @@ static const ProtocolVersion VER;
 
 /** Chlid part of Cluster::clusterTwo test */
 void clusterTwo() {
-    VectorFrameHandler received;
-    TestCluster cluster("Test", "amqp::2", received, VER);
-    BOOST_REQUIRE(cluster.waitFor(2));
-    
-    BOOST_REQUIRE(received.waitFor(1));
-    BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *received[0].getBody());
+    Cluster cluster("Test", "amqp::2");
+    TestClusterHandler handler(cluster);
+    BOOST_REQUIRE(handler.waitFrames(1));
+    BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *handler[0].getBody());
     AMQFrame frame(VER, 1, new BasicGetOkBody(VER));
     cluster.handle(frame);
-    BOOST_REQUIRE(received.waitFor(2));
-    BOOST_CHECK_TYPEID_EQUAL(BasicGetOkBody, *received[1].getBody());
+    BOOST_REQUIRE(handler.waitFrames(2));
+    BOOST_CHECK_TYPEID_EQUAL(BasicGetOkBody, *handler[1].getBody());
 } 
 
 int test_main(int, char**) {

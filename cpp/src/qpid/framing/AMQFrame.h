@@ -48,7 +48,7 @@ class AMQFrame : public AMQDataBlock
     virtual void encode(Buffer& buffer); 
     virtual bool decode(Buffer& buffer); 
     virtual uint32_t size() const;
-    uint16_t getChannel();
+    uint16_t getChannel() const { return channel; }
     AMQBody::shared_ptr getBody();
 
     /** Convenience template to cast the body to an expected type */
@@ -60,17 +60,16 @@ class AMQFrame : public AMQDataBlock
     uint32_t decodeHead(Buffer& buffer); 
     void decodeBody(Buffer& buffer, uint32_t size); 
 
-  private:
-        static AMQP_MethodVersionMap versionMap;
-    ProtocolVersion version;
-            
     uint16_t channel;
     uint8_t type;
     AMQBody::shared_ptr body;
-            
+    ProtocolVersion version;
 
-  friend std::ostream& operator<<(std::ostream& out, const AMQFrame& body);
+  private:
+    static AMQP_MethodVersionMap versionMap;
 };
+
+std::ostream& operator<<(std::ostream&, const AMQFrame&);
 
 }} // namespace qpid::framing
 

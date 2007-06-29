@@ -100,14 +100,13 @@ struct UrlGrammar : public grammar<UrlGrammar>
     };
 };
 
-Url::Url(const string& url) {
-    if (!parse(url.c_str(), UrlGrammar(*this)).full)
-        throw InvalidUrl("Invalid AMQP url: "+url);
-    // TODO aconway 2007-06-15: Better error handling?
+void Url::parse(const char* url) {
+    if (!boost::spirit::parse(url, UrlGrammar(*this)).full)
+        throw InvalidUrl(string("Invalid AMQP url: ")+url);
 }
 
-Url::Url(const string& url, const nothrow_t&) {
-    if (!parse(url.c_str(), UrlGrammar(*this)).full)
+void Url::parseNoThrow(const char* url) {
+    if (!boost::spirit::parse(url, UrlGrammar(*this)).full)
         clear();
 }
 

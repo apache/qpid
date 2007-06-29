@@ -83,7 +83,7 @@ testprogs =		\
   topic_publisher
 
 
-check_PROGRAMS += $(unit_progs) $(testprogs) interop_runner
+check_PROGRAMS += $(unit_progs) $(testprogs) interop_runner 
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 

@@ -24,9 +24,9 @@
 
 #include "ConnectionFactory.h"
 #include "qpid/Url.h"
+#include "qpid/Plugin.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Acceptor.h"
-#include "qpid/SharedObject.h"
 #include "MessageStore.h"
 #include "AutoDelete.h"
 #include "ExchangeRegistry.h"
@@ -39,14 +39,17 @@
 #include "qpid/Options.h"
 
 namespace qpid { 
+
+namespace framing {
+class HandlerUpdater;
+}
+
 namespace broker {
-class ChannelInitializer;
 
 /**
  * A broker instance. 
  */
-class Broker : public sys::Runnable,
-               public SharedObject<Broker>
+class Broker : public sys::Runnable, public PluginUser
 {
   public:
     struct Options : public qpid::Options {
@@ -62,16 +65,9 @@ class Broker : public sys::Runnable,
     
     virtual ~Broker();
 
-    /**
-     * Create a broker.
-     * @param port Port to listen on or 0 to pick a port dynamically.
-     */
-    static shared_ptr create(int16_t port = TcpAddress::DEFAULT_PORT);
-
-    /**
-     * Create a broker with the options in config.
-     */
-    static shared_ptr create(const Options& config);
+    Broker(const Options& configuration);
+    static shared_ptr<Broker> create(const Options& configuration);
+    static shared_ptr<Broker> create(int16_t port = TcpAddress::DEFAULT_PORT);
 
     /**
      * Return listening port. If called before bind this is
@@ -80,19 +76,22 @@ class Broker : public sys::Runnable,
      * 0.
      */
     virtual int16_t getPort() const;
-            
+
+    /** Return the broker's URL. */
+    virtual std::string getUrl() const;
+    
     /**
      * Run the broker. Implements Runnable::run() so the broker
      * can be run in a separate thread.
      */
     virtual void run();
 
-    /** Plug-in a channel initializer. */
-    void plugin(const qpid::shared_ptr<ChannelInitializer>&);
-    
     /** Shut down the broker */
     virtual void shutdown();
 
+    /** Use a plugin */
+    void use(const shared_ptr<Plugin>& plugin);
+    
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
@@ -102,7 +101,6 @@ class Broker : public sys::Runnable,
     DtxManager& getDtxManager() { return dtxManager; }
     
   private:
-    Broker(const Options& configuration);
     sys::Acceptor& getAcceptor() const;
 
     Options config;

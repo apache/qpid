@@ -60,7 +60,7 @@ class BrokerChannelTest : public CppUnit::TestCase
     CPPUNIT_TEST(testFlow);
     CPPUNIT_TEST_SUITE_END();
 
-    Broker::shared_ptr broker;
+    shared_ptr<Broker> broker;
     Connection connection;
     MockHandler handler;
     
