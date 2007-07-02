@@ -11,17 +11,19 @@ lib_broker = $(abs_builddir)/../libqpidbroker.la
 # Initialize variables that are incremented with +=
 # 
 check_PROGRAMS=
-unit_progs=
-unit_wrappers=
+TESTS=
+EXTRA_DIST=
 
 #
 # Unit test programs.
 # 
-unit_progs+=logging
+TESTS+=logging
+check_PROGRAMS+=logging
 logging_SOURCES=logging.cpp test_tools.h
 logging_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common) 
 
-unit_progs+=Url
+TESTS+=Url
+check_PROGRAMS+=Url
 Url_SOURCES=Url.cpp test_tools.h
 Url_LDADD=-lboost_unit_test_framework $(lib_common) 
 
@@ -76,21 +78,20 @@ unit_tests =		\
 
 # Executables for client tests
 
-testprogs =		\
+testprogs=		\
   client_test		\
   echo_service		\
   topic_listener	\
-  topic_publisher
-
-
-check_PROGRAMS += $(unit_progs) $(testprogs) interop_runner 
+  topic_publisher	\
+  interop_runner 
+check_PROGRAMS += $(testprogs)
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
 system_tests = client_test quick_topictest
-TESTS = dummy_test $(unit_progs) $(unit_wrappers) run-unit-tests start_broker $(system_tests) python_tests kill_broker 
+TESTS += run-unit-tests start_broker $(system_tests) python_tests kill_broker 
 
-EXTRA_DIST =								\
+EXTRA_DIST +=								\
   test_env run_test							\
   run-unit-tests start_broker python_tests kill_broker 			\
   quick_topictest							\
@@ -131,10 +132,8 @@ gen.mk: Makefile.am
 check-unit:
 	$(MAKE) check TESTS=$(UNIT_TESTS) run-unit-tests
 
-# Dummy test to force necessary test files to be generated.
-dummy_test: .valgrind.supp .valgrindrc
-	{ echo "#!/bin/sh";  echo "# Dummy test, does nothing. "; } > $@
-	chmod a+x $@
+# Make sure valgrind files are generated.
+all: .valgrind.supp .valgrindrc
 
 # Create a copy so that can be modified without risk of committing the changes.
 .valgrindrc: .valgrindrc-default

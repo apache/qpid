@@ -1,0 +1,16 @@
+#!/bin/sh
+test `id -ng` = "ais" || {
+    cat <<EOF
+    =========================== NOTICE==============================
+
+    You do not appear to have you group ID set to "ais".
+
+    Cluster tests that require the openais library will fail.Make sure
+    you are a member of group ais and run "newgrp ais" before running
+    the tests.
+
+    ================================================================
+    
+EOF
+exit 1;
+}

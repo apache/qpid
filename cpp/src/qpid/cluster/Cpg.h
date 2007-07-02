@@ -21,8 +21,9 @@
 
 #include "qpid/Exception.h"
 #include "qpid/cluster/Dispatchable.h"
-#include <boost/function.hpp>
+
 #include <cassert>
+
 extern "C" {
 #include <openais/cpg.h>
 }
@@ -69,31 +70,36 @@ class Cpg : public Dispatchable {
         return std::string(n.value, n.length);
     }
 
-    typedef boost::function<void (
-        cpg_handle_t /*handle*/,
-        struct cpg_name *group,
-        uint32_t /*nodeid*/,
-        uint32_t /*pid*/,
-        void* /*msg*/,
-        int /*msg_len*/)> DeliverFn;
+    struct Handler {
+        virtual ~Handler() {};
+        virtual void deliver(
+            cpg_handle_t /*handle*/,
+            struct cpg_name *group,
+            uint32_t /*nodeid*/,
+            uint32_t /*pid*/,
+            void* /*msg*/,
+            int /*msg_len*/) = 0;
 
-    typedef boost::function<void (
-        cpg_handle_t /*handle*/,
-        struct cpg_name */*group*/,
-        struct cpg_address */*members*/, int /*nMembers*/,
-        struct cpg_address */*left*/, int /*nLeft*/,
-        struct cpg_address */*joined*/, int /*nJoined*/
-    )> ConfigChangeFn;
+        virtual void configChange(
+            cpg_handle_t /*handle*/,
+            struct cpg_name */*group*/,
+            struct cpg_address */*members*/, int /*nMembers*/,
+            struct cpg_address */*left*/, int /*nLeft*/,
+            struct cpg_address */*joined*/, int /*nJoined*/
+        ) = 0;
+    };
 
     /** Open a CPG handle.
-     *@param deliver - free function called when a message is delivered.
-     *@param reconfig - free function called when CPG configuration changes.
+     *@param handler for CPG events.
      */
-    Cpg(DeliverFn deliver, ConfigChangeFn reconfig);
-
-    /** Disconnect from CPG. */
+    Cpg(Handler&);
+    
+    /** Destructor calls shutdown. */
     ~Cpg();
 
+    /** Disconnect from CPG */
+    void shutdown();
+    
     /** Dispatch CPG events.
      *@param type one of
      * - CPG_DISPATCH_ONE - dispatch exactly one event.
@@ -128,7 +134,9 @@ class Cpg : public Dispatchable {
     
   private:
     class Handles;
+    struct ClearHandleOnExit;
   friend class Handles;
+  friend struct ClearHandleOnExit;
     
     static std::string errorStr(cpg_error_t err, const std::string& msg);
     static std::string cantJoinMsg(const Name&);
@@ -159,8 +167,7 @@ class Cpg : public Dispatchable {
 
     static Handles handles;
     cpg_handle_t handle;
-    DeliverFn deliver;
-    ConfigChangeFn configChange;
+    Handler& handler;
 };
 
 std::ostream& operator <<(std::ostream& out, const Cpg::Id& id);
