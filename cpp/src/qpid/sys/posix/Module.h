@@ -93,9 +93,9 @@ template <class T> Module<T>::~Module() throw()
 
 template <class T> void Module<T>::load(const std::string& name)
 {
-    dlerror();
-    handle = dlopen(name.c_str(), RTLD_NOW);
-    const char* error = dlerror();
+    ::dlerror();
+    handle = ::dlopen(name.c_str(), RTLD_NOW);
+    const char* error = ::dlerror();
     if (error) {
         THROW_QPID_ERROR(INTERNAL_ERROR, error);
     }
