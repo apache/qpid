@@ -36,6 +36,9 @@ template <class T> struct Handler {
 
     /** Handler chains for incoming and outgoing traffic. */
     struct Chains {
+        Chains() {}
+        Chains(Chain i, Chain o) : in(i), out(o) {}
+        Chains(Handler* i, Handler* o) : in(i), out(o) {}
         Chain in;
         Chain out;
     };
@@ -48,12 +51,6 @@ template <class T> struct Handler {
 
     /** Next handler. Public so chains can be modified by altering next. */
     Chain next;
-
-  protected:
-    /** Derived handle() implementations call nextHandler to invoke the
-     * next handler in the chain. */
-    void nextHandler(T data) { if (next) next->handle(data); }
-
 };
 
 }}
