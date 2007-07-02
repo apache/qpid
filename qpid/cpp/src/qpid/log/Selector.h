@@ -43,6 +43,8 @@ class Selector {
     Selector(Level l, const std::string& s=std::string()) {
         enable(l,s);
     }
+
+    Selector(const std::string& enableStr) { enable(enableStr); }
     /**
      * Enable messages with level in levels where the file 
      * name contains substring. Empty string matches all.

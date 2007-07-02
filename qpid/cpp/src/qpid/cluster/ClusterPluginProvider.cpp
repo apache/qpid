@@ -18,7 +18,6 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/framing/HandlerUpdater.h"
 #include "qpid/cluster/Cluster.h"
-#include "qpid/cluster/ChannelManager.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 
@@ -51,12 +50,7 @@ struct ClusterPluginProvider : public PluginProvider {
         if (broker && !options.clusterName.empty()) {
             assert(!cluster); // A process can only belong to one cluster.
             cluster.reset(new Cluster(options.clusterName, broker->getUrl()));
-
-            // Channel manager is both the next handler for the cluster
-            // and the HandlerUpdater plugin for the broker.
-            shared_ptr<ChannelManager> manager(new ChannelManager(cluster));
-            cluster->join(manager);
-            broker->use(manager);
+            // FIXME aconway 2007-06-29: register HandlerUpdater.
         }
     }
 };

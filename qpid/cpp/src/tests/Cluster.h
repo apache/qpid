@@ -27,6 +27,7 @@
 #include <boost/bind.hpp>
 #include <iostream>
 #include <vector>
+#include <functional>
 
 /**
  * Definitions for the Cluster.cpp and Cluster_child.cpp child program.
@@ -39,45 +40,48 @@ using namespace qpid;
 using namespace qpid::cluster;
 using namespace qpid::framing;
 using namespace qpid::sys;
+using namespace boost;
 
 void null_deleter(void*) {}
 
-struct TestClusterHandler :
-    public std::vector<AMQFrame>, public FrameHandler, public Monitor
-    
+struct TestFrameHandler :
+    public FrameHandler, public vector<AMQFrame>, public Monitor
 {
-    TestClusterHandler(Cluster& c) : cluster(c) {
-        cluster.join(make_shared_ptr(this, &null_deleter));
-        cluster.setCallback(boost::bind(&Monitor::notify, this));
-    }
-    
-    void handle(AMQFrame& f) {
-        ScopedLock l(*this);
-        push_back(f);
+    void handle(AMQFrame& frame) {
+        Mutex::ScopedLock l(*this);
+        push_back(frame);
         notifyAll();
     }
 
-    /** Wait for the vector to contain n frames. */
-    bool waitFrames(size_t n) {
-        ScopedLock l(*this);
-        AbsTime deadline(now(), TIME_SEC);
+    bool waitFor(size_t n) {
+        Mutex::ScopedLock l(*this);
+        AbsTime deadline(now(), 5*TIME_SEC);
         while (size() != n && wait(deadline))
             ;
         return size() == n;
     }
-
-    /** Wait for the cluster to have n members */
-    bool waitMembers(size_t n) {
-        ScopedLock l(*this);
-        AbsTime deadline(now(), TIME_SEC);
-        while (cluster.size() != n && wait(deadline))
-            ;
-        return cluster.size() == n;
-    }
-
-    Cluster& cluster;
 };
 
+void nullDeleter(void*) {}
+
+struct TestCluster : public Cluster
+{
+    TestCluster(string name, string url) : Cluster(name, url)
+    {
+        setFromChains(
+            FrameHandler::Chains(
+                make_shared_ptr(&in, nullDeleter),
+                make_shared_ptr(&out, nullDeleter)
+            ));
+    }
+
+    /** Wait for cluster to be of size n. */
+    bool waitFor(size_t n) {
+        return wait(boost::bind(equal_to<size_t>(), bind(&Cluster::size,this), n));
+    }
+
+    TestFrameHandler in, out;
+};
 
 
 

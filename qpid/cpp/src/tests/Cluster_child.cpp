@@ -26,20 +26,20 @@ using namespace qpid;
 using namespace qpid::cluster;
 using namespace qpid::framing;
 using namespace qpid::sys;
-
+using namespace qpid::log;
 
 static const ProtocolVersion VER;
 
 /** Chlid part of Cluster::clusterTwo test */
 void clusterTwo() {
-    Cluster cluster("Test", "amqp::2");
-    TestClusterHandler handler(cluster);
-    BOOST_REQUIRE(handler.waitFrames(1));
-    BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *handler[0].getBody());
-    AMQFrame frame(VER, 1, new BasicGetOkBody(VER));
-    cluster.handle(frame);
-    BOOST_REQUIRE(handler.waitFrames(2));
-    BOOST_CHECK_TYPEID_EQUAL(BasicGetOkBody, *handler[1].getBody());
+    TestCluster cluster("clusterTwo", "amqp::2");
+    BOOST_REQUIRE(cluster.in.waitFor(1)); // Frame from parent.
+    BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *cluster.in[0].getBody());
+    BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
+    AMQFrame frame(VER, 1, new ChannelOkBody(VER));
+    cluster.getToChains().out->handle(frame);
+    BOOST_REQUIRE(cluster.out.waitFor(1));
+    BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.out[0].getBody());
 } 
 
 int test_main(int, char**) {

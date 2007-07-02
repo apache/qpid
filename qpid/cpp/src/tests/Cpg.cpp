@@ -47,11 +47,11 @@ ostream& operator<<(ostream& o, const pair<T*, int>& array) {
     o << "{ ";
     ostream_iterator<cpg_address> i(o, " ");
     copy(array.first, array.first+array.second, i);
-    cout << "}";
+    o << "}";
     return o;
 }
 
-struct Callback {
+struct Callback : public Cpg::Handler {
     Callback(const string group_) : group(group_) {}
     string group;
     vector<string> delivered;
@@ -88,10 +88,7 @@ BOOST_AUTO_TEST_CASE(Cpg_basic) {
     //
     Cpg::Name group("foo");
     Callback cb(group.str());
-    Cpg::DeliverFn deliver=boost::bind(&Callback::deliver, &cb, _1, _2, _3, _4, _5, _6);
-    Cpg::ConfigChangeFn reconfig=boost::bind<void>(&Callback::configChange, &cb, _1, _2, _3, _4, _5, _6, _7, _8);
-
-    Cpg cpg(deliver, reconfig);
+    Cpg cpg(cb);
     cpg.join(group);
     iovec iov = { (void*)"Hello!", 6 };
     cpg.mcast(group, &iov, 1);
