@@ -20,51 +20,52 @@
 #include <boost/test/auto_unit_test.hpp>
 #include "test_tools.h"
 #include "Cluster.h"
+#include "qpid/framing/ChannelPingBody.h"
 #include "qpid/framing/ChannelOkBody.h"
-#include "qpid/framing/BasicGetOkBody.h"
-
 
 static const ProtocolVersion VER;
 
-/** Verify membership ind a cluster with one member. */
+using namespace qpid::log;
+
+/** Verify membership in a cluster with one member. */
 BOOST_AUTO_TEST_CASE(clusterOne) {
-    Cluster cluster("Test", "amqp:one:1");
-    TestClusterHandler handler(cluster);
-    AMQFrame frame(VER, 1, new ChannelOkBody(VER));
-    cluster.handle(frame);
-    BOOST_REQUIRE(handler.waitFrames(1));
+    TestCluster cluster("clusterOne", "amqp:one:1");
+    AMQFrame frame(VER, 1, new ChannelPingBody(VER));
+    cluster.getToChains().in->handle(frame);
+    BOOST_REQUIRE(cluster.in.waitFor(1));
+
+    BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *cluster.in[0].getBody());
     BOOST_CHECK_EQUAL(1u, cluster.size());
     Cluster::MemberList members = cluster.getMembers();
     BOOST_CHECK_EQUAL(1u, members.size());
-    BOOST_REQUIRE_EQUAL(members.front()->url, "amqp:one:1");
-    BOOST_CHECK_EQUAL(1u, handler.size());
-    BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *handler[0].getBody());
+    shared_ptr<const Cluster::Member> me=members.front();
+    BOOST_REQUIRE_EQUAL(me->url, "amqp:one:1");
 }
 
-/** Fork a process to verify membership in a cluster with two members */
+/** Fork a process to test a cluster with two members */
 BOOST_AUTO_TEST_CASE(clusterTwo) {
     pid_t pid=fork();
     BOOST_REQUIRE(pid >= 0);
-    if (pid) {                  // Parent see Cluster_child.cpp for child.
-        Cluster cluster("Test", "amqp::1");
-        TestClusterHandler handler(cluster);
-        BOOST_REQUIRE(handler.waitMembers(2));
+    if (pid) {              // Parent, see Cluster_child.cpp for child.
+        TestCluster cluster("clusterTwo", "amqp::1");
+        BOOST_REQUIRE(cluster.waitFor(2)); // Myself and child.
 
         // Exchange frames with child.
-        AMQFrame frame(VER, 1, new ChannelOkBody(VER));
-        cluster.handle(frame);
-        BOOST_REQUIRE(handler.waitFrames(2));
-        BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *handler[0].getBody());
-        BOOST_CHECK_TYPEID_EQUAL(BasicGetOkBody, *handler[1].getBody());
+        AMQFrame frame(VER, 1, new ChannelPingBody(VER));
+        cluster.getToChains().in->handle(frame);
+        BOOST_REQUIRE(cluster.in.waitFor(1));
+        BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *cluster.in[0].getBody());
+        BOOST_REQUIRE(cluster.out.waitFor(1));
+        BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.out[0].getBody());
 
         // Wait for child to exit.
         int status;
         BOOST_CHECK_EQUAL(::wait(&status), pid);
         BOOST_CHECK_EQUAL(0, status);
-        BOOST_CHECK(handler.waitMembers(1));
+        BOOST_CHECK(cluster.waitFor(1));
         BOOST_CHECK_EQUAL(1u, cluster.size());
     }
     else {                      // Child
-        BOOST_REQUIRE(execl("Cluster_child", "Cluster_child", NULL));
+        BOOST_REQUIRE(execl("./Cluster_child", "./Cluster_child", NULL));
     }
 }

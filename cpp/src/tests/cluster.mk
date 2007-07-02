@@ -5,33 +5,25 @@ if CLUSTER
 lib_cluster = $(abs_builddir)/../libqpidcluster.la
 
 # NOTE: Programs using the openais library must be run with gid=ais
-# Such programs are built as *.ais, with a wrapper script *.sh that
-# runs the program with newgrp ais.
+# You should do "newgrp ais" before running the tests to run these.
 # 
-
-# Rule to generate wrapper scripts for tests that require gid=ais.
-run_test="env VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test"
-.ais.sh:
-	echo "if groups | grep '\bais\b' >/dev/null;" > $@_t
-	echo "then echo $(run_test) ./$< \"$$@	\"| newgrp ais;" >>$@_t
-	echo "else echo WARNING: `whoami` not in group ais, skipping $<.;" >>$@_t
-	echo "fi"  >> $@_t
-	mv $@_t $@
-	chmod a+x $@
 
 #
 # Cluster tests.
 # 
-check_PROGRAMS+=Cpg.ais
-Cpg_ais_SOURCES=Cpg.cpp
-Cpg_ais_LDADD=$(lib_cluster) -lboost_unit_test_framework
-unit_wrappers+=Cpg.sh
 
-# FIXME aconway 2007-06-29: Fixing problems with the test.
-# check_PROGRAMS+=Cluster.ais
-# Cluster_ais_SOURCES=Cluster.cpp Cluster.h
-# Cluster_ais_LDADD=$(lib_cluster) -lboost_unit_test_framework
-# unit_wrappers+=Cluster.sh
+TESTS+=ais_check
+EXTRA_DIST+=ais_check
+
+TESTS+=Cpg
+check_PROGRAMS+=Cpg
+Cpg_SOURCES=Cpg.cpp
+Cpg_LDADD=$(lib_cluster) -lboost_unit_test_framework
+
+TESTS+=Cluster
+check_PROGRAMS+=Cluster
+Cluster_SOURCES=Cluster.cpp Cluster.h
+Cluster_LDADD=$(lib_cluster) -lboost_unit_test_framework
 
 check_PROGRAMS+=Cluster_child 
 Cluster_child_SOURCES=Cluster_child.cpp Cluster.h
