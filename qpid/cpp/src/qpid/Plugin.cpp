@@ -54,13 +54,14 @@ void dlopen(const char* name) {
 
 #else // Posix
 
+#include "qpid/sys/posix/check.h"
 #include <dlfcn.h>
 
 namespace qpid {
 void dlopen(const char* name) {
-    dlerror();
-    dlopen(name, RTLD_NOW);
-    const char* error = dlerror();
+    ::dlerror();
+    ::dlopen(name, RTLD_NOW);
+    const char* error = ::dlerror();
     if (error) {
         THROW_QPID_ERROR(INTERNAL_ERROR, error);
     }
