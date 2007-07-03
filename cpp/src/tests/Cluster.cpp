@@ -22,13 +22,14 @@
 #include "Cluster.h"
 #include "qpid/framing/ChannelPingBody.h"
 #include "qpid/framing/ChannelOkBody.h"
+#include "qpid/cluster/ClassifierHandler.h"
 
 static const ProtocolVersion VER;
 
 using namespace qpid::log;
 
 /** Verify membership in a cluster with one member. */
-BOOST_AUTO_TEST_CASE(clusterOne) {
+BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
     AMQFrame frame(VER, 1, new ChannelPingBody(VER));
     cluster.getToChains().in->handle(frame);
@@ -43,7 +44,7 @@ BOOST_AUTO_TEST_CASE(clusterOne) {
 }
 
 /** Fork a process to test a cluster with two members */
-BOOST_AUTO_TEST_CASE(clusterTwo) {
+BOOST_AUTO_TEST_CASE(testClusterTwo) {
     pid_t pid=fork();
     BOOST_REQUIRE(pid >= 0);
     if (pid) {              // Parent, see Cluster_child.cpp for child.
@@ -69,3 +70,28 @@ BOOST_AUTO_TEST_CASE(clusterTwo) {
         BOOST_REQUIRE(execl("./Cluster_child", "./Cluster_child", NULL));
     }
 }
+
+struct CountHandler : public FrameHandler {
+    CountHandler() : count(0) {}
+    void handle(AMQFrame&) { count++; }
+    size_t count;
+};
+    
+/** Test the ClassifierHandler */
+BOOST_AUTO_TEST_CASE(testClassifierHandlerWiring) {
+    AMQFrame queueDecl(VER, 0, new QueueDeclareBody(VER));
+    AMQFrame messageTrans(VER, 0, new MessageTransferBody(VER));
+    shared_ptr<CountHandler> wiring(new CountHandler());
+    shared_ptr<CountHandler> other(new CountHandler());
+    
+    ClassifierHandler classify(wiring, other);
+
+    classify.handle(queueDecl);
+    BOOST_CHECK_EQUAL(1u, wiring->count);
+    BOOST_CHECK_EQUAL(0u, other->count);
+    
+    classify.handle(messageTrans);
+    BOOST_CHECK_EQUAL(1u, wiring->count);
+    BOOST_CHECK_EQUAL(1u, other->count);
+}
+    

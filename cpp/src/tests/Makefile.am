@@ -87,9 +87,9 @@ testprogs=		\
   client_test		\
   echo_service		\
   topic_listener	\
-  topic_publisher	\
-  interop_runner 
-check_PROGRAMS += $(testprogs)
+  topic_publisher	
+
+check_PROGRAMS += $(testprogs) interop_runner
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
