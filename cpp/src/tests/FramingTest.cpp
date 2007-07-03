@@ -352,6 +352,7 @@ class FramingTest : public CppUnit::TestCase
         void print(std::ostream&) const {}
         MethodId amqpMethodId() const { return 0; }
         ClassId  amqpClassId() const { return 0; }
+        FullMethodId  getFullMethodId() const { return 0; }
         void encodeContent(Buffer& ) const {}
         void decodeContent(Buffer& ) {}
     };
