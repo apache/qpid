@@ -219,10 +219,14 @@ class MessageTests(TestBase):
         msg4.ok()  #Four
 
         channel.message_cancel(destination="consumer_tag")
+
+        #publish a new message
+        channel.message_transfer(routing_key="test-requeue", body="Six")
+        #requeue unacked messages (Three and Five)
+        channel.message_recover(requeue=True)
+
         channel.message_consume(queue="test-requeue", destination="consumer_tag")
         queue2 = self.client.queue("consumer_tag")
-
-        channel.message_recover(requeue=True)
         
         msg3b = queue2.get(timeout=1)
         msg5b = queue2.get(timeout=1)
@@ -232,6 +236,8 @@ class MessageTests(TestBase):
 
         self.assertEqual(True, msg3b.redelivered)
         self.assertEqual(True, msg5b.redelivered)
+
+        self.assertEqual("Six", queue2.get(timeout=1).body)
 
         try:
             extra = queue2.get(timeout=1)
