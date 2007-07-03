@@ -249,8 +249,13 @@ Channel::ConsumerImpl::~ConsumerImpl() {
 }
 
 void Channel::ConsumerImpl::cancel(){
-    if(queue)
+    if(queue) {
         queue->cancel(this);
+        if (queue->canAutoDelete()) {            
+            parent->connection.broker.getQueues().destroyIf(queue->getName(), 
+                                                            boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue));
+        }
+    }
 }
 
 void Channel::ConsumerImpl::requestDispatch(){

@@ -36,7 +36,7 @@ using namespace qpid::sys;
 using namespace qpid::framing;
 using boost::format;
 
-Queue::Queue(const string& _name, uint32_t _autodelete, 
+Queue::Queue(const string& _name, bool _autodelete, 
              MessageStore* const _store,
              const ConnectionToken* const _owner) :
 
@@ -50,7 +50,6 @@ Queue::Queue(const string& _name, uint32_t _autodelete,
     exclusive(0),
     persistenceId(0)
 {
-    if(autodelete) lastUsed = now();
 }
 
 Queue::~Queue(){}
@@ -134,7 +133,6 @@ void Queue::consume(Consumer* c, bool requestExclusive){
                             "Exclusive access denied.") %getName());
         exclusive = c;
     }
-    if(autodelete && consumers.empty()) lastUsed = FAR_FUTURE;
     consumers.push_back(c);
 }
 
@@ -143,7 +141,6 @@ void Queue::cancel(Consumer* c){
     Consumers::iterator i = std::find(consumers.begin(), consumers.end(), c);
     if (i != consumers.end()) 
         consumers.erase(i);
-    if(autodelete && consumers.empty()) lastUsed = now();
     if(exclusive == c) exclusive = 0;
 }
 
@@ -192,7 +189,7 @@ uint32_t Queue::getConsumerCount() const{
 
 bool Queue::canAutoDelete() const{
     Mutex::ScopedLock locker(lock);
-    return Duration(lastUsed, now()) > autodelete;
+    return autodelete && consumers.size() == 0;
 }
 
 void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg)

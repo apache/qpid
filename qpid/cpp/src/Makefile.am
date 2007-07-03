@@ -180,7 +180,6 @@ libqpidcommon_la_SOURCES = \
 libqpidbroker_la_LIBADD = libqpidcommon.la -ldaemon -lboost_filesystem
 libqpidbroker_la_SOURCES = \
   qpid/broker/AccumulatedAck.cpp \
-  qpid/broker/AutoDelete.cpp \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerAdapter.cpp \
   qpid/broker/BrokerSingleton.cpp \
@@ -241,7 +240,6 @@ libqpidclient_la_SOURCES =			\
 nobase_include_HEADERS = \
   $(platform_hdr) \
   qpid/broker/AccumulatedAck.h \
-  qpid/broker/AutoDelete.h \
   qpid/broker/BrokerChannel.h \
   qpid/broker/BrokerExchange.h \
   qpid/broker/BrokerMessage.h \

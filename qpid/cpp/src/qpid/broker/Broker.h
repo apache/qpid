@@ -28,7 +28,6 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Acceptor.h"
 #include "MessageStore.h"
-#include "AutoDelete.h"
 #include "ExchangeRegistry.h"
 #include "ConnectionToken.h"
 #include "DirectExchange.h"
@@ -95,9 +94,7 @@ class Broker : public sys::Runnable, public PluginUser
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
-    uint32_t getTimeout() { return timeout; }
     uint64_t getStagingThreshold() { return stagingThreshold; }
-    AutoDelete& getCleaner() { return cleaner; }
     DtxManager& getDtxManager() { return dtxManager; }
     
   private:
@@ -108,9 +105,7 @@ class Broker : public sys::Runnable, public PluginUser
     const std::auto_ptr<MessageStore> store;
     QueueRegistry queues;
     ExchangeRegistry exchanges;
-    uint32_t timeout;
     uint64_t stagingThreshold;
-    AutoDelete cleaner;
     ConnectionFactory factory;
     DtxManager dtxManager;
 

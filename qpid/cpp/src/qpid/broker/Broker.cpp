@@ -80,9 +80,7 @@ Broker::Broker(const Broker::Options& conf) :
     config(conf),
     store(createStore(conf)),
     queues(store.get()),
-    timeout(30000),
     stagingThreshold(0),
-    cleaner(&queues, 100),  // clean every 100 auto delete declares.
     factory(*this),
     dtxManager(store.get())
 {
@@ -127,7 +125,6 @@ void Broker::run() {
 void Broker::shutdown() {
     if (acceptor)
         acceptor->shutdown();
-//cct    cleaner.cleanNow();  // do we need to delete on close?
 }
 
 Broker::~Broker() {
