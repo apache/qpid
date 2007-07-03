@@ -29,4 +29,10 @@ check_PROGRAMS+=Cluster_child
 Cluster_child_SOURCES=Cluster_child.cpp Cluster.h
 Cluster_child_LDADD=$(lib_cluster) -lboost_test_exec_monitor
 
+# TODO aconway 2007-07-03: In progress
+#TESTS+=cluster_client
+check_PROGRAMS+=cluster_client
+cluster_client_SOURCES=cluster_client.cpp
+cluster_client_LDADD=$(lib_client) -lboost_unit_test_framework
+
 endif
