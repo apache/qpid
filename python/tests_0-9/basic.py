@@ -218,10 +218,11 @@ class BasicTests(TestBase):
         channel.basic_ack(delivery_tag=msg4.delivery_tag, multiple=False) #Four
 
         channel.basic_cancel(consumer_tag=subscription.consumer_tag)
-        subscription2 = channel.basic_consume(queue="test-requeue")
-        queue2 = self.client.queue(subscription2.consumer_tag)
 
         channel.basic_recover(requeue=True)
+
+        subscription2 = channel.basic_consume(queue="test-requeue")
+        queue2 = self.client.queue(subscription2.consumer_tag)
         
         msg3b = queue2.get(timeout=1)
         msg5b = queue2.get(timeout=1)
