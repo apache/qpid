@@ -152,6 +152,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Correlator.cpp \
   qpid/framing/Value.cpp \
   qpid/framing/Proxy.cpp \
+  qpid/framing/Uuid.cpp \
   qpid/framing/Handler.h \
   qpid/framing/FrameHandler.h \
   qpid/framing/HandlerUpdater.h \
@@ -345,6 +346,7 @@ nobase_include_HEADERS = \
   qpid/framing/Requester.h \
   qpid/framing/Responder.h \
   qpid/framing/Value.h \
+  qpid/framing/Uuid.h \
   qpid/framing/amqp_framing.h \
   qpid/framing/amqp_types.h \
   qpid/framing/amqp_types_full.h \

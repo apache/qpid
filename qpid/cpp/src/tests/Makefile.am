@@ -27,6 +27,11 @@ check_PROGRAMS+=Url
 Url_SOURCES=Url.cpp test_tools.h
 Url_LDADD=-lboost_unit_test_framework $(lib_common) 
 
+TESTS+=Uuid
+check_PROGRAMS+=Uuid
+Uuid_SOURCES=Uuid.cpp test_tools.h
+Uuid_LDADD=-lboost_unit_test_framework $(lib_common) 
+
 include cluster.mk
 
 # NB: CppUnit test libraries below will be migrated to boost test programs.
