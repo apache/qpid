@@ -304,3 +304,37 @@ class QueueTests(TestBase):
             self.assertChannelException(404, e.args[0])
 
 
+    def test_autodelete_shared(self):
+        """
+        Test auto-deletion (of non-exclusive queues)
+        """
+        channel = self.channel
+        other = self.connect()
+        channel2 = other.channel(1)
+        channel2.channel_open()
+
+        channel.queue_declare(queue="auto-delete-me", auto_delete=True)
+
+        #consume from both channels
+        reply = channel.basic_consume(queue="auto-delete-me", no_ack=True)
+        channel2.basic_consume(queue="auto-delete-me", no_ack=True)
+
+        #implicit cancel
+        channel2.channel_close()
+
+        #check it is still there
+        channel.queue_declare(queue="auto-delete-me", passive=True)
+
+        #explicit cancel => queue is now unused again:
+        channel.basic_cancel(consumer_tag=reply.consumer_tag)
+
+        #NOTE: this assumes there is no timeout in use
+
+        #check that it has gone be declaring passively
+        try:
+            channel.queue_declare(queue="auto-delete-me", passive=True)
+            self.fail("Expected queue to have been deleted")
+        except Closed, e:
+            self.assertChannelException(404, e.args[0])
+
+
