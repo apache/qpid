@@ -65,7 +65,7 @@ void DeliveryRecord::redeliver(Channel* const channel) const{
 
 void DeliveryRecord::requeue() const{
     msg->redeliver();
-    queue->process(msg);
+    queue->requeue(msg);
 }
 
 void DeliveryRecord::addTo(Prefetch* const prefetch) const{
