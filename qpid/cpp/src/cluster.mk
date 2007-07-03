@@ -11,7 +11,9 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/Cpg.cpp \
   qpid/cluster/Cpg.h \
   qpid/cluster/Dispatchable.h \
-  qpid/cluster/ClusterPluginProvider.cpp
+  qpid/cluster/ClusterPluginProvider.cpp \
+  qpid/cluster/ClassifierHandler.h \
+  qpid/cluster/ClassifierHandler.cpp
 
 libqpidcluster_la_LIBADD= -lcpg libqpidbroker.la
 
