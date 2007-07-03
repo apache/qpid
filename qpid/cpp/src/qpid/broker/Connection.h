@@ -62,7 +62,6 @@ class Connection : public sys::ConnectionInputHandler,
 
     uint32_t getFrameMax() const { return framemax; }
     uint16_t getHeartbeat() const { return heartbeat; }
-    uint32_t getTimeout() const { return timeout; }
     uint64_t getStagingThreshold() const { return stagingThreshold; }
 
     void setFrameMax(uint32_t fm) { framemax = fm; }
@@ -98,7 +97,6 @@ class Connection : public sys::ConnectionInputHandler,
     uint32_t framemax;
     uint16_t heartbeat;
     framing::AMQP_ClientProxy::Connection* client;
-    const uint32_t timeout; //timeout for auto-deleted queues (in ms)
     const uint64_t stagingThreshold;
 
 };

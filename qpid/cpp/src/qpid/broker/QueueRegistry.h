@@ -22,7 +22,7 @@
 #define _QueueRegistry_
 
 #include <map>
-#include "qpid/sys/Monitor.h"
+#include "qpid/sys/Mutex.h"
 #include "BrokerQueue.h"
 
 namespace qpid {
@@ -36,7 +36,6 @@ namespace broker {
  *
  */
 class QueueRegistry{
- 
   public:
     QueueRegistry(MessageStore* const store = 0);
     ~QueueRegistry();
@@ -47,7 +46,7 @@ class QueueRegistry{
      * @return The queue and a boolean flag which is true if the queue
      * was created by this declare call false if it already existed.
      */
-    std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, uint32_t autodelete = 0, 
+    std::pair<Queue::shared_ptr, bool> declare(const string& name, bool durable = false, bool autodelete = false, 
                                                const ConnectionToken* const owner = 0);
 
     /**
@@ -63,6 +62,13 @@ class QueueRegistry{
      *
      */
     void destroy(const string& name);
+    template <class Test> void destroyIf(const string& name, Test test)
+    {
+        qpid::sys::Mutex::ScopedLock locker(lock);
+        if (test()) {
+            queues.erase(name);
+        }
+    }
 
     /**
      * Find the named queue. Return 0 if not found.
@@ -79,8 +85,7 @@ class QueueRegistry{
      */
     MessageStore* const getStore() const;
 
-
-  private:
+private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;
     qpid::sys::Mutex lock;
