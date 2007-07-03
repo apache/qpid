@@ -330,9 +330,9 @@ void Channel::ack(uint64_t firstTag, uint64_t lastTag){
         Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
     
         ack_iterator i = find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matches), lastTag));
-		ack_iterator j = (firstTag == 0) ?
-			unacked.begin() :
-        	find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matches), firstTag));
+        ack_iterator j = (firstTag == 0) ?
+            unacked.begin() :
+            find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matches), firstTag));
         	
         if(i == unacked.end()){
             throw ConnectionException(530, "Received ack for unrecognised delivery tag");
@@ -364,7 +364,7 @@ void Channel::recover(bool requeue){
         outstanding.reset();
         std::list<DeliveryRecord> copy = unacked;
         unacked.clear();
-        for_each(copy.begin(), copy.end(), mem_fun_ref(&DeliveryRecord::requeue));
+        for_each(copy.rbegin(), copy.rend(), mem_fun_ref(&DeliveryRecord::requeue));
     }else{
         for_each(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::redeliver), this));        
     }

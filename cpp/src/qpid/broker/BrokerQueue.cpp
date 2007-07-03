@@ -75,6 +75,14 @@ void Queue::process(Message::shared_ptr& msg){
     }
 }
 
+void Queue::requeue(Message::shared_ptr& msg){
+    Mutex::ScopedLock locker(lock);
+    if(queueing || !dispatch(msg)){
+        queueing = true;
+        messages.push_front(msg);
+    }
+}
+
 bool Queue::dispatch(Message::shared_ptr& msg){
     if(consumers.empty()){
         return false;
@@ -163,12 +171,12 @@ uint32_t Queue::purge(){
 
 void Queue::pop(){
     if (policy.get()) policy->dequeued(messages.front()->contentSize());
-    messages.pop();    
+    messages.pop_front();    
 }
 
 void Queue::push(Message::shared_ptr& msg){
     queueing = true;
-    messages.push(msg);
+    messages.push_back(msg);
     if (policy.get()) {
         policy->enqueued(msg->contentSize());
         if (policy->limitExceeded()) {
