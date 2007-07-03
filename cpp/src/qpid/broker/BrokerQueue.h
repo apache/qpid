@@ -23,7 +23,7 @@
  */
 #include <vector>
 #include <memory>
-#include <queue>
+#include <deque>
 #include <boost/shared_ptr.hpp>
 #include "qpid/framing/amqp_types.h"
 #include "ConnectionToken.h"
@@ -57,7 +57,7 @@ namespace qpid {
          */
         class Queue : public PersistableQueue{
             typedef std::vector<Consumer*> Consumers;
-            typedef std::queue<Message::shared_ptr> Messages;
+            typedef std::deque<Message::shared_ptr> Messages;
             
             const string name;
             const bool autodelete;
@@ -108,6 +108,13 @@ namespace qpid {
              * one is available or stores it for later if not.
              */
             void process(Message::shared_ptr& msg);
+            /**
+             * Returns a message to the in-memory queue (due to lack
+             * of acknowledegement from a receiver). If a consumer is
+             * available it will be dispatched immediately, else it
+             * will be returned to the front of the queue.
+             */
+            void requeue(Message::shared_ptr& msg);
             /**
              * Used during recovery to add stored messages back to the queue
              */
