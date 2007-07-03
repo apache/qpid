@@ -213,7 +213,7 @@ void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, uint
 	std::pair<Queue::shared_ptr, bool> queue_created =  
             broker.getQueues().declare(
                 name, durable,
-                autoDelete ? connection.getTimeout() : 0,
+                autoDelete && !exclusive,
                 exclusive ? &connection : 0);
 	queue = queue_created.first;
 	assert(queue);
@@ -229,9 +229,6 @@ void BrokerAdapter::QueueHandlerImpl::declare(const MethodContext& context, uint
             //handle automatic cleanup:
 	    if (exclusive) {
 		connection.exclusiveQueues.push_back(queue);
-	    } else if(autoDelete){
-		broker.getCleaner().add(queue);
-		broker.getCleaner().clean(); // check if cleaning is needed
 	    }
 	}
     }

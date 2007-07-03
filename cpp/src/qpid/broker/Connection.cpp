@@ -41,7 +41,6 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_) :
     framemax(65536), 
     heartbeat(0),
     client(0),
-    timeout(broker.getTimeout()),
     stagingThreshold(broker.getStagingThreshold())
 {}
 

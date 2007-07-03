@@ -60,7 +60,7 @@ namespace qpid {
             typedef std::queue<Message::shared_ptr> Messages;
             
             const string name;
-            const sys::Duration autodelete;
+            const bool autodelete;
             MessageStore* const store;
             const ConnectionToken* const owner;
             Consumers consumers;
@@ -69,7 +69,6 @@ namespace qpid {
             bool dispatching;
             int next;
             mutable qpid::sys::Mutex lock;
-            sys::AbsTime lastUsed;
             Consumer* exclusive;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
@@ -89,7 +88,7 @@ namespace qpid {
 
             typedef std::vector<shared_ptr> vector;
 	    
-            Queue(const string& name, uint32_t autodelete = 0, 
+            Queue(const string& name, bool autodelete = false, 
                   MessageStore* const store = 0, 
                   const ConnectionToken* const owner = 0);
             ~Queue();
