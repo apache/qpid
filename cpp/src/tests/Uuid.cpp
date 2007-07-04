@@ -17,6 +17,7 @@
  */
 
 #include "qpid/framing/Uuid.h"
+#include "qpid/framing/Buffer.h"
 
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
@@ -57,4 +58,14 @@ BOOST_AUTO_TEST_CASE(testUuidOstream) {
     out << uuid;
     BOOST_CHECK(out.good());
     BOOST_CHECK_EQUAL(out.str(), sampleStr);
+}
+
+BOOST_AUTO_TEST_CASE(testUuidEncodeDecode) {
+    Buffer buf(Uuid::size());
+    Uuid uuid;
+    uuid.encode(buf);
+    buf.flip();
+    Uuid decoded;
+    decoded.decode(buf);
+    BOOST_CHECK(uuid==decoded);
 }
