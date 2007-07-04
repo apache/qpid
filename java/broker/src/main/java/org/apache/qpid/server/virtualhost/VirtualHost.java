@@ -156,7 +156,6 @@ public class VirtualHost implements Accessable
 
         _exchangeRegistry.initialise();
 
-        _logger.warn("VirtualHost authentication Managers require spec change to be operational.");
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);
 
         _accessManager = new AccessManagerImpl(name, hostConfig);

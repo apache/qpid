@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IdleStatus;
@@ -31,7 +28,6 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.util.SessionUtil;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -45,6 +41,9 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.ssl.SSLContextFactory;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
 
 /**
  * The protocol handler handles "protocol events" for all connections. The state
@@ -63,7 +62,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     public AMQPFastProtocolHandler(Integer applicationRegistryInstance)
     {
-    	this(ApplicationRegistry.getInstance(applicationRegistryInstance));
+        this(ApplicationRegistry.getInstance(applicationRegistryInstance));
     }
 
     public AMQPFastProtocolHandler(IApplicationRegistry applicationRegistry)
@@ -83,7 +82,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         final AMQCodecFactory codecFactory = new AMQCodecFactory(true);
 
         createSession(protocolSession, _applicationRegistry, codecFactory);
-        _logger.info("Protocol session created");
+        _logger.info("Protocol session created for:" + protocolSession.getRemoteAddress());
 
         final ProtocolCodecFilter pcf = new ProtocolCodecFilter(codecFactory);
 
@@ -93,10 +92,10 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         {
             if (connectorConfig.enableSSL && isSSLClient(connectorConfig, protocolSession))
             {
-            	String keystorePath = connectorConfig.keystorePath;
-            	String keystorePassword = connectorConfig.keystorePassword;
-            	String certType = connectorConfig.certType;
-            	SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+                String keystorePath = connectorConfig.keystorePath;
+                String keystorePassword = connectorConfig.keystorePassword;
+                String certType = connectorConfig.certType;
+                SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
                 protocolSession.getFilterChain().addAfter("AsynchronousReadFilter", "sslFilter",
                                                           new SSLFilter(sslContextFactory.buildServerContext()));
             }
@@ -104,17 +103,17 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         }
         else
         {
-        	protocolSession.getFilterChain().addLast("protocolFilter", pcf);
+            protocolSession.getFilterChain().addLast("protocolFilter", pcf);
             if (connectorConfig.enableSSL && isSSLClient(connectorConfig, protocolSession))
             {
-            	String keystorePath = connectorConfig.keystorePath;
-            	String keystorePassword = connectorConfig.keystorePassword;
-            	String certType = connectorConfig.certType;
-            	SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+                String keystorePath = connectorConfig.keystorePath;
+                String keystorePassword = connectorConfig.keystorePassword;
+                String certType = connectorConfig.certType;
+                SSLContextFactory sslContextFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
                 protocolSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
-                                                          new SSLFilter(sslContextFactory.buildServerContext()));
-            }        	
-            
+                                                           new SSLFilter(sslContextFactory.buildServerContext()));
+            }
+
         }
     }
 
@@ -128,15 +127,15 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     public void sessionOpened(IoSession protocolSession) throws Exception
     {
-        _logger.info("Session opened");
+        _logger.info("Session opened for:" + protocolSession.getRemoteAddress());
     }
 
     public void sessionClosed(IoSession protocolSession) throws Exception
     {
-        _logger.info("Protocol Session closed");
+        _logger.info("Protocol Session closed for:" + protocolSession.getRemoteAddress());
         final AMQProtocolSession amqProtocolSession = AMQMinaProtocolSession.getAMQProtocolSession(protocolSession);
         //fixme  -- this can be null
-        if(amqProtocolSession != null)
+        if (amqProtocolSession != null)
         {
             amqProtocolSession.closeSession();
         }
@@ -144,13 +143,13 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception
     {
-        _logger.debug("Protocol Session [" + this + "] idle: " + status);
-        if(IdleStatus.WRITER_IDLE.equals(status))
+        _logger.debug("Protocol Session [" + this + "] idle: " + status + " :for:" + session.getRemoteAddress());
+        if (IdleStatus.WRITER_IDLE.equals(status))
         {
             //write heartbeat frame:
             session.write(HeartbeatBody.FRAME);
         }
-        else if(IdleStatus.READER_IDLE.equals(status))
+        else if (IdleStatus.READER_IDLE.equals(status))
         {
             //failover:
             throw new IOException("Timed out while waiting for heartbeat from peer.");
@@ -168,25 +167,25 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
             protocolSession.close();
 
-            _logger.error("Error in protocol initiation " + session + ": " + throwable.getMessage(), throwable);
+            _logger.error("Error in protocol initiation " + session + ":" + protocolSession.getRemoteAddress() + " :" + throwable.getMessage(), throwable);
         }
-        else if(throwable instanceof IOException)
+        else if (throwable instanceof IOException)
         {
             _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable, throwable);
         }
         else
         {
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
-            
+
             // Be aware of possible changes to parameter order as versions change.
             protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
-            	session.getProtocolMajorVersion(),
-                session.getProtocolMinorVersion(),	// AMQP version (major, minor)
-            	0,	// classId
-                0,	// methodId
-                200,	// replyCode
-                new AMQShortString(throwable.getMessage())	// replyText
-                ));
+                                                                     session.getProtocolMajorVersion(),
+                                                                     session.getProtocolMinorVersion(),    // AMQP version (major, minor)
+                                                                     0,    // classId
+                                                                     0,    // methodId
+                                                                     200,    // replyCode
+                                                                     new AMQShortString(throwable.getMessage())    // replyText
+            ));
             protocolSession.close();
         }
     }
@@ -230,11 +229,11 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
             _logger.debug("Message sent: " + object);
         }
     }
-    
+
     protected boolean isSSLClient(ConnectorConfiguration connectionConfig,
-    		IoSession protocolSession) 
+                                  IoSession protocolSession)
     {
-    	InetSocketAddress addr = (InetSocketAddress) protocolSession.getLocalAddress();
-    	return addr.getPort() == connectionConfig.sslPort;
+        InetSocketAddress addr = (InetSocketAddress) protocolSession.getLocalAddress();
+        return addr.getPort() == connectionConfig.sslPort;
     }
 }
