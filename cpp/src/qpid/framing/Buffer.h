@@ -78,6 +78,9 @@ public:
     void putRawData(const string& s);
     void getRawData(string& s, uint32_t size);
 
+    void putRawData(const uint8_t* data, size_t size);
+    void getRawData(uint8_t* data, size_t size);
+
 };
 
 }} // namespace qpid::framing
