@@ -21,22 +21,24 @@
 
 #include "Broker.h"
 
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/HandlerUpdater.h"
+#include "Connection.h"
 #include "DirectExchange.h"
-#include "TopicExchange.h"
 #include "FanOutExchange.h"
 #include "HeadersExchange.h"
 #include "MessageStoreModule.h"
 #include "NullMessageStore.h"
-#include "qpid/framing/ProtocolInitiation.h"
 #include "RecoveryManagerImpl.h"
-#include "Connection.h"
+#include "TopicExchange.h"
+
+#include "qpid/log/Statement.h"
+#include "qpid/Url.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/HandlerUpdater.h"
+#include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Acceptor.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
-#include "qpid/Url.h"
 
 #include <iostream>
 #include <memory>

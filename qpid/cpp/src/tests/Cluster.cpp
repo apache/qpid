@@ -16,13 +16,17 @@
  *
  */
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
-#include <boost/test/auto_unit_test.hpp>
-#include "test_tools.h"
 #include "Cluster.h"
+#include "test_tools.h"
+
 #include "qpid/framing/ChannelPingBody.h"
 #include "qpid/framing/ChannelOkBody.h"
 #include "qpid/cluster/ClassifierHandler.h"
+
+#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
+#include <boost/test/auto_unit_test.hpp>
+
+#include <sys/wait.h>
 
 static const ProtocolVersion VER;
 
