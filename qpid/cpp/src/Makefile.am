@@ -48,11 +48,12 @@ apr_netio_hdr = \
 apr_plat_src = \
   qpid/sys/apr/Socket.cpp \
   qpid/sys/apr/Time.cpp \
-  qpid/sys/apr/Thread.cpp
+  qpid/sys/apr/Thread.cpp \
+  qpid/sys/apr/Shlib.cpp
+
 
 apr_plat_hdr = \
   qpid/sys/apr/Condition.h \
-  qpid/sys/apr/Module.h \
   qpid/sys/apr/Mutex.h \
   qpid/sys/apr/Socket.h \
   qpid/sys/apr/Thread.h
@@ -74,13 +75,13 @@ posix_plat_src = \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
   qpid/sys/posix/Time.cpp \
-  qpid/sys/posix/Thread.cpp
+  qpid/sys/posix/Thread.cpp \
+  qpid/sys/posix/Shlib.cpp
 
 posix_plat_hdr = \
   qpid/sys/posix/check.h \
   qpid/sys/posix/Condition.h \
   qpid/sys/posix/PrivatePosix.h \
-  qpid/sys/posix/Module.h \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Socket.h \
   qpid/sys/posix/Thread.h
@@ -167,6 +168,8 @@ libqpidcommon_la_SOURCES = \
   qpid/Url.cpp \
   qpid/QpidError.cpp \
   qpid/sys/Runnable.cpp \
+  qpid/sys/Shlib.h \
+  qpid/sys/Shlib.cpp \
   qpid/sys/ProducerConsumer.cpp \
   qpid/Options.cpp \
   qpid/Options.h \

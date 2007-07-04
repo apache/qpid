@@ -1,8 +1,4 @@
-#ifndef QPID_SYS_MODULE_H
-#define QPID_SYS_MODULE_H
-
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -10,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,29 +18,11 @@
  *
  */
 
-#include "qpid/sys/Shlib.h"
-#include <boost/noncopyable.hpp>
+int* loaderData = 0;
+extern "C" void callMe(int *i) { loaderData=i; }
 
-namespace qpid {
-namespace sys {
+struct OnUnload { ~OnUnload() { *loaderData=42; } };
+OnUnload unloader;              // For destructor.
 
-template <class T> class Module : public AutoShlib, private boost::noncopyable
-{
-  public:
-    Module(const std::string& name) :
-        AutoShlib(name),
-        ptr(getSymbol<T*(*)()>("create")()) {}
-                
-    T* get() { return ptr; }
-    T* operator->() { return ptr; }
-    ~Module() throw() {
-        getSymbol<void (*)(T*)>("destroy")(ptr);
-    }
 
-  private:
-    T* ptr;
-};
 
-}}
-
-#endif  /*!QPID_SYS_MODULE_H*/
