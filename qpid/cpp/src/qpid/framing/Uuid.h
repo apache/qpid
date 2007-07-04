@@ -26,6 +26,8 @@
 namespace qpid {
 namespace framing {
 
+class Buffer;
+
 /**
  * A UUID is represented as a boost::array of 16 bytes.
  *
@@ -41,6 +43,9 @@ struct Uuid : public boost::array<uint8_t, 16> {
 
     // Default op= and copy ctor are fine.
     // boost::array gives us ==, < etc.
+
+    void encode(framing::Buffer& buf);
+    void decode(framing::Buffer& buf);
 };
 
 /** Print in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb */

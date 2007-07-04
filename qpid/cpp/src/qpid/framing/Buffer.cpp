@@ -181,3 +181,13 @@ void qpid::framing::Buffer::getRawData(string& s, uint32_t len){
     s.assign(data + position, len);
     position += len;
 }
+
+void qpid::framing::Buffer::putRawData(const uint8_t* s, size_t len){
+    memcpy(data + position, s, len);
+    position += len;    
+}
+
+void qpid::framing::Buffer::getRawData(uint8_t* s, size_t len){
+    memcpy(s, data + position, len);
+    position += len;
+}
