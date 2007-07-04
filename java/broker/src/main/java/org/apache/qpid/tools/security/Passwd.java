@@ -18,7 +18,7 @@
  *
  * 
  */
-package org.apache.qpid.server.security;
+package org.apache.qpid.tools.security;
 
 import org.apache.commons.codec.binary.Base64;
 

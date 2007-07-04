@@ -27,9 +27,13 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.util.Map;
+import java.util.List;
+
 public interface Exchange
 {
     AMQShortString getName();
+
     AMQShortString getType();
 
     void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
@@ -61,7 +65,7 @@ public interface Exchange
     boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException;
 
     /**
-     * Determines whether a message is routing to any queue using a specific routing key
+     * Determines whether a message is routing to any queue using a specific _routing key
      * @param routingKey
      * @return
      * @throws AMQException
@@ -76,4 +80,6 @@ public interface Exchange
      * @throws AMQException
      */
     boolean hasBindings() throws AMQException;
+
+    Map<AMQShortString, List<AMQQueue>> getBindings();
 }

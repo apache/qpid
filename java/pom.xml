@@ -391,7 +391,15 @@ under the License.
                     <version>0.5</version>
                 </plugin>
 
-         <plugin>
+        
+
+
+            </plugins>
+        </pluginManagement>
+
+
+		<!--plugins>
+		 <plugin>
                <artifactId>maven-remote-resources-plugin</artifactId>
                <version>1.0-alpha-5</version>
                <executions>
@@ -412,10 +420,7 @@ under the License.
                    </execution>
                </executions>
            </plugin>
-
-
-            </plugins>
-        </pluginManagement>
+		</plugins-->
 
         <defaultGoal>install</defaultGoal>
 

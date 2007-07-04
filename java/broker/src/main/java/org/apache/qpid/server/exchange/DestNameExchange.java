@@ -26,22 +26,16 @@ import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
@@ -157,7 +151,7 @@ public class DestNameExchange extends AbstractExchange
         if (!_index.remove(routingKey, queue))
         {
             throw new AMQException("Queue " + queue + " was not registered with exchange " + this.getName() +
-                                   " with routing key " + routingKey + ". No queue was registered with that routing key");
+                                   " with routing key " + routingKey + ". No queue was registered with that _routing key");
         }
     }
 
@@ -221,5 +215,10 @@ public class DestNameExchange extends AbstractExchange
     public boolean hasBindings() throws AMQException
     {
         return !_index.getBindingsMap().isEmpty();
+    }
+
+    public Map<AMQShortString, List<AMQQueue>> getBindings()
+    {
+        return _index.getBindingsMap();
     }
 }

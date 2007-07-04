@@ -19,13 +19,16 @@
 #
 
 # Set classpath to include Qpid jar with all required jars in manifest
-QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar:$QPID_HOME/lib/bdbstore-launch.jar
+QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar
 
 # Set other variables used by the qpid-run script before calling
 export JAVA=java \
        JAVA_VM=-server \
-       JAVA_MEM=-Xmx1024m \
-       JAVA_GC=-XX:-UseConcMarkSweepGC \
+       JAVA_OPTS=-Dlog4j.configuration=$QPID_TOOLS\etc\messagestoretool-log4j.xml \
        QPID_CLASSPATH=$QPID_LIBS
 
-. qpid-run org.apache.qpid.server.Main "$@"
+if [ -z "$QPID_TOOLS" ]; then
+  die "QPID_HOME must be set"
+fi
+
+. qpid-run org.apache.qpid.tools.messagestore.MessageStoreTool "$@"

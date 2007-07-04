@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
@@ -63,7 +64,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
     public void registerExchange(Exchange exchange) throws AMQException
     {
         _exchangeMap.put(exchange.getName(), exchange);
-        if(exchange.isDurable())
+        if (exchange.isDurable())
         {
             getMessageStore().createExchange(exchange);
         }
@@ -79,13 +80,18 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
+    public Collection<AMQShortString> getExchangeNames()
+    {
+        return _exchangeMap.keySet();
+    }
+
     public void unregisterExchange(AMQShortString name, boolean inUse) throws AMQException
     {
         // TODO: check inUse argument
         Exchange e = _exchangeMap.remove(name);
         if (e != null)
         {
-            if(e.isDurable())
+            if (e.isDurable())
             {
                 getMessageStore().removeExchange(e);
             }
@@ -99,7 +105,7 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public Exchange getExchange(AMQShortString name)
     {
-        if((name == null) || name.length() == 0)
+        if ((name == null) || name.length() == 0)
         {
             return getDefaultExchange();
         }
