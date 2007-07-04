@@ -11,6 +11,7 @@ lib_broker = $(abs_builddir)/../libqpidbroker.la
 # Initialize variables that are incremented with +=
 # 
 check_PROGRAMS=
+check_LTLIBRARIES=
 TESTS=
 EXTRA_DIST=
 
@@ -31,6 +32,15 @@ TESTS+=Uuid
 check_PROGRAMS+=Uuid
 Uuid_SOURCES=Uuid.cpp test_tools.h
 Uuid_LDADD=-lboost_unit_test_framework $(lib_common) 
+
+check_LTLIBRARIES += libshlibtest.la
+libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
+libshlibtest_la_SOURCES = shlibtest.cpp
+
+TESTS+=Shlib
+check_PROGRAMS+=Shlib
+Shlib_SOURCES=Shlib.cpp
+Shlib_LDADD=-lboost_unit_test_framework $(lib_common)
 
 include cluster.mk
 
@@ -112,24 +122,23 @@ EXTRA_DIST +=								\
 include gen.mk
 
 check_LTLIBRARIES += libdlclose_noop.la
-libdlclose_noop_la_LDFLAGS = -module -rpath /home/aconway/svn/qpid/cpp/tests
+libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
 libdlclose_noop_la_SOURCES = dlclose_noop.c
 
 gen.mk: Makefile.am
-	(					\
-	  for i in $(testprogs); do		\
-	    echo $${i}_SOURCES = $$i.cpp;	\
-	    echo $${i}_LDADD = '$$(lib_client) $$(lib_common) $$(extra_libs)'; \
-	  done;					\
-	  libs=;				\
-	  for i in $(unit_tests); do		\
-	    libs="$$libs $${i}.la";		\
-	    echo $${i}_la_SOURCES = $$i.cpp;	\
-	    echo $${i}_la_LIBADD = '$$(lib_common) $$(lib_client)';	\
-	    echo $${i}_la_LIBADD += '$$(lib_broker) $$(extra_libs)';	\
-	    echo $${i}_la_LDFLAGS = "-module -rpath `pwd`";	\
-	  done;					\
-	  echo "check_LTLIBRARIES =$$libs";	\
+	(									\
+	  for i in $(testprogs); do						\
+	    echo $${i}_SOURCES = $$i.cpp;					\
+	    echo $${i}_LDADD = '$$(lib_client) $$(lib_common) $$(extra_libs)';	\
+	  done;									\
+	  libs=;								\
+	  for i in $(unit_tests); do						\
+	    echo "check_LTLIBRARIES +=$${i}.la";				\
+	    echo $${i}_la_SOURCES = $$i.cpp;					\
+	    echo $${i}_la_LIBADD = '$$(lib_common) $$(lib_client)';		\
+	    echo $${i}_la_LIBADD += '$$(lib_broker) $$(extra_libs)';		\
+	    echo $${i}_la_LDFLAGS = "-module -rpath `pwd`";			\
+	  done;									\
 	)					\
 	> $@-t
 	mv $@-t $@
@@ -138,7 +147,7 @@ check-unit:
 	$(MAKE) check TESTS=$(UNIT_TESTS) run-unit-tests
 
 # Make sure valgrind files are generated.
-all: .valgrind.supp .valgrindrc
+all-am: .valgrind.supp .valgrindrc
 
 # Create a copy so that can be modified without risk of committing the changes.
 .valgrindrc: .valgrindrc-default
