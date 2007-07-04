@@ -17,7 +17,11 @@
  */
 
 #include "Uuid.h"
-#include "uuid/uuid.h"
+
+#include "qpid/QpidError.h"
+#include "qpid/framing/Buffer.h"
+
+#include <uuid/uuid.h>
 
 namespace qpid {
 namespace framing {
@@ -29,6 +33,16 @@ Uuid::Uuid() { uuid_generate(c_array()); }
 Uuid::Uuid(uint8_t* uu) { uuid_copy(c_array(),uu); }
 
 static const size_t UNPARSED_SIZE=36; 
+
+void Uuid::encode(Buffer& buf) {
+    buf.putRawData(data(), size());
+}
+
+void Uuid::decode(Buffer& buf) {
+    if (buf.available() < size())
+        THROW_QPID_ERROR(FRAMING_ERROR, "Not enough data for UUID.");
+    buf.getRawData(c_array(), size());
+}
 
 ostream& operator<<(ostream& out, const Uuid& uuid) {
     char unparsed[UNPARSED_SIZE + 1];
