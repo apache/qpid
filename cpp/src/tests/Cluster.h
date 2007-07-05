@@ -44,10 +44,10 @@ using namespace boost;
 
 void null_deleter(void*) {}
 
-struct TestFrameHandler :
-    public FrameHandler, public vector<AMQFrame>, public Monitor
+template <class T>
+struct TestHandler : public Handler<T&>, public vector<T>, public Monitor
 {
-    void handle(AMQFrame& frame) {
+    void handle(T& frame) {
         Mutex::ScopedLock l(*this);
         push_back(frame);
         notifyAll();
@@ -56,11 +56,14 @@ struct TestFrameHandler :
     bool waitFor(size_t n) {
         Mutex::ScopedLock l(*this);
         AbsTime deadline(now(), 5*TIME_SEC);
-        while (size() != n && wait(deadline))
+        while (vector<T>::size() != n && wait(deadline))
             ;
-        return size() == n;
+        return vector<T>::size() == n;
     }
 };
+
+typedef TestHandler<AMQFrame> TestFrameHandler;
+typedef TestHandler<SessionFrame> TestSessionFrameHandler;
 
 void nullDeleter(void*) {}
 
@@ -68,11 +71,7 @@ struct TestCluster : public Cluster
 {
     TestCluster(string name, string url) : Cluster(name, url)
     {
-        setFromChains(
-            FrameHandler::Chains(
-                make_shared_ptr(&in, nullDeleter),
-                make_shared_ptr(&out, nullDeleter)
-            ));
+        setReceivedChain(make_shared_ptr(&received, nullDeleter));
     }
 
     /** Wait for cluster to be of size n. */
@@ -80,7 +79,7 @@ struct TestCluster : public Cluster
         return wait(boost::bind(equal_to<size_t>(), bind(&Cluster::size,this), n));
     }
 
-    TestFrameHandler in, out;
+    TestSessionFrameHandler received;
 };
 
 

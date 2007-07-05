@@ -37,6 +37,7 @@ struct UniqueSet : public std::set<Uuid> {
 BOOST_AUTO_TEST_CASE(testUuidCtor) {
     // Uniqueness
     boost::array<Uuid,1000> uuids;
+    for_each(uuids.begin(), uuids.end(), mem_fun_ref(&Uuid::generate));
     UniqueSet unique;
     for_each(uuids.begin(), uuids.end(), unique);
 }
@@ -62,10 +63,11 @@ BOOST_AUTO_TEST_CASE(testUuidOstream) {
 
 BOOST_AUTO_TEST_CASE(testUuidEncodeDecode) {
     Buffer buf(Uuid::size());
-    Uuid uuid;
+    Uuid uuid(sample.c_array());
     uuid.encode(buf);
     buf.flip();
     Uuid decoded;
     decoded.decode(buf);
-    BOOST_CHECK(uuid==decoded);
+    BOOST_CHECK_EQUAL(string(sample.begin(), sample.end()),
+                      string(decoded.begin(), decoded.end()));
 }

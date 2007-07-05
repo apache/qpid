@@ -81,6 +81,8 @@ public:
     void putRawData(const uint8_t* data, size_t size);
     void getRawData(uint8_t* data, size_t size);
 
+    template <class T> void put(const T& data) { data.encode(*this); }
+    template <class T> void get(T& data) { data.decode(*this); }
 };
 
 }} // namespace qpid::framing

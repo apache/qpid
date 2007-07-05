@@ -36,10 +36,13 @@ using namespace qpid::log;
 BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
     AMQFrame frame(VER, 1, new ChannelPingBody(VER));
-    cluster.getToChains().in->handle(frame);
-    BOOST_REQUIRE(cluster.in.waitFor(1));
+    cluster.getSendChains().in->handle(frame);
+    BOOST_REQUIRE(cluster.received.waitFor(1));
 
-    BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *cluster.in[0].getBody());
+    SessionFrame& sf=cluster.received[0];
+    BOOST_CHECK(sf.isIncoming);
+    BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *sf.frame.getBody());
+    
     BOOST_CHECK_EQUAL(1u, cluster.size());
     Cluster::MemberList members = cluster.getMembers();
     BOOST_CHECK_EQUAL(1u, members.size());
@@ -57,11 +60,13 @@ BOOST_AUTO_TEST_CASE(testClusterTwo) {
 
         // Exchange frames with child.
         AMQFrame frame(VER, 1, new ChannelPingBody(VER));
-        cluster.getToChains().in->handle(frame);
-        BOOST_REQUIRE(cluster.in.waitFor(1));
-        BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *cluster.in[0].getBody());
-        BOOST_REQUIRE(cluster.out.waitFor(1));
-        BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.out[0].getBody());
+        cluster.getSendChains().in->handle(frame);
+        BOOST_REQUIRE(cluster.received.waitFor(1));
+        SessionFrame& sf=cluster.received[0];
+        BOOST_CHECK(sf.isIncoming);
+        BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *sf.frame.getBody());
+        BOOST_REQUIRE(cluster.received.waitFor(2));
+        BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.received[1].frame.getBody());
 
         // Wait for child to exit.
         int status;
@@ -99,3 +104,4 @@ BOOST_AUTO_TEST_CASE(testClassifierHandlerWiring) {
     BOOST_CHECK_EQUAL(1u, other->count);
 }
     
+
