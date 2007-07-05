@@ -284,6 +284,7 @@ public class MandatoryMessageTest extends TestCase
         testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
 
         /** All these tests should have the mandatory flag on. */
+        testProps.setProperty(IMMEDIATE_PROPNAME, false);
         testProps.setProperty(MANDATORY_PROPNAME, true);
 
         /** Bind the receivers consumer by default. */

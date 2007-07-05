@@ -286,6 +286,7 @@ public class ImmediateMessageTest extends TestCase
 
         /** All these tests should have the immediate flag on. */
         testProps.setProperty(IMMEDIATE_PROPNAME, true);
+        testProps.setProperty(MANDATORY_PROPNAME, false);
 
         /** Bind the receivers consumer by default. */
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, true);
