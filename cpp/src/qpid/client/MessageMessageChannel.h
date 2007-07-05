@@ -62,6 +62,8 @@ class MessageMessageChannel : public MessageChannel
     
     void close();
 
+    void cancelAll();
+
   private:
     typedef boost::ptr_map<std::string, IncomingMessage::WaitableDestination>
     Destinations;

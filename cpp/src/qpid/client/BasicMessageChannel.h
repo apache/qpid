@@ -61,6 +61,8 @@ class BasicMessageChannel : public MessageChannel
     
     void close();
 
+    void cancelAll();
+
   private:
 
     struct Consumer{

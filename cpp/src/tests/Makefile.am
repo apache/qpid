@@ -95,6 +95,7 @@ unit_tests =		\
 
 testprogs=		\
   client_test		\
+  exception_test	\
   echo_service		\
   topic_listener	\
   topic_publisher	
@@ -103,7 +104,7 @@ check_PROGRAMS += $(testprogs) interop_runner
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
-system_tests = client_test quick_topictest
+system_tests = client_test exception_test quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests kill_broker 
 
 EXTRA_DIST +=								\
