@@ -69,14 +69,14 @@ void Queue::recover(Message::shared_ptr& msg){
 }
 
 void Queue::process(Message::shared_ptr& msg){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(messageLock);
     if(queueing || !dispatch(msg)){
         push(msg);
     }
 }
 
 void Queue::requeue(Message::shared_ptr& msg){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(messageLock);
     if(queueing || !dispatch(msg)){
         queueing = true;
         messages.push_front(msg);
@@ -105,7 +105,7 @@ bool Queue::dispatch(Message::shared_ptr& msg){
 }
 
 bool Queue::startDispatching(){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedRlock locker(messageLock);
     if(queueing && !dispatching){
         dispatching = true;
         return true;
@@ -117,7 +117,7 @@ bool Queue::startDispatching(){
 void Queue::dispatch(){
     bool proceed = startDispatching();
     while(proceed){
-        Mutex::ScopedLock locker(lock);
+        RWlock::ScopedWlock locker(messageLock);
         if(!messages.empty() && dispatch(messages.front())){
             pop();
         }else{
@@ -129,7 +129,7 @@ void Queue::dispatch(){
 }
 
 void Queue::consume(Consumer* c, bool requestExclusive){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(consumerLock);
     if(exclusive) 
         throw ChannelException(
             403, format("Queue '%s' has an exclusive consumer."
@@ -145,7 +145,7 @@ void Queue::consume(Consumer* c, bool requestExclusive){
 }
 
 void Queue::cancel(Consumer* c){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(consumerLock);
     Consumers::iterator i = std::find(consumers.begin(), consumers.end(), c);
     if (i != consumers.end()) 
         consumers.erase(i);
@@ -153,7 +153,7 @@ void Queue::cancel(Consumer* c){
 }
 
 Message::shared_ptr Queue::dequeue(){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(messageLock);
     Message::shared_ptr msg;
     if(!messages.empty()){
         msg = messages.front();
@@ -163,7 +163,7 @@ Message::shared_ptr Queue::dequeue(){
 }
 
 uint32_t Queue::purge(){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(messageLock);
     int count = messages.size();
     while(!messages.empty()) pop();
     return count;
@@ -186,17 +186,17 @@ void Queue::push(Message::shared_ptr& msg){
 }
 
 uint32_t Queue::getMessageCount() const{
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedRlock locker(messageLock);
     return messages.size();
 }
 
 uint32_t Queue::getConsumerCount() const{
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedRlock locker(consumerLock);
     return consumers.size();
 }
 
 bool Queue::canAutoDelete() const{
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedRlock locker(consumerLock);
     return autodelete && consumers.size() == 0;
 }
 
@@ -241,7 +241,7 @@ void Queue::configure(const FieldTable& _settings)
 void Queue::destroy()
 {
     if (alternateExchange.get()) {
-        Mutex::ScopedLock locker(lock);
+        RWlock::ScopedWlock locker(messageLock);
         while(!messages.empty()){
             DeliverableMessage msg(messages.front());
             alternateExchange->route(msg, msg.getMessage().getRoutingKey(),
