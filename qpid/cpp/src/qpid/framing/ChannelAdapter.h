@@ -58,6 +58,7 @@ class ChannelAdapter : private BodyHandler {
      *@param output Processed frames are forwarded to this handler.
      */
     ChannelAdapter() : id(0) {}
+    virtual ~ChannelAdapter() {}
 
     /** Initialize the channel adapter. */
     void init(ChannelId, OutputHandler&, ProtocolVersion);
