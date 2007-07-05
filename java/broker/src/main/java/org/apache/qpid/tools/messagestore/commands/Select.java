@@ -187,7 +187,7 @@ public class Select extends AbstractCommand
                 }
 
                 //remove the message selection
-                _tool.getState().setMessages(null);
+                _tool.getState().setMessages((java.util.List<Long>) null);
             }
         }
 
