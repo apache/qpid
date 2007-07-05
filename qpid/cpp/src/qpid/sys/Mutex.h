@@ -46,6 +46,26 @@ class ScopedUnlock
     L& mutex;
 };
 
+template <class L>
+class ScopedRlock
+{
+  public:
+    ScopedRlock(L& l) : mutex(l) { l.rlock(); }
+    ~ScopedRlock() { mutex.unlock(); }
+  private:
+    L& mutex;
+};
+
+template <class L>
+class ScopedWlock
+{
+  public:
+    ScopedWlock(L& l) : mutex(l) { l.wlock(); }
+    ~ScopedWlock() { mutex.unlock(); }
+  private:
+    L& mutex;
+};
+
 }}
     
 #ifdef USE_APR_PLATFORM

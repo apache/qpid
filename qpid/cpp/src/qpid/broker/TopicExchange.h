@@ -74,7 +74,7 @@ class TopicPattern : public Tokens
 class TopicExchange : public virtual Exchange{
     typedef std::map<TopicPattern, Queue::vector> BindingMap;
     BindingMap bindings;
-    qpid::sys::Mutex lock;
+    qpid::sys::RWlock lock;
 
     bool isBound(Queue::shared_ptr queue, TopicPattern& pattern);
   public:

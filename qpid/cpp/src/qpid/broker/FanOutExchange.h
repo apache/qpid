@@ -34,7 +34,7 @@ namespace broker {
 
 class FanOutExchange : public virtual Exchange {
     std::vector<Queue::shared_ptr> bindings;
-    qpid::sys::Mutex lock;
+    qpid::sys::RWlock lock;
 
   public:
     static const std::string typeName;

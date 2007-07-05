@@ -29,7 +29,7 @@ FanOutExchange::FanOutExchange(const std::string& _name) : Exchange(_name) {}
 FanOutExchange::FanOutExchange(const std::string& _name, bool _durable, const FieldTable& _args) : Exchange(_name, _durable, _args) {}
 
 bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* /*args*/){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     // Add if not already present.
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
     if (i == bindings.end()) {
@@ -41,7 +41,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/,
 }
 
 bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* /*args*/){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     Queue::vector::iterator i = std::find(bindings.begin(), bindings.end(), queue);
     if (i != bindings.end()) {
         bindings.erase(i);
@@ -52,7 +52,7 @@ bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*
 }
 
 void FanOutExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* /*args*/){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedRlock locker(lock);
     for(Queue::vector::iterator i = bindings.begin(); i != bindings.end(); ++i){
         msg.deliverTo(*i);
     }

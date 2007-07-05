@@ -38,7 +38,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type, 
                                                            bool durable, const FieldTable& args) 
     throw(UnknownExchangeTypeException){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end()) {
 	Exchange::shared_ptr exchange;
@@ -62,7 +62,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
 }
 
 void ExchangeRegistry::destroy(const string& name){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i != exchanges.end()) {
         exchanges.erase(i);
@@ -70,7 +70,7 @@ void ExchangeRegistry::destroy(const string& name){
 }
 
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedRlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end()) 
         throw ChannelException(404, "Exchange not found:" + name);
