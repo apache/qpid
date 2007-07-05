@@ -21,20 +21,14 @@
 #include "qpid/QpidError.h"
 #include "qpid/framing/Buffer.h"
 
-#include <uuid/uuid.h>
-
 namespace qpid {
 namespace framing {
 
 using namespace std;
 
-Uuid::Uuid() { uuid_generate(c_array()); }
-
-Uuid::Uuid(uint8_t* uu) { uuid_copy(c_array(),uu); }
-
 static const size_t UNPARSED_SIZE=36; 
 
-void Uuid::encode(Buffer& buf) {
+void Uuid::encode(Buffer& buf) const {
     buf.putRawData(data(), size());
 }
 

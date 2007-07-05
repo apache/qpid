@@ -32,7 +32,8 @@
 #include "AMQHeartbeatBody.h"
 #include "qpid/framing/AMQP_MethodVersionMap.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
-#include "Buffer.h"
+#include "qpid/framing/Buffer.h"
+#include "qpid/shared_ptr.h"
 
 namespace qpid {
 namespace framing {
@@ -49,7 +50,9 @@ class AMQFrame : public AMQDataBlock
     virtual bool decode(Buffer& buffer); 
     virtual uint32_t size() const;
     uint16_t getChannel() const { return channel; }
-    AMQBody::shared_ptr getBody();
+
+    shared_ptr<AMQBody> getBody() { return body; }
+    void setBody(const shared_ptr<AMQBody>& b) { body = b; }
 
     /** Convenience template to cast the body to an expected type */
     template <class T> boost::shared_ptr<T> castBody() {

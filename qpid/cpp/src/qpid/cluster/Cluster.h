@@ -20,6 +20,7 @@
  */
 
 #include "qpid/cluster/Cpg.h"
+#include "qpid/cluster/SessionFrame.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/sys/Monitor.h"
@@ -69,13 +70,13 @@ class Cluster : private sys::Runnable, private Cpg::Handler
 
     bool empty() const { return size() == 0; }
     
-    /** Get handler chains to send frames to the cluster */ 
-    framing::FrameHandler::Chains getToChains() {
+    /** Get handler chains to send incoming/outgoing frames to the cluster */ 
+    framing::FrameHandler::Chains getSendChains() {
         return toChains;
     }
 
-    /** Set handler chains for frames received from the cluster */
-    void setFromChains(const framing::FrameHandler::Chains& chains);
+    /** Set handler for frames received from the cluster */
+    void setReceivedChain(const SessionFrameHandler::Chain& chain);
 
     /** Wait for predicate(*this) to be true, up to timeout.
      *@return True if predicate became true, false if timed out.
@@ -91,7 +92,7 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     typedef std::map<
         framing::ChannelId, framing::FrameHandler::Chains> ChannelMap;
     
-    void mcast(framing::AMQFrame&); ///< send frame by multicast.
+    void mcast(SessionFrame&);  ///< send frame by multicast.
     void notify();              ///< Notify cluster of my details.
 
     void deliver(
@@ -123,7 +124,7 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     sys::Thread dispatcher;
     boost::function<void()> callback;
     framing::FrameHandler::Chains toChains;
-    framing::FrameHandler::Chains fromChains;
+    SessionFrameHandler::Chain receivedChain;
 
     struct IncomingHandler;
     struct OutgoingHandler;
