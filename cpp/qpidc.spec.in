@@ -122,7 +122,7 @@ make check
 
 %files -n %{qpidd}-devel
 %defattr(-,root,root,-)
-%doc rpm/README.qpidd-devel 
+%doc rpm/README.qpidd-devel
 %defattr(-,root,root,-)
 %_libdir/libqpidbroker.so
 %_libdir/libqpidcluster.so
@@ -165,7 +165,7 @@ fi
 - Bugfix for memory errors on x86_64.
 
 * Thu Apr 12 2007 Alan Conway <aconway@redhat.com> - 0.2-1
-- Bumped version number for rhm dependencies. 
+- Bumped version number for rhm dependencies.
 
 * Wed Apr 11 2007 Alan Conway <aconway@redhat.com> - 0.1-5
 - Add qpidd-devel sub-package.
@@ -185,4 +185,3 @@ fi
 * Fri Dec  8 2006 David Lutterkort <dlutter@redhat.com> - 0.1-1
 - Initial version based on Jim Meyering's sketch and discussions with Alan
   Conway
-
