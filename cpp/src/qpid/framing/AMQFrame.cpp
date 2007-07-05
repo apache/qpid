@@ -47,10 +47,6 @@ AMQFrame::AMQFrame(ProtocolVersion _version, uint16_t _channel, const AMQBody::s
 
 AMQFrame::~AMQFrame() {}
 
-AMQBody::shared_ptr AMQFrame::getBody(){
-    return body;
-}
-
 void AMQFrame::encode(Buffer& buffer)
 {
     buffer.putOctet(body->type());

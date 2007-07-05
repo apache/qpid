@@ -20,8 +20,11 @@
  */
 
 #include <boost/array.hpp>
+
 #include <ostream>
 #include <istream>
+
+#include <uuid/uuid.h>
 
 namespace qpid {
 namespace framing {
@@ -35,16 +38,29 @@ class Buffer;
  * boost::array so Uuid can be the key type in a map etc.
  */
 struct Uuid : public boost::array<uint8_t, 16> {
-    /** Geneate universally  unique identifier */
-    Uuid();
+    /** If unique is true, generate a unique ID else a null ID. */
+    Uuid(bool unique=false) { if (unique) generate(); else clear(); }
 
-    /** Initialize from 16 bytes of data */
-    Uuid(uint8_t* data);
+    /** Copy from 16 bytes of data */
+    Uuid(const uint8_t* data) { assign(data); }
+
+    /** Copy from 16 bytes of data */
+    void assign(const uint8_t* data) { uuid_copy(c_array(), data); }
+    
+    /** Set to a new unique identifier */
+    void generate() { uuid_generate(c_array()); }
+
+    /** Set to all zeros */
+    void clear() { uuid_clear(c_array()); }
+    
+    /** Test for null (all zeros) */
+    bool isNull() const { return uuid_is_null(data()); }
 
     // Default op= and copy ctor are fine.
     // boost::array gives us ==, < etc.
 
-    void encode(framing::Buffer& buf);
+    void encode(framing::Buffer& buf) const;
+    
     void decode(framing::Buffer& buf);
 };
 
