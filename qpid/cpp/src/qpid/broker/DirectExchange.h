@@ -35,7 +35,7 @@ namespace broker {
         typedef std::vector<Queue::shared_ptr> Queues;
         typedef std::map<string, Queues > Bindings;
         Bindings bindings;
-        qpid::sys::Mutex lock;
+        qpid::sys::RWlock lock;
 
     public:
         static const std::string typeName;

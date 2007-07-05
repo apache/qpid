@@ -64,7 +64,7 @@ class QueueRegistry{
     void destroy(const string& name);
     template <class Test> void destroyIf(const string& name, Test test)
     {
-        qpid::sys::Mutex::ScopedLock locker(lock);
+        qpid::sys::RWlock::ScopedWlock locker(lock);
         if (test()) {
             queues.erase(name);
         }
@@ -88,7 +88,7 @@ class QueueRegistry{
 private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;
-    qpid::sys::Mutex lock;
+    qpid::sys::RWlock lock;
     int counter;
     MessageStore* const store;
 };

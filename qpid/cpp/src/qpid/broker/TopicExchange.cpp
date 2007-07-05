@@ -120,7 +120,7 @@ TopicExchange::TopicExchange(const std::string& _name, bool _durable, const Fiel
 
 
 bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
-    Monitor::ScopedLock l(lock);
+    RWlock::ScopedWlock l(lock);
     TopicPattern routingPattern(routingKey);
     if (isBound(queue, routingPattern)) {
         return false;
@@ -131,7 +131,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
 }
 
 bool TopicExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
-    Monitor::ScopedLock l(lock);
+    RWlock::ScopedWlock l(lock);
     BindingMap::iterator bi = bindings.find(TopicPattern(routingKey));
     Queue::vector& qv(bi->second);
     if (bi == bindings.end()) return false;
@@ -151,7 +151,7 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, TopicPattern& pattern)
 }
 
 void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
-    Monitor::ScopedLock l(lock);
+    RWlock::ScopedRlock l(lock);
     for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (i->first.match(routingKey)) {
             Queue::vector& qv(i->second);

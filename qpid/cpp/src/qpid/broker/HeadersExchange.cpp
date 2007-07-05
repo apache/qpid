@@ -44,7 +44,7 @@ HeadersExchange::HeadersExchange(const string& _name) : Exchange(_name) { }
 HeadersExchange::HeadersExchange(const std::string& _name, bool _durable, const FieldTable& _args) : Exchange(_name, _durable, _args) {}
 
 bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     std::string what = args->getString("x-match");
     if (what != all && what != any) {
         THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid x-match value binding to headers exchange.");
@@ -61,7 +61,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/
 }
 
 bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     Bindings::iterator i =
         std::find(bindings.begin(),bindings.end(), Binding(*args, queue));
     if (i != bindings.end()) {
@@ -74,7 +74,7 @@ bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& /*routingKey
 
 
 void HeadersExchange::route(Deliverable& msg, const string& /*routingKey*/, const FieldTable* args){
-    Mutex::ScopedLock locker(lock);;
+    RWlock::ScopedRlock locker(lock);;
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); ++i) {
         if (match(i->first, *args)) msg.deliverTo(i->second);
     }
