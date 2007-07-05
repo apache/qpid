@@ -68,7 +68,8 @@ namespace qpid {
             bool queueing;
             bool dispatching;
             int next;
-            mutable qpid::sys::Mutex lock;
+            mutable qpid::sys::RWlock consumerLock;
+            mutable qpid::sys::RWlock messageLock;
             Consumer* exclusive;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
