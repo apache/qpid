@@ -25,7 +25,8 @@
     <appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
 
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+            <!--param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/-->
+            <param name="ConversionPattern" value="%d %-5p [%t] (%F:%L) - %m%n"/>
         </layout>
     </appender>
 
@@ -34,11 +35,11 @@
     </category>
 
     <category name="org.apache.qpid">
-        <priority value="info"/>
+        <priority value="error"/>
     </category>
 
     <category name="org.apache.qpid.server.security">
-        <priority value="info"/>
+        <priority value="error"/>
     </category>
 
     <category name="org.apache.qpid.server.management">

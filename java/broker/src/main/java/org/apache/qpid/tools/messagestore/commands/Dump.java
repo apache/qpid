@@ -54,7 +54,7 @@ public class Dump extends Show
 
     public String usage()
     {
-        return getCommand() + " [show=[all],[msgheaders],[_amqHeaders],[routing],[content] id=<msgid e.g. 1,2,4-10>";
+        return getCommand() + " [show=[all],[msgheaders],[_amqHeaders],[routing],[content]] [id=<msgid e.g. 1,2,4-10>]";
     }
 
     public String getCommand()

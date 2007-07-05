@@ -32,6 +32,7 @@ import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.tools.messagestore.commands.Clear;
 import org.apache.qpid.tools.messagestore.commands.Command;
+import org.apache.qpid.tools.messagestore.commands.Copy;
 import org.apache.qpid.tools.messagestore.commands.Dump;
 import org.apache.qpid.tools.messagestore.commands.Help;
 import org.apache.qpid.tools.messagestore.commands.List;
@@ -56,7 +57,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * MessageStoreTool.
@@ -85,6 +88,7 @@ public class MessageStoreTool
 
     /** Control used for main run loop. */
     private boolean _running = true;
+    private boolean _initialised = false;
 
     //---------------------------------------------------------------------------------------------------/
 
@@ -182,13 +186,16 @@ public class MessageStoreTool
 
     public void quit()
     {
-        ApplicationRegistry.remove(1);
+        _running = false;
+
+        if (_initialised)
+        {
+            ApplicationRegistry.remove(1);
+        }
 
         _console.println("...exiting");
 
         _console.close();
-
-        _running = false;
     }
 
     public void setBatchMode(boolean batchmode)
@@ -203,6 +210,15 @@ public class MessageStoreTool
     {
         setup();
 
+        if (!_initialised)
+        {
+            System.exit(1);
+        }
+
+        _console.println("");
+
+        _console.println(BOILER_PLATE);        
+
         runCLI();
     }
 
@@ -212,8 +228,6 @@ public class MessageStoreTool
 
         loadCommands();
 
-        _console.println(BOILER_PLATE);
-
         _state.clearAll();
     }
 
@@ -222,6 +236,7 @@ public class MessageStoreTool
         _commands.clear();
         //todo Dynamically load the classes that exis in com.redhat.etp.qpid.commands
         _commands.put("close", new Clear(this));
+        _commands.put("copy", new Copy(this));
         _commands.put("dump", new Dump(this));
         _commands.put("help", new Help(this));
         _commands.put("list", new List(this));
@@ -256,9 +271,11 @@ public class MessageStoreTool
             ConfigurationFileApplicationRegistry registry = new ConfigurationFileApplicationRegistry(configFile);
 
             ApplicationRegistry.remove(1);
+
             ApplicationRegistry.initialise(registry);
 
             checkMessageStores();
+            _initialised = true;
         }
         catch (ConfigurationException e)
         {
@@ -314,12 +331,15 @@ public class MessageStoreTool
             {
                 exec(args);
 
-                if (!_batchMode)
+                if (_running)
                 {
-                    printPrompt();
-                }
+                    if (!_batchMode)
+                    {
+                        printPrompt();
+                    }
 
-                args = _console.readCommand();
+                    args = _console.readCommand();
+                }
             }
         }
     }
@@ -571,6 +591,47 @@ public class MessageStoreTool
         public void clearMessages()
         {
             _msgids = null;
+        }
+
+        /**
+         * A common location to provide parsing of the message id string
+         * utilised by a number of the commands.
+         * The String is comma separated list of ids that can be individual ids
+         * or a range (4-10)
+         *
+         * @param msgString string of msg ids to parse 1,2,4-10
+         */
+        public void setMessages(String msgString)
+        {
+            StringTokenizer tok = new StringTokenizer(msgString, ",");
+
+            if (tok.hasMoreTokens())
+            {
+                _msgids = new LinkedList<Long>();
+            }
+
+            while (tok.hasMoreTokens())
+            {
+                String next = tok.nextToken();
+                if (next.contains("-"))
+                {
+                    Long start = Long.parseLong(next.substring(0, next.indexOf("-")));
+                    Long end = Long.parseLong(next.substring(next.indexOf("-") + 1));
+
+                    if (end >= start)
+                    {
+                        for (long l = start; l <= end; l++)
+                        {
+                            _msgids.add(l);
+                        }
+                    }
+                }
+                else
+                {
+                    _msgids.add(Long.parseLong(next));
+                }
+            }
+
         }
 
         public void setMessages(java.util.List<Long> msgids)

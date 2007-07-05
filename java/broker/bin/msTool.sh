@@ -19,16 +19,38 @@
 #
 
 # Set classpath to include Qpid jar with all required jars in manifest
-QPID_LIBS=$QPID_HOME/lib/qpid-incubating.jar
+QPID_LIBS=$QPID_TOOLS/lib/qpid-incubating.jar
+
+die() {
+  if [[ $1 = -usage ]]; then
+    shift
+    usage=true
+  else
+    usage=false
+  fi
+  echo "$@"
+  $usage && echo
+  $usage && usage
+  exit 1
+}
+
+cygwin=false
+if [[ "$(uname -a | fgrep Cygwin)" != "" ]]; then
+  cygwin=true
+fi
+
+if $cygwin; then
+  QPID_TOOLS=$(cygpath -w $QPID_TOOLS)
+fi
 
 # Set other variables used by the qpid-run script before calling
 export JAVA=java \
        JAVA_VM=-server \
-       JAVA_OPTS=-Dlog4j.configuration=$QPID_TOOLS\etc\messagestoretool-log4j.xml \
+       JAVA_OPTS=-Dlog4j.configuration=file:$QPID_TOOLS/etc/mstool-log4j.xml \
        QPID_CLASSPATH=$QPID_LIBS
 
 if [ -z "$QPID_TOOLS" ]; then
-  die "QPID_HOME must be set"
+  die "QPID_TOOLS be set"
 fi
 
 . qpid-run org.apache.qpid.tools.messagestore.MessageStoreTool "$@"

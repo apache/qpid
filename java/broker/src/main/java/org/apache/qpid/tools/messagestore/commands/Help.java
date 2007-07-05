@@ -35,7 +35,7 @@ public class Help extends AbstractCommand
 
     public String help()
     {
-        return "Provides detailed help on commands. ";
+        return "Provides detailed help on commands.";
     }
 
     public String getCommand()
@@ -59,6 +59,7 @@ public class Help extends AbstractCommand
             if (command != null)
             {
                 _console.println(command.help());
+                _console.println("Usage:" + command.usage());
             }
             else
             {

@@ -65,6 +65,11 @@ public class SimpleCommandParser implements CommandParser
             _nextCommand = null;
         }
 
+        if (input == null)
+        {
+            return null;
+        }
+
         StringTokenizer tok = new StringTokenizer(input, " ");
 
         int tokenCount = tok.countTokens();

@@ -41,12 +41,12 @@ public class Select extends AbstractCommand
 
     public String help()
     {
-        return "Perform a selection";
+        return "Perform a selection.";
     }
 
     public String usage()
     {
-        return "select virtualhost <name> |exchange <name> |queue <name> | msgs id=< msgids eg. 1,2,4-10 >";
+        return "select virtualhost <name> |exchange <name> |queue <name> | msgs id=<msgids eg. 1,2,4-10>";
     }
 
     public String getCommand()

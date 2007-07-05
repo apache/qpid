@@ -52,7 +52,7 @@ public class Show extends AbstractCommand
 
     public String usage()
     {
-        return getCommand() + " [show=[all],[msgheaders],[amqheaders],[routing] id=<msgid e.g. 1,2,4-10>";
+        return getCommand() + " [show=[all],[msgheaders],[amqheaders],[routing]] [id=<msgid e.g. 1,2,4-10>]";
     }
 
     public String getCommand()
@@ -94,35 +94,6 @@ public class Show extends AbstractCommand
 
                 if (arg.startsWith("id="))
                 {
-                    StringTokenizer tok = new StringTokenizer(arg.substring(arg.indexOf("=") + 1), ",");
-
-                    if (tok.hasMoreTokens())
-                    {
-                        msgids = new LinkedList<Long>();
-                    }
-
-                    while (tok.hasMoreTokens())
-                    {
-                        String next = tok.nextToken();
-                        if (next.contains("-"))
-                        {
-                            Long start = Long.parseLong(next.substring(0, next.indexOf("-")));
-                            Long end = Long.parseLong(next.substring(next.indexOf("-") + 1));
-
-                            if (end >= start)
-                            {
-                                for (long l = start; l <= end; l++)
-                                {
-                                    msgids.add(l);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            msgids.add(Long.parseLong(next));
-                        }
-                    }
-
                     _tool.getState().setMessages(msgids);
                 }
             }//for args
@@ -133,7 +104,7 @@ public class Show extends AbstractCommand
     {
         if (_tool.getState().getVhost() == null)
         {
-            _console.println("No Virtualhost open. Open a Virtualhost first.");
+            _console.println("No Virtualhost selected. 'DuSelect' a Virtualhost first.");
             return;
         }
 

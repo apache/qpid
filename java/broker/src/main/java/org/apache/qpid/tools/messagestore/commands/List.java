@@ -47,12 +47,12 @@ public class List extends AbstractCommand
 
     public String help()
     {
-        return "list availble items.";
+        return "list available items.";
     }
 
     public String usage()
     {
-        return "list queues [<exchange>] | exchanges| bindings [<exchange>] | all.";
+        return "list queues [<exchange>] | exchanges | bindings [<exchange>] | all";
     }
 
     public String getCommand()
