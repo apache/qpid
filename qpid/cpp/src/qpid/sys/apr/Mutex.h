@@ -68,5 +68,57 @@ void Mutex::trylock() {
     CHECK_APR_SUCCESS(apr_thread_mutex_trylock(mutex));
 }
 
+
+/**
+ * RW lock.
+ */
+class RWlock : private boost::noncopyable {
+    friend class Condition;
+
+public:
+    typedef ScopedRlock<RWlock> ScopedRlock;
+    typedef ScopedWlock<RWlock> ScopedWlock;
+    
+    inline RWlock();
+    inline ~RWlock();
+    inline void wlock();  // will write-lock
+    inline void rlock();  // will read-lock
+    inline void unlock();
+    inline void trywlock();  // will write-try
+    inline void tryrlock();  // will read-try
+
+  protected:
+    apr_thread_mutex_t* mutex;
+};
+
+RWlock::RWlock() {
+    CHECK_APR_SUCCESS(apr_thread_mutex_create(&mutex, APR_THREAD_MUTEX_NESTED, APRPool::get()));
+}
+
+RWlock::~RWlock(){
+    CHECK_APR_SUCCESS(apr_thread_mutex_destroy(mutex));
+}
+
+void RWlock::wlock() {
+    CHECK_APR_SUCCESS(apr_thread_mutex_lock(mutex));
+}
+
+void RWlock::rlock() {
+    CHECK_APR_SUCCESS(apr_thread_mutex_lock(mutex));
+}
+
+void RWlock::unlock() {
+    CHECK_APR_SUCCESS(apr_thread_mutex_unlock(mutex));
+}
+
+void RWlock::trywlock() {
+    CHECK_APR_SUCCESS(apr_thread_mutex_trylock(mutex));
+}
+
+void RWlock::tryrlock() {
+    CHECK_APR_SUCCESS(apr_thread_mutex_trylock(mutex));
+}
+
+
 }}
 #endif  /*!_sys_apr_Mutex_h*/
