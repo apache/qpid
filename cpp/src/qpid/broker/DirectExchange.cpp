@@ -30,7 +30,7 @@ DirectExchange::DirectExchange(const string& _name) : Exchange(_name) {}
 DirectExchange::DirectExchange(const std::string& _name, bool _durable, const FieldTable& _args) : Exchange(_name, _durable, _args) {}
 
 bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable*){
-    Mutex::ScopedLock l(lock);
+    RWlock::ScopedWlock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
     if (i == queues.end()) {
@@ -42,7 +42,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
 }
 
 bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/){
-    Mutex::ScopedLock l(lock);
+    RWlock::ScopedWlock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
 
     std::vector<Queue::shared_ptr>::iterator i = find(queues.begin(), queues.end(), queue);
@@ -58,7 +58,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
 }
 
 void DirectExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
-    Mutex::ScopedLock l(lock);
+    RWlock::ScopedRlock l(lock);
     std::vector<Queue::shared_ptr>& queues(bindings[routingKey]);
     int count(0);
     for(std::vector<Queue::shared_ptr>::iterator i = queues.begin(); i != queues.end(); i++, count++){

@@ -33,7 +33,7 @@ std::pair<Queue::shared_ptr, bool>
 QueueRegistry::declare(const string& declareName, bool durable, 
                        bool autoDelete, const ConnectionToken* owner)
 {
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     string name = declareName.empty() ? generateName() : declareName;
     assert(!name.empty());
     QueueMap::iterator i =  queues.find(name);
@@ -47,12 +47,12 @@ QueueRegistry::declare(const string& declareName, bool durable,
 }
 
 void QueueRegistry::destroy(const string& name){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedWlock locker(lock);
     queues.erase(name);
 }
 
 Queue::shared_ptr QueueRegistry::find(const string& name){
-    Mutex::ScopedLock locker(lock);
+    RWlock::ScopedRlock locker(lock);
     QueueMap::iterator i = queues.find(name);
     if (i == queues.end()) {
 	return Queue::shared_ptr();
