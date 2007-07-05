@@ -83,8 +83,11 @@ class MessageChannel : public sys::Runnable
     /** Send channel's QOS settings */
     virtual void setQos() = 0;
 
-    /** Channel is closing */
+    /** Channel has closed */
     virtual void close() = 0;
+
+    /** Cancel all consumers */
+    virtual void cancelAll() = 0;
 };
 
 }} // namespace qpid::client

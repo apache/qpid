@@ -27,6 +27,7 @@
 #include "ClientMessage.h"
 #include "ClientQueue.h"
 #include "ResponseHandler.h"
+#include "qpid/Exception.h"
 #include "qpid/framing/ChannelAdapter.h"
 #include "qpid/sys/Thread.h"
 #include "AckMode.h"
@@ -58,7 +59,7 @@ class Channel : public framing::ChannelAdapter
     struct UnknownMethod {};
     typedef shared_ptr<framing::AMQMethodBody> MethodPtr;
         
-    sys::Mutex lock;
+    mutable sys::Mutex lock;
     boost::scoped_ptr<MessageChannel> messaging;
     Connection* connection;
     sys::Thread dispatcher;
@@ -68,12 +69,20 @@ class Channel : public framing::ChannelAdapter
     const bool transactional;
     framing::ProtocolVersion version;
 
+    uint16_t errorCode;
+    std::string errorText;
+
+    sys::Mutex stopLock;
+    bool running;
+
+    void stop();
+
     void handleHeader(framing::AMQHeaderBody::shared_ptr body);
     void handleContent(framing::AMQContentBody::shared_ptr body);
     void handleHeartbeat(framing::AMQHeartbeatBody::shared_ptr body);
     void handleMethodInContext(
         framing::AMQMethodBody::shared_ptr, const framing::MethodContext&);
-    void handleChannel(framing::AMQMethodBody::shared_ptr method);
+    void handleChannel(framing::AMQMethodBody::shared_ptr method, const framing::MethodContext& ctxt);
     void handleConnection(framing::AMQMethodBody::shared_ptr method);
 
     void setQos();
