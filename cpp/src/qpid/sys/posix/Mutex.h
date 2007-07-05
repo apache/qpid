@@ -38,16 +38,40 @@ class Mutex : private boost::noncopyable {
 public:
     typedef ScopedLock<Mutex> ScopedLock;
     typedef ScopedUnlock<Mutex> ScopedUnlock;
-    
+     
     inline Mutex();
     inline ~Mutex();
-    inline void lock();
+    inline void lock();  
     inline void unlock();
-    inline void trylock();
+    inline void trylock();  
+
 
 protected:
     pthread_mutex_t mutex;
 };
+
+/**
+ * RW lock.
+ */
+class RWlock : private boost::noncopyable {
+    friend class Condition;
+
+public:
+    typedef ScopedRlock<RWlock> ScopedRlock;
+    typedef ScopedWlock<RWlock> ScopedWlock;
+    
+    inline RWlock();
+    inline ~RWlock();
+    inline void wlock();  // will write-lock
+    inline void rlock();  // will read-lock
+    inline void unlock();
+    inline void trywlock();  // will write-try
+    inline void tryrlock();  // will read-try
+
+protected:
+    pthread_rwlock_t rwlock;
+};
+
 
 /**
  * Initialise a recursive mutex attr for use in creating mutexes later
@@ -55,11 +79,16 @@ protected:
  */
 namespace {
 	pthread_once_t  onceControl = PTHREAD_ONCE_INIT;
+	pthread_rwlockattr_t rwlockattr;
 	pthread_mutexattr_t mutexattr;
 	
 	void initMutexattr()  {
 		pthread_mutexattr_init(&mutexattr);
 		pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
+	}
+
+	void initRWlockattr()  {
+		pthread_rwlockattr_init(&rwlockattr);
 	}
 	
 	struct RecursiveMutexattr {
@@ -71,8 +100,21 @@ namespace {
 			return &mutexattr;
 		}
 	};
+	struct RecursiveRWlockattr {
+		RecursiveRWlockattr() {
+			pthread_once(&onceControl, initRWlockattr);
+		}
+		
+		operator const pthread_rwlockattr_t*() const {
+			return &rwlockattr;
+		}
+	};
 	
 	RecursiveMutexattr recursiveMutexattr;
+	RecursiveRWlockattr recursiveRWlockattr;
+	
+	
+	
 }
 
 /**
@@ -83,9 +125,9 @@ struct PODMutex
 {
     typedef ScopedLock<PODMutex> ScopedLock;
 
-    inline void lock();
+    inline void lock();  
     inline void unlock();
-    inline void trylock();
+    inline void trylock();  
 
     // Must be public to be a POD:
     pthread_mutex_t mutex;
@@ -96,6 +138,7 @@ struct PODMutex
 void PODMutex::lock() {
     QPID_POSIX_THROW_IF(pthread_mutex_lock(&mutex));
 }
+
 void PODMutex::unlock() {
     QPID_POSIX_THROW_IF(pthread_mutex_unlock(&mutex));
 }
@@ -115,6 +158,7 @@ Mutex::~Mutex(){
 void Mutex::lock() {
     QPID_POSIX_THROW_IF(pthread_mutex_lock(&mutex));
 }
+
 void Mutex::unlock() {
     QPID_POSIX_THROW_IF(pthread_mutex_unlock(&mutex));
 }
@@ -122,6 +166,36 @@ void Mutex::unlock() {
 void Mutex::trylock() {
     QPID_POSIX_THROW_IF(pthread_mutex_trylock(&mutex));
 }
+
+
+RWlock::RWlock() {
+    QPID_POSIX_THROW_IF(pthread_rwlock_init(&rwlock, recursiveRWlockattr));
+}
+
+RWlock::~RWlock(){
+    QPID_POSIX_THROW_IF(pthread_rwlock_destroy(&rwlock));
+}
+
+void RWlock::wlock() {
+    QPID_POSIX_THROW_IF(pthread_rwlock_wrlock(&rwlock));
+}
+
+void RWlock::rlock() {
+    QPID_POSIX_THROW_IF(pthread_rwlock_rdlock(&rwlock));
+}
+
+void RWlock::unlock() {
+    QPID_POSIX_THROW_IF(pthread_rwlock_unlock(&rwlock));
+}
+
+void RWlock::trywlock() {
+    QPID_POSIX_THROW_IF(pthread_rwlock_trywrlock(&rwlock));
+}
+
+void RWlock::tryrlock() {
+    QPID_POSIX_THROW_IF(pthread_rwlock_tryrdlock(&rwlock));
+}
+
 
 }}
 #endif  /*!_sys_posix_Mutex_h*/
