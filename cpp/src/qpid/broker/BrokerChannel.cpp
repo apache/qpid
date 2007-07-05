@@ -401,9 +401,11 @@ void Channel::handleMethodInContext(
 {
     try{
         if(getId() != 0 && !method->isA<ChannelOpenBody>() && !isOpen()) {
-            std::stringstream out;
-            out << "Attempt to use unopened channel: " << getId();
-            throw ConnectionException(504, out.str());
+            if (!method->isA<ChannelCloseOkBody>()) {
+                std::stringstream out;
+                out << "Attempt to use unopened channel: " << getId();
+                throw ConnectionException(504, out.str());
+            }
         } else {
             method->invoke(*adapter, context);
         }

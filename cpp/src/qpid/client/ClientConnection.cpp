@@ -25,6 +25,8 @@
 #include "Connection.h"
 #include "ClientChannel.h"
 #include "ClientMessage.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
 #include "qpid/QpidError.h"
 #include <iostream>
@@ -49,6 +51,9 @@ Connection::Connection(
     isOpen(false), debug(_debug)
 {
     setConnector(defaultConnector);
+    qpid::log::Options o;
+    o.trace = debug;
+    qpid::log::Logger::instance().configure(o, "qpid-c++-client");
 }
 
 Connection::~Connection(){}
@@ -143,6 +148,7 @@ void Connection::received(AMQFrame& frame){
     try{
         channel->getHandlers().in->handle(frame);
     }catch(const qpid::QpidError& e){
+        std::cout << "Caught error while handling " << frame << ": " << e.what() <<std::endl;
         channelException(
             *channel, dynamic_cast<AMQMethodBody*>(frame.getBody().get()), e);
     }

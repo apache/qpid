@@ -109,6 +109,8 @@ void MessageMessageChannel::close(){
 //     incoming.shutdown();
 }
 
+void MessageMessageChannel::cancelAll(){
+}
 
 /** Destination ID for the current get.
  * Must not clash with a generated consumer ID.
