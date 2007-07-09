@@ -60,7 +60,6 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 
     framing::ProtocolVersion getVersion() const;
     ChannelHandler* getChannelHandler() { return &channelHandler; }
-    ConnectionHandler* getConnectionHandler() { return &connectionHandler; }
     BasicHandler* getBasicHandler() { return &basicHandler; }
     ExchangeHandler* getExchangeHandler() { return &exchangeHandler; }
     BindingHandler* getBindingHandler() { return &bindingHandler; }
@@ -81,34 +80,13 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
     DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
 
+    ConnectionHandler* getConnectionHandler() { 
+        throw ConnectionException(503, "Can't access connection class on non-zero channel!");        
+    }
+
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
 
   private:
-
-    class ConnectionHandlerImpl :
-        public ConnectionHandler,
-        public HandlerImpl<framing::AMQP_ClientProxy::Connection>
-    {
-      public:
-        ConnectionHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
-
-        void startOk(const framing::MethodContext& context,
-                     const qpid::framing::FieldTable& clientProperties,
-                     const std::string& mechanism, const std::string& response,
-                     const std::string& locale); 
-        void secureOk(const framing::MethodContext& context,
-                      const std::string& response); 
-        void tuneOk(const framing::MethodContext& context,
-                    uint16_t channelMax,
-                    uint32_t frameMax, uint16_t heartbeat); 
-        void open(const framing::MethodContext& context,
-                  const std::string& virtualHost,
-                  const std::string& capabilities, bool insist); 
-        void close(const framing::MethodContext& context, uint16_t replyCode,
-                   const std::string& replyText,
-                   uint16_t classId, uint16_t methodId); 
-        void closeOk(const framing::MethodContext& context); 
-    };
 
     class ChannelHandlerImpl :
         public ChannelHandler,
@@ -231,7 +209,6 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     Connection& connection;
     BasicHandlerImpl basicHandler;
     ChannelHandlerImpl channelHandler;
-    ConnectionHandlerImpl connectionHandler;
     ExchangeHandlerImpl exchangeHandler;
     BindingHandlerImpl bindingHandler;
     MessageHandlerImpl messageHandler;

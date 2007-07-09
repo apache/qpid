@@ -19,6 +19,7 @@
  *
  */
 
+#include "Broker.h"
 #include "BrokerChannel.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 
@@ -30,8 +31,7 @@ class AMQP_ClientProxy;
 
 namespace broker {
 
-class Broker;
-class Channel;
+    //class Channel;
 class Connection;
 
 /**
@@ -47,6 +47,28 @@ struct CoreRefs
     Connection& connection;
     Broker& broker;
     framing::AMQP_ClientProxy proxy;
+
+    /**
+     * Get named queue, never returns 0.
+     * @return: named queue or default queue for channel if name=""
+     * @exception: ChannelException if no queue of that name is found.
+     * @exception: ConnectionException if name="" and channel has no default.
+     */
+    Queue::shared_ptr getQueue(const string& name) {
+        //Note: this can be removed soon as the default queue for channels is scrapped in 0-10
+        Queue::shared_ptr queue;
+        if (name.empty()) {
+            queue = channel.getDefaultQueue();
+            if (!queue) throw ConnectionException( 530, "Queue must be specified or previously declared" );
+        } else {
+            queue = broker.getQueues().find(name);
+            if (queue == 0) {
+                throw ChannelException( 404, "Queue not found: " + name);
+            }
+        }
+        return queue;
+    }
+
 };
 
 

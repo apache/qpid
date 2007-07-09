@@ -193,6 +193,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerMessageMessage.cpp \
   qpid/broker/BrokerQueue.cpp \
   qpid/broker/Connection.cpp \
+  qpid/broker/ConnectionAdapter.cpp \
   qpid/broker/ConnectionFactory.cpp \
   qpid/broker/Daemon.cpp \
   qpid/broker/DeliverableMessage.cpp \
@@ -289,6 +290,7 @@ nobase_include_HEADERS = \
   qpid/broker/BrokerMessageMessage.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Connection.h \
+  qpid/broker/ConnectionAdapter.h \
   qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionToken.h \
   qpid/broker/Content.h \
