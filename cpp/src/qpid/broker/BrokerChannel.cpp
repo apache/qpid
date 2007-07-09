@@ -50,22 +50,17 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 
-Channel::Channel(
-    Connection& con, ChannelId id,
-    uint32_t _framesize, MessageStore* const _store,
-    uint64_t _stagingThreshold
-) :
+Channel::Channel(Connection& con, ChannelId id, MessageStore* const _store) :
     ChannelAdapter(),
     connection(con),
     currentDeliveryTag(1),
     prefetchSize(0),
     prefetchCount(0),
-    framesize(_framesize),
     tagGenerator("sgen"),
     dtxSelected(false),
     accumulatedAck(0),
     store(_store),
-    messageBuilder(this, _store, _stagingThreshold),
+    messageBuilder(this, _store, connection.getStagingThreshold()),
     opened(id == 0),//channel 0 is automatically open, other must be explicitly opened
     flowActive(true),
     adapter(new BrokerAdapter(*this, con, con.broker))
@@ -215,7 +210,7 @@ void Channel::deliver(
         outstanding.count++;
     }
     //send deliver method, header and content(s)
-    msg->deliver(*this, consumerTag, deliveryTag, framesize);
+    msg->deliver(*this, consumerTag, deliveryTag, connection.getFrameMax());
 }
 
 bool Channel::checkPrefetch(Message::shared_ptr& msg){
@@ -378,7 +373,7 @@ bool Channel::get(Queue::shared_ptr queue, const string& destination, bool ackEx
         msg->sendGetOk(MethodContext(this, msg->getRespondTo()),
         			   destination,
                        queue->getMessageCount() + 1, myDeliveryTag,
-                       framesize);
+                       connection.getFrameMax());
         if(ackExpected){
             unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
         }
@@ -391,7 +386,7 @@ bool Channel::get(Queue::shared_ptr queue, const string& destination, bool ackEx
 void Channel::deliver(Message::shared_ptr& msg, const string& consumerTag,
                       uint64_t deliveryTag)
 {
-    msg->deliver(*this, consumerTag, deliveryTag, framesize);
+    msg->deliver(*this, consumerTag, deliveryTag, connection.getFrameMax());
 }
 
 void Channel::handleMethodInContext(

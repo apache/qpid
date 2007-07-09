@@ -29,6 +29,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
+#include "qpid/framing/ChannelAdapter.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
@@ -36,6 +37,7 @@
 #include "Broker.h"
 #include "qpid/Exception.h"
 #include "BrokerChannel.h"
+#include "ConnectionAdapter.h"
 
 namespace qpid {
 namespace broker {
@@ -66,14 +68,8 @@ class Connection : public sys::ConnectionInputHandler,
 
     void setFrameMax(uint32_t fm) { framemax = fm; }
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
+    void setStagingThreshold(uint64_t st) { stagingThreshold = st; }
     
-    /**
-     * Get named queue, never returns 0.
-     * @return: named queue or default queue for channel if name=""
-     * @exception: ChannelException if no queue of that name is found.
-     * @exception: ConnectionException if name="" and channel has no default.
-     */
-    Queue::shared_ptr getQueue(const string& name, uint16_t channel);
 
     Broker& broker;
     std::vector<Queue::shared_ptr> exclusiveQueues;
@@ -97,7 +93,8 @@ class Connection : public sys::ConnectionInputHandler,
     uint32_t framemax;
     uint16_t heartbeat;
     framing::AMQP_ClientProxy::Connection* client;
-    const uint64_t stagingThreshold;
+    uint64_t stagingThreshold;
+    ConnectionAdapter adapter;
 
 };
 
