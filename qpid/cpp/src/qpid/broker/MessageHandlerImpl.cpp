@@ -123,7 +123,7 @@ MessageHandlerImpl::consume(const MethodContext& context,
                             bool exclusive,
                             const framing::FieldTable& filter )
 {
-    Queue::shared_ptr queue = connection.getQueue(queueName, channel.getId());
+    Queue::shared_ptr queue = getQueue(queueName);
     if(!destination.empty() && channel.exists(destination))
         throw ConnectionException(530, "Consumer tags must be unique");
     string tag = destination;
@@ -142,8 +142,7 @@ MessageHandlerImpl::get( const MethodContext& context,
                          const string& destination,
                          bool noAck )
 {
-    Queue::shared_ptr queue =
-        connection.getQueue(queueName, context.channel->getId());
+    Queue::shared_ptr queue = getQueue(queueName);
     
     if(channel.get(queue, destination, !noAck))
         client.ok(context.getRequestId());

@@ -86,7 +86,6 @@ class Channel : public framing::ChannelAdapter,
     uint32_t prefetchSize;    
     uint16_t prefetchCount;    
     Prefetch outstanding;
-    uint32_t framesize;
     NameGenerator tagGenerator;
     std::list<DeliveryRecord> unacked;
     sys::Mutex deliveryLock;
@@ -110,12 +109,7 @@ class Channel : public framing::ChannelAdapter,
     void checkDtxTimeout();
         
   public:
-    Channel(Connection& parent,
-            framing::ChannelId id,
-            uint32_t framesize, 
-            MessageStore* const _store = 0,
-            uint64_t stagingThreshold = 0);
-    
+    Channel(Connection& parent, framing::ChannelId id, MessageStore* const store = 0);    
     ~Channel();
 
     bool isOpen() const { return opened; }

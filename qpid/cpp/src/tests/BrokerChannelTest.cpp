@@ -154,7 +154,7 @@ class BrokerChannelTest : public CppUnit::TestCase
 
     void testConsumerMgmt(){
         Queue::shared_ptr queue(new Queue("my_queue"));
-        Channel channel(connection, 0, 0, 0);
+        Channel channel(connection, 0, 0);
         channel.open();
         CPPUNIT_ASSERT(!channel.exists("my_consumer"));
 
@@ -179,7 +179,7 @@ class BrokerChannelTest : public CppUnit::TestCase
     }
 
     void testDeliveryNoAck(){
-        Channel channel(connection, 7, 10000);
+        Channel channel(connection, 7);
         channel.open();
         const string data("abcdefghijklmn");
         Message::shared_ptr msg(
@@ -209,7 +209,7 @@ class BrokerChannelTest : public CppUnit::TestCase
     }
 
     void testDeliveryAndRecovery(){
-        Channel channel(connection, 7, 10000);
+        Channel channel(connection, 7);
         channel.open();
         const string data("abcdefghijklmn");
 
@@ -241,8 +241,9 @@ class BrokerChannelTest : public CppUnit::TestCase
 
     void testStaging(){
         MockMessageStore store;
-        Channel channel(
-            connection, 1, 1000/*framesize*/, &store, 10/*staging threshold*/);
+        connection.setFrameMax(1000);
+        connection.setStagingThreshold(10);
+        Channel channel(connection, 1, &store);
         const string data[] = {"abcde", "fghij", "klmno"};
         
         Message* msg = new BasicMessage(
@@ -335,7 +336,7 @@ class BrokerChannelTest : public CppUnit::TestCase
     }
 
     void testFlow(){
-        Channel channel(connection, 7, 10000);
+        Channel channel(connection, 7);
         channel.open();
         //there will always be a connection-start frame
         CPPUNIT_ASSERT_EQUAL((size_t) 1, handler.frames.size());
