@@ -1,14 +1,14 @@
 #!/bin/sh
 # Written by Jim Meyering
 
-VERSION='2007-07-06 07:03' # UTC
+VERSION='2007-07-10 09:09' # UTC
 
 prog_name=`basename $0`
 die () { echo "$prog_name: $*" >&2; exit 1; }
 
 tarballs='
   http://pkgconfig.freedesktop.org/releases/pkg-config-0.21.tar.gz
-  ftp://ftp.gnu.org/gnu/m4/m4-1.4.9.tar.gz
+  ftp://ftp.gnu.org/gnu/m4/m4-1.4.10.tar.gz
   ftp://ftp.gnu.org/gnu/automake/automake-1.10.tar.gz
   ftp://ftp.gnu.org/gnu/autoconf/autoconf-2.61.tar.gz
   ftp://ftp.gnu.org/gnu/libtool/libtool-1.5.24.tar.gz
@@ -78,7 +78,7 @@ get_sources()
 69f37c509a4757d747b6f4c091d209ab3984d62f  autoconf-2.61.tar.gz
 69dc02b083b9a609b28fc4db129fef6a83ed2339  automake-1.10.tar.gz
 b4c994f1bf4a76d2b0c1d0a6f54d16598c15f3db  libtool-1.5.24.tar.gz
-15ad35c65d4c4f2f856687288e7f6b51704d65e1  m4-1.4.9.tar.gz
+26d47c893722d683308f5d9fc172a11d5b2ad8a9  m4-1.4.10.tar.gz
 b2508ba8404cad46ec42f6f58cbca43ae59d715f  pkg-config-0.21.tar.gz
 EOF
   printf 'ok\n' 1>&2
