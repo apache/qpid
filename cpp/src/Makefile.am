@@ -121,6 +121,7 @@ libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
 libqpidcommon_la_LIBADD = \
   -lboost_program_options \
+  -luuid \
   libLogger.la \
   $(APR_LIBS) \
   $(LIB_DLOPEN) \

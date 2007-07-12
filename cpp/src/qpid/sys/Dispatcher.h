@@ -44,26 +44,39 @@ public:
 private:
     Callback readableCallback;
     Callback writableCallback;
+    Callback disconnectedCallback;
     Poller::shared_ptr poller;
     Mutex stateLock;
-    enum { IDLE, INACTIVE, ACTIVE_R, ACTIVE_W, ACTIVE_RW, CALLBACK, DELAYED_R, DELAYED_W, DELAYED_RW} state;
+    enum {
+        IDLE, INACTIVE, ACTIVE_R, ACTIVE_W, ACTIVE_RW,
+        CALLBACK, DELAYED_R, DELAYED_W, DELAYED_RW, DELAYED_DELETE
+    } state;
 
 public:
-    DispatchHandle(int fd, Callback rCb, Callback wCb) :
+    DispatchHandle(int fd, Callback rCb, Callback wCb, Callback dCb) :
       PollerHandle(fd),
       readableCallback(rCb),
       writableCallback(wCb),
+      disconnectedCallback(dCb),
       state(IDLE)
     {}
 
-    void watch(Poller::shared_ptr poller);
+    ~DispatchHandle();
+
+    void startWatch(Poller::shared_ptr poller);
     void rewatch();
     void rewatchRead();
     void rewatchWrite();
     void unwatch();
+    void unwatchRead();
+    void unwatchWrite();
+    void stopWatch();
+    
+protected:
+    void doDelete();
 
 private:
-    void dispatchCallbacks(Poller::Direction dir);
+    void dispatchCallbacks(Poller::EventType dir);
 };
 
 class Dispatcher : public Runnable {
