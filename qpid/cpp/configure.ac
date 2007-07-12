@@ -172,7 +172,7 @@ AC_CHECK_LIB([cpg], [cpg_local_get], [libcpg=yes], [libcpg=no])
 AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes],[cpg_h=no])
 if test x$libcpg = xyes -a x$cpg_h = xyes; then
    AM_CONDITIONAL([CLUSTER], true)
-   CPPFLAGS+=-DCLUSTER
+   CPPFLAGS+=" -DCLUSTER"
 else
   AM_CONDITIONAL([CLUSTER], false)	
   LDFLAGS=$LDFLAGS_save	   
