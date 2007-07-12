@@ -159,8 +159,9 @@ AC_SUBST(DOWNLOAD_URL)
 missing=""
 AC_CHECK_HEADERS([libdaemon/daemon.h],,[missing="$missing libdaemon"])
 AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost"])
+AC_CHECK_HEADERS([uuid/uuid.h],,[missing="$missing libuuid"])
 test -z "$missing" ||
-    AC_MSG_ERROR([Missing required headers. Install the folowing packages or -devel rpms: $missing.])
+    AC_MSG_ERROR([Missing required headers. Install the following packages or -devel rpms: $missing.])
 
 # Enable/disable cluster functionality based on presence of usable openais
 # and devel libs.
@@ -178,8 +179,7 @@ else
 fi
 if test x$libcpg = xno -a x$cpg_h = xyes; then
    AC_MSG_WARN([Found cpg.h but libcpg is missing or does not contain cpg_local_get. Need build of openais whitetank branch head as of 2007-06-20])
-fi   
-
+fi
 AC_CONFIG_FILES([
   qpidc.spec
   Makefile

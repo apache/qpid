@@ -57,42 +57,61 @@ private:
  * 
  * Writer accepts a buffer and queues it for writing; can also be given
  * a callback for when writing is "idle" (ie fd is writable, but nothing to write)
+ * 
+ * The class is implemented in terms of DispatchHandle to allow it to be deleted by deleting
+ * the contained DispatchHandle
  */
-class AsynchIO {
+class AsynchIO : private DispatchHandle {
 public:
     struct Buffer {
+        typedef boost::function1<void, const Buffer&> RecycleStorage;
+        
         char* const bytes;
         const int32_t byteCount;
+        int32_t dataStart;
+        int32_t dataCount;
         
         Buffer(char* const b, const int32_t s) :
             bytes(b),
-            byteCount(s)
+            byteCount(s),
+            dataStart(0),
+            dataCount(s)
+        {}
+
+        virtual ~Buffer()
         {}
     };
 
-    typedef boost::function2<void, const Buffer&, int32_t> ReadCallback;
-    typedef boost::function0<void> EofCallback;
-    typedef boost::function0<void> BuffersEmptyCallback;
-    typedef boost::function1<void, int> IdleCallback;
+    typedef boost::function2<void, AsynchIO&, Buffer*> ReadCallback;
+    typedef boost::function1<void, AsynchIO&> EofCallback;
+    typedef boost::function1<void, AsynchIO&> DisconnectCallback;
+    typedef boost::function1<void, AsynchIO&> BuffersEmptyCallback;
+    typedef boost::function1<void, AsynchIO&> IdleCallback;
 
 private:
     ReadCallback readCallback;
     EofCallback eofCallback;
+    DisconnectCallback disCallback;
     BuffersEmptyCallback emptyCallback;
     IdleCallback idleCallback;
-    DispatchHandle handle;
-    std::deque<Buffer> bufferQueue;
-    std::deque<Buffer> writeQueue;
+    std::deque<Buffer*> bufferQueue;
+    std::deque<Buffer*> writeQueue;
 
 public:
-    AsynchIO(int fd, ReadCallback rCb, EofCallback eofCb, BuffersEmptyCallback eCb = 0, IdleCallback iCb = 0);
+    AsynchIO(int fd,
+        ReadCallback rCb, EofCallback eofCb, DisconnectCallback disCb,
+        BuffersEmptyCallback eCb = 0, IdleCallback iCb = 0);
+    void queueForDeletion();
+
     void start(Poller::shared_ptr poller);
-    void QueueReadBuffer(const Buffer& buff);
-    void QueueWrite(const Buffer& buff);
+    void queueReadBuffer(Buffer* buff);
+    void queueWrite(Buffer* buff);
 
 private:
+    ~AsynchIO();
     void readable(DispatchHandle& handle);
     void writeable(DispatchHandle& handle);
+    void disconnected(DispatchHandle& handle);
 };
 
 }}

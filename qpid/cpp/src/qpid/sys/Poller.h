@@ -61,20 +61,29 @@ public:
     typedef boost::shared_ptr<Poller> shared_ptr;
 
     enum Direction {
-        NONE,
+        NONE = 0,
         IN,
         OUT,
-        INOUT,
-        SHUTDOWN
+        INOUT
+    };
+
+    enum EventType {
+        INVALID = 0,
+        READABLE,
+        WRITABLE,
+        READ_WRITABLE,
+        DISCONNECTED,
+        SHUTDOWN,
+        TIMEOUT
     };
 
     struct Event {
         PollerHandle* handle;
-        Direction dir;
+        EventType type;
         
-        Event(PollerHandle* handle0, Direction dir0) :
+        Event(PollerHandle* handle0, EventType type0) :
           handle(handle0),
-          dir(dir0) {
+          type(type0) {
         }
     };
     
