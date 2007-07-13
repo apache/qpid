@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.test.framework;
 
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-
 import java.util.List;
 
 /**

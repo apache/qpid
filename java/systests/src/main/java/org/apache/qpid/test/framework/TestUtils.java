@@ -32,9 +32,12 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
 /**
+ * TestUtils provides static helper methods that are usefull for writing tests against QPid.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Create connections from test properties. <td> {@link MessagingTestConfigProperties}
+ * <tr><td> Inject a short pause in a test.
  * </table>
  */
 public class TestUtils

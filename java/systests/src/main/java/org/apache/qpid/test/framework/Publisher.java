@@ -23,6 +23,13 @@ package org.apache.qpid.test.framework;
 /**
  * A Publisher is a {@link CircuitEnd} that represents one end of a test circuit. Its main purpose is to
  * provide assertions that can be applied to test the behaviour of the publisher.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities
+ * <tr><td> Provide assertion that the publisher received no exceptions.
+ * <tr><td> Provide assertion that the publisher received a no consumers error code.
+ * <tr><td> Provide assertion that the publisher received a no route error code.
+ * </table>
  */
 public interface Publisher extends CircuitEnd
 {

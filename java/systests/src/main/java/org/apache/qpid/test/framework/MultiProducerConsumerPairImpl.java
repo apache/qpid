@@ -28,7 +28,6 @@ import javax.jms.*;
  */
 public class MultiProducerConsumerPairImpl implements CircuitEnd
 {
-
     /**
      * Gets the message producer at this circuit end point.
      *

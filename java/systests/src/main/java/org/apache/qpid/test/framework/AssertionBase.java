@@ -29,7 +29,7 @@ import java.util.List;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Collect error messages.
  * </table>
  */
 public abstract class AssertionBase implements Assertion

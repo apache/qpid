@@ -29,30 +29,55 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
+ * An exception monitor, listens for JMS exception on a connection or consumer. It record all exceptions that it receives
+ * and provides methods to test the number and type of exceptions received.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
-* <tr><th> Responsibilities <th> Collaborations
-* <tr><td>
-* </table>
-*/
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Record all exceptions received. <td> {@link ExceptionListener}
+ * </table>
+ */
 public class ExceptionMonitor implements ExceptionListener
 {
+    /** Holds the received exceptions. */
     List<JMSException> exceptions = new ArrayList<JMSException>();
 
+    /**
+     * Receives incoming exceptions.
+     *
+     * @param e The exception to record.
+     */
     public void onException(JMSException e)
     {
         exceptions.add(e);
     }
 
+    /**
+     * Checks that no exceptions have been received.
+     *
+     * @return <tt>true</tt> if no exceptions have been received, <tt>false</tt> otherwise.
+     */
     public boolean assertNoExceptions()
     {
         return exceptions.isEmpty();
     }
 
+    /**
+     * Checks that exactly one exception has been received.
+     *
+     * @return <tt>true</tt> if exactly one exception been received, <tt>false</tt> otherwise.
+     */
     public boolean assertOneJMSException()
     {
         return exceptions.size() == 1;
     }
 
+    /**
+     * Checks that exactly one exception, with a linked cause of the specified type, has been received.
+     *
+     * @return <tt>true</tt> if exactly one exception, with a linked cause of the specified type, been received,
+     *         <tt>false</tt> otherwise.
+     */
     public boolean assertOneJMSExceptionWithLinkedCause(Class aClass)
     {
         if (exceptions.size() == 1)
@@ -80,6 +105,9 @@ public class ExceptionMonitor implements ExceptionListener
         return exceptions.size();
     }
 
+    /**
+     * Clears the record of received exceptions.
+     */
     public void reset()
     {
         exceptions = new ArrayList();

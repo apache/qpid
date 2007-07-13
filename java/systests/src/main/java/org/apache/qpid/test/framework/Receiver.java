@@ -23,6 +23,12 @@ package org.apache.qpid.test.framework;
 /**
  * A Receiver is a {@link CircuitEnd} that represents one end of a test circuit. Its main purpose is to
  * provide assertions that can be applied to test the behaviour of the receiver.
+ *
+ * <p/><table id="crc"><caption>CRC Card</caption>
+ * <tr><th> Responsibilities
+ * <tr><td> Provide assertion that the receiver received no exceptions.
+ * <tr><td> Provide assertion that the receiver received all test messages sent to it.
+ * </table>
  */
 public interface Receiver extends CircuitEnd
 {

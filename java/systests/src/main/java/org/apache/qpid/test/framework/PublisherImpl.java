@@ -28,9 +28,16 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 /**
+ * Provides an implementation of the {@link Publisher} interface that wraps a single message producer and consumer on
+ * a single session.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Provide a message producer for sending messages.
+ * <tr><td> Provide a message consumer for receiving messages.
+ * <tr><td> Provide assertion that the publisher received no exceptions.
+ * <tr><td> Provide assertion that the publisher received a no consumers error code.
+ * <tr><td> Provide assertion that the publisher received a no route error code.
  * </table>
  */
 public class PublisherImpl extends CircuitEndBase implements Publisher

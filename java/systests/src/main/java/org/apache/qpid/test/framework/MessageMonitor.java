@@ -24,13 +24,23 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 
 /**
+ * MessageMonitor is used to record information about messages received. This will provide methods to check various
+ * properties, such as the type, number and content of messages received in order to verify the correct behaviour of
+ * tests.
+ *
+ * <p/>At the moment this monitor does not do anything.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
  * </table>
  */
 public class MessageMonitor implements MessageListener
 {
+    /**
+     * Handles received messages. Does Nothing.
+     *
+     * @param message The message. Ignored.
+     */
     public void onMessage(Message message)
     { }
 }

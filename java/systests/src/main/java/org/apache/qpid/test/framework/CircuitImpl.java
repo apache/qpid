@@ -34,15 +34,20 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ * CircuitImpl provides an implementation of the test circuit. This is a first prototype implementation and only supports
+ * a single producer/consumer on each end of the circuit, with both ends of the circuit on the same JVM.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Supply the publishing and receiving ends of a test messaging circuit.
+ *     <td> {@link PublisherImpl}, {@link ReceiverImpl}
  * <tr><td> Start the circuit running.
  * <tr><td> Close the circuit down.
  * <tr><td> Take a reading of the circuits state.
- * <tr><td> Apply assertions against the circuits state.
+ * <tr><td> Apply assertions against the circuits state. <td> {@link Assertion}
  * <tr><td> Send test messages over the circuit.
- * <tr><td> Perform the default test procedue on the circuit.
+ * <tr><td> Perform the default test procedure on the circuit.
+ * <tr><td> Provide access to connection and session exception monitors <td> {@link ExceptionMonitor}
  * </table>
  */
 public class CircuitImpl implements Circuit
@@ -246,7 +251,17 @@ public class CircuitImpl implements Circuit
      */
     public List<Assertion> applyAssertions(List<Assertion> assertions)
     {
-        return null;
+        List<Assertion> failures = new LinkedList<Assertion>();
+
+        for (Assertion assertion : assertions)
+        {
+            if (!assertion.apply())
+            {
+                failures.add(assertion);
+            }
+        }
+
+        return failures;
     }
 
     /**
@@ -331,15 +346,7 @@ public class CircuitImpl implements Circuit
         check();
 
         // Apply all of the requested assertions, keeping record of any that fail.
-        List<Assertion> failures = new LinkedList<Assertion>();
-
-        for (Assertion assertion : assertions)
-        {
-            if (!assertion.apply())
-            {
-                failures.add(assertion);
-            }
-        }
+        List<Assertion> failures = applyAssertions(assertions);
 
         // Clean up the publisher/receiver/session/connections.
         close();
