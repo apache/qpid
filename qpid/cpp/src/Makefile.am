@@ -374,6 +374,7 @@ nobase_include_HEADERS = \
   qpid/sys/ShutdownHandler.h \
   qpid/sys/Socket.h \
   qpid/sys/Thread.h \
+  qpid/sys/ConcurrentQueue.h \
   qpid/sys/ThreadSafeQueue.h \
   qpid/sys/Time.h \
   qpid/sys/TimeoutHandler.h \
