@@ -20,20 +20,6 @@
  */
 package org.apache.qpid.requestreply;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.BrokenBarrierException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.jms.*;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -50,6 +36,20 @@ import org.apache.qpid.util.CommandLineParser;
 import uk.co.thebadgerset.junit.extensions.BatchedThrottle;
 import uk.co.thebadgerset.junit.extensions.Throttle;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+
+import javax.jms.*;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * PingPongProducer is a client that sends test messages, and waits for replies to these messages. The replies may
@@ -237,7 +237,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the default message selector. */
     public static final String SELECTOR_DEFAULT = "";
 
-    /** Holds the name of the proeprty to get the destination count from. */
+    /** Holds the name of the property to get the destination count from. */
     public static final String DESTINATION_COUNT_PROPNAME = "destinationCount";
 
     /** Defines the default number of destinations to ping. */

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.exchange;
+package org.apache.qpid.test.framework;
 
 import org.apache.qpid.jms.Session;
 
