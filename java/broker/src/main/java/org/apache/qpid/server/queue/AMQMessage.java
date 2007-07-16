@@ -397,7 +397,7 @@ public class AMQMessage
     }
 
     /** Threadsafe. Increment the reference count on the message. */
-    protected void incrementReference()
+    public void incrementReference()
     {
         _referenceCount.incrementAndGet();
         // if (_log.isDebugEnabled())
