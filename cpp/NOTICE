@@ -13,8 +13,20 @@ distribution.
 
 Aside from contributions to the Apache Qpid project, this software also 
 includes (binary only):
+	- None at this time
+	
+Project dependancies 	
+ * apr <http://apr.apache.org> 1.2.7) Apache License, Version 2.0
+ * boost <http://www.boost.org> (1.33.1 or later) Boost Software License
+ 	Included in most OS platfroms by defualt.
 
-	- None.
+Optional modules:
+ * cppunit <http://cppunit.sourceforge.net> (1.11.4) LGPL
+ 	Only required to run some of the tests. Not required by any of the 
+	executables. Python is used for most of the tests.
+ * libdaemon <http://www.stud.uni-hamburg.de/users/lennart/projects/libdaemon> (0.10) LGPL 
+	Optional module detected by configure scripts if present to create daemon 
+	process. 
 
 
              
