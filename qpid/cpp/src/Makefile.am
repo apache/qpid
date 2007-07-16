@@ -168,6 +168,7 @@ libqpidcommon_la_SOURCES = \
   qpid/Url.h \
   qpid/Url.cpp \
   qpid/QpidError.cpp \
+  qpid/sys/Serializer.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/Shlib.h \
   qpid/sys/Shlib.cpp \
@@ -351,6 +352,7 @@ nobase_include_HEADERS = \
   qpid/framing/Proxy.h \
   qpid/framing/Requester.h \
   qpid/framing/Responder.h \
+  qpid/framing/SerializeHandler.h \
   qpid/framing/Value.h \
   qpid/framing/Uuid.h \
   qpid/framing/amqp_framing.h \
@@ -375,6 +377,7 @@ nobase_include_HEADERS = \
   qpid/sys/Socket.h \
   qpid/sys/Thread.h \
   qpid/sys/ConcurrentQueue.h \
+  qpid/sys/Serializer.h \
   qpid/sys/ThreadSafeQueue.h \
   qpid/sys/Time.h \
   qpid/sys/TimeoutHandler.h \

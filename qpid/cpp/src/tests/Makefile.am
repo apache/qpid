@@ -46,6 +46,10 @@ check_PROGRAMS+=ConcurrentQueue
 ConcurrentQueue_SOURCES=ConcurrentQueue.cpp
 ConcurrentQueue_LDADD=-lboost_test_exec_monitor $(lib_common)
 
+check_PROGRAMS+=Serializer
+Serializer_SOURCES=Serializer.cpp
+Serializer_LDADD=-lboost_unit_test_framework $(lib_common)
+
 include cluster.mk
 
 # NB: CppUnit test libraries below will be migrated to boost test programs.
