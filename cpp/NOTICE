@@ -24,11 +24,6 @@ Project dependancies:
 	- Included in most OS platfroms by defualt.
 
 Optional modules:
- * cppunit version 1.11.4 under LGPL, and can be downloaded from
- 	<http://cppunit.sourceforge.net>
- 	- Only required to run some of the tests. Not required by any of the 
-	executables. Python is used for most of the tests.
-	
  * libdaemon version 0.10 under LGPL and can be downloaded from 
  	http://www.stud.uni-hamburg.de/users/lennart/projects/libdaemon
 	-Optional module detected by configure scripts if present to create 
