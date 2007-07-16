@@ -43,7 +43,7 @@ public:
     inline ~Mutex();
     inline void lock();  
     inline void unlock();
-    inline void trylock();  
+    inline bool trylock();  
 
 
 protected:
@@ -127,7 +127,7 @@ struct PODMutex
 
     inline void lock();  
     inline void unlock();
-    inline void trylock();  
+    inline bool trylock();  
 
     // Must be public to be a POD:
     pthread_mutex_t mutex;
@@ -143,8 +143,8 @@ void PODMutex::unlock() {
     QPID_POSIX_THROW_IF(pthread_mutex_unlock(&mutex));
 }
 
-void PODMutex::trylock() {
-    QPID_POSIX_THROW_IF(pthread_mutex_trylock(&mutex));
+bool PODMutex::trylock() {
+    return pthread_mutex_trylock(&mutex) == 0;
 }
 
 Mutex::Mutex() {
@@ -163,8 +163,8 @@ void Mutex::unlock() {
     QPID_POSIX_THROW_IF(pthread_mutex_unlock(&mutex));
 }
 
-void Mutex::trylock() {
-    QPID_POSIX_THROW_IF(pthread_mutex_trylock(&mutex));
+bool Mutex::trylock() {
+    return pthread_mutex_trylock(&mutex) == 0;
 }
 
 
