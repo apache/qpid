@@ -42,7 +42,7 @@ class Mutex : private boost::noncopyable {
     inline ~Mutex();
     inline void lock();
     inline void unlock();
-    inline void trylock();
+    inline bool trylock();
 
   protected:
     apr_thread_mutex_t* mutex;
@@ -64,8 +64,8 @@ void Mutex::unlock() {
     CHECK_APR_SUCCESS(apr_thread_mutex_unlock(mutex));
 }
 
-void Mutex::trylock() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_trylock(mutex));
+bool Mutex::trylock() {
+    return apr_thread_mutex_trylock(mutex) == 0;
 }
 
 
@@ -84,8 +84,8 @@ public:
     inline void wlock();  // will write-lock
     inline void rlock();  // will read-lock
     inline void unlock();
-    inline void trywlock();  // will write-try
-    inline void tryrlock();  // will read-try
+    inline bool trywlock();  // will write-try
+    inline bool tryrlock();  // will read-try
 
   protected:
     apr_thread_mutex_t* mutex;
@@ -111,12 +111,12 @@ void RWlock::unlock() {
     CHECK_APR_SUCCESS(apr_thread_mutex_unlock(mutex));
 }
 
-void RWlock::trywlock() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_trylock(mutex));
+bool RWlock::trywlock() {
+    return apr_thread_mutex_trylock(mutex) == 0;
 }
 
-void RWlock::tryrlock() {
-    CHECK_APR_SUCCESS(apr_thread_mutex_trylock(mutex));
+bool RWlock::tryrlock() {
+    return apr_thread_mutex_trylock(mutex) == 0;
 }
 
 
