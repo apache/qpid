@@ -27,7 +27,6 @@ import java.net.InetSocketAddress;
 import java.net.BindException;
 import java.util.Collection;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -192,15 +191,19 @@ public class Main
             catch (InitException e)
             {
                 System.out.println(e.getMessage());
+                _brokerLogger.error("Initialisation Error : " + e.getMessage());
+
             }
             catch (ConfigurationException e)
             {
                 System.out.println("Error configuring message broker: " + e);
+                _brokerLogger.error("Error configuring message broker: " + e);
                 e.printStackTrace();
             }
             catch (Exception e)
             {
                 System.out.println("Error intialising message broker: " + e);
+                _brokerLogger.error("Error intialising message broker: " + e);
                 e.printStackTrace();
             }
         }
