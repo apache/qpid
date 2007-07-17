@@ -30,6 +30,7 @@
 #include "Consumer.h"
 #include "BrokerMessage.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/Serializer.h"
 #include "qpid/sys/Monitor.h"
 #include "PersistableQueue.h"
 #include "QueuePolicy.h"
@@ -65,21 +66,19 @@ namespace qpid {
             const ConnectionToken* const owner;
             Consumers consumers;
             Messages messages;
-            bool queueing;
-            bool dispatching;
             int next;
             mutable qpid::sys::RWlock consumerLock;
-            mutable qpid::sys::RWlock messageLock;
+            mutable qpid::sys::Mutex messageLock;
             Consumer* exclusive;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
             std::auto_ptr<QueuePolicy> policy;            
             QueueBindings bindings;
             boost::shared_ptr<Exchange> alternateExchange;
+	    qpid::sys::Serializer serializer;
 
             void pop();
             void push(Message::shared_ptr& msg);
-            bool startDispatching();
             bool dispatch(Message::shared_ptr& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
 

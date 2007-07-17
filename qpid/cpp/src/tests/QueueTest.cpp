@@ -84,12 +84,16 @@ class QueueTest : public CppUnit::TestCase
         Message::shared_ptr msg3 = message("e", "C");
 
         queue->deliver(msg1);
-        CPPUNIT_ASSERT_EQUAL(msg1.get(), c1.last.get());
+	/** if dispatched on diff thread, force dispatch so don't have to wait for thread. Only do in text */
+        queue->dispatch();  
+       CPPUNIT_ASSERT_EQUAL(msg1.get(), c1.last.get());
 
         queue->deliver(msg2);
+        queue->dispatch();
         CPPUNIT_ASSERT_EQUAL(msg2.get(), c2.last.get());
         
         queue->deliver(msg3);
+        queue->dispatch();
         CPPUNIT_ASSERT_EQUAL(msg3.get(), c1.last.get());        
     
         //Test cancellation:
