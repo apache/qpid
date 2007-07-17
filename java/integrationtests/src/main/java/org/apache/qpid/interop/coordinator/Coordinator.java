@@ -60,8 +60,9 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <tr><td> Terminate the interop testing framework.
  * </table>
  *
- * @todo The test result is ignored, because it only contains the failures for the last test run. Shoud accumulate
- *       failures over all tests, and return with success or fail code based on all results.
+ * @todo Shoud accumulate failures over all tests, and return with success or fail code based on all results. May need
+ *       to write a special TestResult to do this properly. At the moment only the last one used will be tested for
+ *       errors, as the start method creates a fresh one for each test case run.
  *
  * @todo Remove hard coding of test cases and put on command line instead.
  */
@@ -139,7 +140,12 @@ public class Coordinator extends TKTestRunner
      * <p/><table>
      * <tr><td> -b         <td> The broker URL.   <td> Mandatory.
      * <tr><td> -h         <td> The virtual host. <td> Optional.
-     * <tr><td> name=value <td> Trailing argument define name/value pairs. Added to system properties. <td> Optional.
+     * <tr><td> -o         <td> The directory to output test results to. <td> Optional.
+     * <tr><td> -e         <td> The type of test distribution engine to use. <td> Optional. One of: interop, fanout.
+     * <tr><td> ...        <td> Free arguments. The distributed test cases to run.
+     *                     <td> Mandatory. At least one must be defined.
+     * <tr><td> name=value <td> Trailing argument define name/value pairs. Added to the test contenxt properties.
+     *                     <td> Optional.
      * </table>
      *
      * @param args The command line arguments.
