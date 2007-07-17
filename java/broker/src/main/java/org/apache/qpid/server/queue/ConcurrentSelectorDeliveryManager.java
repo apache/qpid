@@ -20,19 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
@@ -42,8 +29,21 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.util.MessageQueue;
 import org.apache.qpid.util.ConcurrentLinkedMessageQueueAtomicSize;
+import org.apache.qpid.util.MessageQueue;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 /** Manages delivery of messages on behalf of a queue */
@@ -453,12 +453,29 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         //while (we have a message) && ((The subscriber is not a browser or message is taken ) or we are clearing) && (Check message is taken.)
         while (purgeMessage(message, sub))
         {
+            // if we are purging then ensure we mark this message taken for the current subscriber
+            // the current subscriber may be null in the case of a get or a purge but this is ok.
+//            boolean alreadyTaken = message.taken(_queue, sub);
+
             //remove the already taken message or expired
             AMQMessage removed = messages.poll();
 
             assert removed == message;
 
-            _totalMessageSize.addAndGet(-message.getSize());
+            // if the message expired then the _totalMessageSize needs adjusting
+            if (message.expired(sub.getChannel().getStoreContext(), _queue))
+            {
+                _totalMessageSize.addAndGet(-message.getSize());
+
+                message.dequeue(sub.getChannel().getStoreContext(), _queue);
+
+                if (_log.isInfoEnabled())
+                {
+                    _log.info(debugIdentity() + " Doing clean up of the main _message queue.");
+                }
+            }
+            //else the clean up is not required as the message has already been taken for this queue therefore
+            // it was the responsibility of the code that took the message to ensure the _totalMessageSize was updated.
 
             if (_log.isTraceEnabled())
             {
@@ -473,7 +490,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
     /**
-     * 
+     *  This method will return true if the message is to be purged from the queue.
+     *
+     *
+     *  SIDE-EFFECT: The message will be taken by the Subscription(sub) for the current Queue(_queue)
      * @param message
      * @param sub
      * @return
@@ -606,7 +626,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             {
                 if (_log.isInfoEnabled())
                 {
-                    _log.info(debugIdentity() + "We could do clean up of the main _message queue here");
+                    //fixme - we should do the clean up as the message remains on the _message queue
+                    // this is resulting in the next consumer receiving the message and then attempting to purge it
+                    //
+                    _log.info(debugIdentity() + "We should do clean up of the main _message queue here");
                 }
             }
 
@@ -800,7 +823,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                         if (debugEnabled)
                         {
                             _log.debug(debugIdentity() + " Subscription(" + System.identityHashCode(s) + ") became " +
-                                      "suspended between nextSubscriber and send for message:" + msg.debugIdentity());
+                                       "suspended between nextSubscriber and send for message:" + msg.debugIdentity());
                         }
                     }
                 }
@@ -810,7 +833,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     if (debugEnabled)
                     {
                         _log.debug(debugIdentity() + " Message(" + msg.debugIdentity() + ") has not been taken so recursing!:" +
-                                  " Subscriber:" + System.identityHashCode(s));
+                                   " Subscriber:" + System.identityHashCode(s));
                     }
 
                     deliver(context, name, msg, deliverFirst);

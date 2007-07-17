@@ -21,7 +21,6 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -98,9 +97,9 @@ public class AMQMessage
     public void setExpiration()
     {
         long expiration =
-            ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getExpiration();
+                ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getExpiration();
         long timestamp =
-            ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
+                ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
 
         if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false))
         {
@@ -163,8 +162,8 @@ public class AMQMessage
             {
 
                 AMQBody cb =
-                    getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(),
-                            _messageId, ++_index));
+                        getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(),
+                                                                                                         _messageId, ++_index));
 
                 return new AMQFrame(_channel, cb);
             }
@@ -250,7 +249,7 @@ public class AMQMessage
      * @throws AMQException
      */
     public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory, TransactionalContext txnConext)
-        throws AMQException
+            throws AMQException
     {
         _messageId = messageId;
         _messageHandle = factory.createMessageHandle(messageId, store, true);
@@ -267,7 +266,7 @@ public class AMQMessage
      * @param contentHeader
      */
     public AMQMessage(Long messageId, MessagePublishInfo info, TransactionalContext txnContext,
-        ContentHeaderBody contentHeader) throws AMQException
+                      ContentHeaderBody contentHeader) throws AMQException
     {
         this(messageId, info, txnContext);
         setContentHeaderBody(contentHeader);
@@ -286,8 +285,8 @@ public class AMQMessage
      * @throws AMQException
      */
     public AMQMessage(Long messageId, MessagePublishInfo info, TransactionalContext txnContext,
-        ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues, List<ContentChunk> contentBodies,
-        MessageStore messageStore, StoreContext storeContext, MessageHandleFactory messageHandleFactory) throws AMQException
+                      ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues, List<ContentChunk> contentBodies,
+                      MessageStore messageStore, StoreContext storeContext, MessageHandleFactory messageHandleFactory) throws AMQException
     {
         this(messageId, info, txnContext, contentHeader);
         _transientMessageData.setDestinationQueues(destinationQueues);
@@ -335,7 +334,7 @@ public class AMQMessage
     }
 
     public void routingComplete(MessageStore store, StoreContext storeContext, MessageHandleFactory factory)
-        throws AMQException
+            throws AMQException
     {
         final boolean persistent = isPersistent();
         _messageHandle = factory.createMessageHandle(_messageId, store, persistent);
@@ -451,7 +450,7 @@ public class AMQMessage
             if (count < 0)
             {
                 throw new MessageCleanupException("Reference count for message id " + debugIdentity()
-                    + " has gone below 0.");
+                                                  + " has gone below 0.");
             }
         }
     }
@@ -668,12 +667,7 @@ public class AMQMessage
         {
             long now = System.currentTimeMillis();
 
-            if (now > _expiration)
-            {
-                dequeue(storecontext, queue);
-
-                return true;
-            }
+            return (now > _expiration);
         }
 
         return false;
@@ -700,7 +694,7 @@ public class AMQMessage
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
             _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId,
-                _transientMessageData.getMessagePublishInfo(), _transientMessageData.getContentHeaderBody());
+                                                          _transientMessageData.getMessagePublishInfo(), _transientMessageData.getContentHeaderBody());
 
             // we then allow the transactional context to do something with the message content
             // now that it has all been received, before we attempt delivery
@@ -936,7 +930,7 @@ public class AMQMessage
         // _taken + " by :" + _takenBySubcription;
 
         return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: "
-            + _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
+               + _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
     }
 
     public Subscription getDeliveredSubscription(AMQQueue queue)

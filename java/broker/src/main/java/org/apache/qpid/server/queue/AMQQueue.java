@@ -1,18 +1,7 @@
 /* Copyright Rupert Smith, 2005 to 2007, all rights reserved. */
 package org.apache.qpid.server.queue;
 
-import java.text.MessageFormat;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.management.JMException;
-
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
@@ -25,6 +14,15 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.management.JMException;
+import java.text.MessageFormat;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This is an AMQ Queue, and should not be confused with a JMS queue or any other abstraction like that. It is described
@@ -138,11 +136,11 @@ public class AMQQueue implements Managable, Comparable
 
     public int compareTo(Object o)
     {
-        return _name.compareTo(((AMQQueue)o).getName());
+        return _name.compareTo(((AMQQueue) o).getName());
     }
 
     public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
-             throws AMQException
+            throws AMQException
     {
         this(name, durable, owner, autoDelete, virtualHost, AsyncDeliveryConfig.getAsyncDeliveryExecutor(),
              new SubscriptionSet(), new SubscriptionImpl.Factory());
@@ -422,6 +420,70 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
+    /**
+     * Removes messages from this queue, and also commits the remove on the message store. Delivery activity
+     * on the queues being moved between is suspended during the remove.
+     *
+     * @param fromMessageId The first message id to move.
+     * @param toMessageId   The last message id to move.
+     * @param storeContext  The context of the message store under which to perform the move. This is associated with
+     *                      the stores transactional context.
+     */
+    public synchronized void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext)
+    {
+        MessageStore fromStore = getVirtualHost().getMessageStore();
+
+        try
+        {
+            // Obtain locks to prevent activity on the queues being moved between.
+            startMovingMessages();
+
+            // Get the list of messages to move.
+            List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
+
+            try
+            {
+                fromStore.beginTran(storeContext);
+
+                // remove the messages in on the message store.
+                for (AMQMessage message : foundMessagesList)
+                {
+                    fromStore.dequeueMessage(storeContext, _name, message.getMessageId());
+                }
+
+                // Commit and flush the move transcations.
+                try
+                {
+                    fromStore.commitTran(storeContext);
+                }
+                catch (AMQException e)
+                {
+                    throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
+                }
+
+                // remove the messages on the in-memory queues.
+                _deliveryMgr.removeMovedMessages(foundMessagesList);
+            }
+            // Abort the move transactions on move failures.
+            catch (AMQException e)
+            {
+                try
+                {
+                    fromStore.abortTran(storeContext);
+                }
+                catch (AMQException ae)
+                {
+                    throw new RuntimeException("Failed to abort transaction whilst moving messages on message store.", ae);
+                }
+            }
+        }
+        // Release locks to allow activity on the queues being moved between to continue.
+        finally
+        {
+            stopMovingMessages();
+        }
+    }
+
     public void startMovingMessages()
     {
         _deliveryMgr.startMovingMessages();
@@ -560,7 +622,7 @@ public class AMQQueue implements Managable, Comparable
         }
 
         Subscription subscription =
-            _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, this);
+                _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, this);
 
         if (subscription.filtersMessages())
         {
@@ -598,14 +660,14 @@ public class AMQQueue implements Managable, Comparable
         if (_logger.isDebugEnabled())
         {
             _logger.debug(MessageFormat.format(
-                              "Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}",
-                              ps, channel, consumerTag, this));
+                    "Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}",
+                    ps, channel, consumerTag, this));
         }
 
         Subscription removedSubscription;
         if ((removedSubscription = _subscribers.removeSubscriber(_subscriptionFactory.createSubscription(channel, ps,
                                                                                                          consumerTag)))
-                == null)
+            == null)
         {
             throw new AMQException("Protocol session with channel " + channel + " and consumer tag " + consumerTag
                                    + " and protocol session key " + ps.getKey() + " not registered with queue " + this);
@@ -787,7 +849,7 @@ public class AMQQueue implements Managable, Comparable
             return false;
         }
 
-        final AMQQueue amqQueue = (AMQQueue)o;
+        final AMQQueue amqQueue = (AMQQueue) o;
 
         return (_name.equals(amqQueue._name));
     }
