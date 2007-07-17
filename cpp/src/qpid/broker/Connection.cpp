@@ -26,6 +26,7 @@
 #include "BrokerChannel.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "BrokerAdapter.h"
+#include "SemanticHandler.h"
 
 using namespace boost;
 using namespace qpid::sys;
@@ -55,7 +56,7 @@ void Connection::received(framing::AMQFrame& frame){
     if (frame.getChannel() == 0) {
         adapter.handle(frame);
     } else {
-        getChannel((frame.getChannel())).getHandlers().in->handle(frame);
+        getChannel((frame.getChannel())).in->handle(frame);
     }
 }
 
@@ -92,17 +93,17 @@ void Connection::closed(){
 
 void Connection::closeChannel(uint16_t id) {
     ChannelMap::iterator i = channels.find(id);
-    if (i != channels.end())
-        i->close();
+    if (i != channels.end()) channels.erase(i);
 }
 
 
-Channel& Connection::getChannel(ChannelId id) {
+FrameHandler::Chains& Connection::getChannel(ChannelId id) {
     ChannelMap::iterator i = channels.find(id);
     if (i == channels.end()) {
-        i = channels.insert(id, new Channel(*this, id, &broker.getStore())).first;
+        FrameHandler::Chains chains(new SemanticHandler(id, *this), new OutputHandlerFrameHandler(*out));
+        i = channels.insert(ChannelMap::value_type(id, chains)).first;
     }        
-    return *i;
+    return i->second;
 }
 
 

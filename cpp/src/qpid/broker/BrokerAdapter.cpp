@@ -20,6 +20,8 @@
 #include "BrokerAdapter.h"
 #include "BrokerChannel.h"
 #include "Connection.h"
+#include "ConsumeAdapter.h"
+#include "GetAdapter.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/Exception.h"
 
@@ -33,8 +35,8 @@ using namespace qpid::framing;
 typedef std::vector<Queue::shared_ptr> QueueVector;
 
 
-BrokerAdapter::BrokerAdapter(Channel& ch, Connection& c, Broker& b) :
-    CoreRefs(ch, c, b),
+    BrokerAdapter::BrokerAdapter(Channel& ch, Connection& c, Broker& b, ChannelAdapter& a) :
+    CoreRefs(ch, c, b, a),
     connection(c),
     basicHandler(*this),
     channelHandler(*this),
@@ -299,9 +301,11 @@ void BrokerAdapter::BasicHandlerImpl::consume(
     if(!consumerTag.empty() && channel.exists(consumerTag)){
         throw ConnectionException(530, "Consumer tags must be unique");
     }
-
     string newTag = consumerTag;
-    channel.consume(
+    //need to generate name here, so we have it for the adapter (it is
+    //also version specific behaviour now)
+    if (newTag.empty()) newTag = tagGenerator.generate();
+    channel.consume(std::auto_ptr<DeliveryAdapter>(new ConsumeAdapter(adapter, newTag, connection.getFrameMax())),
         newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &fields);
 
     if(!nowait) client.consumeOk(newTag, context.getRequestId());
@@ -336,7 +340,8 @@ void BrokerAdapter::BasicHandlerImpl::publish(
         
 void BrokerAdapter::BasicHandlerImpl::get(const MethodContext& context, uint16_t /*ticket*/, const string& queueName, bool noAck){
     Queue::shared_ptr queue = getQueue(queueName);    
-    if(!channel.get(queue, "", !noAck)){
+    GetAdapter out(adapter, queue, "", connection.getFrameMax());
+    if(!channel.get(out, queue, !noAck)){
         string clusterId;//not used, part of an imatix hack
 
         client.getEmpty(clusterId, context.getRequestId());

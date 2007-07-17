@@ -40,12 +40,13 @@ class Connection;
  */
 struct CoreRefs
 {
-    CoreRefs(Channel& ch, Connection& c, Broker& b)
-        : channel(ch), connection(c), broker(b), proxy(ch) {}
+    CoreRefs(Channel& ch, Connection& c, Broker& b, framing::ChannelAdapter& a)
+        : channel(ch), connection(c), broker(b), adapter(a), proxy(a) {}
 
     Channel& channel;
     Connection& connection;
     Broker& broker;
+    framing::ChannelAdapter& adapter;
     framing::AMQP_ClientProxy proxy;
 
     /**

@@ -197,6 +197,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionAdapter.cpp \
   qpid/broker/ConnectionFactory.cpp \
+  qpid/broker/ConsumeAdapter.cpp \
   qpid/broker/Daemon.cpp \
   qpid/broker/DeliverableMessage.cpp \
   qpid/broker/DeliveryRecord.cpp \
@@ -209,6 +210,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/DtxWorkRecord.cpp \
   qpid/broker/ExchangeRegistry.cpp \
   qpid/broker/FanOutExchange.cpp \
+  qpid/broker/GetAdapter.cpp \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/InMemoryContent.cpp \
   qpid/broker/LazyLoadedContent.cpp \
@@ -224,6 +226,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
   qpid/broker/Reference.cpp \
+  qpid/broker/SemanticHandler.cpp \
   qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TxAck.cpp \
@@ -253,9 +256,11 @@ nobase_include_HEADERS = \
   qpid/broker/BrokerMessageBase.h \
   qpid/broker/BrokerQueue.h \
   qpid/broker/CompletionHandler.h \
+  qpid/broker/ConsumeAdapter.h \
   qpid/broker/Consumer.h \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.h \
+  qpid/broker/DeliveryAdapter.h \
   qpid/broker/DirectExchange.h \
   qpid/broker/DtxAck.h \
   qpid/broker/DtxBuffer.h \
@@ -265,6 +270,7 @@ nobase_include_HEADERS = \
   qpid/broker/DtxWorkRecord.h \
   qpid/broker/ExchangeRegistry.h \
   qpid/broker/FanOutExchange.h \
+  qpid/broker/GetAdapter.h \
   qpid/broker/HandlerImpl.h \
   qpid/broker/InMemoryContent.h \
   qpid/broker/MessageBuilder.h \
@@ -306,6 +312,7 @@ nobase_include_HEADERS = \
   qpid/broker/PersistableQueue.h \
   qpid/broker/QueuePolicy.h \
   qpid/broker/RecoveryManagerImpl.h \
+  qpid/broker/SemanticHandler.h \
   qpid/broker/Timer.h \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \
