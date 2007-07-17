@@ -184,6 +184,7 @@ AC_CONFIG_FILES([
   qpidc.spec
   Makefile
   examples/Makefile
+  perftest/Makefile
   src/Makefile
   src/tests/Makefile
   docs/man/Makefile
