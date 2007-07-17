@@ -125,13 +125,14 @@ class BasicTests(TestBase):
         channel.queue_declare(queue="test-queue-4", exclusive=True)
         channel.basic_consume(consumer_tag="my-consumer", queue="test-queue-4")
         channel.basic_publish(routing_key="test-queue-4", content=Content("One"))
- 	import time; time.sleep(5) # this should be replace waiting for confirm of publish once we have message class
-        #cancel should stop messages being delivered
-        channel.basic_cancel(consumer_tag="my-consumer")
-        channel.basic_publish(routing_key="test-queue-4", content=Content("Two"))
+
         myqueue = self.client.queue("my-consumer")
         msg = myqueue.get(timeout=5)
         self.assertEqual("One", msg.content.body)
+	
+        #cancel should stop messages being delivered
+        channel.basic_cancel(consumer_tag="my-consumer")
+        channel.basic_publish(routing_key="test-queue-4", content=Content("Two"))
         try:
             msg = myqueue.get(timeout=1) 
             self.fail("Got message after cancellation: " + msg)
