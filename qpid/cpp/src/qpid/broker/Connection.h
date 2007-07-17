@@ -51,7 +51,7 @@ class Connection : public sys::ConnectionInputHandler,
     Connection(sys::ConnectionOutputHandler* out, Broker& broker);
 
     /** Get a channel. Create if it does not already exist */
-    Channel& getChannel(framing::ChannelId channel);
+    framing::FrameHandler::Chains& getChannel(framing::ChannelId channel);
 
     /** Close a channel */
     void closeChannel(framing::ChannelId channel);
@@ -82,7 +82,7 @@ class Connection : public sys::ConnectionInputHandler,
     void closed();
 
   private:
-    typedef boost::ptr_map<framing::ChannelId, Channel> ChannelMap;
+    typedef std::map<framing::ChannelId, framing::FrameHandler::Chains> ChannelMap;
 
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
     Exchange::shared_ptr findExchange(const string& name);

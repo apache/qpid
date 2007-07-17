@@ -56,7 +56,7 @@ class MessageHandlerImpl;
 class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 {
   public:
-    BrokerAdapter(Channel& ch, Connection& c, Broker& b);
+    BrokerAdapter(Channel& ch, Connection& c, Broker& b, framing::ChannelAdapter& a);
 
     framing::ProtocolVersion getVersion() const;
     ChannelHandler* getChannelHandler() { return &channelHandler; }
@@ -172,8 +172,10 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
         public BasicHandler,
         public HandlerImpl<framing::AMQP_ClientProxy::Basic>
     {
+        NameGenerator tagGenerator;
+
       public:
-        BasicHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        BasicHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent), tagGenerator("sgen") {}
 
         void qos(const framing::MethodContext& context, uint32_t prefetchSize,
                  uint16_t prefetchCount, bool global); 
