@@ -187,19 +187,24 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
+    {
+        return isBound(routingKey,queue);
+    }
+
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
         final List<AMQQueue> queues = _index.get(routingKey);
         return queues != null && queues.contains(queue);
     }
 
-    public boolean isBound(AMQShortString routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey)
     {
         final List<AMQQueue> queues = _index.get(routingKey);
         return queues != null && !queues.isEmpty();
     }
 
-    public boolean isBound(AMQQueue queue) throws AMQException
+    public boolean isBound(AMQQueue queue)
     {
         Map<AMQShortString, List<AMQQueue>> bindings = _index.getBindingsMap();
         for (List<AMQQueue> queues : bindings.values())
@@ -212,7 +217,7 @@ public class DestNameExchange extends AbstractExchange
         return false;
     }
 
-    public boolean hasBindings() throws AMQException
+    public boolean hasBindings()
     {
         return !_index.getBindingsMap().isEmpty();
     }

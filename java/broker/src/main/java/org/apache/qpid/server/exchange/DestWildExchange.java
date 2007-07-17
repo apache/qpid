@@ -230,21 +230,26 @@ public class DestWildExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
+    {
+        return isBound(routingKey, queue);
+    }
+
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
         List<AMQQueue> queues = _routingKey2queues.get(normalize(routingKey));
 
         return (queues != null) && queues.contains(queue);
     }
 
-    public boolean isBound(AMQShortString routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey)
     {
         List<AMQQueue> queues = _routingKey2queues.get(normalize(routingKey));
 
         return (queues != null) && !queues.isEmpty();
     }
 
-    public boolean isBound(AMQQueue queue) throws AMQException
+    public boolean isBound(AMQQueue queue)
     {
         for (List<AMQQueue> queues : _routingKey2queues.values())
         {
@@ -257,7 +262,7 @@ public class DestWildExchange extends AbstractExchange
         return false;
     }
 
-    public boolean hasBindings() throws AMQException
+    public boolean hasBindings()
     {
         return !_routingKey2queues.isEmpty();
     }
