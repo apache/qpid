@@ -18,13 +18,7 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.interop.coordinator;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
-import java.util.*;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -33,6 +27,11 @@ import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 
 import uk.co.thebadgerset.junit.extensions.listeners.TKTestListener;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.Writer;
+import java.util.*;
 
 /**
  * Listens for test results for a named test and outputs these in the standard JUnit XML format to the specified
@@ -50,6 +49,12 @@ import uk.co.thebadgerset.junit.extensions.listeners.TKTestListener;
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Listen to test lifecycle notifications.
+ * <tr><td> Listen to test errors and failures.
+ * <tr><td> Listen to test timings.
+ * <tr><td> Listen to test memory usages.
+ * <tr><td> Listen to parameterized test parameters.
+ * <tr><th> Responsibilities
  * </table>
  *
  * @todo Merge this class with CSV test listener, making the collection of results common to both, and only factoring
@@ -97,7 +102,8 @@ public class XMLTestListener implements TKTestListener
     /**
      * Creates a new XML results output listener that writes to the specified location.
      *
-     * @param writer The location to write results to.
+     * @param writer        The location to write results to.
+     * @param testClassName The name of the test class to include in the test results.
      */
     public XMLTestListener(Writer writer, String testClassName)
     {
@@ -126,7 +132,9 @@ public class XMLTestListener implements TKTestListener
     }
 
     /**
-     * A test started.
+     * Notification that a test started.
+     *
+     * @param test The test that started.
      */
     public void startTest(Test test)
     {
@@ -189,7 +197,9 @@ public class XMLTestListener implements TKTestListener
     { }
 
     /**
-     * A test ended.
+     * Notification that a test ended.
+     *
+     * @param test The test that ended.
      */
     public void endTest(Test test)
     {
@@ -225,6 +235,9 @@ public class XMLTestListener implements TKTestListener
 
     /**
      * An error occurred.
+     *
+     * @param test The test in which the error occurred.
+     * @param t    The throwable that resulted from the error.
      */
     public void addError(Test test, Throwable t)
     {
@@ -237,6 +250,9 @@ public class XMLTestListener implements TKTestListener
 
     /**
      * A failure occurred.
+     *
+     * @param test The test in which the failure occurred.
+     * @param t    The JUnit assertions that led to the failure.
      */
     public void addFailure(Test test, AssertionFailedError t)
     {
@@ -339,13 +355,10 @@ public class XMLTestListener implements TKTestListener
      */
     protected static class Result
     {
-        public Result(String testClass, String testName)
-        {
-            this.testClass = testClass;
-            this.testName = testName;
-        }
-
+        /** Holds the name of the test class. */
         public String testClass;
+
+        /** Holds the name of the test method. */
         public String testName;
 
         /** Holds the exception that caused error in this test. */
@@ -354,49 +367,16 @@ public class XMLTestListener implements TKTestListener
         /** Holds the assertion exception that caused failure in this test. */
         public AssertionFailedError failure;
 
-        /** Holds the error count for this test. */
-        // public int errors = 0;
-
-        /** Holds the failure count for this tests. */
-        // public int failures = 0;
-
-        /** Holds the overall tests run count for this test. */
-        // public int runs = 0;
-
-        /*public boolean equals(Object o)
+        /**
+         * Creates a placeholder for the results of a test.
+         *
+         * @param testClass The test class.
+         * @param testName  The name of the test that was run.
+         */
+        public Result(String testClass, String testName)
         {
-            if (this == o)
-            {
-                return true;
-            }
-
-            if (!(o instanceof Result))
-            {
-                return false;
-            }
-
-            final Result result = (Result) o;
-
-            if ((testClass != null) ? (!testClass.equals(result.testClass)) : (result.testClass != null))
-            {
-                return false;
-            }
-
-            if ((testName != null) ? (!testName.equals(result.testName)) : (result.testName != null))
-            {
-                return false;
-            }
-
-            return true;
+            this.testClass = testClass;
+            this.testName = testName;
         }
-
-        public int hashCode()
-        {
-            int result;
-            result = ((testClass != null) ? testClass.hashCode() : 0);
-            result = (29 * result) + ((testName != null) ? testName.hashCode() : 0);
-
-            return result;
-        }*/
     }
 }

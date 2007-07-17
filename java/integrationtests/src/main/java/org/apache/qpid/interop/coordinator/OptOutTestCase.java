@@ -32,7 +32,7 @@ import junit.framework.Assert;
  * <tr><td> Fail the test with a suitable reason.
  * </table>
  */
-public class OptOutTestCase extends CoordinatingTestCase
+public class OptOutTestCase extends InteropTestCase
 {
     /**
      * Creates a new coordinating test case with the specified name.

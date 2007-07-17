@@ -21,42 +21,37 @@
 package org.apache.qpid.interop.testclient;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
 import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
-import org.apache.qpid.util.CommandLineParser;
-import org.apache.qpid.util.PropertiesUtils;
+import org.apache.qpid.interop.testclient.testcases.TestCase3BasicPubSub;
+import org.apache.qpid.test.framework.MessagingTestConfigProperties;
+import org.apache.qpid.test.framework.TestUtils;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import java.io.IOException;
+import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+
+import javax.jms.*;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Implements a test client as described in the interop testing spec
  * (http://cwiki.apache.org/confluence/display/qpid/Interop+Testing+Specification). A test client is an agent that
  * reacts to control message sequences send by the test {@link org.apache.qpid.interop.coordinator.Coordinator}.
  *
- * <p/><table><caption>Messages Handled by TestClient</caption>
+ * <p/><table><caption>Messages Handled by SustainedTestClient</caption>
  * <tr><th> Message               <th> Action
  * <tr><td> Invite(compulsory)    <td> Reply with Enlist.
  * <tr><td> Invite(test case)     <td> Reply with Enlist if test case available.
  * <tr><td> AssignRole(test case) <td> Reply with Accept Role if matches an enlisted test. Keep test parameters.
  * <tr><td> Start                 <td> Send test messages defined by test parameters. Send report on messages sent.
  * <tr><td> Status Request        <td> Send report on messages received.
+ * <tr><td> Terminate             <td> Terminate the test client.
  * </table>
  *
  * <p><table id="crc"><caption>CRC Card</caption>
@@ -67,12 +62,11 @@ import java.util.Properties;
  */
 public class TestClient implements MessageListener
 {
+    /** Used for debugging. */
     private static Logger log = Logger.getLogger(TestClient.class);
 
-    public static final String CONNECTION_PROPERTY = "connectionfactory.broker";
-    public static final String CONNECTION_NAME = "broker";
+    /** Holds the default identifying name of the test client. */
     public static final String CLIENT_NAME = "java";
-    public static final String DEFAULT_CONNECTION_PROPS_RESOURCE = "org/apache/qpid/interop/connection.properties";
 
     /** Holds the URL of the broker to run the tests on. */
     public static String brokerUrl;
@@ -80,16 +74,33 @@ public class TestClient implements MessageListener
     /** Holds the virtual host to run the tests on. If <tt>null</tt>, then the default virtual host is used. */
     public static String virtualHost;
 
+    /**
+     * Holds the test context properties that provides the default test parameters, plus command line overrides.
+     * This is initialized with the default test parameters, to which command line overrides may be applied.
+     */
+    public static ParsedProperties testContextProperties =
+        TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
+
     /** Holds all the test cases loaded from the classpath. */
     Map<String, InteropClientTestCase> testCases = new HashMap<String, InteropClientTestCase>();
 
+    /** Holds the test case currently being run by this client. */
     protected InteropClientTestCase currentTestCase;
 
-    protected Connection _connection;
+    /** Holds the connection to the broker that the test is being coordinated on. */
+    protected Connection connection;
+
+    /** Holds the message producer to hold the test coordination over. */
     protected MessageProducer producer;
+
+    /** Holds the JMS session for the test coordination. */
     protected Session session;
 
+    /** Holds the name of this client, with a default value. */
     protected String clientName = CLIENT_NAME;
+
+    /** This flag indicates that the test client should attempt to join the currently running test case on start up. */
+    protected boolean join;
 
     /**
      * Creates a new interop test client, listenting to the specified broker and virtual host, with the specified client
@@ -99,15 +110,16 @@ public class TestClient implements MessageListener
      * @param virtualHost The virtual host to conect to.
      * @param clientName  The client name to use.
      */
-    public TestClient(String brokerUrl, String virtualHost, String clientName)
+    public TestClient(String brokerUrl, String virtualHost, String clientName, boolean join)
     {
-        log.debug("public TestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
-                  + ", String clientName = " + clientName + "): called");
+        log.debug("public SustainedTestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
+            + ", String clientName = " + clientName + "): called");
 
         // Retain the connection parameters.
         this.brokerUrl = brokerUrl;
         this.virtualHost = virtualHost;
         this.clientName = clientName;
+        this.join = join;
     }
 
     /**
@@ -124,49 +136,40 @@ public class TestClient implements MessageListener
      */
     public static void main(String[] args)
     {
-        // Use the command line parser to evaluate the command line.
-        CommandLineParser commandLine =
-                new CommandLineParser(
+        // Override the default broker url to be localhost:5672.
+        testContextProperties.setProperty(MessagingTestConfigProperties.BROKER_PROPNAME, "tcp://localhost:5672");
+
+        // Use the command line parser to evaluate the command line with standard handling behaviour (print errors
+        // and usage then exist if there are errors).
+        // Any options and trailing name=value pairs are also injected into the test context properties object,
+        // to override any defaults that may have been set up.
+        ParsedProperties options =
+            new ParsedProperties(uk.co.thebadgerset.junit.extensions.util.CommandLineParser.processCommandLine(args,
+                    new uk.co.thebadgerset.junit.extensions.util.CommandLineParser(
                         new String[][]
-                                {
-                                        {"b", "The broker URL.", "broker", "false"},
-                                        {"h", "The virtual host to use.", "virtual host", "false"},
-                                        {"n", "The test client name.", "name", "false"}
-                                });
-
-        // Capture the command line arguments or display errors and correct usage and then exit.
-        Properties options = null;
-
-        try
-        {
-            options = commandLine.parseCommandLine(args);
-        }
-        catch (IllegalArgumentException e)
-        {
-            System.out.println(commandLine.getErrors());
-            System.out.println(commandLine.getUsage());
-            System.exit(1);
-        }
+                        {
+                            { "b", "The broker URL.", "broker", "false" },
+                            { "h", "The virtual host to use.", "virtual host", "false" },
+                            { "o", "The name of the directory to output test timings to.", "dir", "false" },
+                            { "n", "The name of the test client.", "name", "false" },
+                            { "j", "Join this test client to running test.", "false" }
+                        }), testContextProperties));
 
         // Extract the command line options.
         String brokerUrl = options.getProperty("b");
         String virtualHost = options.getProperty("h");
         String clientName = options.getProperty("n");
-
-        // Add all the trailing command line options (name=value pairs) to system properties. Tests may pick up
-        // overridden values from there.
-        commandLine.addCommandLineToSysProperties();
+        boolean join = options.getPropertyAsBoolean("j");
 
         // Create a test client and start it running.
-        TestClient client = new TestClient(brokerUrl, virtualHost, (clientName == null) ? CLIENT_NAME : clientName);
+        TestClient client = new TestClient(brokerUrl, virtualHost, (clientName == null) ? CLIENT_NAME : clientName, join);
 
         // Use a class path scanner to find all the interop test case implementations.
-        Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
-                new ArrayList<Class<? extends InteropClientTestCase>>();
-        // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
         // Hard code the test classes till the classpath scanner is fixed.
-        Collections.addAll(testCaseClasses,
-                           new Class[]{TestCase1DummyRun.class, TestCase2BasicP2P.class, TestClient.class});
+        Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
+            new ArrayList<Class<? extends InteropClientTestCase>>();
+        // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
+        Collections.addAll(testCaseClasses, TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class);
 
         try
         {
@@ -182,7 +185,10 @@ public class TestClient implements MessageListener
     /**
      * Starts the interop test client running. This causes it to start listening for incoming test invites.
      *
-     * @throws JMSException Any underlying JMSExceptions are allowed to fall through. @param testCaseClasses
+     * @param testCaseClasses The classes of the available test cases. The test case names from these are used to
+     *                        matchin incoming test invites against.
+     *
+     * @throws JMSException Any underlying JMSExceptions are allowed to fall through.
      */
     protected void start(Collection<Class<? extends InteropClientTestCase>> testCaseClasses) throws JMSException
     {
@@ -209,84 +215,36 @@ public class TestClient implements MessageListener
         }
 
         // Open a connection to communicate with the coordinator on.
-        _connection = createConnection(DEFAULT_CONNECTION_PROPS_RESOURCE, clientName, brokerUrl, virtualHost);
-
-        session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        connection = TestUtils.createConnection(testContextProperties);
+        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // Set this up to listen for control messages.
-        MessageConsumer consumer = session.createConsumer(session.createTopic("iop.control." + clientName));
+        Topic privateControlTopic = session.createTopic("iop.control." + clientName);
+        MessageConsumer consumer = session.createConsumer(privateControlTopic);
         consumer.setMessageListener(this);
 
-        MessageConsumer consumer2 = session.createConsumer(session.createTopic("iop.control"));
+        Topic controlTopic = session.createTopic("iop.control");
+        MessageConsumer consumer2 = session.createConsumer(controlTopic);
         consumer2.setMessageListener(this);
 
         // Create a producer to send replies with.
         producer = session.createProducer(null);
 
+        // If the join flag was set, then broadcast a join message to notify the coordinator that a new test client
+        // is available to join the current test case, if it supports it. This message may be ignored, or it may result
+        // in this test client receiving a test invite.
+        if (join)
+        {
+            Message joinMessage = session.createMessage();
+
+            joinMessage.setStringProperty("CONTROL_TYPE", "JOIN");
+            joinMessage.setStringProperty("CLIENT_NAME", clientName);
+            joinMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + clientName);
+            producer.send(controlTopic, joinMessage);
+        }
+
         // Start listening for incoming control messages.
-        _connection.start();
-    }
-
-
-    public static Connection createConnection(String connectionPropsResource, String brokerUrl, String virtualHost)
-    {
-        return createConnection(connectionPropsResource, "clientID", brokerUrl, virtualHost);
-    }
-
-    /**
-     * Establishes a JMS connection using a properties file and qpids built in JNDI implementation. This is a simple
-     * convenience method for code that does anticipate handling connection failures. All exceptions that indicate that
-     * the connection has failed, are wrapped as rutime exceptions, preumably handled by a top level failure handler.
-     *
-     * @param connectionPropsResource The name of the connection properties file.
-     * @param clientID
-     * @param brokerUrl               The broker url to connect to, <tt>null</tt> to use the default from the
-     *                                properties.
-     * @param virtualHost             The virtual host to connectio to, <tt>null</tt> to use the default.
-     *
-     * @return A JMS conneciton.
-     *
-     * @todo Make username/password configurable. Allow multiple urls for fail over. Once it feels right, move it to a
-     * Utils library class.
-     */
-    public static Connection createConnection(String connectionPropsResource, String clientID, String brokerUrl, String virtualHost)
-    {
-        log.debug("public static Connection createConnection(String connectionPropsResource = " + connectionPropsResource
-                  + ", String brokerUrl = " + brokerUrl + ", String clientID = " + clientID
-                  + ", String virtualHost = " + virtualHost + " ): called");
-
-        try
-        {
-            Properties connectionProps =
-                    PropertiesUtils.getProperties(TestClient.class.getClassLoader().getResourceAsStream(
-                            connectionPropsResource));
-
-            if (brokerUrl != null)
-            {
-                String connectionString =
-                        "amqp://guest:guest@" + clientID + "/" + ((virtualHost != null) ? virtualHost : "") + "?brokerlist='" + brokerUrl + "'";
-                connectionProps.setProperty(CONNECTION_PROPERTY, connectionString);
-            }
-
-            Context ctx = new InitialContext(connectionProps);
-
-            ConnectionFactory cf = (ConnectionFactory) ctx.lookup(CONNECTION_NAME);
-            Connection connection = cf.createConnection();
-
-            return connection;
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (NamingException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (JMSException e)
-        {
-            throw new RuntimeException(e);
-        }
+        connection.start();
     }
 
     /**
@@ -394,16 +352,8 @@ public class TestClient implements MessageListener
             {
                 log.info("Received termination instruction from coordinator.");
 
-//                try
-//                {
-//                    currentTestCase.terminate();
-//                }
-//                catch (InterruptedException e)
-//                {
-//                    //
-//                }
                 // Is a cleaner shutdown needed?
-                _connection.close();
+                connection.close();
                 System.exit(0);
             }
             else

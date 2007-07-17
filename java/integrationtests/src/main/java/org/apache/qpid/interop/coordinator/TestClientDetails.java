@@ -21,8 +21,12 @@
 package org.apache.qpid.interop.coordinator;
 
 /**
+ * TestClientDetails is used to encapsulate information about an interop test client. It pairs together the unique
+ * name of the client, and the route on which it listens to its control messages.
+ *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td> Record test clients control addresses together with their names.
  * </table>
  */
 public class TestClientDetails
@@ -56,13 +60,8 @@ public class TestClientDetails
 
         final TestClientDetails testClientDetails = (TestClientDetails) o;
 
-        if ((clientName != null) ? (!clientName.equals(testClientDetails.clientName))
-                                 : (testClientDetails.clientName != null))
-        {
-            return false;
-        }
-
-        return true;
+        return !((clientName != null) ? (!clientName.equals(testClientDetails.clientName))
+                                      : (testClientDetails.clientName != null));
     }
 
     /**

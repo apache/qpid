@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.interop.testclient.testcases;
 
-import javax.jms.*;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.interop.testclient.InteropClientTestCase;
 import org.apache.qpid.interop.testclient.TestClient;
+import org.apache.qpid.test.framework.TestUtils;
+
+import javax.jms.*;
 
 /**
  * Implements test case 2, basic P2P. Sends/received a specified number of messages to a specified route on the
@@ -53,9 +54,6 @@ public class TestCase2BasicP2P implements InteropClientTestCase
 
     /** The number of test messages to send. */
     private int numMessages;
-
-    /** The routing key to send them to on the default direct exchange. */
-    private Destination sendDestination;
 
     /** The connection to send the test messages on. */
     private Connection connection;
@@ -118,14 +116,12 @@ public class TestCase2BasicP2P implements InteropClientTestCase
         this.role = role;
 
         // Create a new connection to pass the test messages on.
-        connection =
-            TestClient.createConnection(TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, TestClient.brokerUrl,
-                TestClient.virtualHost);
+        connection = TestUtils.createConnection(TestClient.testContextProperties);
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // Extract and retain the test parameters.
         numMessages = assignRoleMessage.getIntProperty("P2P_NUM_MESSAGES");
-        sendDestination = session.createQueue(assignRoleMessage.getStringProperty("P2P_QUEUE_AND_KEY_NAME"));
+        Destination sendDestination = session.createQueue(assignRoleMessage.getStringProperty("P2P_QUEUE_AND_KEY_NAME"));
 
         log.debug("numMessages = " + numMessages);
         log.debug("sendDestination = " + sendDestination);
@@ -149,7 +145,9 @@ public class TestCase2BasicP2P implements InteropClientTestCase
     }
 
     /**
-     * Performs the test case actions.
+     * Performs the test case actions. Returning from here, indicates that the sending role has completed its test.
+     *
+     * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.
      */
     public void start() throws JMSException
     {
@@ -168,11 +166,6 @@ public class TestCase2BasicP2P implements InteropClientTestCase
                 messageCount++;
             }
         }
-    }
-
-    public void terminate() throws JMSException
-    {
-        //todo
     }
 
     /**

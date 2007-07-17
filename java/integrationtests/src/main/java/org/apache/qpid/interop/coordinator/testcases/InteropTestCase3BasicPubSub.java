@@ -18,56 +18,64 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.interop.coordinator.testcases;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.jms.Message;
 
 import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.interop.coordinator.CoordinatingTestCase;
+import org.apache.qpid.interop.coordinator.InteropTestCase;
+
+import javax.jms.Message;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Exercises the interop testing framework without actually sending any test messages.
- *     <td> {@link org.apache.qpid.interop.coordinator.CoordinatingTestCase}
+ * <tr><td> Setup pub/sub test parameters and compare with test output. <td> {@link InteropTestCase}
  * </table>
  */
-public class CoordinatingTestCase1DummyRun extends CoordinatingTestCase
+public class InteropTestCase3BasicPubSub extends InteropTestCase
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(CoordinatingTestCase1DummyRun.class);
+    private static final Logger log = Logger.getLogger(InteropTestCase3BasicPubSub.class);
 
     /**
      * Creates a new coordinating test case with the specified name.
      *
      * @param name The test case name.
      */
-    public CoordinatingTestCase1DummyRun(String name)
+    public InteropTestCase3BasicPubSub(String name)
     {
         super(name);
     }
 
     /**
      * Performs the basic P2P test case, "Test Case 2" in the specification.
+     *
+     * @throws Exception Any exceptions are allowed to fall through and fail the test.
      */
-    public void testDummyRun() throws Exception
+    public void testBasicPubSub() throws Exception
     {
-        log.debug("public void testDummyRun(): called");
+        log.debug("public void testBasicPubSub(): called");
 
         Map<String, Object> testConfig = new HashMap<String, Object>();
-        testConfig.put("TEST_NAME", "TC1_DummyRun");
+        testConfig.put("TEST_NAME", "TC3_BasicPubSub");
+        testConfig.put("PUBSUB_KEY", "tc3route");
+        testConfig.put("PUBSUB_NUM_MESSAGES", 10);
+        testConfig.put("PUBSUB_NUM_RECEIVERS", 5);
 
         Message[] reports = sequenceTest(testConfig);
 
         // Compare sender and receiver reports.
-        Assert.assertEquals("Expected to get 2 dummy reports.", 2, reports.length);
+        int messagesSent = reports[0].getIntProperty("MESSAGE_COUNT");
+        int messagesReceived = reports[1].getIntProperty("MESSAGE_COUNT");
+
+        Assert.assertEquals("The requested number of messages were not sent.", 10, messagesSent);
+        Assert.assertEquals("Received messages did not match up to num sent * num receivers.", messagesSent * 5,
+            messagesReceived);
     }
 
     /**
@@ -80,6 +88,6 @@ public class CoordinatingTestCase1DummyRun extends CoordinatingTestCase
      */
     public String getTestCaseNameForTestMethod(String methodName)
     {
-        return "TC1_DummyRun";
+        return "TC3_BasicPubSub";
     }
 }

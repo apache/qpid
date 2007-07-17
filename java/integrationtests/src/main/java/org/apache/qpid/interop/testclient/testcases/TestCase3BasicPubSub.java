@@ -18,14 +18,15 @@
  * under the License.
  *
  */
-
 package org.apache.qpid.interop.testclient.testcases;
-
-import javax.jms.*;
 
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.interop.testclient.InteropClientTestCase;
+import org.apache.qpid.interop.testclient.TestClient;
+import org.apache.qpid.test.framework.TestUtils;
+
+import javax.jms.*;
 
 /**
  * Implements test case 3, basic pub/sub. Sends/received a specified number of messages to a specified route on the
@@ -54,12 +55,6 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
 
     /** The number of test messages to send. */
     private int numMessages;
-
-    /** The number of receiver connection to use. */
-    private int numReceivers;
-
-    /** The routing key to send them to on the default direct exchange. */
-    private Destination sendDestination;
 
     /** The connections to send/receive the test messages on. */
     private Connection[] connection;
@@ -123,7 +118,7 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
 
         // Extract and retain the test parameters.
         numMessages = assignRoleMessage.getIntProperty("PUBSUB_NUM_MESSAGES");
-        numReceivers = assignRoleMessage.getIntProperty("PUBSUB_NUM_RECEIVERS");
+        int numReceivers = assignRoleMessage.getIntProperty("PUBSUB_NUM_RECEIVERS");
         String sendKey = assignRoleMessage.getStringProperty("PUBSUB_KEY");
 
         log.debug("numMessages = " + numMessages);
@@ -139,13 +134,11 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
             connection = new Connection[1];
             session = new Session[1];
 
-            connection[0] =
-                org.apache.qpid.interop.testclient.TestClient.createConnection(org.apache.qpid.interop.testclient.TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, org.apache.qpid.interop.testclient.TestClient.brokerUrl,
-                    org.apache.qpid.interop.testclient.TestClient.virtualHost);
+            connection[0] = TestUtils.createConnection(TestClient.testContextProperties);
             session[0] = connection[0].createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Extract and retain the test parameters.
-            sendDestination = session[0].createTopic(sendKey);
+            Destination sendDestination = session[0].createTopic(sendKey);
 
             producer = session[0].createProducer(sendDestination);
             break;
@@ -159,9 +152,7 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
 
             for (int i = 0; i < numReceivers; i++)
             {
-                connection[i] =
-                    org.apache.qpid.interop.testclient.TestClient.createConnection(org.apache.qpid.interop.testclient.TestClient.DEFAULT_CONNECTION_PROPS_RESOURCE, org.apache.qpid.interop.testclient.TestClient.brokerUrl,
-                        org.apache.qpid.interop.testclient.TestClient.virtualHost);
+                connection[i] = TestUtils.createConnection(TestClient.testContextProperties);
                 session[i] = connection[i].createSession(false, Session.AUTO_ACKNOWLEDGE);
 
                 sendDestination = session[i].createTopic(sendKey);
@@ -174,14 +165,16 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
         }
 
         // Start all the connection dispatcher threads running.
-        for (int i = 0; i < connection.length; i++)
+        for (Connection conn : connection)
         {
-            connection[i].start();
+            conn.start();
         }
     }
 
     /**
-     * Performs the test case actions.
+     * Performs the test case actions. Returning from here, indicates that the sending role has completed its test.
+     *
+     * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.
      */
     public void start() throws JMSException
     {
@@ -202,11 +195,6 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
         }
     }
 
-    public void terminate() throws JMSException, InterruptedException
-    {
-        //todo
-    }
-
     /**
      * Gets a report on the actions performed by the test case in its assigned role.
      *
@@ -221,9 +209,9 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
         log.debug("public Message getReport(Session session): called");
 
         // Close the test connections.
-        for (int i = 0; i < connection.length; i++)
+        for (Connection conn : connection)
         {
-            connection[i].close();
+            conn.close();
         }
 
         // Generate a report message containing the count of the number of messages passed.

@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.util.ConversationFactory;
 
 import javax.jms.*;
@@ -31,7 +32,7 @@ import javax.jms.*;
 import java.util.Map;
 
 /**
- * A CoordinatingTestCase is a JUnit test case extension that knows how to coordinate test clients that take part in a
+ * A InteropTestCase is a JUnit test case extension that knows how to coordinate test clients that take part in a
  * test case as defined in the interop testing specification
  * (http://cwiki.apache.org/confluence/display/qpid/Interop+Testing+Specification).
  *
@@ -64,10 +65,10 @@ import java.util.Map;
  * <tr><td> Supply test properties
  * </table>
  */
-public abstract class CoordinatingTestCase extends TestCase
+public abstract class InteropTestCase extends TestCase
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(CoordinatingTestCase.class);
+    private static final Logger log = Logger.getLogger(InteropTestCase.class);
 
     /** Holds the contact details for the sending test client. */
     protected TestClientDetails sender;
@@ -83,7 +84,7 @@ public abstract class CoordinatingTestCase extends TestCase
      *
      * @param name The test case name.
      */
-    public CoordinatingTestCase(String name)
+    public InteropTestCase(String name)
     {
         super(name);
     }
@@ -152,9 +153,10 @@ public abstract class CoordinatingTestCase extends TestCase
     }
 
     /**
-     * Should provide a translation from the junit method name of a test to its test case name as defined in the
-     * interop testing specification. For example the method "testP2P" might map onto the interop test case name
-     * "TC2_BasicP2P".
+     * Should provide a translation from the junit method name of a test to its test case name as known to the test
+     * clients that will run the test. The purpose of this is to convert the JUnit method name into the correct test
+     * case name to place into the test invite. For example the method "testP2P" might map onto the interop test case
+     * name "TC2_BasicP2P".
      *
      * @param methodName The name of the JUnit test method.
      *
@@ -222,13 +224,7 @@ public abstract class CoordinatingTestCase extends TestCase
 
         // Wait for the test sender to return its report.
         Message senderReport = senderConversation.receive();
-
-        try
-        {
-            Thread.sleep(500);
-        }
-        catch (InterruptedException e)
-        { }
+        TestUtils.pause(500);
 
         // Ask the receiver for its report.
         Message statusRequest = session.createMessage();
