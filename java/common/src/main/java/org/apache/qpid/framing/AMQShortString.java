@@ -39,7 +39,16 @@ import java.lang.ref.WeakReference;
 public final class AMQShortString implements CharSequence, Comparable<AMQShortString>
 {
 
-    private static final Map<AMQShortString, WeakReference<AMQShortString>> internMap =
+    private static final ThreadLocal<Map<AMQShortString, WeakReference<AMQShortString>>> _localInternMap =
+            new ThreadLocal<Map<AMQShortString, WeakReference<AMQShortString>>>()
+            {
+                protected Map<AMQShortString, WeakReference<AMQShortString>> initialValue()
+                {
+                    return new WeakHashMap<AMQShortString, WeakReference<AMQShortString>>();
+                };
+            };
+
+    private static final Map<AMQShortString, WeakReference<AMQShortString>> _globalInternMap =
             new WeakHashMap<AMQShortString, WeakReference<AMQShortString>>();
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQShortString.class);
@@ -51,6 +60,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public AMQShortString(byte[] data)
     {
+
         _data = ByteBuffer.wrap(data);
         _length = data.length;
     }
@@ -387,23 +397,39 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public AMQShortString intern()
     {
+
         hashCode();
-        synchronized(internMap)
+
+        Map<AMQShortString, WeakReference<AMQShortString>> localMap =
+                _localInternMap.get();
+
+        WeakReference<AMQShortString> ref = localMap.get(this);
+        AMQShortString internString;
+
+        if(ref != null)
+        {
+            internString = ref.get();
+            if(internString != null)
+            {
+                return internString;
+            }
+        }
+
+
+        synchronized(_globalInternMap)
         {
 
-            WeakReference<AMQShortString> ref = internMap.get(this);
-            if(ref != null)
+            ref = _globalInternMap.get(this);
+            if((ref == null) || ((internString = ref.get()) == null))
             {
-                AMQShortString internString = ref.get();
-                if(internString != null)
-                {
-                    return internString;
-                }
+                internString = new AMQShortString(getBytes());
+                ref = new WeakReference(internString);
+                _globalInternMap.put(internString, ref);
             }
 
-            AMQShortString internString = new AMQShortString(getBytes());
-            internMap.put(internString, new WeakReference(internString));
-            return internString;
         }
+        localMap.put(internString, ref);
+        return internString;
+
     }
 }
