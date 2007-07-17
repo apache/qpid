@@ -126,12 +126,13 @@ class BasicTests(TestBase):
         channel.basic_consume(consumer_tag="my-consumer", queue="test-queue-4")
         channel.basic_publish(routing_key="test-queue-4", content=Content("One"))
 
-        #cancel should stop messages being delivered
-        channel.basic_cancel(consumer_tag="my-consumer")
-        channel.basic_publish(routing_key="test-queue-4", content=Content("Two"))
         myqueue = self.client.queue("my-consumer")
         msg = myqueue.get(timeout=1)
         self.assertEqual("One", msg.content.body)
+	
+        #cancel should stop messages being delivered
+        channel.basic_cancel(consumer_tag="my-consumer")
+        channel.basic_publish(routing_key="test-queue-4", content=Content("Two"))
         try:
             msg = myqueue.get(timeout=1) 
             self.fail("Got message after cancellation: " + msg)
