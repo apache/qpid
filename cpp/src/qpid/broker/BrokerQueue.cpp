@@ -29,7 +29,9 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
 #include <iostream>
+#include <boost/bind.hpp>
 #include "QueueRegistry.h"
+
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -44,11 +46,10 @@ Queue::Queue(const string& _name, bool _autodelete,
     autodelete(_autodelete),
     store(_store),
     owner(_owner), 
-    queueing(false),
-    dispatching(false),
     next(0),
     exclusive(0),
-    persistenceId(0)
+    persistenceId(0),
+    serializer(false)
 {
 }
 
@@ -69,21 +70,28 @@ void Queue::recover(Message::shared_ptr& msg){
 }
 
 void Queue::process(Message::shared_ptr& msg){
-    RWlock::ScopedWlock locker(messageLock);
-    if(queueing || !dispatch(msg)){
-        push(msg);
-    }
+ 
+    push(msg);
+    serializer.execute(boost::bind(&Queue::dispatch, this));
+   
 }
 
 void Queue::requeue(Message::shared_ptr& msg){
-    RWlock::ScopedWlock locker(messageLock);
-    if(queueing || !dispatch(msg)){
-        queueing = true;
-        messages.push_front(msg);
+ 
+    {
+    	Mutex::ScopedLock locker(messageLock);
+    	messages.push_front(msg);
     }
+    serializer.execute(boost::bind(&Queue::dispatch, this));
+   
 }
 
+
 bool Queue::dispatch(Message::shared_ptr& msg){
+
+ 
+    RWlock::ScopedWlock locker(consumerLock); /// lock scope to wide....
+ 
     if(consumers.empty()){
         return false;
     }else if(exclusive){
@@ -96,7 +104,6 @@ bool Queue::dispatch(Message::shared_ptr& msg){
         while(c){
             next++;
             if(c->deliver(msg)) return true;            
-
             next = next % consumers.size();
             c = next == start ? 0 : consumers[next];            
         }
@@ -104,28 +111,22 @@ bool Queue::dispatch(Message::shared_ptr& msg){
     }
 }
 
-bool Queue::startDispatching(){
-    RWlock::ScopedRlock locker(messageLock);
-    if(queueing && !dispatching){
-        dispatching = true;
-        return true;
-    }else{
-        return false;
-    }
-}
 
 void Queue::dispatch(){
-    bool proceed = startDispatching();
-    while(proceed){
-        RWlock::ScopedWlock locker(messageLock);
-        if(!messages.empty() && dispatch(messages.front())){
+
+     Message::shared_ptr msg;
+     while(true){
+        {
+	    Mutex::ScopedLock locker(messageLock);
+	    if (messages.empty()) break; 
+	    msg = messages.front();
+	}
+        if( dispatch(msg) ){
             pop();
-        }else{
-            dispatching = false;
-            proceed = false;
-            queueing = !messages.empty();
-        }
+        }else break;
+	
     }
+    
 }
 
 void Queue::consume(Consumer* c, bool requestExclusive){
@@ -153,7 +154,7 @@ void Queue::cancel(Consumer* c){
 }
 
 Message::shared_ptr Queue::dequeue(){
-    RWlock::ScopedWlock locker(messageLock);
+    Mutex::ScopedLock locker(messageLock);
     Message::shared_ptr msg;
     if(!messages.empty()){
         msg = messages.front();
@@ -163,19 +164,20 @@ Message::shared_ptr Queue::dequeue(){
 }
 
 uint32_t Queue::purge(){
-    RWlock::ScopedWlock locker(messageLock);
+    Mutex::ScopedLock locker(messageLock);
     int count = messages.size();
     while(!messages.empty()) pop();
     return count;
 }
 
 void Queue::pop(){
+    Mutex::ScopedLock locker(messageLock);
     if (policy.get()) policy->dequeued(messages.front()->contentSize());
     messages.pop_front();    
 }
 
 void Queue::push(Message::shared_ptr& msg){
-    queueing = true;
+    Mutex::ScopedLock locker(messageLock);
     messages.push_back(msg);
     if (policy.get()) {
         policy->enqueued(msg->contentSize());
@@ -186,7 +188,7 @@ void Queue::push(Message::shared_ptr& msg){
 }
 
 uint32_t Queue::getMessageCount() const{
-    RWlock::ScopedRlock locker(messageLock);
+    Mutex::ScopedLock locker(messageLock);
     return messages.size();
 }
 
@@ -241,7 +243,7 @@ void Queue::configure(const FieldTable& _settings)
 void Queue::destroy()
 {
     if (alternateExchange.get()) {
-        RWlock::ScopedWlock locker(messageLock);
+        Mutex::ScopedLock locker(messageLock);
         while(!messages.empty()){
             DeliverableMessage msg(messages.front());
             alternateExchange->route(msg, msg.getMessage().getRoutingKey(),
