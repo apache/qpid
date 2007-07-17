@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.tools.messagestore.commands;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -132,16 +131,9 @@ public class Select extends AbstractCommand
 
             if (_tool.getState().getQueue() != null)
             {
-                try
+                if (!exchange.isBound(_tool.getState().getQueue()))
                 {
-                    if (!exchange.isBound(_tool.getState().getQueue()))
-                    {
-                        _tool.getState().setQueue(null);
-                    }
-                }
-                catch (AMQException e)
-                {
-                    //ignore
+                    _tool.getState().setQueue(null);
                 }
             }
         }
@@ -170,18 +162,11 @@ public class Select extends AbstractCommand
                 {
                     for (AMQShortString exchangeName : vhost.getExchangeRegistry().getExchangeNames())
                     {
-                        try
+                        Exchange exchange = vhost.getExchangeRegistry().getExchange(exchangeName);
+                        if (exchange.isBound(queue))
                         {
-                            Exchange exchange = vhost.getExchangeRegistry().getExchange(exchangeName);
-                            if (exchange.isBound(queue))
-                            {
-                                _tool.getState().setExchange(exchange);
-                                break;
-                            }
-                        }
-                        catch (AMQException e)
-                        {
-                            //ignore error
+                            _tool.getState().setExchange(exchange);
+                            break;
                         }
                     }
                 }

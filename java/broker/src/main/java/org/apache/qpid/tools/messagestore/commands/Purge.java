@@ -24,33 +24,45 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 
-public class Copy extends Move
+public class Purge extends Move
 {
-    public Copy(MessageStoreTool tool)
+    public Purge(MessageStoreTool tool)
     {
         super(tool);
     }
 
     public String help()
     {
-        return "Copy messages between queues.\n" +
-               "The currently selected message set will be copied to the specifed queue.\n" +
+        return "Purge messages from a queue.\n" +
+               "The currently selected message set will be purged from the specifed queue.\n" +
                "Alternatively the values can be provided on the command line.";
     }
 
     public String usage()
     {
-        return "copy to=<queue> [from=<queue>] [msgids=<msgids eg, 1,2,4-10>]";
+        return "purge from=<queue> [msgids=<msgids eg, 1,2,4-10>]";
     }
 
     public String getCommand()
     {
-        return "copy";
+        return "purge";
+    }
+
+
+    protected boolean checkRequirements(AMQQueue fromQueue, AMQQueue toQueue, java.util.List<Long> msgids)
+    {
+        if (fromQueue == null)
+        {
+            _console.println("Source queue not specifed.");
+            _console.println(usage());
+            return false;
+        }
+
+        return true;
     }
 
     protected void doCommand(AMQQueue fromQueue, long start, long end, AMQQueue toQueue, StoreContext storeContext)
     {
-        fromQueue.copyMessagesToAnotherQueue(start, end, toQueue.getName().toString(), storeContext);
+        fromQueue.removeMessagesFromQueue(start, end, storeContext);
     }
-
 }

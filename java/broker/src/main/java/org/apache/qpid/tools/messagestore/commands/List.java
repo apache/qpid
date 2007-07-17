@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.tools.messagestore.commands;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -234,17 +233,9 @@ public class List extends AbstractCommand
         {
             if (exchange != null)
             {
-                try
+                if (exchange.isBound(queue))
                 {
-                    if (exchange.isBound(queue))
-                    {
-                        data.add(queue.toString());
-                    }
-                }
-                catch (AMQException e)
-                {
-                    // is never thrown by current impls forced to throw by interface.
-                    commandError("Unable to check exchange bindings: " + e.getMessage(), null);
+                    data.add(queue.toString());
                 }
             }
             else
@@ -299,17 +290,9 @@ public class List extends AbstractCommand
         {
             if (exchange != null)
             {
-                try
+                if (exchange.isBound(queue))
                 {
-                    if (exchange.isBound(queue))
-                    {
-                        data.add(queue.getName().toString());
-                    }
-                }
-                catch (AMQException e)
-                {
-                    // is never thrown by current impls forced to throw by interface.
-                    commandError("Unable to check exchange bindings: " + e.getMessage(), null);
+                    data.add(queue.getName().toString());
                 }
             }
             else
