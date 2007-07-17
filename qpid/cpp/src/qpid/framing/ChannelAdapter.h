@@ -52,7 +52,7 @@ class MethodContext;
  * Thread safety: OBJECT UNSAFE. Instances must not be called
  * concurrently. AMQP defines channels to be serialized.
  */
-class ChannelAdapter : private BodyHandler {
+class ChannelAdapter : protected BodyHandler {
   public:
     /**
      *@param output Processed frames are forwarded to this handler.
@@ -84,6 +84,10 @@ class ChannelAdapter : private BodyHandler {
 
     virtual bool isOpen() const = 0;
     
+    RequestId getFirstAckRequest() { return requester.getFirstAckRequest(); }
+    RequestId getLastAckRequest() { return requester.getLastAckRequest(); }
+    RequestId getNextSendRequestId() { return requester.getNextId(); }
+
   protected:
     void assertMethodOk(AMQMethodBody& method) const;
     void assertChannelOpen() const;
@@ -93,13 +97,9 @@ class ChannelAdapter : private BodyHandler {
         shared_ptr<AMQMethodBody> method,
         const MethodContext& context) = 0;
 
-    RequestId getFirstAckRequest() { return requester.getFirstAckRequest(); }
-    RequestId getLastAckRequest() { return requester.getLastAckRequest(); }
-    RequestId getNextSendRequestId() { return requester.getNextId(); }
-
   private:
     class ChannelAdapterHandler;
-  friend class ChannelAdapterHandler;
+    friend class ChannelAdapterHandler;
     
     void handleMethod(shared_ptr<AMQMethodBody>);
     void handleRequest(shared_ptr<AMQRequestBody>);
