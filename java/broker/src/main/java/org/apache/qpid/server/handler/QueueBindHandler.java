@@ -97,6 +97,12 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         {
             throw body.getChannelException(AMQConstant.NOT_FOUND, "Exchange " + body.exchange + " does not exist.");
         }
+
+        if (body.routingKey != null)
+        {
+            body.routingKey = body.routingKey.intern();
+        }
+
         try
         {
             if (!exch.isBound(body.routingKey, body.arguments, queue))

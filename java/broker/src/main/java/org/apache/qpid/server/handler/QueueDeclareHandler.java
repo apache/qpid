@@ -91,8 +91,15 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         synchronized (queueRegistry)
         {
 
+
+
             if (((queue = queueRegistry.getQueue(body.queue)) == null))
             {
+                if(body.queue != null)
+                {
+                    body.queue = body.queue.intern();
+                }
+
                 if (body.passive)
                 {
                     String msg = "Queue: " + body.queue + " not found on VirtualHost(" + virtualHost + ").";

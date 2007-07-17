@@ -26,6 +26,10 @@ import org.apache.mina.common.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.lang.ref.WeakReference;
+
 /**
  * A short string is a representation of an AMQ Short String
  * Short strings differ from the Java String class by being limited to on ASCII characters (0-127)
@@ -34,6 +38,10 @@ import org.slf4j.LoggerFactory;
  */
 public final class AMQShortString implements CharSequence, Comparable<AMQShortString>
 {
+
+    private static final Map<AMQShortString, WeakReference<AMQShortString>> internMap =
+            new WeakHashMap<AMQShortString, WeakReference<AMQShortString>>();
+
     private static final Logger _logger = LoggerFactory.getLogger(AMQShortString.class);
 
     private final ByteBuffer _data;
@@ -43,7 +51,6 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public AMQShortString(byte[] data)
     {
-
         _data = ByteBuffer.wrap(data);
         _length = data.length;
     }
@@ -374,6 +381,29 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             }
 
             return (length() == name.length()) ? 0 : -1;
+        }
+    }
+
+
+    public AMQShortString intern()
+    {
+        hashCode();
+        synchronized(internMap)
+        {
+
+            WeakReference<AMQShortString> ref = internMap.get(this);
+            if(ref != null)
+            {
+                AMQShortString internString = ref.get();
+                if(internString != null)
+                {
+                    return internString;
+                }
+            }
+
+            AMQShortString internString = new AMQShortString(getBytes());
+            internMap.put(internString, new WeakReference(internString));
+            return internString;
         }
     }
 }
