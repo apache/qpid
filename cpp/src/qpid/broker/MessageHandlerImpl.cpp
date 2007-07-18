@@ -134,7 +134,7 @@ MessageHandlerImpl::consume(const MethodContext& context,
         noLocal ? &connection : 0, &filter);
     client.ok(context.getRequestId());
     // Dispatch messages as there is now a consumer.
-    queue->dispatch();
+    queue->requestDispatch();
 }
 
 void

@@ -87,6 +87,11 @@ void Queue::requeue(Message::shared_ptr& msg){
 }
 
 
+void Queue::requestDispatch(){
+    serializer.execute(boost::bind(&Queue::dispatch, this));
+}
+
+
 bool Queue::dispatch(Message::shared_ptr& msg){
 
  

@@ -311,7 +311,7 @@ void BrokerAdapter::BasicHandlerImpl::consume(
     if(!nowait) client.consumeOk(newTag, context.getRequestId());
 
     //allow messages to be dispatched if required as there is now a consumer:
-    queue->dispatch();
+    queue->requestDispatch();
 } 
         
 void BrokerAdapter::BasicHandlerImpl::cancel(const MethodContext& context, const string& consumerTag, bool nowait){
