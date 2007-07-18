@@ -43,6 +43,12 @@
       <outputDirectory>qpid-${qpid.version}-src</outputDirectory>
     </fileSet>
 
+    <!-- Include any release information -->
+    <fileSet>
+      <directory>../release-docs</directory>
+      <outputDirectory>qpid-${qpid.version}-src</outputDirectory>
+    </fileSet>
+
     <fileSet>
       <directory>..</directory>
       <outputDirectory>qpid-${qpid.version}-src/java</outputDirectory>

@@ -46,6 +46,12 @@
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
     </fileSet>
 
+    <!-- Include any release information -->
+    <fileSet>
+      <directory>../release-docs</directory>
+      <outputDirectory>qpid-${qpid.version}</outputDirectory>
+    </fileSet>
+
     <!-- Include the classpath jar qpid-incubating.jar -->
     <fileSet>
       <directory>target</directory>

@@ -53,7 +53,6 @@
       <fileMode>0444</fileMode>
     </fileSet>
 
-
     <fileSet>
       <directory>..</directory>
       <outputDirectory>qpidmc</outputDirectory>
@@ -64,6 +63,12 @@
 
     <fileSet>
       <directory>src/main/release</directory>
+      <outputDirectory>qpidmc</outputDirectory>
+    </fileSet>
+
+    <!-- Include any release information -->
+    <fileSet>
+      <directory>../release-docs</directory>
       <outputDirectory>qpidmc</outputDirectory>
     </fileSet>
 

@@ -37,12 +37,24 @@
           <include>NOTICE</include>
           <include>README</include>
       </includes>
-	  <fileMode>0444</fileMode>
+      <fileMode>0444</fileMode>
     </fileSet>
 
     <!-- Include any release information -->
     <fileSet>
       <directory>src/main/release</directory>
+      <outputDirectory>qpid-${qpid.version}</outputDirectory>
+    </fileSet>
+
+    <!-- Include any release information -->
+    <fileSet>
+      <directory>..//release-docs</directory>
+      <outputDirectory>qpid-${qpid.version}</outputDirectory>
+    </fileSet>
+
+    <!-- Include any release information -->
+    <fileSet>
+      <directory>../release-docs</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
     </fileSet>
 
