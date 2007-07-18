@@ -81,7 +81,11 @@ namespace qpid {
             void push(Message::shared_ptr& msg);
             bool dispatch(Message::shared_ptr& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
-
+            /**
+             * only called by serilizer
+	     */
+            void dispatch();
+ 
         public:
             
             typedef boost::shared_ptr<Queue> shared_ptr;
@@ -120,12 +124,12 @@ namespace qpid {
              */
             void recover(Message::shared_ptr& msg);
             /**
-             * Dispatch any queued messages providing there are
+             * Request dispatch any queued messages providing there are
              * consumers for them. Only one thread can be dispatching
-             * at any time, but this method (rather than the caller)
-             * is responsible for ensuring that.
+             * at any time, so this call schedules the despatch based on
+	     * the serilizer policy.
              */
-            void dispatch();
+            void requestDispatch();
             void consume(Consumer* c, bool exclusive = false);
             void cancel(Consumer* c);
             uint32_t purge();

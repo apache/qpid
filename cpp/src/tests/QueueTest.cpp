@@ -37,8 +37,14 @@ using namespace qpid::sys;
 class TestConsumer : public virtual Consumer{
 public:
     Message::shared_ptr last;
+    bool received;
+    TestConsumer(): received(false) {};
 
-    virtual bool deliver(Message::shared_ptr& msg);
+    virtual bool deliver(Message::shared_ptr& msg){
+    last = msg;
+    received = true;
+    return true;
+    };
 };
 
 class FailOnDeliver : public Deliverable
@@ -84,16 +90,19 @@ class QueueTest : public CppUnit::TestCase
         Message::shared_ptr msg3 = message("e", "C");
 
         queue->deliver(msg1);
-	/** if dispatched on diff thread, force dispatch so don't have to wait for thread. Only do in text */
-        queue->dispatch();  
-       CPPUNIT_ASSERT_EQUAL(msg1.get(), c1.last.get());
+	if (!c1.received)
+	    sleep(2);
+        CPPUNIT_ASSERT_EQUAL(msg1.get(), c1.last.get());
 
         queue->deliver(msg2);
-        queue->dispatch();
+	if (!c2.received)
+	    sleep(2);
         CPPUNIT_ASSERT_EQUAL(msg2.get(), c2.last.get());
         
+	c1.received = false;
         queue->deliver(msg3);
-        queue->dispatch();
+	if (!c1.received)
+	    sleep(2);
         CPPUNIT_ASSERT_EQUAL(msg3.get(), c1.last.get());        
     
         //Test cancellation:
@@ -146,7 +155,10 @@ class QueueTest : public CppUnit::TestCase
 
         TestConsumer consumer; 
         queue->consume(&consumer);
-        queue->dispatch();
+        queue->requestDispatch();
+	if (!consumer.received)
+	    sleep(2);
+
         CPPUNIT_ASSERT_EQUAL(msg3.get(), consumer.last.get());
         CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getMessageCount());
 
@@ -195,9 +207,4 @@ class QueueTest : public CppUnit::TestCase
 CPPUNIT_PLUGIN_IMPLEMENT();
 CPPUNIT_TEST_SUITE_REGISTRATION(QueueTest);
 
-//TestConsumer
-bool TestConsumer::deliver(Message::shared_ptr& msg){
-    last = msg;
-    return true;
-}
 
