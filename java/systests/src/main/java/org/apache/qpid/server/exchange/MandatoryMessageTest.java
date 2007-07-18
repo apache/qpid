@@ -181,7 +181,7 @@ public class MandatoryMessageTest extends FrameworkBaseCase
     /** Check that an mandatory message is committed succesfully in a transaction when a consumer is connected. */
     public void test_QPID_508_MandatoryOkTxPubSub()
     {
-        // Ensure transactional sessions are off.
+        // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
