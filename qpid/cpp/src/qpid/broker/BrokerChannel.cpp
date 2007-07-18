@@ -253,7 +253,7 @@ void Channel::ConsumerImpl::cancel(){
 
 void Channel::ConsumerImpl::requestDispatch(){
     if(blocked)
-        queue->dispatch();
+        queue->requestDispatch();
 }
 
 void Channel::handleInlineTransfer(Message::shared_ptr msg){

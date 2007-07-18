@@ -212,6 +212,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         string tag("test");
         channel.consume(recorder.createAdapter(), tag, queue, false, false, 0);
         queue->deliver(msg);
+	sleep(2);
 
         CPPUNIT_ASSERT_EQUAL((size_t) 1, recorder.delivered.size());
         CPPUNIT_ASSERT_EQUAL(msg, recorder.delivered.front().first);
@@ -293,6 +294,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         queue->deliver(msg1);
         queue->deliver(msg2);
         queue->deliver(msg3);
+	sleep(2);
         
         Message::shared_ptr next = queue->dequeue();
         CPPUNIT_ASSERT_EQUAL(msg1, next);
@@ -336,6 +338,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL((size_t) 0, recorder.delivered.size());
 
         channel.flow(true);
+	sleep(2);
         //ensure no messages have been delivered
         CPPUNIT_ASSERT_EQUAL((size_t) 1, recorder.delivered.size());
         CPPUNIT_ASSERT_EQUAL(msg, recorder.delivered.front().first);
