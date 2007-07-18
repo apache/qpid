@@ -10,7 +10,7 @@ EXTRA_DIST = \
   rpm/README.qpidd-devel \
   xml/cluster.xml
 
-SUBDIRS = src docs/api docs/man examples
+SUBDIRS = src docs/api docs/man examples perftest
 
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
