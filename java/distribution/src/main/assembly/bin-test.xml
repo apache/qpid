@@ -27,38 +27,26 @@
   </formats>
 
   <fileSets>
+   <!-- Include the currently hardwired Apache Legal bits -->
     <fileSet>
-      <directory>src/main/release</directory>
+      <directory>../resources</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
       <includes>
           <include>DISCLAIMER</include>
-          <include>LICENSE.txt</include>
-          <include>NOTICE.txt</include>
-          <include>README.txt</include>
+          <include>LICENSE</include>
+          <include>NOTICE</include>
+          <include>README</include>
       </includes>
+      <fileMode>0444</fileMode>
     </fileSet>
+
+  <!-- Include any release information -->
     <fileSet>
-      <directory>..</directory>
+      <directory>src/main/release</directory>
       <outputDirectory>qpid-${qpid.version}</outputDirectory>
-      <includes>
-          <include>*.txt</include>
-      </includes>
     </fileSet>
-    <fileSet>
-      <directory>src/main/release/etc</directory>
-      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <includes>
-    <include>logging.properties</include>
-    <include>log4j.properties</include>
-      </includes>
-    </fileSet>
-    <fileSet>
-      <directory>src/main/release/docs</directory>
-      <outputDirectory>qpid-${qpid.version}/docs</outputDirectory>
-      <includes>
-          <include>RELEASE_NOTES.txt</include>
-      </includes>
-    </fileSet>
+
+    <!-- Include the classpath jar qpid-incubating.jar -->
     <fileSet>
       <directory>target</directory>
       <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
@@ -66,107 +54,40 @@
           <include>qpid-incubating.jar</include>
       </includes>
     </fileSet>
+
+    <!-- Include etc -->
+    <fileSet>
+      <directory>../common/etc</directory>
+      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
+      <fileMode>0640</fileMode>
+    </fileSet>
+    <fileSet>
+      <directory>../broker/etc</directory>
+      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
+      <fileMode>0640</fileMode>
+    </fileSet>
+
+    <!-- Include bin scripts-->
+    <fileSet>
+      <directory>../broker/bin</directory>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <fileMode>0750</fileMode>
+    </fileSet>
+    <fileSet>
+      <directory>../common/bin</directory>
+      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
+      <fileMode>0750</fileMode>
+    </fileSet>
   </fileSets>
-  <files>
-    <!-- due to a bug in the assembly plugin (MASSEMBLY-153) you have
-         to use decimal numbers to specify fileMode -->
-    <file>
-      <source>../common/etc/qpid-run.conf</source>
-      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>qpid-run.conf</destName>
-      <fileMode>420</fileMode>
-    </file>
-    <file>
-      <source>../broker/etc/config.xml</source>
-      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>config.xml</destName>
-      <fileMode>420</fileMode>
-    </file>
-    <file>
-      <source>../broker/etc/log4j.xml</source>
-      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>log4j.xml</destName>
-      <fileMode>420</fileMode>
-    </file>
-    <file>
-      <source>../broker/etc/passwd</source>
-      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>passwd</destName>
-      <fileMode>420</fileMode>
-    </file>
-    <file>
-      <source>../broker/etc/qpid-server.conf</source>
-      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>qpid-server.conf</destName>
-      <fileMode>420</fileMode>
-    </file>
-    <file>
-      <source>../broker/etc/virtualhosts.xml</source>
-      <outputDirectory>qpid-${qpid.version}/etc</outputDirectory>
-      <destName>virtualhosts.xml</destName>
-      <fileMode>420</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/qpid.start</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid.start</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/qpid.stop</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid.stop</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/qpid.stopall</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid.stopall</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../common/bin/qpid-run</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid-run</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/qpid-server</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid-server</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/qpid-server.bat</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>qpid-server.bat</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/run.bat</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>run.bat</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/run.sh</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>run.sh</destName>
-      <fileMode>493</fileMode>
-    </file>
-    <file>
-      <source>../broker/bin/runAll</source>
-      <outputDirectory>qpid-${qpid.version}/bin</outputDirectory>
-      <destName>runAll</destName>
-      <fileMode>493</fileMode>
-    </file>
-  </files>
+
   <dependencySets>
     <dependencySet>
       <outputDirectory>qpid-${qpid.version}/lib</outputDirectory>
       <unpack>false</unpack>
       <excludes>
+        <!-- Exclude the jar output of this build process -->
         <exclude>org.apache.qpid:qpid-distribution</exclude>
+        <!-- Exclude the Console dependancies -->
         <exclude>org.apache.qpid.management:org.apache.qpid.management.ui</exclude>
         <exclude>org.eclipse.core:org.eclipse.core.commands</exclude>
         <exclude>org.eclipse.core:org.eclipse.core.contenttype</exclude>

@@ -27,24 +27,25 @@
   </formats>
 
   <fileSets>
+   <fileSet>
+      <directory>../resources</directory>
+      <outputDirectory>qpid-${qpid.version}-src</outputDirectory>
+      <includes>
+          <include>DISCLAIMER</include>
+          <include>LICENSE</include>
+          <include>NOTICE</include>
+          <include>README</include>
+      </includes>
+    </fileSet>
+
     <fileSet>
       <directory>src/main/release</directory>
       <outputDirectory>qpid-${qpid.version}-src</outputDirectory>
-      <includes>
-        <include>DISCLAIMER</include>
-        <include>LICENSE.txt</include>
-        <include>licenses/*.*</include>
-        <include>NOTICE.txt</include>
-        <include>README.txt</include>
-        <include>BUILDING.txt</include>
-      </includes>
     </fileSet>
+
     <fileSet>
       <directory>..</directory>
       <outputDirectory>qpid-${qpid.version}-src/java</outputDirectory>
-      <includes>
-        <include>**/*</include>
-      </includes>
       <excludes>
         <exclude>build.xml</exclude>
         <exclude>distribution/build.xml</exclude>
@@ -71,24 +72,29 @@
         <exclude>**/eclipse-plugin/src/main/resources/**</exclude>
       </excludes>
     </fileSet>
+
     <fileSet>
       <directory>../../gentools</directory>
       <outputDirectory>qpid-${qpid.version}-src/gentools</outputDirectory>
-      <includes>
-        <include>**/*</include>
-      </includes>
       <excludes>
         <exclude>**/build</exclude>
         <exclude>**/build/**/*</exclude>
         <exclude>**/*.class</exclude>
       </excludes>
     </fileSet>
+
     <fileSet>
       <directory>../../specs</directory>
       <outputDirectory>qpid-${qpid.version}-src/specs</outputDirectory>
       <includes>
-        <include>**/*</include>
+        <include>amqp.0-8.xml</include>
+        <include>cluster.0-8.xml</include>
       </includes>
+  </fileSet>
+
+  <fileSet>
+      <directory>../../python</directory>
+      <outputDirectory>qpid-${qpid.version}-src/python</outputDirectory>
     </fileSet>
   </fileSets>
 </assembly>
