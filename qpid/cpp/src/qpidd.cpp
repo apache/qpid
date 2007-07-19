@@ -24,6 +24,8 @@
 #include "qpid/log/Statement.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Logger.h"
+#include "qpid/Plugin.h"
+#include "qpid/sys/Shlib.h"
 #include "config.h"
 #include <boost/filesystem/path.hpp>
 #include <iostream>
@@ -54,10 +56,10 @@ struct DaemonOptions : public qpid::Options {
 
 
 struct QpiddOptions : public qpid::Options {
-    DaemonOptions daemon;
-    Broker::Options broker;
-    qpid::log::Options log;
     CommonOptions common;
+    Broker::Options broker;
+    DaemonOptions daemon;
+    qpid::log::Options log;
     
     QpiddOptions() : qpid::Options("Options") {
         common.config = "/etc/qpidd.conf";
@@ -65,6 +67,12 @@ struct QpiddOptions : public qpid::Options {
         add(broker);
         add(daemon);
         add(log);
+        const Plugin::Plugins& plugins=
+            Plugin::getPlugins();
+        for (Plugin::Plugins::const_iterator i = plugins.begin();
+             i != plugins.end();
+             ++i)
+            add(*(*i)->getOptions());
     }
 
     void usage() const {
@@ -74,7 +82,7 @@ struct QpiddOptions : public qpid::Options {
 
 // Globals
 shared_ptr<Broker> brokerPtr;
-QpiddOptions options;
+auto_ptr<QpiddOptions> options;
 
 void shutdownHandler(int signal){
     QPID_LOG(notice, "Shutting down on signal " << signal);
@@ -84,45 +92,60 @@ void shutdownHandler(int signal){
 struct QpiddDaemon : public Daemon {
     /** Code for parent process */
     void parent() {
-        uint16_t port = wait(options.daemon.wait);
-        if (options.broker.port == 0)
+        uint16_t port = wait(options->daemon.wait);
+        if (options->broker.port == 0)
             cout << port << endl; 
     }
 
     /** Code for forked child process */
     void child() {
-        brokerPtr.reset(new Broker(options.broker));
+        brokerPtr.reset(new Broker(options->broker));
         uint16_t port=brokerPtr->getPort();
         ready(port);            // Notify parent.
         brokerPtr->run();
     }
 };
 
+void tryShlib(const char* libname) {
+    try {
+        Shlib shlib(libname);
+    }
+    catch (const exception& e) {
+        // TODO aconway 2007-07-09: Should log failures as INFO
+        // at least, but we try shlibs before logging is configured.
+    }
+}
+  
 
 int main(int argc, char* argv[])
 {
     try {
-        options.parse(argc, argv, options.common.config);
-        qpid::log::Logger::instance().configure(options.log, argv[0]);
+        // Load optional modules
+        tryShlib("libqpidcluster.so.0");
+
+        // Parse options
+        options.reset(new QpiddOptions());
+        options->parse(argc, argv, options->common.config);
+        qpid::log::Logger::instance().configure(options->log, argv[0]);
 
         // Options that just print information.
-        if(options.common.help || options.common.version) {
-            if (options.common.version) 
+        if(options->common.help || options->common.version) {
+            if (options->common.version) 
                 cout << "qpidd (" << PACKAGE_NAME << ") version "
                      << PACKAGE_VERSION << endl;
-            else if (options.common.help)
-                options.usage();
+            else if (options->common.help)
+                options->usage();
             return 0;
         }
 
         // Options that affect a running daemon.
-        if (options.daemon.check || options.daemon.quit) {
-            pid_t pid = Daemon::getPid(options.broker.port);
+        if (options->daemon.check || options->daemon.quit) {
+            pid_t pid = Daemon::getPid(options->broker.port);
             if (pid < 0) 
                 return 1;
-            if (options.daemon.check)
+            if (options->daemon.check)
                 cout << pid << endl;
-            if (options.daemon.quit && kill(pid, SIGINT) < 0)
+            if (options->daemon.quit && kill(pid, SIGINT) < 0)
                 throw Exception("Failed to stop daemon: " + strError(errno));
             return 0;
         }
@@ -139,14 +162,14 @@ int main(int argc, char* argv[])
         signal(SIGTTOU,SIG_IGN);
         signal(SIGTTIN,SIG_IGN);
             
-        if (options.daemon.daemon) {
+        if (options->daemon.daemon) {
             // Fork the daemon
             QpiddDaemon d;
             d.fork();
         } 
         else {                  // Non-daemon broker.
-            brokerPtr.reset(new Broker(options.broker));
-            if (options.broker.port == 0)
+            brokerPtr.reset(new Broker(options->broker));
+            if (options->broker.port == 0)
                 cout << uint16_t(brokerPtr->getPort()) << endl; 
             brokerPtr->run(); 
         }

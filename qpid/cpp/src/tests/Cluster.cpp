@@ -36,11 +36,14 @@ using namespace qpid::log;
 BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
     AMQFrame frame(VER, 1, new ChannelPingBody(VER));
-    cluster.getSendChains().in->handle(frame);
+    Uuid id(true);
+    SessionFrame send(id, frame, true);
+    cluster.handle(send);
     BOOST_REQUIRE(cluster.received.waitFor(1));
 
     SessionFrame& sf=cluster.received[0];
     BOOST_CHECK(sf.isIncoming);
+    BOOST_CHECK_EQUAL(id, sf.uuid);
     BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *sf.frame.getBody());
     
     BOOST_CHECK_EQUAL(1u, cluster.size());
@@ -60,9 +63,12 @@ BOOST_AUTO_TEST_CASE(testClusterTwo) {
 
         // Exchange frames with child.
         AMQFrame frame(VER, 1, new ChannelPingBody(VER));
-        cluster.getSendChains().in->handle(frame);
+        Uuid id(true);
+        SessionFrame send(id, frame, true);
+        cluster.handle(send);
         BOOST_REQUIRE(cluster.received.waitFor(1));
         SessionFrame& sf=cluster.received[0];
+        BOOST_CHECK_EQUAL(id, sf.uuid);
         BOOST_CHECK(sf.isIncoming);
         BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *sf.frame.getBody());
         BOOST_REQUIRE(cluster.received.waitFor(2));
