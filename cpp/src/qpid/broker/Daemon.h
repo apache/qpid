@@ -22,6 +22,7 @@
 #include <string>
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace qpid {
 namespace broker {
@@ -30,72 +31,49 @@ namespace broker {
  * Tools for forking and managing a daemon process.
  * NB: Only one Daemon instance is allowed in a process.
  */
-class Daemon
+class Daemon : private boost::noncopyable
 {
   public:
-    /** Utility function to create pid file name in a standard place
-     * (may require root acces) using identifier as the file name.
-     */
-    static std::string defaultPidFile(const std::string& identifier);
-    
+    /** Check daemon is running on port, throw exception if not */
+    static pid_t getPid(uint16_t port);
+
+    Daemon();
+
+    virtual ~Daemon();
+
     /**
-     * Daemon control object.
-     *@param pidFileFn Function that will comupte a PID file name.
-     * Called when pid file is created in ready()
-     *@param timeout in seconds for any operations that wait.
+     * Fork a daemon process.
+     * Call parent() in the parent process, child() in the child.
      */
-    Daemon(boost::function<std::string()> pidFileFn, int timeout);
+    void fork();
 
-    ~Daemon();
+  protected:
 
-    typedef boost::function<void(Daemon&)> Function;
+    /** Called in parent process */
+    virtual void parent() = 0;
 
-    /** Fork the daemon.
-     *@param parent called in the parent process.
-     *@param child called in the child process.
+    /** Called in child process */
+    virtual void child() = 0;
+
+    /** Call from parent(): wait for child to indicate it is ready.
+     * @timeout in seconds to wait for response.
+     * @return port passed by child to ready().
      */
-    pid_t fork(Function parent, Function child);
+    uint16_t wait(int timeout);
 
-    /** Parent only: wait for child to indicate it is ready.
-     * @return value child passed to ready() */
-    int wait();
-
-    /** Child only. Notify the parent we are ready and write the
+    /** Call from child(): Notify the parent we are ready and write the
      * PID file.
-     *@param value returned by parent call to wait(). -1 is reserved
-     * for signalling an error.
+     *@param port returned by parent call to wait().
      */
-    void ready(int value);
+    void ready(uint16_t port);
     
-    /** Child only, send failed signal so parent fork() will throw. */
-    void failed();
-    
-    /** Kill the daemon with SIGINT. */
-    void quit();
-    
-    /** Kill the daemon with SIGKILL. */
-    void kill();
-
-    /** Check daemon is running, throw exception if not */
-    pid_t check();
-
-    bool isParent() { return pid > 0; }
-
-    bool isChild() { return pid == 0; }
-    
-    pid_t getPid() const {return pid; }
-
   private:
-    class Retval;
+    static std::string dir();
+    static std::string pidFile(uint16_t port);
 
-    static boost::function<std::string()> pidFileFn;
-    static const char* realPidFileFn();
-    void notify(int);
-    
-    static std::string identifier;
-    boost::scoped_ptr<Retval> retval;
     pid_t pid;
-    int timeout;
+    int pipeFds[2];
+    std::string lockFile;
 };
 
 }} // namespace qpid::broker

@@ -156,30 +156,31 @@ DOWNLOAD_URL=http://rhm.et.redhat.com/download
 AC_SUBST(DOWNLOAD_URL)
 
 # Check for headers from required devel kits.
-missing=""
-AC_CHECK_HEADERS([libdaemon/daemon.h],,[missing="$missing libdaemon"])
-AC_CHECK_HEADERS([boost/shared_ptr.hpp],,[missing="$missing boost"])
-AC_CHECK_HEADERS([uuid/uuid.h],,[missing="$missing libuuid"])
-test -z "$missing" ||
-    AC_MSG_ERROR([Missing required headers. Install the following packages or -devel rpms: $missing.])
+AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
+  AC_MSG_ERROR([Missing required header files.]))
 
-# Enable/disable cluster functionality based on presence of usable openais
-# and devel libs.
-# cpg_local_get is not yet in a packaged release as of 2007-06-20
-LDFLAGS_save=$LDFLAGS				
-LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
-AC_CHECK_LIB([cpg], [cpg_local_get], [libcpg=yes], [libcpg=no])
-AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes],[cpg_h=no])
-if test x$libcpg = xyes -a x$cpg_h = xyes; then
-   AM_CONDITIONAL([CLUSTER], true)
-   CPPFLAGS+=" -DCLUSTER"
-else
-  AM_CONDITIONAL([CLUSTER], false)	
-  LDFLAGS=$LDFLAGS_save	   
+# Enable cluster functionality.
+AC_ARG_ENABLE([cluster],
+  [AS_HELP_STRING([--enable-cluster],
+    [Enable cluster functionality, requires openais (default no)])],
+  [case $enableval in
+    yes|no) enable_CLUSTER=$enableval;;
+    *) AC_MSG_ERROR([Invalid value for --enable-apr-cluster: $enableval]);;
+   esac],
+  [enable_CLUSTER=no])
+
+AM_CONDITIONAL([CLUSTER], [test x$enable_CLUSTER = xyes])
+if test x$enable_CLUSTER = xyes; then
+  CPPFLAGS+=" -DCLUSTER"
+  LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
+  # cpg_local_get is not yet in a packaged release as of 2007-06-20
+  AC_CHECK_LIB([cpg],[cpg_local_get],,
+    AC_MSG_ERROR([cpg_local_get not available. openais missing/too old.]))
+   AC_CHECK_HEADERS([openais/cpg.h],,
+     AC_MSG_ERROR([Required header files not found.],[]))
 fi
-if test x$libcpg = xno -a x$cpg_h = xyes; then
-   AC_MSG_WARN([Found cpg.h but libcpg is missing or does not contain cpg_local_get. Need build of openais whitetank branch head as of 2007-06-20])
-fi
+
+	
 AC_CONFIG_FILES([
   qpidc.spec
   Makefile

@@ -26,7 +26,6 @@
 #include "qpid/log/Logger.h"
 #include "config.h"
 #include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
 #include <iostream>
 #include <fstream>
 #include <signal.h>
@@ -77,53 +76,31 @@ struct QpiddOptions : public qpid::Options {
 shared_ptr<Broker> brokerPtr;
 QpiddOptions options;
 
-void handle_signal(int /*signal*/){
-    QPID_LOG(notice, "Shutting down...");
+void shutdownHandler(int signal){
+    QPID_LOG(notice, "Shutting down on signal " << signal);
     brokerPtr->shutdown();
 }
 
-/** Compute a name for the pid file */
-std::string pidFileFn() {
-    uint16_t port=brokerPtr ? brokerPtr->getPort() : options.broker.port;
-    string file=(boost::format("qpidd.%d.pid") % port).str();
-    string pidPath;
-    if (getuid() == 0)          // Use standard pid file for root.
-        pidPath=Daemon::defaultPidFile(file);
-    else {                      // Use $HOME/.qpidd for non-root.
-        const char* home=getenv("HOME");
-        if (!home)
-            throw(Exception("$HOME is not set, cant create $HOME/.qpidd."));
-        namespace fs=boost::filesystem;
-        fs::path dir = fs::path(home,fs::native) / fs::path(".qpidd", fs::native);
-        fs::create_directory(dir);
-        dir /= file;
-        pidPath=dir.string();
+struct QpiddDaemon : public Daemon {
+    /** Code for parent process */
+    void parent() {
+        uint16_t port = wait(options.daemon.wait);
+        if (options.broker.port == 0)
+            cout << port << endl; 
     }
-    QPID_LOG(debug, "PID file name=" << pidPath);
-    return pidPath;
-}
 
-/** Code for forked parent */
-void parent(Daemon& demon) {
-    uint16_t realPort = demon.wait();
-    if (options.broker.port == 0)
-        cout << realPort << endl; 
-}
-
-/** Code for forked child */
-void child(Daemon& demon) {
-    brokerPtr.reset(new Broker(options.broker));
-    uint16_t realPort=brokerPtr->getPort();
-    demon.ready(realPort);   // Notify parent.
-    brokerPtr->run();
-}
+    /** Code for forked child process */
+    void child() {
+        brokerPtr.reset(new Broker(options.broker));
+        uint16_t port=brokerPtr->getPort();
+        ready(port);            // Notify parent.
+        brokerPtr->run();
+    }
+};
 
 
 int main(int argc, char* argv[])
 {
-    // Spelled 'demon' to avoid clash with daemon.h function.
-    Daemon demon(pidFileFn, options.daemon.wait);
-
     try {
         options.parse(argc, argv, options.common.config);
         qpid::log::Logger::instance().configure(options.log, argv[0]);
@@ -138,27 +115,34 @@ int main(int argc, char* argv[])
             return 0;
         }
 
-        // Stop running daemon
-        if (options.daemon.quit) {
-            demon.quit();
+        // Options that affect a running daemon.
+        if (options.daemon.check || options.daemon.quit) {
+            pid_t pid = Daemon::getPid(options.broker.port);
+            if (pid < 0) 
+                return 1;
+            if (options.daemon.check)
+                cout << pid << endl;
+            if (options.daemon.quit && kill(pid, SIGINT) < 0)
+                throw Exception("Failed to stop daemon: " + strError(errno));
             return 0;
         }
 
-        // Query running daemon
-        if (options.daemon.check) {
-            pid_t pid = demon.check();
-            if (pid < 0) 
-                return 1;
-            else {
-                cout << pid << endl;
-                return 0;
-            }
-        }
+        // Starting the broker.
 
-        // Starting the broker:
-        signal(SIGINT, handle_signal);
-        if (options.daemon.daemon) {    // Daemon broker
-            demon.fork(parent, child);
+        // Signal handling
+        signal(SIGINT,shutdownHandler); 
+        signal(SIGTERM,shutdownHandler);
+        signal(SIGHUP,SIG_IGN); // TODO aconway 2007-07-18: reload config.
+
+        signal(SIGCHLD,SIG_IGN); 
+        signal(SIGTSTP,SIG_IGN); 
+        signal(SIGTTOU,SIG_IGN);
+        signal(SIGTTIN,SIG_IGN);
+            
+        if (options.daemon.daemon) {
+            // Fork the daemon
+            QpiddDaemon d;
+            d.fork();
         } 
         else {                  // Non-daemon broker.
             brokerPtr.reset(new Broker(options.broker));
@@ -169,10 +153,7 @@ int main(int argc, char* argv[])
         return 0;
     }
     catch(const exception& e) {
-        if (demon.isParent())
-            cerr << e.what() << endl;
-        else
-            QPID_LOG(critical, e.what());
+        cerr << e.what() << endl;
     }
     return 1;
 }

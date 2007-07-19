@@ -20,7 +20,6 @@ BuildRequires: doxygen
 BuildRequires: e2fsprogs-devel
 BuildRequires: graphviz
 BuildRequires: help2man
-BuildRequires: libdaemon-devel
 BuildRequires: libtool
 BuildRequires: pkgconfig
 
