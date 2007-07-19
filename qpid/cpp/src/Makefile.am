@@ -183,7 +183,7 @@ libqpidcommon_la_SOURCES = \
   qpid/log/Statement.h \
   qpid/memory.h
 
-libqpidbroker_la_LIBADD = libqpidcommon.la -ldaemon -lboost_filesystem
+libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \
   qpid/broker/AccumulatedAck.cpp \
   qpid/broker/Broker.cpp \
