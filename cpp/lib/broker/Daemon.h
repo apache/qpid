@@ -21,6 +21,8 @@
 
 #include <string>
 #include <boost/scoped_ptr.hpp>
+#include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace qpid {
 namespace broker {
@@ -29,63 +31,51 @@ namespace broker {
  * Tools for forking and managing a daemon process.
  * NB: Only one Daemon instance is allowed in a process.
  */
-class Daemon
+class Daemon : private boost::noncopyable
 {
   public:
+    /** Check daemon is running on port, throw exception if not */
+    static pid_t getPid(uint16_t port);
 
-    /** Extract the daemon's name from argv[0] */
-    static std::string nameFromArgv0(const char* argv0);
-    
+    Daemon();
+
+    virtual ~Daemon();
+
     /**
-     * Creating a Daemon instance forks a daemon process.
-     *@param name used to create pid files etc.
-     *@param timeout in seconds for all operations that wait.
+     * Fork a daemon process.
+     * Call parent() in the parent process, child() in the child.
      */
-    Daemon(const std::string& name, int timeout);
+    void fork();
 
-    ~Daemon();
+  protected:
+
+    /** Called in parent process */
+    virtual void parent() = 0;
+
+    /** Called in child process */
+    virtual void child() = 0;
+
+    /** Call from parent(): wait for child to indicate it is ready.
+     * @timeout in seconds to wait for response.
+     * @return port passed by child to ready().
+     */
+    uint16_t wait(int timeout);
+
+    /** Call from child(): Notify the parent we are ready and write the
+     * PID file.
+     *@param port returned by parent call to wait().
+     */
+    void ready(uint16_t port);
     
-    /** Fork the daemon, wait till it signals readiness */
-    pid_t fork();
-
-    /** Child only, send ready signal so parent fork() will return. */
-    void ready();
-    
-    /** Child only, send failed signal so parent fork() will throw. */
-    void failed();
-    
-    /** Kill the daemon with SIGINT. */
-    void quit();
-    
-    /** Kill the daemon with SIGKILL. */
-    void kill();
-
-    /** Check daemon is running, throw exception if not */
-    pid_t check();
-
-    bool isParent() { return pid > 0; }
-
-    bool isChild() { return pid == 0; }
-    
-    std::string getName() const { return name; }
-
-    pid_t getPid() const {return pid; }
-
   private:
-    class Retval;
+    static std::string dir();
+    static std::string pidFile(uint16_t port);
 
-    void notify(int);
-    
-    static std::string name;
-    static std::string pidFile;
-    static const char* getPidFile();
-    boost::scoped_ptr<Retval> retval;
     pid_t pid;
-    int timeout;
+    int pipeFds[2];
+    std::string lockFile;
 };
 
 }} // namespace qpid::broker
-
-
 
 #endif  /*!_broker_Daemon_h*/

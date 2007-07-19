@@ -33,14 +33,6 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 using namespace std;
 
-Broker::shared_ptr brokerPtr;
-
-void handle_signal(int /*signal*/){
-    std::cerr << "Shutting down..." << std::endl;
-    brokerPtr->shutdown();
-}
-
-
 /** Command line options */
 struct QpiddOptions : public Broker::Options
 {
@@ -50,14 +42,13 @@ struct QpiddOptions : public Broker::Options
     bool quit;
     bool kill;
     bool check;
-    bool ppid;
     int wait;
     string config;
     po::options_description desc;
-    
+
     QpiddOptions() :
         help(false), version(false), daemon(false),
-        quit(false), kill(false), check(false), ppid(false), wait(10),
+        quit(false), kill(false), check(false), wait(10),
         config("/etc/qpidd.conf"),
         desc("Options")
     {
@@ -66,10 +57,8 @@ struct QpiddOptions : public Broker::Options
             ("daemon,d", optValue(daemon), "Run as a daemon.")
             ("quit,q", optValue(quit), "Stop the running daemon politely.")
             ("kill,k", optValue(kill), "Kill the running daemon harshly.")
-            ("check,c", optValue(check), "If daemon is running return 0.")
-            ("wait", optValue(wait, "SECONDS"),
-             "Maximum wait for daemon response.")
-            ("ppid", optValue(ppid), "Print daemon pid to stdout" );
+            ("check,c", optValue(check), "If daemon is running print PID and return 0.")
+            ("wait", optValue(wait, "SECONDS"), "Maximum wait for daemon response.");
         po::options_description brokerOpts;
         Broker::Options::addTo(desc);
         desc.add_options()
@@ -93,13 +82,13 @@ struct QpiddOptions : public Broker::Options
         try {
             ifstream conf(config.c_str());
             po::store(po::parse_config_file(conf, desc), vm);
-        }
+    }
         catch (const logic_error& e) {
             throw logic_error(string("parsing config file: ")+ e.what());
         }
         po::notify(vm);
-    };
-    
+};
+
     void usage(ostream& out) const {
         out << "Usage: qpidd [OPTIONS]" << endl << endl
             << desc << endl;
@@ -110,80 +99,86 @@ ostream& operator<<(ostream& out, const QpiddOptions& config)  {
     config.usage(out); return out;
 }
 
+// Globals
+Broker::shared_ptr brokerPtr;
+QpiddOptions options;
+
+void shutdownHandler(int /*signal*/){
+    brokerPtr->shutdown();
+}
+
+struct QpiddDaemon : public Daemon {
+    /** Code for parent process */
+    void parent() {
+        uint16_t port = wait(options.wait);
+        if (options.port == 0)
+            cout << port << endl; 
+    }
+
+    /** Code for forked child process */
+    void child() {
+        brokerPtr = Broker::create(options);
+        uint16_t port=brokerPtr->getPort();
+        ready(port);            // Notify parent.
+        brokerPtr->run();
+    }
+};
+
+
 int main(int argc, char* argv[])
 {
-    QpiddOptions config;
     try {
-        config.parse(argc, argv);
-        string name=(format("%s.%d")
-                     % Daemon::nameFromArgv0(argv[0])
-                     % (config.port)).str();
-        // Spelled 'demon' to avoid clash with daemon.h function.
-        Daemon demon(name, config.wait);
+        options.parse(argc, argv);
 
         // Options that just print information.
-        if(config.help) {
-            config.usage(cout);
-            return 0;
-        }
-        if (config.version) {
-            cout << "qpidd (" << PACKAGE_NAME << ") version "
-                 << PACKAGE_VERSION << endl;
+        if(options.help || options.version) {
+            if (options.version) 
+                cout << "qpidd (" << PACKAGE_NAME << ") version "
+                     << PACKAGE_VERSION << endl;
+            else if (options.help)
+                options.usage(cout);
             return 0;
         }
 
-        // Options that affect an already running daemon.
-        if (config.quit || config.kill || config.check) {
-            pid_t pid = demon.check();
-            if (config.ppid && pid > 0)
-                cout << pid << endl;
-            if (config.kill)
-                demon.kill();
-            else if (config.quit)
-                demon.quit();
-            if (config.check && pid <= 0)
+        // Options that affect a running daemon.
+        if (options.check || options.quit) {
+            pid_t pid = Daemon::getPid(options.port);
+            if (pid < 0) 
                 return 1;
+            if (options.check)
+                cout << pid << endl;
+            if (options.quit && kill(pid, SIGINT) < 0)
+                throw Exception("Failed to stop daemon: " + strError(errno));
             return 0;
         }
 
-        // Starting the broker:
-        signal(SIGINT, handle_signal);
-        if (config.daemon) {
-            pid_t pid = demon.fork();
-            if (pid == 0) {  // Child
-                try {
-                    brokerPtr=Broker::create(config);
-                    demon.ready();   // Notify parent we're ready.
-                    brokerPtr->run();
-                } catch (const exception& e) {
-                    // TODO aconway 2007-04-26: Log this, cerr is lost.
-                    cerr << "Broker daemon failed: " << e.what() << endl;
-                    demon.failed(); // Notify parent we failed.
-                    return 1;
-                }
-            }
-            else if (pid > 0) { // Parent
-                if (config.ppid)
-                    cout << pid << endl;
-                return 0;
-            }
-            else { // pid < 0
-                throw Exception("fork failed"+strError(errno));
-            }
-        } // Non-daemon broker.
-        else {
-            brokerPtr = Broker::create(config);
+        // Starting the broker.
+
+        // Signal handling
+        signal(SIGINT,shutdownHandler); 
+        signal(SIGTERM,shutdownHandler);
+        signal(SIGHUP,SIG_IGN); // TODO aconway 2007-07-18: reload config.
+
+        signal(SIGCHLD,SIG_IGN); 
+        signal(SIGTSTP,SIG_IGN); 
+        signal(SIGTTOU,SIG_IGN);
+        signal(SIGTTIN,SIG_IGN);
+            
+        if (options.daemon) {
+            // Fork the daemon
+            QpiddDaemon d;
+            d.fork();
+        } 
+        else {                  // Non-daemon broker.
+            brokerPtr =  Broker::create(options);
+            if (options.port == 0)
+                cout << uint16_t(brokerPtr->getPort()) << endl; 
             brokerPtr->run(); 
         }
         return 0;
     }
-    catch(const po::error& e) {
-        // Command line parsing error.
-        cerr << "Error: " << e.what() << endl
-             << "Type 'qpidd --help' for usage." << endl;
-    }
     catch(const exception& e) {
-        cerr << "Error: " << e.what() << endl;
+        cerr << e.what() << endl;
     }
     return 1;
 }

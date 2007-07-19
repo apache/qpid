@@ -15,130 +15,165 @@
  * limitations under the License.
  *
  */
-#include "QpidError.h"
 #include "Daemon.h"
-#include <libdaemon/daemon.h>
+#include "Exception.h"
+
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/device/file_descriptor.hpp>
+
+#include <sstream>
+
 #include <errno.h>
-#include <unistd.h>
-#include <sys/stat.h>
+#include <fcntl.h>
 #include <signal.h>
-#include <boost/filesystem/path.hpp>
-#include <boost/filesystem/operations.hpp>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 namespace qpid {
 namespace broker {
 
 using namespace std;
+typedef boost::iostreams::stream<boost::iostreams::file_descriptor> fdstream;
 
-string Daemon::pidFile;
-string Daemon::name;
-
-string Daemon::nameFromArgv0(const char* argv0) {
-    return string(daemon_ident_from_argv0(const_cast<char*>(argv0)));
+namespace {
+/** Throw an exception containing msg and strerror if throwIf is true.
+ * Name is supposed to be reminiscent of perror().
+ */
+void terror(bool throwIf, const string& msg, int errNo=errno) {
+    if (throwIf)
+        throw Exception(msg + (errNo? ": "+strError(errNo) : string(".")));
 }
 
-const char* Daemon::getPidFile() {
-    if (pidFile.empty()) {
-        const char* home=getenv("HOME");
-        if (!home)
-            throw(Exception("$HOME is not set, cant create $HOME/.qpidd."));
-        using namespace boost::filesystem;
-        path dir = path(home,native) / path(".qpidd", native);
-        create_directory(dir);
-        dir /= name;
-        pidFile = dir.string();
+
+struct LockFile : public fdstream {
+
+    LockFile(const std::string& path_, bool create)
+        : path(path_), fd(-1), created(create)
+    {
+        errno = 0;
+        int flags=create ? O_WRONLY|O_CREAT|O_NOFOLLOW : O_RDWR;
+        fd = ::open(path.c_str(), flags, 0644);
+        terror(fd < 0,"Cannot open "+path);
+        terror(::lockf(fd, F_TLOCK, 0) < 0, "Cannot lock "+path);
+        open(boost::iostreams::file_descriptor(fd));
     }
-    return pidFile.c_str();
+
+    ~LockFile() {
+        if (fd >= 0) {
+            ::lockf(fd, F_ULOCK, 0);
+            close();
+        }
+    }
+
+    std::string path;
+    int fd;
+    bool created;
+};
+
+} // namespace
+
+Daemon::Daemon() {
+    pid = -1;
+    pipeFds[0] = pipeFds[1] = -1;
 }
 
-Daemon::Daemon(const string& name_, int secs) : pid(-1), timeout(secs)
+string Daemon::dir() {
+    return (getuid() == 0 ? "/var/run" : "/tmp");
+}
+
+string Daemon::pidFile(uint16_t port) {
+    ostringstream path;
+    path << dir() << "/qpidd." << port << ".pid";
+    return path.str();
+}
+
+void Daemon::fork()
 {
-    name = name_;
-    daemon_pid_file_ident = daemon_log_ident = name.c_str();
-    if (getuid() != 0) {
-        // For normal users put pid file under $HOME/.qpid
-        daemon_pid_file_proc = getPidFile;
+    terror(pipe(pipeFds) < 0, "Can't create pipe");
+    terror((pid = ::fork()) < 0, "Daemon fork failed");
+    if (pid == 0) {             // Child
+        try {
+            // File descriptors
+            terror(::close(pipeFds[0])<0, "Cannot close read pipe");
+            terror(::close(0)<0, "Cannot close stdin");
+            terror(::close(1)<0, "Cannot close stdout");
+            terror(::close(2)<0, "Cannot close stderr");
+            int fd=::open("/dev/null",O_RDWR); // stdin
+            terror(fd != 0, "Cannot re-open stdin");
+            terror(::dup(fd)<0, "Cannot re-open stdout");
+            terror(::dup(fd)<0, "Cannot re-open stderror");
+
+            // Misc
+            terror(setsid()<0, "Cannot set session ID");
+            terror(chdir(dir().c_str()) < 0, "Cannot change directory to "+dir());
+            umask(027);
+
+            // Child behavior
+            child();
+        }
+        catch (const exception& e) {
+            fdstream pipe(pipeFds[1]);
+            assert(pipe.is_open());
+            pipe << "0 " << e.what() << endl;
+        }
     }
-    // For root use the libdaemon default: /var/run.    
+    else {                      // Parent
+        close(pipeFds[1]);      // Write side.
+        parent();
+    }
 }
 
 Daemon::~Daemon() {
-    if (isChild())
-        daemon_pid_file_remove();
+    if (!lockFile.empty()) 
+        unlink(lockFile.c_str());
 }
 
-class Daemon::Retval {
-  public:
-    Retval();
-    ~Retval();
-    int send(int s);
-    int wait(int timeout);
-  private:
-    bool completed;
-};
+uint16_t Daemon::wait(int timeout) {            // parent waits for child.
+    errno = 0;                  
+    struct timeval tv;
+    tv.tv_sec = timeout;
+    tv.tv_usec = 0;
 
-pid_t Daemon::fork() {
-    retval.reset(new Retval());
-    pid = daemon_fork();
-    if (pid < 0)
-            throw Exception("Failed to fork daemon: "+strError(errno));
-    else if (pid > 0) {
-        int ret = retval->wait(timeout); // parent, wait for child.
-        if (ret != 0) {
-            string err;
-            if (ret > 0)
-                err = strError(ret);
-            else if (ret == -1)
-                err= strError(errno);
-            else
-                err= "unknown error";
-            throw Exception("Deamon startup failed: "+err);
-        }
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(pipeFds[0], &fds);
+    terror(1 != select(FD_SETSIZE, &fds, 0, 0, &tv), "No response from daemon process");
+
+    fdstream pipe(pipeFds[0]);
+    uint16_t value = 0;
+    pipe >> value >> skipws;
+    if (value == 0) {
+        string errmsg;
+        getline(pipe, errmsg);
+        throw Exception("Daemon startup failed"+ (errmsg.empty() ? string(".") : ": " + errmsg));
     }
-    else if (pid == 0) { // child.
-        // TODO aconway 2007-04-26: Should log failures.
-        if (daemon_pid_file_create())
-            failed();
+    return value;
+}
+
+void Daemon::ready(uint16_t port) { // child
+    lockFile = pidFile(port);
+    LockFile lf(lockFile, true);
+    lf << getpid() << endl;
+    if (lf.fail())
+        throw Exception("Cannot write lock file "+lockFile);
+    fdstream pipe(pipeFds[1]);
+    pipe << port << endl;;
+}
+
+pid_t Daemon::getPid(uint16_t port) {
+    string name = pidFile(port);
+    LockFile lockFile(name, false);
+    pid_t pid;
+    lockFile >> pid;
+    if (lockFile.fail())
+        throw Exception("Cannot read lock file "+name);
+    if (kill(pid, 0) < 0 && errno != EPERM) {
+        unlink(name.c_str());
+        throw Exception("Removing stale lock file "+name);
     }
     return pid;
 }
 
-void Daemon::notify(int i) {
-    assert(retval);
-    if (retval->send(i)) 
-        throw Exception("Failed to notify parent: "+strError(errno));
-}
-
-void Daemon::ready() { notify(0); }
-
-// NB: Not -1, confused with failure of fork() on the parent side.
-void Daemon::failed() { notify(errno? errno:-2); }
-
-void  Daemon::quit() {
-    if (daemon_pid_file_kill_wait(SIGINT, timeout))
-        throw Exception("Failed to stop daemon: " + strError(errno));
-}
-
-void  Daemon::kill() {
-    if (daemon_pid_file_kill_wait(SIGKILL, timeout) < 0)
-        throw Exception("Failed to stop daemon: " + strError(errno));
-}
-
-pid_t Daemon::check() {
-    return daemon_pid_file_is_running();
-}
-
-Daemon::Retval::Retval() : completed(false) {
-    daemon_retval_init();
-}
-Daemon::Retval::~Retval() {
-    if (!completed) daemon_retval_done();
-}
-int Daemon::Retval::send(int s) {
-    return daemon_retval_send(s);
-}
-int Daemon::Retval::wait(int timeout) {
-    return daemon_retval_wait(timeout);
-}
 
 }} // namespace qpid::broker

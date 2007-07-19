@@ -28,7 +28,7 @@ lib_LTLIBRARIES = libqpidbroker.la
 libqpidbroker_la_LIBADD =			\
   ../common/libqpidcommon.la			\
   -ldaemon					\
-  -lboost_filesystem
+  -lboost_iostreams
 
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 libqpidbroker_la_SOURCES =			\
