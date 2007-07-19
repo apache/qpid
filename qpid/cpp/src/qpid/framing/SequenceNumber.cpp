@@ -60,3 +60,14 @@ bool SequenceNumber::operator>(const SequenceNumber& other) const
 {
     return other < *this;
 }
+
+namespace qpid {
+namespace framing {
+
+int32_t operator-(const SequenceNumber& a, const SequenceNumber& b)
+{
+    int32_t result = a.value - b.value;    
+    return result;
+}
+
+}}
