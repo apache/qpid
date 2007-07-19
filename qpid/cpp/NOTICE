@@ -23,13 +23,5 @@ Project dependancies:
  	can be downloaded from http://www.boost.org
 	- Included in most OS platfroms by defualt.
 
-Optional modules:
-	
- * libdaemon version 0.10 under LGPL and can be downloaded from 
- 	http://www.stud.uni-hamburg.de/users/lennart/projects/libdaemon
-	-Optional module detected by configure scripts if present to create 
-	daemon process. 
-
-
              
 
