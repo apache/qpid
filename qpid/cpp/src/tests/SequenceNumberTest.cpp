@@ -31,6 +31,9 @@ class SequenceNumberTest : public CppUnit::TestCase
     CPPUNIT_TEST(testIncrementPostfix);
     CPPUNIT_TEST(testIncrementPrefix);
     CPPUNIT_TEST(testWrapAround);
+    CPPUNIT_TEST(testDifference);
+    CPPUNIT_TEST(testDifferenceWithWrapAround1);
+    CPPUNIT_TEST(testDifferenceWithWrapAround2);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -83,23 +86,84 @@ class SequenceNumberTest : public CppUnit::TestCase
         const uint32_t max = 0xFFFFFFFF;
         SequenceNumber a(max - 10);
         SequenceNumber b(max - 5);
+        checkComparison(a, b, 5);
 
+        const uint32_t max_signed = 0x7FFFFFFF;
+        SequenceNumber c(max_signed - 10);
+        SequenceNumber d(max_signed - 5);
+        checkComparison(c, d, 5);
+    }
+
+    void checkComparison(SequenceNumber& a, SequenceNumber& b, int gap)
+    {
         //increment until b wraps around
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < (gap + 2); i++) {
             CPPUNIT_ASSERT(++a < ++b);//test prefix
         }
-        //verify we have wrapped around
-        CPPUNIT_ASSERT(a.getValue() > b.getValue());
         //keep incrementing until a also wraps around
-        for (int i = 0; i < 6; i++) {            
+        for (int i = 0; i < (gap + 2); i++) {            
             CPPUNIT_ASSERT(a++ < b++);//test postfix
         }
         //let a 'catch up'
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < gap; i++) {
             a++;
         }
         CPPUNIT_ASSERT(a == b);
         CPPUNIT_ASSERT(++a > b);
+    }
+
+    void testDifference()
+    {
+        SequenceNumber a;
+        SequenceNumber b;
+
+        for (int i = 0; i < 10; i++, ++a) {
+            CPPUNIT_ASSERT_EQUAL(i, a - b);
+            CPPUNIT_ASSERT_EQUAL(-i, b - a);
+        }
+
+        b = a;
+
+        for (int i = 0; i < 10; i++, ++b) {
+            CPPUNIT_ASSERT_EQUAL(-i, a - b);
+            CPPUNIT_ASSERT_EQUAL(i, b - a);
+        }
+    }
+
+    void testDifferenceWithWrapAround1()
+    {
+        const uint32_t max = 0xFFFFFFFF;
+        SequenceNumber a(max - 5);
+        SequenceNumber b(max - 10);
+        checkDifference(a, b, 5);
+    }
+
+    void testDifferenceWithWrapAround2()
+    {
+        const uint32_t max_signed = 0x7FFFFFFF;
+        SequenceNumber c(max_signed - 5);
+        SequenceNumber d(max_signed - 10);
+        checkDifference(c, d, 5);
+    }
+
+    void checkDifference(SequenceNumber& a, SequenceNumber& b, int gap)
+    {
+        CPPUNIT_ASSERT_EQUAL(gap, a - b);
+        CPPUNIT_ASSERT_EQUAL(-gap, b - a);
+
+        //increment until b wraps around
+        for (int i = 0; i < (gap + 2); i++, ++a, ++b) {
+            CPPUNIT_ASSERT_EQUAL(gap, a - b);
+        }
+        //keep incrementing until a also wraps around
+        for (int i = 0; i < (gap + 2); i++, ++a, ++b) {
+            CPPUNIT_ASSERT_EQUAL(gap, a - b);
+        }
+        //let b catch up and overtake
+        for (int i = 0; i < (gap*2); i++, ++b) {
+            CPPUNIT_ASSERT_EQUAL(gap - i, a - b);
+            CPPUNIT_ASSERT_EQUAL(i - gap, b - a);
+        }
     }
 };
     
