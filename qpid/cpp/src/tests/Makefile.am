@@ -170,7 +170,7 @@ all-am: .valgrind.supp .valgrindrc
 # ltmain invocations, one may corrupt the temporaries of the other.
 .NOTPARALLEL:
 
-CLEANFILES=valgrind.out qpidd.log .valgrindrc .valgrind.supp dummy_test $(unit_wrappers)
+CLEANFILES=valgrind.out *.log *.vglog .valgrindrc .valgrind.supp dummy_test $(unit_wrappers)
 MAINTAINERCLEANFILES=gen.mk
 
 interop_runner_SOURCES = 	\

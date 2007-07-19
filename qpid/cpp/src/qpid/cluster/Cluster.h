@@ -37,11 +37,17 @@
 namespace qpid { namespace cluster {
 
 /**
- * Represents a cluster, provides access to data about members.
- * Implements HandlerUpdater to manage handlers that route frames to
- * and from the cluster.
+ * Connection to the cluster. Maintains cluster membership
+ * data.
+ *
+ * As SessionFrameHandler, handles frames by sending them to the
+ * cluster, sends frames received from the cluster to the next
+ * SessionFrameHandler.
+ * 
+ * 
  */
-class Cluster : private sys::Runnable, private Cpg::Handler
+class Cluster : public SessionFrameHandler,
+                private sys::Runnable, private Cpg::Handler
 {
   public:
     /** Details of a cluster member */
@@ -57,8 +63,10 @@ class Cluster : private sys::Runnable, private Cpg::Handler
      * Join a cluster.
      * @param name of the cluster.
      * @param url of this broker, sent to the cluster.
+     * @param handler for frames received from the cluster.
      */
-    Cluster(const std::string& name, const std::string& url);
+    Cluster(const std::string& name, const std::string& url,
+            const SessionFrameHandler::Chain& next);
 
     virtual ~Cluster();
 
@@ -70,14 +78,6 @@ class Cluster : private sys::Runnable, private Cpg::Handler
 
     bool empty() const { return size() == 0; }
     
-    /** Get handler chains to send incoming/outgoing frames to the cluster */ 
-    framing::FrameHandler::Chains getSendChains() {
-        return toChains;
-    }
-
-    /** Set handler for frames received from the cluster */
-    void setReceivedChain(const SessionFrameHandler::Chain& chain);
-
     /** Wait for predicate(*this) to be true, up to timeout.
      *@return True if predicate became true, false if timed out.
      *Note the predicate may not be true after wait returns,
@@ -86,13 +86,13 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     bool wait(boost::function<bool(const Cluster&)> predicate,
               sys::Duration timeout=sys::TIME_INFINITE) const;
 
+    /** Send frame to the cluster */
+    void handle(SessionFrame&);
+    
   private:
     typedef Cpg::Id Id;
     typedef std::map<Id, shared_ptr<Member> >  MemberMap;
-    typedef std::map<
-        framing::ChannelId, framing::FrameHandler::Chains> ChannelMap;
     
-    void mcast(SessionFrame&);  ///< send frame by multicast.
     void notify();              ///< Notify cluster of my details.
 
     void deliver(
@@ -112,7 +112,7 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     );
 
     void run();
-    bool handleClusterFrame(Id from, framing::AMQFrame&);
+    void handleClusterFrame(Id from, framing::AMQFrame&);
 
     mutable sys::Monitor lock;
     boost::scoped_ptr<Cpg> cpg;
@@ -120,17 +120,8 @@ class Cluster : private sys::Runnable, private Cpg::Handler
     std::string url;
     Id self;
     MemberMap members;
-    ChannelMap channels;
     sys::Thread dispatcher;
     boost::function<void()> callback;
-    framing::FrameHandler::Chains toChains;
-    SessionFrameHandler::Chain receivedChain;
-
-    struct IncomingHandler;
-    struct OutgoingHandler;
-
-  friend struct IncomingHandler;
-  friend struct OutgoingHandler;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);

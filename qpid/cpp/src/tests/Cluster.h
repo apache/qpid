@@ -24,7 +24,10 @@
 #include "qpid/framing/ChannelOkBody.h"
 #include "qpid/framing/BasicGetOkBody.h"
 #include "qpid/log/Logger.h"
+
 #include <boost/bind.hpp>
+#include <boost/test/test_tools.hpp>
+
 #include <iostream>
 #include <vector>
 #include <functional>
@@ -69,13 +72,12 @@ void nullDeleter(void*) {}
 
 struct TestCluster : public Cluster
 {
-    TestCluster(string name, string url) : Cluster(name, url)
-    {
-        setReceivedChain(make_shared_ptr(&received, nullDeleter));
-    }
+    TestCluster(string name, string url)
+        : Cluster(name, url, make_shared_ptr(&received, nullDeleter)) {}
 
     /** Wait for cluster to be of size n. */
     bool waitFor(size_t n) {
+        BOOST_CHECKPOINT("About to call Cluster::wait");
         return wait(boost::bind(equal_to<size_t>(), bind(&Cluster::size,this), n));
     }
 

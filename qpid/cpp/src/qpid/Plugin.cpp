@@ -22,19 +22,19 @@
 
 namespace qpid {
 
-std::vector<PluginProvider*> PluginProvider::providers;
+Plugin::Plugins Plugin::plugins;
 
-PluginProvider::PluginProvider() {
+Plugin::Plugin() {
     // Register myself.
-    providers.push_back(this);
+    plugins.push_back(this);
 }
 
-PluginProvider::~PluginProvider() {}
+Plugin::~Plugin() {}
 
-Options*  PluginProvider::getOptions() { return 0; }
+Options*  Plugin::getOptions() { return 0; }
 
-const std::vector<PluginProvider*>& PluginProvider::getProviders() {
-    return providers;
+const Plugin::Plugins& Plugin::getPlugins() {
+    return plugins;
 }
 
 } // namespace qpid

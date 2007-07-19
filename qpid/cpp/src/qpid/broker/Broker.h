@@ -23,19 +23,23 @@
  */
 
 #include "ConnectionFactory.h"
-#include "qpid/Url.h"
-#include "qpid/Plugin.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/sys/Acceptor.h"
-#include "MessageStore.h"
-#include "ExchangeRegistry.h"
 #include "ConnectionToken.h"
 #include "DirectExchange.h"
 #include "DtxManager.h"
-#include "qpid/framing/OutputHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
+#include "ExchangeRegistry.h"
+#include "MessageStore.h"
 #include "QueueRegistry.h"
 #include "qpid/Options.h"
+#include "qpid/Plugin.h"
+#include "qpid/Url.h"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/HandlerUpdater.h"
+#include "qpid/framing/OutputHandler.h"
+#include "qpid/framing/ProtocolInitiation.h"
+#include "qpid/sys/Acceptor.h"
+#include "qpid/sys/Runnable.h"
+
+#include <vector>
 
 namespace qpid { 
 
@@ -48,7 +52,7 @@ namespace broker {
 /**
  * A broker instance. 
  */
-class Broker : public sys::Runnable, public PluginUser
+class Broker : public sys::Runnable, public Plugin::Target
 {
   public:
     struct Options : public qpid::Options {
@@ -88,26 +92,32 @@ class Broker : public sys::Runnable, public PluginUser
     /** Shut down the broker */
     virtual void shutdown();
 
-    /** Use a plugin */
-    void use(const shared_ptr<Plugin>& plugin);
+    /** Register a handler updater. */
+    void add(const shared_ptr<framing::HandlerUpdater>&);
+    
+    /** Apply all handler updaters to a handler chain pair. */
+    void update(framing::FrameHandler::Chains&); 
     
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
     uint64_t getStagingThreshold() { return stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
-    
+
   private:
     sys::Acceptor& getAcceptor() const;
 
     Options config;
     sys::Acceptor::shared_ptr acceptor;
     const std::auto_ptr<MessageStore> store;
+    typedef std::vector<shared_ptr<framing::HandlerUpdater> > HandlerUpdaters;
+
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     uint64_t stagingThreshold;
     ConnectionFactory factory;
     DtxManager dtxManager;
+    HandlerUpdaters handlerUpdaters;
 
     static MessageStore* createStore(const Options& config);
 };

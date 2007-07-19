@@ -16,8 +16,8 @@
  *
  */
 #include "qpid/broker/Broker.h"
-#include "qpid/framing/HandlerUpdater.h"
 #include "qpid/cluster/Cluster.h"
+#include "qpid/cluster/SessionManager.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 
@@ -26,11 +26,11 @@ namespace cluster {
 
 using namespace std;
 
-struct ClusterPluginProvider : public PluginProvider {
+struct ClusterPlugin : public Plugin {
 
     struct ClusterOptions : public Options {
         string clusterName;
-        ClusterOptions() {
+        ClusterOptions() : Options("Cluster Options") {
             addOptions()
                 ("cluster", optValue(clusterName, "NAME"),
                  "Join the cluster named NAME");
@@ -39,22 +39,25 @@ struct ClusterPluginProvider : public PluginProvider {
 
     ClusterOptions options;
     shared_ptr<Cluster> cluster;
+    shared_ptr<SessionManager> sessions;
 
     Options* getOptions() {
         return &options;
     }
 
-    void provide(PluginUser& user) {
-        broker::Broker* broker = dynamic_cast<broker::Broker*>(&user);
+    void initialize(Plugin::Target& target) {
+        broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker, and only if the --cluster config is set.
         if (broker && !options.clusterName.empty()) {
             assert(!cluster); // A process can only belong to one cluster.
-            cluster.reset(new Cluster(options.clusterName, broker->getUrl()));
-            // FIXME aconway 2007-06-29: register HandlerUpdater.
+            sessions.reset(new SessionManager());
+            cluster.reset(new Cluster(options.clusterName, broker->getUrl(), sessions));
+            sessions->setClusterSend(cluster); // FIXME aconway 2007-07-10: 
+            broker->add(sessions);
         }
     }
 };
 
-static ClusterPluginProvider instance; // Static initialization.
+static ClusterPlugin instance; // Static initialization.
     
 }} // namespace qpid::cluster
