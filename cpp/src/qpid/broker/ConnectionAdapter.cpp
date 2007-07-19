@@ -50,10 +50,14 @@ void ConnectionAdapter::handleMethodInContext(
 )
 {
     try{
+        handler->client.setResponseTo(context.getRequestId());
         method->invoke(*this, context);
+        handler->client.setResponseTo(0);
     }catch(ConnectionException& e){
+        handler->client.setResponseTo(0);
         handler->client.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());
     }catch(std::exception& e){
+        handler->client.setResponseTo(0);
         handler->client.close(541/*internal error*/, e.what(), method->amqpClassId(), method->amqpMethodId());
     }
 }
@@ -82,43 +86,38 @@ Handler::Handler(Connection& c, ConnectionAdapter& a) :
     proxy(a), client(proxy.getConnection()), connection(c) {}
 
 
-void Handler::startOk(
-    const MethodContext&, const FieldTable& /*clientProperties*/,
+void Handler::startOk(const FieldTable& /*clientProperties*/,
     const string& /*mechanism*/, 
     const string& /*response*/, const string& /*locale*/)
 {
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), connection.getHeartbeat());
 }
         
-void Handler::secureOk(
-    const MethodContext&, const string& /*response*/){}
+void Handler::secureOk(const string& /*response*/){}
         
-void Handler::tuneOk(
-    const MethodContext&, uint16_t /*channelmax*/,
+void Handler::tuneOk(uint16_t /*channelmax*/,
     uint32_t framemax, uint16_t heartbeat)
 {
     connection.setFrameMax(framemax);
     connection.setHeartbeat(heartbeat);
 }
         
-void Handler::open(
-    const MethodContext& context, const string& /*virtualHost*/,
+void Handler::open(const string& /*virtualHost*/,
     const string& /*capabilities*/, bool /*insist*/)
 {
     string knownhosts;
     client.openOk(
-        knownhosts, context.getRequestId());
+        knownhosts);//GRS, context.getRequestId());
 }
 
         
-void Handler::close(
-    const MethodContext& context, uint16_t /*replyCode*/, const string& /*replyText*/, 
+void Handler::close(uint16_t /*replyCode*/, const string& /*replyText*/, 
     uint16_t /*classId*/, uint16_t /*methodId*/)
 {
-    client.closeOk(context.getRequestId());
+    client.closeOk();//GRS context.getRequestId());
     connection.getOutput().close();
 } 
         
-void Handler::closeOk(const MethodContext&){
+void Handler::closeOk(){
     connection.getOutput().close();
 } 

@@ -63,11 +63,7 @@ class ExchangeTest : public CppUnit::TestCase
         queue.reset();
         queue2.reset();
 
-        Message::shared_ptr msgPtr(
-            new BasicMessage(
-                0, "e", "A", true, true,
-                AMQMethodBody::shared_ptr(
-                    new BasicGetBody(ProtocolVersion()))));
+        Message::shared_ptr msgPtr(new BasicMessage(0, "e", "A", true, true));
         DeliverableMessage msg(msgPtr);
         topic.route(msg, "abc", 0);
         direct.route(msg, "abc", 0);

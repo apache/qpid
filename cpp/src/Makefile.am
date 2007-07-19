@@ -151,6 +151,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/ProtocolVersionException.cpp \
   qpid/framing/Requester.cpp \
   qpid/framing/Responder.cpp \
+  qpid/framing/SequenceNumber.cpp \
   qpid/framing/Correlator.cpp \
   qpid/framing/Value.cpp \
   qpid/framing/Proxy.cpp \
@@ -360,6 +361,7 @@ nobase_include_HEADERS = \
   qpid/framing/Requester.h \
   qpid/framing/Responder.h \
   qpid/framing/SerializeHandler.h \
+  qpid/framing/SequenceNumber.h \
   qpid/framing/Value.h \
   qpid/framing/Uuid.h \
   qpid/framing/amqp_framing.h \

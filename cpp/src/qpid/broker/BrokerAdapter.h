@@ -85,6 +85,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     }
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
+    void setResponseTo(framing::RequestId r);
 
   private:
 
@@ -95,16 +96,16 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
       public:
         ChannelHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
         
-        void open(const framing::MethodContext& context, const std::string& outOfBand); 
-        void flow(const framing::MethodContext& context, bool active); 
-        void flowOk(const framing::MethodContext& context, bool active); 
-        void ok( const framing::MethodContext& context );
-        void ping( const framing::MethodContext& context );
-        void pong( const framing::MethodContext& context );
-        void resume( const framing::MethodContext& context, const std::string& channelId );
-        void close(const framing::MethodContext& context, uint16_t replyCode, const
+        void open(const std::string& outOfBand); 
+        void flow(bool active); 
+        void flowOk(bool active); 
+        void ok(  );
+        void ping(  );
+        void pong(  );
+        void resume( const std::string& channelId );
+        void close(uint16_t replyCode, const
                    std::string& replyText, uint16_t classId, uint16_t methodId); 
-        void closeOk(const framing::MethodContext& context); 
+        void closeOk(); 
     };
     
     class ExchangeHandlerImpl :
@@ -114,16 +115,14 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
       public:
         ExchangeHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
         
-        void declare(const framing::MethodContext& context, uint16_t ticket,
+        void declare(uint16_t ticket,
                      const std::string& exchange, const std::string& type, 
                      bool passive, bool durable, bool autoDelete,
                      bool internal, bool nowait, 
                      const qpid::framing::FieldTable& arguments); 
-        void delete_(const framing::MethodContext& context, uint16_t ticket,
+        void delete_(uint16_t ticket,
                      const std::string& exchange, bool ifUnused, bool nowait); 
-        void query(const framing::MethodContext& context,
-                   u_int16_t ticket,
-                   const string& name);
+        void query(u_int16_t ticket, const string& name);
     };
 
     class BindingHandlerImpl : 
@@ -133,8 +132,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     public:
         BindingHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
 
-        void query(const framing::MethodContext& context,
-                   u_int16_t ticket,
+        void query(u_int16_t ticket,
                    const std::string& exchange,
                    const std::string& queue,
                    const std::string& routingKey,
@@ -148,22 +146,21 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
       public:
         QueueHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
         
-        void declare(const framing::MethodContext& context, uint16_t ticket, const std::string& queue, 
+        void declare(uint16_t ticket, const std::string& queue, 
                      bool passive, bool durable, bool exclusive, 
                      bool autoDelete, bool nowait,
                      const qpid::framing::FieldTable& arguments); 
-        void bind(const framing::MethodContext& context, uint16_t ticket, const std::string& queue, 
+        void bind(uint16_t ticket, const std::string& queue, 
                   const std::string& exchange, const std::string& routingKey,
                   bool nowait, const qpid::framing::FieldTable& arguments); 
-        void unbind(const framing::MethodContext& context,
-                    uint16_t ticket,
+        void unbind(uint16_t ticket,
                     const std::string& queue,
                     const std::string& exchange,
                     const std::string& routingKey,
                     const qpid::framing::FieldTable& arguments );
-        void purge(const framing::MethodContext& context, uint16_t ticket, const std::string& queue, 
+        void purge(uint16_t ticket, const std::string& queue, 
                    bool nowait); 
-        void delete_(const framing::MethodContext& context, uint16_t ticket, const std::string& queue,
+        void delete_(uint16_t ticket, const std::string& queue,
                      bool ifUnused, bool ifEmpty, 
                      bool nowait);
     };
@@ -177,23 +174,23 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
       public:
         BasicHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent), tagGenerator("sgen") {}
 
-        void qos(const framing::MethodContext& context, uint32_t prefetchSize,
+        void qos(uint32_t prefetchSize,
                  uint16_t prefetchCount, bool global); 
         void consume(
-            const framing::MethodContext& context, uint16_t ticket, const std::string& queue,
+            uint16_t ticket, const std::string& queue,
             const std::string& consumerTag, bool noLocal, bool noAck,
             bool exclusive, bool nowait,
             const qpid::framing::FieldTable& fields); 
-        void cancel(const framing::MethodContext& context, const std::string& consumerTag,
+        void cancel(const std::string& consumerTag,
                     bool nowait); 
-        void publish(const framing::MethodContext& context, uint16_t ticket,
+        void publish(uint16_t ticket,
                      const std::string& exchange, const std::string& routingKey, 
                      bool mandatory, bool immediate); 
-        void get(const framing::MethodContext& context, uint16_t ticket, const std::string& queue,
+        void get(uint16_t ticket, const std::string& queue,
                  bool noAck); 
-        void ack(const framing::MethodContext& context, uint64_t deliveryTag, bool multiple); 
-        void reject(const framing::MethodContext& context, uint64_t deliveryTag, bool requeue); 
-        void recover(const framing::MethodContext& context, bool requeue); 
+        void ack(uint64_t deliveryTag, bool multiple); 
+        void reject(uint64_t deliveryTag, bool requeue); 
+        void recover(bool requeue); 
     };
 
     class TxHandlerImpl :
@@ -203,9 +200,9 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
       public:
         TxHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
         
-        void select(const framing::MethodContext& context);
-        void commit(const framing::MethodContext& context);
-        void rollback(const framing::MethodContext& context);
+        void select();
+        void commit();
+        void rollback();
     };
 
     Connection& connection;

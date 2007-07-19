@@ -29,6 +29,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/BasicDeliverBody.h"
 #include "qpid/framing/BasicGetOkBody.h"
+#include "qpid/framing/BasicPublishBody.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQMethodBody.h"
@@ -44,10 +45,10 @@ using namespace qpid::sys;
 BasicMessage::BasicMessage(
     const ConnectionToken* const _publisher, 
     const string& _exchange, const string& _routingKey, 
-    bool _mandatory, bool _immediate, framing::AMQMethodBody::shared_ptr respondTo
+    bool _mandatory, bool _immediate
 ) :
     Message(_publisher, _exchange, _routingKey, _mandatory,
-            _immediate, respondTo),
+            _immediate, framing::AMQMethodBody::shared_ptr(new BasicPublishBody(ProtocolVersion(0,9)))),
     size(0)
 {}
 
@@ -84,19 +85,20 @@ void BasicMessage::deliver(ChannelAdapter& channel,
     sendContent(channel, framesize);
 }
 
-void BasicMessage::sendGetOk(const MethodContext& context,
-    					     const std::string& /*destination*/,
+void BasicMessage::sendGetOk(ChannelAdapter& channel,
+                             const std::string& /*destination*/,
                              uint32_t messageCount,
+                             uint64_t responseTo, 
                              uint64_t deliveryTag, 
                              uint32_t framesize)
 {
-    context.channel->send(
+    channel.send(
         new BasicGetOkBody(
-            context.channel->getVersion(),
-            context.methodBody->getRequestId(),
+            channel.getVersion(),
+            responseTo,
             deliveryTag, getRedelivered(), getExchange(),
             getRoutingKey(), messageCount)); 
-    sendContent(*context.channel, framesize);
+    sendContent(channel, framesize);
 }
 
 void BasicMessage::sendContent(
