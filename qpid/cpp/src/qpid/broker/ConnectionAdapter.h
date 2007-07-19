@@ -81,22 +81,16 @@ struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler
     Connection& connection;
     
     Handler(Connection& connection, ConnectionAdapter& adapter);
-    void startOk(const framing::MethodContext& context,
-                 const qpid::framing::FieldTable& clientProperties,
+    void startOk(const qpid::framing::FieldTable& clientProperties,
                  const std::string& mechanism, const std::string& response,
                  const std::string& locale); 
-    void secureOk(const framing::MethodContext& context,
-                  const std::string& response); 
-    void tuneOk(const framing::MethodContext& context,
-                uint16_t channelMax,
-                uint32_t frameMax, uint16_t heartbeat); 
-    void open(const framing::MethodContext& context,
-              const std::string& virtualHost,
-                  const std::string& capabilities, bool insist); 
-    void close(const framing::MethodContext& context, uint16_t replyCode,
-               const std::string& replyText,
+    void secureOk(const std::string& response); 
+    void tuneOk(uint16_t channelMax, uint32_t frameMax, uint16_t heartbeat); 
+    void open(const std::string& virtualHost,
+              const std::string& capabilities, bool insist); 
+    void close(uint16_t replyCode, const std::string& replyText,
                uint16_t classId, uint16_t methodId); 
-    void closeOk(const framing::MethodContext& context); 
+    void closeOk(); 
 };
 
 }}

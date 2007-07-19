@@ -18,23 +18,45 @@
  * under the License.
  *
  */
-#include "GetAdapter.h"
-#include "qpid/framing/MethodContext.h"
 
-using namespace qpid::broker;
-using qpid::framing::ChannelAdapter;
-using qpid::framing::RequestId;
-using qpid::framing::MethodContext;
+#include "SequenceNumber.h"
 
-GetAdapter::GetAdapter(ChannelAdapter& a, Queue::shared_ptr q, const std::string d, uint32_t f) 
-    : adapter(a), queue(q), destination(d), framesize(f) {}
+using qpid::framing::SequenceNumber;
 
-RequestId GetAdapter::getNextDeliveryTag()
+SequenceNumber::SequenceNumber() : value(0) {}
+
+SequenceNumber::SequenceNumber(uint32_t v) : value((int32_t) v) {}
+
+bool SequenceNumber::operator==(const SequenceNumber& other) const
 {
-    return adapter.getNextSendRequestId();
+    return value == other.value;
 }
 
-void GetAdapter::deliver(Message::shared_ptr& msg, framing::RequestId deliveryTag)
+bool SequenceNumber::operator!=(const SequenceNumber& other) const
 {
-    msg->sendGetOk(adapter, destination, queue->getMessageCount(), 1, deliveryTag, framesize);
+    return !(value == other.value);
+}
+
+
+SequenceNumber& SequenceNumber::operator++()
+{
+    value = value + 1;
+    return *this;
+}
+
+const SequenceNumber SequenceNumber::operator++(int)
+{
+    SequenceNumber old(value);
+    value = value + 1;
+    return old;
+}
+
+bool SequenceNumber::operator<(const SequenceNumber& other) const
+{
+    return (value - other.value) < 0;
+}
+
+bool SequenceNumber::operator>(const SequenceNumber& other) const
+{
+    return other < *this;
 }

@@ -37,7 +37,29 @@ SemanticHandler::SemanticHandler(ChannelId id, Connection& c) :
 
 void SemanticHandler::handle(framing::AMQFrame& frame) 
 {
+    //TODO: assembly etc when move to 0-10 framing
+    //
+    //have potentially three separate tracks at this point:
+    //
+    // (1) execution controls
+    // (2) commands
+    // (3) data i.e. content-bearing commands
+    //
+    //framesets on each can be interleaved. framesets on the latter
+    //two share a command-id sequence.
+    //
+    //need to decide what to do if a frame on the command track
+    //arrives while a frameset on the data track is still
+    //open. execute it (i.e. out-of order execution with respect to
+    //the command id sequence) or queue it up.
+
+    //if ready to execute (i.e. if segment is complete or frame is
+    //message content):
     handleBody(frame.getBody());
+    //if the frameset is complete, we can move the execution-mark
+    //forward (not for execution controls)
+    //note: need to be more sophisticated than this if we execute
+    //commands that arrive within an active message frameset
 }
 
 //ChannelAdapter virtual methods:
@@ -52,9 +74,12 @@ void SemanticHandler::handleMethodInContext(boost::shared_ptr<qpid::framing::AMQ
                 throw ConnectionException(504, out.str());
             }
         } else {
+            adapter->setResponseTo(context.getRequestId());
             method->invoke(*adapter, context);
+            adapter->setResponseTo(0);
         }
     }catch(ChannelException& e){
+        adapter->setResponseTo(0);
         adapter->getProxy().getChannel().close(
             e.code, e.toString(),
             method->amqpClassId(), method->amqpMethodId());

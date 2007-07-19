@@ -69,8 +69,7 @@ public:
     {
         for(int i = 0; i < 10; i++){
             Message::shared_ptr msg(
-                new BasicMessage(0, "exchange", "routing_key", false, false,
-                                 MockChannel::basicGetBody()));
+                new BasicMessage(0, "exchange", "routing_key", false, false));
             msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
             msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
             messages.push_back(msg);

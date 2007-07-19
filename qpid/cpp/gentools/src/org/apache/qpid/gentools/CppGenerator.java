@@ -763,14 +763,23 @@ public class CppGenerator extends Generator
                                 AmqpVersionSet versionSet = overloadededParameterMap.get(thisFieldMap);
                                 if (!first) sb.append(cr);
                                 sb.append(indent + "virtual "+returnType+" "+ methodName + "(");
-                                if (abstractMethodFlag) sb.append("const MethodContext& context");
-                                boolean leadingComma = abstractMethodFlag;
-                                int paramIndent = indentSize + (5*tabSize);
-								sb.append(generateMethodParameterList(thisFieldMap, paramIndent, leadingComma, true, true));
+
+                                if (abstractMethodFlag && isSpecialCase(thisClass.name, method.name)) {
+                                    sb.append("const MethodContext& context");
+                                } else {
+                                    sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), false, true, true));
+                                }
+
+                                //if (abstractMethodFlag) sb.append("const MethodContext& context");
+                                //boolean leadingComma = abstractMethodFlag;
+                                //int paramIndent = indentSize + (5*tabSize);
+				//				sb.append(generateMethodParameterList(thisFieldMap, paramIndent, leadingComma, true, true));
+                                /*
                                 if (!abstractMethodFlag && method.isResponse(null)) {
                                 	if (!thisFieldMap.isEmpty()) sb.append(", \n"+Utils.createSpaces(paramIndent));
                                 	sb.append("	RequestId responseTo");
                                 }
+                                */
                                 sb.append(" )");
                                 if (abstractMethodFlag)
                                     sb.append(" = 0");
@@ -888,6 +897,7 @@ public class CppGenerator extends Generator
                 sb.append(indent + "{" + cr);
                 sb.append(indent + "private:" + cr);
                 sb.append(indent + tab + "ChannelAdapter& channel;" + cr);
+                sb.append(indent + tab + "RequestId responseTo;" + cr);
                 sb.append(cr);
                 sb.append(indent + "public:" + cr);
                 sb.append(indent + tab + "// Constructors and destructors" + cr);
@@ -897,6 +907,9 @@ public class CppGenerator extends Generator
                 sb.append(indent + tab + "virtual ~" + className + "() {}" + cr);
                 sb.append(cr);
                 sb.append(indent + tab + "static "+className+"& get(" + proxyOuterClassName(serverFlag)+"& proxy) { return proxy.get"+className+"();}\n\n");
+                sb.append(indent + tab + "// set for response correlation" + cr);
+                sb.append(indent + tab + "void setResponseTo(RequestId r) { responseTo = r; }" + cr);                
+                sb.append(cr);
                 sb.append(indent + tab + "// Protocol methods" + cr);
                 sb.append(cr);
                 sb.append(generateInnerClassMethods(thisClass, serverFlag, false, indentSize + tabSize, tabSize));
@@ -1004,8 +1017,10 @@ public class CppGenerator extends Generator
                                           methodName + "(");
                                 sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), false, true, true));
                                 if (method.isResponse(null)) {
+                                    /*
                                     if (!thisFieldMap.isEmpty()) sb.append(", ");
-                                	sb.append("RequestId responseTo");
+                                    sb.append("RequestId responseTo");
+                                    */
                                 }
                                 sb.append(")");
                                 if (versionSet.size() != globalVersionSet.size())
@@ -1457,6 +1472,7 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         String tab = Utils.createSpaces(tabSize);
         StringBuffer sb = new StringBuffer();
+        boolean special = isSpecialCase(thisClass.name, method.name);
         
         if (method.serverMethodFlagMap.size() > 0) // At least one AMQP version defines this method as a server method
             {
@@ -1466,14 +1482,18 @@ public class CppGenerator extends Generator
                         if (bItr.next()) // This is a server operation
                             {
                                 boolean fieldMapNotEmptyFlag = method.fieldMap.size() > 0;
-                                sb.append(indent + "void invoke(AMQP_ServerOperations& target, const MethodContext& context)" + cr);
+                                sb.append(indent + "void invoke(AMQP_ServerOperations& target, const MethodContext&" 
+                                          + (special ? " context)" : " )") + cr);
                                 sb.append(indent + "{" + cr);
                                 sb.append(indent + tab + "target.get" + thisClass.name + "Handler()->" +
                                           parseForReservedWords(Utils.firstLower(method.name),
-                                                                thisClass.name + Utils.firstUpper(method.name) + "Body.invoke()") + "(context");
-                                if (fieldMapNotEmptyFlag)
+                                                                thisClass.name + Utils.firstUpper(method.name) + "Body.invoke()") + "(");
+                                if (special) 
                                     {
-                                        sb.append("," + cr);
+                                        sb.append("context");                    
+                                    }
+                                else if (fieldMapNotEmptyFlag)
+                                    {
                                         sb.append(generateFieldList(method.fieldMap, version, false, false, indentSize + 4*tabSize));
                                         sb.append(indent + tab + tab + tab + tab);                    
                                     }
@@ -1631,5 +1651,10 @@ public class CppGenerator extends Generator
                 ccn.append(b);
             }
         return ccn.toString();
+    }
+
+    private boolean isSpecialCase(String className, String methodName) 
+    {
+        return "message".equalsIgnoreCase(className) && ("transfer".equalsIgnoreCase(methodName) || "append".equalsIgnoreCase(methodName));
     }
 }
