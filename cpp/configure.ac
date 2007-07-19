@@ -103,12 +103,12 @@ AM_CONDITIONAL([USE_APR_NETIO], [test x$enable_APR_NETIO = xyes])
 
 AC_ARG_ENABLE([apr-platform],
   [AS_HELP_STRING([--enable-apr-platform],
-    [use the Apache Portable Runtime library for platform (default yes)])],
+    [use the Apache Portable Runtime library for platform (default no)])],
   [case $enableval in
     yes|no) enable_APR_PLATFORM=$enableval;;
     *) AC_MSG_ERROR([Invalid value for --enable-apr-platform: $enableval]);;
    esac],
-  [enable_APR_PLATFORM=yes]
+  [enable_APR_PLATFORM=no]
 )
 AM_CONDITIONAL([USE_APR_PLATFORM], [test x$enable_APR_PLATFORM = xyes])
 
