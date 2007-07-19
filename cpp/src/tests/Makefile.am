@@ -117,7 +117,7 @@ system_tests = client_test exception_test quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 
 
 EXTRA_DIST +=								\
-  test_env run_test							\
+  test_env run_test vg_check						\
   run-unit-tests start_broker python_tests stop_broker 			\
   quick_topictest							\
   topictest								\
