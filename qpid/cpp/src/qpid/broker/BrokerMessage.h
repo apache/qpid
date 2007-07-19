@@ -63,8 +63,7 @@ class BasicMessage : public Message {
 
     BasicMessage(const ConnectionToken* const publisher, 
                  const string& exchange, const string& routingKey, 
-                 bool mandatory, bool immediate,
-                 boost::shared_ptr<framing::AMQMethodBody> respondTo);
+                 bool mandatory, bool immediate);
     BasicMessage();
     ~BasicMessage();
     void setHeader(boost::shared_ptr<framing::AMQHeaderBody> header);
@@ -76,9 +75,10 @@ class BasicMessage : public Message {
                  uint64_t deliveryTag, 
                  uint32_t framesize);
     
-    void sendGetOk(const framing::MethodContext&, 
-				   const std::string& destination,
+    void sendGetOk(framing::ChannelAdapter& channel, 
+                   const std::string& destination,
                    uint32_t messageCount,
+                   uint64_t responseTo, 
                    uint64_t deliveryTag, 
                    uint32_t framesize);
 

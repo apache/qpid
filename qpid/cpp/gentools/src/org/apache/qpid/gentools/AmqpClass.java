@@ -93,6 +93,9 @@ public class AmqpClass implements Printable, NodeAware
 					thisMethod = new AmqpMethod(methodName, converter);
 					methodMap.put(methodName, thisMethod);
 				}			
+				int content = Utils.getNamedIntegerAttribute(child, Utils.ATTRIBUTE_CONTENT, 0);
+                                thisMethod.content = (content == 1);
+
 				if (!thisMethod.addFromNode(child, 0, version))
 				{
 					String className = converter.prepareClassName(Utils.getNamedAttribute(classNode,

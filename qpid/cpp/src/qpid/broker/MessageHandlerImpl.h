@@ -40,22 +40,16 @@ class MessageHandlerImpl :
   public:
     MessageHandlerImpl(CoreRefs& parent);
 
-    void append(const framing::MethodContext&,
-                 const std::string& reference,
-                 const std::string& bytes );
+    void append(const framing::MethodContext& context);
 
-    void cancel(const framing::MethodContext&,
-                 const std::string& destination );
+    void cancel(const std::string& destination );
 
-    void checkpoint(const framing::MethodContext&,
-                     const std::string& reference,
+    void checkpoint(const std::string& reference,
                      const std::string& identifier );
 
-    void close(const framing::MethodContext&,
-                const std::string& reference );
+    void close(const std::string& reference );
 
-    void consume(const framing::MethodContext&,
-                  uint16_t ticket,
+    void consume(uint16_t ticket,
                   const std::string& queue,
                   const std::string& destination,
                   bool noLocal,
@@ -63,62 +57,32 @@ class MessageHandlerImpl :
                   bool exclusive,
                   const framing::FieldTable& filter );
 
-    void empty( const framing::MethodContext& );
+    void empty();
 
-    void get(const framing::MethodContext&,
-              uint16_t ticket,
+    void get(uint16_t ticket,
               const std::string& queue,
               const std::string& destination,
               bool noAck );
 
-    void offset(const framing::MethodContext&,
-                 uint64_t value );
+    void offset(uint64_t value);
 
-    void ok( const framing::MethodContext& );
+    void ok();
 
-    void open(const framing::MethodContext&,
-               const std::string& reference );
+    void open(const std::string& reference );
 
-    void qos(const framing::MethodContext&,
-              uint32_t prefetchSize,
+    void qos(uint32_t prefetchSize,
               uint16_t prefetchCount,
               bool global );
 
-    void recover(const framing::MethodContext&,
-                  bool requeue );
+    void recover(bool requeue );
 
-    void reject(const framing::MethodContext&,
-                 uint16_t code,
+    void reject(uint16_t code,
                  const std::string& text );
 
-    void resume(const framing::MethodContext&,
-                 const std::string& reference,
+    void resume(const std::string& reference,
                  const std::string& identifier );
 
-    void transfer(const framing::MethodContext&,
-                   uint16_t ticket,
-                   const std::string& destination,
-                   bool redelivered,
-                   bool immediate,
-                   uint64_t ttl,
-                   uint8_t priority,
-                   uint64_t timestamp,
-                   uint8_t deliveryMode,
-                   uint64_t expiration,
-                   const std::string& exchange,
-                   const std::string& routingKey,
-                   const std::string& messageId,
-                   const std::string& correlationId,
-                   const std::string& replyTo,
-                   const std::string& contentType,
-                   const std::string& contentEncoding,
-                   const std::string& userId,
-                   const std::string& appId,
-                   const std::string& transactionId,
-                   const std::string& securityToken,
-                   const framing::FieldTable& applicationHeaders,
-                   const framing::Content& body,
-                   bool mandatory );
+    void transfer(const framing::MethodContext& context);
   private:
     ReferenceRegistry references;
 };

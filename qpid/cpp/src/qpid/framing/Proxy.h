@@ -20,6 +20,7 @@
  */
 
 #include "ProtocolVersion.h"
+#include "amqp_types.h"
 
 namespace qpid {
 namespace framing {

@@ -118,8 +118,7 @@ class MessageBuilderTest : public CppUnit::TestCase
 
         Message::shared_ptr message(
             new BasicMessage(
-                0, "test", "my_routing_key", false, false,
-                MockChannel::basicGetBody()));
+                0, "test", "my_routing_key", false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(0);
         
@@ -137,8 +136,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         string data1("abcdefg");
 
         Message::shared_ptr message(
-            new BasicMessage(0, "test", "my_routing_key", false, false,
-                             MockChannel::basicGetBody()));
+            new BasicMessage(0, "test", "my_routing_key", false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(7);
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -160,8 +158,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         string data2("hijklmn");
 
         Message::shared_ptr message(
-            new BasicMessage(0, "test", "my_routing_key", false, false,
-                             MockChannel::basicGetBody()));
+            new BasicMessage(0, "test", "my_routing_key", false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(14);
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
@@ -191,8 +188,7 @@ class MessageBuilderTest : public CppUnit::TestCase
             string data2("hijklmn");
             
             Message::shared_ptr message(
-                new BasicMessage(0, "test", "my_routing_key", false, false,
-                                 MockChannel::basicGetBody()));
+                new BasicMessage(0, "test", "my_routing_key", false, false));
             AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
             header->setContentSize(14);
             BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header->getProperties());

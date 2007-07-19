@@ -36,6 +36,7 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	public AmqpFlagMap clientMethodFlagMap; // Method called on client (<chassis name="server"> in XML)
 	public AmqpFlagMap serverMethodFlagMap; // Method called on server (<chassis name="client"> in XML)
         public AmqpFlagMap isResponseFlagMap;
+        public boolean content;
 
 	public AmqpMethod(String name, LanguageConverter converter)
 	{

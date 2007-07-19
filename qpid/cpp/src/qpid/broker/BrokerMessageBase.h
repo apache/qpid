@@ -85,7 +85,6 @@ class Message : public PersistableMessage{
     const std::string& getExchange() const { return exchange; }
     uint64_t getPersistenceId() const { return persistenceId; }
     bool getRedelivered() const { return redelivered; }
-    AMQMethodBodyPtr getRespondTo() const { return respondTo; }
     
     void setRouting(const std::string& _exchange, const std::string& _routingKey)
     { exchange = _exchange; routingKey = _routingKey; } 
@@ -102,9 +101,10 @@ class Message : public PersistableMessage{
     /**
      * Used to return a message in response to a get from a queue
      */
-    virtual void sendGetOk(const framing::MethodContext& context,
+    virtual void sendGetOk(framing::ChannelAdapter& channel, 
                            const std::string& destination,
                            uint32_t messageCount,
+                           uint64_t responseTo, 
                            uint64_t deliveryTag, 
                            uint32_t framesize) = 0;
             
