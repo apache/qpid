@@ -54,7 +54,7 @@ case it just tries to open the filename.
 System tests are self contained AMQP client executables or scripts.
 They are listed in the TESTS make variable, which can be over-ridden.
 
-The ./start_broker "test" launches the broker, ./kill_broker" kills it.
+The ./start_broker "test" launches the broker, ./stop_broker" stops it.
 Tests in between assume the broker is running.
 
 ./python_tests: runs ../python/run_tests. This is the main set of
