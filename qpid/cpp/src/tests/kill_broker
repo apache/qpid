@@ -1,2 +1,0 @@
-#!/bin/sh
-QPID_PORT=`cat qpidd.port` ../qpidd --quit && rm -f qpidd.port
