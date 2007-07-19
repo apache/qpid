@@ -56,7 +56,11 @@ void Connection::received(framing::AMQFrame& frame){
     if (frame.getChannel() == 0) {
         adapter.handle(frame);
     } else {
-        getChannel((frame.getChannel())).in->handle(frame);
+        // Assign handler to new shared_ptr, as it may be erased
+        // from the map by handle() if frame is a ChannelClose.
+        // 
+        FrameHandler::Chain handler=getChannel((frame.getChannel())).in;
+        handler->handle(frame);
     }
 }
 
