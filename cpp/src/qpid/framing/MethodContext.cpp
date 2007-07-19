@@ -24,8 +24,11 @@ namespace qpid {
 namespace framing {
 
 RequestId  MethodContext::getRequestId() const  {
-    return boost::shared_polymorphic_downcast<AMQRequestBody>(methodBody)
-        ->getRequestId();
+    if (methodBody->type() == REQUEST_BODY) {
+        return boost::shared_polymorphic_cast<AMQRequestBody>(methodBody)->getRequestId();
+    } else {
+        return 0;
+    }
 }
 
 }} // namespace qpid::framing

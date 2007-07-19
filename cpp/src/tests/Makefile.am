@@ -84,7 +84,8 @@ broker_unit_tests =	\
 framing_unit_tests =	\
   FieldTableTest	\
   FramingTest		\
-  HeaderTest
+  HeaderTest		\
+  SequenceNumberTest
 
 misc_unit_tests =	\
   ProducerConsumerTest

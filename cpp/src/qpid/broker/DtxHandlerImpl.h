@@ -36,53 +36,31 @@ class DtxHandlerImpl
 public:
     DtxHandlerImpl(CoreRefs& parent);
 
+    void setResponseTo(framing::RequestId r);
+
     // DtxCoordinationHandler:
 
-    void commit(const framing::MethodContext& context,
-                        u_int16_t ticket,
-                        const std::string& xid,
-                        bool onePhase );
+    void commit(u_int16_t ticket, const std::string& xid, bool onePhase);
 
-    void forget(const framing::MethodContext& context,
-                        u_int16_t ticket,
-                        const std::string& xid );
+    void forget(u_int16_t ticket, const std::string& xid);
 
-    void getTimeout(const framing::MethodContext& context,
-                            const std::string& xid );
+    void getTimeout(const std::string& xid);
 
-    void prepare(const framing::MethodContext& context,
-                         u_int16_t ticket,
-                         const std::string& xid );
+    void prepare(u_int16_t ticket, const std::string& xid);
 
-    void recover(const framing::MethodContext& context,
-                         u_int16_t ticket,
-                         bool startscan,
-                         u_int32_t endscan );
+    void recover(u_int16_t ticket, bool startscan, u_int32_t endscan);
 
-    void rollback(const framing::MethodContext& context,
-                          u_int16_t ticket,
-                          const std::string& xid );
+    void rollback(u_int16_t ticket, const std::string& xid);
 
-    void setTimeout(const framing::MethodContext& context,
-                            u_int16_t ticket,
-                            const std::string& xid,
-                            u_int32_t timeout );
+    void setTimeout(u_int16_t ticket, const std::string& xid, u_int32_t timeout);
 
     // DtxDemarcationHandler:
 
-    void end(const framing::MethodContext& context,
-                     u_int16_t ticket,
-                     const std::string& xid,
-                     bool fail,
-                     bool suspend );
+    void end(u_int16_t ticket, const std::string& xid, bool fail, bool suspend);
 
-    void select(const framing::MethodContext& context );
+    void select();
 
-    void start(const framing::MethodContext& context,
-                       u_int16_t ticket,
-                       const std::string& xid,
-                       bool join,
-                       bool resume );
+    void start(u_int16_t ticket, const std::string& xid, bool join, bool resume);
 };
 
 

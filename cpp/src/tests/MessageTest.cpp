@@ -46,8 +46,7 @@ class MessageTest : public CppUnit::TestCase
         string data2("hijklmn");
 
         BasicMessage::shared_ptr msg(
-            new BasicMessage(0, exchange, routingKey, false, false,
-                             MockChannel::basicGetBody()));
+            new BasicMessage(0, exchange, routingKey, false, false));
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(14);        
         AMQContentBody::shared_ptr part1(new AMQContentBody(data1));

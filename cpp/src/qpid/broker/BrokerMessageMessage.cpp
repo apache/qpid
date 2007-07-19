@@ -185,14 +185,14 @@ void MessageMessage::deliver(
 }
 
 void MessageMessage::sendGetOk(
-    const framing::MethodContext& context,
+    framing::ChannelAdapter& channel,
     const std::string& destination,
     uint32_t /*messageCount*/,
+    uint64_t /*responseTo*/, 
     uint64_t /*deliveryTag*/, 
     uint32_t framesize)
 {
-    framing::ChannelAdapter* channel = context.channel;
-    transferMessage(*channel, destination, framesize);
+    transferMessage(channel, destination, framesize);
 }
 
 bool MessageMessage::isComplete()

@@ -70,6 +70,13 @@ public class Utils
 	{
 		return Integer.parseInt(getNamedAttribute(n, attrName));
 	}
+
+        public static int getNamedIntegerAttribute(Node node, String name, int defaultValue) throws AmqpParseException
+	{
+		NamedNodeMap attributes = node.getAttributes();
+		Attr a = attributes == null ? null : (Attr) attributes.getNamedItem(name);
+		return a == null ? defaultValue : Integer.parseInt(a.getNodeValue());
+	}
 	
 	// Element functions
 	

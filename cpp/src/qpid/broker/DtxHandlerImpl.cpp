@@ -49,14 +49,13 @@ const int XA_OK(8);
 // DtxDemarcationHandler:
 
 
-void DtxHandlerImpl::select(const MethodContext& context )
+void DtxHandlerImpl::select()
 {
     channel.selectDtx();
-    dClient.selectOk(context.getRequestId());
+    dClient.selectOk();//GRS context.getRequestId());
 }
 
-void DtxHandlerImpl::end(const MethodContext& context,
-                         u_int16_t /*ticket*/,
+void DtxHandlerImpl::end(u_int16_t /*ticket*/,
                          const string& xid,
                          bool fail,
                          bool suspend)
@@ -67,7 +66,7 @@ void DtxHandlerImpl::end(const MethodContext& context,
             if (suspend) {
                 throw ConnectionException(503, "End and suspend cannot both be set.");
             } else {
-                dClient.endOk(XA_RBROLLBACK, context.getRequestId());
+                dClient.endOk(XA_RBROLLBACK);//GRS, context.getRequestId());
             }
         } else {
             if (suspend) {
@@ -75,15 +74,14 @@ void DtxHandlerImpl::end(const MethodContext& context,
             } else {
                 channel.endDtx(xid, false);
             }
-            dClient.endOk(XA_OK, context.getRequestId());
+            dClient.endOk(XA_OK);//GRS, context.getRequestId());
         }
     } catch (const DtxTimeoutException& e) {
-        dClient.endOk(XA_RBTIMEOUT, context.getRequestId());        
+        dClient.endOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
     }
 }
 
-void DtxHandlerImpl::start(const MethodContext& context,
-                           u_int16_t /*ticket*/,
+void DtxHandlerImpl::start(u_int16_t /*ticket*/,
                            const string& xid,
                            bool join,
                            bool resume)
@@ -97,54 +95,50 @@ void DtxHandlerImpl::start(const MethodContext& context,
         } else {
             channel.startDtx(xid, broker.getDtxManager(), join);
         }
-        dClient.startOk(XA_OK, context.getRequestId());
+        dClient.startOk(XA_OK);//GRS, context.getRequestId());
     } catch (const DtxTimeoutException& e) {
-        dClient.startOk(XA_RBTIMEOUT, context.getRequestId());        
+        dClient.startOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
     }
 }
 
 // DtxCoordinationHandler:
 
-void DtxHandlerImpl::prepare(const MethodContext& context,
-                             u_int16_t /*ticket*/,
+void DtxHandlerImpl::prepare(u_int16_t /*ticket*/,
                              const string& xid)
 {
     try {
         bool ok = broker.getDtxManager().prepare(xid);
-        cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
+        cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK);//GRS, context.getRequestId());
     } catch (const DtxTimeoutException& e) {
-        cClient.prepareOk(XA_RBTIMEOUT, context.getRequestId());        
+        cClient.prepareOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
     }
 }
 
-void DtxHandlerImpl::commit(const MethodContext& context,
-                            u_int16_t /*ticket*/,
+void DtxHandlerImpl::commit(u_int16_t /*ticket*/,
                             const string& xid,
                             bool onePhase)
 {
     try {
         bool ok = broker.getDtxManager().commit(xid, onePhase);
-        cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK, context.getRequestId());
+        cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK);//GRS, context.getRequestId());
     } catch (const DtxTimeoutException& e) {
-        cClient.commitOk(XA_RBTIMEOUT, context.getRequestId());        
+        cClient.commitOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
     }
 }
 
 
-void DtxHandlerImpl::rollback(const MethodContext& context,
-                              u_int16_t /*ticket*/,
+void DtxHandlerImpl::rollback(u_int16_t /*ticket*/,
                               const string& xid )
 {
     try {
         broker.getDtxManager().rollback(xid);
-        cClient.rollbackOk(XA_OK, context.getRequestId());
+        cClient.rollbackOk(XA_OK);//GRS, context.getRequestId());
     } catch (const DtxTimeoutException& e) {
-        cClient.rollbackOk(XA_RBTIMEOUT, context.getRequestId());        
+        cClient.rollbackOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
     }
 }
 
-void DtxHandlerImpl::recover(const MethodContext& context,
-                             u_int16_t /*ticket*/,
+void DtxHandlerImpl::recover(u_int16_t /*ticket*/,
                              bool /*startscan*/,
                              u_int32_t /*endscan*/ )
 {
@@ -177,33 +171,34 @@ void DtxHandlerImpl::recover(const MethodContext& context,
 
     FieldTable response;
     response.setString("xids", data);
-    cClient.recoverOk(response, context.getRequestId());
+    cClient.recoverOk(response);//GRS, context.getRequestId());
 }
 
-void DtxHandlerImpl::forget(const MethodContext& /*context*/,
-                            u_int16_t /*ticket*/,
+void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
                             const string& xid)
 {
     //Currently no heuristic completion is supported, so this should never be used.
     throw ConnectionException(503, boost::format("Forget is invalid. Branch with xid %1% not heuristically completed!") % xid);
 }
 
-void DtxHandlerImpl::getTimeout(const MethodContext& context,
-                                const string& xid)
+void DtxHandlerImpl::getTimeout(const string& xid)
 {
     uint32_t timeout = broker.getDtxManager().getTimeout(xid);
-    cClient.getTimeoutOk(timeout, context.getRequestId());    
+    cClient.getTimeoutOk(timeout);//GRS, context.getRequestId());    
 }
 
 
-void DtxHandlerImpl::setTimeout(const MethodContext& context,
-                                u_int16_t /*ticket*/,
+void DtxHandlerImpl::setTimeout(u_int16_t /*ticket*/,
                                 const string& xid,
                                 u_int32_t timeout)
 {
     broker.getDtxManager().setTimeout(xid, timeout);
-    cClient.setTimeoutOk(context.getRequestId());    
+    cClient.setTimeoutOk();//GRS context.getRequestId());    
 }
 
-
+void DtxHandlerImpl::setResponseTo(framing::RequestId r)
+{
+    dClient.setResponseTo(r);
+    cClient.setResponseTo(r);
+}
 

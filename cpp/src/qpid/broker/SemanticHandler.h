@@ -26,6 +26,7 @@
 #include "Connection.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
 namespace broker {
@@ -37,6 +38,7 @@ class SemanticHandler : private framing::ChannelAdapter, public framing::FrameHa
     Connection& connection;
     Channel channel;
     std::auto_ptr<BrokerAdapter> adapter;
+    framing::SequenceNumber executionMark;
 
     //ChannelAdapter virtual methods:
     void handleMethodInContext(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 

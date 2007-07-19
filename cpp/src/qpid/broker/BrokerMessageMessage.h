@@ -58,9 +58,10 @@ class MessageMessage: public Message{
                  uint64_t deliveryTag, 
                  uint32_t framesize);
     
-    void sendGetOk(const framing::MethodContext& context, 
-				   const std::string& destination,
+    void sendGetOk(framing::ChannelAdapter& channel, 
+                   const std::string& destination,
                    uint32_t messageCount,
+                   uint64_t responseTo, 
                    uint64_t deliveryTag, 
                    uint32_t framesize);
 

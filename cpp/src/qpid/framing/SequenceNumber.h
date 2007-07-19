@@ -18,23 +18,34 @@
  * under the License.
  *
  */
-#include "GetAdapter.h"
-#include "qpid/framing/MethodContext.h"
+#ifndef _framing_SequenceNumber_h
+#define _framing_SequenceNumber_h
 
-using namespace qpid::broker;
-using qpid::framing::ChannelAdapter;
-using qpid::framing::RequestId;
-using qpid::framing::MethodContext;
+#include "amqp_types.h"
 
-GetAdapter::GetAdapter(ChannelAdapter& a, Queue::shared_ptr q, const std::string d, uint32_t f) 
-    : adapter(a), queue(q), destination(d), framesize(f) {}
+namespace qpid {
+namespace framing {
 
-RequestId GetAdapter::getNextDeliveryTag()
+/**
+ * 4-byte sequence number that 'wraps around'.
+ */
+class SequenceNumber
 {
-    return adapter.getNextSendRequestId();
-}
+    int32_t value;
+ public:
+    SequenceNumber();
+    SequenceNumber(uint32_t v);
 
-void GetAdapter::deliver(Message::shared_ptr& msg, framing::RequestId deliveryTag)
-{
-    msg->sendGetOk(adapter, destination, queue->getMessageCount(), 1, deliveryTag, framesize);
-}
+    SequenceNumber& operator++();//prefix ++
+    const SequenceNumber operator++(int);//postfix ++
+    bool operator==(const SequenceNumber& other) const;
+    bool operator!=(const SequenceNumber& other) const;
+    bool operator<(const SequenceNumber& other) const;
+    bool operator>(const SequenceNumber& other) const;
+    uint32_t getValue() const { return (uint32_t) value; }
+};    
+
+}} // namespace qpid::framing
+
+
+#endif

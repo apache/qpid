@@ -225,9 +225,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         Channel channel(connection, 1, &store);
         const string data[] = {"abcde", "fghij", "klmno"};
         
-        Message* msg = new BasicMessage(
-            0, "my_exchange", "my_routing_key", false, false,
-            MockChannel::basicGetBody());
+        Message* msg = new BasicMessage(0, "my_exchange", "my_routing_key", false, false);
 
         store.expect();
         store.stage(*msg);
@@ -347,8 +345,7 @@ class BrokerChannelTest : public CppUnit::TestCase
     Message* createMessage(const string& exchange, const string& routingKey, const string& messageId, uint64_t contentSize)
     {
         BasicMessage* msg = new BasicMessage(
-            0, exchange, routingKey, false, false,
-            MockChannel::basicGetBody());
+            0, exchange, routingKey, false, false);
         AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
         header->setContentSize(contentSize);        
         msg->setHeader(header);
