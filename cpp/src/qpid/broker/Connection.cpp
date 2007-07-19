@@ -104,7 +104,10 @@ void Connection::closeChannel(uint16_t id) {
 FrameHandler::Chains& Connection::getChannel(ChannelId id) {
     ChannelMap::iterator i = channels.find(id);
     if (i == channels.end()) {
-        FrameHandler::Chains chains(new SemanticHandler(id, *this), new OutputHandlerFrameHandler(*out));
+        FrameHandler::Chains chains(
+            new SemanticHandler(id, *this),
+            new OutputHandlerFrameHandler(*out));
+        broker.update(chains);
         i = channels.insert(ChannelMap::value_type(id, chains)).first;
     }        
     return i->second;
