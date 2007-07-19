@@ -11,11 +11,13 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/Cpg.cpp \
   qpid/cluster/Cpg.h \
   qpid/cluster/Dispatchable.h \
-  qpid/cluster/ClusterPluginProvider.cpp \
+  qpid/cluster/ClusterPlugin.cpp \
   qpid/cluster/ClassifierHandler.h \
   qpid/cluster/ClassifierHandler.cpp \
   qpid/cluster/SessionFrame.h \
-  qpid/cluster/SessionFrame.cpp
+  qpid/cluster/SessionFrame.cpp \
+  qpid/cluster/SessionManager.h \
+  qpid/cluster/SessionManager.cpp
 
 libqpidcluster_la_LIBADD= -lcpg libqpidbroker.la
 

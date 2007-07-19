@@ -20,7 +20,6 @@
  */
 
 #include "Broker.h"
-
 #include "Connection.h"
 #include "DirectExchange.h"
 #include "FanOutExchange.h"
@@ -40,11 +39,14 @@
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
 
+#include <boost/bind.hpp>
+
 #include <iostream>
 #include <memory>
 
 using qpid::sys::Acceptor;
 using qpid::framing::HandlerUpdater;
+using qpid::framing::FrameHandler;
 
 namespace qpid {
 namespace broker {
@@ -98,6 +100,12 @@ Broker::Broker(const Broker::Options& conf) :
         store->recover(recoverer);
     }
 
+    // Initialize plugins
+    const Plugin::Plugins& plugins=Plugin::getPlugins();
+    for (Plugin::Plugins::const_iterator i = plugins.begin();
+         i != plugins.end();
+         i++)
+        (*i)->initialize(*this);
 }
 
 
@@ -149,13 +157,14 @@ Acceptor& Broker::getAcceptor() const {
     return *acceptor;
 }
 
-void Broker::use(const shared_ptr<Plugin>& plugin) {
-    shared_ptr<HandlerUpdater> updater=
-        dynamic_pointer_cast<HandlerUpdater>(plugin);
-    if (updater) {
-        QPID_LOG(critical, "HandlerUpdater plugins not implemented");
-        // FIXME aconway 2007-06-28: hook into Connections.
-    }
+void Broker::add(const shared_ptr<HandlerUpdater>& updater) {
+    QPID_LOG(debug, "Broker added HandlerUpdater");
+    handlerUpdaters.push_back(updater);
+}
+
+void Broker::update(FrameHandler::Chains& chains) {
+    for_each(handlerUpdaters.begin(), handlerUpdaters.end(),
+             boost::bind(&HandlerUpdater::update, _1, chains));
 }
 
 }} // namespace qpid::broker

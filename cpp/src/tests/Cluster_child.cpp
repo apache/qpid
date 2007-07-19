@@ -39,7 +39,9 @@ void clusterTwo() {
     BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
 
     AMQFrame frame(VER, 1, new ChannelOkBody(VER));
-    cluster.getSendChains().out->handle(frame);
+    Uuid id(true);
+    SessionFrame sf(id, frame, false);
+    cluster.handle(sf);
     BOOST_REQUIRE(cluster.received.waitFor(2));
     BOOST_CHECK(!cluster.received[1].isIncoming);
     BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.received[1].frame.getBody());

@@ -26,13 +26,15 @@
 namespace qpid {
 namespace framing {
 
-/** Plugin object that can update handler chains. */
-struct HandlerUpdater : public Plugin {
+/** Interface for objects that can update handler chains. */
+struct HandlerUpdater {
+    virtual ~HandlerUpdater() {}
+    
     /** Update the handler chains.
      *@param id Unique identifier for channel or session.
      *@param chains Handler chains to be updated.
      */
-    virtual void update(ChannelId id, FrameHandler::Chains& chains) = 0;
+    virtual void update(FrameHandler::Chains& chains) = 0;
 };
 
 }} // namespace qpid::framing

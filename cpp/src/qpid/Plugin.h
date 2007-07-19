@@ -32,70 +32,56 @@
 namespace qpid {
 class Options;
 
-/** Generic base class to allow dynamic casting of generic Plugin objects
- * to concrete types.
- */
-struct Plugin : private boost::noncopyable {
-    virtual ~Plugin() {}
-};
-
-/** Generic interface for anything that uses plug-ins. */
-struct PluginUser : boost::noncopyable {
-    virtual ~PluginUser() {}
-    /**
-     * Called by a PluginProvider to provide a plugin.
-     *
-     * A concrete PluginUser will dynamic_pointer_cast plugin to a
-     * class it knows how to use. A PluginUser should ignore plugins
-     * it does not recognize.
-     *
-     * The user will release its shared_ptr when it is finished using
-     * plugin.
-     */ 
-    virtual void use(const shared_ptr<Plugin>& plugin) = 0;
-};
-
 /**
- * Base for classes that provide plug-ins.
+ * Plug-in base class.
  */
-class PluginProvider : boost::noncopyable
+class Plugin : boost::noncopyable
 {
   public:
     /**
-     * Register the provider to appear in getProviders()
+     * Base interface for targets that receive plug-ins.
+     *
+     * The Broker is a plug-in target, there might be others
+     * in future.
+     */
+    struct Target { virtual ~Target() {} };
+
+    typedef std::vector<Plugin*> Plugins;
+    
+    /**
+     * Construct registers the plug-in to appear in getPlugins().
      * 
-     * A concrete PluginProvider is instantiated as a global or static
+     * A concrete Plugin is instantiated as a global or static
      * member variable in a library so it is registered during static
      * initialization when the library is loaded.
      */
-    PluginProvider();
+    Plugin();
     
-    virtual ~PluginProvider();
+    virtual ~Plugin();
 
     /**
-     * Returns configuration options for the plugin.
+     * Configuration options for the plugin.
      * Then will be updated during option parsing by the host program.
      * 
      * @return An options group or 0 for no options. Default returns 0.
-     * PluginProvider retains ownership of return value.
+     * Plugin retains ownership of return value.
      */
     virtual Options* getOptions();
 
-    /** Provide plugins to a PluginUser.
+    /**
+     * Initialize Plugin functionality on a Target.
      * 
-     * The provider can dynamic_cast the user if it only provides
-     * plugins to certain types of user. Providers should ignore
-     * users they don't recognize.
+     * Plugins should ignore targets they don't recognize.
      */
-    virtual void provide(PluginUser& user) = 0;
+    virtual void initialize(Target&) = 0;
 
-    /** Get the list of pointers to the registered providers.
-     * Caller must not delete the pointers.
+    /** List of registered Plugin objects.
+     * Caller must not delete plugin pointers.
      */
-    static const std::vector<PluginProvider*>& getProviders();
+    static const Plugins& getPlugins();
 
   private:
-    static std::vector<PluginProvider*> providers;
+    static Plugins plugins;
 };
  
 } // namespace qpid
