@@ -72,7 +72,7 @@ struct QpiddOptions : public Broker::Options
         // Earlier sources get precedence.
         po::store(po::parse_command_line(argc, argv, desc), vm);
         try { 
-            po::store(po::parse_environment(desc, po::env2option), vm);
+            po::store(po::parse_environment(desc, po::EnvMapper(desc)), vm);
         }
         catch (const logic_error& e) {
             throw logic_error(string("parsing environment variables: ")

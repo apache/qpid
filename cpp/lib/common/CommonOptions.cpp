@@ -26,20 +26,20 @@ namespace qpid {
 
 namespace program_options {
 
-char env2optchar(char env) {
-    return (env=='_') ? '-' : tolower(env);
-}
-    
-const std::string envPrefix("QPID_");
+static const std::string prefix("QPID_");
 
-std::string env2option(const std::string& env) {
-    if (env.find(envPrefix) ==0) {
-        std::string opt = env.substr(envPrefix.size());
-        std::transform(opt.begin(), opt.end(), opt.begin(), env2optchar);
-        return opt;
+static char env2optchar(char env) { return (env=='_') ? '-' : tolower(env); }
+
+std::string EnvMapper::operator()(const std::string& env) {
+    if (env.substr(0, prefix.size()) == prefix) {
+        std::string opt = env.substr(prefix.size());
+        transform(opt.begin(), opt.end(), opt.begin(), env2optchar);
+        // Ignore env vars that don't match to known options.
+        if (opts.find_nothrow(opt, false))
+            return opt;
     }
     return std::string();
-} 
+}
 
 } // namespace program_options
 
