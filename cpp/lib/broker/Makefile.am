@@ -27,7 +27,6 @@ INCLUDES =				\
 lib_LTLIBRARIES = libqpidbroker.la
 libqpidbroker_la_LIBADD =			\
   ../common/libqpidcommon.la			\
-  -ldaemon					\
   -lboost_iostreams
 
 libqpidbroker_la_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
