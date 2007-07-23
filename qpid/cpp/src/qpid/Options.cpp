@@ -27,12 +27,13 @@ namespace qpid {
 using namespace std;
 
 namespace {
-const std::string prefix("QPID_");
+
 char env2optchar(char env) { return (env=='_') ? '-' : tolower(env); }
 
 struct Mapper {
     Mapper(const Options& o) : opts(o) {}
     string operator()(const string& env) {
+        static const std::string prefix("QPID_");
         if (env.substr(0, prefix.size()) == prefix) {
             string opt = env.substr(prefix.size());
             transform(opt.begin(), opt.end(), opt.begin(), env2optchar);
@@ -58,7 +59,8 @@ void Options::parse(int argc, char** argv, const std::string& configFile)
     try {
         po::variables_map vm;
         parsing="command line options";
-        po::store(po::parse_command_line(argc, argv, *this), vm);
+        if (argc > 0 && argv != 0)
+            po::store(po::parse_command_line(argc, argv, *this), vm);
         parsing="environment variables";
         po::store(po::parse_environment(*this, Mapper(*this)), vm);
         po::notify(vm); // configFile may be updated from arg/env options.

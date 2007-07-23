@@ -48,20 +48,25 @@ using namespace boost;
 void null_deleter(void*) {}
 
 template <class T>
-struct TestHandler : public Handler<T&>, public vector<T>, public Monitor
+class TestHandler : public Handler<T&>, public vector<T>
 {
+    Monitor lock;
+
+  public:
     void handle(T& frame) {
-        Mutex::ScopedLock l(*this);
+        Mutex::ScopedLock l(lock);
         push_back(frame);
-        notifyAll();
+        BOOST_MESSAGE(getpid()<<" TestHandler::handle: " << this->size());
+        lock.notifyAll();
     }
 
     bool waitFor(size_t n) {
-        Mutex::ScopedLock l(*this);
-        AbsTime deadline(now(), 5*TIME_SEC);
-        while (vector<T>::size() != n && wait(deadline))
+        Mutex::ScopedLock l(lock);
+        BOOST_MESSAGE(getpid()<<" TestHandler::waitFor("<<n<<") "<<this->size());
+        AbsTime deadline(now(), 2*TIME_SEC);
+        while (vector<T>::size() < n && lock.wait(deadline))
             ;
-        return vector<T>::size() == n;
+        return vector<T>::size() >= n;
     }
 };
 

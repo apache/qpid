@@ -85,7 +85,15 @@ Logger& Logger::instance() {
     return boost::details::pool::singleton_default<Logger>::instance();
 }
 
-Logger::Logger() : flags(0) {}
+Logger::Logger() : flags(0) {
+    // Initialize myself from env variables so all programs
+    // (e.g. tests) can use logging even if they don't parse
+    // command line args.
+    Options opts;
+    opts.parse(0, 0);           
+    configure(opts,"");
+}
+
 Logger::~Logger() {}
 
 void Logger::select(const Selector& s) {
@@ -190,6 +198,7 @@ void Logger::remove(Statement& s) {
 
 void Logger::configure(const Options& opts, const std::string& prog)
 {
+    clear();
     Options o(opts);
     if (o.trace)
         o.selectors.push_back("trace+");

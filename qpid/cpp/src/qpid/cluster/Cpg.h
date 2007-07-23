@@ -170,9 +170,14 @@ class Cpg : public Dispatchable {
     Handler& handler;
 };
 
+std::ostream& operator <<(std::ostream& out, const cpg_name& name);
 std::ostream& operator <<(std::ostream& out, const Cpg::Id& id);
 std::ostream& operator <<(std::ostream& out, const std::pair<cpg_address*,int> addresses);
 
+inline bool operator==(const cpg_name& a, const cpg_name& b) {
+    return a.length==b.length &&  strncmp(a.value, b.value, a.length) == 0;
+}
+inline bool operator!=(const cpg_name& a, const cpg_name& b) { return !(a == b); }
 
 }} // namespace qpid::cluster
 
