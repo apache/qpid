@@ -47,13 +47,13 @@ void InMemoryContent::send(ChannelAdapter& channel, uint32_t framesize)
             uint32_t offset = 0;
             for (int chunk = (*i)->size() / framesize; chunk > 0; chunk--) {
                 string data = (*i)->getData().substr(offset, framesize);
-                channel.send(new AMQContentBody(data)); 
+                channel.send(make_shared_ptr(new AMQContentBody(data))); 
                 offset += framesize;
             }
             uint32_t remainder = (*i)->size() % framesize;
             if (remainder) {
                 string data = (*i)->getData().substr(offset, remainder);
-                channel.send(new AMQContentBody(data)); 
+                channel.send(make_shared_ptr(new AMQContentBody(data))); 
             }
         } else {
             AMQBody::shared_ptr contentBody =

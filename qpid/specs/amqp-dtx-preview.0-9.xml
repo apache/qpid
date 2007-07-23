@@ -1040,4 +1040,38 @@
     </method>
   </class>
 
+  <class name="execution" handler="execution" index="140">
+    <doc>
+      This class allows for efficiently communicating information
+      about completion of processing.  
+    </doc>
+
+    <chassis name="server" implement="MUST"/>
+    <chassis name="client" implement="MUST"/>
+
+    <method name="flush" index="10" label="request an execution.complete return method">
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+    </method>
+
+    <method name="complete" index="20">
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+
+      
+      <field name="cumulative-execution-mark" domain="long" label="Low-water mark for command ids">
+        <doc>
+          The low-water mark for executed command-ids. All ids below this mark have been executed;
+          above this mark, there are gaps containing unexecuted command ids (i.e. discontinuous). By
+          definition, the first id above this mark (if it exists) is an unexecuted command-id.
+        </doc>
+      </field>
+
+
+      <!-- The ranged mark on the complete method has been temporarily removed -->
+    </method>
+
+  </class>
+
+
 </amqp>

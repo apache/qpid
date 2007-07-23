@@ -45,14 +45,14 @@ void
 MessageHandlerImpl::cancel(const string& destination )
 {
     channel.cancel(destination);
-    client.ok();//GRS context.getRequestId());
+    client.ok();
 }
 
 void
 MessageHandlerImpl::open(const string& reference)
 {
     references.open(reference);
-    client.ok();//GRS context.getRequestId());
+    client.ok();
 }
 
 void
@@ -60,14 +60,14 @@ MessageHandlerImpl::append(const framing::MethodContext& context)
 {
     MessageAppendBody::shared_ptr body(boost::shared_polymorphic_downcast<MessageAppendBody>(context.methodBody));
     references.get(body->getReference())->append(body);
-    client.ok();//GRS context.getRequestId());
+    client.ok();
 }
 
 void
 MessageHandlerImpl::close(const string& reference)
 {
 	Reference::shared_ptr ref = references.get(reference);
-    client.ok();//GRS context.getRequestId());
+    client.ok();
     
     // Send any transfer messages to their correct exchanges and okay them
     const Reference::Messages& msgs = ref->getMessages();
@@ -85,7 +85,7 @@ MessageHandlerImpl::checkpoint(const string& /*reference*/,
 {
     // Initial implementation (which is conforming) is to do nothing here
     // and return offset zero for the resume
-    client.ok();//GRS context.getRequestId());
+    client.ok();
 }
 
 void
@@ -95,7 +95,7 @@ MessageHandlerImpl::resume(const string& reference,
     // Initial (null) implementation
     // open reference and return 0 offset
     references.open(reference);
-    client.offset(0);//GRS, );//GRS, context.getRequestId());
+    client.offset(0);
 }
 
 void
@@ -123,7 +123,7 @@ MessageHandlerImpl::consume(uint16_t /*ticket*/,
     channel.consume(std::auto_ptr<DeliveryAdapter>(new ConsumeAdapter(adapter, destination, connection.getFrameMax())),
         tag, queue, !noAck, exclusive,
         noLocal ? &connection : 0, &filter);
-    client.ok();//GRS context.getRequestId());
+    client.ok();
     // Dispatch messages as there is now a consumer.
     queue->requestDispatch();
 }
@@ -138,9 +138,9 @@ MessageHandlerImpl::get(uint16_t /*ticket*/,
     
     GetAdapter out(adapter, queue, destination, connection.getFrameMax());
     if(channel.get(out, queue, !noAck))
-        client.ok();//GRS context.getRequestId());
+        client.ok();
     else 
-        client.empty();//GRS context.getRequestId());
+        client.empty();
 }
 
 void
@@ -166,22 +166,19 @@ MessageHandlerImpl::qos(uint32_t prefetchSize,
     //TODO: handle global
     channel.setPrefetchSize(prefetchSize);
     channel.setPrefetchCount(prefetchCount);
-    client.ok();//GRS context.getRequestId());
+    client.ok();
 }
 
 void
 MessageHandlerImpl::recover(bool requeue)
 {
     channel.recover(requeue);
-    client.ok();//GRS context.getRequestId());
+    client.ok();
 }
 
 void
-MessageHandlerImpl::reject(uint16_t /*code*/,
-                           const string& /*text*/ )
+MessageHandlerImpl::reject(uint16_t /*code*/, const string& /*text*/ )
 {
-    //channel.ack();
-    // channel.requeue();
 }
 
 void

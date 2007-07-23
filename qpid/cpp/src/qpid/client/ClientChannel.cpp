@@ -92,10 +92,10 @@ void Channel::protocolInit(
      connection->send(new AMQFrame(0, new ConnectionSecureOkBody(response)));
     **/
 
-    send(new ConnectionTuneOkBody(
+    sendCommand(make_shared_ptr(new ConnectionTuneOkBody(
              version, proposal->getRequestId(),
              proposal->getChannelMax(), connection->getMaxFrameSize(),
-             proposal->getHeartbeat()));
+             proposal->getHeartbeat())));
     
     uint16_t heartbeat = proposal->getHeartbeat();
     connection->connector->setReadTimeout(heartbeat * 2);
@@ -104,7 +104,7 @@ void Channel::protocolInit(
     // Send connection open.
     std::string capabilities;
     responses.expect();
-    send(new ConnectionOpenBody(version, vhost, capabilities, true));
+    sendCommand(make_shared_ptr(new ConnectionOpenBody(version, vhost, capabilities, true)));
     //receive connection.open-ok (or redirect, but ignore that for now
     //esp. as using force=true).
     AMQMethodBody::shared_ptr openResponse = responses.receive();
@@ -210,6 +210,7 @@ AMQMethodBody::shared_ptr method, const MethodContext& ctxt)
           case BasicGetOkBody::CLASS_ID: messaging->handle(method); break;
           case ChannelCloseBody::CLASS_ID: handleChannel(method, ctxt); break;
           case ConnectionCloseBody::CLASS_ID: handleConnection(method); break;
+          case ExecutionCompleteBody::CLASS_ID: handleExecution(method); break;
           default: throw UnknownMethod();
         }
     }
@@ -223,7 +224,7 @@ AMQMethodBody::shared_ptr method, const MethodContext& ctxt)
 void Channel::handleChannel(AMQMethodBody::shared_ptr method, const MethodContext& ctxt) {
     switch (method->amqpMethodId()) {
       case ChannelCloseBody::METHOD_ID:
-          send(new ChannelCloseOkBody(version, ctxt.getRequestId()));
+          sendCommand(make_shared_ptr(new ChannelCloseOkBody(version, ctxt.getRequestId())));
         peerClose(shared_polymorphic_downcast<ChannelCloseBody>(method));
         return;
       case ChannelFlowBody::METHOD_ID:
@@ -239,6 +240,18 @@ void Channel::handleConnection(AMQMethodBody::shared_ptr method) {
         return;
     } 
     throw UnknownMethod();
+}
+
+void Channel::handleExecution(AMQMethodBody::shared_ptr method) {
+    if (method->amqpMethodId() == ExecutionCompleteBody::METHOD_ID) {
+        Monitor::ScopedLock l(outgoingMonitor);
+        //record the completion mark:
+        outgoing.lwm = shared_polymorphic_downcast<ExecutionCompleteBody>(method)->getCumulativeExecutionMark();
+        //TODO: notify anyone waiting for completion notification:
+        outgoingMonitor.notifyAll();
+    } else{
+        throw UnknownMethod();
+    }
 }
 
 void Channel::handleHeader(AMQHeaderBody::shared_ptr body){
@@ -315,7 +328,7 @@ AMQMethodBody::shared_ptr Channel::sendAndReceive(
     AMQMethodBody::shared_ptr toSend, ClassId c, MethodId m)
 {
     responses.expect();
-    send(toSend);
+    sendCommand(toSend);
     return responses.receive(c, m);
 }
 
@@ -325,7 +338,7 @@ AMQMethodBody::shared_ptr Channel::sendAndReceiveSync(
     if(sync)
         return sendAndReceive(body, c, m);
     else {
-        send(body);
+        sendCommand(body);
         return AMQMethodBody::shared_ptr();
     }
 }
@@ -360,5 +373,33 @@ void Channel::setReturnedMessageHandler(ReturnedMessageHandler* handler) {
 
 void Channel::run() {
     messaging->run();
+}
+
+void Channel::sendCommand(AMQBody::shared_ptr body)
+{
+    ++(outgoing.hwm);
+    send(body);
+}
+
+bool Channel::waitForCompletion(SequenceNumber poi, Duration timeout)
+{
+    AbsTime end;
+    if (timeout == 0) {
+        end = AbsTime::FarFuture();
+    } else {
+        end = AbsTime(AbsTime::now(), timeout);
+    }
+
+    Monitor::ScopedLock l(outgoingMonitor);
+    while (end > AbsTime::now() && outgoing.lwm < poi) {
+        outgoingMonitor.wait(end);
+    }
+    return !(outgoing.lwm < poi);
+}
+
+bool Channel::synchWithServer(Duration timeout) 
+{
+    send(make_shared_ptr(new ExecutionFlushBody(version)));
+    return waitForCompletion(outgoing.hwm, timeout);
 }
 
