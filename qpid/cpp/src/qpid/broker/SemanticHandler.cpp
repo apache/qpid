@@ -36,7 +36,7 @@ SemanticHandler::SemanticHandler(ChannelId id, Connection& c) :
 
 
 void SemanticHandler::handle(framing::AMQFrame& frame) 
-{
+{    
     //TODO: assembly etc when move to 0-10 framing
     //
     //have potentially three separate tracks at this point:
@@ -56,14 +56,39 @@ void SemanticHandler::handle(framing::AMQFrame& frame)
     //if ready to execute (i.e. if segment is complete or frame is
     //message content):
     handleBody(frame.getBody());
-    //if the frameset is complete, we can move the execution-mark
-    //forward (not for execution controls)
-    //note: need to be more sophisticated than this if we execute
-    //commands that arrive within an active message frameset
 }
 
 //ChannelAdapter virtual methods:
 void SemanticHandler::handleMethodInContext(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
+                                            const qpid::framing::MethodContext& context)
+{
+    if (!method->invoke(this)) {
+        //else do the usual:
+        handleL4(method, context);
+        //(if the frameset is complete) we can move the execution-mark
+        //forward 
+        ++(incoming.hwm);
+
+        //note: need to be more sophisticated than this if we execute
+        //commands that arrive within an active message frameset (that
+        //can't happen until 0-10 framing is implemented)
+    }
+}
+
+void SemanticHandler::complete(u_int32_t mark) 
+{
+    //just record it for now (will eventually need to use it to ack messages):
+    outgoing.lwm = SequenceNumber(mark);
+}
+
+void SemanticHandler::flush()
+{
+    //flush doubles as a sync to begin with - send an execution.complete
+    incoming.lwm = incoming.hwm;
+    send(make_shared_ptr(new ExecutionCompleteBody(getVersion(), incoming.hwm.getValue())));
+}
+
+void SemanticHandler::handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
                                             const qpid::framing::MethodContext& context)
 {
     try{

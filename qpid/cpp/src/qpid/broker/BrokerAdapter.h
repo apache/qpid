@@ -79,6 +79,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 
     DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
     DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
+    ExecutionHandler* getExecutionHandler() { throw ConnectionException(531, "Wrong adapter for execution layer method!"); }
 
     ConnectionHandler* getConnectionHandler() { 
         throw ConnectionException(503, "Can't access connection class on non-zero channel!");        

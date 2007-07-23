@@ -29,6 +29,7 @@
 #include "ResponseHandler.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/ChannelAdapter.h"
+#include "qpid/framing/SequenceNumber.h"
 #include "qpid/sys/Thread.h"
 #include "AckMode.h"
 
@@ -64,6 +65,8 @@ class Channel : public framing::ChannelAdapter
     Connection* connection;
     sys::Thread dispatcher;
     ResponseHandler responses;
+    sys::Monitor outgoingMonitor;
+    framing::Window outgoing;
 
     uint16_t prefetch;
     const bool transactional;
@@ -84,6 +87,7 @@ class Channel : public framing::ChannelAdapter
         framing::AMQMethodBody::shared_ptr, const framing::MethodContext&);
     void handleChannel(framing::AMQMethodBody::shared_ptr method, const framing::MethodContext& ctxt);
     void handleConnection(framing::AMQMethodBody::shared_ptr method);
+    void handleExecution(framing::AMQMethodBody::shared_ptr method);
 
     void setQos();
 
@@ -114,9 +118,12 @@ class Channel : public framing::ChannelAdapter
                 sync, body, BodyType::CLASS_ID, BodyType::METHOD_ID));
     }
 
+    void sendCommand(framing::AMQBody::shared_ptr body);
+
     void open(framing::ChannelId, Connection&);
     void closeInternal();
     void peerClose(boost::shared_ptr<framing::ChannelCloseBody>);
+    bool waitForCompletion(framing::SequenceNumber, sys::Duration);
     
     // FIXME aconway 2007-02-23: Get rid of friendships.
   friend class Connection;
@@ -358,7 +365,10 @@ class Channel : public framing::ChannelAdapter
      */
     void run();
 
-
+    /**
+     * TESTING ONLY FOR NOW!
+     */
+    bool synchWithServer(sys::Duration timeout = 0);
 };
 
 }}

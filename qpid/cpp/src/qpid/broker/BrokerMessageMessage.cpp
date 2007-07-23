@@ -85,7 +85,7 @@ void MessageMessage::transferMessage(
     if (ref){
 
         // Open
-        channel.send(new MessageOpenBody(channel.getVersion(), ref->getId()));
+        channel.send(make_shared_ptr(new MessageOpenBody(channel.getVersion(), ref->getId())));
         // Appends
         for(Reference::Appends::const_iterator a = ref->getAppends().begin();
             a != ref->getAppends().end();
@@ -98,8 +98,8 @@ void MessageMessage::transferMessage(
             string::size_type contentStart = 0;
             while (sizeleft) {
                 string::size_type contentSize = sizeleft <= framesize ? sizeleft : framesize-overhead;
-                channel.send(new MessageAppendBody(channel.getVersion(), ref->getId(),
-                                                   string(content, contentStart, contentSize)));
+                channel.send(make_shared_ptr(new MessageAppendBody(channel.getVersion(), ref->getId(),
+                                                                   string(content, contentStart, contentSize))));
                 sizeleft -= contentSize;
                 contentStart += contentSize;
             }
@@ -108,7 +108,7 @@ void MessageMessage::transferMessage(
 	
     // The transfer
     if ( transfer->size()<=framesize ) {
-    	channel.send(
+    	channel.send(make_shared_ptr(
             new MessageTransferBody(channel.getVersion(), 
                                     transfer->getTicket(),
                                     consumerTag,
@@ -132,7 +132,7 @@ void MessageMessage::transferMessage(
                                     transfer->getSecurityToken(),
                                     transfer->getApplicationHeaders(),
                                     body,
-                                    transfer->getMandatory()));
+                                    transfer->getMandatory())));
     } else {
         // Thing to do here is to construct a simple reference message then deliver that instead
         // fragmentation will be taken care of in the delivery if necessary;
@@ -172,7 +172,7 @@ void MessageMessage::transferMessage(
     }
     // Close any reference data
     if (ref)
-        channel.send(new MessageCloseBody(channel.getVersion(), ref->getId()));
+        channel.send(make_shared_ptr(new MessageCloseBody(channel.getVersion(), ref->getId())));
 }
 
 void MessageMessage::deliver(

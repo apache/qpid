@@ -52,12 +52,12 @@ void LazyLoadedContent::send(ChannelAdapter& channel, uint32_t framesize)
             string data;
             store->loadContent(*msg, data, offset,
                                remaining > framesize ? framesize : remaining);
-            channel.send(new AMQContentBody(data));
+            channel.send(make_shared_ptr(new AMQContentBody(data)));
         }
     } else {
         string data;
         store->loadContent(*msg, data, 0, expectedSize);  
-        channel.send(new AMQContentBody(data));
+        channel.send(make_shared_ptr(new AMQContentBody(data)));
     }
 }
 
