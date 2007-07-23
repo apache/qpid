@@ -140,6 +140,9 @@ class ClientDelegate(Delegate):
   def connection_close(self, ch, msg):
     self.client.peer.close(msg)
 
+  def execution_complete(self, ch, msg):
+    ch.completion.complete(msg.cumulative_execution_mark)
+
   def close(self, reason):
     self.client.closed = True
     self.client.reason = reason

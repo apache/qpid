@@ -78,10 +78,10 @@ void BasicMessage::deliver(ChannelAdapter& channel,
                            const string& consumerTag, uint64_t deliveryTag, 
                            uint32_t framesize)
 {
-    channel.send(
+    channel.send(make_shared_ptr(
     	new BasicDeliverBody(
             channel.getVersion(), consumerTag, deliveryTag,
-            getRedelivered(), getExchange(), getRoutingKey()));
+            getRedelivered(), getExchange(), getRoutingKey())));
     sendContent(channel, framesize);
 }
 
@@ -92,12 +92,12 @@ void BasicMessage::sendGetOk(ChannelAdapter& channel,
                              uint64_t deliveryTag, 
                              uint32_t framesize)
 {
-    channel.send(
+    channel.send(make_shared_ptr(
         new BasicGetOkBody(
             channel.getVersion(),
             responseTo,
             deliveryTag, getRedelivered(), getExchange(),
-            getRoutingKey(), messageCount)); 
+            getRoutingKey(), messageCount))); 
     sendContent(channel, framesize);
 }
 

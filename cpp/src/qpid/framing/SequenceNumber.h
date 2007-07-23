@@ -48,6 +48,12 @@ class SequenceNumber
     friend int32_t operator-(const SequenceNumber& a, const SequenceNumber& b);
 };    
 
+struct Window 
+{
+    SequenceNumber hwm;
+    SequenceNumber lwm;
+};
+
 }} // namespace qpid::framing
 
 

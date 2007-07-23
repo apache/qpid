@@ -348,6 +348,8 @@ public class CppGenerator extends Generator
             return generateConstructor(thisClass, method, version, 4, 4);
         if (token.equals("${mb_server_operation_invoke}"))
             return generateServerOperationsInvoke(thisClass, method, version, 4, 4);
+        if (token.equals("${mb_server_operation_invoke2}"))
+            return generateServerOperationsInvoke2(thisClass, method, version, 4, 4);
         if (token.equals("${mb_buffer_param}"))
             return method.fieldMap.size() > 0 ? " buffer" : "/*buffer*/";
         if (token.equals("${hv_latest_major}"))
@@ -719,7 +721,7 @@ public class CppGenerator extends Generator
                     sb.append(cr);
                 sb.append(indent + "// ==================== class " + handlerClassName +
                           " ====================" + cr);
-                sb.append(indent + "class " + handlerClassName);
+                sb.append(indent + "class " + handlerClassName + " : public virtual Invocable");
                 if (thisClass.versionSet.size() != globalVersionSet.size())
                     sb.append(" // AMQP Version(s) " + thisClass.versionSet + cr);
                 else
@@ -1085,11 +1087,11 @@ public class CppGenerator extends Generator
         String tab = Utils.createSpaces(tabSize);
         String namespace = version != null ? version.namespace() + "::" : "";
         StringBuffer sb = new StringBuffer();
-        sb.append(indent+tab+(method.isResponse(version) ? "" : "return ")+"channel.send(new ");
+        sb.append(indent+tab+(method.isResponse(version) ? "" : "return ")+"channel.send(make_shared_ptr(new ");
         sb.append(namespace + methodBodyClassName + "( channel.getVersion()");
         if (method.isResponse(version)) sb.append(", responseTo");
         sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, false, true));
-        sb.append("));\n");
+        sb.append(")));\n");
         return sb.toString();           
     }
     
@@ -1502,6 +1504,50 @@ public class CppGenerator extends Generator
                             }
                     }
             }
+        return sb.toString();       
+    }
+    
+    protected String generateServerOperationsInvoke2(AmqpClass thisClass, AmqpMethod method,
+                                                    AmqpVersion version, int indentSize, int tabSize)
+        throws AmqpTypeMappingException
+    {
+        String indent = Utils.createSpaces(indentSize);
+        String tab = Utils.createSpaces(tabSize);
+        StringBuffer sb = new StringBuffer();
+        String ptrType = "AMQP_ServerOperations:: " + thisClass.name + "Handler*";
+        if (isSpecialCase(thisClass.name, method.name)) {
+            sb.append(indent + "bool invoke(Invocable*)" + cr);
+            sb.append(indent + "{" + cr);
+            sb.append(indent + tab + "return false;" + cr);
+            sb.append(indent + "}" + cr);
+        } else if (method.serverMethodFlagMap.size() > 0) { // At least one AMQP version defines this method as a server method
+            
+            Iterator<Boolean> bItr = method.serverMethodFlagMap.keySet().iterator();
+            while (bItr.hasNext())
+                {
+                    if (bItr.next()) // This is a server operation
+                        {
+                            boolean fieldMapNotEmptyFlag = method.fieldMap.size() > 0;
+                            sb.append(indent + "bool invoke(Invocable* target)" + cr);
+                            sb.append(indent + "{" + cr);
+                            sb.append(indent + tab + ptrType + " ptr = dynamic_cast<" + ptrType + ">(target);" + cr);
+                            sb.append(indent + tab + "if (ptr) {" + cr);
+                            sb.append(indent + tab + tab + "ptr->");
+                            sb.append(parseForReservedWords(Utils.firstLower(method.name),null) + "(" + cr);
+                            if (fieldMapNotEmptyFlag)
+                                {
+                                        sb.append(generateFieldList(method.fieldMap, version, false, false, indentSize + 4*tabSize));
+                                        sb.append(indent + tab + tab + tab + tab);                    
+                                }
+                            sb.append(");" + cr);
+                            sb.append(indent + tab + tab + "return true;" + cr);
+                            sb.append(indent + tab + "} else {" + cr);
+                            sb.append(indent + tab + tab + "return false;" + cr);
+                            sb.append(indent + tab + "}" + cr);
+                            sb.append(indent + "}" + cr);
+                        }
+                }
+        }
         return sb.toString();       
     }
     

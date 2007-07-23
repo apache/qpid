@@ -52,6 +52,7 @@ class AMQMethodBody : public AMQBody
     virtual ClassId  amqpClassId() const = 0;
     
     virtual void invoke(AMQP_ServerOperations&, const MethodContext&);
+    virtual bool invoke(Invocable* target);
 
     template <class T> bool isA() {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;

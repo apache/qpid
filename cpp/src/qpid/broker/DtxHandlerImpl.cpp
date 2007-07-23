@@ -52,7 +52,7 @@ const int XA_OK(8);
 void DtxHandlerImpl::select()
 {
     channel.selectDtx();
-    dClient.selectOk();//GRS context.getRequestId());
+    dClient.selectOk();
 }
 
 void DtxHandlerImpl::end(u_int16_t /*ticket*/,
@@ -66,7 +66,7 @@ void DtxHandlerImpl::end(u_int16_t /*ticket*/,
             if (suspend) {
                 throw ConnectionException(503, "End and suspend cannot both be set.");
             } else {
-                dClient.endOk(XA_RBROLLBACK);//GRS, context.getRequestId());
+                dClient.endOk(XA_RBROLLBACK);
             }
         } else {
             if (suspend) {
@@ -74,10 +74,10 @@ void DtxHandlerImpl::end(u_int16_t /*ticket*/,
             } else {
                 channel.endDtx(xid, false);
             }
-            dClient.endOk(XA_OK);//GRS, context.getRequestId());
+            dClient.endOk(XA_OK);
         }
     } catch (const DtxTimeoutException& e) {
-        dClient.endOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
+        dClient.endOk(XA_RBTIMEOUT);        
     }
 }
 
@@ -95,9 +95,9 @@ void DtxHandlerImpl::start(u_int16_t /*ticket*/,
         } else {
             channel.startDtx(xid, broker.getDtxManager(), join);
         }
-        dClient.startOk(XA_OK);//GRS, context.getRequestId());
+        dClient.startOk(XA_OK);
     } catch (const DtxTimeoutException& e) {
-        dClient.startOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
+        dClient.startOk(XA_RBTIMEOUT);        
     }
 }
 
@@ -108,9 +108,9 @@ void DtxHandlerImpl::prepare(u_int16_t /*ticket*/,
 {
     try {
         bool ok = broker.getDtxManager().prepare(xid);
-        cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK);//GRS, context.getRequestId());
+        cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
-        cClient.prepareOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
+        cClient.prepareOk(XA_RBTIMEOUT);        
     }
 }
 
@@ -120,9 +120,9 @@ void DtxHandlerImpl::commit(u_int16_t /*ticket*/,
 {
     try {
         bool ok = broker.getDtxManager().commit(xid, onePhase);
-        cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK);//GRS, context.getRequestId());
+        cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
-        cClient.commitOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
+        cClient.commitOk(XA_RBTIMEOUT);        
     }
 }
 
@@ -132,9 +132,9 @@ void DtxHandlerImpl::rollback(u_int16_t /*ticket*/,
 {
     try {
         broker.getDtxManager().rollback(xid);
-        cClient.rollbackOk(XA_OK);//GRS, context.getRequestId());
+        cClient.rollbackOk(XA_OK);
     } catch (const DtxTimeoutException& e) {
-        cClient.rollbackOk(XA_RBTIMEOUT);//GRS, context.getRequestId());        
+        cClient.rollbackOk(XA_RBTIMEOUT);        
     }
 }
 
@@ -171,7 +171,7 @@ void DtxHandlerImpl::recover(u_int16_t /*ticket*/,
 
     FieldTable response;
     response.setString("xids", data);
-    cClient.recoverOk(response);//GRS, context.getRequestId());
+    cClient.recoverOk(response);
 }
 
 void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
@@ -184,7 +184,7 @@ void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
 void DtxHandlerImpl::getTimeout(const string& xid)
 {
     uint32_t timeout = broker.getDtxManager().getTimeout(xid);
-    cClient.getTimeoutOk(timeout);//GRS, context.getRequestId());    
+    cClient.getTimeoutOk(timeout);    
 }
 
 
@@ -193,7 +193,7 @@ void DtxHandlerImpl::setTimeout(u_int16_t /*ticket*/,
                                 u_int32_t timeout)
 {
     broker.getDtxManager().setTimeout(xid, timeout);
-    cClient.setTimeoutOk();//GRS context.getRequestId());    
+    cClient.setTimeoutOk();    
 }
 
 void DtxHandlerImpl::setResponseTo(framing::RequestId r)

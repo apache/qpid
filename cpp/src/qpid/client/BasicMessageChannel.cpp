@@ -101,7 +101,7 @@ void BasicMessageChannel::cancel(const std::string& tag, bool synch) {
         consumers.erase(i);
     }
     if(c.ackMode == LAZY_ACK && c.lastDeliveryTag > 0) {
-        channel.send(new BasicAckBody(channel.version, c.lastDeliveryTag, true));
+        channel.send(make_shared_ptr(new BasicAckBody(channel.version, c.lastDeliveryTag, true)));
     }
     channel.sendAndReceiveSync<BasicCancelOkBody>(
         synch, make_shared_ptr(new BasicCancelBody(channel.version, tag, !synch)));
@@ -119,9 +119,9 @@ void BasicMessageChannel::cancelAll(){
         Consumer& c = i->second;
         if (c.ackMode == LAZY_ACK && c.lastDeliveryTag > 0)
         {
-            channel.send(new BasicAckBody(channel.version, c.lastDeliveryTag, true));
+            channel.send(make_shared_ptr(new BasicAckBody(channel.version, c.lastDeliveryTag, true)));
         }
-        channel.send(new BasicCancelBody(channel.version, i->first, true));
+        channel.send(make_shared_ptr(new BasicCancelBody(channel.version, i->first, true)));
     }
     consumers.clear();
 }
@@ -131,8 +131,7 @@ bool BasicMessageChannel::get(
 {
     // Prepare for incoming response
     incoming.addDestination(BASIC_GET, destGet);
-    channel.send(
-        new BasicGetBody(channel.version, 0, queue.getName(), ackMode));
+    channel.send(make_shared_ptr(new BasicGetBody(channel.version, 0, queue.getName(), ackMode)));
     bool got = destGet.wait(msg);
     return got;
 }
@@ -150,9 +149,7 @@ void BasicMessageChannel::publish(
         *static_cast<BasicHeaderProperties*>(header->getProperties()), msg);
     header->setContentSize(msg.getData().size());
 
-    channel.send(
-        new BasicPublishBody(
-            channel.version, 0, e, key, mandatory, immediate));
+    channel.send(make_shared_ptr(new BasicPublishBody(channel.version, 0, e, key, mandatory, immediate)));
     channel.send(header);
     string data = msg.getData();
     u_int64_t data_length = data.length();
@@ -160,14 +157,14 @@ void BasicMessageChannel::publish(
         //frame itself uses 8 bytes
         u_int32_t frag_size = channel.connection->getMaxFrameSize() - 8;
         if(data_length < frag_size){
-            channel.send(new AMQContentBody(data));
+            channel.send(make_shared_ptr(new AMQContentBody(data)));
         }else{
             u_int32_t offset = 0;
             u_int32_t remaining = data_length - offset;
             while (remaining > 0) {
                 u_int32_t length = remaining > frag_size ? frag_size : remaining;
                 string frag(data.substr(offset, length));
-                channel.send(new AMQContentBody(frag));                          
+                channel.send(make_shared_ptr(new AMQContentBody(frag)));                          
                 
                 offset += length;
                 remaining = data_length - offset;
@@ -268,11 +265,11 @@ void BasicMessageChannel::deliver(Consumer& consumer, Message& msg){
             //else drop-through
           case AUTO_ACK:
             consumer.lastDeliveryTag = 0;
-            channel.send(
+            channel.send(make_shared_ptr(
                 new BasicAckBody(
                     channel.version,
                     msg.getDeliveryTag(),
-                    multiple));
+                    multiple)));
           case NO_ACK:          // Nothing to do
           case CLIENT_ACK:      // User code must ack.
             break;
