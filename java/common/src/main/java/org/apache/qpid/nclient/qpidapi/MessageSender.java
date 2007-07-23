@@ -22,7 +22,7 @@ import org.apache.qpid.nclient.exception.QpidException;
 
 /**
  * A sender is used to send message to its queue.
- *
+ * <p/>
  * Created by Arnaud Simon
  * Date: 22-Jul-2007
  * Time: 09:41:58
@@ -34,11 +34,11 @@ public interface MessageSender extends Resource
      * Sends a message to this sender queue.
      *
      * @param message The message to be sent
-     * @param inline  //TODO
-     * @throws QpidException If the sender fails to send the message due to some error.
-     * @throws IllegalStateException If this sender was closed or its session suspended. 
+     * @throws QpidException         If the sender fails to send the message due to some error.
+     * @throws IllegalStateException If this sender was closed or its session suspended.
      */
-     public void send(Message message, boolean inline) throws
-                                                       QpidException,
-                                                       IllegalStateException;
+    public void send(Message message)
+            throws
+            QpidException,
+            IllegalStateException;
 }
