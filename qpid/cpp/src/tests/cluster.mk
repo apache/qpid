@@ -20,7 +20,7 @@ check_PROGRAMS+=Cpg
 Cpg_SOURCES=Cpg.cpp
 Cpg_LDADD=$(lib_cluster) -lboost_unit_test_framework
 
-TESTS+=Cluster
+#TESTS+=Cluster
 check_PROGRAMS+=Cluster
 Cluster_SOURCES=Cluster.cpp Cluster.h
 Cluster_LDADD=$(lib_cluster) -lboost_unit_test_framework
