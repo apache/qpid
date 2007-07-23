@@ -115,13 +115,14 @@ Cluster::MemberList Cluster::getMembers() const {
 }
 
 void Cluster::deliver(
-        cpg_handle_t /*handle*/,
-        struct cpg_name* /* group */,
-        uint32_t nodeid,
-        uint32_t pid,
-        void* msg,
-        int msg_len)
+    cpg_handle_t /*handle*/,
+    cpg_name* group,
+    uint32_t nodeid,
+    uint32_t pid,
+    void* msg,
+    int msg_len)
 {
+    assert(name == *group);
     Id from(nodeid, pid);
     Buffer buf(static_cast<char*>(msg), msg_len);
     SessionFrame frame;
@@ -149,26 +150,27 @@ void Cluster::handleClusterFrame(Id from, AMQFrame& frame) {
     ClusterNotifyBody* notifyIn=
         dynamic_cast<ClusterNotifyBody*>(frame.getBody().get());
     assert(notifyIn);
-        MemberList list;
-        {
-            Mutex::ScopedLock l(lock);
+    MemberList list;
+    {
+        Mutex::ScopedLock l(lock);
         shared_ptr<Member>& member=members[from];
         if (!member) 
             member.reset(new Member(notifyIn->getUrl()));
-            else 
+        else 
             member->url = notifyIn->getUrl();
-            lock.notifyAll();
+        lock.notifyAll();
         QPID_LOG(trace, *this << ": members joined: " << members);
-        }
+    }
 }
 
 void Cluster::configChange(
     cpg_handle_t /*handle*/,
-    struct cpg_name */*group*/,
-    struct cpg_address */*current*/, int /*nCurrent*/,
-    struct cpg_address *left, int nLeft,
-    struct cpg_address *joined, int nJoined)
+    cpg_name *group,
+    cpg_address */*current*/, int /*nCurrent*/,
+    cpg_address *left, int nLeft,
+    cpg_address *joined, int nJoined)
 {
+    assert(name == *group);
     bool newMembers=false;
     MemberList updated;
     {

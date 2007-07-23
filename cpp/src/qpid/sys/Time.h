@@ -32,41 +32,43 @@ class Duration;
 
 /** Times in nanoseconds */
 class AbsTime {
+    static int64_t max() { return std::numeric_limits<int64_t>::max(); }
     int64_t time_ns;
-
-	friend class Duration;
+    
+  friend class Duration;
 	
-public:
-	inline AbsTime() {}
-	inline AbsTime(const AbsTime& time0, const Duration& duration);
-	// Default asignment operation fine
-	// Default copy constructor fine
+  public:
+    inline AbsTime() {}
+    inline AbsTime(const AbsTime& time0, const Duration& duration);
+    // Default asignment operation fine
+    // Default copy constructor fine
 	 
-	static AbsTime now();
-	inline static AbsTime FarFuture();
+    static AbsTime now();
+    inline static AbsTime FarFuture();
 
-        friend bool operator<(const AbsTime& a, const AbsTime& b);
-        friend bool operator>(const AbsTime& a, const AbsTime& b);
+  friend bool operator<(const AbsTime& a, const AbsTime& b);
+  friend bool operator>(const AbsTime& a, const AbsTime& b);
 };
 
 class Duration {
+    static int64_t max() { return std::numeric_limits<int64_t>::max(); }
     int64_t nanosecs;
 
-	friend class AbsTime;
+  friend class AbsTime;
 
-public:
-	inline Duration(int64_t time0);
-	inline explicit Duration(const AbsTime& time0);
-	inline explicit Duration(const AbsTime& start, const AbsTime& finish);
-	inline operator int64_t() const;
+  public:
+    inline Duration(int64_t time0);
+    inline explicit Duration(const AbsTime& time0);
+    inline explicit Duration(const AbsTime& start, const AbsTime& finish);
+    inline operator int64_t() const;
 };
 
 
-AbsTime::AbsTime(const AbsTime& time0, const Duration& duration0) :
-	time_ns(time0.time_ns+duration0.nanosecs)
+AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
+    time_ns(d == Duration::max() ? max() : t.time_ns+d.nanosecs)
 {}
 
-AbsTime AbsTime::FarFuture() { AbsTime ff; ff.time_ns = std::numeric_limits<int64_t>::max(); return ff;}
+AbsTime AbsTime::FarFuture() { AbsTime ff; ff.time_ns = max(); return ff;}
 
 inline AbsTime now() { return AbsTime::now(); }
 
@@ -74,15 +76,15 @@ inline bool operator<(const AbsTime& a, const AbsTime& b) { return a.time_ns < b
 inline bool operator>(const AbsTime& a, const AbsTime& b) { return a.time_ns > b.time_ns; }
 
 Duration::Duration(int64_t time0) :
-	nanosecs(time0)
+    nanosecs(time0)
 {}
 
 Duration::Duration(const AbsTime& time0) :
-	nanosecs(time0.time_ns)
+    nanosecs(time0.time_ns)
 {}
 
 Duration::Duration(const AbsTime& start, const AbsTime& finish) :
-	nanosecs(finish.time_ns - start.time_ns)
+    nanosecs(finish.time_ns - start.time_ns)
 {}
 
 Duration::operator int64_t() const

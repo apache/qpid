@@ -82,11 +82,11 @@ struct Callback : public Cpg::Handler {
     }
 };
 
-BOOST_AUTO_TEST_CASE(Cpg_basic) {
+BOOST_AUTO_TEST_CASE(CpgBasic) {
     // Verify basic functionality of cpg. This will catch any
     // openais configuration or permission errors.
     //
-    Cpg::Name group("foo");
+    Cpg::Name group("CpgBasic");
     Callback cb(group.str());
     Cpg cpg(cb);
     cpg.join(group);

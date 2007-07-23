@@ -33,8 +33,8 @@ namespace framing {
 
 AMQP_MethodVersionMap AMQFrame::versionMap;
 
-AMQFrame::AMQFrame(ProtocolVersion _version):
-version(_version)
+AMQFrame::AMQFrame(ProtocolVersion _version)
+    : channel(0), type(0), version(_version)
  {
      assert(version != ProtocolVersion(0,0));
  }

@@ -30,8 +30,6 @@
 
 static const ProtocolVersion VER;
 
-using namespace qpid::log;
-
 /** Verify membership in a cluster with one member. */
 BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
@@ -55,10 +53,15 @@ BOOST_AUTO_TEST_CASE(testClusterOne) {
 
 /** Fork a process to test a cluster with two members */
 BOOST_AUTO_TEST_CASE(testClusterTwo) {
-    pid_t pid=fork();
-    BOOST_REQUIRE(pid >= 0);
-    if (pid) {              // Parent, see Cluster_child.cpp for child.
-        TestCluster cluster("clusterTwo", "amqp::1");
+    bool nofork=getenv("NOFORK") != 0;
+    pid_t pid=0;
+    if (!nofork) {
+        pid = fork();
+        BOOST_REQUIRE(pid >= 0);
+    }
+    if (pid || nofork) {        // Parent
+        BOOST_MESSAGE("Parent start");
+        TestCluster cluster("clusterTwo", "amqp:parent:1");
         BOOST_REQUIRE(cluster.waitFor(2)); // Myself and child.
 
         // Exchange frames with child.
@@ -74,12 +77,14 @@ BOOST_AUTO_TEST_CASE(testClusterTwo) {
         BOOST_REQUIRE(cluster.received.waitFor(2));
         BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.received[1].frame.getBody());
 
-        // Wait for child to exit.
-        int status;
-        BOOST_CHECK_EQUAL(::wait(&status), pid);
-        BOOST_CHECK_EQUAL(0, status);
-        BOOST_CHECK(cluster.waitFor(1));
-        BOOST_CHECK_EQUAL(1u, cluster.size());
+        if (!nofork) {
+            // Wait for child to exit.
+            int status;
+            BOOST_CHECK_EQUAL(::wait(&status), pid);
+            BOOST_CHECK_EQUAL(0, status);
+            BOOST_CHECK(cluster.waitFor(1));
+            BOOST_CHECK_EQUAL(1u, cluster.size());
+        }
     }
     else {                      // Child
         BOOST_REQUIRE(execl("./Cluster_child", "./Cluster_child", NULL));
