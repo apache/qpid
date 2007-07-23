@@ -29,7 +29,7 @@ class so that the generated code can be reused in a variety of
 situations.
 """
 
-import re, textwrap, new, xmlutil
+import re, textwrap, new, mllib
 
 class SpecContainer:
 
@@ -275,21 +275,20 @@ class Field(Metadata):
     self.docs = docs
 
 def get_desc(nd):
-  label = nd.get("@label")
+  label = nd["@label"]
   if not label:
-    label = nd.text
+    label = nd.text()
   if label:
     label = label.strip()
   return label
 
 def get_docs(nd):
-  return [n.text for n in nd["doc"]]
+  return [n.text() for n in nd.query["doc"]]
 
 def load_fields(nd, l, domains):
-  for f_nd in nd["field"]:
-    try:
-      type = f_nd["@domain"]
-    except KeyError:
+  for f_nd in nd.query["field"]:
+    type = f_nd["@domain"]
+    if type == None:
       type = f_nd["@type"]
     type = pythonize(type)
     domain = None
@@ -300,27 +299,27 @@ def load_fields(nd, l, domains):
                 get_desc(f_nd), get_docs(f_nd)))
 
 def load(specfile, *errata):
-  doc = xmlutil.parse(specfile)
-  spec_root = doc["amqp"][0]
+  doc = mllib.xml_parse(specfile)
+  spec_root = doc["amqp"]
   spec = Spec(int(spec_root["@major"]), int(spec_root["@minor"]), specfile)
 
-  for root in [spec_root] + map(lambda x: xmlutil.parse(x)["amqp"][0], errata):
+  for root in [spec_root] + map(lambda x: mllib.xml_parse(x)["amqp"], errata):
     # constants
-    for nd in root["constant"]:
+    for nd in root.query["constant"]:
       const = Constant(spec, pythonize(nd["@name"]), int(nd["@value"]),
-                       nd.get("@class"), get_docs(nd))
+                       nd["@class"], get_docs(nd))
       try:
         spec.constants.add(const)
-      except ValueError, e:  
+      except ValueError, e:
         print "Warning:", e
     # domains are typedefs
-    for nd in root["domain"]:
+    for nd in root.query["domain"]:
       spec.domains.add(Domain(spec, nd.index(), pythonize(nd["@name"]),
                               pythonize(nd["@type"]), get_desc(nd),
                               get_docs(nd)))
 
     # classes
-    for c_nd in root["class"]:
+    for c_nd in root.query["class"]:
       cname = pythonize(c_nd["@name"])
       if spec.classes.byname.has_key(cname):
         klass = spec.classes.byname[cname]
@@ -331,16 +330,16 @@ def load(specfile, *errata):
 
       added_methods = []
       load_fields(c_nd, klass.fields, spec.domains.byname)
-      for m_nd in c_nd["method"]:
+      for m_nd in c_nd.query["method"]:
         mname = pythonize(m_nd["@name"])
         if klass.methods.byname.has_key(mname):
           meth = klass.methods.byname[mname]
         else:
           meth = Method(klass, mname,
                         int(m_nd["@index"]),
-                        m_nd.get_bool("@content", False),
-                        [pythonize(nd["@name"]) for nd in m_nd["response"]],
-                        m_nd.get_bool("@synchronous", False),
+                        m_nd["@content"] == "1",
+                        [pythonize(nd["@name"]) for nd in m_nd.query["response"]],
+                        m_nd["@synchronous"] == "1",
                         get_desc(m_nd),
                         get_docs(m_nd))
           klass.methods.add(meth)
