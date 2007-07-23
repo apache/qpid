@@ -25,6 +25,7 @@
 #include "BrokerChannel.h"
 #include "Connection.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceNumber.h"
 
@@ -34,11 +35,18 @@ namespace broker {
 class BrokerAdapter;
 class framing::ChannelAdapter;
 
-class SemanticHandler : private framing::ChannelAdapter, public framing::FrameHandler {
+class SemanticHandler : private framing::ChannelAdapter, 
+    public framing::FrameHandler, 
+    public framing::AMQP_ServerOperations::ExecutionHandler
+{
     Connection& connection;
     Channel channel;
     std::auto_ptr<BrokerAdapter> adapter;
-    framing::SequenceNumber executionMark;
+    framing::Window incoming;
+    framing::Window outgoing;
+
+    void handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
+                               const qpid::framing::MethodContext& context);
 
     //ChannelAdapter virtual methods:
     void handleMethodInContext(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
@@ -50,6 +58,10 @@ class SemanticHandler : private framing::ChannelAdapter, public framing::FrameHa
 public:
     SemanticHandler(framing::ChannelId id, Connection& c);
     void handle(framing::AMQFrame& frame);
+
+    //execution class method handlers:
+    void complete(u_int32_t cumulativeExecutionMark);    
+    void flush();
 };
 
 }}

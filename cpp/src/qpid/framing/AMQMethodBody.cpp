@@ -36,6 +36,10 @@ void AMQMethodBody::invoke(AMQP_ServerOperations&, const MethodContext&){
     THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
 }
 
+bool AMQMethodBody::invoke(Invocable*) {
+    return false;
+}
+
 AMQMethodBody::shared_ptr AMQMethodBody::create(
     AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
     Buffer& buffer)

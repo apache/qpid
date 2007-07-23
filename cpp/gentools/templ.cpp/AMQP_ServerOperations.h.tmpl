@@ -36,6 +36,13 @@ namespace framing {
 
 class MethodContext;
 
+class Invocable 
+{
+protected:
+    Invocable() {}        
+    virtual ~Invocable() {}        
+};
+
 class AMQP_ServerOperations
 {
 protected:

@@ -78,10 +78,6 @@ class ChannelAdapter : protected BodyHandler {
     RequestId send(shared_ptr<AMQBody> body,
                    Correlator::Action action=Correlator::Action());
 
-    // TODO aconway 2007-04-05:  remove and use make_shared_ptr at call sites.
-    /**@deprecated Use make_shared_ptr with the other send() override */
-    RequestId send(AMQBody* body) { return send(AMQBody::shared_ptr(body)); }
-
     virtual bool isOpen() const = 0;
     
     RequestId getFirstAckRequest() { return requester.getFirstAckRequest(); }

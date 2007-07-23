@@ -56,12 +56,12 @@ ProtocolVersion BrokerAdapter::getVersion() const {
 void BrokerAdapter::ChannelHandlerImpl::open(const string& /*outOfBand*/){
     channel.open();
     // FIXME aconway 2007-01-04: provide valid ID as per ampq 0-9
-    client.openOk(std::string()/* ID */);//GRS, context.getRequestId());
+    client.openOk(std::string()/* ID */);
 } 
         
 void BrokerAdapter::ChannelHandlerImpl::flow(bool active){
     channel.flow(active);
-    client.flowOk(active);//GRS, context.getRequestId());
+    client.flowOk(active);
 }         
 
 void BrokerAdapter::ChannelHandlerImpl::flowOk(bool /*active*/){} 
@@ -70,7 +70,7 @@ void BrokerAdapter::ChannelHandlerImpl::close(uint16_t /*replyCode*/,
     const string& /*replyText*/,
     uint16_t /*classId*/, uint16_t /*methodId*/)
 {
-    client.closeOk();//GRS context.getRequestId());
+    client.closeOk();
     // FIXME aconway 2007-01-18: Following line will "delete this". Ugly.
     connection.closeChannel(channel.getId()); 
 } 
@@ -104,7 +104,7 @@ void BrokerAdapter::ExchangeHandlerImpl::declare(uint16_t /*ticket*/, const stri
         }
     }
     if(!nowait){
-        client.declareOk();//GRS context.getRequestId());
+        client.declareOk();
     }
 }
                 
@@ -114,16 +114,16 @@ void BrokerAdapter::ExchangeHandlerImpl::delete_(uint16_t /*ticket*/,
     Exchange::shared_ptr exchange(broker.getExchanges().get(name));
     if (exchange->isDurable()) broker.getStore().destroy(*exchange);
     broker.getExchanges().destroy(name);
-    if(!nowait) client.deleteOk();//GRS context.getRequestId());
+    if(!nowait) client.deleteOk();
 } 
 
 void BrokerAdapter::ExchangeHandlerImpl::query(u_int16_t /*ticket*/, const string& name)
 {
     try {
         Exchange::shared_ptr exchange(broker.getExchanges().get(name));
-        client.queryOk(exchange->getType(), exchange->isDurable(), false, exchange->getArgs());//GRS, context.getRequestId());
+        client.queryOk(exchange->getType(), exchange->isDurable(), false, exchange->getArgs());
     } catch (const ChannelException& e) {
-        client.queryOk("", false, true, FieldTable());//GRS, context.getRequestId());        
+        client.queryOk("", false, true, FieldTable());        
     }
 }
 
@@ -144,18 +144,18 @@ void BrokerAdapter::BindingHandlerImpl::query(u_int16_t /*ticket*/,
     }
 
     if (!exchange) {
-        client.queryOk(true, false, false, false, false);//GRS, context.getRequestId());
+        client.queryOk(true, false, false, false, false);
     } else if (!queueName.empty() && !queue) {
-        client.queryOk(false, true, false, false, false);//GRS, context.getRequestId());
+        client.queryOk(false, true, false, false, false);
     } else if (exchange->isBound(queue, key.empty() ? 0 : &key, args.count() > 0 ? &args : &args)) {
-            client.queryOk(false, false, false, false, false);//GRS, context.getRequestId());
+            client.queryOk(false, false, false, false, false);
     } else {
         //need to test each specified option individually
         bool queueMatched = queueName.empty() || exchange->isBound(queue, 0, 0);
         bool keyMatched = key.empty() || exchange->isBound(Queue::shared_ptr(), &key, 0);
         bool argsMatched = args.count() == 0 || exchange->isBound(Queue::shared_ptr(), 0, &args);
 
-        client.queryOk(false, false, !queueMatched, !keyMatched, !argsMatched);//GRS, context.getRequestId());
+        client.queryOk(false, false, !queueMatched, !keyMatched, !argsMatched);
     }
 }
 
@@ -196,7 +196,7 @@ void BrokerAdapter::QueueHandlerImpl::declare(uint16_t /*ticket*/, const string&
     if (!nowait) {
         string queueName = queue->getName();
         client.declareOk(
-            queueName, queue->getMessageCount(), queue->getConsumerCount());//GRS, context.getRequestId());
+            queueName, queue->getMessageCount(), queue->getConsumerCount());
     }
 } 
         
@@ -214,7 +214,7 @@ void BrokerAdapter::QueueHandlerImpl::bind(uint16_t /*ticket*/, const string& qu
                 broker.getStore().bind(*exchange, *queue, routingKey, arguments);
             }
         }
-        if(!nowait) client.bindOk();//GRS context.getRequestId());    
+        if(!nowait) client.bindOk();    
     }else{
         throw ChannelException(
             404, "Bind failed. No such exchange: " + exchangeName);
@@ -238,14 +238,14 @@ BrokerAdapter::QueueHandlerImpl::unbind(uint16_t /*ticket*/,
         broker.getStore().unbind(*exchange, *queue, routingKey, arguments);
     }
 
-    client.unbindOk();//GRS context.getRequestId());    
+    client.unbindOk();    
 }
         
 void BrokerAdapter::QueueHandlerImpl::purge(uint16_t /*ticket*/, const string& queueName, bool nowait){
 
     Queue::shared_ptr queue = getQueue(queueName);
     int count = queue->purge();
-    if(!nowait) client.purgeOk( count);//GRS, context.getRequestId());
+    if(!nowait) client.purgeOk( count);
 } 
         
 void BrokerAdapter::QueueHandlerImpl::delete_(uint16_t /*ticket*/, const string& queue, 
@@ -270,7 +270,7 @@ void BrokerAdapter::QueueHandlerImpl::delete_(uint16_t /*ticket*/, const string&
     }
 
     if(!nowait)
-        client.deleteOk(count);//GRS, context.getRequestId());
+        client.deleteOk(count);
 } 
               
         
@@ -280,7 +280,7 @@ void BrokerAdapter::BasicHandlerImpl::qos(uint32_t prefetchSize, uint16_t prefet
     //TODO: handle global
     channel.setPrefetchSize(prefetchSize);
     channel.setPrefetchCount(prefetchCount);
-    client.qosOk();//GRS context.getRequestId());
+    client.qosOk();
 } 
         
 void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/, 
@@ -300,7 +300,7 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
     channel.consume(std::auto_ptr<DeliveryAdapter>(new ConsumeAdapter(adapter, newTag, connection.getFrameMax())),
         newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &fields);
 
-    if(!nowait) client.consumeOk(newTag);//GRS, context.getRequestId());
+    if(!nowait) client.consumeOk(newTag);
 
     //allow messages to be dispatched if required as there is now a consumer:
     queue->requestDispatch();
@@ -309,7 +309,7 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
 void BrokerAdapter::BasicHandlerImpl::cancel(const string& consumerTag, bool nowait){
     channel.cancel(consumerTag);
 
-    if(!nowait) client.cancelOk(consumerTag);//GRS, context.getRequestId());
+    if(!nowait) client.cancelOk(consumerTag);
 } 
         
 void BrokerAdapter::BasicHandlerImpl::publish(uint16_t /*ticket*/, 
@@ -333,7 +333,7 @@ void BrokerAdapter::BasicHandlerImpl::get(uint16_t /*ticket*/, const string& que
     if(!channel.get(out, queue, !noAck)){
         string clusterId;//not used, part of an imatix hack
 
-        client.getEmpty(clusterId);//GRS, context.getRequestId());
+        client.getEmpty(clusterId);
     }
 } 
         
@@ -351,19 +351,19 @@ void BrokerAdapter::BasicHandlerImpl::recover(bool requeue)
 void BrokerAdapter::TxHandlerImpl::select()
 {
     channel.startTx();
-    client.selectOk();//GRS context.getRequestId());
+    client.selectOk();
 }
 
 void BrokerAdapter::TxHandlerImpl::commit()
 {
     channel.commit();
-    client.commitOk();//GRS context.getRequestId());
+    client.commitOk();
 }
 
 void BrokerAdapter::TxHandlerImpl::rollback()
 {    
     channel.rollback();
-    client.rollbackOk();//GRS context.getRequestId());
+    client.rollbackOk();
     channel.recover(false);    
 }
               
@@ -378,7 +378,7 @@ void BrokerAdapter::ChannelHandlerImpl::ok()
 //
 void BrokerAdapter::ChannelHandlerImpl::ping()
 {
-    client.ok();//GRS context.getRequestId());
+    client.ok();
     client.pong();
 }
 
@@ -386,7 +386,7 @@ void BrokerAdapter::ChannelHandlerImpl::ping()
 void
 BrokerAdapter::ChannelHandlerImpl::pong()
 {
-    client.ok();//GRS context.getRequestId());
+    client.ok();
 }
 
 void BrokerAdapter::ChannelHandlerImpl::resume(const string& /*channel*/)

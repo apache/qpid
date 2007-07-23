@@ -35,6 +35,7 @@
 #include "qpid/client/ClientMessage.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/sys/Time.h"
 
 using namespace qpid::client;
 using namespace qpid::sys;
@@ -117,6 +118,11 @@ int main(int argc, char** argv)
 	msg.setData(data);
 	channel.publish(msg, exchange, "MyTopic");
 	if (opts.trace) std::cout << "Published message: " << data << std::endl;
+        if (opts.trace) {
+            std::cout << "Publication " 
+                      << (channel.synchWithServer(qpid::sys::TIME_SEC * 1) ? " DID " : " did NOT ") 
+                      << "complete"  << std::endl;
+        }
 
 	{
             Monitor::ScopedLock l(monitor);
