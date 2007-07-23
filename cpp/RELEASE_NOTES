@@ -13,20 +13,12 @@ http://cwiki.apache.org/confluence/pages/viewpage.action?pageId=28284
 Please take time to go through the README file provided with the distro to get a good understanding about build system etc.
 
 
-Known Issues/Outstanding Work
------------------------------
+Known Issues
+------------
 
 You can view the outstanding task list for Qpid by visiting our JIRA:
 http://issues.apache.org/jira/browse/QPID
 
-Task		QPID-65 	C++ API documentation.
-
-New Feature	QPID-43 	Multiple-AMQP version support in the broker
-
-Improvement	QPID-157 	C++ client example code.
-Improvement	QPID-63 	C++ event queue posix impl.
-
-Bug		QPID-488 	Concurrent access to apr_pools (which are not thread safe)
 Bug		QPID-437 	c++ broker doesn't obey the mandatory flag
 
 
