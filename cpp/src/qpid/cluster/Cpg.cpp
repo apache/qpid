@@ -90,25 +90,22 @@ Cpg::Cpg(Handler& h) : handler(h) {
     cpg_callbacks_t callbacks = { &globalDeliver, &globalConfigChange };
     check(cpg_initialize(&handle, &callbacks), "Cannot initialize CPG");
     handles.put(handle, &handler);
+    QPID_LOG(debug, "Initialize CPG handle " << handle);
 }
 
 Cpg::~Cpg() {
     try {
         shutdown();
     } catch (const std::exception& e) {
-        QPID_LOG(error, string("Exception in Cpg destructor: ")+e.what());
+        QPID_LOG(error, "Exception in Cpg destructor: " << e.what());
     }
 }
 
-struct Cpg::ClearHandleOnExit {
-    ClearHandleOnExit(cpg_handle_t h) : handle(h) {}
-    ~ClearHandleOnExit() { Cpg::handles.put(handle, 0); }
-    cpg_handle_t handle;
-};
-    
 void Cpg::shutdown() {
+    QPID_LOG(debug, "Shutdown CPG handle " << handle);
     if (handles.get(handle)) {
-        ClearHandleOnExit guard(handle); // Exception safe
+        QPID_LOG(debug, "Finalize CPG handle " << handle);
+        handles.put(handle, 0);
         check(cpg_finalize(handle), "Error in shutdown of CPG");
     }
 }
@@ -173,8 +170,11 @@ ostream& operator <<(ostream& out, const Cpg::Id& id) {
     return out << ":" << id.pid();
 }
 
+ostream& operator <<(ostream& out, const cpg_name& name) {
+    return out << string(name.value, name.length);
+}
 
-}} // namespace qpid::cpg
+}} // namespace qpid::cluster
 
 
 
