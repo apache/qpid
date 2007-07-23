@@ -27,8 +27,8 @@
   <property name="generated.dir" location="${generated.path}/${generated.package}" />
   <property name="generated.timestamp" location="${generated.dir}/timestamp" />
   <property name="xml.spec.dir" location="${topDirectoryLocation}/../specs" />
-  <property name="xml.spec.deps" value="amqp.0-8.xml cluster.0-8.xml" />
-  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/cluster.0-8.xml" />
+  <property name="xml.spec.deps" value="amqp.0-8.xml cluster.0-8.xml message.0-9.xml" />
+  <property name="xml.spec.list" value="${xml.spec.dir}/amqp.0-8.xml ${xml.spec.dir}/cluster.0-8.xml ${xml.spec.dir}/message.0-9.xml" />
   	
   <target name="generate" depends="compile_generator,check_generate_deps" unless="generation.notRequired">
     <mkdir dir="${generated.dir}"/>
