@@ -48,7 +48,7 @@ public:
 
     void prepare(u_int16_t ticket, const std::string& xid);
 
-    void recover(u_int16_t ticket, bool startscan, u_int32_t endscan);
+    void recover(u_int16_t ticket, bool startscan, bool endscan);
 
     void rollback(u_int16_t ticket, const std::string& xid);
 

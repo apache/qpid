@@ -52,7 +52,6 @@ const int XA_OK(8);
 void DtxHandlerImpl::select()
 {
     channel.selectDtx();
-    dClient.selectOk();
 }
 
 void DtxHandlerImpl::end(u_int16_t /*ticket*/,
@@ -140,7 +139,7 @@ void DtxHandlerImpl::rollback(u_int16_t /*ticket*/,
 
 void DtxHandlerImpl::recover(u_int16_t /*ticket*/,
                              bool /*startscan*/,
-                             u_int32_t /*endscan*/ )
+                             bool /*endscan*/ )
 {
     //TODO: what do startscan and endscan actually mean?
 
@@ -193,7 +192,6 @@ void DtxHandlerImpl::setTimeout(u_int16_t /*ticket*/,
                                 u_int32_t timeout)
 {
     broker.getDtxManager().setTimeout(xid, timeout);
-    cClient.setTimeoutOk();    
 }
 
 void DtxHandlerImpl::setResponseTo(framing::RequestId r)

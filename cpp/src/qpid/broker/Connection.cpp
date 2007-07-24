@@ -87,6 +87,7 @@ void Connection::closed(){
             broker.getQueues().destroy(q->getName());
             exclusiveQueues.erase(exclusiveQueues.begin());
             q->unbind(broker.getExchanges(), q);
+            q->destroy();
         }
     } catch(std::exception& e) {
         QPID_LOG(error, " Unhandled exception while closing session: " <<

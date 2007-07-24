@@ -40,8 +40,8 @@ public:
 	const qpid::framing::BasicDeliverBody		basic_deliver;
 	const qpid::framing::BasicGetEmptyBody		basic_get_empty;
 	const qpid::framing::BasicGetOkBody		basic_get_ok;
-	const qpid::framing::BasicQosOkBody		basic_qos_ok;
-	const qpid::framing::BasicReturnBody		basic_return;
+	//const qpid::framing::BasicQosOkBody		basic_qos_ok;
+	//const qpid::framing::BasicReturnBody		basic_return;
 	const qpid::framing::ChannelCloseBody		channel_close;
         const qpid::framing::ChannelCloseOkBody		channel_close_ok;
 	const qpid::framing::ChannelFlowBody		channel_flow;
@@ -52,14 +52,14 @@ public:
         const qpid::framing::ConnectionRedirectBody	connection_redirect;
         const qpid::framing::ConnectionStartBody	connection_start;
         const qpid::framing::ConnectionTuneBody		connection_tune;
-	const qpid::framing::ExchangeDeclareOkBody	exchange_declare_ok;      
-	const qpid::framing::ExchangeDeleteOkBody	exchange_delete_ok;
+	//const qpid::framing::ExchangeDeclareOkBody	exchange_declare_ok;      
+	//const qpid::framing::ExchangeDeleteOkBody	exchange_delete_ok;
 	const qpid::framing::QueueDeclareOkBody		queue_declare_ok;
 	const qpid::framing::QueueDeleteOkBody		queue_delete_ok;
-	const qpid::framing::QueueBindOkBody		queue_bind_ok;
-	const qpid::framing::TxCommitOkBody		tx_commit_ok;
-	const qpid::framing::TxRollbackOkBody		tx_rollback_ok;
-	const qpid::framing::TxSelectOkBody		tx_select_ok;
+	//const qpid::framing::QueueBindOkBody		queue_bind_ok;
+	//const qpid::framing::TxCommitOkBody		tx_commit_ok;
+	//const qpid::framing::TxRollbackOkBody		tx_rollback_ok;
+	//const qpid::framing::TxSelectOkBody		tx_select_ok;
 
     MethodBodyInstances(uint8_t major, uint8_t minor) :
     	version(major, minor),
@@ -68,8 +68,8 @@ public:
         basic_deliver(version),
         basic_get_empty(version),
         basic_get_ok(version),
-        basic_qos_ok(version),
-        basic_return(version),
+        //basic_qos_ok(version),
+        //basic_return(version),
         channel_close(version),
         channel_close_ok(version),
         channel_flow(version),
@@ -80,14 +80,14 @@ public:
         connection_redirect(version),
         connection_start(version),
         connection_tune(version),
-        exchange_declare_ok(version),      
-        exchange_delete_ok(version),
+        //exchange_declare_ok(version),      
+        //exchange_delete_ok(version),
         queue_declare_ok(version),
-        queue_delete_ok(version),
-        queue_bind_ok(version),
-        tx_commit_ok(version),
-        tx_rollback_ok(version),
-        tx_select_ok(version)
+        queue_delete_ok(version)//,
+        //queue_bind_ok(version),
+        //tx_commit_ok(version),
+        //tx_rollback_ok(version),
+        //tx_select_ok(version)
     {}
 
 };

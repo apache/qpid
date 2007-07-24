@@ -197,11 +197,6 @@ void BasicMessageChannel::handle(boost::shared_ptr<AMQMethodBody> method) {
           msg.setRedelivered(deliver->getRedelivered());
           return;
       }
-      case BasicReturnBody::METHOD_ID: {
-          incoming.openReference(BASIC_REF);
-          incoming.createMessage(BASIC_RETURN, BASIC_REF);
-          return;
-      }
       case BasicConsumeOkBody::METHOD_ID: {
           Mutex::ScopedLock l(lock);
           BasicConsumeOkBody::shared_ptr consumeOk =
@@ -332,10 +327,9 @@ void BasicMessageChannel::setReturnedMessageHandler(ReturnedMessageHandler* hand
 }
 
 void BasicMessageChannel::setQos(){
-    channel.sendAndReceive<BasicQosOkBody>(
-        make_shared_ptr(new BasicQosBody(channel.version, 0, channel.getPrefetch(), false)));
+    channel.send(make_shared_ptr(new BasicQosBody(channel.version, 0, channel.getPrefetch(), false)));
     if(channel.isTransactional())
-        channel.sendAndReceive<TxSelectOkBody>(make_shared_ptr(new TxSelectBody(channel.version)));
+        channel.send(make_shared_ptr(new TxSelectBody(channel.version)));
 }
 
 }} // namespace qpid::client
