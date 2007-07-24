@@ -19,25 +19,33 @@
  *
  */
 
-#include "qpid/broker/BrokerChannel.h"
 #include "qpid/cluster/SessionFrame.h"
 #include "qpid/framing/HandlerUpdater.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
+
+#include <boost/noncopyable.hpp>
 
 #include <map>
 
 namespace qpid {
+
+namespace broker {
+class Broker;
+}
+
 namespace cluster {
 
 /**
  * Manage sessions and handler chains for the cluster.
  * 
  */
-class SessionManager : public framing::HandlerUpdater, public SessionFrameHandler
+class SessionManager : public framing::HandlerUpdater, public SessionFrameHandler,
+                       private boost::noncopyable
 {
   public:
-    SessionManager();
+    SessionManager(broker::Broker& broker);
 
     /** Set the handler to send to the cluster */
     void setClusterSend(const SessionFrameHandler::Chain& send) { clusterSend=send; }
@@ -52,12 +60,13 @@ class SessionManager : public framing::HandlerUpdater, public SessionFrameHandle
     framing::ChannelId getChannelId(const framing::Uuid&) const;
     
   private:
+    class SessionOperations;
     typedef std::map<framing::Uuid,framing::FrameHandler::Chains> SessionMap;
 
     sys::Mutex lock;
     SessionFrameHandler::Chain clusterSend;
+    framing::FrameHandler::Chain localBroker;
     SessionMap sessions;
-    framing::FrameHandler::Chains nonLocal;
 };
 
 

@@ -52,6 +52,7 @@ struct ClusterConnections : public vector<shared_ptr<Connection> > {
 };
 
 BOOST_AUTO_TEST_CASE(testWiringReplication) {
+    // Declare on one broker, use on others.
     ClusterConnections cluster;
     BOOST_REQUIRE(cluster.size() > 1);
 
@@ -63,13 +64,17 @@ BOOST_AUTO_TEST_CASE(testWiringReplication) {
     broker0.declareExchange(fooEx);
     broker0.declareQueue(fooQ);
     broker0.bind(fooEx, fooQ, "FooKey");
-
-    Channel broker1;
-    cluster[1]->openChannel(broker1);
-    broker1.publish(Message("hello"), fooEx, "FooKey");
-    Message m;
-    BOOST_REQUIRE(broker1.get(m, fooQ));
-    BOOST_REQUIRE_EQUAL(m.getData(), "hello");
+    broker0.close();
+    
+    for (size_t i = 1; i < cluster.size(); ++i) {
+        Channel ch;
+        cluster[i]->openChannel(ch);
+        ch.publish(Message("hello"), fooEx, "FooKey");
+        Message m;
+        BOOST_REQUIRE(ch.get(m, fooQ));
+        BOOST_REQUIRE_EQUAL(m.getData(), "hello");
+        ch.close();
+    }
 }
 
 

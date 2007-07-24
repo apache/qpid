@@ -6,11 +6,9 @@ PORTS=`cat cluster.ports`
 for PORT in $PORTS ; do
     ../qpidd -qp $PORT || ERROR="$ERROR $PORT"
 done
+rm -f cluster.ports
 
 if [ -n "$ERROR" ]; then
     echo "Errors stopping brokers on ports: $ERROR"
-    echo $ERROR > cluster.ports
     exit 1
-else
-    rm cluster.ports
 fi

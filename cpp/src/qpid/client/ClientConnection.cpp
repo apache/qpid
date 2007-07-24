@@ -51,9 +51,6 @@ Connection::Connection(
     isOpen(false), debug(_debug)
 {
     setConnector(defaultConnector);
-    qpid::log::Options o;
-    o.trace = debug;
-    qpid::log::Logger::instance().configure(o, "qpid-c++-client");
 }
 
 Connection::~Connection(){}

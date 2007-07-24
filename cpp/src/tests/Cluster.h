@@ -64,9 +64,9 @@ class TestHandler : public Handler<T&>, public vector<T>
         Mutex::ScopedLock l(lock);
         BOOST_MESSAGE(getpid()<<" TestHandler::waitFor("<<n<<") "<<this->size());
         AbsTime deadline(now(), 2*TIME_SEC);
-        while (vector<T>::size() < n && lock.wait(deadline))
+        while (this->size() < n && lock.wait(deadline))
             ;
-        return vector<T>::size() >= n;
+        return this->size() >= n;
     }
 };
 
