@@ -164,7 +164,7 @@ void Broker::add(const shared_ptr<HandlerUpdater>& updater) {
 
 void Broker::update(FrameHandler::Chains& chains) {
     for_each(handlerUpdaters.begin(), handlerUpdaters.end(),
-             boost::bind(&HandlerUpdater::update, _1, chains));
+             boost::bind(&HandlerUpdater::update, _1, boost::ref(chains)));
 }
 
 }} // namespace qpid::broker

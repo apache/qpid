@@ -18,6 +18,9 @@
 
 #include "Options.h"
 #include "qpid/Exception.h"
+
+#include <boost/bind.hpp>
+
 #include <fstream>
 #include <algorithm>
 #include <iostream>
@@ -28,18 +31,26 @@ using namespace std;
 
 namespace {
 
-char env2optchar(char env) { return (env=='_') ? '-' : tolower(env); }
+struct EnvOptMapper {
+    static bool matchChar(char env, char opt) {
+        return (env==toupper(opt)) || (strchr("-.", opt) && env=='_');
+    }
 
-struct Mapper {
-    Mapper(const Options& o) : opts(o) {}
-    string operator()(const string& env) {
+    static bool matchStr(const string& env, boost::shared_ptr<po::option_description> desc) {
+        return std::equal(env.begin(), env.end(), desc->long_name().begin(), &matchChar);
+    }
+            
+    EnvOptMapper(const Options& o) : opts(o) {}
+    
+    string operator()(const string& envVar) {
         static const std::string prefix("QPID_");
-        if (env.substr(0, prefix.size()) == prefix) {
-            string opt = env.substr(prefix.size());
-            transform(opt.begin(), opt.end(), opt.begin(), env2optchar);
-            // Ignore env vars that don't match to known options.
-            if (opts.find_nothrow(opt, false))
-                return opt;
+        if (envVar.substr(0, prefix.size()) == prefix) {
+            string env = envVar.substr(prefix.size());
+            typedef const std::vector< boost::shared_ptr<po::option_description> > OptDescs;
+            OptDescs::const_iterator i =
+                find_if(opts.options().begin(), opts.options().end(), boost::bind(matchStr, env, _1));
+            if (i != opts.options().end())
+                return (*i)->long_name();
         }
         return string();
     }
@@ -62,7 +73,7 @@ void Options::parse(int argc, char** argv, const std::string& configFile)
         if (argc > 0 && argv != 0)
             po::store(po::parse_command_line(argc, argv, *this), vm);
         parsing="environment variables";
-        po::store(po::parse_environment(*this, Mapper(*this)), vm);
+        po::store(po::parse_environment(*this, EnvOptMapper(*this)), vm);
         po::notify(vm); // configFile may be updated from arg/env options.
         if (!configFile.empty()) {
             parsing="configuration file "+configFile;
