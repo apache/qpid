@@ -145,14 +145,6 @@ class Tag(Node):
       if name == k:
         return v
 
-  def __getitem__(self, name):
-    if name and name[0] == "@":
-      return self.get_attr(name[1:])
-    else:
-      for nd in self.query[name]:
-        return nd
-      return self.get_attr(name)
-
   def dispatch(self, f):
     try:
       method = getattr(f, "do_" + self.name)
@@ -203,6 +195,9 @@ class Filter(View):
     elif predicate[0] == "#":
       type = predicate[1:]
       self.predicate = lambda x: x.is_type(type)
+    elif predicate[0] == "@":
+      name = predicate[1:]
+      self.predicate = lambda x: x[0] == name
     else:
       self.predicate = lambda x: isinstance(x, Tag) and x.name == predicate
 
@@ -231,6 +226,19 @@ class Children(View):
       for child in nd.children:
         yield child
 
+class Attributes(View):
+
+  def __iter__(self):
+    for nd in self.source:
+      for a in nd.attrs:
+        yield a
+
+class Values(View):
+
+  def __iter__(self):
+    for name, value in self.source:
+      yield value
+
 class Query(View):
 
   def __iter__(self):
@@ -245,6 +253,9 @@ class Query(View):
 
     query = self.source
     for p in path:
-      query = Query(Filter(p, Flatten(Children(query))))
+      if isinstance(p, basestring) and p[0] == "@":
+        query = Values(Filter(p, Attributes(query)))
+      else:
+        query = Query(Filter(p, Flatten(Children(query))))
 
     return query
