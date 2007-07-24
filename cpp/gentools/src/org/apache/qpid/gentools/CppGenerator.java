@@ -141,6 +141,21 @@ public class CppGenerator extends Generator
                                                 "8",                                    // size
                                                 "buffer.putLongLong(#)", // encodeExpression
                                                 "# = buffer.getLongLong()")); // decodeExpression
+
+        //some 0-10 types:
+
+        typeMap.put("uuid", new DomainInfo(
+                                              "string",                         // type
+                                              "4 + #.length()",                 // size
+                                              "buffer.putLongString(#)", // encodeExpression
+                                              "buffer.getLongString(#)")); // decodeExpression
+
+        //NB: this is WRONG! but is here as a transitional aid
+        typeMap.put("rfc1982-long-set", new DomainInfo(
+                                            "u_int16_t",                        // type
+                                            "2",                                        // size
+                                            "buffer.putShort(#)",       // encodeExpression
+                                            "# = buffer.getShort()"));  // decodeExpression
     }
 
     public boolean isQuietFlag()

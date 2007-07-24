@@ -60,7 +60,7 @@ public:
     void handle(framing::AMQFrame& frame);
 
     //execution class method handlers:
-    void complete(u_int32_t cumulativeExecutionMark);    
+    void complete(uint32_t cumulativeExecutionMark, uint16_t);    
     void flush();
 };
 

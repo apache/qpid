@@ -72,10 +72,9 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
         throw ConnectionException(540, "File class not implemented");  }
     StreamHandler* getStreamHandler() {
         throw ConnectionException(540, "Stream class not implemented");  }
-    DtxHandler* getDtxHandler() {
-        throw ConnectionException(540, "Dtx class not implemented");  }
     TunnelHandler* getTunnelHandler() {
         throw ConnectionException(540, "Tunnel class not implemented"); }
+    SessionHandler* getSessionHandler() { throw ConnectionException(503, "Session class not implemented yet"); }
 
     DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
     DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
@@ -117,13 +116,16 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
         ExchangeHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
         
         void declare(uint16_t ticket,
-                     const std::string& exchange, const std::string& type, 
-                     bool passive, bool durable, bool autoDelete,
-                     bool internal, bool nowait, 
+                     const std::string& exchange, const std::string& type,
+                     const std::string& alternateExchange, 
+                     bool passive, bool durable, bool autoDelete, 
                      const qpid::framing::FieldTable& arguments); 
         void delete_(uint16_t ticket,
-                     const std::string& exchange, bool ifUnused, bool nowait); 
+                     const std::string& exchange, bool ifUnused); 
         void query(u_int16_t ticket, const string& name);
+      private:
+        void checkType(Exchange::shared_ptr exchange, const std::string& type);
+        void checkAlternate(Exchange::shared_ptr exchange, Exchange::shared_ptr alternate);
     };
 
     class BindingHandlerImpl : 
@@ -147,13 +149,14 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
       public:
         QueueHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
         
-        void declare(uint16_t ticket, const std::string& queue, 
+        void declare(uint16_t ticket, const std::string& queue,
+                     const std::string& alternateExchange, 
                      bool passive, bool durable, bool exclusive, 
                      bool autoDelete, bool nowait,
                      const qpid::framing::FieldTable& arguments); 
         void bind(uint16_t ticket, const std::string& queue, 
                   const std::string& exchange, const std::string& routingKey,
-                  bool nowait, const qpid::framing::FieldTable& arguments); 
+                  const qpid::framing::FieldTable& arguments); 
         void unbind(uint16_t ticket,
                     const std::string& queue,
                     const std::string& exchange,
@@ -186,7 +189,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
                     bool nowait); 
         void publish(uint16_t ticket,
                      const std::string& exchange, const std::string& routingKey, 
-                     bool mandatory, bool immediate); 
+                     bool rejectUnroutable, bool immediate); 
         void get(uint16_t ticket, const std::string& queue,
                  bool noAck); 
         void ack(uint64_t deliveryTag, bool multiple); 

@@ -241,7 +241,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ClientExchange.cpp		\
   qpid/client/ClientQueue.cpp			\
   qpid/client/BasicMessageChannel.cpp		\
-  qpid/client/MessageMessageChannel.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/IncomingMessage.cpp		\
   qpid/client/MessageListener.cpp		\
@@ -329,7 +328,6 @@ nobase_include_HEADERS = \
   qpid/client/IncomingMessage.h \
   qpid/client/MessageChannel.h \
   qpid/client/MessageListener.h \
-  qpid/client/MessageMessageChannel.h \
   qpid/client/MethodBodyInstances.h \
   qpid/client/ResponseHandler.h \
   qpid/client/ReturnedMessageHandler.h \

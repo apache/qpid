@@ -69,7 +69,7 @@ class QueueTest : public CppUnit::TestCase
   public:
     Message::shared_ptr message(std::string exchange, std::string routingKey) {
         return Message::shared_ptr(
-            new BasicMessage(0, exchange, routingKey, true, true));
+            new BasicMessage(0, exchange, routingKey, false, false));
     }
     
     void testConsumers(){

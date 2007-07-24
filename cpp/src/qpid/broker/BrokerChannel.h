@@ -33,6 +33,7 @@
 #include "Consumer.h"
 #include "DeliveryAdapter.h"
 #include "DeliveryRecord.h"
+#include "Deliverable.h"
 #include "DtxBuffer.h"
 #include "DtxManager.h"
 #include "MessageBuilder.h"
@@ -102,7 +103,7 @@ class Channel : public CompletionHandler
     MessageBuilder messageBuilder;//builder for in-progress message
     bool opened;
     bool flowActive;
-	
+    void route(Message::shared_ptr msg, Deliverable& strategy);
     void complete(Message::shared_ptr msg);// completion handler for MessageBuilder
     void record(const DeliveryRecord& delivery);
     bool checkPrefetch(Message::shared_ptr& msg);
