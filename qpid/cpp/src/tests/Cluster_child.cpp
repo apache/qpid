@@ -32,15 +32,14 @@ static const ProtocolVersion VER;
 
 /** Chlid part of Cluster::clusterTwo test */
 void clusterTwo() {
-    TestCluster cluster("clusterTwo", "amqp::2");
+    TestCluster cluster("clusterTwo", "amqp:child:2");
     BOOST_REQUIRE(cluster.received.waitFor(1)); // Frame from parent.
     BOOST_CHECK(cluster.received[0].isIncoming);
     BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *cluster.received[0].frame.getBody());
     BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
 
     AMQFrame frame(VER, 1, new ChannelOkBody(VER));
-    Uuid id(true);
-    SessionFrame sf(id, frame, false);
+    SessionFrame sf(cluster.received[0].uuid, frame, false);
     cluster.handle(sf);
     BOOST_REQUIRE(cluster.received.waitFor(2));
     BOOST_CHECK(!cluster.received[1].isIncoming);

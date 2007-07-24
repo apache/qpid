@@ -75,8 +75,8 @@ class ChannelAdapter : protected BodyHandler {
      *response to this frame.  Ignored if body is not a Request.
      *@return If body is a request, the ID assigned else 0.
      */
-    RequestId send(shared_ptr<AMQBody> body,
-                   Correlator::Action action=Correlator::Action());
+    virtual RequestId send(shared_ptr<AMQBody> body,
+                           Correlator::Action action=Correlator::Action());
 
     virtual bool isOpen() const = 0;
     

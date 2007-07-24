@@ -50,9 +50,10 @@ struct ClusterPlugin : public Plugin {
         // Only provide to a Broker, and only if the --cluster config is set.
         if (broker && !options.clusterName.empty()) {
             assert(!cluster); // A process can only belong to one cluster.
-            sessions.reset(new SessionManager());
+
+            sessions.reset(new SessionManager(*broker));
             cluster.reset(new Cluster(options.clusterName, broker->getUrl(), sessions));
-            sessions->setClusterSend(cluster); // FIXME aconway 2007-07-10: 
+            sessions->setClusterSend(cluster); 
             broker->add(sessions);
         }
     }
