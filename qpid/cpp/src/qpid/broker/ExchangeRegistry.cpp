@@ -72,8 +72,9 @@ void ExchangeRegistry::destroy(const string& name){
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){
     RWlock::ScopedRlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
-    if (i == exchanges.end()) 
-        throw ChannelException(404, "Exchange not found:" + name);
+    if (i == exchanges.end()) {
+        throw ChannelException(404, "Exchange not found: " + name);
+    }
     return i->second;
 }
 

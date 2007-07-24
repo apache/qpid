@@ -29,9 +29,11 @@ DeliverableMessage::DeliverableMessage(Message::shared_ptr& _msg) : msg(_msg)
 void DeliverableMessage::deliverTo(Queue::shared_ptr& queue)
 {
     queue->deliver(msg);    
+    delivered = true;
 }
 
 Message& DeliverableMessage::getMessage()
 {
     return *msg;
 }
+

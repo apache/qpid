@@ -44,6 +44,7 @@ void TxPublish::rollback() throw(){
 
 void TxPublish::deliverTo(Queue::shared_ptr& queue){
     queues.push_back(queue);
+    delivered = true;
 }
 
 TxPublish::Prepare::Prepare(TransactionContext* _ctxt, Message::shared_ptr& _msg) 

@@ -48,7 +48,7 @@ namespace qpid {
 
             explicit Exchange(const string& _name) : name(_name), durable(false), persistenceId(0){}
             Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args) 
-                : name(_name), durable(_durable), args(_args), persistenceId(0){}
+                : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0){}
             virtual ~Exchange(){}
 
             string getName() const { return name; }
@@ -59,6 +59,7 @@ namespace qpid {
             void setAlternate(Exchange::shared_ptr _alternate) { alternate = _alternate; }
             void incAlternateUsers() { alternateUsers++; }
             void decAlternateUsers() { alternateUsers--; }
+            bool inUseAsAlternate() { return alternateUsers > 0; }
 
             virtual string getType() const = 0;
             virtual bool bind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args) = 0;

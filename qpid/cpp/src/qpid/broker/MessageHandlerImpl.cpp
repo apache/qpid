@@ -45,14 +45,14 @@ void
 MessageHandlerImpl::cancel(const string& destination )
 {
     channel.cancel(destination);
-    client.ok();
+    //client.ok();
 }
 
 void
 MessageHandlerImpl::open(const string& reference)
 {
     references.open(reference);
-    client.ok();
+    //client.ok();
 }
 
 void
@@ -60,14 +60,14 @@ MessageHandlerImpl::append(const framing::MethodContext& context)
 {
     MessageAppendBody::shared_ptr body(boost::shared_polymorphic_downcast<MessageAppendBody>(context.methodBody));
     references.get(body->getReference())->append(body);
-    client.ok();
+    //client.ok();
 }
 
 void
 MessageHandlerImpl::close(const string& reference)
 {
-	Reference::shared_ptr ref = references.get(reference);
-    client.ok();
+    Reference::shared_ptr ref = references.get(reference);
+    //client.ok();
     
     // Send any transfer messages to their correct exchanges and okay them
     const Reference::Messages& msgs = ref->getMessages();
@@ -85,7 +85,7 @@ MessageHandlerImpl::checkpoint(const string& /*reference*/,
 {
     // Initial implementation (which is conforming) is to do nothing here
     // and return offset zero for the resume
-    client.ok();
+    //client.ok();
 }
 
 void
@@ -123,7 +123,7 @@ MessageHandlerImpl::consume(uint16_t /*ticket*/,
     channel.consume(std::auto_ptr<DeliveryAdapter>(new ConsumeAdapter(adapter, destination, connection.getFrameMax())),
         tag, queue, !noAck, exclusive,
         noLocal ? &connection : 0, &filter);
-    client.ok();
+    //client.ok();
     // Dispatch messages as there is now a consumer.
     queue->requestDispatch();
 }
@@ -137,10 +137,11 @@ MessageHandlerImpl::get(uint16_t /*ticket*/,
     Queue::shared_ptr queue = getQueue(queueName);
     
     GetAdapter out(adapter, queue, destination, connection.getFrameMax());
-    if(channel.get(out, queue, !noAck))
+    if(channel.get(out, queue, !noAck)) {
         client.ok();
-    else 
+    } else {
         client.empty();
+    }
 }
 
 void
@@ -166,14 +167,14 @@ MessageHandlerImpl::qos(uint32_t prefetchSize,
     //TODO: handle global
     channel.setPrefetchSize(prefetchSize);
     channel.setPrefetchCount(prefetchCount);
-    client.ok();
+    //client.ok();
 }
 
 void
 MessageHandlerImpl::recover(bool requeue)
 {
     channel.recover(requeue);
-    client.ok();
+    //client.ok();
 }
 
 void
@@ -192,7 +193,7 @@ MessageHandlerImpl::transfer(const framing::MethodContext& context)
     if (transfer->getBody().isInline()) {
         MessageMessage::shared_ptr message(new MessageMessage(&connection, requestId, transfer));
         channel.handleInlineTransfer(message);
-         client.ok();
+        client.ok();
     } else { 
         Reference::shared_ptr ref(references.get(transfer->getBody().getValue()));
         MessageMessage::shared_ptr message(new MessageMessage(&connection, requestId, transfer, ref));

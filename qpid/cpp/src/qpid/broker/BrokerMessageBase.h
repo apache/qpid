@@ -165,6 +165,8 @@ class Message : public PersistableMessage{
      */
     virtual void releaseContent(MessageStore* /*store*/) {};
 
+    bool isImmediate() const { return immediate; }
+
   private:
     const ConnectionToken* publisher;
     std::string exchange;

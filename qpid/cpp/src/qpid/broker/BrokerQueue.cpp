@@ -56,8 +56,15 @@ Queue::Queue(const string& _name, bool _autodelete,
 Queue::~Queue(){}
 
 void Queue::deliver(Message::shared_ptr& msg){
-    enqueue(0, msg);
-    process(msg);
+    if (msg->isImmediate() && getConsumerCount() == 0) {
+        if (alternateExchange) {
+            DeliverableMessage deliverable(msg);
+            alternateExchange->route(deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+        }
+    } else {
+        enqueue(0, msg);
+        process(msg);
+    }
 }
 
 void Queue::recover(Message::shared_ptr& msg){
@@ -255,6 +262,7 @@ void Queue::destroy()
                                      &(msg.getMessage().getApplicationHeaders()));
             pop();
         }
+        alternateExchange->decAlternateUsers();
     }
 
     if (store) {
@@ -317,4 +325,9 @@ Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)
 void Queue::setAlternateExchange(boost::shared_ptr<Exchange> exchange)
 {
     alternateExchange = exchange;
+}
+
+boost::shared_ptr<Exchange> Queue::getAlternateExchange()
+{
+    return alternateExchange;
 }

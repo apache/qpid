@@ -155,7 +155,7 @@ namespace qpid {
             const QueuePolicy* const getPolicy();
 
             void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
-
+            boost::shared_ptr<Exchange> getAlternateExchange();
 
             //PersistableQueue support:
             uint64_t getPersistenceId() const;
