@@ -108,13 +108,6 @@ class BrokerTests(TestBase):
             if isinstance(e.args[0], str): self.fail(e)
             self.assertConnectionException(504, e.args[0])
 
-    def test_ping_pong(self):
-        channel = self.channel
-        reply = channel.channel_ping()
-        self.assertEqual(reply.method.klass.name, "channel")
-        self.assertEqual(reply.method.name, "ok")
-        #todo: provide a way to get notified of incoming pongs...
-
     def test_channel_flow(self):
         channel = self.channel
         channel.queue_declare(queue="flow_test_queue", exclusive=True)

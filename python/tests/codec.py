@@ -432,13 +432,6 @@ class FieldTableTestCase(BaseDataTypes):
         """
         self.failUnlessEqual(self.callFunc('encode_table', {'$key1':'value1'}), '\x00\x00\x00\x11\x05$key1S\x00\x00\x00\x06value1', 'valid name value pair encoding FAILED...')
 
-    # -------------------------------------------
-    def test_field_table_invalid_field_name(self):
-        """
-        invalid field name
-        """
-        self.failUnlessRaises(Exception, self.codec.encode_table, {'1key1':'value1'})
-
     # ----------------------------------------------------
     def test_field_table_invalid_field_name_length(self):
         """

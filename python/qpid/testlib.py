@@ -125,6 +125,8 @@ Options:
             self.tests=findmodules("tests")
             if self.use08spec():
                 self.tests+=findmodules("tests_0-8")
+            elif self.spec.major == 0 and self.spec.minor == 10:    
+                self.tests+=findmodules("tests_0-10")
             else:
                 self.tests+=findmodules("tests_0-9")
 
@@ -214,10 +216,10 @@ class TestBase(unittest.TestCase):
             
     def exchange_declare(self, channel=None, ticket=0, exchange='',
                          type='', passive=False, durable=False,
-                         auto_delete=False, internal=False, nowait=False,
+                         auto_delete=False,
                          arguments={}):
         channel = channel or self.channel
-        reply = channel.exchange_declare(ticket, exchange, type, passive, durable, auto_delete, internal, nowait, arguments)
+        reply = channel.exchange_declare(ticket=ticket, exchange=exchange, type=type, passive=passive,durable=durable, auto_delete=auto_delete, arguments=arguments)
         self.exchanges.append((channel,exchange))
         return reply
 

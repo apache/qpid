@@ -237,7 +237,11 @@ class Method(Metadata):
               "long": 0,
               "longlong": 0,
               "timestamp": 0,
-              "content": None}
+              "content": None,
+              "uuid": "",
+              "rfc1982_long": 0,
+              "rfc1982_long_set": 0
+              }
 
   def define_method(self, name):
     g = {Method.METHOD: self}
@@ -306,7 +310,9 @@ def load(specfile, *errata):
   for root in [spec_root] + map(lambda x: mllib.xml_parse(x)["amqp"], errata):
     # constants
     for nd in root.query["constant"]:
-      const = Constant(spec, pythonize(nd["@name"]), int(nd["@value"]),
+      val = nd["@value"]
+      if val.startswith("0x"): continue
+      const = Constant(spec, pythonize(nd["@name"]), int(val),
                        nd["@class"], get_docs(nd))
       try:
         spec.constants.add(const)
