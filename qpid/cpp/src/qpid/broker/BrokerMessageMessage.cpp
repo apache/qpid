@@ -43,7 +43,7 @@ MessageMessage::MessageMessage(
     ConnectionToken* publisher, RequestId requestId_, TransferPtr transfer_
 ) : Message(publisher, transfer_->getDestination(),
             transfer_->getRoutingKey(),
-            transfer_->getMandatory(),
+            transfer_->getRejectUnroutable(),
             transfer_->getImmediate(),
             transfer_),
     requestId(requestId_),
@@ -57,7 +57,7 @@ MessageMessage::MessageMessage(
     ReferencePtr reference_
 ) : Message(publisher, transfer_->getDestination(),
             transfer_->getRoutingKey(),
-            transfer_->getMandatory(),
+            transfer_->getRejectUnroutable(),
             transfer_->getImmediate(),
             transfer_),
     requestId(requestId_),
@@ -113,6 +113,7 @@ void MessageMessage::transferMessage(
                                     transfer->getTicket(),
                                     consumerTag,
                                     getRedelivered(),
+                                    transfer->getRejectUnroutable(),
                                     transfer->getImmediate(),
                                     transfer->getTtl(),
                                     transfer->getPriority(),
@@ -126,13 +127,14 @@ void MessageMessage::transferMessage(
                                     transfer->getReplyTo(),
                                     transfer->getContentType(),
                                     transfer->getContentEncoding(),
+                                    0, /*content-length*/
+                                    string(), /*type*/
                                     transfer->getUserId(),
                                     transfer->getAppId(),
                                     transfer->getTransactionId(),
                                     transfer->getSecurityToken(),
                                     transfer->getApplicationHeaders(),
-                                    body,
-                                    transfer->getMandatory())));
+                                    body)));
     } else {
         // Thing to do here is to construct a simple reference message then deliver that instead
         // fragmentation will be taken care of in the delivery if necessary;
@@ -143,6 +145,7 @@ void MessageMessage::transferMessage(
                                     transfer->getTicket(),
                                     consumerTag,
                                     getRedelivered(),
+                                    transfer->getRejectUnroutable(),
                                     transfer->getImmediate(),
                                     transfer->getTtl(),
                                     transfer->getPriority(),
@@ -156,13 +159,14 @@ void MessageMessage::transferMessage(
                                     transfer->getReplyTo(),
                                     transfer->getContentType(),
                                     transfer->getContentEncoding(),
+                                    0, /*content-length*/
+                                    string(), /*type*/
                                     transfer->getUserId(),
                                     transfer->getAppId(),
                                     transfer->getTransactionId(),
                                     transfer->getSecurityToken(),
                                     transfer->getApplicationHeaders(),
-                                    framing::Content(REFERENCE, refname),
-                                    transfer->getMandatory()));
+                                    framing::Content(REFERENCE, refname)));
         ReferencePtr newRef(new Reference(refname));
         Reference::AppendPtr newAppend(new MessageAppendBody(channel.getVersion(), refname, content));
         newRef->append(newAppend);
@@ -288,6 +292,7 @@ MessageTransferBody* MessageMessage::copyTransfer(const ProtocolVersion& version
                                    transfer->getTicket(),
                                    destination,
                                    getRedelivered(),
+                                   transfer->getRejectUnroutable(),
                                    transfer->getImmediate(),
                                    transfer->getTtl(),
                                    transfer->getPriority(),
@@ -301,13 +306,14 @@ MessageTransferBody* MessageMessage::copyTransfer(const ProtocolVersion& version
                                    transfer->getReplyTo(),
                                    transfer->getContentType(),
                                    transfer->getContentEncoding(),
+                                    0, /*content-length*/
+                                    string(), /*type*/
                                    transfer->getUserId(),
                                    transfer->getAppId(),
                                    transfer->getTransactionId(),
                                    transfer->getSecurityToken(),
                                    transfer->getApplicationHeaders(),
-                                   body,
-                                   transfer->getMandatory());
+                                   body);
 
 }
 

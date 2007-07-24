@@ -67,11 +67,11 @@ public:
     AccessHandler* getAccessHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
     FileHandler* getFileHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
     StreamHandler* getStreamHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    DtxHandler* getDtxHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
     TunnelHandler* getTunnelHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
     DtxCoordinationHandler* getDtxCoordinationHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
     DtxDemarcationHandler* getDtxDemarcationHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
     ExecutionHandler* getExecutionHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
+    SessionHandler* getSessionHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
     framing::ProtocolVersion getVersion() const;
 };
 

@@ -75,7 +75,7 @@ void SemanticHandler::handleMethodInContext(boost::shared_ptr<qpid::framing::AMQ
     }
 }
 
-void SemanticHandler::complete(u_int32_t mark) 
+void SemanticHandler::complete(uint32_t mark, uint16_t /*range- not decoded correctly yet*/) 
 {
     //just record it for now (will eventually need to use it to ack messages):
     outgoing.lwm = SequenceNumber(mark);
@@ -85,7 +85,10 @@ void SemanticHandler::flush()
 {
     //flush doubles as a sync to begin with - send an execution.complete
     incoming.lwm = incoming.hwm;
-    send(make_shared_ptr(new ExecutionCompleteBody(getVersion(), incoming.hwm.getValue())));
+    if (isOpen()) {
+        /*use dummy value for range which is not yet encoded correctly*/
+        send(make_shared_ptr(new ExecutionCompleteBody(getVersion(), incoming.hwm.getValue(), 0)));
+    }
 }
 
 void SemanticHandler::handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 

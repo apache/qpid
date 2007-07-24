@@ -20,7 +20,7 @@
  -
  -->
 
-<amqp major="0" minor="9" port="5672" comment="AMQ protocol 0.80">
+<amqp major="0" minor="10" port="5672">
 
 <class name = "cluster" index = "301">
 

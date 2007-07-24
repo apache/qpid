@@ -27,6 +27,8 @@ namespace qpid {
     namespace broker {
         class Deliverable{
         public:
+            bool delivered;
+            Deliverable() : delivered(false) {}
             virtual void deliverTo(Queue::shared_ptr& queue) = 0;
             virtual ~Deliverable(){}
         };

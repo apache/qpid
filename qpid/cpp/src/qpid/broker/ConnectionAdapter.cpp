@@ -106,15 +106,14 @@ void Handler::open(const string& /*virtualHost*/,
     const string& /*capabilities*/, bool /*insist*/)
 {
     string knownhosts;
-    client.openOk(
-        knownhosts);//GRS, context.getRequestId());
+    client.openOk(knownhosts);
 }
 
         
 void Handler::close(uint16_t /*replyCode*/, const string& /*replyText*/, 
     uint16_t /*classId*/, uint16_t /*methodId*/)
 {
-    client.closeOk();//GRS context.getRequestId());
+    client.closeOk();
     connection.getOutput().close();
 } 
         

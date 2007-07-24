@@ -27,7 +27,6 @@
 #include "MethodBodyInstances.h"
 #include "Connection.h"
 #include "BasicMessageChannel.h"
-#include "MessageMessageChannel.h"
 
 // FIXME aconway 2007-01-26: Evaluate all throws, ensure consistent
 // handling of errors that should close the connection or the channel.
@@ -39,12 +38,18 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
+namespace qpid{
+namespace client{
+
+const std::string empty;
+
+}}
+
 Channel::Channel(bool _transactional, u_int16_t _prefetch, InteropMode mode) :
     connection(0), prefetch(_prefetch), transactional(_transactional), errorCode(200), errorText("Ok"), running(false)
 {
     switch (mode) {
       case AMQP_08: messaging.reset(new BasicMessageChannel(*this)); break;
-      case AMQP_09: messaging.reset(new MessageMessageChannel(*this)); break;
       default: assert(0); QPID_ERROR(INTERNAL_ERROR, "Invalid interop-mode.");
     }
 }
@@ -138,17 +143,14 @@ void Channel::declareExchange(Exchange& exchange, bool synch){
     string name = exchange.getName();
     string type = exchange.getType();
     FieldTable args;
-    sendAndReceiveSync<ExchangeDeclareOkBody>(
-        synch,
-        make_shared_ptr(new ExchangeDeclareBody(
-                            version, 0, name, type, false, false, false, false, !synch, args)));
+    send(make_shared_ptr(new ExchangeDeclareBody(version, 0, name, type, empty, false, false, false, args)));
+    if (synch) synchWithServer();
 }
 
 void Channel::deleteExchange(Exchange& exchange, bool synch){
     string name = exchange.getName();
-    sendAndReceiveSync<ExchangeDeleteOkBody>(
-        synch,
-        make_shared_ptr(new ExchangeDeleteBody(version, 0, name, false, !synch)));
+    send(make_shared_ptr(new ExchangeDeleteBody(version, 0, name, false)));
+    if (synch) synchWithServer();
 }
 
 void Channel::declareQueue(Queue& queue, bool synch){
@@ -158,7 +160,7 @@ void Channel::declareQueue(Queue& queue, bool synch){
         sendAndReceiveSync<QueueDeclareOkBody>(
             synch,
             make_shared_ptr(new QueueDeclareBody(
-                version, 0, name, false/*passive*/, queue.isDurable(),
+                version, 0, name, empty, false/*passive*/, queue.isDurable(),
                 queue.isExclusive(), queue.isAutoDelete(), !synch, args)));
     if(synch) {
         if(queue.getName().length() == 0)
@@ -177,17 +179,16 @@ void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch)
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){
     string e = exchange.getName();
     string q = queue.getName();
-    sendAndReceiveSync<QueueBindOkBody>(
-        synch,
-        make_shared_ptr(new QueueBindBody(version, 0, q, e, key,!synch, args)));
+    send(make_shared_ptr(new QueueBindBody(version, 0, q, e, key, args)));
+    if (synch) synchWithServer();
 }
 
 void Channel::commit(){
-    sendAndReceive<TxCommitOkBody>(make_shared_ptr(new TxCommitBody(version)));
+    send(make_shared_ptr(new TxCommitBody(version)));
 }
 
 void Channel::rollback(){
-    sendAndReceive<TxRollbackOkBody>(make_shared_ptr(new TxRollbackBody(version)));
+    send(make_shared_ptr(new TxRollbackBody(version)));
 }
 
 void Channel::handleMethodInContext(
@@ -206,7 +207,7 @@ AMQMethodBody::shared_ptr method, const MethodContext& ctxt)
     }
     try {
         switch (method->amqpClassId()) {
-          case MessageOkBody::CLASS_ID: 
+          case MessageTransferBody::CLASS_ID: 
           case BasicGetOkBody::CLASS_ID: messaging->handle(method); break;
           case ChannelCloseBody::CLASS_ID: handleChannel(method, ctxt); break;
           case ConnectionCloseBody::CLASS_ID: handleConnection(method); break;
