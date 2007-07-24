@@ -71,6 +71,9 @@ def camel(offset, *args):
 def dromedary(s):
   return s[0].lower() + s[1:]
 
+def scream(*args):
+  return "_".join([a.replace("-", "_").upper() for a in args])
+
 DOMAINS = {}
 
 for d in spec.query["amqp/domain"]:
@@ -81,6 +84,8 @@ def resolve(type):
     return resolve(DOMAINS[type])
   else:
     return type
+
+OPTIONS = {}
 
 class Struct:
 
@@ -123,8 +128,26 @@ class Struct:
 
     out.line()
     out.line("    %s%s(%s) {" % (self.name, isfx, self.parameters()))
+    opts = False
     for type, name in self.fields:
-      out.line("    this.%s = %s;" % (name, name))
+      if not OPTIONS.has_key(name):
+        out.line("        this.%s = %s;" % (name, name))
+      else:
+        opts = True
+    if opts:
+      for type, name in self.fields:
+        if OPTIONS.has_key(name):
+          out.line("        boolean _%s = false;" % name)
+      out.line("        for (int i=0; i < _options.length; i++) {")
+      out.line("            switch (_options[i]) {")
+      for type, name in self.fields:
+        if OPTIONS.has_key(name):
+          out.line("            case %s: _%s=true; break;" % (OPTIONS[name], name))
+      out.line("            }")
+      out.line("        }")
+      for type, name in self.fields:
+        if OPTIONS.has_key(name):
+          out.line("        this.%s = _%s;" % (name, name))
     out.line("    }")
 
     out.line()
@@ -148,23 +171,54 @@ class Struct:
 
 
   def parameters(self):
-    return ", ".join(["%s %s" % (TYPES[type], name) for type, name in self.fields])
+    params = []
+    var = False
+    for type, name in self.fields:
+      if OPTIONS.has_key(name):
+        var = True
+      else:
+        params.append("%s %s" % (TYPES[type], name))
+    if var:
+      params.append("Option ... _options")
+    return ", ".join(params)
 
   def arguments(self):
-    return ", ".join([name for (type, name) in self.fields])
+    args = []
+    var = False
+    for type, name in self.fields:
+      if OPTIONS.has_key(name):
+        var = True
+      else:
+        args.append(name)
+    if var:
+      args.append("_options")
+    return ", ".join(args)
 
+opts = Output(out_dir, out_pkg, "Option")
+opts.line("public enum Option {")
 structs = []
 for m in spec.query["amqp/class/method"]:
   struct = Struct(int(m.parent["@index"])*256 + int(m["@index"]),
                   camel(0, m.parent["@name"], m["@name"]))
   for f in m.query["field"]:
-    struct.field(resolve(f["@domain"]), camel(1, f["@name"]))
+    type = resolve(f["@domain"])
+    name = camel(1, f["@name"])
+    struct.field(type, name)
+    if type == "bit":
+      opt_name = scream(f["@name"])
+      if not OPTIONS.has_key(name):
+        OPTIONS[name] = opt_name
+        opts.line("    %s," % opt_name)
   structs.append(struct)
-  out = Output(out_dir, out_pkg, struct.name)
-  struct.interface(out)
+opts.line("}")
+opts.write()
+
+for s in structs:
+  out = Output(out_dir, out_pkg, s.name)
+  s.interface(out)
   out.write()
-  iout = Output(out_dir, out_pkg, struct.name + isfx)
-  struct.impl(iout)
+  iout = Output(out_dir, out_pkg, s.name + isfx)
+  s.impl(iout)
   iout.write()
 
 fct = Output(out_dir, out_pkg, "StructFactory")
@@ -181,7 +235,7 @@ ifct_name = "StructFactory%s" % isfx
 ifct = Output(out_dir, out_pkg, ifct_name)
 ifct.line("class %s implements StructFactory {" % ifct_name)
 ifct.line("    public Struct create(int type, Decoder dec) {")
-ifct.line("        switch(type) {")
+ifct.line("        switch (type) {")
 for s in structs:
   ifct.line("        case %s.TYPE:" % s.name)
   ifct.line("            return new %s%s(dec);" % (s.name, isfx))
