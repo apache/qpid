@@ -61,6 +61,9 @@ void  ClassifierHandler::handle(AMQFrame& frame) {
     Chain chosen;
     shared_ptr<AMQMethodBody> method =
         dynamic_pointer_cast<AMQMethodBody>(frame.getBody());
+    // FIXME aconway 2007-07-05: Need to stop bypassed frames
+    // from overtaking mcast frames.
+    //
     if (method) 
         chosen=map[fullId(method)];
     if (chosen)

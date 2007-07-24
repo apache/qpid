@@ -34,9 +34,8 @@ Exception::auto_ptr QpidError::clone() const throw() { return Exception::auto_pt
 
 void QpidError::throwSelf() const  { throw *this; }
 
-void QpidError::init() {
-    whatStr = boost::str(boost::format("Error [%d] %s (%s:%d)")
-                         % code % msg % loc.file % loc.line);
+std::string QpidError::message(int code, const std::string& msg, const char* file, int line) {
+    return (boost::format("Error [%d] %s (%s:%d)") % code % msg % file % line).str();
 }
 
 

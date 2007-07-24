@@ -48,16 +48,15 @@ class QpidError : public Exception
 
     template <class T>
     QpidError(int code_, const T& msg_, const SrcLine& loc_) throw()
-        : code(code_), loc(loc_), msg(boost::lexical_cast<std::string>(msg_))
-    { init(); }
+        : Exception(message(code_, boost::lexical_cast<std::string>(msg_), loc_.file.c_str(), loc_.line)),
+          code(code_), loc(loc_), msg(boost::lexical_cast<std::string>(msg_)) {}
         
     ~QpidError() throw();
     Exception::auto_ptr clone() const throw();
     void throwSelf() const;
 
-  private:
-    
-    void init();
+    /** Format message for exception. */
+    static std::string message(int code, const std::string& msg, const char* file, int line);
 };
 
 

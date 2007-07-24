@@ -22,13 +22,18 @@
  */
 
 #include "qpid/Options.h"
+#include "qpid/log/Options.h"
 #include "qpid/Url.h"
+#include "qpid/log/Logger.h"
+
+#include <iostream>
+#include <exception>
 
 namespace qpid {
 
 struct TestOptions : public qpid::Options
 {
-    TestOptions() : Options("Test Options"), host("localhost"), port(TcpAddress::DEFAULT_PORT), clientid("cpp"), trace(false), help(false)
+    TestOptions() : Options("Test Options"), host("localhost"), port(TcpAddress::DEFAULT_PORT), clientid("cpp"), help(false)
     {
         addOptions()
             ("host,h", optValue(host, "HOST"), "Broker host to connect to")
@@ -39,10 +44,26 @@ struct TestOptions : public qpid::Options
             ("clientname,n", optValue(clientid, "ID"), "unique client identifier")
             ("username", optValue(username, "USER"), "user name for broker log in.")
             ("password", optValue(password, "USER"), "password for broker log in.")
-            ("trace,t", optValue(trace), "Turn on debug tracing.")
             ("help", optValue(help), "print this usage statement");
+        add(log);
     }
 
+    /** As well as parsing, print help & exit if required */
+    void parse(int argc, char** argv) {
+        try {
+            qpid::Options::parse(argc, argv);
+        } catch (const std::exception& e) {
+            std::cout << e.what() << std::endl << *this << std::endl;
+            exit(1);
+        }
+        if (help) {
+            std::cout << *this << std::endl;
+            exit(0);
+        }
+        trace = log.trace;
+        qpid::log::Logger::instance().configure(log, argv[0]);
+    }
+    
     std::string host;
     uint16_t port;
     std::string virtualhost;
@@ -51,6 +72,7 @@ struct TestOptions : public qpid::Options
     std::string password;
     bool trace;
     bool help;
+    log::Options log;
 };
 
 }
