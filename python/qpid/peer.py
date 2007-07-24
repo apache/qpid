@@ -189,7 +189,9 @@ class Channel:
     self.completion = ExecutionCompletion()
 
     # Use reliable framing if version == 0-9.
-    self.reliable = (spec.major == 0 and spec.minor == 9)
+    #    (also for 0-10 while transitioning...)
+    self.reliable = (spec.major == 0 and (spec.minor == 9 or spec.minor == 10))
+    self.use_execution_layer = (spec.major == 0 and spec.minor == 10)
     self.synchronous = True
 
   def close(self, reason):
@@ -199,6 +201,7 @@ class Channel:
     self.reason = reason
     self.incoming.close()
     self.responses.close()
+    self.completion.close()
 
   def write(self, frame, content = None):
     if self.closed:
@@ -261,6 +264,11 @@ class Channel:
       
       self.request(frame, self.queue_response, content)
       if not frame.method.responses:
+        if self.use_execution_layer and type.klass.name != "execution":
+          self.execution_flush()
+          self.completion.wait()                  
+          if self.closed:
+            raise Closed(self.reason)
         return None
       try:
         resp = self.responses.get()
@@ -352,6 +360,9 @@ class ExecutionCompletion:
     #the following test is a hack until the track/sub-channel is available
     if method.klass.name != "execution":
       self.command_id = self.sequence.next()
+
+  def close(self):
+    self.completed.set()    
 
   def complete(self, mark):
     self.mark = mark
