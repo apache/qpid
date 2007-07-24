@@ -258,16 +258,8 @@ class Codec:
     codec = Codec(enc)
     if tbl:
       for key, value in tbl.items():
-        # Field names MUST start with a letter, '$' or '#' and may
-        # continue with letters, '$' or '#', digits, or underlines, to
-        # a maximum length of 128 characters.
-
         if len(key) > 128:
           raise ValueError("field table key too long: '%s'" % key)
-
-        m = Codec.KEY_CHECK.match(key)
-        if m == None or m.end() != len(key):
-          raise ValueError("invalid field table key: '%s'" % key)
 
         codec.encode_shortstr(key)
         if isinstance(value, basestring):
@@ -338,3 +330,25 @@ class Codec:
       return self.decode_longstr()
     else:
       return ReferenceId(self.decode_longstr())
+
+  # new domains for 0-10:
+  
+  def encode_uuid(self, s):
+    self.encode_longstr(s)
+
+  def decode_uuid(self):
+    return self.decode_longstr()
+
+  def encode_rfc1982_long(self, s):
+    self.encode_long(s)
+
+  def decode_rfc1982_long(self):
+    return self.decode_long()
+
+  #Not done yet
+  def encode_rfc1982_long_set(self, s):
+    self.encode_short(0)
+
+  def decode_rfc1982_long_set(self):
+    self.decode_short()
+    return 0;
