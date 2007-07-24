@@ -248,8 +248,6 @@ class Codec:
     """
     return self.dec_str("!L")
 
-  KEY_CHECK = re.compile(r"[\$#A-Za-z][\$#A-Za-z0-9_]*")
-
   def encode_table(self, tbl):
     """
     encodes a table data structure in network byte order
@@ -260,7 +258,6 @@ class Codec:
       for key, value in tbl.items():
         if len(key) > 128:
           raise ValueError("field table key too long: '%s'" % key)
-
         codec.encode_shortstr(key)
         if isinstance(value, basestring):
           codec.write("S")
