@@ -82,8 +82,8 @@ public class QpidMessageProducerImpl extends AbstractResource implements QpidMes
 				msgHeaders.getContentType(), //contentType
 				msgHeaders.getCorrelationId(), //correlationId
 				msgHeaders.getDeliveryMode(), //deliveryMode non persistant
-				new AMQShortString(ExchangeDefaults.DIRECT_EXCHANGE_NAME),// destination
-				new AMQShortString(ExchangeDefaults.DIRECT_EXCHANGE_NAME),// exchange
+				msgHeaders.getDestination(),// destination
+				msgHeaders.getExchange(),// exchange
 				msgHeaders.getExpiration(), //expiration
 				msgHeaders.isImmediate(), //immediate
 				msgHeaders.isMandatory(), //mandatory

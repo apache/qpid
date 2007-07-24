@@ -79,7 +79,7 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                 {
                     try
                     {
-                        exchange = exchangeFactory.createExchange(body.exchange, body.type, body.durable,
+                        exchange = exchangeFactory.createExchange(exchangeRegistry,body.exchange, body.type, body.durable,
                                                                   body.passive, body.ticket);
                         exchangeRegistry.registerExchange(exchange);
                     }

@@ -26,7 +26,7 @@ import org.apache.qpid.framing.AMQShortString;
 
 public interface ExchangeFactory
 {
-    Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
+    Exchange createExchange(ExchangeRegistry exchangeRegistry, AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                             int ticket)
             throws AMQException;
 }

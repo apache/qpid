@@ -22,6 +22,10 @@ public class QpidConstants
 
     public final static String FANOUT_EXCHANGE_CLASS = "fanout";
 
+    public final static String SYNAPSE_EXCHANGE_NAME = "amq.synapse";
+
+    public final static String SYNAPSE_EXCHANGE_CLASS = "synapse";
+    
 
     public final static String SYSTEM_MANAGEMENT_EXCHANGE_NAME = "qpid.sysmgmt";
 

@@ -70,7 +70,14 @@ public class QpidMessageConsumerImpl extends AbstractResource implements QpidMes
 	public AMQPApplicationMessage receive()throws QpidException
 	{
 		checkClosed();
-		return _queue.poll();
+		try
+		{
+			return _queue.take();
+		}
+		catch (InterruptedException e)
+		{
+		throw new QpidException("Error occurred while retrieving message",e);
+		}
 	}
 	
 	public AMQPApplicationMessage receive(long timeout, TimeUnit tu)throws QpidException

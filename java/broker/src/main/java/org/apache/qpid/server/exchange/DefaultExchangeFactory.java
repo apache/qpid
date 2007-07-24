@@ -20,19 +20,15 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQChannelException;
-import org.apache.qpid.AMQUnknownExchangeType;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
@@ -48,9 +44,12 @@ public class DefaultExchangeFactory implements ExchangeFactory
         _exchangeClassMap.put(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestWildExchange.class);
         _exchangeClassMap.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS, org.apache.qpid.server.exchange.HeadersExchange.class);
         _exchangeClassMap.put(ExchangeDefaults.FANOUT_EXCHANGE_CLASS, org.apache.qpid.server.exchange.FanoutExchange.class);
+        
+        // I'd rather allow an extention mechanism to register custom exchanges. for standard default exchanges this is fine.
+        _exchangeClassMap.put(new AMQShortString("synapse"), org.apache.qpid.server.exchange.synapse.SynapseExchange.class);
     }
 
-    public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
+    public Exchange createExchange(ExchangeRegistry exchangeRegistry,AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                                    int ticket)
             throws AMQException
     {
@@ -62,7 +61,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
         try
         {
             Exchange e = exchClass.newInstance();
-            e.initialise(_host, exchange, durable, ticket, autoDelete);
+            e.initialise(_host, exchange, durable, ticket, autoDelete, exchangeRegistry);
             return e;
         }
         catch (InstantiationException e)

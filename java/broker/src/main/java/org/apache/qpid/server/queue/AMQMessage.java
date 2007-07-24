@@ -643,4 +643,13 @@ public class AMQMessage
         return _requestId;
     }
 
+    public MessageStore getMessageStore()
+    {
+    	return _store;
+    }
+    
+    public TransactionalContext getTransactionContext()
+    {
+    	return _txnContext;
+    }
 }

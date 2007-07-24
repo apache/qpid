@@ -32,7 +32,7 @@ public interface Exchange
     AMQShortString getName();
     AMQShortString getType();
 
-    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
+    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete, ExchangeRegistry exchangeRegistry) throws AMQException;
 
     boolean isDurable();
 

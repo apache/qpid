@@ -34,12 +34,15 @@ public class ExchangeInitialiser
         define(registry, factory, ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         define(registry, factory, ExchangeDefaults.FANOUT_EXCHANGE_NAME, ExchangeDefaults.FANOUT_EXCHANGE_CLASS);
 
+        //There should be an extention mechanism to register
+        define(registry,factory,new AMQShortString("amq.synapse"),new AMQShortString("synapse"));
+        
         registry.setDefaultExchange(registry.getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME));
     }
 
     private void define(ExchangeRegistry r, ExchangeFactory f,
                         AMQShortString name, AMQShortString type) throws AMQException
     {
-        r.registerExchange(f.createExchange(name, type, true, false, 0));
+        r.registerExchange(f.createExchange(r,name, type, true, false, 0));
     }
 }
