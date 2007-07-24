@@ -56,6 +56,12 @@
                         <configuration>
                             <tasks>
                                 <ant antfile="protocol-version.xml" />
+                                <exec executable="python">
+                                  <arg line="generate"/>
+                                  <arg line="${generated.path}"/>
+                                  <arg line="org.apache.qpidity"/>
+                                  <arg line="${specs.dir}/amqp-transitional.0-10.xml"/>
+                                </exec>
                             </tasks>
                             <sourceRoot>${generated.path}</sourceRoot>
                         </configuration>
