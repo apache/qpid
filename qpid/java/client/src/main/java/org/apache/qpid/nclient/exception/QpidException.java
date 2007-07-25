@@ -30,7 +30,7 @@ public class QpidException extends Exception
      * <p> This error code is set from the AMQP ones.
      * <TODO> So we may want to use the AMQP error code directly.
      */
-    String _errorCode;
+    private String _errorCode;
 
     /**
      * Constructor for a Qpid Exception.
@@ -44,5 +44,15 @@ public class QpidException extends Exception
     {
         super(message, cause);
         _errorCode = errorCode;
+    }
+
+    /**
+     * Get this execption error code.
+     *
+     * @return This exception error code.
+     */
+    public String getErrorCode()
+    {
+        return _errorCode;
     }
 }
