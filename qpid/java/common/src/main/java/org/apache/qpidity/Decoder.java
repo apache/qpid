@@ -33,9 +33,9 @@ public interface Decoder
 {
 
     boolean readBit();
-    byte readOctet();
-    short readShort();
-    int readLong();
+    short readOctet();
+    int readShort();
+    long readLong();
     long readLonglong();
 
     long readTimestamp();
@@ -44,7 +44,7 @@ public interface Decoder
     String readLongstr();
 
     Map<String,?> readTable();
-    Range<Integer>[] readRfc1982LongSet();
+    Range<Long>[] readRfc1982LongSet();
     UUID readUuid();
 
     String readContent();

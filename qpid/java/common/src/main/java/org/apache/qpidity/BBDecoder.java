@@ -34,9 +34,25 @@ import java.util.UUID;
 class BBDecoder implements Decoder
 {
 
+    private static final short unsigned(byte b)
+    {
+        return (short) ((0x100 + b) & 0xFF);
+    }
+
+    private static final int unsigned(short s)
+    {
+        return (0x10000 + s) & 0xFFFF;
+    }
+
+    private static final long unsigned(int i)
+    {
+        return (0x1000000000L + i) & 0xFFFFFFFFL;
+    }
+
     private final ByteBuffer in;
 
-    public BBDecoder(ByteBuffer in) {
+    public BBDecoder(ByteBuffer in)
+    {
         this.in = in;
     }
 
@@ -46,19 +62,19 @@ class BBDecoder implements Decoder
         return false;
     }
 
-    public byte readOctet()
+    public short readOctet()
     {
-        throw new Error("TODO");
+        return unsigned(in.get());
     }
 
-    public short readShort()
+    public int readShort()
     {
-        return in.getShort();
+        return unsigned(in.getShort());
     }
 
-    public int readLong()
+    public long readLong()
     {
-        return in.getInt();
+        return unsigned(in.getInt());
     }
 
     public long readLonglong()
@@ -74,7 +90,7 @@ class BBDecoder implements Decoder
 
     public String readShortstr()
     {
-        byte size = in.get();
+        short size = readOctet();
         byte[] bytes = new byte[size];
         in.get(bytes);
         return new String(bytes);
@@ -82,7 +98,11 @@ class BBDecoder implements Decoder
 
     public String readLongstr()
     {
-        throw new Error("TODO");
+        long size = readLong();
+        assert size <= Integer.MAX_VALUE;
+        byte[] bytes = new byte[(int) size];
+        in.get(bytes);
+        return new String(bytes);
     }
 
     public Map<String,?> readTable()
@@ -91,7 +111,7 @@ class BBDecoder implements Decoder
         return null;
     }
 
-    public Range<Integer>[] readRfc1982LongSet()
+    public Range<Long>[] readRfc1982LongSet()
     {
         throw new Error("TODO");
     }
