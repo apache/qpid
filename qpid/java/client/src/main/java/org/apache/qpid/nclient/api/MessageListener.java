@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.nclient.qpidapi;
+package org.apache.qpid.nclient.api;
 
 /**
  * MessageListeners are used to asynchronously receive messages.
