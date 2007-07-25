@@ -97,11 +97,6 @@ public interface Circuit
      */
     public List<Assertion> applyAssertions(List<Assertion> assertions);
 
-    /*
-     * Sends a message on the test circuit. The exact nature of the message sent is controlled by the test parameters.
-     */
-    // public void send();
-
     /**
      * Runs the default test procedure against the circuit, and checks that all of the specified assertions hold.
      *
