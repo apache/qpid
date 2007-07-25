@@ -3,11 +3,11 @@ SUBDIRS = . tests
 # Generated code
 -include generate.mk
 
-generate.mk $(generated_cpp) $(generated_h): gen
+generate.mk $(generated_cpp) $(generated_h): gen/timestamp
 
-gen: generate.sh $(generator)
+gen/timestamp: generate.sh $(generator)
 	$(srcdir)/generate.sh
-	touch gen
+	touch $@
 
 # Empty rule in case a generator file is renamed/removed.
 $(generator):
