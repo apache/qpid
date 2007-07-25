@@ -28,4 +28,4 @@ import java.nio.ByteBuffer;
  * @author Rafael H. Schloming
  */
 
-abstract class AbstractMethod implements Method {}
+abstract class AbstractMethod extends AbstractStruct implements Method {}
