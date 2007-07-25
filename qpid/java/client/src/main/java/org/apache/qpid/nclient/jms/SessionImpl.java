@@ -22,6 +22,6 @@ package org.apache.qpid.nclient.jms;
  * Date: 25-Jul-2007
  * Time: 12:35:36
  */
-public class SessionImpl
+public class  SessionImpl
 {
 }
