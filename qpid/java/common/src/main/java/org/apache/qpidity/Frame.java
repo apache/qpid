@@ -116,8 +116,7 @@ class Frame
     {
         StringBuilder str = new StringBuilder();
         str.append(String.format
-                   ("[%05d %05d %1d %1d %d%d%d%d]", channel, track, type,
-                    getSize(),
+                   ("[%05d %05d %1d %1d %d%d%d%d]", channel, getSize(), track, type,
                     firstSegment ? 1 : 0, lastSegment ? 1 : 0,
                     firstFrame ? 1 : 0, lastFrame ? 1 : 0));
         ShortBuffer shorts = payload.asShortBuffer();

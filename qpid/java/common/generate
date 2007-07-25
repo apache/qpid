@@ -112,7 +112,7 @@ class Struct:
              (self.name, isfx, self.name))
 
     out.line()
-    out.line("    public int getEncodingType() {")
+    out.line("    public int getEncodedType() {")
     out.line("        return TYPE;")
     out.line("    }")
 
