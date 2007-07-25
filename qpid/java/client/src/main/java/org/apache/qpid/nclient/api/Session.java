@@ -161,7 +161,7 @@ public interface Session
      * @param nowait       nowait
      * @throws QpidException If the session fails to bind the queue due to some error.
      */
-    public void bindQueue(String queueName, String exchangeName, String routingKey, boolean nowait)
+    public void bindQueue(String queueName, String exchangeName, String routingKey)
             throws
             QpidException;
     //Todo: Do we need to define more specific exceptions like exchange does not exist?
@@ -187,7 +187,7 @@ public interface Session
      * @param nowait    nowait
      * @throws QpidException If the session fails to purge the queue due to some error.
      */
-    public void purgeQueue(String queueName, boolean nowait)
+    public void purgeQueue(String queueName)
             throws
             QpidException;
 
@@ -224,7 +224,7 @@ public interface Session
      * @throws QpidException  If the session fails to declare the exchange due to some error.
      * @see DeclareExchangeOption
      */
-    public void declareExchange(String exchangeName, String exchangeClass, DeclareExchangeOption... options)
+    public void declareExchange(String exchangeName, String exchangeClass, String alternateExchange, DeclareExchangeOption... options)
             throws
             QpidException;
     //Todo: Do we need to define more specific exceptions like exchange already exist?
