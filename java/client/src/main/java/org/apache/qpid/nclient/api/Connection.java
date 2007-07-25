@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,7 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.nclient.qpidapi;
+package org.apache.qpid.nclient.api;
+
+
+
 
 import org.apache.qpid.nclient.exception.QpidException;
 
@@ -35,7 +38,7 @@ public interface Connection
      * Establish the connection with the broker identified by the provided URL.
      *
      * @param url The URL of the broker.
-     * @throws QpidException If the communication layer fails to connect with the broker.
+     * @throws org.apache.qpid.nclient.exception.QpidException If the communication layer fails to connect with the broker.
      */
     public void connect(URL url)
             throws
@@ -78,4 +81,12 @@ public interface Connection
     public DtxSession createDTXSession(int expiryInSeconds)
             throws
             QpidException;
+
+    /**
+     * If the communication layer detects a serious problem with a connection, it
+     * informs the connection's ExceptionListener
+     *
+     * @param exceptionListner The execptionListener
+     */
+    public void setExceptionListener(ExceptionListener exceptionListner);
 }

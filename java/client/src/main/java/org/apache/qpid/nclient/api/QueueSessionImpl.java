@@ -1,5 +1,4 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one
+/* Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -18,37 +17,13 @@
  */
 package org.apache.qpid.nclient.api;
 
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpid.nclient.jms.SessionImpl;
 
 /**
- * A Resource is associated with a session and can be independently closed.
- *
  * Created by Arnaud Simon
- * Date: 21-Jul-2007
- * Time: 09:41:30
+ * Date: 25-Jul-2007
+ * Time: 13:38:58
  */
-public interface Resource
+public class QueueSessionImpl extends SessionImpl
 {
-
-    /**
-     * Close this resource.
-     *
-     * @throws QpidException If the session fails to close this resource due to some error
-     */
-    public void close() throws
-                        QpidException;
-
-    /**
-     * Get this resource session.
-     *
-     * @return This resource's session. 
-     */
-    public Session  getSession();
-
-    /**
-     * Get the queue name to which this resource is tied.
-     *
-     * @return The queue name of this resource. 
-     */
-    public String getQueueNAme();
 }
