@@ -45,19 +45,22 @@ class BBEncoder implements Encoder
         //throw new Error("TODO");
     }
 
-    public void writeOctet(byte b)
+    public void writeOctet(short b)
     {
-        out.put(b);
+        assert b < 0x100;
+        out.put((byte) b);
     }
 
-    public void writeShort(short s)
+    public void writeShort(int s)
     {
-        out.putShort(s);
+        assert s < 0x10000;
+        out.putShort((short) s);
     }
 
-    public void writeLong(int i)
+    public void writeLong(long i)
     {
-        out.putInt(i);
+        assert i < 0x100000000L;
+        out.putInt((int) i);
     }
 
     public void writeLonglong(long l)
@@ -77,13 +80,14 @@ class BBEncoder implements Encoder
         if (s.length() > 255) {
             throw new IllegalArgumentException(s);
         }
-        writeOctet((byte) s.length());
+        writeOctet((short) s.length());
         out.put(s.getBytes());
     }
 
     public void writeLongstr(String s)
     {
-        throw new Error("TODO");
+        writeLong(s.length());
+        out.put(s.getBytes());
     }
 
 
@@ -92,7 +96,7 @@ class BBEncoder implements Encoder
         //throw new Error("TODO");
     }
 
-    public void writeRfc1982LongSet(Range<Integer>[] ranges)
+    public void writeRfc1982LongSet(Range<Long>[] ranges)
     {
         throw new Error("TODO");
     }
