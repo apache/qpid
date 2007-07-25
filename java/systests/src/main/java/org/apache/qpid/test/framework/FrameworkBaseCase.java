@@ -25,16 +25,13 @@ import junit.framework.TestCase;
 import org.apache.log4j.NDC;
 
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.interop.coordinator.sequencers.TestCaseSequencer;
+import org.apache.qpid.test.framework.sequencers.TestCaseSequencer;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.test.framework.localcircuit.CircuitImpl;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
-import javax.jms.JMSException;
-import javax.jms.Message;
-
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 

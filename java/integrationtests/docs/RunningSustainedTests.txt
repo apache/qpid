@@ -9,7 +9,7 @@ Run the tests as per the integration tests.
 - Start a broker
 - Start at least one test client [java org.apache.qpid.interop.TestClient], ensuring unique naming.
 
-- Start the test coordinator with the 'fanout' engine, on the sustained test case [java org.apache.qpid.interop.coordinator.Coordinator]
+- Start the test coordinator with the 'fanout' engine, on the sustained test case [java org.apache.qpid.test.framework.distributedtesting.Coordinator]
 
 - Additional Test clients can be started and joined into the running test:  [java org.apache.qpid.interop.TestClient -j]
 

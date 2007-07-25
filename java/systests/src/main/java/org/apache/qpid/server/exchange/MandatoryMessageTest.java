@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.interop.coordinator.sequencers.TestCaseSequencer;
+import org.apache.qpid.test.framework.sequencers.TestCaseSequencer;
 import org.apache.qpid.test.framework.Circuit;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;

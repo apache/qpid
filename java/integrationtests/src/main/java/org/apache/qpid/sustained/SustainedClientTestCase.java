@@ -24,8 +24,8 @@ import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
-import org.apache.qpid.interop.testclient.TestClient;
-import org.apache.qpid.interop.testclient.testcases.TestCase3BasicPubSub;
+import org.apache.qpid.test.framework.distributedtesting.TestClient;
+import org.apache.qpid.interop.clienttestcases.TestCase3BasicPubSub;
 import org.apache.qpid.test.framework.TestUtils;
 
 import javax.jms.Connection;

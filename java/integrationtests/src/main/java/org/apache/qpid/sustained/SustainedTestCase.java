@@ -23,9 +23,8 @@ package org.apache.qpid.sustained;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.interop.coordinator.DistributedTestCase;
-import org.apache.qpid.interop.coordinator.DropInTest;
-import org.apache.qpid.interop.coordinator.TestClientDetails;
+import org.apache.qpid.test.framework.distributedtesting.DistributedTestCase;
+import org.apache.qpid.test.framework.DropInTest;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -33,7 +32,7 @@ import javax.jms.Message;
 import java.util.Properties;
 
 /**
- * SustainedTestCase is a {@link org.apache.qpid.interop.coordinator.DistributedTestCase} that runs the "Perf_SustainedPubSub" test case. This consists of one
+ * SustainedTestCase is a {@link org.apache.qpid.test.framework.distributedtesting.DistributedTestCase} that runs the "Perf_SustainedPubSub" test case. This consists of one
  * test client sending, and several receiving, and attempts to find the highest rate at which messages can be broadcast
  * to the receivers. It is also a {@link DropInTest} to which more test clients may be added during a test run.
  *
