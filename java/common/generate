@@ -25,7 +25,14 @@ class Output:
     self.name = name
     self.lines = []
 
-  def line(self, l = None):
+    self.line("package %s;" % self.package)
+    self.line()
+    self.line("import java.util.Map;")
+    self.line("import java.util.UUID;")
+    self.line()
+    self.line()
+
+  def line(self, l = ""):
     self.lines.append(l)
 
   def write(self):
@@ -34,16 +41,9 @@ class Output:
       os.makedirs(dir)
     file = os.path.join(dir, "%s.java" % self.name)
     out = open(file, "w")
-    print >> out, "package %s;" % self.package
-    print >> out
-    print >> out, "import java.util.Map;"
-    print >> out, "import java.util.UUID;"
-    print >> out
     for l in self.lines:
-      if l == None:
-        print >> out
-      else:
-        print >> out, l
+      out.write(l)
+      out.write(os.linesep)
     out.close()
 
 TYPES = {
