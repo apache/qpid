@@ -22,13 +22,9 @@ package org.apache.qpidity;
 
 
 /**
- * Method
+ * AbstractStruct
  *
  * @author Rafael H. Schloming
  */
 
-interface Method extends Struct {
-
-    int getEncodedType();
-
-}
+public abstract class AbstractStruct implements Struct {}

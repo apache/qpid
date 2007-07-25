@@ -15,9 +15,13 @@ public class Stub {
     }
 
     private static void frame(short track, short type, boolean first, boolean last, Method m) {
-        ByteBuffer buf = ByteBuffer.allocate(512);
+        SizeEncoder sizer = new SizeEncoder();
         if (m != null) {
-            buf.putInt(m.getEncodingType());
+            m.write(sizer);
+        }
+        ByteBuffer buf = ByteBuffer.allocate(sizer.getSize() + 4);
+        if (m != null) {
+            buf.putInt(m.getEncodedType());
             m.write(new BBEncoder(buf));
         }
         buf.flip();
@@ -29,7 +33,7 @@ public class Stub {
         StructFactory f = new StructFactory_v0_10();
         frame(Frame.L2, Frame.METHOD, true, true, f.newSessionOpen(0));
         frame(Frame.L4, Frame.METHOD, true, false,
-              f.newQueueDeclare((short) 0, "asdf", "alternate",  null, DURABLE));
+              f.newQueueDeclare((short) 0, "asdf", "alternate", null, DURABLE));
         frame(Frame.L4, Frame.METHOD, false, false);
         frame(Frame.L3, Frame.METHOD, true, true,
               f.newExchangeDeclare((short) 0, "exchange", "type", "alternate", null));
