@@ -48,7 +48,7 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
  * <tr><td> destinationCount <td> 1        <td> The number of receivers listening to the pings.
  * <tr><td> timeout          <td> 30000    <td> In milliseconds. The timeout to stop waiting for replies.
  * <tr><td> commitBatchSize  <td> 1        <td> The number of messages per transaction in transactional mode.
- * <tr><td> uniqueDests      <td> true     <td> Whether each receiver only listens to one ping destination or all.
+ * <tr><td> uniqueDests      <td> true     <td> Whether each receivers only listens to one ping destination or all.
  * <tr><td> durableDests     <td> false    <td> Whether or not durable destinations are used.
  * <tr><td> ackMode          <td> AUTO_ACK <td> The message acknowledgement mode. Possible values are:
  *                                               0 - SESSION_TRANSACTED
@@ -80,12 +80,6 @@ public class MessagingTestConfigProperties
 
     /** Defines the class to use as the initial context factory by default. */
     public static final String INITIAL_CONTEXT_FACTORY_DEFAULT = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
-
-    /** Holds the name of the default connection factory configuration property. */
-    public static final String CONNECTION_PROPNAME = "connectionfactory.broker";
-
-    /** Defeins the default connection configuration. */
-    public static final String CONNECTION_DEFAULT = "amqp://guest:guest@clientid/?brokerlist='vm://:1'";
 
     /** Holds the name of the property to get the test broker url from. */
     public static final String BROKER_PROPNAME = "qpid.test.broker";
@@ -125,16 +119,16 @@ public class MessagingTestConfigProperties
     /** Holds the default value of the publisher consumer flag. */
     public static final boolean PUBLISHER_CONSUMER_BIND_DEFAULT = false;
 
-    /** Holds the name of the property to get the bind receiver procuder flag from. */
+    /** Holds the name of the property to get the bind receivers procuder flag from. */
     public static final String RECEIVER_PRODUCER_BIND_PROPNAME = "receiverProducerBind";
 
-    /** Holds the default value of the receiver producer flag. */
+    /** Holds the default value of the receivers producer flag. */
     public static final boolean RECEIVER_PRODUCER_BIND_DEFAULT = false;
 
-    /** Holds the name of the property to get the bind receiver procuder flag from. */
+    /** Holds the name of the property to get the bind receivers procuder flag from. */
     public static final String RECEIVER_CONSUMER_BIND_PROPNAME = "receiverConsumerBind";
 
-    /** Holds the default value of the receiver consumer flag. */
+    /** Holds the default value of the receivers consumer flag. */
     public static final boolean RECEIVER_CONSUMER_BIND_DEFAULT = true;
 
     /** Holds the name of the property to get the destination name root from. */
@@ -275,7 +269,7 @@ public class MessagingTestConfigProperties
     static
     {
         defaults.setPropertyIfNull(INITIAL_CONTEXT_FACTORY_PROPNAME, INITIAL_CONTEXT_FACTORY_DEFAULT);
-        defaults.setPropertyIfNull(CONNECTION_PROPNAME, CONNECTION_DEFAULT);
+        // defaults.setPropertyIfNull(CONNECTION_PROPNAME, CONNECTION_DEFAULT);
         defaults.setPropertyIfNull(MESSAGE_SIZE_PROPNAME, MESSAGE_SIZE_DEAFULT);
         defaults.setPropertyIfNull(PUBLISHER_PRODUCER_BIND_PROPNAME, PUBLISHER_PRODUCER_BIND_DEFAULT);
         defaults.setPropertyIfNull(PUBLISHER_CONSUMER_BIND_PROPNAME, PUBLISHER_CONSUMER_BIND_DEFAULT);

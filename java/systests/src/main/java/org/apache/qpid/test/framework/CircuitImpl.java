@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.test.framework;
 
-import junit.framework.Assert;
-
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.framework.MessageMonitor;
 
@@ -49,6 +47,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * <tr><td> Perform the default test procedure on the circuit.
  * <tr><td> Provide access to connection and session exception monitors <td> {@link ExceptionMonitor}
  * </table>
+ *
+ * @todo Add ability to create routes with no consumers active on them. Immediate/Mandatory tests are closing consumers
+ *       themsleves to create this scenario. Should make it part of the test configuration.
  */
 public class CircuitImpl implements Circuit
 {
@@ -74,12 +75,12 @@ public class CircuitImpl implements Circuit
     private ExceptionMonitor exceptionMonitor;
 
     /**
-     * Creates a test circuit using the specified test parameters. The publisher, receiver, connection and
+     * Creates a test circuit using the specified test parameters. The publisher, receivers, connection and
      * connection monitor must already have been created, to assemble the circuit.
      *
      * @param testProps                  The test parameters.
      * @param publisher                  The test publisher.
-     * @param receiver                   The test receiver.
+     * @param receiver                   The test receivers.
      * @param connection                 The connection.
      * @param connectionExceptionMonitor The connection exception monitor.
      */
@@ -93,7 +94,7 @@ public class CircuitImpl implements Circuit
         this.connectionExceptionMonitor = connectionExceptionMonitor;
         this.exceptionMonitor = new ExceptionMonitor();
 
-        // Set this as the parent circuit on the publisher and receiver.
+        // Set this as the parent circuit on the publisher and receivers.
         publisher.setCircuit(this);
         receiver.setCircuit(this);
     }
@@ -107,9 +108,11 @@ public class CircuitImpl implements Circuit
      */
     public static Circuit createCircuit(ParsedProperties testProps)
     {
-        // Create a standard publisher/receiver test client pair on a shared connection, individual sessions.
+        // Create a standard publisher/receivers test client pair on a shared connection, individual sessions.
         try
         {
+            // ParsedProperties testProps = new ParsedProperties(testProps);
+
             // Get a unique offset to append to destination names to make them unique to the connection.
             long uniqueId = uniqueDestsId.incrementAndGet();
 
@@ -211,7 +214,7 @@ public class CircuitImpl implements Circuit
         }
         catch (JMSException e)
         {
-            throw new RuntimeException("Could not create publisher/receiver pair due to a JMSException.", e);
+            throw new RuntimeException("Could not create publisher/receivers pair due to a JMSException.", e);
         }
     }
 
@@ -348,7 +351,7 @@ public class CircuitImpl implements Circuit
         // Apply all of the requested assertions, keeping record of any that fail.
         List<Assertion> failures = applyAssertions(assertions);
 
-        // Clean up the publisher/receiver/session/connections.
+        // Clean up the publisher/receivers/session/connections.
         close();
 
         // Return any failed assertions to the caller.

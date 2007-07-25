@@ -98,7 +98,7 @@ public class TestCase2BasicP2P implements InteropClientTestCase
      * Assigns the role to be played by this test case. The test parameters are fully specified in the
      * assignment message. When this method return the test case will be ready to execute.
      *
-     * @param role              The role to be played; sender or receiver.
+     * @param role              The role to be played; sender or receivers.
      *
      * @param assignRoleMessage The role assingment message, contains the full test parameters.
      *
@@ -134,7 +134,7 @@ public class TestCase2BasicP2P implements InteropClientTestCase
             producer = session.createProducer(sendDestination);
             break;
 
-        // Otherwise the receiver role is being assigned, so set this up to listen for messages.
+        // Otherwise the receivers role is being assigned, so set this up to listen for messages.
         case RECEIVER:
             MessageConsumer consumer = session.createConsumer(sendDestination);
             consumer.setMessageListener(this);

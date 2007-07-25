@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.test.framework;
 
+import org.apache.log4j.Logger;
+
 import static org.apache.qpid.test.framework.MessagingTestConfigProperties.*;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
@@ -27,9 +29,13 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+
+import java.util.Properties;
+import java.util.Map;
 
 /**
  * TestUtils provides static helper methods that are usefull for writing tests against QPid.
@@ -42,11 +48,24 @@ import javax.naming.NamingException;
  */
 public class TestUtils
 {
+    /** Used for debugging. */
+    private static Logger log = Logger.getLogger(TestUtils.class);
+
     /**
-     * Establishes a JMS connection using a properties file and qpids built in JNDI implementation. This is a simple
-     * convenience method for code that does anticipate handling connection failures. All exceptions that indicate
-     * that the connection has failed, are wrapped as rutime exceptions, preumably handled by a top level failure
+     * Establishes a JMS connection using a set of properties and qpids built in JNDI implementation. This is a simple
+     * convenience method for code that does not anticipate handling connection failures. All exceptions that indicate
+     * that the connection has failed, are wrapped as rutime exceptions, presumably handled by a top level failure
      * handler.
+     *
+     * <p/>This utility makes use of the following test parameters from {@link MessagingTestConfigProperties} to control
+     * the connection creation:
+     *
+     * <p/><table>
+     * <tr><td> {@link MessagingTestConfigProperties#USERNAME_PROPNAME} <td> The username.
+     * <tr><td> {@link MessagingTestConfigProperties#PASSWORD_PROPNAME} <td> The password.
+     * <tr><td> {@link MessagingTestConfigProperties#VIRTUAL_HOST_PROPNAME} <td> The virtual host name.
+     * <tr><td> {@link MessagingTestConfigProperties#BROKER_PROPNAME} <td> The broker URL.
+     * <tr><td> {@link MessagingTestConfigProperties#CONNECTION_NAME} <td> The broker name in the initial context.
      *
      * @param messagingProps Connection properties as defined in {@link MessagingTestConfigProperties}.
      *
@@ -54,6 +73,9 @@ public class TestUtils
      */
     public static Connection createConnection(ParsedProperties messagingProps)
     {
+        log.debug("public static Connection createConnection(ParsedProperties messagingProps = " + messagingProps
+            + "): called");
+
         try
         {
             // Extract the configured connection properties from the test configuration.
@@ -62,12 +84,14 @@ public class TestUtils
             String virtualHost = messagingProps.getProperty(VIRTUAL_HOST_PROPNAME);
             String brokerUrl = messagingProps.getProperty(BROKER_PROPNAME);
 
-            // Set up the broker connection url.
+            // Create the broker connection url.
             String connectionString =
-                "amqp://" + conUsername + ":" + conPassword + "/" + ((virtualHost != null) ? virtualHost : "")
+                "amqp://" + conUsername + ":" + conPassword + "@clientid/" + ((virtualHost != null) ? virtualHost : "")
                 + "?brokerlist='" + brokerUrl + "'";
 
-            // messagingProps.setProperty(CONNECTION_PROPNAME, connectionString);
+            // Create properties to create the initial context from, and inject the connection factory configuration
+            // for the defined connection name into it.
+            messagingProps.setProperty("connectionfactory." + CONNECTION_NAME, connectionString);
 
             Context ctx = new InitialContext(messagingProps);
 
@@ -106,6 +130,27 @@ public class TestUtils
             Thread.currentThread().interrupt();
 
             throw new RuntimeException("Failed to generate the requested pause length.", e);
+        }
+    }
+
+    /**
+     * Sets properties of different types on a JMS Message.
+     *
+     * @param message    The message to set properties on.
+     * @param properties The property name/value pairs to set.
+     *
+     * @throws javax.jms.JMSException All underlying JMSExceptions are allowed to fall through.
+     *
+     * @todo Move this helper method somewhere else. For example, TestUtils.
+     */
+    public static void setPropertiesOnMessage(Message message, Map<Object, Object> properties) throws JMSException
+    {
+        for (Map.Entry<Object, Object> entry : properties.entrySet())
+        {
+            String name = entry.getKey().toString();
+            Object value = entry.getValue();
+
+            message.setObjectProperty(name, value);
         }
     }
 }

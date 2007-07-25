@@ -22,27 +22,27 @@ package org.apache.qpid.test.framework;
 
 /**
  * A Receiver is a {@link CircuitEnd} that represents one end of a test circuit. Its main purpose is to
- * provide assertions that can be applied to test the behaviour of the receiver.
+ * provide assertions that can be applied to test the behaviour of the receivers.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities
- * <tr><td> Provide assertion that the receiver received no exceptions.
- * <tr><td> Provide assertion that the receiver received all test messages sent to it.
+ * <tr><td> Provide assertion that the receivers received no exceptions.
+ * <tr><td> Provide assertion that the receivers received all test messages sent to it.
  * </table>
  */
 public interface Receiver extends CircuitEnd
 {
     /**
-     * Provides an assertion that the receiver encountered no exceptions.
+     * Provides an assertion that the receivers encountered no exceptions.
      *
-     * @return An assertion that the receiver encountered no exceptions.
+     * @return An assertion that the receivers encountered no exceptions.
      */
     public Assertion noExceptionsAssertion();
 
     /**
-     * Provides an assertion that the receiver got all messages that were sent to it.
+     * Provides an assertion that the receivers got all messages that were sent to it.
      *
-     * @return An assertion that the receiver got all messages that were sent to it.
+     * @return An assertion that the receivers got all messages that were sent to it.
      */
     public Assertion allMessagesAssertion();
 }

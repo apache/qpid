@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.qpid.interop.coordinator.sequencers.TestCaseSequencer;
 import org.apache.qpid.test.framework.Circuit;
-import org.apache.qpid.test.framework.CircuitImpl;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import static org.apache.qpid.test.framework.MessagingTestConfigProperties.*;
@@ -67,6 +67,16 @@ public class ImmediateMessageTest extends FrameworkBaseCase
     /** Used to read the tests configurable properties through. */
     ParsedProperties testProps;
 
+    /**
+     * Creates a new test case with the specified name.
+     *
+     * @param name The test case name.
+     */
+    public ImmediateMessageTest(String name)
+    {
+        super(name);
+    }
+
     /** Check that an immediate message is sent succesfully not using transactions when a consumer is connected. */
     public void test_QPID_517_ImmediateOkNoTxP2P()
     {
@@ -74,10 +84,10 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, false);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
-        // Send one message with no errors.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
+        // Run the default test sequence over the test circuit checking for no errors.
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
     }
 
     /** Check that an immediate message is committed succesfully in a transaction when a consumer is connected. */
@@ -87,10 +97,10 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
         // Send one message with no errors.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
@@ -100,13 +110,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, false);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
 
         // Disconnect the consumer.
         testCircuit.getReceiver().getConsumer().close();
 
         // Send one message and get a linked no consumers exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noConsumersAssertion())));
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noConsumersAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no consumers code, in a transaction, when a consumer is disconnected. */
@@ -116,13 +127,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
 
         // Disconnect the consumer.
         testCircuit.getReceiver().getConsumer().close();
 
         // Send one message and get a linked no consumers exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noConsumersAssertion())));
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noConsumersAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no route code, not using transactions, when no outgoing route is connected. */
@@ -132,14 +144,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, false);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
         // Send one message and get a linked no route exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no route code, upon transaction commit, when no outgoing route is connected. */
@@ -149,14 +161,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
-        // Send one message and get a linked no consumers exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
+        // Send one message and get a linked no route exception.
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
     }
 
     /** Check that an immediate message is sent succesfully not using transactions when a consumer is connected. */
@@ -166,10 +178,10 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, false);
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
         // Send one message with no errors.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
     }
 
     /** Check that an immediate message is committed succesfully in a transaction when a consumer is connected. */
@@ -179,10 +191,10 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
         // Send one message with no errors.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no consumers code, not using transactions, when a consumer is disconnected. */
@@ -195,13 +207,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         // Use durable subscriptions, so that the route remains open with no subscribers.
         testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
 
         // Disconnect the consumer.
         testCircuit.getReceiver().getConsumer().close();
 
         // Send one message and get a linked no consumers exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noConsumersAssertion())));
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noConsumersAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no consumers code, in a transaction, when a consumer is disconnected. */
@@ -214,13 +227,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         // Use durable subscriptions, so that the route remains open with no subscribers.
         testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
 
         // Disconnect the consumer.
         testCircuit.getReceiver().getConsumer().close();
 
         // Send one message and get a linked no consumers exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noConsumersAssertion())));
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noConsumersAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no route code, not using transactions, when no outgoing route is connected. */
@@ -230,14 +244,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, false);
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
         // Send one message and get a linked no route exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
     }
 
     /** Check that an immediate message results in no route code, upon transaction commit, when no outgoing route is connected. */
@@ -247,14 +261,14 @@ public class ImmediateMessageTest extends FrameworkBaseCase
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
-        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receiver to
+        // Set up the messaging topology so that only the publishers producer is bound (do not set up the receivers to
         // collect its messages).
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
-        Circuit testCircuit = CircuitImpl.createCircuit(testProps);
-
         // Send one message and get a linked no route exception.
-        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
+        TestCaseSequencer sequencer = getTestSequencer();
+        Circuit testCircuit = sequencer.createCircuit(testProps);
+        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
     }
 
     protected void setUp() throws Exception

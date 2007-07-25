@@ -25,6 +25,9 @@ import junit.framework.TestResult;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.interop.coordinator.sequencers.DistributedTestSequencer;
+import org.apache.qpid.interop.coordinator.sequencers.FanOutTestSequencer;
+import org.apache.qpid.interop.coordinator.sequencers.InteropTestSequencer;
 import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
@@ -39,24 +42,24 @@ import java.util.Iterator;
 import java.util.Set;
 
 /**
- * FanOutTestDecorator is an {@link InvitingTestDecorator} that runs one test client in the sender role, and the remainder
- * in the receiver role. It also has the capability to listen for new test cases joining the test beyond the initial start
+ * FanOutTestDecorator is an {@link DistributedTestDecorator} that runs one test client in the sender role, and the remainder
+ * in the receivers role. It also has the capability to listen for new test cases joining the test beyond the initial start
  * point. This feature can be usefull when experimenting with adding more load, in the form of more test clients, to assess
  * its impact on a running test.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Execute coordinated test cases. <td> {@link InteropTestCase}
+ * <tr><td> Execute coordinated test cases. <td> {@link DistributedTestCase}
  * <tr><td> Accept test clients joining a running test.
  * </table>
  */
-public class FanOutTestDecorator extends InvitingTestDecorator implements MessageListener
+public class FanOutTestDecorator extends DistributedTestDecorator implements MessageListener
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(FanOutTestDecorator.class);
 
     /** Holds the currently running test case. */
-    InteropTestCase currentTest = null;
+    DistributedTestCase currentTest = null;
 
     /**
      * Creates a wrapped suite test decorator from another one.
@@ -71,7 +74,7 @@ public class FanOutTestDecorator extends InvitingTestDecorator implements Messag
     {
         super(suite, availableClients, controlConversation, controlConnection);
 
-        log.debug("public InvitingTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> allClients = "
+        log.debug("public DistributedTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> allClients = "
             + availableClients + ", ConversationHelper controlConversation = " + controlConversation + "): called");
 
         testSuite = suite;
@@ -110,7 +113,7 @@ public class FanOutTestDecorator extends InvitingTestDecorator implements Messag
         // Run all of the test cases in the test suite.
         for (Test test : tests)
         {
-            InteropTestCase coordTest = (InteropTestCase) test;
+            DistributedTestCase coordTest = (DistributedTestCase) test;
 
             // Get all of the clients able to participate in the test.
             Set<TestClientDetails> enlists = signupClients(coordTest);
@@ -121,24 +124,28 @@ public class FanOutTestDecorator extends InvitingTestDecorator implements Messag
                 throw new RuntimeException("No clients to test with");
             }
 
-            // Set up the first client in the sender role, and the remainder in the receiver role.
+            // Create a distributed test sequencer for the test.
+            DistributedTestSequencer sequencer = getDistributedTestSequencer();
+
+            // Set up the first client in the sender role, and the remainder in the receivers role.
             Iterator<TestClientDetails> clients = enlists.iterator();
-            coordTest.setSender(clients.next());
+            sequencer.setSender(clients.next());
 
             while (clients.hasNext())
             {
                 // Set the sending and receiving client details on the test case.
-                coordTest.setReceiver(clients.next());
+                sequencer.setReceiver(clients.next());
             }
 
             // Pass down the connection to hold the coordinating conversation over.
-            coordTest.setConversationFactory(conversationFactory);
+            sequencer.setConversationFactory(conversationFactory);
 
             // If the current test case is a drop-in test, set it up as the currently running test for late joiners to
             // add in to. Otherwise the current test field is set to null, to indicate that late joiners are not allowed.
             currentTest = (coordTest instanceof DropInTest) ? coordTest : null;
 
             // Execute the test case.
+            coordTest.setTestSequencer(sequencer);
             coordTest.run(testResult);
 
             currentTest = null;
@@ -146,9 +153,20 @@ public class FanOutTestDecorator extends InvitingTestDecorator implements Messag
     }
 
     /**
+     * Should provide the distributed test sequencer to pass to {@link org.apache.qpid.test.framework.FrameworkBaseCase}
+     * tests.
+     *
+     * @return A distributed test sequencer.
+     */
+    public DistributedTestSequencer getDistributedTestSequencer()
+    {
+        return new FanOutTestSequencer();
+    }
+
+    /**
      * Listens to incoming messages on the control topic. If the messages are 'join' messages, signalling a new
      * test client wishing to join the current test, then the new client will be added to the current test in the
-     * receiver role.
+     * receivers role.
      *
      * @param message The incoming control message.
      */

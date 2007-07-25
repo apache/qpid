@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+
 public interface QueueNotificationListener
 {
     void notifyClients(NotificationCheck notification, AMQQueue queue, String notificationMsg);

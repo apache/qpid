@@ -26,9 +26,6 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.interop.coordinator.testcases.InteropTestCase1DummyRun;
-import org.apache.qpid.interop.coordinator.testcases.InteropTestCase2BasicP2P;
-import org.apache.qpid.interop.coordinator.testcases.InteropTestCase3BasicPubSub;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.util.ConversationFactory;
@@ -55,12 +52,12 @@ import java.util.concurrent.LinkedBlockingQueue;
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Find out what test clients are available. <td> {@link ConversationFactory}
- * <tr><td> Decorate available tests to run all available clients. <td> {@link InvitingTestDecorator}
+ * <tr><td> Decorate available tests to run all available clients. <td> {@link DistributedTestDecorator}
  * <tr><td> Attach XML test result logger.
  * <tr><td> Terminate the interop testing framework.
  * </table>
  *
- * @todo Shoud accumulate failures over all tests, and return with success or fail code based on all results. May need
+ * @todo Should accumulate failures over all tests, and return with success or fail code based on all results. May need
  *       to write a special TestResult to do this properly. At the moment only the last one used will be tested for
  *       errors, as the start method creates a fresh one for each test case run.
  *
@@ -70,6 +67,9 @@ public class Coordinator extends TKTestRunner
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(Coordinator.class);
+
+    /** Used for reporting to the console. */
+    private static final Logger console = Logger.getLogger("CONSOLE");
 
     /** Defines the possible distributed test engines available to run coordinated test cases with. */
     public enum TestEngine
@@ -115,6 +115,9 @@ public class Coordinator extends TKTestRunner
     /** Holds the coordinating test engine type to run the tests through. */
     protected TestEngine engine;
 
+    /** Flag that indicates that all test clients should be terminated upon completion of the test cases. */
+    protected boolean terminate;
+
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
      *
@@ -123,7 +126,7 @@ public class Coordinator extends TKTestRunner
      * @param reportDir   The directory to write out test results to.
      * @param engine      The distributed test engine type to run the tests with.
      */
-    public Coordinator(String brokerUrl, String virtualHost, String reportDir, TestEngine engine)
+    public Coordinator(String brokerUrl, String virtualHost, String reportDir, TestEngine engine, boolean terminate)
     {
         log.debug("Coordinator(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
 
@@ -132,6 +135,7 @@ public class Coordinator extends TKTestRunner
         this.virtualHost = virtualHost;
         this.reportDir = reportDir;
         this.engine = engine;
+        this.terminate = terminate;
     }
 
     /**
@@ -152,65 +156,100 @@ public class Coordinator extends TKTestRunner
      */
     public static void main(String[] args)
     {
+        console.info("Qpid Distributed Test Coordinator.");
+
         // Override the default broker url to be localhost:5672.
         testContextProperties.setProperty(MessagingTestConfigProperties.BROKER_PROPNAME, "tcp://localhost:5672");
 
-        // Use the command line parser to evaluate the command line with standard handling behaviour (print errors
-        // and usage then exist if there are errors).
-        // Any options and trailing name=value pairs are also injected into the test context properties object,
-        // to override any defaults that may have been set up.
-        Properties options =
-            CommandLineParser.processCommandLine(args,
-                new CommandLineParser(
-                    new String[][]
-                    {
-                        { "b", "The broker URL.", "broker", "false" },
-                        { "h", "The virtual host to use.", "virtual host", "false" },
-                        { "o", "The name of the directory to output test timings to.", "dir", "false" },
-                        {
-                            "e", "The test execution engine to use. Default is interop.", "engine", "interop",
-                            "^interop$|^fanout$", "true"
-                        }
-                    }), testContextProperties);
-
-        // Extract the command line options.
-        String brokerUrl = options.getProperty("b");
-        String virtualHost = options.getProperty("h");
-        String reportDir = options.getProperty("o");
-        String testEngine = options.getProperty("e");
-        TestEngine engine = "fanout".equals(testEngine) ? TestEngine.FANOUT : TestEngine.INTEROP;
-        reportDir = (reportDir == null) ? "." : reportDir;
-
-        // If broker or virtual host settings were specified as command line options, override the defaults in the
-        // test context properties with them.
-
-        // Scan for available test cases using a classpath scanner.
-        // Hard code the test classes till the classpath scanner is fixed.
-        Collection<Class<? extends InteropTestCase>> testCaseClasses = new ArrayList<Class<? extends InteropTestCase>>();
-        // ClasspathScanner.getMatches(InteropTestCase.class, "^Test.*", true);
-        Collections.addAll(testCaseClasses, InteropTestCase1DummyRun.class, InteropTestCase2BasicP2P.class,
-            InteropTestCase3BasicPubSub.class);
-
-        // Check that some test classes were actually found.
-        if (testCaseClasses.isEmpty())
-        {
-            throw new RuntimeException("No test classes implementing InteropTestCase were found on the class path.");
-        }
-
-        // Extract the names of all the test classes, to pass to the start method.
-        int i = 0;
-        String[] testClassNames = new String[testCaseClasses.size()];
-
-        for (Class testClass : testCaseClasses)
-        {
-            testClassNames[i++] = testClass.getName();
-        }
-
-        // Create a coordinator and begin its test procedure.
-        Coordinator coordinator = new Coordinator(brokerUrl, virtualHost, reportDir, engine);
-
         try
         {
+            // Use the command line parser to evaluate the command line with standard handling behaviour (print errors
+            // and usage then exist if there are errors).
+            // Any options and trailing name=value pairs are also injected into the test context properties object,
+            // to override any defaults that may have been set up.
+            ParsedProperties options =
+                new ParsedProperties(CommandLineParser.processCommandLine(args,
+                        new CommandLineParser(
+                            new String[][]
+                            {
+                                { "b", "The broker URL.", "broker", "false" },
+                                { "h", "The virtual host to use.", "virtual host", "false" },
+                                { "o", "The name of the directory to output test timings to.", "dir", "false" },
+                                {
+                                    "e", "The test execution engine to use. Default is interop.", "engine", "interop",
+                                    "^interop$|^fanout$", "true"
+                                },
+                                { "t", "Terminate test clients on completion of tests.", "flag", "false" }
+                            }), testContextProperties));
+
+            // Extract the command line options.
+            String brokerUrl = options.getProperty("b");
+            String virtualHost = options.getProperty("h");
+            String reportDir = options.getProperty("o");
+            reportDir = (reportDir == null) ? "." : reportDir;
+            String testEngine = options.getProperty("e");
+            TestEngine engine = "fanout".equals(testEngine) ? TestEngine.FANOUT : TestEngine.INTEROP;
+            boolean terminate = options.getPropertyAsBoolean("t");
+
+            // If broker or virtual host settings were specified as command line options, override the defaults in the
+            // test context properties with them.
+
+            // Collection all of the test cases to be run.
+            Collection<Class<? extends DistributedTestCase>> testCaseClasses =
+                new ArrayList<Class<? extends DistributedTestCase>>();
+
+            // Scan for available test cases using a classpath scanner.
+            // ClasspathScanner.getMatches(InteropTestCase.class, "^Test.*", true);
+
+            // Hard code the test classes till the classpath scanner is fixed.
+            // Collections.addAll(testCaseClasses, InteropTestCase1DummyRun.class, InteropTestCase2BasicP2P.class,
+            // InteropTestCase3BasicPubSub.class);
+
+            // Parse all of the free arguments as test cases to run.
+            for (int i = 1; true; i++)
+            {
+                String nextFreeArg = options.getProperty(Integer.toString(i));
+
+                // Terminate the loop once all free arguments have been consumed.
+                if (nextFreeArg == null)
+                {
+                    break;
+                }
+
+                try
+                {
+                    Class nextClass = Class.forName(nextFreeArg);
+
+                    if (DistributedTestCase.class.isAssignableFrom(nextClass))
+                    {
+                        testCaseClasses.add(nextClass);
+                        console.info("Found distributed test case: " + nextFreeArg);
+                    }
+                }
+                catch (ClassNotFoundException e)
+                {
+                    console.info("Unable to instantiate the test case: " + nextFreeArg + ".");
+                }
+            }
+
+            // Check that some test classes were actually found.
+            if (testCaseClasses.isEmpty())
+            {
+                throw new RuntimeException("No test cases implementing InteropTestCase were specified on the command line.");
+            }
+
+            // Extract the names of all the test classes, to pass to the start method.
+            int i = 0;
+            String[] testClassNames = new String[testCaseClasses.size()];
+
+            for (Class testClass : testCaseClasses)
+            {
+                testClassNames[i++] = testClass.getName();
+            }
+
+            // Create a coordinator and begin its test procedure.
+            Coordinator coordinator = new Coordinator(brokerUrl, virtualHost, reportDir, engine, terminate);
+
             TestResult testResult = coordinator.start(testClassNames);
 
             // Return different error codes, depending on whether or not there were test failures.
@@ -225,8 +264,8 @@ public class Coordinator extends TKTestRunner
         }
         catch (Exception e)
         {
-            System.err.println(e.getMessage());
-            log.error("Top level handler caught execption.", e);
+            log.debug("Top level handler caught execption.", e);
+            console.info(e.getMessage());
             System.exit(EXCEPTION_EXIT);
         }
     }
@@ -280,11 +319,15 @@ public class Coordinator extends TKTestRunner
             result = super.start(new String[] { testClassName });
         }
 
-        // At this point in time, all tests have completed. Broadcast the shutdown message.
-        Message terminate = session.createMessage();
-        terminate.setStringProperty("CONTROL_TYPE", "TERMINATE");
+        // At this point in time, all tests have completed. Broadcast the shutdown message, if the termination option
+        // was set on the command line.
+        if (terminate)
+        {
+            Message terminate = session.createMessage();
+            terminate.setStringProperty("CONTROL_TYPE", "TERMINATE");
 
-        conversation.send(controlTopic, terminate);
+            conversation.send(controlTopic, terminate);
+        }
 
         return result;
     }
@@ -350,9 +393,9 @@ public class Coordinator extends TKTestRunner
                 Test nextTest = suite.testAt(i);
                 log.debug("suite.testAt(" + i + ") = " + nextTest);
 
-                if (nextTest instanceof InteropTestCase)
+                if (nextTest instanceof DistributedTestCase)
                 {
-                    log.debug("nextTest is a InteropTestCase");
+                    log.debug("nextTest is a DistributedTestCase");
                 }
             }
 
@@ -383,7 +426,7 @@ public class Coordinator extends TKTestRunner
      *
      * @return An invititing test decorator, that invites all the enlisted clients to participate in tests, in pairs.
      */
-    protected InvitingTestDecorator newTestDecorator(WrappedSuiteTestDecorator targetTest,
+    protected DistributedTestDecorator newTestDecorator(WrappedSuiteTestDecorator targetTest,
         Set<TestClientDetails> enlistedClients, ConversationFactory conversationFactory, Connection connection)
     {
         switch (engine)

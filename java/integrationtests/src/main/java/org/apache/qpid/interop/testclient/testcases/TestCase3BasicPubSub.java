@@ -30,7 +30,7 @@ import javax.jms.*;
 
 /**
  * Implements test case 3, basic pub/sub. Sends/received a specified number of messages to a specified route on the
- * default topic exchange, using the specified number of receiver connections. Produces reports on the actual number of
+ * default topic exchange, using the specified number of receivers connections. Produces reports on the actual number of
  * messages sent/received.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
@@ -99,7 +99,7 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
      * Assigns the role to be played by this test case. The test parameters are fully specified in the
      * assignment message. When this method return the test case will be ready to execute.
      *
-     * @param role              The role to be played; sender or receiver.
+     * @param role              The role to be played; sender or receivers.
      *
      * @param assignRoleMessage The role assingment message, contains the full test parameters.
      *
@@ -143,10 +143,10 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
             producer = session[0].createProducer(sendDestination);
             break;
 
-        // Otherwise the receiver role is being assigned, so set this up to listen for messages on the required number
-        // of receiver connections.
+        // Otherwise the receivers role is being assigned, so set this up to listen for messages on the required number
+        // of receivers connections.
         case RECEIVER:
-            // Create the required number of receiver connections.
+            // Create the required number of receivers connections.
             connection = new Connection[numReceivers];
             session = new Session[numReceivers];
 

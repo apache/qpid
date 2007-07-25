@@ -25,11 +25,18 @@ import junit.framework.TestCase;
 import org.apache.log4j.NDC;
 
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.interop.coordinator.sequencers.TestCaseSequencer;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+
+import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * FrameworkBaseCase provides a starting point for writing test cases against the test framework. Its main purpose is
@@ -45,6 +52,42 @@ import java.util.List;
  */
 public class FrameworkBaseCase extends TestCase
 {
+    /** Holds the test sequencer to create and run test circuits with. */
+    protected TestCaseSequencer testSequencer = new DefaultTestSequencer();
+
+    /**
+     * Creates a new test case with the specified name.
+     *
+     * @param name The test case name.
+     */
+    public FrameworkBaseCase(String name)
+    {
+        super(name);
+    }
+
+    /**
+     * Returns the test case sequencer that provides test circuit, and test sequence implementations. The sequencer
+     * that this base case returns by default is suitable for running a test circuit with both circuit ends colocated
+     * on the same JVM.
+     *
+     * @return The test case sequencer.
+     */
+    protected TestCaseSequencer getTestSequencer()
+    {
+        return testSequencer;
+    }
+
+    /**
+     * Overrides the default test sequencer. Test decorators can use this to supply distributed test sequencers or other
+     * test sequencer specializations.
+     *
+     * @param sequencer The new test sequencer.
+     */
+    public void setTestSequencer(TestCaseSequencer sequencer)
+    {
+        this.testSequencer = sequencer;
+    }
+
     /**
      * Creates a list of assertions.
      *
@@ -131,6 +174,37 @@ public class FrameworkBaseCase extends TestCase
         finally
         {
             NDC.pop();
+        }
+    }
+
+    /**
+     * DefaultTestSequencer is a test sequencer that creates test circuits with publishing and receiving ends rooted
+     * on the same JVM.
+     */
+    public class DefaultTestSequencer implements TestCaseSequencer
+    {
+        /**
+         * Holds a test coordinating conversation with the test clients. This should consist of assigning the test roles,
+         * begining the test and gathering the test reports from the participants.
+         *
+         * @param testCircuit    The test circuit.
+         * @param assertions     The list of assertions to apply to the test circuit.
+         * @param testProperties The test case definition.
+         */
+        public void sequenceTest(Circuit testCircuit, List<Assertion> assertions, Properties testProperties)
+        {
+            assertNoFailures(testCircuit.test(1, assertions));
+        }
+
+        /**
+         * Creates a test circuit for the test, configered by the test parameters specified.
+         *
+         * @param testProperties The test parameters.
+         * @return A test circuit.
+         */
+        public Circuit createCircuit(ParsedProperties testProperties)
+        {
+            return CircuitImpl.createCircuit(testProperties);
         }
     }
 }

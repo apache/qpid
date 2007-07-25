@@ -47,7 +47,7 @@ public interface InteropClientTestCase extends MessageListener
         /** Specifies the sender role. */
         SENDER,
 
-        /** Specifies the receiver role. */
+        /** Specifies the receivers role. */
         RECEIVER
     }
 
@@ -74,7 +74,7 @@ public interface InteropClientTestCase extends MessageListener
      * Assigns the role to be played by this test case. The test parameters are fully specified in the
      * assignment message. When this method return the test case will be ready to execute.
      *
-     * @param role              The role to be played; sender or receiver.
+     * @param role              The role to be played; sender or receivers.
      * @param assignRoleMessage The role assingment message, contains the full test parameters.
      *
      * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.

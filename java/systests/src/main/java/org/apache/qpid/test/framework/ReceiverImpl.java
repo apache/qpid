@@ -32,8 +32,8 @@ import javax.jms.Session;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Provide a message producer for sending messages.
  * <tr><td> Provide a message consumer for receiving messages.
- * <tr><td> Provide assertion that the receiver received no exceptions.
- * <tr><td> Provide assertion that the receiver received all test messages sent to it.
+ * <tr><td> Provide assertion that the receivers received no exceptions.
+ * <tr><td> Provide assertion that the receivers received all test messages sent to it.
  * </table>
  */
 public class ReceiverImpl extends CircuitEndBase implements Receiver
@@ -54,9 +54,9 @@ public class ReceiverImpl extends CircuitEndBase implements Receiver
     }
 
     /**
-     * Provides an assertion that the receiver encountered no exceptions.
+     * Provides an assertion that the receivers encountered no exceptions.
      *
-     * @return An assertion that the receiver encountered no exceptions.
+     * @return An assertion that the receivers encountered no exceptions.
      */
     public Assertion noExceptionsAssertion()
     {
@@ -64,9 +64,9 @@ public class ReceiverImpl extends CircuitEndBase implements Receiver
     }
 
     /**
-     * Provides an assertion that the receiver got all messages that were sent to it.
+     * Provides an assertion that the receivers got all messages that were sent to it.
      *
-     * @return An assertion that the receiver got all messages that were sent to it.
+     * @return An assertion that the receivers got all messages that were sent to it.
      */
     public Assertion allMessagesAssertion()
     {

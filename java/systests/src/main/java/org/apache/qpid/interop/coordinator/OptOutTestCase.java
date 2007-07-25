@@ -22,17 +22,19 @@ package org.apache.qpid.interop.coordinator;
 
 import junit.framework.Assert;
 
+import org.apache.qpid.interop.coordinator.sequencers.DistributedTestSequencer;
+
 /**
  * An OptOutTestCase is a test case that automatically fails. It is used when a list of test clients has been generated
  * from a compulsory invite, but only some of those clients have responded to a specific test case invite. The clients
- * that did not respond, are automatically given a fail for the test.
+ * that did not respond, may automatically be given a fail for some tests.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Fail the test with a suitable reason.
  * </table>
  */
-public class OptOutTestCase extends InteropTestCase
+public class OptOutTestCase extends DistributedTestCase
 {
     /**
      * Creates a new coordinating test case with the specified name.
@@ -47,7 +49,10 @@ public class OptOutTestCase extends InteropTestCase
     /** Generates an appropriate test failure assertion. */
     public void testOptOut()
     {
-        Assert.fail("One of " + getSender() + " and " + getReceiver() + " opted out of the test.");
+        DistributedTestSequencer sequencer = getDistributedTestSequencer();
+
+        Assert.fail("One of " + sequencer.getSender() + " and " + getDistributedTestSequencer().getReceivers()
+            + " opted out of the test.");
     }
 
     /**

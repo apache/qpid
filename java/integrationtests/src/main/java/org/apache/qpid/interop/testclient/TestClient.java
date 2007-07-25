@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.interop.testclient.testcases.TestCase1DummyRun;
 import org.apache.qpid.interop.testclient.testcases.TestCase2BasicP2P;
 import org.apache.qpid.interop.testclient.testcases.TestCase3BasicPubSub;
+import org.apache.qpid.sustained.SustainedClientTestCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
 
@@ -63,7 +64,10 @@ import java.util.Map;
 public class TestClient implements MessageListener
 {
     /** Used for debugging. */
-    private static Logger log = Logger.getLogger(TestClient.class);
+    private static final Logger log = Logger.getLogger(TestClient.class);
+
+    /** Used for reporting to the console. */
+    private static final Logger console = Logger.getLogger("CONSOLE");
 
     /** Holds the default identifying name of the test client. */
     public static final String CLIENT_NAME = "java";
@@ -169,7 +173,8 @@ public class TestClient implements MessageListener
         Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
             new ArrayList<Class<? extends InteropClientTestCase>>();
         // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
-        Collections.addAll(testCaseClasses, TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class);
+        Collections.addAll(testCaseClasses, TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class,
+            SustainedClientTestCase.class);
 
         try
         {
@@ -285,7 +290,7 @@ public class TestClient implements MessageListener
                     }
                     else
                     {
-                        log.warn("'" + testName + "' not part of this clients tests.");
+                        log.debug("Received an invite to the test '" + testName + "' but this test is not known.");
                     }
                 }
                 else

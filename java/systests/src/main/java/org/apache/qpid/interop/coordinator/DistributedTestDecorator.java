@@ -24,6 +24,7 @@ import junit.framework.TestResult;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.interop.coordinator.sequencers.DistributedTestSequencer;
 import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
@@ -36,19 +37,24 @@ import javax.jms.Message;
 import java.util.*;
 
 /**
- * InvitingTestDecorator is a base class for writing test decorators that invite test clients to participate in
- * distributed test cases. It provides a helper method, {@link #signupClients(InteropTestCase)}, that broadcasts
- * an invitation and return the set of test clients that are available to particiapte in the test.
+ * DistributedTestDecorator is a base class for writing test decorators that invite test clients to participate in
+ * distributed test cases. It provides a helper method, {@link #signupClients}, that broadcasts an invitation and
+ * returns the set of test clients that are available to particiapte in the test.
+ *
+ * <p/>When used to wrap a {@link org.apache.qpid.test.framework.FrameworkBaseCase} test, it replaces the default
+ * {@link org.apache.qpid.interop.coordinator.sequencers.TestCaseSequencer} implementations with a suitable
+ * {@link org.apache.qpid.interop.coordinator.sequencers.DistributedTestSequencer}. Concrete implementations
+ * can use this to configure the sending and receiving roles on the test.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Broadcast test invitations and collect enlists. <td> {@link ConversationFactory}.
  * </table>
  */
-public abstract class InvitingTestDecorator extends WrappedSuiteTestDecorator
+public abstract class DistributedTestDecorator extends WrappedSuiteTestDecorator
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(InvitingTestDecorator.class);
+    private static final Logger log = Logger.getLogger(DistributedTestDecorator.class);
 
     /** Holds the contact information for all test clients that are available and that may take part in the test. */
     Set<TestClientDetails> allClients;
@@ -59,7 +65,7 @@ public abstract class InvitingTestDecorator extends WrappedSuiteTestDecorator
     /** Holds the connection that the control conversation is held over. */
     Connection connection;
 
-    /** Holds the underlying {@link InteropTestCase}s that this decorator wraps. */
+    /** Holds the underlying {@link DistributedTestCase}s that this decorator wraps. */
     WrappedSuiteTestDecorator testSuite;
 
     /** Holds the control topic, on which test invitations are broadcast. */
@@ -73,12 +79,12 @@ public abstract class InvitingTestDecorator extends WrappedSuiteTestDecorator
      * @param controlConversation The conversation helper for the control level, test coordination conversation.
      * @param controlConnection   The connection that the coordination messages are sent over.
      */
-    public InvitingTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> availableClients,
+    public DistributedTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> availableClients,
         ConversationFactory controlConversation, Connection controlConnection)
     {
         super(suite);
 
-        log.debug("public InvitingTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> allClients = "
+        log.debug("public DistributedTestDecorator(WrappedSuiteTestDecorator suite, Set<TestClientDetails> allClients = "
             + availableClients + ", ConversationHelper controlConversation = " + controlConversation + "): called");
 
         testSuite = suite;
@@ -105,6 +111,14 @@ public abstract class InvitingTestDecorator extends WrappedSuiteTestDecorator
     public abstract void run(TestResult testResult);
 
     /**
+     * Should provide the distributed test sequencer to pass to {@link org.apache.qpid.test.framework.FrameworkBaseCase}
+     * tests.
+     *
+     * @return A distributed test sequencer.
+     */
+    public abstract DistributedTestSequencer getDistributedTestSequencer();
+
+    /**
      * Broadcasts an invitation to participate in a coordinating test case to find out what clients are available to
      * run the test case.
      *
@@ -112,7 +126,7 @@ public abstract class InvitingTestDecorator extends WrappedSuiteTestDecorator
      *
      * @return A set of test clients that accepted the invitation.
      */
-    protected Set<TestClientDetails> signupClients(InteropTestCase coordTest)
+    protected Set<TestClientDetails> signupClients(DistributedTestCase coordTest)
     {
         // Broadcast the invitation to find out what clients are available to test.
         Set<TestClientDetails> enlists;
@@ -146,6 +160,6 @@ public abstract class InvitingTestDecorator extends WrappedSuiteTestDecorator
      */
     public String toString()
     {
-        return "InvitingTestDecorator: [ testSuite = " + testSuite + " ]";
+        return "DistributedTestDecorator: [ testSuite = " + testSuite + " ]";
     }
 }

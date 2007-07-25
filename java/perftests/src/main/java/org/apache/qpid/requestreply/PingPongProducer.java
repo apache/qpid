@@ -44,9 +44,7 @@ import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -89,7 +87,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <tr><td> destinationCount <td> 1        <td> The number of receivers listening to the pings.
  * <tr><td> timeout          <td> 30000    <td> In milliseconds. The timeout to stop waiting for replies.
  * <tr><td> commitBatchSize  <td> 1        <td> The number of messages per transaction in transactional mode.
- * <tr><td> uniqueDests      <td> true     <td> Whether each receiver only listens to one ping destination or all.
+ * <tr><td> uniqueDests      <td> true     <td> Whether each receivers only listens to one ping destination or all.
  * <tr><td> durableDests     <td> false    <td> Whether or not durable destinations are used.
  * <tr><td> ackMode          <td> AUTO_ACK <td> The message acknowledgement mode. Possible values are:
  *                                               0 - SESSION_TRANSACTED
@@ -373,7 +371,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     protected int _maxPendingSize;
 
     /**
-     * Holds a monitor which is used to synchronize sender and receiver threads, where the sender has elected
+     * Holds a monitor which is used to synchronize sender and receivers threads, where the sender has elected
      * to wait until the number of unreceived message is reduced before continuing to send.
      */
     protected Object _sendPauseMonitor = new Object();
@@ -570,7 +568,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     {
         try
         {
-            Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}));
+            Properties options =
+                CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}), System.getProperties());
 
             // Create a ping producer overriding its defaults with all options passed on the command line.
             PingPongProducer pingProducer = new PingPongProducer(options);

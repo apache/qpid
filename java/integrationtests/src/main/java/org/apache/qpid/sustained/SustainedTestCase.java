@@ -23,18 +23,17 @@ package org.apache.qpid.sustained;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.interop.coordinator.DistributedTestCase;
 import org.apache.qpid.interop.coordinator.DropInTest;
 import org.apache.qpid.interop.coordinator.TestClientDetails;
-import org.apache.qpid.interop.coordinator.FanOutTestCase;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 
 /**
- * SustainedTestCase is a {@link FanOutTestCase} that runs the "Perf_SustainedPubSub" test case. This consists of one
+ * SustainedTestCase is a {@link org.apache.qpid.interop.coordinator.DistributedTestCase} that runs the "Perf_SustainedPubSub" test case. This consists of one
  * test client sending, and several receiving, and attempts to find the highest rate at which messages can be broadcast
  * to the receivers. It is also a {@link DropInTest} to which more test clients may be added during a test run.
  *
@@ -43,7 +42,7 @@ import java.util.Map;
  * <tr><td>
  * </table>
  */
-public class SustainedTestCase extends FanOutTestCase implements DropInTest
+public class SustainedTestCase extends DistributedTestCase implements DropInTest
 {
     /** Used for debugging. */
     Logger log = Logger.getLogger(SustainedTestCase.class);
@@ -70,7 +69,7 @@ public class SustainedTestCase extends FanOutTestCase implements DropInTest
     {
         log.debug("public void testSinglePubSubCycle(): called");
 
-        Map<String, Object> testConfig = new HashMap<String, Object>();
+        Properties testConfig = new Properties();
         testConfig.put("TEST_NAME", "Perf_SustainedPubSub");
         testConfig.put("SUSTAINED_KEY", SUSTAINED_KEY);
         testConfig.put("SUSTAINED_NUM_RECEIVERS", Integer.getInteger("numReceives", 2));
@@ -80,7 +79,7 @@ public class SustainedTestCase extends FanOutTestCase implements DropInTest
 
         log.info("Created Config: " + testConfig.entrySet().toArray());
 
-        sequenceTest(testConfig);
+        getTestSequencer().sequenceTest(null, null, testConfig);
     }
 
     /**
@@ -98,14 +97,17 @@ public class SustainedTestCase extends FanOutTestCase implements DropInTest
      */
     public void lateJoin(Message message) throws JMSException
     {
+        throw new RuntimeException("Not implemented.");
+        /*
         // Extract the joining clients details from its join request message.
         TestClientDetails clientDetails = new TestClientDetails();
         clientDetails.clientName = message.getStringProperty("CLIENT_NAME");
         clientDetails.privateControlKey = message.getStringProperty("CLIENT_PRIVATE_CONTROL_KEY");
 
-        // Register the joining client, but do block for confirmation as cannot do a synchronous receiver during this
+        // Register the joining client, but do block for confirmation as cannot do a synchronous receivers during this
         // method call, as it may have been called from an 'onMessage' method.
-        assignReceiverRole(clientDetails, new HashMap<String, Object>(), false);
+        assignReceiverRole(clientDetails, new Properties(), false);
+         */
     }
 
     /**
