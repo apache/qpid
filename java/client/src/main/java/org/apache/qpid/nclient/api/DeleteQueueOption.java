@@ -1,4 +1,4 @@
-package org.apache.qpid.nclient.qpidapi;
+package org.apache.qpid.nclient.api;
 
 /**
  * Created by Arnaud Simon

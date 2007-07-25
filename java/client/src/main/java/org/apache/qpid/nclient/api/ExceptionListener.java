@@ -21,34 +21,21 @@ package org.apache.qpid.nclient.api;
 import org.apache.qpid.nclient.exception.QpidException;
 
 /**
- * A Resource is associated with a session and can be independently closed.
+ * If the communication layer detects a serious problem with a <CODE>connection</CODE>, it
+ * informs the connection's ExceptionListener
  *
  * Created by Arnaud Simon
- * Date: 21-Jul-2007
- * Time: 09:41:30
+ * Date: 25-Jul-2007
+ * Time: 12:00:27
  */
-public interface Resource
+public interface ExceptionListener
 {
-
     /**
-     * Close this resource.
+     * If the communication layer detects a serious problem with a connection, it
+     * informs the connection's ExceptionListener
      *
-     * @throws QpidException If the session fails to close this resource due to some error
+     * @param exception The exception comming from the communication layer.
+     * @see org.apache.qpid.nclient.qpidapi.Connection
      */
-    public void close() throws
-                        QpidException;
-
-    /**
-     * Get this resource session.
-     *
-     * @return This resource's session. 
-     */
-    public Session  getSession();
-
-    /**
-     * Get the queue name to which this resource is tied.
-     *
-     * @return The queue name of this resource. 
-     */
-    public String getQueueNAme();
+    public void onException(QpidException exception);
 }
