@@ -81,12 +81,17 @@ public class AMQMessage
     // private AtomicBoolean _taken = new AtomicBoolean(false);
     private TransientMessageData _transientMessageData = new TransientMessageData();
 
+    //todo: this should be part of a messageOnQueue object
     private Set<Subscription> _rejectedBy = null;
 
+    //todo: this should be part of a messageOnQueue object
     private Map<AMQQueue, AtomicBoolean> _takenMap = new HashMap<AMQQueue, AtomicBoolean>();
+    //todo: this should be part of a messageOnQueue object
     private Map<AMQQueue, Subscription> _takenBySubcriptionMap = new HashMap<AMQQueue, Subscription>();
 
     private final int hashcode = System.identityHashCode(this);
+
+    //todo: this should be part of a messageOnQueue object
     private long _expiration;
 
     public String debugIdentity()
@@ -652,14 +657,13 @@ public class AMQMessage
     /**
      * Checks to see if the message has expired. If it has the message is dequeued.
      *
-     * @param storecontext
-     * @param queue
+     * @param queue The queue to check the expiration against. (Currently not used)
      *
      * @return true if the message has expire
      *
      * @throws AMQException
      */
-    public boolean expired(StoreContext storecontext, AMQQueue queue) throws AMQException
+    public boolean expired(AMQQueue queue) throws AMQException
     {
         // note: If the storecontext isn't need then we can remove the getChannel() from Subscription.
 

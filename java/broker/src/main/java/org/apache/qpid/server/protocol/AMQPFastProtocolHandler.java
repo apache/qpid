@@ -204,6 +204,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         if (message instanceof AMQDataBlock)
         {
             amqProtocolSession.dataBlockReceived((AMQDataBlock) message);
+                        
         }
         else if (message instanceof ByteBuffer)
         {

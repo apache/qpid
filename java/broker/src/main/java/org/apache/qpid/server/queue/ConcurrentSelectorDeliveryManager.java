@@ -87,6 +87,10 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     private final Object _queueHeadLock = new Object();
     private String _processingThreadName = "";
 
+
+    /** Used by any reaping thread to purge messages */
+    private StoreContext _reapingStoreContext = new StoreContext();
+
     ConcurrentSelectorDeliveryManager(SubscriptionManager subscriptions, AMQQueue queue)
     {
 
@@ -463,17 +467,19 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             assert removed == message;
 
             // if the message expired then the _totalMessageSize needs adjusting
-            if (message.expired(sub.getChannel().getStoreContext(), _queue))
+            if (message.expired(_queue))
             {
                 _totalMessageSize.addAndGet(-message.getSize());
 
-                message.dequeue(sub.getChannel().getStoreContext(), _queue);
+                // Use the reapingStoreContext as any sub(if we have one) may be in a tx.
+                message.dequeue(_reapingStoreContext, _queue);
 
                 if (_log.isInfoEnabled())
                 {
                     _log.info(debugIdentity() + " Doing clean up of the main _message queue.");
                 }
             }
+
             //else the clean up is not required as the message has already been taken for this queue therefore
             // it was the responsibility of the code that took the message to ensure the _totalMessageSize was updated.
 
@@ -513,15 +519,15 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         // if the message is null then don't purge as we have no messagse.
         if (message != null)
         {
+            // Check that the message hasn't expired.
+            if (message.expired(_queue))
+            {
+                return true;
+            }
+
             // if we have a subscriber perform message checks
             if (sub != null)
             {
-                // Check that the message hasn't expired.
-                if (message.expired(sub.getChannel().getStoreContext(), _queue))
-                {
-                    return true;
-                }
-
                 // if we have a queue browser(we don't purge) so check mark the message as taken
                 purge = ((!sub.isBrowser() || message.isTaken(_queue)));
             }
@@ -640,7 +646,14 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
         catch (AMQException e)
         {
-            message.release(_queue);
+            if (message != null)
+            {
+                message.release(_queue);
+            }
+            else
+            {
+                _log.error(debugIdentity() + "Unable to release message as it is null. " + e, e);
+            }
             _log.error(debugIdentity() + "Unable to deliver message as dequeue failed: " + e, e);
         }
     }
@@ -719,25 +732,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
     }
 
-//    private void sendNextMessage(Subscription sub)
-//    {
-//        if (sub.filtersMessages())
-//        {
-//            sendNextMessage(sub, sub.getPreDeliveryQueue());
-//            if (sub.isAutoClose())
-//            {
-//                if (sub.getPreDeliveryQueue().isEmpty())
-//                {
-//                    sub.close();
-//                }
-//            }
-//        }
-//        else
-//        {
-//            sendNextMessage(sub, _messages);
-//        }
-//    }
-
     public void deliver(StoreContext context, AMQShortString name, AMQMessage msg, boolean deliverFirst) throws AMQException
     {
 
@@ -746,8 +740,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             _log.debug(debugIdentity() + "deliver :first(" + deliverFirst + ") :" + msg);
         }
-        // This shouldn't be done here.
-//        msg.release();
 
         //Check if we have someone to deliver the message to.
         _lock.lock();
