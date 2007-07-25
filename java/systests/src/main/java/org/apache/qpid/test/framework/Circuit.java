@@ -91,7 +91,7 @@ public interface Circuit
      * Applied a list of assertions against the test circuit. The {@link #check()} method should be called before doing
      * this, to ensure that the circuit has gathered its state into a report to assert against.
      *
-     * @param assertions The list of assertions to apply.
+     * @param assertions The list of assertions to apply to the circuit.
      *
      * @return Any assertions that failed.
      */
