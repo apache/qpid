@@ -13,8 +13,8 @@ out_dir=sys.argv[1]
 out_pkg = sys.argv[2]
 spec_file = sys.argv[3]
 spec = mllib.xml_parse(spec_file)
-major = spec["amqp"]["@major"]
-minor = spec["amqp"]["@minor"]
+major = spec["amqp/@major"]
+minor = spec["amqp/@minor"]
 isfx = "_v%s_%s" % (major, minor)
 
 class Output:
@@ -33,7 +33,7 @@ class Output:
     if not os.path.exists(dir):
       os.makedirs(dir)
     file = os.path.join(dir, "%s.java" % self.name)
-    out = open(file, "write")
+    out = open(file, "w")
     print >> out, "package %s;" % self.package
     print >> out
     print >> out, "import java.util.Map;"
@@ -80,7 +80,7 @@ for d in spec.query["amqp/domain"]:
   DOMAINS[d["@name"]] = d["@type"]
 
 def resolve(type):
-  if (DOMAINS.has_key(type)):
+  if DOMAINS.has_key(type) and DOMAINS[type] != type:
     return resolve(DOMAINS[type])
   else:
     return type
