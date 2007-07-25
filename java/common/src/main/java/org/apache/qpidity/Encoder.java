@@ -33,9 +33,9 @@ public interface Encoder
 {
 
     void writeBit(boolean b);
-    void writeOctet(byte b);
-    void writeShort(short s);
-    void writeLong(int i);
+    void writeOctet(short b);
+    void writeShort(int s);
+    void writeLong(long i);
     void writeLonglong(long l);
 
     void writeTimestamp(long l);
@@ -44,7 +44,7 @@ public interface Encoder
     void writeLongstr(String s);
 
     void writeTable(Map<String,?> table);
-    void writeRfc1982LongSet(Range<Integer>[] ranges);
+    void writeRfc1982LongSet(Range<Long>[] ranges);
     void writeUuid(UUID uuid);
 
     void writeContent(String c);

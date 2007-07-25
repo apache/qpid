@@ -57,17 +57,17 @@ class SizeEncoder implements Encoder
         //throw new Error("TODO");
     }
 
-    public void writeOctet(byte b)
+    public void writeOctet(short b)
     {
         size += 1;
     }
 
-    public void writeShort(short s)
+    public void writeShort(int s)
     {
         size += 2;
     }
 
-    public void writeLong(int i)
+    public void writeLong(long i)
     {
         size += 4;
     }
@@ -104,7 +104,7 @@ class SizeEncoder implements Encoder
         //throw new Error("TODO");
     }
 
-    public void writeRfc1982LongSet(Range<Integer>[] ranges)
+    public void writeRfc1982LongSet(Range<Long>[] ranges)
     {
         throw new Error("TODO");
     }
