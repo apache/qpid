@@ -190,16 +190,7 @@ class Filter(View):
 
   def __init__(self, predicate, source):
     View.__init__(self, source)
-    if callable(predicate):
-      self.predicate = predicate
-    elif predicate[0] == "#":
-      type = predicate[1:]
-      self.predicate = lambda x: x.is_type(type)
-    elif predicate[0] == "@":
-      name = predicate[1:]
-      self.predicate = lambda x: x[0] == name
-    else:
-      self.predicate = lambda x: isinstance(x, Tag) and x.name == predicate
+    self.predicate = predicate
 
   def __iter__(self):
     for nd in self.source:
@@ -239,23 +230,45 @@ class Values(View):
     for name, value in self.source:
       yield value
 
+def flatten_path(path):
+  if isinstance(path, basestring):
+    for part in path.split("/"):
+      yield part
+  elif callable(path):
+    yield path
+  else:
+    for p in path:
+      for fp in flatten_path(p):
+        yield fp
+
 class Query(View):
 
   def __iter__(self):
     for nd in self.source:
       yield nd
 
-  def __getitem__(self, predicate):
-    if isinstance(predicate, basestring):
-      path = predicate.split("/")
-    else:
-      path = [predicate]
-
+  def __getitem__(self, path):
     query = self.source
-    for p in path:
-      if isinstance(p, basestring) and p[0] == "@":
-        query = Values(Filter(p, Attributes(query)))
+    for p in flatten_path(path):
+      if callable(p):
+        select = Query
+        pred = p
+        source = query
+      elif isinstance(p, basestring):
+        if p[0] == "@":
+          select = Values
+          pred = lambda x, n=p[1:]: x[0] == n
+          source = Attributes(query)
+        elif p[0] == "#":
+          select = Query
+          pred = lambda x, t=p[1:]: x.is_type(t)
+          source = Children(query)
+        else:
+          select = Query
+          pred = lambda x, n=p: isinstance(x, Tag) and x.name == n
+          source = Flatten(Children(query))
       else:
-        query = Query(Filter(p, Flatten(Children(query))))
+        raise ValueError(p)
+      query = select(Filter(pred, source))
 
     return query
