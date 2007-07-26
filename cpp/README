@@ -29,44 +29,33 @@ Known version numbers for a succesfull build are given in brackets, take
 these as a recommended minimum version. Older unix versions, for example,
 Redhat Linux 3, will almost certainly require some packages to be upgraded.
 
-Qpid can be built using the gcc compiler:
-
- # gcc     <http://gcc.gnu.org/>            (3.2.3)
-
-Qpid is compiled against libraries:
-
- * apr     <http://apr.apache.org>          (1.2.7)
- * boost   <http://www.boost.org>           (1.33.1)
- * cppunit <http://cppunit.sourceforge.net> (1.11.4)
+The following libraries and header files must be installed to build
+a source distribution:
+ * boost   <http://www.boost.org>              (1.33.1)
  * uuid    <http://e2fsprogs.sourceforge.net/> (1.39)
+ * apr     <http://apr.apache.org>             (1.2.7)
+ * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (0.21)
 
-Using tools:
+Optional cluster functionality requires:
+ * openais <http://openais.org/> 	       (0.80.3)
 
- * boost-jam  <http://boost.sourceforge.net/>          (3.1.13)
+Optionally building/running the tests requires:
+ * cppunit <http://cppunit.sourceforge.net>    (1.11.4)
+
+Qpid has been built using the gcc compiler:
+ * gcc     <http://gcc.gnu.org/>            (3.2.3)
+
+If you want to build directly from the SVN repository you will need
+all of the above plus:
+
  * GNU make   <http://www.gnu.org/software/make/>      (3.8.0)
  * autoconf   <http://www.gnu.org/software/autoconf/>  (2.61)
  * automake   <http://www.gnu.org/software/automake/>  (1.9.6)
  * help2man   <http://www.gnu.org/software/help2man/>  (1.36.4)
  * libtool    <http://www.gnu.org/software/libtool/>   (1.5.22)
- * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (0.21)
  * doxygen    <ftp://ftp.stack.nl/pub/users/dimitri/>  (1.5.1)
  * graphviz   <http://www.graphviz.org/>               (2.12)
  * JDK 5.0    <http://java.sun.com/j2se/1.5.0/>        (1.5.0.11)
-
-=== Optional tools and libraries ===
-
-The following are only required if you generate documentation.
-(Source distributions contain pre-generated documentation.)
- * help2man
- * doxygen
- * graphviz
-
-cppunit is not required if you do not build/run the tests.
-
-If building from a source distribution you do not need:
- * autoconf
- * automake
- * JDK 5.0
 
 === Installing as root ===
 
@@ -90,7 +79,27 @@ It is recommended that you create a directory to install them to, for example,
   # ./configure --prefix=~/qpid-tools
   # make install
 
- The exceptions to this are boost and JDK 5.0.
+The exceptions are openais, boost, JDK 5.0.
+
+==== To build and install openais from source ====
+
+Unpack the source distribution and do:
+ # make
+ # sudo make install DESTDIR=
+ # sudo ldconfig
+
+This will install in the standard places (/usr/lib, /usr/include etc.)
+
+Next edit /etc/ais/openais.conf and modify the "bindnetaddr" setting
+to your hosts external IP address (don't use 127.0.0.1.) 
+
+Finally start the ais daemon (must be done as root):
+
+ # sudo /sbin/aisexec
+
+Note that to run the AIS tests your primary group must be "ais".  You
+can change your primary group with the usermod command or set it
+temporarily with the newgrp command.
 
 ==== To build the boost library ====
 

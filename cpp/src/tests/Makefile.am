@@ -87,9 +87,6 @@ framing_unit_tests =	\
   HeaderTest		\
   SequenceNumberTest
 
-misc_unit_tests =	\
-  ProducerConsumerTest
-
 posix_unit_tests =	\
   EventChannelTest	\
   EventChannelThreadsTest

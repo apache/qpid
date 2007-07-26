@@ -176,7 +176,6 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/Runnable.cpp \
   qpid/sys/Shlib.h \
   qpid/sys/Shlib.cpp \
-  qpid/sys/ProducerConsumer.cpp \
   qpid/Options.cpp \
   qpid/Options.h \
   qpid/log/Options.cpp \
@@ -380,7 +379,6 @@ nobase_include_HEADERS = \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
   qpid/sys/Poller.h \
-  qpid/sys/ProducerConsumer.h \
   qpid/sys/Runnable.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/ShutdownHandler.h \
@@ -388,7 +386,6 @@ nobase_include_HEADERS = \
   qpid/sys/Thread.h \
   qpid/sys/ConcurrentQueue.h \
   qpid/sys/Serializer.h \
-  qpid/sys/ThreadSafeQueue.h \
   qpid/sys/Time.h \
   qpid/sys/TimeoutHandler.h \
   qpid/Exception.h \

@@ -159,28 +159,22 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-# Enable cluster functionality.
-AC_ARG_ENABLE([cluster],
-  [AS_HELP_STRING([--enable-cluster],
-    [Enable cluster functionality, requires openais (default no)])],
-  [case $enableval in
-    yes|no) enable_CLUSTER=$enableval;;
-    *) AC_MSG_ERROR([Invalid value for --enable-apr-cluster: $enableval]);;
-   esac],
-  [enable_CLUSTER=no])
-
-AM_CONDITIONAL([CLUSTER], [test x$enable_CLUSTER = xyes])
-if test x$enable_CLUSTER = xyes; then
-  CPPFLAGS+=" -DCLUSTER"
+# Check for cluster requirements.
+save_ldflags=$LDFLAGS  
   LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
-  # cpg_local_get is not yet in a packaged release as of 2007-06-20
-  AC_CHECK_LIB([cpg],[cpg_local_get],,
-    AC_MSG_ERROR([cpg_local_get not available. openais missing/too old.]))
-   AC_CHECK_HEADERS([openais/cpg.h],,
-     AC_MSG_ERROR([Required header files not found.],[]))
+AC_CHECK_LIB([cpg],[cpg_local_get],[cpg_lib=yes])
+AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes])
+if test x$cpg_lib = xyes -a x$cpg_h = xyes; then
+   enable_CLUSTER=yes; 
+   CPPFLAGS+=" -DCLUSTER"
+else
+   enable_CLUSTER=no; 
+   LDFLAGS=$save_ldflags	    
 fi
+AM_CONDITIONAL([CLUSTER], [test x$enable_CLUSTER = xyes])
 
 	
+# Files to generate	
 AC_CONFIG_FILES([
   qpidc.spec
   Makefile

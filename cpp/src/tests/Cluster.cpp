@@ -19,8 +19,8 @@
 #include "Cluster.h"
 #include "test_tools.h"
 
-#include "qpid/framing/ChannelPingBody.h"
-#include "qpid/framing/ChannelOkBody.h"
+#include "qpid/framing/SessionPingBody.h"
+#include "qpid/framing/SessionPongBody.h"
 #include "qpid/cluster/ClassifierHandler.h"
 
 #define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
@@ -33,16 +33,16 @@ static const ProtocolVersion VER;
 /** Verify membership in a cluster with one member. */
 BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
-    AMQFrame frame(VER, 1, new ChannelPingBody(VER));
+    AMQFrame frame(VER, 1, new SessionPingBody(VER));
     Uuid id(true);
     SessionFrame send(id, frame, true);
     cluster.handle(send);
-    BOOST_REQUIRE(cluster.received.waitFor(1));
+    SessionFrame sf;
+    BOOST_REQUIRE(cluster.received.waitPop(sf));
 
-    SessionFrame& sf=cluster.received[0];
     BOOST_CHECK(sf.isIncoming);
     BOOST_CHECK_EQUAL(id, sf.uuid);
-    BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *sf.frame.getBody());
+    BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *sf.frame.getBody());
     
     BOOST_CHECK_EQUAL(1u, cluster.size());
     Cluster::MemberList members = cluster.getMembers();
@@ -65,17 +65,18 @@ BOOST_AUTO_TEST_CASE(testClusterTwo) {
         BOOST_REQUIRE(cluster.waitFor(2)); // Myself and child.
 
         // Exchange frames with child.
-        AMQFrame frame(VER, 1, new ChannelPingBody(VER));
+        AMQFrame frame(VER, 1, new SessionPingBody(VER));
         Uuid id(true);
         SessionFrame send(id, frame, true);
         cluster.handle(send);
-        BOOST_REQUIRE(cluster.received.waitFor(1));
-        SessionFrame& sf=cluster.received[0];
+        SessionFrame sf;
+        BOOST_REQUIRE(cluster.received.waitPop(sf));
         BOOST_CHECK_EQUAL(id, sf.uuid);
         BOOST_CHECK(sf.isIncoming);
-        BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *sf.frame.getBody());
-        BOOST_REQUIRE(cluster.received.waitFor(2));
-        BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.received[1].frame.getBody());
+        BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *sf.frame.getBody());
+        
+        BOOST_REQUIRE(cluster.received.waitPop(sf));
+        BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *sf.frame.getBody());
 
         if (!nofork) {
             // Wait for child to exit.
