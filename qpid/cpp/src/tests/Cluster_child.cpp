@@ -20,6 +20,8 @@
 
 #include "Cluster.h"
 #include "test_tools.h"
+#include "qpid/framing/SessionPingBody.h"
+#include "qpid/framing/SessionPongBody.h"
 
 using namespace std;
 using namespace qpid;
@@ -33,17 +35,18 @@ static const ProtocolVersion VER;
 /** Chlid part of Cluster::clusterTwo test */
 void clusterTwo() {
     TestCluster cluster("clusterTwo", "amqp:child:2");
-    BOOST_REQUIRE(cluster.received.waitFor(1)); // Frame from parent.
-    BOOST_CHECK(cluster.received[0].isIncoming);
-    BOOST_CHECK_TYPEID_EQUAL(ChannelPingBody, *cluster.received[0].frame.getBody());
+    SessionFrame sf;
+    BOOST_REQUIRE(cluster.received.waitPop(sf)); // Frame from parent.
+    BOOST_CHECK(sf.isIncoming);
+    BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *sf.frame.getBody());
     BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
 
-    AMQFrame frame(VER, 1, new ChannelOkBody(VER));
-    SessionFrame sf(cluster.received[0].uuid, frame, false);
-    cluster.handle(sf);
-    BOOST_REQUIRE(cluster.received.waitFor(2));
-    BOOST_CHECK(!cluster.received[1].isIncoming);
-    BOOST_CHECK_TYPEID_EQUAL(ChannelOkBody, *cluster.received[1].frame.getBody());
+    AMQFrame frame(VER, 1, new SessionPongBody(VER));
+    SessionFrame sendframe(sf.uuid, frame, false);
+    cluster.handle(sendframe);
+    BOOST_REQUIRE(cluster.received.waitPop(sf));
+    BOOST_CHECK(!sf.isIncoming);
+    BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *sf.frame.getBody());
 } 
 
 int test_main(int, char**) {
