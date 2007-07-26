@@ -49,6 +49,7 @@ class Basic < Test::Unit::TestCase
     assert content.headers == msg.content.headers
     assert content.body == msg.content.body
     assert content.children == msg.content.children
+    ch.basic_ack(msg.delivery_tag)
     msg = ch.channel_close()
     assert msg.method.qname == :channel_close_ok
   end
