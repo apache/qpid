@@ -33,10 +33,10 @@ public class Stub {
         StructFactory f = new StructFactory_v0_10();
         frame(Frame.L2, Frame.METHOD, true, true, f.newSessionOpen(0));
         frame(Frame.L4, Frame.METHOD, true, false,
-              f.newQueueDeclare((short) 0, "asdf", "alternate", null, DURABLE));
+              f.newQueueDeclare("asdf", "alternate", null, DURABLE));
         frame(Frame.L4, Frame.METHOD, false, false);
         frame(Frame.L3, Frame.METHOD, true, true,
-              f.newExchangeDeclare((short) 0, "exchange", "type", "alternate", null));
+              f.newExchangeDeclare("exchange", "type", "alternate", null));
         frame(Frame.L4, Frame.METHOD, false, true);
         frame(Frame.L4, Frame.HEADER, true, false);
         frame(Frame.L4, Frame.HEADER, false, false);
@@ -45,7 +45,7 @@ public class Stub {
         frame(Frame.L4, Frame.BODY, false, false);
         frame(Frame.L4, Frame.BODY, false, false);
         frame(Frame.L1, Frame.METHOD, true, true,
-              f.newExchangeDeclare((short) 0, "exchange", "type", "alternate", null));
+              f.newExchangeDeclare("exchange", "type", "alternate", null));
         frame(Frame.L4, Frame.BODY, false, false);
         frame(Frame.L4, Frame.BODY, false, true);
     }
@@ -72,7 +72,7 @@ class SessionDelegate extends Delegate<Session> {
 
     public @Override void exchangeDeclare(Session session, ExchangeDeclare ed) {
         System.out.println("got an exchange declare: " + ed.getExchange() + ", " + ed.getType());
-        session.queueDeclare((short) 0, "asdf", "alternate", null);
+        session.queueDeclare("asdf", "alternate", null);
     }
 
     /*

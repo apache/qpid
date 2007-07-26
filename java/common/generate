@@ -74,6 +74,7 @@ def scream(*args):
   return "_".join([a.replace("-", "_").upper() for a in args])
 
 DOMAINS = {}
+EXCLUDE = {"access-ticket": True}
 
 for d in spec.query["amqp/domain"]:
   DOMAINS[d["@name"]] = d["@type"]
@@ -83,6 +84,7 @@ def resolve(type):
     return resolve(DOMAINS[type])
   else:
     return type
+
 
 OPTIONS = {}
 
@@ -142,6 +144,8 @@ class Struct:
       for type, name in self.fields:
         if OPTIONS.has_key(name):
           out.line("            case %s: _%s=true; break;" % (OPTIONS[name], name))
+      out.line('            default: throw new IllegalArgumentException'
+               '("invalid option: " + _options[i]);')
       out.line("            }")
       out.line("        }")
       for type, name in self.fields:
@@ -193,13 +197,17 @@ class Struct:
       args.append("_options")
     return ", ".join(args)
 
+CLASSES = {"file": False, "basic": False, "stream": False, "tunnel": False}
+FIELDS = {"ticket": False}
+
 opts = Output(out_dir, out_pkg, "Option")
 opts.line("public enum Option {")
 structs = []
-for m in spec.query["amqp/class/method"]:
+for m in spec.query["amqp/class/method",
+                    lambda m: CLASSES.get(m.parent["@name"], True)]:
   struct = Struct(int(m.parent["@index"])*256 + int(m["@index"]),
                   camel(0, m.parent["@name"], m["@name"]))
-  for f in m.query["field"]:
+  for f in m.query["field", lambda f: FIELDS.get(f["@name"], True)]:
     type = resolve(f["@domain"])
     name = camel(1, f["@name"])
     struct.field(type, name)
