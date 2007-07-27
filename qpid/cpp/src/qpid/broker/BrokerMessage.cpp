@@ -26,6 +26,7 @@
 #include "InMemoryContent.h"
 #include "LazyLoadedContent.h"
 #include "MessageStore.h"
+#include "BrokerQueue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/BasicDeliverBody.h"
 #include "qpid/framing/BasicGetOkBody.h"
@@ -36,6 +37,30 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ChannelAdapter.h"
 #include "RecoveryManagerImpl.h"
+
+namespace qpid{
+namespace broker{
+
+struct BasicGetToken : DeliveryToken
+{
+    typedef boost::shared_ptr<BasicGetToken> shared_ptr;
+
+    Queue::shared_ptr queue;
+
+    BasicGetToken(Queue::shared_ptr q) : queue(q) {}
+};
+
+struct BasicConsumeToken : DeliveryToken 
+{
+    typedef boost::shared_ptr<BasicConsumeToken> shared_ptr;
+
+    const string consumer;
+
+    BasicConsumeToken(const string c) : consumer(c) {}
+};
+
+}
+}
 
 using namespace boost;
 using namespace qpid::broker;
@@ -74,6 +99,16 @@ bool BasicMessage::isComplete(){
     return header.get() && (header->getContentSize() == contentSize());
 }
 
+DeliveryToken::shared_ptr BasicMessage::createGetToken(Queue::shared_ptr queue)
+{
+    return DeliveryToken::shared_ptr(new BasicGetToken(queue));
+}
+
+DeliveryToken::shared_ptr BasicMessage::createConsumeToken(const string& consumer)
+{
+    return DeliveryToken::shared_ptr(new BasicConsumeToken(consumer));
+}
+
 void BasicMessage::deliver(ChannelAdapter& channel, 
                            const string& consumerTag, uint64_t deliveryTag, 
                            uint32_t framesize)
@@ -86,23 +121,39 @@ void BasicMessage::deliver(ChannelAdapter& channel,
 }
 
 void BasicMessage::sendGetOk(ChannelAdapter& channel,
-                             const std::string& /*destination*/,
                              uint32_t messageCount,
-                             uint64_t responseTo, 
+                             uint64_t /*responseTo*/, 
                              uint64_t deliveryTag, 
                              uint32_t framesize)
 {
     channel.send(make_shared_ptr(
         new BasicGetOkBody(
             channel.getVersion(),
-            responseTo,
+            //responseTo,
             deliveryTag, getRedelivered(), getExchange(),
             getRoutingKey(), messageCount))); 
     sendContent(channel, framesize);
 }
 
-void BasicMessage::sendContent(
-    ChannelAdapter& channel, uint32_t framesize)
+void BasicMessage::deliver(framing::ChannelAdapter& channel, uint64_t deliveryTag, DeliveryToken::shared_ptr token, uint32_t framesize)
+{
+    BasicConsumeToken::shared_ptr consume = dynamic_pointer_cast<BasicConsumeToken>(token);
+    if (consume) {
+        deliver(channel, consume->consumer, deliveryTag, framesize);
+    } else {
+        BasicGetToken::shared_ptr get = dynamic_pointer_cast<BasicGetToken>(token);
+        if (get) {
+            uint64_t request(1/*actual value doesn't affect anything at present*/);
+            sendGetOk(channel, get->queue->getMessageCount(), request, deliveryTag, framesize);
+        } else {
+            //TODO:
+            //either need to be able to convert to a message transfer or
+            //throw error of some kind to allow this to be handled higher up
+        }
+    }
+}
+
+void BasicMessage::sendContent(ChannelAdapter& channel, uint32_t framesize)
 {
     channel.send(header);
     Mutex::ScopedLock locker(contentLock);

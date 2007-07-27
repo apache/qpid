@@ -329,12 +329,6 @@ class Codec:
       return ReferenceId(self.decode_longstr())
 
   # new domains for 0-10:
-  
-  def encode_uuid(self, s):
-    self.encode_longstr(s)
-
-  def decode_uuid(self):
-    return self.decode_longstr()
 
   def encode_rfc1982_long(self, s):
     self.encode_long(s)
@@ -342,10 +336,21 @@ class Codec:
   def decode_rfc1982_long(self):
     return self.decode_long()
 
-  #Not done yet
   def encode_rfc1982_long_set(self, s):
-    self.encode_short(0)
+    self.encode_short(len(s))
+    for i in s:
+      self.encode_long(i)
 
   def decode_rfc1982_long_set(self):
-    self.decode_short()
-    return 0;
+    count = self.decode_short()
+    set = []
+    for i in range(0, count):
+      set.append(self.decode_long())
+    return set;
+
+  #not correct for 0-10 yet
+  def encode_uuid(self, s):
+    self.encode_longstr(s)
+
+  def decode_uuid(self):
+    return self.decode_longstr()

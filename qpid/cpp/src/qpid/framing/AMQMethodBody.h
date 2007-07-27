@@ -47,6 +47,7 @@ class AMQMethodBody : public AMQBody
     AMQMethodBody(ProtocolVersion ver) : version(ver) {}
     virtual ~AMQMethodBody() {}
     void decode(Buffer&, uint32_t);
+    virtual void encode(Buffer& buffer) const;
 
     virtual MethodId amqpMethodId() const = 0;
     virtual ClassId  amqpClassId() const = 0;
@@ -64,8 +65,8 @@ class AMQMethodBody : public AMQBody
     virtual bool isRequest() const { return false; }
     virtual bool isResponse() const { return false; }
 
-  protected:
     static uint32_t baseSize() { return 4; }
+  protected:
 
     struct ClassMethodId {
         uint16_t classId;
@@ -76,6 +77,9 @@ class AMQMethodBody : public AMQBody
     void encodeId(Buffer& buffer) const;
     virtual void encodeContent(Buffer& buffer) const = 0;
     virtual void decodeContent(Buffer& buffer) = 0;
+
+    virtual void printPrefix(std::ostream&) const {}
+
 };
 
 

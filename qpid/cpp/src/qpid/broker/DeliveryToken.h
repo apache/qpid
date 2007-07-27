@@ -18,23 +18,25 @@
  * under the License.
  *
  */
-#ifndef _ConsumeAdapter_
-#define _ConsumeAdapter_
+#ifndef _DeliveryToken_
+#define _DeliveryToken_
 
-#include "DeliveryAdapter.h"
-#include "qpid/framing/ChannelAdapter.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
-    class ConsumeAdapter : public DeliveryAdapter
+
+    /**
+     * A DeliveryToken allows the delivery of a message to be
+     * associated with whatever mechanism caused it to be
+     * delivered. (i.e. its a form of Memento).
+     */
+    class DeliveryToken
     {
-        framing::ChannelAdapter& adapter;
-        const std::string tag;
-        const uint32_t framesize;
     public:
-        ConsumeAdapter(framing::ChannelAdapter& adapter, const std::string tag, uint32_t framesize);
-        framing::RequestId getNextDeliveryTag();
-        void deliver(Message::shared_ptr& msg, framing::RequestId tag);
+        typedef boost::shared_ptr<DeliveryToken> shared_ptr;
+
+        virtual ~DeliveryToken(){}
     };
 
 }}

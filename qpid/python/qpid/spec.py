@@ -240,7 +240,7 @@ class Method(Metadata):
               "content": None,
               "uuid": "",
               "rfc1982_long": 0,
-              "rfc1982_long_set": 0
+              "rfc1982_long_set": []
               }
 
   def define_method(self, name):

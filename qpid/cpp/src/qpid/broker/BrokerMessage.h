@@ -43,6 +43,7 @@ class AMQHeaderBody;
 namespace broker {
 
 class MessageStore;
+class Queue;
 using framing::string;
 	
 /**
@@ -70,13 +71,16 @@ class BasicMessage : public Message {
     void addContent(framing::AMQContentBody::shared_ptr data);
     bool isComplete();
 
+    static DeliveryToken::shared_ptr createGetToken(boost::shared_ptr<Queue> queue);
+    static DeliveryToken::shared_ptr createConsumeToken(const string& consumer);
+    void deliver(framing::ChannelAdapter& channel, uint64_t deliveryTag, DeliveryToken::shared_ptr token, uint32_t framesize);
+
     void deliver(framing::ChannelAdapter&, 
                  const string& consumerTag, 
                  uint64_t deliveryTag, 
                  uint32_t framesize);
     
     void sendGetOk(framing::ChannelAdapter& channel, 
-                   const std::string& destination,
                    uint32_t messageCount,
                    uint64_t responseTo, 
                    uint64_t deliveryTag, 

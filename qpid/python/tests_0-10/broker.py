@@ -48,7 +48,7 @@ class BrokerTests(TestBase):
         body = "test ack"
         ch.message_transfer(routing_key = "otherqueue", body = body)
         msg = self.client.queue(ctag).get(timeout = 5)
-        msg.ok()
+        msg.complete()
         self.assert_(msg.body == body)
         
     def test_simple_delivery_immediate(self):

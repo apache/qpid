@@ -29,6 +29,8 @@ import java.util.TreeMap;
 
 public class CppGenerator extends Generator
 {
+    protected static final boolean USE_RELIABLE_FRAMING = false;
+
     protected static final String versionNamespaceStartToken = "${version_namespace_start}";
     protected static final String versionNamespaceEndToken = "${version_namespace_end}";
         
@@ -150,12 +152,11 @@ public class CppGenerator extends Generator
                                               "buffer.putLongString(#)", // encodeExpression
                                               "buffer.getLongString(#)")); // decodeExpression
 
-        //NB: this is WRONG! but is here as a transitional aid
         typeMap.put("rfc1982-long-set", new DomainInfo(
-                                            "u_int16_t",                        // type
-                                            "2",                                        // size
-                                            "buffer.putShort(#)",       // encodeExpression
-                                            "# = buffer.getShort()"));  // decodeExpression
+                                              "SequenceNumberSet",                                // type
+                                              "#.encodedSize()",                       // size
+                                              "#.encode(buffer)",   // encodeExpression
+                                              "#.decode(buffer)")); // decodeExpression
     }
 
     public boolean isQuietFlag()
@@ -378,6 +379,7 @@ public class CppGenerator extends Generator
     }
 
     private String baseClass(AmqpMethod method, AmqpVersion version) {
+        if (!USE_RELIABLE_FRAMING) return "AMQMethodBody";
 	String base = method.isResponse(version) ? "AMQResponseBody":"AMQRequestBody";
 	return base;
     }
@@ -787,16 +789,6 @@ public class CppGenerator extends Generator
                                     sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), false, true, true));
                                 }
 
-                                //if (abstractMethodFlag) sb.append("const MethodContext& context");
-                                //boolean leadingComma = abstractMethodFlag;
-                                //int paramIndent = indentSize + (5*tabSize);
-				//				sb.append(generateMethodParameterList(thisFieldMap, paramIndent, leadingComma, true, true));
-                                /*
-                                if (!abstractMethodFlag && method.isResponse(null)) {
-                                	if (!thisFieldMap.isEmpty()) sb.append(", \n"+Utils.createSpaces(paramIndent));
-                                	sb.append("	RequestId responseTo");
-                                }
-                                */
                                 sb.append(" )");
                                 if (abstractMethodFlag)
                                     sb.append(" = 0");

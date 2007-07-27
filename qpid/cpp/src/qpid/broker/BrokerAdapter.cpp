@@ -20,8 +20,7 @@
 #include "BrokerAdapter.h"
 #include "BrokerChannel.h"
 #include "Connection.h"
-#include "ConsumeAdapter.h"
-#include "GetAdapter.h"
+#include "DeliveryToken.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/Exception.h"
 
@@ -325,8 +324,8 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
     //need to generate name here, so we have it for the adapter (it is
     //also version specific behaviour now)
     if (newTag.empty()) newTag = tagGenerator.generate();
-    channel.consume(std::auto_ptr<DeliveryAdapter>(new ConsumeAdapter(adapter, newTag, connection.getFrameMax())),
-        newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &fields);
+    DeliveryToken::shared_ptr token(BasicMessage::createConsumeToken(newTag));
+    channel.consume(token, newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &fields);
 
     if(!nowait) client.consumeOk(newTag);
 
@@ -357,8 +356,8 @@ void BrokerAdapter::BasicHandlerImpl::publish(uint16_t /*ticket*/,
         
 void BrokerAdapter::BasicHandlerImpl::get(uint16_t /*ticket*/, const string& queueName, bool noAck){
     Queue::shared_ptr queue = getQueue(queueName);    
-    GetAdapter out(adapter, queue, "", connection.getFrameMax());
-    if(!channel.get(out, queue, !noAck)){
+    DeliveryToken::shared_ptr token(BasicMessage::createGetToken(queue));
+    if(!channel.get(token, queue, !noAck)){
         string clusterId;//not used, part of an imatix hack
 
         client.getEmpty(clusterId);

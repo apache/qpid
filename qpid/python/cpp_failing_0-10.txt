@@ -1,4 +1,15 @@
-tests_0-10.message.MessageTests.test_checkpoint
 tests_0-10.message.MessageTests.test_reject
 tests_0-10.basic.BasicTests.test_get
+
+tests_0-10.message.MessageTests.test_get
+tests_0-10.message.MessageTests.test_checkpoint
+tests_0-10.message.MessageTests.test_empty_reference
+tests_0-10.message.MessageTests.test_reference_already_opened_error
+tests_0-10.message.MessageTests.test_reference_completion
+tests_0-10.message.MessageTests.test_reference_large
+tests_0-10.message.MessageTests.test_reference_multi_transfer
+tests_0-10.message.MessageTests.test_reference_simple
+tests_0-10.message.MessageTests.test_reference_unopened_on_append_error
+tests_0-10.message.MessageTests.test_reference_unopened_on_close_error
+tests_0-10.message.MessageTests.test_reference_unopened_on_transfer_error
 
