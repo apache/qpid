@@ -14,8 +14,6 @@ libqpidcluster_la_SOURCES = \
   qpid/cluster/ClusterPlugin.cpp \
   qpid/cluster/ClassifierHandler.h \
   qpid/cluster/ClassifierHandler.cpp \
-  qpid/cluster/SessionFrame.h \
-  qpid/cluster/SessionFrame.cpp \
   qpid/cluster/SessionManager.h \
   qpid/cluster/SessionManager.cpp
 

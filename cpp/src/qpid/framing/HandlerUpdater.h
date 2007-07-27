@@ -31,10 +31,10 @@ struct HandlerUpdater {
     virtual ~HandlerUpdater() {}
     
     /** Update the handler chains.
-     *@param id Unique identifier for channel or session.
+     *@param channel Id of associated channel.
      *@param chains Handler chains to be updated.
      */
-    virtual void update(FrameHandler::Chains& chains) = 0;
+    virtual void update(ChannelId channel, FrameHandler::Chains& chains) = 0;
 };
 
 }} // namespace qpid::framing

@@ -33,7 +33,6 @@
 #include "qpid/Plugin.h"
 #include "qpid/Url.h"
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/HandlerUpdater.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Acceptor.h"
@@ -96,7 +95,7 @@ class Broker : public sys::Runnable, public Plugin::Target
     void add(const shared_ptr<framing::HandlerUpdater>&);
     
     /** Apply all handler updaters to a handler chain pair. */
-    void update(framing::FrameHandler::Chains&); 
+    void update(framing::ChannelId, framing::FrameHandler::Chains&); 
     
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }

@@ -47,6 +47,7 @@
 using qpid::sys::Acceptor;
 using qpid::framing::HandlerUpdater;
 using qpid::framing::FrameHandler;
+using qpid::framing::ChannelId;
 
 namespace qpid {
 namespace broker {
@@ -162,9 +163,10 @@ void Broker::add(const shared_ptr<HandlerUpdater>& updater) {
     handlerUpdaters.push_back(updater);
 }
 
-void Broker::update(FrameHandler::Chains& chains) {
+void Broker::update(ChannelId channel, FrameHandler::Chains& chains) {
     for_each(handlerUpdaters.begin(), handlerUpdaters.end(),
-             boost::bind(&HandlerUpdater::update, _1, boost::ref(chains)));
+             boost::bind(&HandlerUpdater::update, _1,
+                         channel, boost::ref(chains)));
 }
 
 }} // namespace qpid::broker
