@@ -19,8 +19,8 @@ package org.apache.qpid.nclient.jms;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpid.nclient.exception.QpidException;
 import org.apache.qpid.nclient.jms.message.*;
+import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -243,7 +243,7 @@ public class SessionImpl implements Session
             // Note: this operation makes sure that asynch message processing has returned
             _qpidSession.commit();
         }
-        catch (org.apache.qpidity.QpidException e)
+        catch (QpidException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
