@@ -108,7 +108,7 @@ FrameHandler::Chains& Connection::getChannel(ChannelId id) {
         FrameHandler::Chains chains(
             new SemanticHandler(id, *this),
             new OutputHandlerFrameHandler(*out));
-        broker.update(chains);
+        broker.update(id, chains);
         i = channels.insert(ChannelMap::value_type(id, chains)).first;
     }        
     return i->second;

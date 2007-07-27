@@ -74,61 +74,38 @@ using namespace broker;
     virtual void redeliver(Message::shared_ptr&, DeliveryToken::shared_ptr, DeliveryId) {}
 };
 
-/** Wrap plain AMQFrames in SessionFrames */
-struct FrameWrapperHandler : public FrameHandler {
-
-    FrameWrapperHandler(const Uuid& id, bool dir, SessionFrameHandler::Chain next_)
-        : uuid(id), direction(dir), next(next_) {
-        assert(!uuid.isNull());
-    }
-    
-    void handle(AMQFrame& frame) {
-        SessionFrame sf(uuid, frame, direction);
-        assert(next);
-        next->handle(sf);
-    }
-
-    Uuid uuid;
-    bool direction;
-    SessionFrameHandler::Chain next;
-};
-
 SessionManager::SessionManager(Broker& b) : localBroker(new BrokerHandler(b)) {}
 
-void SessionManager::update(FrameHandler::Chains& chains) {
+void SessionManager::update(ChannelId channel, FrameHandler::Chains& chains) {
     Mutex::ScopedLock l(lock);
     // Create a new local session, store local chains.
-    Uuid uuid(true);
-    sessions[uuid] = chains;
+    sessions[channel] = chains;
     
-    // Replace local in chain. Build from the back.
-    // TODO aconway 2007-07-05: Currently mcast wiring, bypass
-    // everythign else.
+    // Replace local "in" chain to mcast wiring and process other frames
+    // as normal.
     assert(clusterSend);
-    FrameHandler::Chain wiring(new FrameWrapperHandler(uuid, SessionFrame::IN, clusterSend));
-    FrameHandler::Chain classify(new ClassifierHandler(wiring, chains.in));
-    chains.in = classify;
-
-    // Leave out chain unmodified.
-    // TODO aconway 2007-07-05: Failover will require replication of
-    // outgoing frames to session replicas.
+    chains.in = make_shared_ptr(
+        new ClassifierHandler(clusterSend, chains.in));
 }
 
-void SessionManager::handle(SessionFrame& frame) {
+void SessionManager::handle(AMQFrame& frame) {
     // Incoming from cluster.
     {
         Mutex::ScopedLock l(lock);
-        assert(frame.isIncoming); // FIXME aconway 2007-07-24: Drop isIncoming?
-        SessionMap::iterator i = sessions.find(frame.uuid);
+        SessionMap::iterator i = sessions.find(frame.getChannel());
         if (i == sessions.end()) {
-            // Non local method frame, invoke.
-            localBroker->handle(frame.frame);
+            // Non-local wiring method frame, invoke locally.
+            localBroker->handle(frame);
         }
         else {
-            // Local frame, continue on local chain
-            i->second.in->handle(frame.frame);
+            // Local frame continuing on local chain
+            i->second.in->handle(frame);
         }
     }
+}
+
+void SessionManager::setClusterSend(const FrameHandler::Chain& send) {
+    clusterSend=send;
 }
 
 }} // namespace qpid::cluster
