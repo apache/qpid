@@ -18,10 +18,10 @@
  */
 package org.apache.qpid.nclient.api;
 
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 /**
- * This session’s resources are control under the scope of a distributed transaction.
+ * This sessionï¿½s resources are control under the scope of a distributed transaction.
  *
  * Created by Arnaud Simon
  * Date: 20-Jul-2007

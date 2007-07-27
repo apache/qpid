@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.nclient.api;
 
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 import java.util.Set;
 
@@ -80,7 +80,7 @@ public interface MessageReceiver extends Resource
             IllegalStateException;
 
     /**
-     * Set the receiver’s MessageListener.
+     * Set the receiverï¿½s MessageListener.
      * Setting the message listener to null is the equivalent of un-setting the message
      * listener for this receiver.
      * <p> Once a message listener is set, a receiver cannot receive messages through its

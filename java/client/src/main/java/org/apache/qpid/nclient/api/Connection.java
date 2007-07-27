@@ -19,11 +19,9 @@
 package org.apache.qpid.nclient.api;
 
 
-
-
-import org.apache.qpid.nclient.exception.QpidException;
-
 import java.net.URL;
+
+import org.apache.qpidity.QpidException;
 
 /**
  * This represents a physical connection to a broker.

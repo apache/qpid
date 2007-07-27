@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.nclient.api;
 
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 /**
  * A sender is used to send message to its queue.

@@ -20,7 +20,7 @@ package org.apache.qpid.nclient.api;
 
 
 import org.apache.qpid.nclient.FieldTable;
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 import java.nio.ByteBuffer;
 
