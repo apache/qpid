@@ -56,8 +56,6 @@ Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads, bo
 {
     return Acceptor::shared_ptr(new APRAcceptor(port, backlog, threads, trace));
 }
-// Must define Acceptor virtual dtor.
-Acceptor::~Acceptor() {}
 
 APRAcceptor::APRAcceptor(int16_t port_, int backlog, int threads, bool trace_) :
     port(port_),

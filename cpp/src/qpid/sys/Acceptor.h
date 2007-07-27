@@ -37,9 +37,11 @@ class Acceptor : public qpid::SharedObject<Acceptor>
     virtual ~Acceptor() = 0;
     virtual uint16_t getPort() const = 0;
     virtual std::string getHost() const = 0;
-    virtual void run(qpid::sys::ConnectionInputHandlerFactory* factory) = 0;
+    virtual void run(ConnectionInputHandlerFactory* factory) = 0;
     virtual void shutdown() = 0;
 };
+
+inline Acceptor::~Acceptor() {}
 
 }}
 

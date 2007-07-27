@@ -30,9 +30,14 @@ struct timeval;
 namespace qpid {
 namespace sys {
 
+// Private Time related implementation details
 struct timespec& toTimespec(struct timespec& ts, const Duration& t);
 struct timeval& toTimeval(struct timeval& tv, const Duration& t);
 Duration toTime(const struct timespec& ts);
+
+// Private socket related implementation details
+class SocketPrivate;
+int toFd(const SocketPrivate* s);
 
 }}
 

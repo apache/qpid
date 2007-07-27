@@ -20,31 +20,56 @@
  */
 
 
-#include "Socket.h"
+#include "qpid/sys/Socket.h"
+
 #include "APRBase.h"
 #include "APRPool.h"
 
+#include <apr_network_io.h>
 
-using namespace qpid::sys;
+namespace qpid {
+namespace sys {
 
-Socket Socket::createTcp() {
-    Socket s;
-    CHECK_APR_SUCCESS(
-        apr_socket_create(
-            &s.socket, APR_INET, SOCK_STREAM, APR_PROTO_TCP,
-            APRPool::get()));
-    return s;
+class SocketPrivate {
+public:
+	SocketPrivate(apr_socket_t* s = 0) :
+		socket(s)
+	{}
+
+	apr_socket_t* socket;
+};
+
+Socket::Socket() :
+	impl(new SocketPrivate)
+{
+	createTcp();
 }
 
-Socket::Socket(apr_socket_t* s) {
+Socket::Socket(SocketPrivate* sp) :
+	impl(sp)
+{}
+
+Socket::~Socket() {
+	delete impl;
+}
+
+void Socket::createTcp() const {
+	apr_socket_t*& socket = impl->socket;
+    apr_socket_t* s;
+    CHECK_APR_SUCCESS(
+        apr_socket_create(
+            &s, APR_INET, SOCK_STREAM, APR_PROTO_TCP,
+            APRPool::get()));
     socket = s;
 }
 
-void Socket::setTimeout(const Duration& interval) {
+void Socket::setTimeout(const Duration& interval) const {
+	apr_socket_t*& socket = impl->socket;
     apr_socket_timeout_set(socket, interval/TIME_USEC);
 }
 
-void Socket::connect(const std::string& host, int port) {
+void Socket::connect(const std::string& host, int port) const {
+	apr_socket_t*& socket = impl->socket;
     apr_sockaddr_t* address;
     CHECK_APR_SUCCESS(
         apr_sockaddr_info_get(
@@ -53,14 +78,16 @@ void Socket::connect(const std::string& host, int port) {
     CHECK_APR_SUCCESS(apr_socket_connect(socket, address));
 }
 
-void Socket::close() {
+void Socket::close() const {
+	apr_socket_t*& socket = impl->socket;
     if (socket == 0) return;
     CHECK_APR_SUCCESS(apr_socket_close(socket));
     socket = 0;
 }
 
-ssize_t Socket::send(const void* data, size_t size)
+ssize_t Socket::send(const void* data, size_t size) const
 {
+	apr_socket_t*& socket = impl->socket;
     apr_size_t sent = size;
     apr_status_t status =
         apr_socket_send(socket, reinterpret_cast<const char*>(data), &sent);
@@ -70,8 +97,9 @@ ssize_t Socket::send(const void* data, size_t size)
     return sent;
 }
 
-ssize_t Socket::recv(void* data, size_t size)
+ssize_t Socket::recv(void* data, size_t size) const
 {
+	apr_socket_t*& socket = impl->socket;
     apr_size_t received = size;
     apr_status_t status =
         apr_socket_recv(socket, reinterpret_cast<char*>(data), &received);
@@ -83,4 +111,4 @@ ssize_t Socket::recv(void* data, size_t size)
     return received;
 }
 
-
+}} // namespace qpid::sys
