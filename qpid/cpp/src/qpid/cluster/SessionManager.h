@@ -19,7 +19,6 @@
  *
  */
 
-#include "qpid/cluster/SessionFrame.h"
 #include "qpid/framing/HandlerUpdater.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/Uuid.h"
@@ -41,30 +40,30 @@ namespace cluster {
  * Manage sessions and handler chains for the cluster.
  * 
  */
-class SessionManager : public framing::HandlerUpdater, public SessionFrameHandler,
+class SessionManager : public framing::HandlerUpdater, public framing::FrameHandler,
                        private boost::noncopyable
 {
   public:
     SessionManager(broker::Broker& broker);
 
     /** Set the handler to send to the cluster */
-    void setClusterSend(const SessionFrameHandler::Chain& send) { clusterSend=send; }
+    void setClusterSend(const framing::FrameHandler::Chain& send);
     
     /** As ChannelUpdater update the handler chains. */
-    void update(framing::FrameHandler::Chains& chains);
+    void update(framing::ChannelId, framing::FrameHandler::Chains&);
 
-    /** As SessionFrameHandler handle frames received from the cluster */
-    void handle(SessionFrame&);
+    /** As FrameHandler frames received from the cluster */
+    void handle(framing::AMQFrame&);
 
     /** Get ChannelID for UUID. Return 0 if no mapping */
     framing::ChannelId getChannelId(const framing::Uuid&) const;
     
   private:
     class SessionOperations;
-    typedef std::map<framing::Uuid,framing::FrameHandler::Chains> SessionMap;
+    typedef std::map<framing::ChannelId,framing::FrameHandler::Chains> SessionMap;
 
     sys::Mutex lock;
-    SessionFrameHandler::Chain clusterSend;
+    framing::FrameHandler::Chain clusterSend;
     framing::FrameHandler::Chain localBroker;
     SessionMap sessions;
 };
