@@ -178,8 +178,10 @@ class Codec:
     encodes long (32 bits) data 'o' in network byte order
     """
 
-    if (o < 0):
-        raise ValueError('unsinged long int cannot be less than 0')
+    # we need to check both bounds because on 64 bit platforms
+    # struct.pack won't raise an error if o is too large
+    if (o < 0 or o > 4294967295):
+      raise ValueError('Valid range of long int is [0,4294967295]')
 
     self.pack("!L", o)
 
