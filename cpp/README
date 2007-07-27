@@ -90,16 +90,34 @@ Unpack the source distribution and do:
 
 This will install in the standard places (/usr/lib, /usr/include etc.)
 
-Next edit /etc/ais/openais.conf and modify the "bindnetaddr" setting
-to your hosts external IP address (don't use 127.0.0.1.) 
+Edit /etc/ais/openais.conf and modify the "bindnetaddr" setting
+to your hosts IP address. Do not use 127.0.0.1.
+
+Make sure the UDP port set for mcastport in openais.conf (5405 by
+default) is not blocked by your firewall. Disable the firewall or
+configure it to allow this port for UDP.
 
 Finally start the ais daemon (must be done as root):
-
  # sudo /sbin/aisexec
 
 Note that to run the AIS tests your primary group must be "ais".  You
 can change your primary group with the usermod command or set it
 temporarily with the newgrp command.
+
+Troubleshooting tips:
+
+If aisexec goes into a loop printing "entering GATHER state", verify your firewall is allowing UDP traffic on the mcastport set in openais.conf.
+
+If aisexec reports "got nodejoin message 127.0.0.1" verify the
+bindnetaddr in openais.conf is an active local IP address.  ifconfig
+will list local addresses.
+
+When aisexec is working correctly, the start-up log messages will end
+with "entering OPERATIONAL state." and "got nodejoin message <ip
+address>" where <ip address> is the local IP address specified for
+bindnetaddr in openais.conf.
+
+For further info on openais http://openais.org/
 
 ==== To build the boost library ====
 
