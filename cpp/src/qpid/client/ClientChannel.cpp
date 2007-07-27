@@ -77,7 +77,7 @@ void Channel::protocolInit(
     connection->connector->init(); // Send ProtocolInit block.
     ConnectionStartBody::shared_ptr connectionStart =
         responses.receive<ConnectionStartBody>();
-    
+
     FieldTable props;
     string mechanism("PLAIN");
     string response = ((char)0) + uid + ((char)0) + pwd;
@@ -85,7 +85,7 @@ void Channel::protocolInit(
     ConnectionTuneBody::shared_ptr proposal =
         sendAndReceive<ConnectionTuneBody>(
             make_shared_ptr(new ConnectionStartOkBody(
-                version, connectionStart->getRequestId(),
+                version, //connectionStart->getRequestId(),
                 props, mechanism,
                 response, locale)));
 
@@ -98,7 +98,7 @@ void Channel::protocolInit(
     **/
 
     sendCommand(make_shared_ptr(new ConnectionTuneOkBody(
-             version, proposal->getRequestId(),
+             version, //proposal->getRequestId(),
              proposal->getChannelMax(), connection->getMaxFrameSize(),
              proposal->getHeartbeat())));
     
@@ -222,10 +222,10 @@ AMQMethodBody::shared_ptr method, const MethodContext& ctxt)
             }
         }
 
-void Channel::handleChannel(AMQMethodBody::shared_ptr method, const MethodContext& ctxt) {
+void Channel::handleChannel(AMQMethodBody::shared_ptr method, const MethodContext& /*ctxt*/) {
     switch (method->amqpMethodId()) {
       case ChannelCloseBody::METHOD_ID:
-          sendCommand(make_shared_ptr(new ChannelCloseOkBody(version, ctxt.getRequestId())));
+          sendCommand(make_shared_ptr(new ChannelCloseOkBody(version/*, ctxt.getRequestId()*/)));
         peerClose(shared_polymorphic_downcast<ChannelCloseBody>(method));
         return;
       case ChannelFlowBody::METHOD_ID:

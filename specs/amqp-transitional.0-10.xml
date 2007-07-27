@@ -6184,13 +6184,6 @@
     <chassis name="server" implement="MUST" />
     <chassis name="client" implement="MUST" />
 
-    <!-- TRANSITIONAL: this is included as a temporary measure to allow easier evolution from 0-9 to 0-10 -->
-    <method name = "ok" index = "500" label = "old means of signalling completion">
-      <chassis name = "server" implement = "MUST" />
-      <chassis name = "client" implement = "MUST" />
-    </method>
-
-
     <!-- - Method: message.transfer  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="transfer" index="10" label="transfer a message">
@@ -6220,8 +6213,9 @@
       <chassis name="server" implement="MUST" />
       <chassis name="client" implement="MUST" />
 
-      <response name="ok" />
+      <!-- commented out to ease transition from 0-9 to 0-10
       <response name="reject" />
+      -->
 
       <field name="ticket" domain="access-ticket" label="access ticket">
         <rule name="validity" on-failure="access-refused">
@@ -6594,8 +6588,9 @@
 
       <chassis name="server" implement="MUST" />
 
-      <response name="ok" /><!-- added in just to ease transition -->
+      <!-- commented out to aid transition to 0-10
       <response name="empty" />
+      -->
 
       <field name="ticket" domain="access-ticket">
         <rule name="ticket-required" on-failure="access-refused">

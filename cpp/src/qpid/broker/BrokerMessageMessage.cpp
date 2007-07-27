@@ -34,10 +34,18 @@
 #include <algorithm>
 
 using namespace std;
+using namespace boost;
 using namespace qpid::framing;
 
 namespace qpid {
 namespace broker {
+
+struct MessageDeliveryToken : public DeliveryToken
+{
+    const std::string destination;
+
+    MessageDeliveryToken(const std::string& d) : destination(d) {}
+};
 	
 MessageMessage::MessageMessage(
     ConnectionToken* publisher, RequestId requestId_, TransferPtr transfer_
@@ -179,22 +187,13 @@ void MessageMessage::transferMessage(
         channel.send(make_shared_ptr(new MessageCloseBody(channel.getVersion(), ref->getId())));
 }
 
-void MessageMessage::deliver(
-    framing::ChannelAdapter& channel, 
-    const std::string& consumerTag, 
-    uint64_t /*deliveryTag*/, 
-    uint32_t framesize)
+
+void MessageMessage::deliver(ChannelAdapter& channel, uint64_t, DeliveryToken::shared_ptr token, uint32_t framesize)
 {
-    transferMessage(channel, consumerTag, framesize);
+    transferMessage(channel, shared_polymorphic_cast<MessageDeliveryToken>(token)->destination, framesize);
 }
 
-void MessageMessage::sendGetOk(
-    framing::ChannelAdapter& channel,
-    const std::string& destination,
-    uint32_t /*messageCount*/,
-    uint64_t /*responseTo*/, 
-    uint64_t /*deliveryTag*/, 
-    uint32_t framesize)
+void MessageMessage::deliver(ChannelAdapter& channel, const std::string& destination, uint32_t framesize)
 {
     transferMessage(channel, destination, framesize);
 }
@@ -321,6 +320,10 @@ MessageMessage::ReferencePtr MessageMessage::getReference() const {
     return reference;
 }
 
+DeliveryToken::shared_ptr MessageMessage::getToken(const std::string& destination)
+{
+    return DeliveryToken::shared_ptr(new MessageDeliveryToken(destination));
+}
 
 }} // namespace qpid::broker
 

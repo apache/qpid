@@ -90,5 +90,5 @@ class ExampleTest (TestBase):
         self.assertEqual(body, msg.body)
 
         # Now acknowledge the message.
-        msg.ok()
+        msg.complete()
 

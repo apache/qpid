@@ -53,17 +53,8 @@ class MessageMessage: public Message{
     TransferPtr getTransfer() const { return transfer; }
     ReferencePtr getReference() const ;
     
-    void deliver(framing::ChannelAdapter& channel, 
-                 const std::string& consumerTag, 
-                 uint64_t deliveryTag, 
-                 uint32_t framesize);
-    
-    void sendGetOk(framing::ChannelAdapter& channel, 
-                   const std::string& destination,
-                   uint32_t messageCount,
-                   uint64_t responseTo, 
-                   uint64_t deliveryTag, 
-                   uint32_t framesize);
+    void deliver(framing::ChannelAdapter& channel, uint64_t deliveryTag, DeliveryToken::shared_ptr token, uint32_t framesize);
+    void deliver(framing::ChannelAdapter&, const std::string& destination, uint32_t framesize);
 
     bool isComplete();
 
@@ -80,6 +71,8 @@ class MessageMessage: public Message{
     uint64_t expectedContentSize();
     void decodeHeader(framing::Buffer& buffer);
     void decodeContent(framing::Buffer& buffer, uint32_t contentChunkSize = 0);
+
+    static DeliveryToken::shared_ptr getToken(const std::string& destination);
 
   private:
     void transferMessage(

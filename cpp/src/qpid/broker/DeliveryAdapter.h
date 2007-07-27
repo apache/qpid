@@ -22,11 +22,13 @@
 #define _DeliveryAdapter_
 
 #include "BrokerMessageBase.h"
+#include "DeliveryToken.h"
 #include "qpid/framing/amqp_types.h"
 
 namespace qpid {
 namespace broker {
 
+    typedef framing::RequestId DeliveryId;
     /**
      * The intention behind this interface is to separate the generic
      * handling of some form of message delivery to clients that is
@@ -40,8 +42,8 @@ namespace broker {
     class DeliveryAdapter
     {
     public:
-        virtual framing::RequestId getNextDeliveryTag() = 0;
-        virtual void deliver(Message::shared_ptr& msg, framing::RequestId tag) = 0;
+        virtual DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token) = 0;
+        virtual void redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId tag) = 0;
         virtual ~DeliveryAdapter(){}
     };
 

@@ -51,6 +51,7 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	}
 
         public boolean isResponse(AmqpVersion version) {
+            if (!CppGenerator.USE_RELIABLE_FRAMING) return false;
 	    return (version == null) ? isResponseFlagMap.isSet() : isResponseFlagMap.isSet(version);
 	}
     

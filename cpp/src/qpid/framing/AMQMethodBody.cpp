@@ -60,4 +60,9 @@ void AMQMethodBody::decode(Buffer& buffer, uint32_t /*size*/) {
     decodeContent(buffer);
 }
 
+void AMQMethodBody::encode(Buffer& buffer) const {
+    encodeId(buffer);
+    encodeContent(buffer);
+}
+
 }} // namespace qpid::framing
