@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.nclient.api;
 
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 /**
  * If the communication layer detects a serious problem with a <CODE>connection</CODE>, it
