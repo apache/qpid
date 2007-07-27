@@ -36,7 +36,7 @@ using namespace sys;
 using namespace broker;
 
 /** Handler to send frames direct to local broker (bypass correlation etc.) */
-struct BrokerHandler : public FrameHandler, private ChannelAdapter {
+    struct BrokerHandler : public FrameHandler, private ChannelAdapter, private DeliveryAdapter {
     Connection connection;
     Channel channel;
     BrokerAdapter adapter;
@@ -51,7 +51,7 @@ struct BrokerHandler : public FrameHandler, private ChannelAdapter {
     // 
     BrokerHandler(Broker& broker) :
         connection(0, broker),
-        channel(connection, 1, 0),
+        channel(connection, *this, 1, 0),
         adapter(channel, connection, broker, *this) {}
 
     void handle(AMQFrame& frame) {
@@ -68,6 +68,10 @@ struct BrokerHandler : public FrameHandler, private ChannelAdapter {
     virtual void handleMethodInContext(shared_ptr<AMQMethodBody>, const MethodContext&){}
     // No-op send.
     virtual RequestId send(shared_ptr<AMQBody>, Correlator::Action) { return 0; }
+
+    //delivery adapter methods, also no-ops:
+    virtual DeliveryId deliver(Message::shared_ptr&, DeliveryToken::shared_ptr) { return 0; }
+    virtual void redeliver(Message::shared_ptr&, DeliveryToken::shared_ptr, DeliveryId) {}
 };
 
 /** Wrap plain AMQFrames in SessionFrames */

@@ -33,6 +33,7 @@
 #include "Consumer.h"
 #include "DeliveryAdapter.h"
 #include "DeliveryRecord.h"
+#include "DeliveryToken.h"
 #include "Deliverable.h"
 #include "DtxBuffer.h"
 #include "DtxManager.h"
@@ -64,7 +65,7 @@ class Channel : public CompletionHandler
     class ConsumerImpl : public Consumer
     {
         Channel* parent;
-        std::auto_ptr<DeliveryAdapter> adapter;
+        DeliveryToken::shared_ptr token;
         const string tag;
         Queue::shared_ptr queue;
         ConnectionToken* const connection;
@@ -72,7 +73,7 @@ class Channel : public CompletionHandler
         bool blocked;
 
       public:
-        ConsumerImpl(Channel* parent, std::auto_ptr<DeliveryAdapter> adapter, 
+        ConsumerImpl(Channel* parent, DeliveryToken::shared_ptr token, 
                      const string& tag, Queue::shared_ptr queue,
                      ConnectionToken* const connection, bool ack);
         ~ConsumerImpl();
@@ -86,6 +87,7 @@ class Channel : public CompletionHandler
 
     framing::ChannelId id;
     Connection& connection;
+    DeliveryAdapter& out;
     uint64_t currentDeliveryTag;
     Queue::shared_ptr defaultQueue;
     ConsumerImplMap consumers;
@@ -110,7 +112,7 @@ class Channel : public CompletionHandler
     void checkDtxTimeout();
         
   public:
-    Channel(Connection& parent, framing::ChannelId id, MessageStore* const store = 0);    
+    Channel(Connection& parent, DeliveryAdapter& out, framing::ChannelId id, MessageStore* const store = 0);    
     ~Channel();
 
     bool isOpen() const { return opened; }
@@ -127,11 +129,11 @@ class Channel : public CompletionHandler
     /**
      *@param tagInOut - if empty it is updated with the generated token.
      */
-    void consume(std::auto_ptr<DeliveryAdapter> adapter, string& tagInOut, Queue::shared_ptr queue, bool acks,
+    void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, bool acks,
                  bool exclusive, ConnectionToken* const connection = 0,
                  const framing::FieldTable* = 0);
     void cancel(const string& tag);
-    bool get(DeliveryAdapter& adapter, Queue::shared_ptr queue, bool ackExpected);
+    bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
     void close();
     void startTx();
     void commit();

@@ -26,7 +26,10 @@ class Message:
     self.frame = frame
     self.method = frame.method_type
     self.content = content
-
+    if self.method.klass.name != "execution":
+      self.command_id = self.channel.incoming_completion.sequence.next()
+      #print "allocated: ", self.command_id, "to ", self.method.klass.name, "_", self.method.name
+      
   def __len__(self):
     return len(self.frame.args)
 
@@ -66,3 +69,6 @@ class Message:
 
   def __repr__(self):
     return Message.REPR % (self.method, self.frame.args, self.content)
+
+  def complete(self, cumulative=True):
+    self.channel.incoming_completion.complete(mark=self.command_id, cumulative=cumulative)
