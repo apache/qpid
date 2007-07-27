@@ -22,6 +22,7 @@
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/posix/check.h"
+#include "qpid/sys/posix/PrivatePosix.h"
 
 #include <sys/epoll.h>
 #include <errno.h>
@@ -88,11 +89,11 @@ class PollerHandlePrivate {
     }
 };
 
-PollerHandle::PollerHandle(int fd0) :
+PollerHandle::PollerHandle(const Socket& s) :
     impl(new PollerHandlePrivate),
-    fd(fd0)
+    socket(s)
 {}
-    
+
 PollerHandle::~PollerHandle() {
     delete impl;
 }
@@ -186,7 +187,7 @@ void Poller::addFd(PollerHandle& handle, Direction dir) {
     }
     epe.data.ptr = &handle;
     
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, op, handle.getFD(), &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, op, toFd(handle.socket.impl), &epe));
     
     // Record monitoring state of this fd
     eh.events = epe.events;
@@ -197,7 +198,7 @@ void Poller::delFd(PollerHandle& handle) {
     PollerHandlePrivate& eh = *handle.impl;
     ScopedLock<Mutex> l(eh.lock);
     assert(!eh.isIdle());
-    int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, handle.getFD(), 0);
+    int rc = ::epoll_ctl(impl->epollFd, EPOLL_CTL_DEL, toFd(handle.socket.impl), 0);
     // Ignore EBADF since deleting a nonexistent fd has the overall required result!
     // And allows the case where a sloppy program closes the fd and then does the delFd()
     if (rc == -1 && errno != EBADF) {
@@ -216,7 +217,7 @@ void Poller::modFd(PollerHandle& handle, Direction dir) {
     epe.events = PollerPrivate::directionToEpollEvent(dir) | ::EPOLLONESHOT;
     epe.data.ptr = &handle;
     
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, handle.getFD(), &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, toFd(handle.socket.impl), &epe));
     
     // Record monitoring state of this fd
     eh.events = epe.events;
@@ -232,7 +233,7 @@ void Poller::rearmFd(PollerHandle& handle) {
     epe.events = eh.events;        
     epe.data.ptr = &handle;
 
-    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, handle.getFD(), &epe));
+    QPID_POSIX_CHECK(::epoll_ctl(impl->epollFd, EPOLL_CTL_MOD, toFd(handle.socket.impl), &epe));
 
     eh.setActive();
 }
