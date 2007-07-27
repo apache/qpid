@@ -45,7 +45,7 @@ public interface Session
      * @throws QpidException If the communication layer fails to close this session or if an internal error happens
      *                       when closing this session resources. .
      */
-    public void close()
+    public void sessionClose()
             throws
             QpidException;
 
@@ -55,7 +55,7 @@ public interface Session
      *
      * @throws QpidException If the communication layer fails to suspend this session
      */
-    public void suspend()
+    public void sessionSuspend()
             throws
             QpidException;
 
@@ -66,7 +66,8 @@ public interface Session
      *
      * @throws QpidException If the communication layer fails to unsuspend this session
      */
-    public void unsuspend()
+    public void sessionUnsuspend()
+    
             throws
             QpidException;
 
