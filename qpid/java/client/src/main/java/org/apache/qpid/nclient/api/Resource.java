@@ -22,10 +22,6 @@ import org.apache.qpidity.QpidException;
 
 /**
  * A Resource is associated with a session and can be independently closed.
- *
- * Created by Arnaud Simon
- * Date: 21-Jul-2007
- * Time: 09:41:30
  */
 public interface Resource
 {

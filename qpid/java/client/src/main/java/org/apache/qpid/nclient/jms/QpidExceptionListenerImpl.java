@@ -23,9 +23,7 @@ import org.apache.qpidity.QpidException;
 import javax.jms.JMSException;
 
 /**
- * Created by Arnaud Simon
- * Date: 25-Jul-2007
- * Time: 12:08:47
+ * An exception listner 
  */
 public class QpidExceptionListenerImpl implements ExceptionListener
 {
@@ -37,7 +35,7 @@ public class QpidExceptionListenerImpl implements ExceptionListener
 
     void setJMSExceptionListner(javax.jms.ExceptionListener jmsExceptionListener)
     {
-       _jmsExceptionListener = jmsExceptionListener;
+        _jmsExceptionListener = jmsExceptionListener;
     }
     //----- ExceptionListener API
 
@@ -46,7 +44,7 @@ public class QpidExceptionListenerImpl implements ExceptionListener
         // convert this exception in a JMS exception
         JMSException jmsException = ExceptionHelper.convertQpidExceptionToJMSException(exception);
         // propagate to the jms exception listener
-        if( _jmsExceptionListener != null )
+        if (_jmsExceptionListener != null)
         {
             _jmsExceptionListener.onException(jmsException);
         }

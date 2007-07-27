@@ -25,10 +25,6 @@ import org.apache.qpidity.Option;
  * A session is associated with a connection.
  * <p> When created a Session is not attached with an underlying channel. Unsuspended a Session is
  * equivalent to attaching a communication channel that can be used to communicate with the broker.
- * <p/>
- * Created by Arnaud Simon
- * Date: 20-Jul-2007
- * Time: 09:36:24
  */
 public interface Session
 {
@@ -198,7 +194,6 @@ public interface Session
      * @param queueName    The queue to be bound.
      * @param exchangeName The exchange name.
      * @param routingKey   The routing key.
-     * @param nowait       nowait
      * @throws QpidException If the session fails to bind the queue due to some error.
      */
     public void queueBind(String queueName, String exchangeName, String routingKey)
@@ -224,7 +219,6 @@ public interface Session
      * TODO: Define the exact semantic i.e. are message sent to a dead letter queue?
      *
      * @param queueName The queue to be purged
-     * @param nowait    nowait
      * @throws QpidException If the session fails to purge the queue due to some error.
      */
     public void queuePurge(String queueName)

@@ -26,10 +26,6 @@ import java.nio.ByteBuffer;
 
 /**
  * A message is sent and received by resources. It is composed of a set of header and a payload.
- * <p/>
- * Created by Arnaud Simon
- * Date: 20-Jul-2007
- * Time: 09:40:49
  */
 public interface Message
 {

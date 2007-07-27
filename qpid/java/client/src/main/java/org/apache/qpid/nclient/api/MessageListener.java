@@ -20,10 +20,6 @@ package org.apache.qpid.nclient.api;
 
 /**
  * MessageListeners are used to asynchronously receive messages.
- *
- * Created by Arnaud Simon
- * Date: 2o-Jul-2007
- * Time: 09:42:52
  */
 public interface MessageListener
 {
