@@ -1,9 +1,7 @@
 package org.apache.qpid.nclient.api;
 
 /**
- * Created by Arnaud Simon
- * Date: 23-Jul-2007
- * Time: 12:44:43
+ * Available options for deleting a queue.
  */
 public enum DeleteQueueOption
 {

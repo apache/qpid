@@ -30,9 +30,7 @@ import java.util.Vector;
 
 
 /**
- * Created by Arnaud Simon
- * Date: 25-Jul-2007
- * Time: 09:47:17
+ * 
  */
 public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
 {
@@ -106,9 +104,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     //---- Interface javax.jms.Connection ---//
 
-    public Session createSession(boolean b, int i)
-            throws
-            JMSException
+    public Session createSession(boolean b, int i) throws JMSException
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -123,9 +119,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @return The unique client identifier.
      * @throws JMSException If this connection is closed.
      */
-    public String getClientID()
-            throws
-            JMSException
+    public String getClientID() throws JMSException
     {
         checkNotClosed();
 
@@ -147,9 +141,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @param clientID the unique client identifier
      * @throws JMSException Always as clientID is always set at construction time.
      */
-    public void setClientID(String clientID)
-            throws
-            JMSException
+    public void setClientID(String clientID) throws JMSException
     {
         checkNotClosed();
         throw new IllegalStateException("Client name cannot be changed after being set");
@@ -162,9 +154,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @throws JMSException If there ie a problem getting the connection metadata for this connection.
      * @see javax.jms.ConnectionMetaData
      */
-    public ConnectionMetaData getMetaData()
-            throws
-            JMSException
+    public ConnectionMetaData getMetaData() throws JMSException
     {
         checkNotClosed();
         return ConnectionMetaDataImpl.getInstance();
@@ -176,9 +166,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @return the <CODE>ExceptionListener</CODE> for this connection
      * @throws JMSException In case of unforeseen problem
      */
-    public ExceptionListener getExceptionListener()
-            throws
-            JMSException
+    public ExceptionListener getExceptionListener() throws JMSException
     {
         checkNotClosed();
         return _exceptionListener;
@@ -203,9 +191,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @param exceptionListener The connection listener.
      * @throws JMSException If the connection is closed.
      */
-    public void setExceptionListener(ExceptionListener exceptionListener)
-            throws
-            JMSException
+    public void setExceptionListener(ExceptionListener exceptionListener) throws JMSException
     {
         checkNotClosed();
         _exceptionListener = exceptionListener;
@@ -219,9 +205,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @throws JMSException In case of a problem due to some internal error.
      */
-    public void start()
-            throws
-            JMSException
+    public void start() throws JMSException
     {
         checkNotClosed();
         if (!_started)
@@ -246,9 +230,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @throws JMSException In case of a problem due to some internal error.
      */
-    public void stop()
-            throws
-            JMSException
+    public void stop() throws JMSException
     {
         checkNotClosed();
         if (_started)
@@ -278,9 +260,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @throws JMSException In case of a problem due to some internal error.
      */
-    public void close()
-            throws
-            JMSException
+    public void close() throws JMSException
     {
         checkNotClosed();
         if (!_isClosed)
@@ -317,9 +297,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @throws JMSException In case of a problem due to some internal error.
      */
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages)
-            throws
-            JMSException
+                                                       ServerSessionPool sessionPool, int maxMessages) throws
+                                                                                                       JMSException
     {
         checkNotClosed();
         return null;
@@ -338,9 +317,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      */
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName,
                                                               String messageSelector, ServerSessionPool sessionPool,
-                                                              int maxMessages)
-            throws
-            JMSException
+                                                              int maxMessages) throws JMSException
     {
         checkNotClosed();
         return null;
@@ -348,9 +325,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     //-------------- QueueConnection API
 
-    public QueueSession createQueueSession(boolean b, int i)
-            throws
-            JMSException
+    public QueueSession createQueueSession(boolean b, int i) throws JMSException
     {
         checkNotClosed();
         //TODO: create a queue session
@@ -359,25 +334,21 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public ConnectionConsumer createConnectionConsumer(Queue queue, String string, ServerSessionPool serverSessionPool, int i)
-            throws
-            JMSException
+    public ConnectionConsumer createConnectionConsumer(Queue queue, String string, ServerSessionPool serverSessionPool,
+                                                       int i) throws JMSException
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     //-------------- TopicConnection API
 
-    public TopicSession createTopicSession(boolean b, int i)
-            throws
-            JMSException
+    public TopicSession createTopicSession(boolean b, int i) throws JMSException
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public ConnectionConsumer createConnectionConsumer(Topic topic, String string, ServerSessionPool serverSessionPool, int i)
-            throws
-            JMSException
+    public ConnectionConsumer createConnectionConsumer(Topic topic, String string, ServerSessionPool serverSessionPool,
+                                                       int i) throws JMSException
     {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -387,15 +358,12 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     /**
      * Validate that the Connection is not closed.
      * <p/>
-     * If the Connection has been closed, throw a javax.jms.IllegalStateException. This behaviour is
+     * If the Connection has been closed, throw a IllegalStateException. This behaviour is
      * required by the JMS specification.
      *
-     * @throws javax.jms.IllegalStateException
-     *          If the session is closed.
+     * @throws IllegalStateException If the session is closed.
      */
-    protected synchronized void checkNotClosed()
-            throws
-            IllegalStateException
+    protected synchronized void checkNotClosed() throws IllegalStateException
     {
         if (_isClosed)
         {

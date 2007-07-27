@@ -23,10 +23,6 @@ import org.apache.qpidity.QpidException;
 /**
  * If the communication layer detects a serious problem with a <CODE>connection</CODE>, it
  * informs the connection's ExceptionListener
- *
- * Created by Arnaud Simon
- * Date: 25-Jul-2007
- * Time: 12:00:27
  */
 public interface ExceptionListener
 {
@@ -35,7 +31,7 @@ public interface ExceptionListener
      * informs the connection's ExceptionListener
      *
      * @param exception The exception comming from the communication layer.
-     * @see org.apache.qpid.nclient.qpidapi.Connection
+     * @see org.apache.qpid.nclient.api.Connection
      */
     public void onException(QpidException exception);
 }
