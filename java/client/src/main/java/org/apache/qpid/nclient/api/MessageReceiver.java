@@ -24,11 +24,6 @@ import java.util.Set;
 
 /**
  * Used to receive messages from a queue
- * 
- * <p/>
- * Created by Arnaud Simon
- * Date: 20-Jul-2007
- * Time: 09:42:37
  */
 public interface MessageReceiver extends Resource
 {
