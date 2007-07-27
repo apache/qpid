@@ -19,7 +19,7 @@ package org.apache.qpid.nclient.jms;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 import org.apache.qpid.nclient.jms.QueueSessionImpl;
 
 import javax.jms.*;
