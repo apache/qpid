@@ -35,18 +35,15 @@ static const ProtocolVersion VER;
 /** Chlid part of Cluster::clusterTwo test */
 void clusterTwo() {
     TestCluster cluster("clusterTwo", "amqp:child:2");
-    SessionFrame sf;
-    BOOST_REQUIRE(cluster.received.waitPop(sf)); // Frame from parent.
-    BOOST_CHECK(sf.isIncoming);
-    BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *sf.frame.getBody());
+    AMQFrame frame;
+    BOOST_REQUIRE(cluster.received.waitPop(frame)); // Frame from parent.
+    BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *frame.getBody());
     BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
 
-    AMQFrame frame(VER, 1, new SessionPongBody(VER));
-    SessionFrame sendframe(sf.uuid, frame, false);
-    cluster.handle(sendframe);
-    BOOST_REQUIRE(cluster.received.waitPop(sf));
-    BOOST_CHECK(!sf.isIncoming);
-    BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *sf.frame.getBody());
+    AMQFrame send(VER, 1, new SessionPongBody(VER));
+    cluster.handle(send);
+    BOOST_REQUIRE(cluster.received.waitPop(frame));
+    BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *frame.getBody());
 } 
 
 int test_main(int, char**) {
