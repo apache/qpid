@@ -32,7 +32,10 @@ public interface Resource
 
     /**
      * Close this resource.
-     *
+     * <p> Any blocking receive must return null.
+     * <p> For asynchronous receiver, this operation blocks until the message listener
+     * finishes processing the current message,
+     * 
      * @throws QpidException If the session fails to close this resource due to some error
      */
     public void close() throws
