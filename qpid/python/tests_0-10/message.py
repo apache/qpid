@@ -171,8 +171,8 @@ class MessageTests(TestBase):
         self.assertEqual("Four", msg4.body)
         self.assertEqual("Five", msg5.body)
 
-        msg1.ok(batchoffset=1)#One and Two
-        msg4.ok()
+        msg2.complete(cumulative=True)#One and Two
+        msg4.complete(cumulative=False)
 
         channel.message_recover(requeue=False)
         
@@ -215,8 +215,8 @@ class MessageTests(TestBase):
         self.assertEqual("Four", msg4.body)
         self.assertEqual("Five", msg5.body)
 
-        msg1.ok(batchoffset=1)  #One and Two
-        msg4.ok()  #Four
+        msg2.complete(cumulative=True)  #One and Two
+        msg4.complete(cumulative=False)  #Four
 
         channel.message_cancel(destination="consumer_tag")
 
@@ -276,14 +276,13 @@ class MessageTests(TestBase):
         except Empty: None
 
         #ack messages and check that the next set arrive ok:
-        #todo: once batching is implmented, send a single response for all messages
-        msg.ok(batchoffset=-4)#1-5
+        msg.complete()
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
 
-        msg.ok(batchoffset=-4)#6-10
+        msg.complete()
 
         try:
             extra = queue.get(timeout=1)
@@ -320,13 +319,13 @@ class MessageTests(TestBase):
         except Empty: None
 
         #ack messages and check that the next set arrive ok:
-        msg.ok(batchoffset=-4)#1-5
+        msg.complete()
 
         for i in range(6, 11):
             msg = queue.get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
 
-        msg.ok(batchoffset=-4)#6-10
+        msg.complete()
 
         try:
             extra = queue.get(timeout=1)
@@ -376,9 +375,9 @@ class MessageTests(TestBase):
             self.assertEqual("Message %d" % i, msg.body)
             
             if (i==13):
-              msg.ok(batchoffset=-2)#11, 12 & 13
+              msg.complete()#11, 12 & 13
             if(i in [15, 17, 19]):
-              msg.ok()
+              msg.complete(cumulative=False)
 
         reply = channel.message_get(no_ack=True, queue="test-get")
         self.assertEqual(reply.method.klass.name, "message")
@@ -395,8 +394,7 @@ class MessageTests(TestBase):
             self.assertEqual(reply.method.name, "ok")
             msg = self.client.queue(tag).get(timeout=1)
             self.assertEqual("Message %d" % i, msg.body)
-            msg.ok()
-            #channel.message_ack(delivery_tag=reply.delivery_tag)
+            msg.complete()
 
         reply = channel.message_get(no_ack=True, queue="test-get")
         self.assertEqual(reply.method.klass.name, "message")

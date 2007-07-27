@@ -25,6 +25,7 @@
 #include <string>
 #include <boost/shared_ptr.hpp>
 #include "Content.h"
+#include "DeliveryToken.h"
 #include "PersistableMessage.h"
 #include "qpid/framing/amqp_types.h"
 
@@ -91,23 +92,9 @@ class Message : public PersistableMessage{
     void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
     void redeliver() { redelivered = true; }
 
-    /**
-     * Used to deliver the message from the queue
-     */
-    virtual void deliver(framing::ChannelAdapter& channel,
-                         const std::string& consumerTag, 
-                         uint64_t deliveryTag, 
-                         uint32_t framesize) = 0;
-    /**
-     * Used to return a message in response to a get from a queue
-     */
-    virtual void sendGetOk(framing::ChannelAdapter& channel, 
-                           const std::string& destination,
-                           uint32_t messageCount,
-                           uint64_t responseTo, 
-                           uint64_t deliveryTag, 
-                           uint32_t framesize) = 0;
-            
+    virtual void deliver(framing::ChannelAdapter& channel, uint64_t deliveryTag/*only needed for basic class*/, 
+                         DeliveryToken::shared_ptr token, uint32_t framesize) = 0;
+
     virtual bool isComplete() = 0;
             
     virtual uint64_t contentSize() const = 0;

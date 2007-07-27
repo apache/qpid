@@ -24,6 +24,7 @@
 #include <memory>
 #include "BrokerChannel.h"
 #include "Connection.h"
+#include "DeliveryAdapter.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/FrameHandler.h"
@@ -36,6 +37,7 @@ class BrokerAdapter;
 class framing::ChannelAdapter;
 
 class SemanticHandler : private framing::ChannelAdapter, 
+    private DeliveryAdapter,
     public framing::FrameHandler, 
     public framing::AMQP_ServerOperations::ExecutionHandler
 {
@@ -44,6 +46,7 @@ class SemanticHandler : private framing::ChannelAdapter,
     std::auto_ptr<BrokerAdapter> adapter;
     framing::Window incoming;
     framing::Window outgoing;
+    sys::Mutex outLock;
 
     void handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
                                const qpid::framing::MethodContext& context);
@@ -55,12 +58,22 @@ class SemanticHandler : private framing::ChannelAdapter,
     void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>);
     void handleContent(boost::shared_ptr<qpid::framing::AMQContentBody>);
     void handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody>);
+
+    framing::RequestId send(shared_ptr<framing::AMQBody> body, framing::Correlator::Action action=framing::Correlator::Action());
+
+
+    //delivery adapter methods:
+    DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token);
+    void redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId tag);
+
 public:
     SemanticHandler(framing::ChannelId id, Connection& c);
+
+    //frame handler:
     void handle(framing::AMQFrame& frame);
 
     //execution class method handlers:
-    void complete(uint32_t cumulativeExecutionMark, uint16_t);    
+    void complete(uint32_t cumulativeExecutionMark, framing::SequenceNumberSet range);    
     void flush();
 };
 

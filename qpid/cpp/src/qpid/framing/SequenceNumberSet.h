@@ -18,20 +18,32 @@
  * under the License.
  *
  */
-#include "ConsumeAdapter.h"
+#ifndef _framing_SequenceNumberSet_h
+#define _framing_SequenceNumberSet_h
 
-using namespace qpid::broker;
-using qpid::framing::ChannelAdapter;
-using qpid::framing::RequestId;
+#include <ostream>
+#include <vector>
+#include "amqp_types.h"
+#include "Buffer.h"
+#include "SequenceNumber.h"
 
-ConsumeAdapter::ConsumeAdapter(ChannelAdapter& a, const std::string t, uint32_t f) : adapter(a), tag(t), framesize(f) {}
+namespace qpid {
+namespace framing {
 
-RequestId ConsumeAdapter::getNextDeliveryTag()
-{
-    return adapter.getNextSendRequestId();
-}
+class SequenceNumberSet : public std::vector<SequenceNumber>
+{   
+public:
+    typedef std::vector<SequenceNumber>::const_iterator const_iterator;
+    typedef std::vector<SequenceNumber>::iterator iterator;
 
-void ConsumeAdapter::deliver(Message::shared_ptr& msg, RequestId deliveryTag)
-{
-    msg->deliver(adapter, tag, deliveryTag, framesize);
-}
+    void encode(Buffer& buffer) const;
+    void decode(Buffer& buffer);
+    uint32_t encodedSize() const;   
+
+    friend std::ostream& operator<<(std::ostream&, const SequenceNumberSet&);
+};    
+
+}} // namespace qpid::framing
+
+
+#endif
