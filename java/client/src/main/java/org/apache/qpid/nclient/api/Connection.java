@@ -32,7 +32,7 @@ public interface Connection
      * Establish the connection with the broker identified by the provided URL.
      *
      * @param url The URL of the broker.
-     * @throws org.apache.qpid.nclient.exception.QpidException If the communication layer fails to connect with the broker.
+     * @throws QpidException If the communication layer fails to connect with the broker.
      */
     public void connect(URL url)
             throws
