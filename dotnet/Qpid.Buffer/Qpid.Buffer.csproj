@@ -7,8 +7,8 @@
     <ProjectGuid>{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Buffer</RootNamespace>
-    <AssemblyName>Qpid.Buffer</AssemblyName>
+    <RootNamespace>Apache.Qpid.Buffer</RootNamespace>
+    <AssemblyName>Apache.Qpid.Buffer</AssemblyName>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>

@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
     public abstract class AMQDestination
     {

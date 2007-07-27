@@ -20,9 +20,9 @@
  */
 using System;
 using log4net;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Transport.Socket.Blocking
+namespace Apache.Qpid.Client.Transport.Socket.Blocking
 {
     class ByteChannel : IByteChannel
     {

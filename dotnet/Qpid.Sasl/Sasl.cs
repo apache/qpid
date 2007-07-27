@@ -24,9 +24,9 @@ using System.Collections;
 using System.Configuration;
 using System.Text;
 
-using Qpid.Sasl.Configuration;
+using Apache.Qpid.Sasl.Configuration;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    /// <summary>
    /// Static class used to access the SASL functionality. 
@@ -42,12 +42,12 @@ namespace Qpid.Sasl
    /// <example><![CDATA[
    /// <configuration>
    ///   <configSections>
-   ///      <section name="qpid.sasl" type="Qpid.Sasl.Configuration.SaslConfigurationSectionHandler, Qpid.Sasl"/>
+   ///      <section name="qpid.sasl" type="Apache.Qpid.Sasl.Configuration.SaslConfigurationSectionHandler, Apache.Qpid.Sasl"/>
    ///   </configSections>
    ///
    ///   <qpid.sasl>
    ///      <clientFactories>
-   ///         <add type="Qpid.Sasl.Tests.TestClientFactory, Qpid.Sasl.Tests"/>
+   ///         <add type="Apache.Qpid.Sasl.Tests.TestClientFactory, Apache.Qpid.Sasl.Tests"/>
    ///      </clientFactories>
    ///   </qpid.sasl>
    /// </configuration>
@@ -112,4 +112,4 @@ namespace Qpid.Sasl
       }
    } // class Sasl
 
-} // namespace Qpid.Sasl.Mechanisms
+} // namespace Apache.Qpid.Sasl.Mechanisms

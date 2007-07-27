@@ -21,10 +21,10 @@
 using System;
 using log4net;
 using NUnit.Framework;
-using Qpid.Messaging;
-using Qpid.Client.Qms;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
 
-namespace Qpid.Client.Tests
+namespace Apache.Qpid.Client.Tests
 {
     /// <summary>
     /// Provides a basis for writing Unit tests that communicate with an AMQ protocol broker. By default it creates a connection

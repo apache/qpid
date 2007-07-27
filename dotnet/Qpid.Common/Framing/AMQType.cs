@@ -20,9 +20,9 @@
  */
 using System;
 using System.Text;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
    /// <summary>
    /// Base class for the Field Table Type system.

@@ -22,7 +22,7 @@
 using System;
 using System.Text;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    /// <summary>
    /// Marker interface for Sasl Callbacks
@@ -101,5 +101,6 @@ namespace Qpid.Sasl
       }
    } // class RealmCallback
 
-} // namespace Qpid.Sasl
+} // namespace Apache.Qpid.Sasl
+
 

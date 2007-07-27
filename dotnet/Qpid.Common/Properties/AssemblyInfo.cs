@@ -23,11 +23,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Qpid.Common")]
+[assembly: AssemblyTitle("Apache.Qpid.Common")]
 [assembly: AssemblyDescription("Common AMQ Framing Code")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Apache Qpid")]
-[assembly: AssemblyProduct("")]
+[assembly: AssemblyProduct("Apache.Qpid.Common")]
 [assembly: AssemblyCopyright("Copyright © J.P. Morgan Chase & Co. 2006")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

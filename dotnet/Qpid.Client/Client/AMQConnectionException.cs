@@ -21,7 +21,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
     [Serializable]
     public class AMQConnectionException : AMQException

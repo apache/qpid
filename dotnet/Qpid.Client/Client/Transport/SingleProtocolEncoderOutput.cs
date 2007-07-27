@@ -19,10 +19,10 @@
  *
  */
 using System;
-using Qpid.Buffer;
-using Qpid.Codec;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Codec;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
     public class SingleProtocolEncoderOutput : IProtocolEncoderOutput
     {

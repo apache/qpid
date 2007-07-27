@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Client.Protocol.Listener
+namespace Apache.Qpid.Client.Protocol.Listener
 {
     public interface IAMQMethodListener
     {
@@ -42,4 +42,5 @@ namespace Qpid.Client.Protocol.Listener
         void Error(Exception e);
     }
 }
+
 

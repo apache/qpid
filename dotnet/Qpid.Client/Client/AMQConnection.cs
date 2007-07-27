@@ -24,17 +24,17 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using log4net;
-using Qpid.Client.Failover;
-using Qpid.Client.Protocol;
-using Qpid.Client.Qms;
-using Qpid.Client.State;
-using Qpid.Client.Transport;
-using Qpid.Client.Transport.Socket.Blocking;
-using Qpid.Collections;
-using Qpid.Framing;
-using Qpid.Messaging;
+using Apache.Qpid.Client.Failover;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Client.State;
+using Apache.Qpid.Client.Transport;
+using Apache.Qpid.Client.Transport.Socket.Blocking;
+using Apache.Qpid.Collections;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
     public class AMQConnection : Closeable, IConnection
     {
@@ -711,8 +711,8 @@ namespace Qpid.Client
 
                 /*
                 // Currently there is only one transport option - BlockingSocket.
-                String assemblyName = "Qpid.Client.Transport.Socket.Blocking.dll";
-                String transportType = "Qpid.Client.Transport.Socket.Blocking.BlockingSocketTransport";
+                String assemblyName = "Apache.Qpid.Client.Transport.Socket.Blocking.dll";
+                String transportType = "Apache.Qpid.Client.Transport.Socket.Blocking.BlockingSocketTransport";
 
                 // Load the transport assembly dynamically.
                 _transport = LoadTransportFromAssembly(brokerDetail.getHost(), brokerDetail.getPort(), assemblyName, transportType);

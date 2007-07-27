@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Client.State
+namespace Apache.Qpid.Client.State
 {
     public interface IStateListener
     {
@@ -29,4 +29,5 @@ namespace Qpid.Client.State
         void Error(Exception e);
     }
 }
+
 

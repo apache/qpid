@@ -21,9 +21,9 @@
 using System;
 using System.Net;
 using NUnit.Framework;
-using Qpid.Client.Qms;
+using Apache.Qpid.Client.Qms;
 
-namespace Qpid.Client.Tests.url
+namespace Apache.Qpid.Client.Tests.url
 {
     [TestFixture]
     public class connectionUrlTests

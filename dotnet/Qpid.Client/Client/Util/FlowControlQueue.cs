@@ -22,10 +22,10 @@ using System;
 using System.Collections;
 using System.Text;
 using System.Threading;
-using Qpid.Collections;
-using Qpid.Common;
+using Apache.Qpid.Collections;
+using Apache.Qpid.Common;
 
-namespace Qpid.Client.Util
+namespace Apache.Qpid.Client.Util
 {
    internal delegate void ThresholdMethod(int currentCount);
 

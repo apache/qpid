@@ -21,7 +21,7 @@
 using System;
 using System.Collections;
 
-namespace Qpid.Collections
+namespace Apache.Qpid.Collections
 {
     public abstract class BlockingQueue : Queue
     {
@@ -91,4 +91,5 @@ namespace Qpid.Collections
         }                        
     }
 }
+
 

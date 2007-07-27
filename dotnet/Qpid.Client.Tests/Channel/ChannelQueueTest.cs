@@ -22,11 +22,11 @@ using System;
 using System.Net;
 using System.Threading;
 using log4net;
-using Qpid.Client.Qms;
-using Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Messaging;
 using NUnit.Framework;
 
-namespace Qpid.Client.Tests.Channel
+namespace Apache.Qpid.Client.Tests.Channel
 {
     /// <summary>
     /// Test the queue methods

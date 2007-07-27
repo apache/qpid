@@ -21,7 +21,7 @@
 using System;
 using System.Collections;
 
-namespace Qpid.Protocol
+namespace Apache.Qpid.Protocol
 {
    public sealed class AMQConstant
    {

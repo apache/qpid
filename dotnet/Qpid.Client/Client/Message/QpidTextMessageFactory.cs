@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-using Qpid.Buffer;
-using Qpid.Framing;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public class QpidTextMessageFactory : AbstractQmsMessageFactory
     {        

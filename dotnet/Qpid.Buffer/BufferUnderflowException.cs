@@ -21,7 +21,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid.Buffer
+namespace Apache.Qpid.Buffer
 {
     [Serializable]
     public class BufferUnderflowException : Exception
@@ -37,5 +37,6 @@ namespace Qpid.Buffer
         }
     }
 }
+
 
 

@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
     public delegate void ExceptionListenerDelegate(Exception ex);
 

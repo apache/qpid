@@ -24,7 +24,7 @@ using System.Collections;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Qpid.Sasl.Mechanisms
+namespace Apache.Qpid.Sasl.Mechanisms
 {
    /// <summary>
    /// Implements the CRAM-MD5 authentication mechanism as outlined
@@ -88,4 +88,4 @@ namespace Qpid.Sasl.Mechanisms
 
    } // class CramMD5SaslClient
 
-} // namespace Qpid.Sasl.Mechanisms
+} // namespace Apache.Qpid.Sasl.Mechanisms

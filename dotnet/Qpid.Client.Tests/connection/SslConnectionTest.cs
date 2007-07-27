@@ -23,10 +23,10 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography.X509Certificates;
 using NUnit.Framework;
-using Qpid.Client.Qms;
-using Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests.Connection
+namespace Apache.Qpid.Client.Tests.Connection
 {
    /// <summary>
    /// Test SSL/TLS connections to the broker

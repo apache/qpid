@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using log4net;
-using Qpid.Messaging;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests.interop.TestCases
+namespace Apache.Qpid.Client.Tests.interop.TestCases
 {
     /// <summary>
     /// Implements test case 2, basic P2P. Sends/receives a specified number of messages to a specified route on the

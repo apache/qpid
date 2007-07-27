@@ -20,7 +20,7 @@
  */
 using System.Collections;
 
-namespace Qpid.Codec.Support
+namespace Apache.Qpid.Codec.Support
 {
     public class SimpleProtocolDecoderOutput : IProtocolDecoderOutput
     {
@@ -40,4 +40,5 @@ namespace Qpid.Codec.Support
         }            
     }
 }
+
 

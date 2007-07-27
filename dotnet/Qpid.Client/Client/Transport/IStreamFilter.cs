@@ -20,7 +20,7 @@
  */
 using System.IO;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
    /// <summary>
    /// Defines a way to introduce an arbitrary filtering

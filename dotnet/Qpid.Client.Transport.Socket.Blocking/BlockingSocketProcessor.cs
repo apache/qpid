@@ -22,10 +22,10 @@ using System;
 using System.Net;
 using System.Net.Sockets;
 using log4net;
-using Qpid.Buffer;
-using Qpid.Client.Protocol;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Client.Protocol;
 
-namespace Qpid.Client.Transport.Socket.Blocking
+namespace Apache.Qpid.Client.Transport.Socket.Blocking
 {
     class BlockingSocketProcessor : IConnectionCloser
     {
@@ -113,4 +113,5 @@ namespace Qpid.Client.Transport.Socket.Blocking
         }
     }
 }
+
 

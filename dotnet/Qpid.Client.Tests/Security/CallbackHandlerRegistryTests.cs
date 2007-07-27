@@ -20,10 +20,10 @@
  */
 using System;
 using NUnit.Framework;
-using Qpid.Client.Security;
+using Apache.Qpid.Client.Security;
 
 
-namespace Qpid.Client.Tests.Security
+namespace Apache.Qpid.Client.Tests.Security
 {
    [TestFixture]
    public class CallbackRegistryHandlerTests
@@ -63,4 +63,4 @@ namespace Qpid.Client.Tests.Security
 
    } // class TestCallbackHandler
 
-} // namespace Qpid.Client.Tests.Connection
+} // namespace Apache.Qpid.Client.Tests.Connection

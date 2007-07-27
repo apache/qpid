@@ -21,12 +21,12 @@
 using System;
 using System.Collections;
 using log4net;
-using Qpid.Client.Handler;
-using Qpid.Client.Protocol;
-using Qpid.Client.Protocol.Listener;
-using Qpid.Framing;
+using Apache.Qpid.Client.Handler;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.Protocol.Listener;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.State
+namespace Apache.Qpid.Client.State
 {
     public class AMQStateManager : IAMQMethodListener
     {

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Client.Failover
+namespace Apache.Qpid.Client.Failover
 {
     /// <summary>
     /// Enumeration of failover states. Used to handle failover from within AMQProtocolHandler where MINA events need to be

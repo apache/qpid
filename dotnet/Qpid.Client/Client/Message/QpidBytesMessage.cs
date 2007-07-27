@@ -22,11 +22,11 @@ using System;
 using System.IO;
 using System.Runtime.Serialization;
 using System.Text;
-using Qpid.Framing;
-using Qpid.Messaging;
-using Qpid.Buffer;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     [Serializable]
     class MessageEOFException : QpidException

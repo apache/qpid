@@ -20,7 +20,7 @@
  */
 using log4net;
 
-namespace Qpid.Client.Failover
+namespace Apache.Qpid.Client.Failover
 {
     public abstract class FailoverSupport
     {

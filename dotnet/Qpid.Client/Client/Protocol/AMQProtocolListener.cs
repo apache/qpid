@@ -22,12 +22,12 @@ using System;
 using System.Collections;
 using System.Threading;
 using log4net;
-using Qpid.Client.Failover;
-using Qpid.Client.Protocol.Listener;
-using Qpid.Client.State;
-using Qpid.Framing;
+using Apache.Qpid.Client.Failover;
+using Apache.Qpid.Client.Protocol.Listener;
+using Apache.Qpid.Client.State;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Protocol
+namespace Apache.Qpid.Client.Protocol
 {
     public class AMQProtocolListener : IProtocolListener
     {

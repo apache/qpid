@@ -3,11 +3,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Qpid.Common.Tests")]
+[assembly: AssemblyTitle("Apache.Qpid.Common.Tests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Apache Qpid")]
-[assembly: AssemblyProduct("Qpid.Common.Tests")]
+[assembly: AssemblyProduct("Apache.Qpid.Common.Tests")]
 [assembly: AssemblyCopyright("Copyright (c) 2006 The Apache Software Foundation")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

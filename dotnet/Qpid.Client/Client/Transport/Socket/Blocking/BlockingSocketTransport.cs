@@ -22,12 +22,12 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Threading;
-using Qpid.Client.Qms;
-using Qpid.Client.Protocol;
-using Qpid.Codec;
-using Qpid.Framing;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Codec;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Transport.Socket.Blocking
+namespace Apache.Qpid.Client.Transport.Socket.Blocking
 {
    /// <summary>
    /// TCP Socket transport supporting both
@@ -146,4 +146,5 @@ namespace Qpid.Client.Transport.Socket.Blocking
       #endregion
    }
 }
+
 

@@ -4,7 +4,7 @@ namespace TopicPublisher
     {
         static void Main(string[] args)
         {
-            Qpid.Client.Tests.interop.TopicPublisher.Main(args);
+            Apache.Qpid.Client.Tests.interop.TopicPublisher.Main(args);
         }
     }
 }

@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Client.Qms
+namespace Apache.Qpid.Client.Qms
 {
     /// <summary>
     /// Know URL option names.

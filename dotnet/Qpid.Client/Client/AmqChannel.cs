@@ -23,15 +23,15 @@ using System.Collections;
 using System.Text.RegularExpressions;
 using System.Threading;
 using log4net;
-using Qpid.Buffer;
-using Qpid.Client.Message;
-using Qpid.Client.Util;
-using Qpid.Collections;
-using Qpid.Framing;
-using Qpid.Messaging;
-using Qpid.Protocol;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Client.Message;
+using Apache.Qpid.Client.Util;
+using Apache.Qpid.Collections;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Protocol;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
     public class AmqChannel : Closeable, IChannel
     {

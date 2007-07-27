@@ -19,7 +19,7 @@
  *
  */
 
-namespace Qpid.Buffer
+namespace Apache.Qpid.Buffer
 {
    /// <summary>
    /// Allocates <see cref="ByteBuffer"/>'s and manages them. 
@@ -53,5 +53,6 @@ namespace Qpid.Buffer
 
    } // class SimpleByteBufferAllocator
 }
+
 
 

@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
-using Qpid.Messaging;
-using Qpid.Client.Qms;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
 using log4net;
-using Qpid.Client.Tests.interop.TestCases;
+using Apache.Qpid.Client.Tests.interop.TestCases;
 
-namespace Qpid.Client.Tests.interop
+namespace Apache.Qpid.Client.Tests.interop
 {
     /// <summary>
     /// Implements a test client as described in the interop testing spec

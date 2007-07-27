@@ -20,11 +20,11 @@
  */
 using System;
 using System.Text;
-using Qpid.Framing;
-using Qpid.Messaging;
-using Qpid.Buffer;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public class QpidTextMessage : AbstractQmsMessage, ITextMessage
     {

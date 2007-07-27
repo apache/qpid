@@ -22,9 +22,9 @@
 using System;
 using System.Runtime.Serialization;
 
-using Qpid.Protocol;
+using Apache.Qpid.Protocol;
 
-namespace Qpid
+namespace Apache.Qpid
 {
    /// <summary>
    /// Thrown when an invalid routing key was sent to the broker

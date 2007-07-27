@@ -22,11 +22,11 @@ using System;
 using System.Collections;
 using System.Text;
 using log4net;
-using Qpid.Framing;
-using Qpid.Messaging;
-using Qpid.Buffer;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public abstract class AbstractQmsMessage : AMQMessage, IMessage
     {

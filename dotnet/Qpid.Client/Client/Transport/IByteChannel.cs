@@ -19,9 +19,9 @@
  *
  */
 using System;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
    /// <summary>
    /// Represents input/output channels that read

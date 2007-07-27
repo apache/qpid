@@ -4,7 +4,7 @@ namespace TopicListener
     {
         static void Main(string[] args)
         {
-            Qpid.Client.Tests.interop.TopicListener.Main(args);
+            Apache.Qpid.Client.Tests.interop.TopicListener.Main(args);
         }
     }
 }
