@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.nclient.exception;
+package org.apache.qpidity;
 
 /**
  * Created by Arnaud Simon
@@ -56,3 +56,4 @@ public class QpidException extends Exception
         return _errorCode;
     }
 }
+
