@@ -19,7 +19,6 @@
 #include "Cluster.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ClusterNotifyBody.h"
-#include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include <boost/bind.hpp>
 #include <algorithm>
@@ -52,9 +51,9 @@ ostream& operator <<(ostream& out, const Cluster::MemberMap& members) {
 
 Cluster::Cluster(
     const std::string& name_, const std::string& url_,
-    const SessionFrameHandler::Chain& next
+    const FrameHandler::Chain& next
 ) :
-    SessionFrameHandler(next), 
+    FrameHandler(next), 
     cpg(new Cpg(*this)),
     name(name_),
     url(url_), 
@@ -85,7 +84,7 @@ Cluster::~Cluster() {
     }
 }
 
-void Cluster::handle(SessionFrame& frame) {
+void Cluster::handle(AMQFrame& frame) {
     QPID_LOG(trace, *this << " SEND: " << frame);
     Buffer buf(frame.size());
     frame.encode(buf);
@@ -95,9 +94,9 @@ void Cluster::handle(SessionFrame& frame) {
 }
 
 void Cluster::notify() {
-    SessionFrame sf;
-    sf.frame.setBody(make_shared_ptr(new ClusterNotifyBody(ProtocolVersion(), url)));
-    handle(sf);
+    AMQFrame frame(ProtocolVersion(), 0,
+                   new ClusterNotifyBody(ProtocolVersion(), url));
+    handle(frame);
 }
 
 size_t Cluster::size() const {
@@ -125,11 +124,11 @@ void Cluster::deliver(
     assert(name == *group);
     Id from(nodeid, pid);
     Buffer buf(static_cast<char*>(msg), msg_len);
-    SessionFrame frame;
+    AMQFrame frame;
     frame.decode(buf);
     QPID_LOG(trace, *this << " RECV: " << frame << " from: " << from);
-    if (frame.uuid.isNull())
-        handleClusterFrame(from, frame.frame);
+    if (frame.getChannel() == 0)
+        handleClusterFrame(from, frame);
     else
         next->handle(frame);
 }

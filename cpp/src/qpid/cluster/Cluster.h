@@ -20,7 +20,6 @@
  */
 
 #include "qpid/cluster/Cpg.h"
-#include "qpid/cluster/SessionFrame.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/shared_ptr.h"
 #include "qpid/sys/Monitor.h"
@@ -40,13 +39,13 @@ namespace qpid { namespace cluster {
  * Connection to the cluster. Maintains cluster membership
  * data.
  *
- * As SessionFrameHandler, handles frames by sending them to the
- * cluster, sends frames received from the cluster to the next
- * SessionFrameHandler.
+ * As FrameHandler, handles frames by sending them to the
+ * cluster. Frames received from the cluster are sent to the next
+ * FrameHandler in the chain.
  * 
  * 
  */
-class Cluster : public SessionFrameHandler,
+class Cluster : public framing::FrameHandler,
                 private sys::Runnable, private Cpg::Handler
 {
   public:
@@ -66,7 +65,7 @@ class Cluster : public SessionFrameHandler,
      * @param handler for frames received from the cluster.
      */
     Cluster(const std::string& name, const std::string& url,
-            const SessionFrameHandler::Chain& next);
+            const framing::FrameHandler::Chain& next);
 
     virtual ~Cluster();
 
@@ -87,7 +86,7 @@ class Cluster : public SessionFrameHandler,
               sys::Duration timeout=sys::TIME_INFINITE) const;
 
     /** Send frame to the cluster */
-    void handle(SessionFrame&);
+    void handle(framing::AMQFrame&);
     
   private:
     typedef Cpg::Id Id;
