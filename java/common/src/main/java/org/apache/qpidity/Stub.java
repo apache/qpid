@@ -72,7 +72,14 @@ class SessionDelegate extends Delegate<Session> {
 
     public @Override void exchangeDeclare(Session session, ExchangeDeclare ed) {
         System.out.println("got an exchange declare: " + ed.getExchange() + ", " + ed.getType());
-        session.queueDeclare("asdf", "alternate", null);
+        try
+        {
+        	session.queueDeclare("asdf", "alternate", null);
+        }
+        catch(Exception e)
+        {
+        	
+        }
     }
 
     /*

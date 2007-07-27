@@ -280,7 +280,7 @@ inv.line("    protected abstract StructFactory getFactory();")
 inv.line()
 for s in structs:
   dname = dromedary(s.name)
-  inv.line("    public void %s(%s) {" % (dname, s.parameters()))
+  inv.line("    public void %s(%s) throws QpidException {" % (dname, s.parameters()))
   inv.line("        invoke(getFactory().new%s(%s));" % (s.name, s.arguments()))
   inv.line("    }")
 inv.line("}")
