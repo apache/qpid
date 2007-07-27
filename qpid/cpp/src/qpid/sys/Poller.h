@@ -23,6 +23,7 @@
  */
 
 #include "Time.h"
+#include "Socket.h"
 
 #include <stdint.h>
 
@@ -39,14 +40,14 @@ class PollerHandlePrivate;
 class PollerHandle {
     friend class Poller;
 
-    PollerHandlePrivate* impl;
-    const int fd;
+    PollerHandlePrivate* const impl;
+    const Socket& socket;
 
 public:
-    PollerHandle(int fd0);
+    PollerHandle(const Socket& s);
     virtual ~PollerHandle();
-
-    int getFD() const { return fd; }
+    
+    const Socket& getSocket() const {return socket;}
 };
 
 /**
@@ -55,7 +56,7 @@ public:
  */
 class PollerPrivate;
 class Poller {
-    PollerPrivate* impl;
+    PollerPrivate* const impl;
 
 public:
     typedef boost::shared_ptr<Poller> shared_ptr;

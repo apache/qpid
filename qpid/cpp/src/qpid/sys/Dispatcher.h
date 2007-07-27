@@ -49,12 +49,13 @@ private:
     Mutex stateLock;
     enum {
         IDLE, INACTIVE, ACTIVE_R, ACTIVE_W, ACTIVE_RW,
-        CALLBACK, DELAYED_R, DELAYED_W, DELAYED_RW, DELAYED_DELETE
+        DELAYED_IDLE, DELAYED_INACTIVE, DELAYED_R, DELAYED_W, DELAYED_RW,
+        DELAYED_DELETE
     } state;
 
 public:
-    DispatchHandle(int fd, Callback rCb, Callback wCb, Callback dCb) :
-      PollerHandle(fd),
+    DispatchHandle(const Socket& s, Callback rCb, Callback wCb, Callback dCb) :
+      PollerHandle(s),
       readableCallback(rCb),
       writableCallback(wCb),
       disconnectedCallback(dCb),
