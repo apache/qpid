@@ -35,14 +35,14 @@ namespace sys {
  */
 class AsynchAcceptor {
 public:
-    typedef boost::function1<void, int> Callback;
+    typedef boost::function1<void, const Socket&> Callback;
 
 private:
     Callback acceptedCallback;
     DispatchHandle handle;
 
 public:
-    AsynchAcceptor(int fd, Callback callback);
+    AsynchAcceptor(const Socket& s, Callback callback);
     void start(Poller::shared_ptr poller);
 
 private:
@@ -75,9 +75,9 @@ public:
             bytes(b),
             byteCount(s),
             dataStart(0),
-            dataCount(s)
+            dataCount(0)
         {}
-
+        
         virtual ~Buffer()
         {}
     };
@@ -85,6 +85,7 @@ public:
     typedef boost::function2<void, AsynchIO&, Buffer*> ReadCallback;
     typedef boost::function1<void, AsynchIO&> EofCallback;
     typedef boost::function1<void, AsynchIO&> DisconnectCallback;
+    typedef boost::function2<void, AsynchIO&, const Socket&> ClosedCallback;
     typedef boost::function1<void, AsynchIO&> BuffersEmptyCallback;
     typedef boost::function1<void, AsynchIO&> IdleCallback;
 
@@ -92,26 +93,33 @@ private:
     ReadCallback readCallback;
     EofCallback eofCallback;
     DisconnectCallback disCallback;
+    ClosedCallback closedCallback;
     BuffersEmptyCallback emptyCallback;
     IdleCallback idleCallback;
     std::deque<Buffer*> bufferQueue;
     std::deque<Buffer*> writeQueue;
+    bool queuedClose;
 
 public:
-    AsynchIO(int fd,
+    AsynchIO(const Socket& s,
         ReadCallback rCb, EofCallback eofCb, DisconnectCallback disCb,
-        BuffersEmptyCallback eCb = 0, IdleCallback iCb = 0);
+        ClosedCallback cCb = 0, BuffersEmptyCallback eCb = 0, IdleCallback iCb = 0);
     void queueForDeletion();
 
     void start(Poller::shared_ptr poller);
     void queueReadBuffer(Buffer* buff);
-    void queueWrite(Buffer* buff);
+    void queueWrite(Buffer* buff = 0);
+    void unread(Buffer* buff);
+    void queueWriteClose();
+    Buffer* getQueuedBuffer();
+    const Socket& getSocket() const { return DispatchHandle::getSocket(); }
 
 private:
     ~AsynchIO();
     void readable(DispatchHandle& handle);
     void writeable(DispatchHandle& handle);
     void disconnected(DispatchHandle& handle);
+    void close(DispatchHandle& handle);
 };
 
 }}

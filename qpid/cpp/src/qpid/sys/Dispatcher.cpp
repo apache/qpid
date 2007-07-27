@@ -94,10 +94,11 @@ void DispatchHandle::rewatch() {
     ScopedLock<Mutex> lock(stateLock);
     switch(state) {
     case IDLE:
+    case DELAYED_IDLE:
         break;
     case DELAYED_R:
     case DELAYED_W:
-    case CALLBACK:
+    case DELAYED_INACTIVE:
         state = r ?
             (w ? DELAYED_RW : DELAYED_R) :
             DELAYED_W;
@@ -132,6 +133,7 @@ void DispatchHandle::rewatchRead() {
     ScopedLock<Mutex> lock(stateLock);
     switch(state) {
     case IDLE:
+    case DELAYED_IDLE:
         break;
     case DELAYED_R:
     case DELAYED_RW:
@@ -140,7 +142,7 @@ void DispatchHandle::rewatchRead() {
     case DELAYED_W:
         state = DELAYED_RW;
         break;
-    case CALLBACK:
+    case DELAYED_INACTIVE:
         state = DELAYED_R;
         break;
     case ACTIVE_R:
@@ -168,6 +170,7 @@ void DispatchHandle::rewatchWrite() {
     ScopedLock<Mutex> lock(stateLock);
     switch(state) {
     case IDLE:
+    case DELAYED_IDLE:
         break;
     case DELAYED_W:
     case DELAYED_RW:
@@ -176,7 +179,7 @@ void DispatchHandle::rewatchWrite() {
     case DELAYED_R:
         state = DELAYED_RW;
         break;
-    case CALLBACK:
+    case DELAYED_INACTIVE:
         state = DELAYED_W;
         break;
     case INACTIVE:
@@ -204,15 +207,16 @@ void DispatchHandle::unwatchRead() {
     ScopedLock<Mutex> lock(stateLock);
     switch(state) {
     case IDLE:
+    case DELAYED_IDLE:
         break;
     case DELAYED_R:
-        state = CALLBACK;
+        state = DELAYED_INACTIVE;
         break;
     case DELAYED_RW:
         state = DELAYED_W;    
         break;
     case DELAYED_W:
-    case CALLBACK:
+    case DELAYED_INACTIVE:
     case DELAYED_DELETE:
         break;
     case ACTIVE_R:
@@ -239,15 +243,16 @@ void DispatchHandle::unwatchWrite() {
     ScopedLock<Mutex> lock(stateLock);
     switch(state) {
     case IDLE:
+    case DELAYED_IDLE:
         break;
     case DELAYED_W:
-        state = CALLBACK;
+        state = DELAYED_INACTIVE;
         break;
     case DELAYED_RW:
         state = DELAYED_R;
         break;
     case DELAYED_R:
-    case CALLBACK:
+    case DELAYED_INACTIVE:
     case DELAYED_DELETE:
         break;
     case ACTIVE_W:
@@ -270,12 +275,13 @@ void DispatchHandle::unwatch() {
     ScopedLock<Mutex> lock(stateLock);
     switch (state) {
     case IDLE:
+    case DELAYED_IDLE:
         break;
     case DELAYED_R:
     case DELAYED_W:
     case DELAYED_RW:
-    case CALLBACK:
-        state = CALLBACK;
+    case DELAYED_INACTIVE:
+        state = DELAYED_INACTIVE;
         break;
     case DELAYED_DELETE:
         break;
@@ -289,32 +295,46 @@ void DispatchHandle::unwatch() {
 
 void DispatchHandle::stopWatch() {
     ScopedLock<Mutex> lock(stateLock);
-    if ( state == IDLE) {
+    switch (state) {
+    case IDLE:
+    case DELAYED_IDLE:
+    case DELAYED_DELETE:
     	return;
+    case DELAYED_R:
+    case DELAYED_W:
+    case DELAYED_RW:
+    case DELAYED_INACTIVE:
+    	state = DELAYED_IDLE;
+    	break;
+    default:
+	    state = IDLE;
+	    break;
     }
     assert(poller);
     poller->delFd(*this);
     poller.reset();
-    state = IDLE;
 }
 
 // The slightly strange switch structure
 // is to ensure that the lock is released before
 // we do the delete
 void DispatchHandle::doDelete() {
+	// Ensure that we're no longer watching anything
+	stopWatch();
+
     // If we're in the middle of a callback defer the delete
     {
     ScopedLock<Mutex> lock(stateLock);
     switch (state) {
-    case DELAYED_R:
-    case DELAYED_W:
-    case DELAYED_RW:
-    case CALLBACK:
+    case DELAYED_IDLE:
     case DELAYED_DELETE:
         state = DELAYED_DELETE;
         return;
+    case IDLE:
+    	break;
     default:
-        break;
+    	// Can only get out of stopWatch() in DELAYED_IDLE/DELAYED_DELETE/IDLE states
+        assert(false);
     }
     }
     // If we're not then do it right away
@@ -359,7 +379,7 @@ void DispatchHandle::dispatchCallbacks(Poller::EventType type) {
     case Poller::DISCONNECTED:
         {
         ScopedLock<Mutex> lock(stateLock);
-        state = CALLBACK;
+        state = DELAYED_INACTIVE;
         }
         if (disconnectedCallback) {
             disconnectedCallback(*this);
@@ -386,10 +406,11 @@ void DispatchHandle::dispatchCallbacks(Poller::EventType type) {
         poller->modFd(*this, Poller::INOUT);
         state = ACTIVE_RW;
         return;
-    case CALLBACK:
+    case DELAYED_INACTIVE:
         state = INACTIVE;
         return;
-    case IDLE:
+    case DELAYED_IDLE:
+    	state = IDLE;
     	return;
     default:
         // This should be impossible

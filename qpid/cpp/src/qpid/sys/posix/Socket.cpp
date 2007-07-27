@@ -25,6 +25,8 @@
 #include "check.h"
 #include "PrivatePosix.h"
 
+#include <fcntl.h>
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/errno.h>
 #include <netinet/in.h>
@@ -32,30 +34,63 @@
 
 #include <boost/format.hpp>
 
-using namespace qpid::sys;
+namespace qpid {
+namespace sys {
 
-Socket Socket::createTcp() 
+class SocketPrivate {
+public:
+	SocketPrivate(int f = -1) :
+		fd(f)
+	{}
+
+	int fd;
+};
+
+Socket::Socket() :
+	impl(new SocketPrivate)
 {
-    int s = ::socket (PF_INET, SOCK_STREAM, 0);
-    if (s < 0) throw QPID_POSIX_ERROR(errno);
-    return s;
+	createTcp();
 }
 
-Socket::Socket(int descriptor) : socket(descriptor) {}
+Socket::Socket(SocketPrivate* sp) :
+	impl(sp)
+{}
 
-void Socket::setTimeout(const Duration& interval)
+Socket::~Socket() {
+	delete impl;
+}
+
+void Socket::createTcp() const
 {
+	int& socket = impl->fd;
+	if (socket != -1) Socket::close();
+    int s = ::socket (PF_INET, SOCK_STREAM, 0);
+    if (s < 0) throw QPID_POSIX_ERROR(errno);
+    socket = s;
+}
+
+void Socket::setTimeout(const Duration& interval) const
+{
+	const int& socket = impl->fd;
     struct timeval tv;
     toTimeval(tv, interval);
     setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
-void Socket::connect(const std::string& host, int port)
+void Socket::setNonblocking() const {
+    QPID_POSIX_CHECK(::fcntl(impl->fd, F_SETFL, O_NONBLOCK));
+}
+
+
+void Socket::connect(const std::string& host, int port) const
 {
+	const int& socket = impl->fd;
     struct sockaddr_in name;
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
+    // TODO: Be good to make this work for IPv6 as well as IPv4
+    // Use more modern lookup functions
     struct hostent* hp = gethostbyname ( host.c_str() );
     if (hp == 0) throw QPID_POSIX_ERROR(errno);
     memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
@@ -64,16 +99,18 @@ void Socket::connect(const std::string& host, int port)
 }
 
 void
-Socket::close()
+Socket::close() const
 {
-    if (socket == 0) return;
+	int& socket = impl->fd;
+    if (socket == -1) return;
     if (::close(socket) < 0) throw QPID_POSIX_ERROR(errno);
-    socket = 0;
+    socket = -1;
 }
 
 ssize_t
-Socket::send(const void* data, size_t size)
+Socket::send(const void* data, size_t size) const
 {
+	const int& socket = impl->fd;
     ssize_t sent = ::send(socket, data, size, 0);
     if (sent < 0) {
         if (errno == ECONNRESET) return SOCKET_EOF;
@@ -84,8 +121,9 @@ Socket::send(const void* data, size_t size)
 }
 
 ssize_t
-Socket::recv(void* data, size_t size)
+Socket::recv(void* data, size_t size) const
 {
+	const int& socket = impl->fd;
     ssize_t received = ::recv(socket, data, size, 0);
     if (received < 0) {
         if (errno == ETIMEDOUT) return SOCKET_TIMEOUT;
@@ -94,8 +132,9 @@ Socket::recv(void* data, size_t size)
     return received;
 }
 
-int Socket::listen(int port, int backlog) 
+int Socket::listen(int port, int backlog) const
 {
+	const int& socket = impl->fd;
     struct sockaddr_in name;
     name.sin_family = AF_INET;
     name.sin_port = htons(port);
@@ -111,8 +150,45 @@ int Socket::listen(int port, int backlog)
 
     return ntohs(name.sin_port);
 }
-    
-int Socket::fd() const
+
+Socket* Socket::accept(struct sockaddr *addr, socklen_t *addrlen) const
 {
-    return socket;
+	int afd = ::accept(impl->fd, addr, addrlen);
+	if ( afd >= 0)
+		return new Socket(new SocketPrivate(afd));
+	else if (errno == EAGAIN)
+		return 0;
+    else throw QPID_POSIX_ERROR(errno);
 }
+
+int Socket::read(void *buf, size_t count) const
+{
+	return ::read(impl->fd, buf, count);
+}
+
+int Socket::write(const void *buf, size_t count) const
+{
+	return ::write(impl->fd, buf, count);
+}
+
+std::string Socket::getSockname() const
+{
+    ::sockaddr_storage name; // big enough for any socket address    
+    ::socklen_t namelen = sizeof(name);
+
+	const int& socket = impl->fd;
+    if (::getsockname(socket, (::sockaddr*)&name, &namelen) < 0)
+        throw QPID_POSIX_ERROR(errno);
+    
+    char dispName[NI_MAXHOST];
+    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName), 0, 0, NI_NUMERICHOST) != 0)
+    	throw QPID_POSIX_ERROR(rc);
+    return dispName;
+}
+
+int toFd(const SocketPrivate* s)
+{
+    return s->fd;
+}
+
+}} // namespace qpid::sys

@@ -7,4 +7,12 @@
    obj:*/libcpg.so.2.0.0
 }
 
+{
+   Uninitialised value problem in dlopen
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:*dl_*
+   obj:/lib64/ld-2.6.so
+   obj:*
+}
 

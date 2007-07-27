@@ -54,7 +54,6 @@ Connector::~Connector(){
 }
 
 void Connector::connect(const std::string& host, int port){
-    socket = Socket::createTcp();
     socket.connect(host, port);
     closed = false;
     receiver = Thread(this);

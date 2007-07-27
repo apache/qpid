@@ -58,18 +58,12 @@ apr_plat_src = \
 apr_plat_hdr = \
   qpid/sys/apr/Condition.h \
   qpid/sys/apr/Mutex.h \
-  qpid/sys/apr/Socket.h \
   qpid/sys/apr/Thread.h
 
 posix_netio_src = \
-  qpid/sys/posix/EventChannel.cpp \
-  qpid/sys/posix/EventChannelAcceptor.cpp \
-  qpid/sys/posix/EventChannelConnection.cpp \
-  qpid/sys/posix/EventChannelThreads.cpp
+  qpid/sys/AsynchIOAcceptor.cpp
 
-posix_netio_hdr = \
-  qpid/sys/posix/EventChannel.h \
-  qpid/sys/posix/EventChannelThreads.h
+posix_netio_hdr = 
 
 posix_plat_src = \
   qpid/sys/Dispatcher.cpp \
@@ -86,7 +80,6 @@ posix_plat_hdr = \
   qpid/sys/posix/Condition.h \
   qpid/sys/posix/PrivatePosix.h \
   qpid/sys/posix/Mutex.h \
-  qpid/sys/posix/Socket.h \
   qpid/sys/posix/Thread.h
 
 if USE_APR_NETIO
