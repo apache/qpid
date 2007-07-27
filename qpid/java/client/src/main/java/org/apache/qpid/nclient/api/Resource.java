@@ -18,7 +18,7 @@
  */
 package org.apache.qpid.nclient.api;
 
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 /**
  * A Resource is associated with a session and can be independently closed.
