@@ -33,17 +33,11 @@ static const ProtocolVersion VER;
 /** Verify membership in a cluster with one member. */
 BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
-    AMQFrame frame(VER, 1, new SessionPingBody(VER));
-    Uuid id(true);
-    SessionFrame send(id, frame, true);
+    AMQFrame send(VER, 1, new SessionPingBody(VER));
     cluster.handle(send);
-    SessionFrame sf;
-    BOOST_REQUIRE(cluster.received.waitPop(sf));
-
-    BOOST_CHECK(sf.isIncoming);
-    BOOST_CHECK_EQUAL(id, sf.uuid);
-    BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *sf.frame.getBody());
-    
+    AMQFrame received;
+    BOOST_REQUIRE(cluster.received.waitPop(received));
+    BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *received.getBody());
     BOOST_CHECK_EQUAL(1u, cluster.size());
     Cluster::MemberList members = cluster.getMembers();
     BOOST_CHECK_EQUAL(1u, members.size());
@@ -65,18 +59,14 @@ BOOST_AUTO_TEST_CASE(testClusterTwo) {
         BOOST_REQUIRE(cluster.waitFor(2)); // Myself and child.
 
         // Exchange frames with child.
-        AMQFrame frame(VER, 1, new SessionPingBody(VER));
-        Uuid id(true);
-        SessionFrame send(id, frame, true);
+        AMQFrame send(VER, 1, new SessionPingBody(VER));
         cluster.handle(send);
-        SessionFrame sf;
-        BOOST_REQUIRE(cluster.received.waitPop(sf));
-        BOOST_CHECK_EQUAL(id, sf.uuid);
-        BOOST_CHECK(sf.isIncoming);
-        BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *sf.frame.getBody());
+        AMQFrame received;
+        BOOST_REQUIRE(cluster.received.waitPop(received));
+        BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *received.getBody());
         
-        BOOST_REQUIRE(cluster.received.waitPop(sf));
-        BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *sf.frame.getBody());
+        BOOST_REQUIRE(cluster.received.waitPop(received));
+        BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *received.getBody());
 
         if (!nofork) {
             // Wait for child to exit.

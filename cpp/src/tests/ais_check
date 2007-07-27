@@ -3,7 +3,7 @@
 #
 
 test `id -ng` = "ais" || BADGROUP=yes
-ps -u root | grep aisexec > /dev/null 2>&1 || NOAISEXEC=yes
+{ ps -u root | grep aisexec >/dev/null; } || NOAISEXEC=yes
 
 if test -n "$BADGROUP" -o -n "$NOAISEXEC"; then
     cat <<EOF
@@ -14,12 +14,12 @@ if test -n "$BADGROUP" -o -n "$NOAISEXEC"; then
     will not be run because:
 
 EOF
-    test -n"$BADGROUP" || cat <<EOF
+    test -n "$BADGROUP" && cat <<EOF
     You do not appear to have you group ID set to "ais". Make ais your
     primary group, or run "newgrp ais" before running the tests.
 
 EOF
-    test -n "$NOAISEXEC" || cat <<EOF    
+    test -n "$NOAISEXEC" && cat <<EOF    
     The aisexec daemon is not running. Make sure /etc/ais/openais.conf
     is a valid configuration and aisexec is run by root.
 EOF

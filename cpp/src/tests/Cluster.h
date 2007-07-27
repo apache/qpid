@@ -54,7 +54,6 @@ class TestHandler : public Handler<T&>, public ConcurrentQueue<T>
 };
 
 typedef TestHandler<AMQFrame> TestFrameHandler;
-typedef TestHandler<SessionFrame> TestSessionFrameHandler;
 
 void nullDeleter(void*) {}
 
@@ -70,7 +69,7 @@ struct TestCluster : public Cluster
                         equal_to<size_t>(), bind(&Cluster::size,this), n));
     }
 
-    TestSessionFrameHandler received;
+    TestFrameHandler received;
 };
 
 
