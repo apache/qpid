@@ -20,9 +20,7 @@ package org.apache.qpid.nclient.jms;
 import org.apache.qpid.nclient.jms.SessionImpl;
 
 /**
- * Created by Arnaud Simon
- * Date: 25-Jul-2007
- * Time: 13:38:58
+ * 
  */
 public class QueueSessionImpl extends SessionImpl
 {

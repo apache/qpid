@@ -25,10 +25,6 @@ import org.apache.qpidity.QpidException;
 
 /**
  * This represents a physical connection to a broker.
- * <p/>
- * Created by Arnaud Simon
- * Date: 20-Jul-2007
- * Time: 09:34:15
  */
 public interface Connection
 {

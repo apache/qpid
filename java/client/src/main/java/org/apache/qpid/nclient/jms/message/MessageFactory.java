@@ -1,4 +1,6 @@
-/* Licensed to the Apache Software Foundation (ASF) under one
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -14,30 +16,26 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
-package org.apache.qpid.nclient.jms;
+package  org.apache.qpid.nclient.jms.message;
 
-import org.apache.qpidity.QpidException;
+import java.util.List;
 
 import javax.jms.JMSException;
 
-/**
- *Helper class for handling exceptions
- */
-public class ExceptionHelper
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+
+
+public interface MessageFactory
 {
-    static public JMSException convertQpidExceptionToJMSException(Exception exception)
-    {
-        JMSException jmsException = null;
-        if (exception instanceof QpidException)
-        {
-            jmsException = new JMSException(exception.getMessage(), ((QpidException) exception).getErrorCode());
-        }
-        else
-        {
-            jmsException = new JMSException(exception.getMessage());
-        }
-        jmsException.setLinkedException(exception);
-        return jmsException;
-    }
+    AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
+                                     ContentHeaderBody contentHeader,
+                                     AMQShortString exchange, AMQShortString routingKey,
+                                     List bodies)
+        throws JMSException, AMQException;
+
+    AbstractJMSMessage createMessage() throws JMSException;
 }

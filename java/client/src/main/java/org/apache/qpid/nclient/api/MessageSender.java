@@ -22,10 +22,6 @@ import org.apache.qpidity.QpidException;
 
 /**
  * A sender is used to send message to its queue.
- * <p/>
- * Created by Arnaud Simon
- * Date: 22-Jul-2007
- * Time: 09:41:58
  */
 public interface MessageSender extends Resource
 {

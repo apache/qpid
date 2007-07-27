@@ -19,9 +19,7 @@
 package org.apache.qpid.nclient;
 
 /**
- * Created by Arnaud Simon
- * Date: 23-Jul-2007
- * Time: 09:47:32
+ * 
  */
 public interface FieldTable
 {

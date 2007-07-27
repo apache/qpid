@@ -26,10 +26,6 @@ import java.util.Enumeration;
 /**
  * A <CODE>ConnectionMetaDataImpl</CODE> object provides information describing the
  * JMS <CODE>Connection</CODE>.
- * <p/>
- * Created by Arnaud Simon
- * Date: 25-Jul-2007
- * Time: 10:47:20
  */
 public class ConnectionMetaDataImpl implements ConnectionMetaData
 {
@@ -53,8 +49,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
     // Provider minor version
     private static final int PROVIDER_MINOR_VERSION = 10;
     // Provider version
-    private static final String PROVIDER_VERSION = QpidProperties.getProductName() + " (Client: ["
-            + QpidProperties.getBuildVersion() + "]  ; Protocol: [ 0.10 ] )";
+    private static final String PROVIDER_VERSION = QpidProperties.getProductName() + " (Client: [" + QpidProperties.getBuildVersion() + "]  ; Protocol: [ 0.10 ] )";
 
     /**
      * Prevent instantiation.
@@ -81,9 +76,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return the JMS API version
      * @throws JMSException Never
      */
-    public String getJMSVersion()
-            throws
-            JMSException
+    public String getJMSVersion() throws JMSException
     {
         return JMS_VERSION;
     }
@@ -95,9 +88,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return the JMS API major version number
      * @throws JMSException Never
      */
-    public int getJMSMajorVersion()
-            throws
-            JMSException
+    public int getJMSMajorVersion() throws JMSException
     {
         return JMS_MAJOR_VERSION;
     }
@@ -109,9 +100,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return the JMS API minor version number
      * @throws JMSException Never
      */
-    public int getJMSMinorVersion()
-            throws
-            JMSException
+    public int getJMSMinorVersion() throws JMSException
     {
         return JMS_MINOR_VERSION;
     }
@@ -123,9 +112,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return Qpid name
      * @throws JMSException Never
      */
-    public String getJMSProviderName()
-            throws
-            JMSException
+    public String getJMSProviderName() throws JMSException
     {
         return PROVIDER_NAME;
     }
@@ -136,9 +123,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return Qpid version
      * @throws JMSException Never
      */
-    public String getProviderVersion()
-            throws
-            JMSException
+    public String getProviderVersion() throws JMSException
     {
         return PROVIDER_VERSION;
         // TODO: We certainly can dynamically get the server version.
@@ -150,9 +135,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return Qpid major version number
      * @throws JMSException Never
      */
-    public int getProviderMajorVersion()
-            throws
-            JMSException
+    public int getProviderMajorVersion() throws JMSException
     {
         return PROVIDER_MAJOR_VERSION;
     }
@@ -163,9 +146,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return Qpid minor version number
      * @throws JMSException Never
      */
-    public int getProviderMinorVersion()
-            throws
-            JMSException
+    public int getProviderMinorVersion() throws JMSException
     {
         return PROVIDER_MINOR_VERSION;
     }
@@ -176,9 +157,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
      * @return an Enumeration of JMSX property names
      * @throws JMSException if cannot retrieve metadata due to some internal error.
      */
-    public Enumeration getJMSXPropertyNames()
-            throws
-            JMSException
+    public Enumeration getJMSXPropertyNames() throws JMSException
     {
         return CustomJMSXProperty.asEnumeration();
     }

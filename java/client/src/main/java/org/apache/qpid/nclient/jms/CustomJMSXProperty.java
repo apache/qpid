@@ -32,11 +32,11 @@ public enum CustomJMSXProperty
 
     public static synchronized Enumeration asEnumeration()
     {
-        if(_names == null)
+        if (_names == null)
         {
             CustomJMSXProperty[] properties = values();
             ArrayList<String> nameList = new ArrayList<String>(properties.length);
-            for(CustomJMSXProperty property :  properties)
+            for (CustomJMSXProperty property : properties)
             {
                 nameList.add(property.toString());
             }

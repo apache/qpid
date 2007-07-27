@@ -22,10 +22,6 @@ import org.apache.qpidity.QpidException;
 
 /**
  * This session�s resources are control under the scope of a distributed transaction.
- *
- * Created by Arnaud Simon
- * Date: 20-Jul-2007
- * Time: 09:39:11
  */
 public interface DtxSession extends Session
 {
