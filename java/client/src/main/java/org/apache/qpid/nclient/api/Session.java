@@ -37,9 +37,7 @@ public interface Session
      * @throws QpidException If the communication layer fails to close this session or if an internal error happens
      *                       when closing this session resources. .
      */
-    public void close()
-            throws
-            QpidException;
+    public void close() throws QpidException;
 
     /**
      * Suspend this session resulting in interrupting the traffic with the broker.
@@ -47,9 +45,7 @@ public interface Session
      *
      * @throws QpidException If the communication layer fails to suspend this session
      */
-    public void suspend()
-            throws
-            QpidException;
+    public void suspend() throws QpidException;
 
     /**
      * Unsuspended a Session is equivalent to attaching a communication channel that can be used to
@@ -58,9 +54,14 @@ public interface Session
      *
      * @throws QpidException If the communication layer fails to unsuspend this session
      */
-    public void unsuspend()
-            throws
-            QpidException;
+    public void unsuspend() throws QpidException;
+
+    /**
+     * Gives up responsibility to all messages that have not yet been delivered to MessageReceiver.
+     *
+     * @throws QpidException If the communication layer fails to release undelivered messages.
+     */
+    public void releaseUndeliveredMessages() throws QpidException;
 
     /**
      * Create a message sender for sending messages to queue queueName.
@@ -69,9 +70,7 @@ public interface Session
      * @return A sender for queue queueName
      * @throws QpidException If the session fails to create the sended due to some error
      */
-    public MessageSender createSender(String queueName)
-            throws
-            QpidException;
+    public MessageSender createSender(String queueName) throws QpidException;
     //Todo: Do we need to define more specific exception like queue name not valid?
 
     /**
@@ -91,9 +90,7 @@ public interface Session
      * @throws QpidException If the session fails to create the receiver due to some error.
      * @see CreateReceiverOption
      */
-    public MessageReceiver createReceiver(String queueName, CreateReceiverOption... options)
-            throws
-            QpidException;
+    public MessageReceiver createReceiver(String queueName, CreateReceiverOption... options) throws QpidException;
     //Todo: Do we need to define more specific exceptions like queue name not valid?
 
     /**
@@ -102,10 +99,7 @@ public interface Session
      * @throws QpidException         If the session fails to commit due to some error.
      * @throws IllegalStateException If this session is not transacted.
      */
-    public void commit()
-            throws
-            QpidException,
-            IllegalStateException;
+    public void commit() throws QpidException, IllegalStateException;
 
     /**
      * Rollback the receipt and the delivery of all messages exchanged by this session resources.
@@ -113,10 +107,7 @@ public interface Session
      * @throws QpidException         If the session fails to rollback due to some error.
      * @throws IllegalStateException If this session is not transacted.
      */
-    public void rollback()
-            throws
-            QpidException,
-            IllegalStateException;
+    public void rollback() throws QpidException, IllegalStateException;
 
     /**
      * Set this session as transacted.
@@ -125,10 +116,7 @@ public interface Session
      * @throws QpidException         If the session fail to be transacted due to some error.
      * @throws IllegalStateException If this session is already transacted.
      */
-    public void setTransacted()
-            throws
-            QpidException,
-            IllegalStateException;
+    public void setTransacted() throws QpidException, IllegalStateException;
 
     /**
      * Declare a queue of name queueName
@@ -147,9 +135,7 @@ public interface Session
      * @throws QpidException If the session fails to declare the queue due to some error.
      * @see DeclareQueueOption
      */
-    public void declareQueue(String queueName, DeclareQueueOption... options)
-            throws
-            QpidException;
+    public void declareQueue(String queueName, DeclareQueueOption... options) throws QpidException;
     //Todo: Do we need to define more specific exceptions like queue name already exist?
 
     /**
@@ -158,12 +144,9 @@ public interface Session
      * @param queueName    The queue to be bound.
      * @param exchangeName The exchange name.
      * @param routingKey   The routing key.
-     * @param nowait       nowait
      * @throws QpidException If the session fails to bind the queue due to some error.
      */
-    public void bindQueue(String queueName, String exchangeName, String routingKey)
-            throws
-            QpidException;
+    public void bindQueue(String queueName, String exchangeName, String routingKey) throws QpidException;
     //Todo: Do we need to define more specific exceptions like exchange does not exist?
 
     /**
@@ -174,9 +157,7 @@ public interface Session
      * @param routingKey   The routing key.
      * @throws QpidException If the session fails to unbind the queue due to some error.
      */
-    public void unbindQueue(String queueName, String exchangeName, String routingKey)
-            throws
-            QpidException;
+    public void unbindQueue(String queueName, String exchangeName, String routingKey) throws QpidException;
     //Todo: Do we need to define more specific exceptions like exchange does not exist?
 
     /**
@@ -184,12 +165,9 @@ public interface Session
      * TODO: Define the exact semantic i.e. are message sent to a dead letter queue?
      *
      * @param queueName The queue to be purged
-     * @param nowait    nowait
      * @throws QpidException If the session fails to purge the queue due to some error.
      */
-    public void purgeQueue(String queueName)
-            throws
-            QpidException;
+    public void purgeQueue(String queueName) throws QpidException;
 
     /**
      * Delet a queue.
@@ -202,9 +180,7 @@ public interface Session
      * @throws QpidException If the session fails to delete the queue due to some error.
      * @see DeleteQueueOption
      */
-    public void deleteQueue(String queueName, DeleteQueueOption options)
-            throws
-            QpidException;
+    public void deleteQueue(String queueName, DeleteQueueOption options) throws QpidException;
 
     /**
      * Declare an exchange.
@@ -218,15 +194,15 @@ public interface Session
      * <li> not passive
      * </ul>
      *
-     * @param exchangeName  The exchange name.
-     * @param exchangeClass The fully qualified name of the exchange class.
-     * @param options       Set of options.
-     * @throws QpidException  If the session fails to declare the exchange due to some error.
+     * @param exchangeName      The exchange name.
+     * @param exchangeClass     The fully qualified name of the exchange class.
+     * @param alternateExchange The alternate exchange.
+     * @param options           Set of options.
+     * @throws QpidException If the session fails to declare the exchange due to some error.
      * @see DeclareExchangeOption
      */
-    public void declareExchange(String exchangeName, String exchangeClass, String alternateExchange, DeclareExchangeOption... options)
-            throws
-            QpidException;
+    public void declareExchange(String exchangeName, String exchangeClass, String alternateExchange,
+                                DeclareExchangeOption... options) throws QpidException;
     //Todo: Do we need to define more specific exceptions like exchange already exist?
 
     /**
@@ -238,10 +214,8 @@ public interface Session
      * @param exchangeName The name of exchange to be deleted.
      * @param options      Set of options.
      * @throws QpidException If the session fails to delete the exchange due to some error.
-     * @see DeleteExchangeOption 
+     * @see DeleteExchangeOption
      */
-    public void deleteExchange(String exchangeName, DeleteExchangeOption... options)
-            throws
-            QpidException;
-     //Todo: Do we need to define more specific exceptions like exchange does not exist?
+    public void deleteExchange(String exchangeName, DeleteExchangeOption... options) throws QpidException;
+    //Todo: Do we need to define more specific exceptions like exchange does not exist?
 }

@@ -57,6 +57,8 @@ public interface MessageReceiver extends Resource
 
     /**
      * Stop the delivery of messages to this receiver.
+     * <p>For asynchronous receiver, this operation blocks until the message listener
+     * finishes processing the current message,
      *
      * @throws QpidException         If this receiver fails to be stopped due to some error.
      * @throws IllegalStateException If this receiver is closed or already stopped.

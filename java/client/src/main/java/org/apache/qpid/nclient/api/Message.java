@@ -75,13 +75,10 @@ public interface Message
      * <p>The message must have been previously acquired either by receiving it in
      * pre-acquire mode or by explicitly acquiring it.
      *
-     * @throws QpidException If the acknowledgement of the message fails due to some error.
+     * @throws QpidException         If the acknowledgement of the message fails due to some error.
      * @throws IllegalStateException If this messages is not acquired.
      */
-    public void acknowledge()
-            throws
-            QpidException,
-            IllegalStateException;
+    public void acknowledge() throws QpidException, IllegalStateException;
 
     /**
      * Acknowledge the receipt of an acquired messages which IDs are within
@@ -91,10 +88,7 @@ public interface Message
      * @throws QpidException         If the acknowledgement of this set of messages fails due to some error.
      * @throws IllegalStateException If some messages are not acquired.
      */
-    public void acknowledge(Message message)
-            throws
-            QpidException,
-            IllegalStateException;
+    public void acknowledge(Message message) throws QpidException, IllegalStateException;
 
     /**
      * Reject a previously acquired message.
@@ -104,10 +98,7 @@ public interface Message
      * @throws QpidException         If this message cannot be rejected dus to some error
      * @throws IllegalStateException If this message is not acquired.
      */
-    public void reject()
-            throws
-            QpidException,
-            IllegalStateException;
+    public void reject() throws QpidException, IllegalStateException;
 
     /**
      * Try to acquire this message hence releasing it form the queue. This means that once acknowledged,
@@ -119,8 +110,13 @@ public interface Message
      * @throws QpidException         If this message cannot be acquired dus to some error
      * @throws IllegalStateException If this message has already been acquired.
      */
-    public boolean acquire()
-            throws
-            QpidException,
-            IllegalStateException;
+    public boolean acquire() throws QpidException, IllegalStateException;
+
+    /**
+     * Give up responsibility for processing this message.
+     *
+     * @throws QpidException          If this message cannot be released dus to some error.
+     * @throws IllegalStateException  If this message has already been acknowledged.
+     */
+    public void release() throws QpidException, IllegalStateException;
 }
