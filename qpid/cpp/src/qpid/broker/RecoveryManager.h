@@ -31,20 +31,28 @@
 namespace qpid {
 namespace broker {
 
-    class RecoveryManager{
-    public:
-        virtual ~RecoveryManager(){}
-        virtual RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer) = 0;
-        virtual RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer) = 0;
-        virtual RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer) = 0;
-        virtual RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
-                                                                      std::auto_ptr<TPCTransactionContext> txn) = 0;
-        virtual void recoveryComplete() = 0;
-    };
+class RecoveryManager{
+  public:
+    virtual ~RecoveryManager(){}
+    virtual RecoverableExchange::shared_ptr recoverExchange(framing::Buffer& buffer) = 0;
+    virtual RecoverableQueue::shared_ptr recoverQueue(framing::Buffer& buffer) = 0;
+    virtual RecoverableMessage::shared_ptr recoverMessage(framing::Buffer& buffer) = 0;
+    virtual RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
+                                                                  std::auto_ptr<TPCTransactionContext> txn) = 0;
+    virtual void recoveryComplete() = 0;
+};
 
-    
-}
-}
+class Recoverable {
+  public:
+    virtual ~Recoverable() {}
+
+    /**
+     * Request recovery of queue and message state.
+     */
+    virtual void recover(RecoveryManager& recoverer) = 0;
+};
+
+}}
 
 
 #endif
