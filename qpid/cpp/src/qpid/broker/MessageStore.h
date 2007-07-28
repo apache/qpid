@@ -35,7 +35,7 @@ namespace broker {
  * all methods, any pointers/references to queues or messages
  * are valid only for the duration of the call).
  */
-class MessageStore : public TransactionalStore{
+class MessageStore : public TransactionalStore, public Recoverable {
 public:
     /**
      * Record the existence of a durable queue
@@ -67,11 +67,6 @@ public:
     virtual void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
                         const std::string& key, const framing::FieldTable& args) = 0;
 
-    /**
-     * Request recovery of queue and message state from store
-     */
-    virtual void recover(RecoveryManager& recoverer) = 0;
-    
     /**
      * Stores a messages before it has been enqueued
      * (enqueueing automatically stores the message so this is
