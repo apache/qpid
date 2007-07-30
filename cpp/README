@@ -33,8 +33,10 @@ The following libraries and header files must be installed to build
 a source distribution:
  * boost   <http://www.boost.org>              (1.33.1)
  * uuid    <http://e2fsprogs.sourceforge.net/> (1.39)
- * apr     <http://apr.apache.org>             (1.2.7)
  * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (0.21)
+
+Building on a platform other than Linux currently requires:
+ * apr     <http://apr.apache.org>             (1.2.7)
 
 Optional cluster functionality requires:
  * openais <http://openais.org/> 	       (0.80.3)
