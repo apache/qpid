@@ -27,4 +27,4 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-interface Header extends Struct {}
+public interface Header extends Struct {}
