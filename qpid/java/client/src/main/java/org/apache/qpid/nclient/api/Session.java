@@ -18,6 +18,9 @@
  */
 package org.apache.qpid.nclient.api;
 
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Option;
 
@@ -33,9 +36,9 @@ public interface Session
 	 * -------------------------------------
 	 * Session housekeeping methods
 	 * -------------------------------------
-	 */
+	 */ 
 	
-    /**
+	/**
      * Close this session and any associated resources.
      *
      * @throws QpidException If the communication layer fails to close this session or if an internal error happens
@@ -47,7 +50,9 @@ public interface Session
 
     /**
      * Suspend this session resulting in interrupting the traffic with the broker.
-     * When a session is suspend any operation of this session and of the associated resources is unavailable.
+     * An important distinction btw sessionFlow() and this method 
+     * is that the session timer will start to tick in suspend.
+     * When a session is suspend any operation of this session and of the associated resources are unavailable.
      *
      * @throws QpidException If the communication layer fails to suspend this session
      */
@@ -55,18 +60,23 @@ public interface Session
             throws
             QpidException;
 
-    /**
-     * Unsuspended a Session is equivalent to attaching a communication channel that can be used to
-     * communicate with the broker. All the operations of this session and of the associated resources
-     * are made available.
-     *
-     * @throws QpidException If the communication layer fails to unsuspend this session
-     */
-    public void sessionUnsuspend()
     
-            throws
-            QpidException;
-
+    /**
+     * This will stop the communication flow in the session
+     * However the session is still considered active and the session timer will not tick.
+     * This method is used for session level flow control.
+     * @throws QpidException If the communication layer fails to execute the flow method properly
+     */
+    
+	public void sessionFlow(Option ... _options) throws QpidException; 
+    
+    /**
+     * This is used for failover. This will resume an existing session
+     *
+     * @throws QpidException If the communication layer fails to execute this properly
+     */
+    
+	public void sessionResume(UUID sessionId) throws QpidException; 
     
     /**
 	 * -------------------------------------
@@ -130,7 +140,7 @@ public interface Session
      * @throws QpidException         If the session fails to commit due to some error.
      * @throws IllegalStateException If this session is not transacted.
      */
-    public void commit()
+    public void txCommit()
             throws
             QpidException,
             IllegalStateException;
@@ -141,7 +151,7 @@ public interface Session
      * @throws QpidException         If the session fails to rollback due to some error.
      * @throws IllegalStateException If this session is not transacted.
      */
-    public void rollback()
+    public void txRollback()
             throws
             QpidException,
             IllegalStateException;
@@ -183,7 +193,7 @@ public interface Session
      * @throws QpidException If the session fails to declare the queue due to some error.
      * @see Option
      */
-    public void queueDeclare(String queueName, Option... options)
+    public void queueDeclare(String queueName,String alternateExchange,Map<String,?> arguments, Option... options)
             throws
             QpidException;
     //Todo: Do we need to define more specific exceptions like queue name already exist?
@@ -196,7 +206,7 @@ public interface Session
      * @param routingKey   The routing key.
      * @throws QpidException If the session fails to bind the queue due to some error.
      */
-    public void queueBind(String queueName, String exchangeName, String routingKey)
+    public void queueBind(String queueName, String exchangeName, String routingKey,Map<String,?> arguments)
             throws
             QpidException;
     //Todo: Do we need to define more specific exceptions like exchange does not exist?
@@ -209,7 +219,7 @@ public interface Session
      * @param routingKey   The routing key.
      * @throws QpidException If the session fails to unbind the queue due to some error.
      */
-    public void queueUnbind(String queueName, String exchangeName, String routingKey)
+    public void queueUnbind(String queueName, String exchangeName, String routingKey,Map<String,?> arguments)
             throws
             QpidException;
     //Todo: Do we need to define more specific exceptions like exchange does not exist?
@@ -221,7 +231,7 @@ public interface Session
      * @param queueName The queue to be purged
      * @throws QpidException If the session fails to purge the queue due to some error.
      */
-    public void queuePurge(String queueName)
+    public void queuePurge(String queueName,Option... options)
             throws
             QpidException;
 
@@ -244,7 +254,7 @@ public interface Session
      * 
      * Following are the valid options 
      */
-    public void queueDelete(String queueName, Option options)
+    public void queueDelete(String queueName, Option... options)
             throws
             QpidException;
 
@@ -268,7 +278,7 @@ public interface Session
      * @throws QpidException  If the session fails to declare the exchange due to some error.
      * @see Option
      */
-    public void exchangeDeclare(String exchangeName, String exchangeClass, String alternateExchange, Option... options)
+    public void exchangeDeclare(String exchangeName, String exchangeClass, String alternateExchange,Map<String,?> arguments, Option... options)
             throws
             QpidException;
     //Todo: Do we need to define more specific exceptions like exchange already exist?
