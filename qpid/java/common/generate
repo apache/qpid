@@ -285,3 +285,8 @@ for s in structs:
   inv.line("    }")
 inv.line("}")
 inv.write()
+
+for pset in ("DeliveryProperties", "ApplicationProperties"):
+  hdrs = Output(out_dir, out_pkg, pset)
+  hdrs.line("public interface %s extends Header {}" % pset)
+  hdrs.write()
