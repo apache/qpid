@@ -33,40 +33,22 @@ qpidd_LDADD =					\
 sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
 
-apr_netio_src = \
-  qpid/sys/apr/APRAcceptor.cpp \
+apr_plat_src = \
   qpid/sys/apr/APRBase.cpp \
   qpid/sys/apr/APRPool.cpp \
-  qpid/sys/apr/APRSocket.cpp \
-  qpid/sys/apr/LFProcessor.cpp \
-  qpid/sys/apr/LFSessionContext.cpp
-
-apr_netio_hdr = \
-  qpid/sys/apr/APRBase.h \
-  qpid/sys/apr/APRPool.h \
-  qpid/sys/apr/APRSocket.h \
-  qpid/sys/apr/LFProcessor.h \
-  qpid/sys/apr/LFSessionContext.h	
-
-apr_plat_src = \
   qpid/sys/apr/Socket.cpp \
   qpid/sys/apr/Time.cpp \
   qpid/sys/apr/Thread.cpp \
   qpid/sys/apr/Shlib.cpp
 
-
 apr_plat_hdr = \
+  qpid/sys/apr/APRBase.h \
+  qpid/sys/apr/APRPool.h \
   qpid/sys/apr/Condition.h \
   qpid/sys/apr/Mutex.h \
   qpid/sys/apr/Thread.h
 
-posix_netio_src = \
-  qpid/sys/AsynchIOAcceptor.cpp
-
-posix_netio_hdr = 
-
 posix_plat_src = \
-  qpid/sys/Dispatcher.cpp \
   qpid/sys/epoll/EpollPoller.cpp \
   qpid/sys/posix/check.cpp \
   qpid/sys/posix/Socket.cpp \
@@ -82,24 +64,14 @@ posix_plat_hdr = \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Thread.h
 
-if USE_APR_NETIO
- platform_dist=$(posix_netio_src) $(posix_netio_hdr)
- platform_src = $(apr_netio_src)
- platform_hdr = $(apr_netio_hdr)
-else
- platform_dist=$(apr_netio_src) $(apr_netio_hdr)
- platform_src = $(posix_netio_src)
- platform_hdr = $(posix_netio_hdr)
-endif
-
 if USE_APR_PLATFORM
- platform_dist+=$(posix_plat_src) $(posix_plat_hdr)
- platform_src += $(apr_plat_src)
- platform_hdr += $(apr_plat_hdr)
+ platform_dist=$(posix_plat_src) $(posix_plat_hdr)
+ platform_src = $(apr_plat_src)
+ platform_hdr = $(apr_plat_hdr)
 else
- platform_dist+=$(apr_plat_src) $(apr_plat_hdr)
- platform_src += $(posix_plat_src)
- platform_hdr += $(posix_plat_hdr)
+ platform_dist=$(apr_plat_src) $(apr_plat_hdr)
+ platform_src = $(posix_plat_src)
+ platform_hdr = $(posix_plat_hdr)
 endif
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
@@ -166,8 +138,10 @@ libqpidcommon_la_SOURCES = \
   qpid/Url.h \
   qpid/Url.cpp \
   qpid/QpidError.cpp \
-  qpid/sys/Serializer.cpp \
+  qpid/sys/AsynchIOAcceptor.cpp \
+  qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
+  qpid/sys/Serializer.cpp \
   qpid/sys/Shlib.h \
   qpid/sys/Shlib.cpp \
   qpid/Options.cpp \
