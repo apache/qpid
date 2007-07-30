@@ -20,7 +20,7 @@ package org.apache.qpid.nclient.jms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpid.nclient.api.Resource;
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -50,6 +50,11 @@ public abstract class MessageActor
      */
     Resource _qpidResource;
 
+    /**
+     * The JMS destination this actor is set for.
+     */
+    DestinationImpl _destination;
+
     //-- Constructor
 
     //TODO define the parameters
@@ -59,10 +64,11 @@ public abstract class MessageActor
         
     }
 
-    protected MessageActor(SessionImpl session)
+    protected MessageActor(SessionImpl session, DestinationImpl destination)
     {
         // TODO create the qpidResource _qpidResource =
         _session = session;
+        _destination = destination;
     }
 
     //--- public methods (part of the jms public API)
