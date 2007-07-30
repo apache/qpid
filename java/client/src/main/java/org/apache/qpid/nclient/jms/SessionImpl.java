@@ -83,6 +83,10 @@ public class SessionImpl implements Session
      */
     private boolean _inRecovery = false;
 
+    /**
+     * This session connection
+     */
+    private ConnectionImpl _connection;
     //--- javax.jms.Session API
 
     /**
@@ -303,7 +307,7 @@ public class SessionImpl implements Session
             {
                 _qpidSession.sessionClose();
             }
-            catch ( org.apache.qpidity.QpidException e)
+            catch (org.apache.qpidity.QpidException e)
             {
                 throw ExceptionHelper.convertQpidExceptionToJMSException(e);
             }
@@ -338,7 +342,7 @@ public class SessionImpl implements Session
             throw new IllegalStateException("Session is transacted");
         }
         // release all unack messages
-        for(QpidMessage message : _unacknowledgedMessages)
+        for (QpidMessage message : _unacknowledgedMessages)
         {
             // release all those messages
             //Todo: message.getQpidMEssage.release();
@@ -383,93 +387,244 @@ public class SessionImpl implements Session
         throw new java.lang.UnsupportedOperationException();
     }
 
+    /**
+     * Creates a MessageProducer to send messages to the specified destination.
+     *
+     * @param destination the Destination to send messages to, or null if this is a producer
+     *                    which does not have a specified destination.
+     * @return A new MessageProducer
+     * @throws JMSException                If the session fails to create a MessageProducer
+     *                                     due to some internal error.
+     * @throws InvalidDestinationException If an invalid destination is specified.
+     */
     public MessageProducer createProducer(Destination destination) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        return new MessageProducerImpl(this, (DestinationImpl) destination);
     }
 
+    /**
+     * Creates a MessageConsumer for the specified destination.
+     *
+     * @param destination The <CODE>Destination</CODE> to access
+     * @return A new MessageConsumer for the specified destination.
+     * @throws JMSException                If the session fails to create a MessageConsumer due to some internal error.
+     * @throws InvalidDestinationException If an invalid destination is specified.
+     */
     public MessageConsumer createConsumer(Destination destination) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return createConsumer(destination, null);
     }
 
-    public MessageConsumer createConsumer(Destination destination, String string) throws JMSException
+    /**
+     * Creates a MessageConsumer for the specified destination, using a message selector.
+     *
+     * @param destination     The <CODE>Destination</CODE> to access
+     * @param messageSelector Only messages with properties matching the message selector expression are delivered.
+     * @return A new MessageConsumer for the specified destination.
+     * @throws JMSException                If the session fails to create a MessageConsumer due to some internal error.
+     * @throws InvalidDestinationException If an invalid destination is specified.
+     * @throws InvalidSelectorException    If the message selector is invalid.
+     */
+    public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+
+        return createConsumer(destination, messageSelector, false);
     }
 
-    public MessageConsumer createConsumer(Destination destination, String string, boolean b) throws JMSException
+    /**
+     * Creates MessageConsumer for the specified destination, using a message selector.
+     * <p> This method can specify whether messages published by its own connection should
+     * be delivered to it, if the destination is a topic.
+     * <p/>
+     * <P>In some cases, a connection may both publish and subscribe to a topic. The consumer
+     * NoLocal attribute allows a consumer to inhibit the delivery of messages published by its
+     * own connection. The default value for this attribute is False.
+     *
+     * @param destination     The <CODE>Destination</CODE> to access
+     * @param messageSelector Only messages with properties matching the message selector expression are delivered.
+     * @param noLocal         If true, and the destination is a topic, inhibits the delivery of messages published
+     *                        by its own connection.
+     * @return A new MessageConsumer for the specified destination.
+     * @throws JMSException                If the session fails to create a MessageConsumer due to some internal error.
+     * @throws InvalidDestinationException If an invalid destination is specified.
+     * @throws InvalidSelectorException    If the message selector is invalid.
+     */
+    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws
+                                                                                                            JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        checkDestination(destination);
+        return new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null);
     }
 
-    public Queue createQueue(String string) throws JMSException
+    /**
+     * Creates a queue identity by a given name.
+     * <P>This facility is provided for the rare cases where clients need to
+     * dynamically manipulate queue identity. It allows the creation of a
+     * queue identity with a provider-specific name. Clients that depend
+     * on this ability are not portable.
+     * <P>Note that this method is not for creating the physical queue.
+     * The physical creation of queues is an administrative task and is not
+     * to be initiated by the JMS API. The one exception is the
+     * creation of temporary queues, which is accomplished with the
+     * <CODE>createTemporaryQueue</CODE> method.
+     *
+     * @param queueName the name of this <CODE>Queue</CODE>
+     * @return a <CODE>Queue</CODE> with the given name
+     * @throws JMSException If the session fails to create a queue due to some internal error.
+     */
+    public Queue createQueue(String queueName) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        // todo: check that this destiantion name does exist
+        return new QueueImpl(queueName);
     }
 
-    public Topic createTopic(String string) throws JMSException
+    /**
+     * reates a topic identity given a Topicname.
+     * <P>This facility is provided for the rare cases where clients need to
+     * dynamically manipulate queue identity. It allows the creation of a
+     * queue identity with a provider-specific name. Clients that depend
+     * on this ability are not portable.
+     * <P>Note that this method is not for creating the physical queue.
+     * The physical creation of queues is an administrative task and is not
+     * to be initiated by the JMS API. The one exception is the
+     * creation of temporary queues, which is accomplished with the
+     * <CODE>createTemporaryTopic</CODE> method.
+     *
+     * @param topicName The name of this <CODE>Topic</CODE>
+     * @return a <CODE>Topic</CODE> with the given name
+     * @throws JMSException If the session fails to create a topic due to some internal error.
+     */
+    public Topic createTopic(String topicName) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        // todo: check that this destiantion name does exist
+        return new TopicImpl(topicName);
     }
 
-    public TopicSubscriber createDurableSubscriber(Topic topic, String string) throws JMSException
+    /**
+     * Creates a durable subscriber to the specified topic,
+     *
+     * @param topic The non-temporary <CODE>Topic</CODE> to subscribe to.
+     * @param name  The name used to identify this subscription.
+     * @return A durable subscriber to the specified topic,
+     * @throws JMSException                If creating a subscriber fails due to some internal error.
+     * @throws InvalidDestinationException If an invalid topic is specified.
+     * @throws InvalidSelectorException    If the message selector is invalid.
+     */
+    public TopicSubscriber createDurableSubscriber(Topic topic, String name) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        // by default, use a null messageselector and set noLocal to falsen
+        return createDurableSubscriber(topic, name, null, false);
     }
 
-    public TopicSubscriber createDurableSubscriber(Topic topic, String string, String string1, boolean b) throws
-                                                                                                          JMSException
+    /**
+     * Creates a durable subscriber to the specified topic, using a message selector and specifying whether messages
+     * published by its
+     * own connection should be delivered to it.
+     * <p> A client can change an existing durable subscription by creating a durable <CODE>TopicSubscriber</CODE> with
+     * the same name and a new topic and/or message selector. Changing a durable subscriber is equivalent to
+     * unsubscribing (deleting) the old one and creating a new one.
+     *
+     * @param topic           The non-temporary <CODE>Topic</CODE> to subscribe to.
+     * @param name            The name used to identify this subscription.
+     * @param messageSelector Only messages with properties matching the message selector expression are delivered.
+     * @param noLocal         If set, inhibits the delivery of messages published by its own connection
+     * @return A durable subscriber to the specified topic,
+     * @throws JMSException                If creating a subscriber fails due to some internal error.
+     * @throws InvalidDestinationException If an invalid topic is specified.
+     * @throws InvalidSelectorException    If the message selector is invalid.
+     */
+    public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector,
+                                                   boolean noLocal) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        checkDestination(topic);
+        return new TopicSubscriberImpl(this, topic, messageSelector, noLocal, _connection.getClientID() + ":" + name);
     }
 
+    /**
+     * Create a QueueBrowser to peek at the messages on the specified queue.
+     *
+     * @param queue The <CODE>Queue</CODE> to browse.
+     * @return A QueueBrowser.
+     * @throws JMSException                If creating a browser fails due to some internal error.
+     * @throws InvalidDestinationException If an invalid queue is specified.
+     */
     public QueueBrowser createBrowser(Queue queue) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return createBrowser(queue, null);
     }
 
-    public QueueBrowser createBrowser(Queue queue, String string) throws JMSException
+    /**
+     * Create a QueueBrowser to peek at the messages on the specified queue using a message selector.
+     *
+     * @param queue           The <CODE>Queue</CODE> to browse.
+     * @param messageSelector Only messages with properties matching the message selector expression are delivered.
+     * @return A QueueBrowser.
+     * @throws JMSException                If creating a browser fails due to some internal error.
+     * @throws InvalidDestinationException If an invalid queue is specified.
+     * @throws InvalidSelectorException    If the message selector is invalid.
+     */
+    public QueueBrowser createBrowser(Queue queue, String messageSelector) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        checkDestination(queue);
+        return new QueueBrowserImpl(this, queue, messageSelector);
     }
 
+     /**
+    * Create a TemporaryQueue. Its lifetime will be tha of the Connection unless it is deleted earlier.
+    *
+    * @return A temporary queue.
+    *
+    * @exception JMSException If creating the temporary queue fails due to some internal error.
+    */
     public TemporaryQueue createTemporaryQueue() throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public TemporaryTopic createTemporaryTopic() throws JMSException
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return new TemporaryQueueImpl();
     }
 
    /**
-    * Unsubscribes a durable subscription that has been created by a client.
+    * Create a TemporaryTopic. Its lifetime will be tha of the Connection unless it is deleted earlier.
     *
-    * <P>This method deletes the state being maintained on behalf of the
-    * subscriber by its provider.
+    * @return A temporary topic.
     *
-    * <P>It is erroneous for a client to delete a durable subscription
-    * while there is an active <CODE>TopicSubscriber</CODE> for the
-    * subscription, or while a consumed message is part of a pending
-    * transaction or has not been acknowledged in the session.
-    *
-    * @param name the name used to identify this subscription
-    *
-    * @exception JMSException if the session fails to unsubscribe to the durable subscription due to some internal error.
-    * @exception InvalidDestinationException if an invalid subscription name
-    *                                        is specified.
+    * @exception JMSException If creating the temporary topic fails due to some internal error.
     */
-   public void unsubscribe(String name) throws JMSException
-   {
-      checkNotClosed();
+    public TemporaryTopic createTemporaryTopic() throws JMSException
+    {
+        return new TemporaryTopicImpl();
+    }
 
-   }
+    /**
+     * Unsubscribes a durable subscription that has been created by a client.
+     * <p/>
+     * <P>This method deletes the state being maintained on behalf of the
+     * subscriber by its provider.
+     * <p/>
+     * <P>It is erroneous for a client to delete a durable subscription
+     * while there is an active <CODE>TopicSubscriber</CODE> for the
+     * subscription, or while a consumed message is part of a pending
+     * transaction or has not been acknowledged in the session.
+     *
+     * @param name the name used to identify this subscription
+     * @throws JMSException                if the session fails to unsubscribe to the durable subscription due to some internal error.
+     * @throws InvalidDestinationException if an invalid subscription name
+     *                                     is specified.
+     */
+    public void unsubscribe(String name) throws JMSException
+    {
+        checkNotClosed();
+
+    }
 
     //----- Protected methods
     /**
      * Notify this session that a message is processed
+     *
      * @param message The processed message.
      */
     protected void preProcessMessage(QpidMessage message)
@@ -482,7 +637,7 @@ public class SessionImpl implements Session
      *
      * @return true if this session is recovering.
      */
-    protected  boolean isInRecovery()
+    protected boolean isInRecovery()
     {
         return _inRecovery;
     }
@@ -504,6 +659,19 @@ public class SessionImpl implements Session
                 _logger.debug("Session has been closed. Cannot invoke any further operations.");
             }
             throw new javax.jms.IllegalStateException("Session has been closed. Cannot invoke any further operations.");
+        }
+    }
+
+    /**
+     * Validate that the destination is valid i.e. it is not null
+     *
+     * @throws InvalidDestinationException If the destination not valid.
+     */
+    protected void checkDestination(Destination dest) throws InvalidDestinationException
+    {
+        if (dest == null)
+        {
+            throw new javax.jms.InvalidDestinationException("Invalid destination specified: " + dest, "Invalid destination");
         }
     }
 

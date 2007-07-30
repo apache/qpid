@@ -18,7 +18,7 @@
 package org.apache.qpid.nclient.jms;
 
 import org.apache.qpid.nclient.api.MessageReceiver;
-import org.apache.qpid.nclient.exception.QpidException;
+import org.apache.qpidity.QpidException;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -26,25 +26,47 @@ import javax.jms.MessageListener;
 import javax.jms.Message;
 
 /**
- * Implementation of JMS message consumer 
+ * Implementation of JMS message consumer
  */
 public class MessageConsumerImpl extends MessageActor implements MessageConsumer
 {
     /**
      * The underlying qpid receiver
      */
-    MessageReceiver _qpidReceiver;
+    private MessageReceiver _qpidReceiver;
 
     /**
      * This MessageConsumer's messageselector.
      */
-    protected String _messageSelector = null;
+    private String _messageSelector = null;
+
+    /**
+     * NoLocal
+     * If true, and the destination is a topic then inhibits the delivery of messages published
+     * by its own connection.  The behavior for NoLocal is not specified if the destination is a queue.
+     */
+    protected boolean _noLocal;
+
+    /**
+     * The subscription name
+     */
+    private String _subscriptionName;
 
     /**
      * A MessageListener set up for this consumer.
      */
     private MessageListener _messageListener = null;
 
+    //----- Constructors
+    protected MessageConsumerImpl(SessionImpl session, DestinationImpl destination, String messageSelector,
+                                  boolean noLocal, String subscriptionName)
+    {
+        super(session, destination);
+        _messageSelector = messageSelector;
+        _noLocal = noLocal;
+        _subscriptionName = subscriptionName;
+
+    }
     //----- Message consumer API
 
     /**
@@ -89,8 +111,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      */
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
-         checkNotClosed();
-         // create a message listener wrapper 
+        checkNotClosed();
+        // create a message listener wrapper
     }
 
     public Message receive() throws JMSException
