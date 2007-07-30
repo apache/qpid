@@ -50,6 +50,10 @@ check_PROGRAMS+=Serializer
 Serializer_SOURCES=Serializer.cpp
 Serializer_LDADD=-lboost_unit_test_framework $(lib_common)
 
+check_PROGRAMS+=Visitor
+Visitor_SOURCES=Visitor.cpp
+Visitor_LDADD=-lboost_unit_test_framework
+
 include cluster.mk
 
 # NB: CppUnit test libraries below will be migrated to boost test programs.
