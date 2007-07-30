@@ -90,17 +90,6 @@ CPPUNIT_CXXFLAGS=$CPPUNIT_CFLAGS
 AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(CPPUNIT_CXXFLAGS)
 
-AC_ARG_ENABLE([apr-netio],
-  [AS_HELP_STRING([--enable-apr-netio],
-    [use the Apache Portable Runtime library for network IO (default yes)])],
-  [case $enableval in
-    yes|no) enable_APR_NETIO=$enableval;;
-    *) AC_MSG_ERROR([Invalid value for --enable-apr-netio: $enableval]);;
-   esac],
-  [enable_APR_NETIO=yes]
-)
-AM_CONDITIONAL([USE_APR_NETIO], [test x$enable_APR_NETIO = xyes])
-
 AC_ARG_ENABLE([apr-platform],
   [AS_HELP_STRING([--enable-apr-platform],
     [use the Apache Portable Runtime library for platform (default no)])],
@@ -117,16 +106,10 @@ AC_SUBST(APR_MINIMUM_VERSION)
 AC_SUBST(APR_CXXFLAGS)
 AC_SUBST(USE_APR_PLATFORM)
 
-if test "$enable_APR_NETIO" = yes -o "$enable_APR_PLATFORM" = yes; then
+if test "$enable_APR_PLATFORM" = yes; then
   PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
-  APR_CXXFLAGS="$APR_CFLAGS"
-  if test "$enable_APR_NETIO" = yes; then
-	USE_APR_NETIO=1
-  fi
-  if test "$enable_APR_PLATFORM" = yes; then
-  	APR_CXXFLAGS+=" -DUSE_APR_PLATFORM=1"
-	USE_APR_PLATFORM=1
-  fi
+  APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR_PLATFORM=1"
+  USE_APR_PLATFORM=1
 fi
 
 AC_ARG_ENABLE([valgrind],
