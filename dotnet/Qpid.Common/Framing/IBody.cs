@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     /// <summary>
     /// An IBody is contained within a top level frame. As such, it is not en/decodable on its own but

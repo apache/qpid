@@ -22,7 +22,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid
+namespace Apache.Qpid
 {
     [Serializable]
     public class AMQChannelClosedException : AMQException

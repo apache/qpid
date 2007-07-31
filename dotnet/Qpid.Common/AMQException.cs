@@ -22,7 +22,7 @@ using System;
 using System.Runtime.Serialization;
 using log4net;
 
-namespace Qpid
+namespace Apache.Qpid
 {
     /// <summary>
     /// The generic AMQ exception.

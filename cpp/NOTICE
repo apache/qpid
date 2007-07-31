@@ -15,13 +15,11 @@ Aside from contributions to the Apache Qpid project, this software also
 includes (binary only):
 	- None at this time
 	
-Project dependancies: 	
- * apr version 1.2.7 under the Apache Software License, Version 2.0, and 
- 	can be downloded from http://apr.apache.org
+Project requires, not packaged: 	
+ * apr version 1.2.7 or later under the Apache Software License, Version 2.0, 
+ 	and can be downloded from http://apr.apache.org
 	
- * boost vesrion 1.33.1 or later under the Boost Software License, and 
+ * boost version 1.33.1 or later under the Boost Software License, and 
  	can be downloaded from http://www.boost.org
 	- Included in most OS platfroms by defualt.
-
-             
 

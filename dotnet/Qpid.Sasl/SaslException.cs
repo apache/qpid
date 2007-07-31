@@ -24,7 +24,7 @@ using System.Collections;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    /// <summary>
    /// Reports an exception during the processing of an SASL
@@ -53,4 +53,4 @@ namespace Qpid.Sasl
 
    } // class SaslException
 
-} // namespace Qpid.Sasl.Mechanisms
+} // namespace Apache.Qpid.Sasl.Mechanisms

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Client.State
+namespace Apache.Qpid.Client.State
 {
     public enum AMQState
     {
@@ -31,4 +31,5 @@ namespace Qpid.Client.State
         ALL // all is a special state used in the state manager. It is not valid to be "in" the state "all".
     }
 }
+
 

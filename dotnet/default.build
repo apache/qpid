@@ -22,7 +22,7 @@
       Fileset with build files for test assemblies
    -->
    <fileset id="tests.builds">
-      <include name="Qpid.Buffer.Tess/default.build" />
+      <include name="Qpid.Buffer.Tests/default.build" />
       <include name="Qpid.Sasl.Tests/default.build" />
       <include name="Qpid.Common.Tests/default.build" />        
       <include name="Qpid.Client.Tests/default.build" />	
@@ -123,4 +123,5 @@
    </target>
 	
 </project>
+
 

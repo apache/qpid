@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.management;
 
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
 
 import javax.management.JMException;
 import javax.management.MBeanServer;
@@ -43,17 +43,14 @@ import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.AuthorizeCallback;
-
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HashedInitialiser;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent is being used then there are no security features
@@ -68,6 +65,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
     private final MBeanServer _mbeanServer;
     private Registry _rmiRegistry;
     private JMXServiceURL _jmxURL;
+    
+    public static final String MANAGEMENT_PORT_CONFIG_PATH = "management.jmxport";
+    public static final int MANAGEMENT_PORT_DEFAULT = 8999;
 
     public JMXManagedObjectRegistry() throws AMQException
     {
@@ -95,7 +95,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
 
         boolean security = appRegistry.getConfiguration().getBoolean("management.security-enabled", false);
-        int port = appRegistry.getConfiguration().getInt("management.jmxport", 8999);
+        int port = appRegistry.getConfiguration().getInt(MANAGEMENT_PORT_CONFIG_PATH, MANAGEMENT_PORT_DEFAULT);
 
         if (security)
         {
@@ -144,13 +144,13 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             MBeanServerForwarder mbsf = MBeanInvocationHandlerImpl.newProxyInstance();
             cs.setMBeanServerForwarder(mbsf);
             cs.start();
-            _log.warn("JMX: Started JMXConnector server with SASL");
+            _log.warn("JMX: Started JMXConnector server  on port '" + port + "' with SASL");
 
         }
         else
         {
             startJMXConnectorServer(port);
-            _log.warn("JMX: Started JMXConnector server with security disabled");
+            _log.warn("JMX: Started JMXConnector server on port '" + port + "' with security disabled");
         }
     }
 

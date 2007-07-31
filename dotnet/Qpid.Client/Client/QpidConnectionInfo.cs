@@ -24,9 +24,9 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using log4net;
-using Qpid.Client.Qms;
+using Apache.Qpid.Client.Qms;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
 
     public class URLHelper

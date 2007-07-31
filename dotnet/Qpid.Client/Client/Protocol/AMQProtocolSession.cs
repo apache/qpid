@@ -21,12 +21,12 @@
 using System;
 using System.Collections;
 using log4net;
-using Qpid.Client.Message;
-using Qpid.Client.Transport;
-using Qpid.Framing;
-using Qpid.Sasl;
+using Apache.Qpid.Client.Message;
+using Apache.Qpid.Client.Transport;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Sasl;
 
-namespace Qpid.Client.Protocol
+namespace Apache.Qpid.Client.Protocol
 {
     public class AMQProtocolSession
     {

@@ -46,7 +46,7 @@ class ExchangeBindings
 
         ExchangeBinding(AMQShortString routingKey, Exchange exchange)
         {
-            this(routingKey, exchange,EMPTY_ARGUMENTS);
+            this(routingKey, exchange, EMPTY_ARGUMENTS);
         }
 
         ExchangeBinding(AMQShortString routingKey, Exchange exchange, FieldTable arguments)
@@ -80,7 +80,10 @@ class ExchangeBindings
 
         public boolean equals(Object o)
         {
-            if (!(o instanceof ExchangeBinding)) return false;
+            if (!(o instanceof ExchangeBinding))
+            {
+                return false;
+            }
             ExchangeBinding eb = (ExchangeBinding) o;
             return _exchange.equals(eb._exchange)
                    && _routingKey.equals(eb._routingKey)
@@ -104,16 +107,16 @@ class ExchangeBindings
      */
     void addBinding(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
     {
-        _bindings.add(new ExchangeBinding(routingKey, exchange, arguments ));
+        _bindings.add(new ExchangeBinding(routingKey, exchange, arguments));
     }
 
 
     public void remove(AMQShortString routingKey, FieldTable arguments, Exchange exchange)
     {
-        _bindings.remove(new ExchangeBinding(routingKey, exchange, arguments ));
+        _bindings.remove(new ExchangeBinding(routingKey, exchange, arguments));
     }
 
-    
+
     /**
      * Deregisters this queue from any exchange it has been bound to
      */

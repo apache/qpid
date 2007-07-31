@@ -20,18 +20,6 @@
  */
 package org.apache.qpid.ping;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.List;
-import java.util.Properties;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.requestreply.PingPongProducer;
@@ -39,6 +27,18 @@ import org.apache.qpid.util.CommandLineParser;
 
 import uk.co.thebadgerset.junit.extensions.util.MathUtils;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * PingDurableClient is a variation of the {@link PingPongProducer} ping tool. Instead of sending its pings and
@@ -167,7 +167,8 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         try
         {
             // Create a ping producer overriding its defaults with all options passed on the command line.
-            Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}));
+            Properties options =
+                CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}), System.getProperties());
             PingDurableClient pingProducer = new PingDurableClient(options);
 
             // Create a shutdown hook to terminate the ping-pong producer.

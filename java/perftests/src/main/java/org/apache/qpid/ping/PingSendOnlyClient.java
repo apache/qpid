@@ -57,7 +57,7 @@ public class PingSendOnlyClient extends PingDurableClient
         try
         {
             // Create a ping producer overriding its defaults with all options passed on the command line.
-            Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}));
+            Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}), System.getProperties());
             PingSendOnlyClient pingProducer = new PingSendOnlyClient(options);
 
             // Create a shutdown hook to terminate the ping-pong producer.

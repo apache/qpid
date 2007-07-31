@@ -23,9 +23,9 @@ using System.Text;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
-using Qpid.Messaging;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests
+namespace Apache.Qpid.Client.Tests
 {
     [TestFixture]
     public class ProducerMultiConsumer : BaseMessagingTestFixture

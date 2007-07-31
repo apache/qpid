@@ -53,6 +53,7 @@ import org.apache.qpid.server.txn.TransactionalContext;
  */
 public class AMQMessage implements StorableMessage
 {
+    /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
     // The ordered list of queues into which this message is enqueued.
@@ -76,19 +77,16 @@ public class AMQMessage implements StorableMessage
 
     private AMQMessageHandle _messageHandle;
 
-    // TODO: ideally this should be able to go into the transient message date - check this! (RG)
+    /** Holds the transactional context in which this message is being processed. */
     private TransactionalContext _txnContext;
 
     /**
-     * Flag to indicate whether message has been delivered to a consumer. Used in implementing return functionality for
-     * messages published with the 'immediate' flag.
+     * Flag to indicate whether this message has been delivered to a consumer. Used in implementing return functionality
+     * for messages published with the 'immediate' flag.
      */
     private boolean _deliveredToConsumer;
-    /**
-     * We need to keep track of whether the message was 'immediate' as in extreme circumstances, when the
-     * checkDelieveredToConsumer is called, the message may already have been received and acknowledged, and the body
-     * removed from the store.
-     */
+
+    /** Flag to indicate that this message requires 'immediate' delivery. */
     private boolean _immediate;
 
     // private Subscription _takenBySubcription;
@@ -494,7 +492,7 @@ public class AMQMessage implements StorableMessage
      */
     public AMQMessage takeReference()
     {
-        _referenceCount.incrementAndGet();
+        incrementReference(); // _referenceCount.incrementAndGet();
 
         return this;
     }

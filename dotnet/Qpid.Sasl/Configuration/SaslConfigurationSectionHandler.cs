@@ -25,7 +25,7 @@ using System.Configuration;
 using System.Text;
 using System.Xml;
 
-namespace Qpid.Sasl.Configuration
+namespace Apache.Qpid.Sasl.Configuration
 {
    /// <summary>
    /// Defines the configuration section to configure extra 
@@ -79,5 +79,6 @@ namespace Qpid.Sasl.Configuration
       }
    } // class SaslConfigurationSectionHandler
 
-} // namespace Qpid.Sasl.Configuration
+} // namespace Apache.Qpid.Sasl.Configuration
+
 

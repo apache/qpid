@@ -23,9 +23,9 @@ using System.Collections;
 using System.Text;
 using System.Threading;
 using NUnit.Framework;
-using Qpid.Collections;
+using Apache.Qpid.Collections;
 
-namespace Qpid.Collections.Tests
+namespace Apache.Qpid.Collections.Tests
 {
     [TestFixture]
     public class TestConsumerProducerQueue

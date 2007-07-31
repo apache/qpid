@@ -24,7 +24,7 @@ using System.Collections;
 using System.Globalization;
 using System.Text;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    public abstract class SaslClient : ISaslClient
    {
@@ -142,4 +142,4 @@ namespace Qpid.Sasl
 
    } // class SaslClient
 
-} // namespace Qpid.Sasl.Mechanisms
+} // namespace Apache.Qpid.Sasl.Mechanisms

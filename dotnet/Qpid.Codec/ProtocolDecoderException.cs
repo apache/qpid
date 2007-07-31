@@ -21,7 +21,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid.Codec
+namespace Apache.Qpid.Codec
 {
     [Serializable]
     public class ProtocolDecoderException : ProtocolCodecException
@@ -65,5 +65,6 @@ namespace Qpid.Codec
        }
     }
 }
+
 
 

@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Codec
+namespace Apache.Qpid.Codec
 {
     public interface IProtocolEncoderOutput
     {
@@ -33,4 +33,5 @@ namespace Qpid.Codec
         void Write(ByteBuffer buf);
     }
 }
+
 

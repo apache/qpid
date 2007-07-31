@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
-using Qpid.Messaging;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests.interop
+namespace Apache.Qpid.Client.Tests.interop
 {
     /// <summary> Defines the possible test case roles that an interop test case can take on. </summary>
     public enum Roles { SENDER, RECEIVER };

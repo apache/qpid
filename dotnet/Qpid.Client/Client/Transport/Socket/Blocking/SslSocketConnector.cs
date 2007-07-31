@@ -21,12 +21,12 @@
 using System.IO;
 using System.Net;
 using log4net;
-using Qpid.Client.Qms;
+using Apache.Qpid.Client.Qms;
 using Org.Mentalis.Security.Ssl;
 using MCertificate = Org.Mentalis.Security.Certificates.Certificate;
 using MCertificateChain = Org.Mentalis.Security.Certificates.CertificateChain;
 
-namespace Qpid.Client.Transport.Socket.Blocking
+namespace Apache.Qpid.Client.Transport.Socket.Blocking
 {
    /// <summary>
    /// Implements a TLS v1.0 connection using the Mentalis.org library

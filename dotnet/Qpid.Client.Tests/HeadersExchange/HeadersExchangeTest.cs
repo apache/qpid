@@ -22,10 +22,10 @@ using System;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
-using Qpid.Framing;
-using Qpid.Messaging;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests
+namespace Apache.Qpid.Client.Tests
 {
     /// <summary>
     /// Sets up a producer/consumer pair to send test messages through a header exchange. The header exchange matching pattern is tested to

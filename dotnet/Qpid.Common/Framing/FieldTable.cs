@@ -22,11 +22,11 @@ using System;
 using System.Collections;
 using System.Text;
 using log4net;
-using Qpid.Buffer;
-using Qpid.Collections;
-using Qpid.Messaging;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Collections;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     public class FieldTable : IFieldTable, IEnumerable
     {

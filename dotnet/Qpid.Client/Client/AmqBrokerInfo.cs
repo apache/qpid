@@ -21,9 +21,9 @@
 using System;
 using System.Collections;
 using System.Text;
-using Qpid.Client.Qms;
+using Apache.Qpid.Client.Qms;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
     public class AmqBrokerInfo : IBrokerInfo
     {

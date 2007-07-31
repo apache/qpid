@@ -19,13 +19,13 @@
  *
  */
 using System;
-using Qpid.Client.Protocol.Listener;
-using Qpid.Client.Transport;
-using Qpid.Framing;
+using Apache.Qpid.Client.Protocol.Listener;
+using Apache.Qpid.Client.Transport;
+using Apache.Qpid.Framing;
 
 using log4net;
 
-namespace Qpid.Client.Protocol
+namespace Apache.Qpid.Client.Protocol
 {
     /// <summary>
     /// A convenient interface to writing protocol frames.
@@ -103,4 +103,5 @@ namespace Qpid.Client.Protocol
         }
     }
 }
+
 

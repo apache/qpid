@@ -23,7 +23,7 @@ using System;
 using System.Collections;
 using System.Text;
 
-namespace Qpid.Sasl.Mechanisms
+namespace Apache.Qpid.Sasl.Mechanisms
 {
 
    /// <summary>
@@ -78,4 +78,4 @@ namespace Qpid.Sasl.Mechanisms
       #endregion // ISaslClient Implementation
 
    } // class PlainSaslClient
-} // namespace Qpid.Sasl.Mechanisms
+} // namespace Apache.Qpid.Sasl.Mechanisms

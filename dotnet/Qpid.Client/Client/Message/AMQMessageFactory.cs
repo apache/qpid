@@ -19,11 +19,11 @@
  *
  */
 using System.Collections;
-using Qpid.Framing;
+using Apache.Qpid.Framing;
 using log4net;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public abstract class AbstractQmsMessageFactory : IMessageFactory
     {

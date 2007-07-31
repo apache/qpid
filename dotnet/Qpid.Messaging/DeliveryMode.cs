@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
     public enum DeliveryMode
     {

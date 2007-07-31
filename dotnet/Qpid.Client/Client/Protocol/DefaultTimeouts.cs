@@ -22,7 +22,7 @@
 using System;
 using System.Text;
 
-namespace Qpid.Client.Protocol
+namespace Apache.Qpid.Client.Protocol
 {
    /// <summary>
    /// Default timeout values for the protocol

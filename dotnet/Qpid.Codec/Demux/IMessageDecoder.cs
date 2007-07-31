@@ -19,9 +19,9 @@
  *
  */
 using System;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Codec.Demux
+namespace Apache.Qpid.Codec.Demux
 {
     public interface IMessageDecoder
     {
@@ -52,4 +52,5 @@ namespace Qpid.Codec.Demux
         MessageDecoderResult Decode(ByteBuffer buffer, IProtocolDecoderOutput output);
     }
 }
+
 

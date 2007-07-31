@@ -41,8 +41,11 @@ Building on a platform other than Linux currently requires:
 Optional cluster functionality requires:
  * openais <http://openais.org/> 	       (0.80.3)
 
-Optionally building/running the tests requires:
- * cppunit <http://cppunit.sourceforge.net>    (1.11.4)
+ * apr     <http://apr.apache.org>          (1.2.7)
+ * boost   <http://www.boost.org>           (1.33.1)
+ * cppunit <http://cppunit.sourceforge.net> (1.11.4)
+
+Using tools:
 
 Qpid has been built using the gcc compiler:
  * gcc     <http://gcc.gnu.org/>            (3.2.3)
@@ -64,7 +67,7 @@ all of the above plus:
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
 
-  # yum install apr-devel boost-devel cppunit-devel e2fsprogs-devel
+  # yum install apr-devel boost-devel cppunit-devel 
   # yum install pkgconfig doxygen graphviz help2man
 
 Follow the manual installation instruction below for any packages not

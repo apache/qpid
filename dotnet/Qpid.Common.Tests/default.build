@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="Qpid.Common" default="test">
+<project name="Apache.Qpid.Common" default="test">
 
    <target name="build">
         <csc target="library" 
@@ -14,9 +14,9 @@
                <include name="${build.dir}/log4net.dll" />
                <include name="${build.dir}/nunit.framework.dll" />
                <include name="${build.dir}/${project::get-name()}.dll" />
-               <include name="${build.dir}/Qpid.Codec.dll" />
-               <include name="${build.dir}/Qpid.Messaging.dll" />
-               <include name="${build.dir}/Qpid.Buffer.dll" />
+               <include name="${build.dir}/Apache.Qpid.Codec.dll" />
+               <include name="${build.dir}/Apache.Qpid.Messaging.dll" />
+               <include name="${build.dir}/Apache.Qpid.Buffer.dll" />
             </references>
             
         </csc>

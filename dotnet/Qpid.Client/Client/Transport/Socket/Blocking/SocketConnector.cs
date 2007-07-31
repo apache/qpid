@@ -21,9 +21,9 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using Qpid.Client.Qms;
+using Apache.Qpid.Client.Qms;
 
-namespace Qpid.Client.Transport.Socket.Blocking
+namespace Apache.Qpid.Client.Transport.Socket.Blocking
 {
    /// <summary>
    /// Implements a TCP connection over regular sockets.
@@ -67,4 +67,5 @@ namespace Qpid.Client.Transport.Socket.Blocking
 
    }
 }
+
 

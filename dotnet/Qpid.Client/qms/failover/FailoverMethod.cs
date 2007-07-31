@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Client.Qms.Failover
+namespace Apache.Qpid.Client.Qms.Failover
 {
     public class FailoverMethodConstants
     {

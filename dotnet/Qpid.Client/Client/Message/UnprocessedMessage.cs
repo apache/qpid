@@ -19,9 +19,9 @@
  *
  */
 using System.Collections;
-using Qpid.Framing;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public class UnprocessedMessage
     {
@@ -53,4 +53,5 @@ namespace Qpid.Client.Message
         }
     }
 }
+
 

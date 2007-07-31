@@ -23,7 +23,7 @@ using System;
 using System.Collections;
 using System.Text;
 
-namespace Qpid.Sasl.Mechanisms
+namespace Apache.Qpid.Sasl.Mechanisms
 {
    /// <summary>
    /// Implements the ANONYMOUS authentication mechanism
@@ -66,4 +66,4 @@ namespace Qpid.Sasl.Mechanisms
 
    } // class AnonymousSaslClient
 
-} // namespace Qpid.Sasl.Mechanisms
+} // namespace Apache.Qpid.Sasl.Mechanisms

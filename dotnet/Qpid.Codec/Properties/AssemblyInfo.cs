@@ -23,11 +23,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Mina.Codec")]
+[assembly: AssemblyTitle("Apache.Qpid.Codec")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Apache Qpid")]
-[assembly: AssemblyProduct("Mina.Codec")]
+[assembly: AssemblyProduct("Apache.Qpid.Codec")]
 [assembly: AssemblyCopyright("Copyright (c) 2006 The Apache Software Foundation")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

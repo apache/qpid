@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     /// <summary>
     /// A data block represents something that has a size in bytes and the ability to write itself to a byte

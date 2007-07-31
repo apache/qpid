@@ -21,12 +21,12 @@
 using System;
 using System.Threading;
 using log4net;
-using Qpid.Client.Message;
-using Qpid.Collections;
-using Qpid.Framing;
-using Qpid.Messaging;
+using Apache.Qpid.Client.Message;
+using Apache.Qpid.Collections;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
     public class BasicMessageConsumer : Closeable, IMessageConsumer
     {

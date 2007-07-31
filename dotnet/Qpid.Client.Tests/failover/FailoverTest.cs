@@ -22,10 +22,10 @@ using System;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
-using Qpid.Client.Qms;
-using Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests.failover
+namespace Apache.Qpid.Client.Tests.failover
 {
     [TestFixture, Category("Failover")]
     public class FailoverTest : IConnectionListener

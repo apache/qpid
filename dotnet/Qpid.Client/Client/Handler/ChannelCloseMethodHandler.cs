@@ -19,12 +19,12 @@
  *
  */
 using log4net;
-using Qpid.Client.Protocol;
-using Qpid.Client.State;
-using Qpid.Protocol;
-using Qpid.Framing;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.State;
+using Apache.Qpid.Protocol;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Handler
+namespace Apache.Qpid.Client.Handler
 {
     public class ChannelCloseMethodHandler : IStateAwareMethodListener
     {
@@ -63,5 +63,6 @@ namespace Qpid.Client.Handler
         }
     }
 }
+
 
 

@@ -22,10 +22,10 @@
 using System;
 using System.Collections;
 using System.Text;
-using Qpid.Client.Protocol;
-using Qpid.Sasl;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Sasl;
 
-namespace Qpid.Client.Security
+namespace Apache.Qpid.Client.Security
 {
    internal class UsernamePasswordCallbackHandler : IAMQCallbackHandler
    {

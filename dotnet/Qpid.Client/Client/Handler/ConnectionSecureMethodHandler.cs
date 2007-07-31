@@ -18,12 +18,12 @@
  * under the License.
  *
  */
-using Qpid.Client.Protocol;
-using Qpid.Client.State;
-using Qpid.Framing;
-using Qpid.Sasl;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.State;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Sasl;
 
-namespace Qpid.Client.Handler
+namespace Apache.Qpid.Client.Handler
 {
     public class ConnectionSecureMethodHandler : IStateAwareMethodListener
     {
@@ -55,5 +55,6 @@ namespace Qpid.Client.Handler
         }
     }
 }
+
 
 

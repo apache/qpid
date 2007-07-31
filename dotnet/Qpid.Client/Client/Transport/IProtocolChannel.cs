@@ -21,7 +21,7 @@
 using System;
 using System.Collections;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
     public interface IProtocolChannel : IProtocolWriter
     {
