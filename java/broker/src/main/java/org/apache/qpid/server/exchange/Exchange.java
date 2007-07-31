@@ -27,13 +27,9 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.List;
-import java.util.Map;
-
 public interface Exchange
 {
     AMQShortString getName();
-
     AMQShortString getType();
 
     void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
@@ -55,17 +51,6 @@ public interface Exchange
 
     void route(AMQMessage message) throws AMQException;
 
-
-    /**
-     * Determines whether a message would be isBound to a particular queue using a specific routing key and arguments
-     * @param routingKey
-     * @param arguments
-     * @param queue
-     * @return
-     * @throws AMQException
-     */
-    boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue);
-
     /**
      * Determines whether a message would be isBound to a particular queue using a specific routing key
      * @param routingKey
@@ -73,25 +58,22 @@ public interface Exchange
      * @return
      * @throws AMQException
      */
-    boolean isBound(AMQShortString routingKey, AMQQueue queue);
+    boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException;
 
     /**
-     * Determines whether a message is routing to any queue using a specific _routing key
+     * Determines whether a message is routing to any queue using a specific routing key
      * @param routingKey
      * @return
      * @throws AMQException
      */
-    boolean isBound(AMQShortString routingKey);
+    boolean isBound(AMQShortString routingKey) throws AMQException;
 
-    boolean isBound(AMQQueue queue);
+    boolean isBound(AMQQueue queue) throws AMQException;
 
     /**
      * Returns true if this exchange has at least one binding associated with it.
      * @return
      * @throws AMQException
      */
-    boolean hasBindings();
-
-    Map<AMQShortString, List<AMQQueue>> getBindings();
-
+    boolean hasBindings() throws AMQException;
 }

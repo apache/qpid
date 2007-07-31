@@ -20,6 +20,20 @@
  */
 package org.apache.qpid.requestreply;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.jms.*;
+
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
@@ -36,18 +50,6 @@ import org.apache.qpid.util.CommandLineParser;
 import uk.co.thebadgerset.junit.extensions.BatchedThrottle;
 import uk.co.thebadgerset.junit.extensions.Throttle;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
-
-import javax.jms.*;
-
-import java.io.IOException;
-import java.net.InetAddress;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * PingPongProducer is a client that sends test messages, and waits for replies to these messages. The replies may
@@ -87,7 +89,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * <tr><td> destinationCount <td> 1        <td> The number of receivers listening to the pings.
  * <tr><td> timeout          <td> 30000    <td> In milliseconds. The timeout to stop waiting for replies.
  * <tr><td> commitBatchSize  <td> 1        <td> The number of messages per transaction in transactional mode.
- * <tr><td> uniqueDests      <td> true     <td> Whether each receivers only listens to one ping destination or all.
+ * <tr><td> uniqueDests      <td> true     <td> Whether each receiver only listens to one ping destination or all.
  * <tr><td> durableDests     <td> false    <td> Whether or not durable destinations are used.
  * <tr><td> ackMode          <td> AUTO_ACK <td> The message acknowledgement mode. Possible values are:
  *                                               0 - SESSION_TRANSACTED
@@ -235,7 +237,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the default message selector. */
     public static final String SELECTOR_DEFAULT = "";
 
-    /** Holds the name of the property to get the destination count from. */
+    /** Holds the name of the proeprty to get the destination count from. */
     public static final String DESTINATION_COUNT_PROPNAME = "destinationCount";
 
     /** Defines the default number of destinations to ping. */
@@ -371,7 +373,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     protected int _maxPendingSize;
 
     /**
-     * Holds a monitor which is used to synchronize sender and receivers threads, where the sender has elected
+     * Holds a monitor which is used to synchronize sender and receiver threads, where the sender has elected
      * to wait until the number of unreceived message is reduced before continuing to send.
      */
     protected Object _sendPauseMonitor = new Object();
@@ -568,8 +570,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     {
         try
         {
-            Properties options =
-                CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}), System.getProperties());
+            Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}));
 
             // Create a ping producer overriding its defaults with all options passed on the command line.
             PingPongProducer pingProducer = new PingPongProducer(options);

@@ -35,7 +35,6 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.HeartbeatConfig;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
@@ -73,7 +72,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
         SaslServer ss = null;
         try
-        {                       
+        {
             ss = authMgr.createSaslServer(String.valueOf(body.mechanism), session.getLocalFQDN());
 
             if (ss == null)

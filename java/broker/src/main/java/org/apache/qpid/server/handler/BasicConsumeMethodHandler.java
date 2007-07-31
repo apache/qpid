@@ -100,12 +100,6 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
             }
             else
             {
-
-                if (body.consumerTag != null)
-                {
-                    body.consumerTag = body.consumerTag.intern();
-                }
-
                 try
                 {
                     AMQShortString consumerTag = channel.subscribeToQueue(body.consumerTag, queue, session, !body.noAck,
@@ -144,15 +138,15 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     // If the above doesn't work then perhaps this is wrong too.
 //                    throw body.getConnectionException(AMQConstant.NOT_ALLOWED,
 //                                                      "Non-unique consumer tag, '" + body.consumerTag + "'");
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
+                                        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
                     // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
                     // Be aware of possible changes to parameter order as versions change.
                     session.writeFrame(ConnectionCloseBody.createAMQFrame(channelId,
-                                                                          (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                          BasicConsumeBody.getClazz((byte) 8, (byte) 0),    // classId
-                                                                          BasicConsumeBody.getMethod((byte) 8, (byte) 0),    // methodId
-                                                                          AMQConstant.NOT_ALLOWED.getCode(),    // replyCode
-                                                                          msg));    // replyText
+                        (byte)8, (byte)0,	// AMQP version (major, minor)
+                        BasicConsumeBody.getClazz((byte)8, (byte)0),	// classId
+                        BasicConsumeBody.getMethod((byte)8, (byte)0),	// methodId
+                        AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
+                        msg));	// replyText
                 }
                 catch (ExistingExclusiveSubscriptionException e)
                 {
