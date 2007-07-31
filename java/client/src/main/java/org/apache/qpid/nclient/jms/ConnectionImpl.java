@@ -20,7 +20,6 @@ package org.apache.qpid.nclient.jms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpidity.QpidException;
-import org.apache.qpid.nclient.jms.QueueSessionImpl;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -30,7 +29,7 @@ import java.util.Vector;
 
 
 /**
- * 
+ * Implements javax.jms.Connection, javax.jms.QueueConnection adn javax.jms.TopicConnection
  */
 public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
 {
@@ -104,9 +103,22 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     //---- Interface javax.jms.Connection ---//
 
-    public Session createSession(boolean b, int i) throws JMSException
+    /**
+     * Creates a Session
+     *
+     * @param transacted      Indicates whether the session is transacted.
+     * @param acknowledgeMode ignored if the session is transacted. Legal values are <code>Session.AUTO_ACKNOWLEDGE</code>,
+     *                        <code>Session.CLIENT_ACKNOWLEDGE</code>, and <code>Session.DUPS_OK_ACKNOWLEDGE</code>.
+     * @return A newly created session
+     * @throws JMSException If the Connection object fails to create a session due to some internal error.
+     */
+    public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        SessionImpl session = new SessionImpl(this, transacted, acknowledgeMode);
+        // add this session with the list of session that are handled by this connection
+        _sessions.add(session);
+        return session;
     }
 
     /**
@@ -334,23 +346,60 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public ConnectionConsumer createConnectionConsumer(Queue queue, String string, ServerSessionPool serverSessionPool,
-                                                       int i) throws JMSException
+    /**
+     * Creates a connection consumer for this connection (optional operation).
+     * This is an expert facility for App server integration.
+     *
+     * @param queue           The queue to access.
+     * @param messageSelector Only messages with properties matching the message selector expression are delivered.
+     * @param sessionPool     The session pool to associate with this connection consumer.
+     * @param maxMessages     The maximum number of messages that can be assigned to a server session at one time.
+     * @return Null for the moment.
+     * @throws JMSException In case of a problem due to some internal error.
+     */
+    public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
+                                                       ServerSessionPool sessionPool, int maxMessages) throws
+                                                                                                       JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return createConnectionConsumer((Destination) queue, messageSelector, sessionPool, maxMessages);
     }
 
     //-------------- TopicConnection API
-
-    public TopicSession createTopicSession(boolean b, int i) throws JMSException
+    /**
+     * Create a TopicSession.
+     *
+     * @param transacted      Indicates whether the session is transacted
+     * @param acknowledgeMode Legal values are <code>Session.AUTO_ACKNOWLEDGE</code>, <code>Session.CLIENT_ACKNOWLEDGE</code>, and
+     *                        <code>Session.DUPS_OK_ACKNOWLEDGE</code>.
+     * @return a newly created topic session
+     * @throws JMSException If creating the session fails due to some internal error.
+     */
+    public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        checkNotClosed();
+        TopicSessionImpl session = new TopicSessionImpl(this, transacted, acknowledgeMode);
+        // add the session with this Connection's sessions
+        // important for when the Connection is closed.
+        _sessions.add(session);
+        return session;
     }
 
-    public ConnectionConsumer createConnectionConsumer(Topic topic, String string, ServerSessionPool serverSessionPool,
-                                                       int i) throws JMSException
+    /**
+     * Creates a connection consumer for this connection (optional operation).
+     * This is an expert facility for App server integration.
+     *
+     * @param topic           The topic to access.
+     * @param messageSelector Only messages with properties matching the message selector expression are delivered.
+     * @param sessionPool     The session pool to associate with this connection consumer.
+     * @param maxMessages     The maximum number of messages that can be assigned to a server session at one time.
+     * @return Null for the moment.
+     * @throws JMSException In case of a problem due to some internal error.
+     */
+    public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector,
+                                                       ServerSessionPool sessionPool, int maxMessages) throws
+                                                                                                       JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return createConnectionConsumer((Destination) topic, messageSelector, sessionPool, maxMessages);
     }
 
     //-------------- protected and private methods
@@ -375,4 +424,13 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         }
     }
 
+    /**
+     * Provide access to the underlying qpid Connection.
+     *
+     * @return This JMS connection underlying Qpid Connection.
+     */
+    protected org.apache.qpid.nclient.api.Connection getQpidConnection()
+    {
+        return _qpidConnection;
+    }
 }

@@ -50,7 +50,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     /**
      * The subscription name
      */
-    private String _subscriptionName;
+    protected String _subscriptionName;
 
     /**
      * A MessageListener set up for this consumer.
@@ -58,14 +58,33 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     private MessageListener _messageListener = null;
 
     //----- Constructors
+    /**
+     * Create a new MessageProducerImpl.
+     *
+     * @param session          The session from which the MessageProducerImpl is instantiated
+     * @param destination      The default destination for this MessageProducerImpl
+     * @param messageSelector  The message selector for this QueueReceiverImpl.
+     * @param noLocal          If true inhibits the delivery of messages published by its own connection.
+     * @param subscriptionName Name of the subscription if this is to be created as a durable subscriber.
+     *                         If this value is null, a non-durable subscription is created.
+     * @throws JMSException If the MessageProducerImpl cannot be created due to some internal error.
+     */
     protected MessageConsumerImpl(SessionImpl session, DestinationImpl destination, String messageSelector,
-                                  boolean noLocal, String subscriptionName)
+                                  boolean noLocal, String subscriptionName) throws JMSException
     {
         super(session, destination);
         _messageSelector = messageSelector;
         _noLocal = noLocal;
         _subscriptionName = subscriptionName;
-
+        try
+        {
+            // TODO define the relevant options 
+            _qpidReceiver = _session.getQpidSession().createReceiver(destination.getName(), null);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
     }
     //----- Message consumer API
 
@@ -112,22 +131,48 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
         checkNotClosed();
-        // create a message listener wrapper
+        // TODO: create a message listener wrapper
     }
 
+    /**
+     * Receive the next message produced for this message consumer.
+     * <P>This call blocks indefinitely until a message is produced or until this message consumer is closed.
+     *
+     * @return The next message produced for this message consumer, or
+     *         null if this message consumer is concurrently closed
+     * @throws JMSException If receiving the next message fails due to some internal error.
+     */
     public Message receive() throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return receive(0);
     }
 
-    public Message receive(long l) throws JMSException
+    /**
+     * Receive the next message that arrives within the specified timeout interval.
+     * <p> This call blocks until a message arrives, the timeout expires, or this message consumer is closed.
+     * <p> A timeout of zero never expires, and the call blocks indefinitely.
+     * <p> A timeout less than 0 throws a JMSException.
+     *
+     * @param timeout The timeout value (in milliseconds)
+     * @return The next message that arrives within the specified timeout interval.
+     * @throws JMSException If receiving the next message fails due to some internal error.
+     */
+    public Message receive(long timeout) throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        Message message = null;
+        // todo convert this message into a JMS one: _qpidReceiver.receive(-1);
+        return message;
     }
 
+    /**
+     * Receive the next message if one is immediately available.
+     *
+     * @return the next message or null if one is not available.
+     * @throws JMSException If receiving the next message fails due to some internal error.
+     */
     public Message receiveNoWait() throws JMSException
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return receive(-1);
     }
 
 

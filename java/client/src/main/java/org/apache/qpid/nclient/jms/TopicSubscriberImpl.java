@@ -30,18 +30,18 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
     /**
      * Create a new TopicSubscriberImpl.
      *
-     * @param session         The session of this topic subscriber.
-     * @param topic           The default topic for this TopicSubscriberImpl
-     * @param messageSelector The MessageSelector
-     * @param noLocal         If true inhibits the delivery of messages published by its own connection.
-     * @param name            Name of the subscription if this is to be created as a durable subscriber. If this value is null,
-     *                        a non-durable subscription is created.
+     * @param session          The session of this topic subscriber.
+     * @param topic            The default topic for this TopicSubscriberImpl
+     * @param messageSelector  The MessageSelector
+     * @param noLocal          If true inhibits the delivery of messages published by its own connection.
+     * @param subscriptionName Name of the subscription if this is to be created as a durable subscriber.
+     *                         If this value is null, a non-durable subscription is created.
      * @throws javax.jms.JMSException If the TopicSubscriberImpl cannot be created due to internal error.
      */
     protected TopicSubscriberImpl(SessionImpl session, Topic topic, String messageSelector, boolean noLocal,
-                                  String name) throws JMSException
+                                  String subscriptionName) throws JMSException
     {
-        super(session, (DestinationImpl) topic, messageSelector, noLocal, name);
+        super(session, (DestinationImpl) topic, messageSelector, noLocal, subscriptionName);
     }
 
     //---  javax.jms.TopicSubscriber interface
