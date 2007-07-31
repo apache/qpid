@@ -21,48 +21,68 @@
  *
  */
 
-#include "Handler.h"
-
 #include <boost/mpl/vector.hpp>
-#include <boost/mpl/inherit.hpp>
-#include <boost/mpl/inherit_linearly.hpp>
-#include <boost/type_traits/add_reference.hpp>
+#include <boost/type_traits/remove_reference.hpp>
+#include <boost/preprocessor/seq/for_each.hpp>
 
 namespace qpid {
 namespace framing {
 
-// FIXME aconway 2007-07-30: Drop linking from handlers, use
-// vector<shared_ptr<Handler<T> > for chains.
+/** @file Generic visitor pattern. */
 
-/** @file Visitor pattern for Handlers. */
-
-/**
- * Interface for a handler visitor, inherits Handler<T> for each T in Types
- *@param Types A boost::mpl type sequence, e.g. boost::mpl::vector.
+/** visit() interface for type T (optional return type R, default void.)
+ * To create  a visitor for a set of types T1, T2 ... do this:
+ * struct MyVisitor : public Visit<T1>, public Visit<T2> ... {};
+ *@param T Type to visit, must be forward declared, need not be defined.
  */
-template <class Types>
-struct HandlerVisitor : public boost::mpl::inherit_linearly<
-    Types, boost::mpl::inherit<boost::mpl::_1, Handler<boost::mpl::_2> >
-    >::type
-{};
-
-/** Base class for hierarchy of objects visitable by Visitor */
-template <class Visitor>
-struct AbstractVisitable {
-    virtual ~AbstractVisitable() {}
-    typedef Visitor VisitorType;
-    virtual void accept(Visitor& v) = 0;
+template <class T, class R=void> struct Visit {
+    typedef R ReturnType;
+    typedef T VisitType;
+    
+    virtual ~Visit() {}
+    virtual R visit(T&) = 0;
 };
 
-/** Base class for concrete visitable types, implements accept.
- * @param T parameter type for appropriate Handler, may be a reference.
+
+#define QPID_VISITOR_DECL(_1,_2,T) class T;
+
+#define QPID_VISITOR_BASE(_1,_2,T) , public ::qpid::framing::Visit<T>
+
+/** Convenience macro to generate a visitor interface.
+ * QPID_VISITOR(MyVisitor,(A)(B)(C)); is equivalent to:
+ * @code
+ * class A; class B; class C;
+ * class MyVisitor : public Visit<A> , public Visit<B> , public Visit<C> {};
+ * @endcode
+ * @param visitor name of the generated visitor class.
+ * @param bases a sequence of visitable types in the form (T1)(T2)...
+ * The odd parenthesized notation is due to quirks of the preprocesser.
+ */
+#define QPID_VISITOR(visitor,types) \
+    BOOST_PP_SEQ_FOR_EACH(QPID_VISITOR_DECL, _, types) \
+    class visitor : public ::qpid::framing::Visit<BOOST_PP_SEQ_HEAD(types)> \
+    BOOST_PP_SEQ_FOR_EACH(QPID_VISITOR_BASE, _, BOOST_PP_SEQ_TAIL(types)) \
+    {}
+
+/** Root class for hierarchy of objects visitable by Visitor V.
+ * Defines virtual accept()
+ */
+template <class V, class R=void>
+struct VisitableRoot {
+    typedef V VisitorType;
+    typedef R ReturnType;
+    virtual ~VisitableRoot() {}
+    virtual R accept(V& v) = 0;
+};
+
+/** Base class for concrete visitable classes, implements accept().
+ * @param T type of visitable class (CRTP)
  * @param Base base class to inherit from.
  */
 template <class T, class Base>
-struct ConcreteVisitable : public Base {
-    typedef typename boost::add_reference<T>::type TRef;
+struct Visitable : public Base {
     void accept(typename Base::VisitorType& v) {
-        static_cast<Handler<T>& >(v).handle(static_cast<TRef>(*this));
+        static_cast<Visit<T>& >(v).visit(static_cast<T&>(*this));
     }
 };
 
