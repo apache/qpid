@@ -582,9 +582,9 @@ public class AMQChannel
         final List<UnacknowledgedMessage> msgToRequeue = new LinkedList<UnacknowledgedMessage>();
         final List<UnacknowledgedMessage> msgToResend = new LinkedList<UnacknowledgedMessage>();
 
-        if (_log.isDebugEnabled())
+        if (_log.isInfoEnabled())
         {
-            _log.debug("unacked map Size:" + _unacknowledgedMessageMap.size());
+            _log.info("unacked map Size:" + _unacknowledgedMessageMap.size());
         }
 
         // Process the Unacked-Map.
@@ -640,15 +640,15 @@ public class AMQChannel
             });
 
         // Process Messages to Resend
-        if (_log.isDebugEnabled())
+        if (_log.isInfoEnabled())
         {
             if (!msgToResend.isEmpty())
             {
-                _log.debug("Preparing (" + msgToResend.size() + ") message to resend.");
+                _log.info("Preparing (" + msgToResend.size() + ") message to resend.");
             }
             else
             {
-                _log.debug("No message to resend.");
+                _log.info("No message to resend.");
             }
         }
 

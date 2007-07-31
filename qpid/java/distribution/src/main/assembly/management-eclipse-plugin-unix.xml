@@ -38,21 +38,13 @@
   </moduleSets>
  -->
   <fileSets>
-
-
-  <!-- Include the currently hardwired Apache Legal bits -->
     <fileSet>
-      <directory>../resources</directory>
-      <outputDirectory>qpid-${qpid.version}</outputDirectory>
+      <directory>src/main/release</directory>
+      <outputDirectory>qpidmc</outputDirectory>
       <includes>
-          <include>DISCLAIMER</include>
-          <include>LICENSE</include>
-          <include>NOTICE</include>
-          <include>README</include>
+        <include>DISCLAIMER</include>
       </includes>
-      <fileMode>0444</fileMode>
     </fileSet>
-
     <fileSet>
       <directory>..</directory>
       <outputDirectory>qpidmc</outputDirectory>
@@ -60,23 +52,20 @@
         <include>*.txt</include>
       </includes>
     </fileSet>
-
     <fileSet>
-      <directory>src/main/release</directory>
-      <outputDirectory>qpidmc</outputDirectory>
+      <directory>src/main/release/docs</directory>
+      <outputDirectory>qpidmc/docs</outputDirectory>
+      <includes>
+        <include>RELEASE_NOTES.txt</include>
+      </includes>
     </fileSet>
-
-    <!-- Include any release information -->
-    <fileSet>
-      <directory>../release-docs</directory>
-      <outputDirectory>qpidmc</outputDirectory>
-    </fileSet>
-
     <fileSet>
       <directory>../management/eclipse-plugin/src/main/resources/unix/configuration</directory>
       <outputDirectory>qpidmc/configuration</outputDirectory>
+      <includes>
+        <include>**</include>
+      </includes>
     </fileSet>
-
     <fileSet>
       <directory>../management/eclipse-plugin/src/main/resources</directory>
       <outputDirectory>qpidmc</outputDirectory>
@@ -84,7 +73,6 @@
         <include>license.eclipse.txt</include>
       </includes>
     </fileSet>
-
     <fileSet>
       <directory>../management/eclipse-plugin</directory>
       <outputDirectory>qpidmc</outputDirectory>
@@ -92,14 +80,13 @@
         <include>README.txt</include>
       </includes>
     </fileSet>
-
     <fileSet>
       <directory>../management/eclipse-plugin/bin</directory>
       <outputDirectory>qpidmc/bin</outputDirectory>
       <includes>
         <include>qpidmc*.sh</include>
       </includes>
-      <fileMode>0777</fileMode>
+      <fileMode>777</fileMode>
     </fileSet>
   </fileSets>
 
@@ -113,7 +100,7 @@
       </includes>
       <scope>runtime</scope>
     </dependencySet>
-
+  
   <dependencySet>
         <outputDirectory>qpidmc/eclipse/plugins</outputDirectory>
         <outputFileNameMapping>${artifactId}_${version}.${extension}</outputFileNameMapping>

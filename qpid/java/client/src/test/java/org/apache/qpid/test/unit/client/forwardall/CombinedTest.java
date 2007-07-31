@@ -21,7 +21,9 @@
 package org.apache.qpid.test.unit.client.forwardall;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.testutil.VMBrokerSetup;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +34,6 @@ import org.slf4j.LoggerFactory;
 public class CombinedTest extends TestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CombinedTest.class);
-    private int run = 0;
 
     protected void setUp() throws Exception
     {
@@ -47,18 +48,14 @@ public class CombinedTest extends TestCase
 
     public void testForwardAll() throws Exception
     {
-        while (run < 10)
-        {
-            int services = 2;
-            ServiceCreator.start("vm://:1", services);
+        int services = 2;
+        ServiceCreator.start("vm://:1", services);
 
-            _logger.info("Starting " + ++run + " client...");
+        _logger.info("Starting client...");
 
-            new Client("vm://:1", services).shutdownWhenComplete();
+        new Client("vm://:1", services).shutdownWhenComplete();
 
-
-            _logger.info("Completed " + run + " successfully!");
-        }
+        _logger.info("Completed successfully!");
     }
 
     public static junit.framework.Test suite()

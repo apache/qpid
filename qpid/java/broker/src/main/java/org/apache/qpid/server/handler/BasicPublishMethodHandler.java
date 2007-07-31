@@ -67,10 +67,6 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
             body.exchange = ExchangeDefaults.DEFAULT_EXCHANGE_NAME;
 
         }
-        else
-        {
-            body.exchange = body.exchange.intern();
-        }
         VirtualHost vHost = session.getVirtualHost();
         Exchange e = vHost.getExchangeRegistry().getExchange(body.exchange);
         // if the exchange does not exist we raise a channel exception
@@ -90,16 +86,10 @@ public class BasicPublishMethodHandler  implements StateAwareMethodListener<Basi
                 throw body.getChannelNotFoundException(evt.getChannelId());
             }
 
-            if(body.routingKey != null)
-            {
-                body.routingKey = body.routingKey.intern();
-            }
-            
             MessagePublishInfo info = session.getRegistry().getProtocolVersionMethodConverter().convertToInfo(body);
             channel.setPublishFrame(info, session);
         }
     }
 }
-
 
 

@@ -20,18 +20,10 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.AMQTypedValue;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.management.MBeanConstructor;
-import org.apache.qpid.server.management.MBeanDescription;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.management.JMException;
 import javax.management.openmbean.ArrayType;
@@ -44,11 +36,19 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.AMQTypedValue;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.management.MBeanConstructor;
+import org.apache.qpid.server.management.MBeanDescription;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
 
 /**
  * An exchange that binds queues based on a set of required headers and header values
@@ -91,13 +91,13 @@ public class HeadersExchange extends AbstractExchange
     private final class HeadersExchangeMBean extends ExchangeMBean
     {
         @MBeanConstructor("Creates an MBean for AMQ Headers exchange")
-        public HeadersExchangeMBean() throws JMException
+        public HeadersExchangeMBean()  throws JMException
         {
             super();
             _exchangeType = "headers";
             init();
         }
-
+        
         /**
          * initialises the OpenType objects.
          */
@@ -113,7 +113,7 @@ public class HeadersExchange extends AbstractExchange
             _bindingDataType = new CompositeType("Exchange Binding", "Queue name and header bindings",
                                                  _bindingItemNames, _bindingItemNames, _bindingItemTypes);
             _bindinglistDataType = new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
-                                                   _bindingDataType, _bindingItemIndexNames);
+                                                 _bindingDataType, _bindingItemIndexNames);
         }
 
         public TabularData bindings() throws OpenDataException
@@ -169,7 +169,7 @@ public class HeadersExchange extends AbstractExchange
                 throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
             }
 
-            String[] bindings = binding.split(",");
+            String[] bindings  = binding.split(",");
             FieldTable bindingMap = new FieldTable();
             for (int i = 0; i < bindings.length; i++)
             {
@@ -241,23 +241,17 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
-    {
-        //fixme isBound here should take the arguements in to consideration.
-        return isBound(routingKey, queue);
-    }
-
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
     {
         return isBound(queue);
     }
 
-    public boolean isBound(AMQShortString routingKey)
+    public boolean isBound(AMQShortString routingKey) throws AMQException
     {
         return hasBindings();
     }
 
-    public boolean isBound(AMQQueue queue)
+    public boolean isBound(AMQQueue queue) throws AMQException
     {
         for (Registration r : _bindings)
         {
@@ -269,7 +263,7 @@ public class HeadersExchange extends AbstractExchange
         return false;
     }
 
-    public boolean hasBindings()
+    public boolean hasBindings() throws AMQException
     {
         return !_bindings.isEmpty();
     }
@@ -292,11 +286,6 @@ public class HeadersExchange extends AbstractExchange
             _logger.error("Exception occured in creating the HeadersExchangeMBean", ex);
             throw new AMQException(null, "Exception occured in creating the HeadersExchangeMBean", ex);
         }
-    }
-
-    public Map<AMQShortString, List<AMQQueue>> getBindings()
-    {
-        return null;
     }
 
     private static class Registration

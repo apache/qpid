@@ -2,7 +2,6 @@ package org.apache.qpid.nclient.impl;
 
 import org.apache.qpid.nclient.api.Message;
 import org.apache.qpid.nclient.api.MessageReceiver;
-import org.apache.qpid.nclient.api.MessageSender;
 import org.apache.qpidity.Header;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.QpidException;
@@ -15,10 +14,10 @@ public class ClientSession extends Session implements org.apache.qpid.nclient.ap
 	 * Message methods
 	 * ---------------------------------------------------
 	 */
-	public MessageSender createSender(String queueName) throws QpidException
+	/*public MessageSender createSender(String queueName) throws QpidException
 	{
 		return null;
-	}
+	}*/
 
 	public MessageReceiver createReceiver(String queueName, Option... options) throws QpidException
 	{
