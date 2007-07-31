@@ -23,6 +23,7 @@ import java.util.UUID;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Option;
+import org.apache.qpidity.Header;
 
 /**
  * A session is associated with a connection.
@@ -74,15 +75,28 @@ public interface Session
      * -------------------------------------
      */
 
-    /**
-     * Create a message sender for sending messages to queue queueName.
+	/**
+     * Transfer the given message.
      *
      * @param queueName The queue this sender is sending messages.
      * @return A sender for queue queueName
      * @throws QpidException If the session fails to create the sended due to some error
      */
-    public MessageSender createSender(String queueName) throws QpidException;
-    //Todo: Do we need to define more specific exception like queue name not valid?
+    public void messageTransfer(String destination,Message msg)throws QpidException; 
+    
+    public void messageTransfer(Option... options)throws QpidException; 
+    
+    /**
+     * Transfer the given message.
+     *
+     * @param 
+     * @throws QpidException If the session fails to create the sended due to some error
+     */
+    public void messageHeaders(Header ... headers)throws QpidException; 
+    		     
+    public void messageBody(byte[] src)throws QpidException; 
+    		     
+    public void messageClose()throws QpidException; 
 
     /**
      * Create a message receiver for receiving messages from queue queueName.
