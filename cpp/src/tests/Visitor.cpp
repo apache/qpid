@@ -29,19 +29,19 @@ struct DummyA;
 struct DummyB;
 struct DummyC;
 
-typedef HandlerVisitor<boost::mpl::vector<DummyA&, DummyB&, DummyC&> > DummyVisitor;
+QPID_VISITOR(DummyVisitor, (DummyA)(DummyB)(DummyC));
 
-struct DummyFrame : public AbstractVisitable<DummyVisitor> {};
+struct DummyFrame : public VisitableRoot<DummyVisitor> {};
 
-struct DummyA : public ConcreteVisitable<DummyA&, DummyFrame> {};
-struct DummyB : public ConcreteVisitable<DummyB&, DummyFrame> {};
-struct DummyC : public ConcreteVisitable<DummyC&, DummyFrame> {};
+struct DummyA : public Visitable<DummyA, DummyFrame> {};
+struct DummyB : public Visitable<DummyB, DummyFrame> {};
+struct DummyC : public Visitable<DummyC, DummyFrame> {};
 
 struct TestDummyVisitor : public DummyVisitor {
     boost::tuple<DummyA*, DummyB*, DummyC*> dummies;
-    void handle(DummyA& a) { dummies.get<0>() = &a; }
-    void handle(DummyB& b) { dummies.get<1>() = &b; }
-    void handle(DummyC& c) { dummies.get<2>() = &c; }
+    void visit(DummyA& a) { dummies.get<0>() = &a; }
+    void visit(DummyB& b) { dummies.get<1>() = &b; }
+    void visit(DummyC& c) { dummies.get<2>() = &c; }
 };
 
 BOOST_AUTO_TEST_CASE(Visitor_accept) {
