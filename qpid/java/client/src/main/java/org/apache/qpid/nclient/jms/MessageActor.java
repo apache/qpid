@@ -83,8 +83,7 @@ public abstract class MessageActor
         {
             closeMessageActor();
             // notify the session that this message actor is closing
-
-            //TODO _session.removeActor(_actorID);
+            _session.closeMessageActor(this);
         }
     }
 
