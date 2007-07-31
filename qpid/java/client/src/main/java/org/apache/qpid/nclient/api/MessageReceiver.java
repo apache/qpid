@@ -19,6 +19,7 @@
 package org.apache.qpid.nclient.api;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Option;
 
 import java.util.Set;
 
@@ -32,12 +33,13 @@ public interface MessageReceiver extends Resource
      *
      * @return This receiver set of options.
      */
-    public Set<CreateReceiverOption> getOptions();
+    public Set<Option> getOptions();
 
     /**
      * Receive a message form this receiver queue.
-     * <p> If the timeout is less or equal than 0 then this operation is blocking.
-     * Otherwise it blocks until a message arrives, the timeout expires, or this receiver is closed.
+     * <p> If the timeout is equal to 0 then this operation is blocking.
+     * <p> If the timeout is less than 0 then this operation retruns immediatly
+     * <p> Otherwise it blocks until a message arrives, the timeout expires, or this receiver is closed.
      * <p> To receive messages, a receiver must be started.
      *
      * @param timeout The timeout value (in milliseconds).
