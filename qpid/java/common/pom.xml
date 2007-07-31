@@ -55,7 +55,7 @@
                         <phase>generate-sources</phase>
                         <configuration>
                             <tasks>
-                                <echo>"${generated.path}</echo>
+                                <echo>"${generated.path}"</echo>
                                 <ant antfile="protocol-version.xml" />
                                 <exec executable="python">
                                   <arg line="generate"/>
