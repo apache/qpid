@@ -239,6 +239,10 @@ void Poller::rearmFd(PollerHandle& handle) {
 }
 
 void Poller::shutdown() {
+	// Allow sloppy code to shut us down more than once
+	if (impl->isShutdown)
+		return;
+
     // Don't use any locking here - isshutdown will be visible to all
     // after the epoll_ctl() anyway (it's a memory barrier)
     impl->isShutdown = true;
