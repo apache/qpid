@@ -22,9 +22,9 @@
 using System;
 using System.Collections;
 
-using Qpid.Sasl.Mechanisms;
+using Apache.Qpid.Sasl.Mechanisms;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    public class DefaultClientFactory : ISaslClientFactory
    {
@@ -90,5 +90,6 @@ namespace Qpid.Sasl
       }
    } // class DefaultClientFactory
 
-} // namespace Qpid.Sasl
+} // namespace Apache.Qpid.Sasl
+
 

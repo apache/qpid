@@ -23,7 +23,7 @@ using System.Collections;
 using System.Text;
 using NUnit.Framework;
 
-namespace Qpid.Collections
+namespace Apache.Qpid.Collections
 {
     [TestFixture]
     public class TestLinkedHashtable

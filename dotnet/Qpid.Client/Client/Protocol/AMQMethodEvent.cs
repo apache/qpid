@@ -20,9 +20,9 @@
  */
 using System;
 using System.Text;
-using Qpid.Framing;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Protocol
+namespace Apache.Qpid.Client.Protocol
 {
     public class AMQMethodEvent
     {
@@ -72,4 +72,5 @@ namespace Qpid.Client.Protocol
         }
     }
 }
+
 

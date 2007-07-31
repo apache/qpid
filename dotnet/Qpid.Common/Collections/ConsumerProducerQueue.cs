@@ -23,7 +23,7 @@ using System.Collections;
 using System.Threading;
 
 
-namespace Qpid.Collections
+namespace Apache.Qpid.Collections
 {
    /// <summary>
    /// Simple FIFO queue to support multi-threaded consumer

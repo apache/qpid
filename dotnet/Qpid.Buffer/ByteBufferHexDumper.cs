@@ -20,7 +20,7 @@
  */
 using System.Text;
 
-namespace Qpid.Buffer
+namespace Apache.Qpid.Buffer
 {
     public class ByteBufferHexDumper
     {
@@ -74,5 +74,6 @@ namespace Qpid.Buffer
         }
     }
 }
+
 
 

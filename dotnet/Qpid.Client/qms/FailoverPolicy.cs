@@ -21,9 +21,9 @@
 using System;
 using System.Text;
 using log4net;
-using Qpid.Client.Qms.Failover;
+using Apache.Qpid.Client.Qms.Failover;
 
-namespace Qpid.Client.Qms
+namespace Apache.Qpid.Client.Qms
 {
     public class FailoverPolicy
     {

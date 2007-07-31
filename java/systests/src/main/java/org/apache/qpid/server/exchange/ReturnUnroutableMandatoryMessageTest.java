@@ -126,8 +126,8 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         con.start();
         TextMessage tm = (TextMessage) consumer.receive(1000L);
 
-        assertTrue("No message routed to receiver", tm != null);
-        assertTrue("Wrong message routed to receiver: " + tm.getText(), "msg3".equals(tm.getText()));
+        assertTrue("No message routed to receivers", tm != null);
+        assertTrue("Wrong message routed to receivers: " + tm.getText(), "msg3".equals(tm.getText()));
 
         try
         {
@@ -193,8 +193,8 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         con.start();
         TextMessage tm = (TextMessage) consumer.receive(1000L);
 
-        assertTrue("No message routed to receiver", tm != null);
-        assertTrue("Wrong message routed to receiver: " + tm.getText(), "msg1".equals(tm.getText()));
+        assertTrue("No message routed to receivers", tm != null);
+        assertTrue("Wrong message routed to receivers: " + tm.getText(), "msg1".equals(tm.getText()));
 
         try
         {
@@ -259,8 +259,8 @@ public class ReturnUnroutableMandatoryMessageTest extends TestCase implements Ex
         con.start();
         TextMessage tm = (TextMessage) consumer.receive(1000L);
 
-        assertTrue("No message routed to receiver", tm != null);
-        assertTrue("Wrong message routed to receiver: " + tm.getText(), "msg1".equals(tm.getText()));
+        assertTrue("No message routed to receivers", tm != null);
+        assertTrue("Wrong message routed to receivers: " + tm.getText(), "msg1".equals(tm.getText()));
 
         try
         {

@@ -23,7 +23,7 @@ using System;
 using System.Collections;
 using System.Text;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    public sealed class SaslProperties
    {
@@ -39,4 +39,4 @@ namespace Qpid.Sasl
  
    } // class SaslProperties
 
-} // namespace Qpid.Sasl.Mechanisms
+} // namespace Apache.Qpid.Sasl.Mechanisms

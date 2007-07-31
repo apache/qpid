@@ -21,12 +21,12 @@
 using System;
 using System.Threading;
 using log4net;
-using Qpid.Client.Protocol;
-using Qpid.Client.State;
-using Qpid.Framing;
-using Qpid.Protocol;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.State;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Protocol;
 
-namespace Qpid.Client.Handler
+namespace Apache.Qpid.Client.Handler
 {
     public class ConnectionCloseMethodHandler : IStateAwareMethodListener
     {

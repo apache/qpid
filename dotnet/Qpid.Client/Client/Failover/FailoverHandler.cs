@@ -21,10 +21,10 @@
 using System;
 using System.Threading;
 using log4net;
-using Qpid.Client.Protocol;
-using Qpid.Client.State;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.State;
 
-namespace Qpid.Client.Failover
+namespace Apache.Qpid.Client.Failover
 {
     public class FailoverHandler
     {
@@ -171,4 +171,5 @@ namespace Qpid.Client.Failover
         }
     }
 }
+
 

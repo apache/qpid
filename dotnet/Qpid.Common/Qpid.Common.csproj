@@ -7,8 +7,8 @@
     <ProjectGuid>{77064C42-24D2-4CEB-9EA2-0EF481A43205}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid</RootNamespace>
-    <AssemblyName>Qpid.Common</AssemblyName>
+    <RootNamespace>Apache.Qpid</RootNamespace>
+    <AssemblyName>Apache.Qpid.Common</AssemblyName>
     <SignAssembly>false</SignAssembly>
     <AssemblyOriginatorKeyFile>
     </AssemblyOriginatorKeyFile>

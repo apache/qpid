@@ -20,10 +20,10 @@
  */
 using System;
 using System.Collections;
-using Qpid.Framing;
-using Qpid.Buffer;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public class QpidBytesMessageFactory : AbstractQmsMessageFactory
     {
@@ -71,4 +71,5 @@ namespace Qpid.Client.Message
 
     }
 }
+
 

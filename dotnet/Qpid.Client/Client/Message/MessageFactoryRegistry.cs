@@ -20,10 +20,10 @@
  */
 using System;
 using System.Collections;
-using Qpid.Framing;
-using Qpid.Messaging;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
    public class MessageFactoryRegistry
    {
@@ -125,4 +125,5 @@ namespace Qpid.Client.Message
       }
    }
 }
+
 

@@ -25,10 +25,10 @@ using System.Collections.Specialized;
 using System.Configuration;
 using System.Text;
 
-using Qpid.Client.Security;
-using Qpid.Sasl.Mechanisms;
+using Apache.Qpid.Client.Security;
+using Apache.Qpid.Sasl.Mechanisms;
 
-namespace Qpid.Client.Configuration
+namespace Apache.Qpid.Client.Configuration
 {
    public class AuthenticationConfigurationSectionHandler 
       : IConfigurationSectionHandler
@@ -81,4 +81,4 @@ namespace Qpid.Client.Configuration
          _keys.Remove(key);
       }
    }
-} // namespace Qpid.Client.Configuration
+} // namespace Apache.Qpid.Client.Configuration

@@ -19,10 +19,10 @@
  *
  */
 using System;
-using Qpid.Client.Protocol.Listener;
-using Qpid.Framing;
+using Apache.Qpid.Client.Protocol.Listener;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Protocol
+namespace Apache.Qpid.Client.Protocol
 {
     public interface IProtocolListener
     {

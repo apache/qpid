@@ -24,10 +24,10 @@ using System.Collections;
 using System.Text;
 
 using NUnit.Framework;
-using Qpid.Sasl;
-using Qpid.Sasl.Mechanisms;
+using Apache.Qpid.Sasl;
+using Apache.Qpid.Sasl.Mechanisms;
 
-namespace Qpid.Sasl.Tests.Mechanisms
+namespace Apache.Qpid.Sasl.Tests.Mechanisms
 {
    [TestFixture]
    public class ExternalSaslClientTests : ISaslCallbackHandler
@@ -68,4 +68,4 @@ namespace Qpid.Sasl.Tests.Mechanisms
 
    } // class AnonymousSaslClientTests
 
-} // namespace Qpid.Sasl.Tests.Mechanisms
+} // namespace Apache.Qpid.Sasl.Tests.Mechanisms

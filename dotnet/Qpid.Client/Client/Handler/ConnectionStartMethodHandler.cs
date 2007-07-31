@@ -22,14 +22,14 @@ using System;
 using System.Collections;
 using System.Text;
 using log4net;
-using Qpid.Client.Protocol;
-using Qpid.Client.Security;
-using Qpid.Client.State;
-using Qpid.Framing;
-using Qpid.Sasl;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.Security;
+using Apache.Qpid.Client.State;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Sasl;
 
 
-namespace Qpid.Client.Handler
+namespace Apache.Qpid.Client.Handler
 {
     public class ConnectionStartMethodHandler : IStateAwareMethodListener
     {
@@ -73,7 +73,7 @@ namespace Qpid.Client.Handler
 
                 stateManager.ChangeState(AMQState.CONNECTION_NOT_TUNED);
                 FieldTable clientProperties = new FieldTable();
-                clientProperties["product"] = "Qpid.NET";
+                clientProperties["product"] = "Apache.Qpid.NET";
                 clientProperties["version"] = "1.0";
                 clientProperties["platform"] = GetFullSystemInfo();
                 AMQFrame frame = ConnectionStartOkBody.CreateAMQFrame(

@@ -19,9 +19,9 @@
  *
  */
 using System.Collections;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Codec.Support
+namespace Apache.Qpid.Codec.Support
 {
     public abstract class SimpleProtocolEncoderOutput : IProtocolEncoderOutput
     {

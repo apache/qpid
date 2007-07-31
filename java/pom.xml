@@ -155,14 +155,26 @@ under the License.
         <module>perftests</module>
         <module>integrationtests</module>
         <module>management/eclipse-plugin</module>
-		<module>client/example</module>
-		<module>client-java14</module>
+        <module>client/example</module>
+        <module>client-java14</module>
 
     </modules>
 
 
     <build>
         <resources>
+
+            <resource>
+                <targetPath>META-INF/</targetPath>
+                <filtering>false</filtering>
+                <directory>../resources</directory>
+                <includes>
+                    <include>DISCLAIMER</include>
+                    <include>LICENSE</include>
+                    <include>NOTICE</include>
+                </includes>
+            </resource>
+ 
             <resource>
                 <directory>src/main/java</directory>
                 <excludes>
@@ -172,26 +184,28 @@ under the License.
             </resource>
             <resource>
                 <directory>src/main/resources</directory>
-                <includes>
-                    <include>**</include>
-                </includes>
             </resource>
             <resource>
                 <directory>src/main/resources-filtered</directory>
-                <includes>
-                    <include>**</include>
-                </includes>
                 <filtering>true</filtering>
             </resource>
             <resource>
                 <directory>target/generated/src/main/resources</directory>
-                <includes>
-                    <include>**</include>
-                </includes>
             </resource>
         </resources>
 
         <testResources>
+           <testResource>
+                <targetPath>META-INF/</targetPath>
+                <filtering>false</filtering>
+                <directory>../resources</directory>
+                <includes>
+                    <include>DISCLAIMER</include>
+                    <include>LICENSE</include>
+                    <include>NOTICE</include>
+                </includes>
+            </testResource>
+
             <testResource>
                 <directory>src/test/java</directory>
                 <excludes>
@@ -200,9 +214,6 @@ under the License.
             </testResource>
             <testResource>
                 <directory>src/test/resources</directory>
-                <includes>
-                    <include>**</include>
-                </includes>
             </testResource>
             <testResource>
                 <directory>src/test/java</directory>
@@ -391,7 +402,19 @@ under the License.
                     <version>0.5</version>
                 </plugin>
 
-         <plugin>
+        
+
+
+            </plugins>
+        </pluginManagement>
+
+
+        <plugins>
+
+            <!-- Disabled as plugin crashes on the systest module. 
+             Also, the resulting NOTICE file doesn't include all license info due to missing data in dependant poms.
+
+            <plugin>
                <artifactId>maven-remote-resources-plugin</artifactId>
                <version>1.0-alpha-5</version>
                <executions>
@@ -411,11 +434,8 @@ under the License.
                        </configuration>
                    </execution>
                </executions>
-           </plugin>
-
-
-            </plugins>
-        </pluginManagement>
+           </plugin-->
+        </plugins>
 
         <defaultGoal>install</defaultGoal>
 
@@ -586,7 +606,6 @@ under the License.
             -->
 
             <!-- Run the javadoc report. -->
-            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
@@ -600,7 +619,6 @@ under the License.
                     </tags>
                 </configuration>
             </plugin>
-            -->
 
             <!-- Generate the clover coverage report. -->
             <!--

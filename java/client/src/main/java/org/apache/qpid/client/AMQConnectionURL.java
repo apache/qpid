@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.URLHelper;
+import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -27,14 +35,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.url.URLHelper;
-import org.apache.qpid.url.URLSyntaxException;
-
 public class AMQConnectionURL implements ConnectionURL
 {
+    private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionURL.class);
+
     private String _url;
     private String _failoverMethod;
     private HashMap<String, String> _failoverOptions;
@@ -162,7 +166,7 @@ public class AMQConnectionURL implements ConnectionURL
                 if ((slash != 0) && (fullURL.charAt(slash - 1) == ':'))
                 {
                     throw URLHelper.parseError(slash - 2, fullURL.indexOf('?') - slash + 2,
-                        "Virtual host looks like a windows path, forward slash not allowed in URL", fullURL);
+                                               "Virtual host looks like a windows path, forward slash not allowed in URL", fullURL);
                 }
                 else
                 {
@@ -182,7 +186,7 @@ public class AMQConnectionURL implements ConnectionURL
         if (colonIndex == -1)
         {
             throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, userinfo.length(),
-                "Null password in user information not allowed.", _url);
+                                       "Null password in user information not allowed.", _url);
         }
         else
         {
@@ -387,7 +391,14 @@ public class AMQConnectionURL implements ConnectionURL
             if (_password != null)
             {
                 sb.append(':');
-                sb.append(_password);
+                if (_logger.isDebugEnabled())
+                {
+                    sb.append(_password);
+                }
+                else
+                {
+                    sb.append("********");
+                }
             }
 
             sb.append('@');
@@ -432,7 +443,7 @@ public class AMQConnectionURL implements ConnectionURL
     public static void main(String[] args) throws URLSyntaxException
     {
         String url2 =
-            "amqp://ritchiem:bob@temp?brokerlist='tcp://localhost:5672;jcp://fancyserver:3000/',failover='roundrobin'";
+                "amqp://ritchiem:bob@temp?brokerlist='tcp://localhost:5672;jcp://fancyserver:3000/',failover='roundrobin'";
         // "amqp://user:pass@clientid/virtualhost?brokerlist='tcp://host:1?option1=\'value\',option2=\'value\';vm://:3?option1=\'value\'',failover='method?option1=\'value\',option2='value''";
 
         ConnectionURL connectionurl2 = new AMQConnectionURL(url2);

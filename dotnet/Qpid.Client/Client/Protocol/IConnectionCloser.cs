@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Client.Protocol
+namespace Apache.Qpid.Client.Protocol
 {
     public interface IConnectionCloser
     {

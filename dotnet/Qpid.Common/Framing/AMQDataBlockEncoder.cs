@@ -20,11 +20,11 @@
  */
 using System.Collections;
 using log4net;
-using Qpid.Buffer;
-using Qpid.Codec;
-using Qpid.Codec.Demux;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Codec;
+using Apache.Qpid.Codec.Demux;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     public class AMQDataBlockEncoder : IMessageEncoder
     {

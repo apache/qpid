@@ -21,9 +21,9 @@
 using System;
 using System.Globalization;
 using System.Text;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
    public class EncodingUtils
    {

@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="Qpid.Client" default="build">
+<project name="Apache.Qpid.Client" default="build">
     <!--
 		Properties that come from master build file
 		- build.dir: root directory for build
@@ -18,12 +18,12 @@
          </sources>
          <references>
             <include name="${build.dir}/log4net.dll" />	
-            <include name="${build.dir}/Qpid.Buffer.dll" />	
-            <include name="${build.dir}/Qpid.Sasl.dll" />	
-            <include name="${build.dir}/Qpid.Codec.dll" />	
-            <include name="${build.dir}/Qpid.Common.dll" />	
-            <include name="${build.dir}/Qpid.Messaging.dll" />	
-            <include name="${build.dir}/Org.Mentalis.Security.dll" />	
+            <include name="${build.dir}/Apache.Qpid.Buffer.dll" />	
+            <include name="${build.dir}/Apache.Qpid.Sasl.dll" />	
+            <include name="${build.dir}/Apache.Qpid.Codec.dll" />	
+            <include name="${build.dir}/Apache.Qpid.Common.dll" />	
+            <include name="${build.dir}/Apache.Qpid.Messaging.dll" />	
+            <include name="${build.dir}/Org.Mentalis.Security.dll" />
          </references>
         </csc>
     </target>

@@ -18,13 +18,14 @@
  * under the License.
  *
  */
-using Qpid.Client.Protocol;
+using Apache.Qpid.Client.Protocol;
 
-namespace Qpid.Client.State
+namespace Apache.Qpid.Client.State
 {
     public interface IStateAwareMethodListener
     {
         void MethodReceived(AMQStateManager stateManager, AMQMethodEvent evt);
     }
 }
+
 

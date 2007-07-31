@@ -22,8 +22,8 @@ using System;
 using System.Collections;
 using System.Threading;
 using log4net;
-using Qpid.Client.Protocol;
-using Qpid.Framing;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Framing;
 
 namespace Qpid.Client.Transport.Socket.Blocking
 {
@@ -117,4 +117,5 @@ namespace Qpid.Client.Transport.Socket.Blocking
         }
     }
 }
+
 

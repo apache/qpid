@@ -7,8 +7,8 @@
     <ProjectGuid>{52AC4940-2077-4104-A753-29A9C8C16957}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Client.Transport.Socket.Blocking</RootNamespace>
-    <AssemblyName>Qpid.Client.Transport.Socket.Blocking</AssemblyName>
+    <RootNamespace>Apache.Qpid.Client.Transport.Socket.Blocking</RootNamespace>
+    <AssemblyName>Apache.Qpid.Client.Transport.Socket.Blocking</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

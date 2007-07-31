@@ -20,10 +20,10 @@
  */
 using System;
 using System.Text;
-using Qpid.Client.Protocol;
-using Qpid.Sasl;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Sasl;
 
-namespace Qpid.Client.Security
+namespace Apache.Qpid.Client.Security
 {
    public interface IAMQCallbackHandler : ISaslCallbackHandler
    {
@@ -31,4 +31,5 @@ namespace Qpid.Client.Security
    }
 
 } 
+
 

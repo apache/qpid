@@ -4,7 +4,7 @@ ACLOCAL_AMFLAGS = -I m4
 SPEC=$(PACKAGE).spec
 
 EXTRA_DIST = \
-  LICENSE NOTICE README \
+  LICENSE NOTICE README RELEASE_NOTES\
   etc/qpidd \
   $(SPEC) $(SPEC).in \
   rpm/README.qpidd-devel \

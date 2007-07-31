@@ -1,10 +1,10 @@
 using System;
 using System.Threading;
 using log4net;
-using Qpid.Messaging;
-using Qpid.Client.Qms;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
 
-namespace Qpid.Client.Tests.interop
+namespace Apache.Qpid.Client.Tests.interop
 {
     public class TopicPublisher
     {

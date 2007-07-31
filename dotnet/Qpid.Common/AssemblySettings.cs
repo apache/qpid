@@ -27,7 +27,7 @@ using System.Runtime.CompilerServices;
 using System.Xml;
 using log4net;
 
-namespace Qpid.Common
+namespace Apache.Qpid.Common
 {
     /// <summary>
     ///

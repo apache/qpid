@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Codec
+namespace Apache.Qpid.Codec
 {
     public interface IProtocolDecoderOutput
     {
@@ -31,4 +31,5 @@ namespace Qpid.Codec
         void Write(object message);
     }
 }
+
 

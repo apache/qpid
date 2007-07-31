@@ -22,7 +22,7 @@
 using System;
 using System.Text;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    public interface ISaslClient
    {
@@ -37,5 +37,6 @@ namespace Qpid.Sasl
 
    } // interface ISaslClient
 
-} // namespace Qpid.Sasl
+} // namespace Apache.Qpid.Sasl
+
 

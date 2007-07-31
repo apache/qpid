@@ -20,7 +20,7 @@
  */
 using System.Collections;
 
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
     public interface IFieldTable : IEnumerable
     {

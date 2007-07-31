@@ -20,10 +20,10 @@
  */
 using System;
 using System.Runtime.Serialization;
-using Qpid.Common;
-using Qpid.Protocol;
+using Apache.Qpid.Common;
+using Apache.Qpid.Protocol;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
    [Serializable]
    public class AMQNoRouteException : AMQUndeliveredException

@@ -22,7 +22,7 @@ using System;
 using System.Runtime.Serialization;
 using log4net;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     /// <summary>
     /// Thrown when a frame cannot be decoded. This generally indicates a mismatch between the broker and the
