@@ -30,7 +30,7 @@
   <!-- Include the currently hardwired Apache Legal bits -->
     <fileSet>
       <directory>../resources</directory>
-      <outputDirectory>qpid-${qpid.version}</outputDirectory>
+      <outputDirectory>qpidmc</outputDirectory>
       <includes>
           <include>DISCLAIMER</include>
           <include>LICENSE</include>
@@ -90,7 +90,18 @@
       </excludes>
       <fileMode>0777</fileMode>
     </fileSet>
-   </fileSets>
+
+    <!-- Required to make eclipse load the JMXRemote SASL pluging -->
+    <!-- This should be removed as JMXRemote SASL module is not ASF license friendly -->
+    <!-- However management console doesn't seem to work without it -->
+    <fileSet>
+      <directory>../management/eclipse-plugin/src/main/resources/sasl</directory>
+      <outputDirectory>qpidmc/eclipse/plugins/jmxremote.sasl_1.0.1/META-INF</outputDirectory>
+      <includes>
+        <include>MANIFEST.MF</include>
+      </includes>
+    </fileSet>
+  </fileSets>
 
   <dependencySets>
     <dependencySet>
@@ -102,7 +113,7 @@
         <exclude>org.apache.qpid:qpid-common</exclude>
         <exclude>org.apache.qpid:qpid-broker</exclude>
         <exclude>org.apache.qpid:qpid-client</exclude>
-        <exclude>commons-cli:commons-cli</exclude>        
+        <exclude>commons-cli:commons-cli</exclude>
         <exclude>commons-configuration:commons-configuration</exclude>
         <exclude>commons-lang:commons-lang</exclude>
         <exclude>org.apache.mina:mina-filter-ssl</exclude>

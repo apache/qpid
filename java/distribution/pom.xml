@@ -135,7 +135,6 @@
             </plugin>
         </plugins>
 
-    
          <defaultGoal>assembly:assembly</defaultGoal>
     </build>
 

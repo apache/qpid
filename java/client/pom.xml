@@ -134,12 +134,38 @@
                             <goal>ueberjar</goal>
                         </goals>
                         <configuration>
-                            <stripUnusedClasses>true</stripUnusedClasses>
+                            <stripUnusedClasses>false</stripUnusedClasses>
                             <name>[artifactId]-[version]-single.jar</name>
+                            <classifier>single</classifier>
+                            <attach>true</attach>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <id>attach-artifacts</id>
+                    <phase>package</phase>
+                    <goals>
+                      <goal>attach-artifact</goal>
+                    </goals>
+                    <configuration>
+                        <artifacts>
+                          <artifact>
+                            <file>target/${artifactId}-${version}-single.jar</file>
+                            <type>jar</type>
+                            <classifier>single</classifier>
+                          </artifact>
+                        </artifacts>
+                    </configuration>
+                  </execution>
+                </executions>
+            </plugin>
+
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
