@@ -32,19 +32,35 @@ public class TemporaryQueueImpl extends QueueImpl implements TemporaryQueue, Tem
 
     //--- constructor
 
-    public TemporaryQueueImpl()
+     /**
+     * Create a new TemporaryQueueImpl with a given name.
+     *
+     * @param session The session used to create this TemporaryQueueImpl.
+     * @throws JMSException If creating the TemporaryQueueImpl fails due to some error.
+     */
+    public TemporaryQueueImpl(SessionImpl session) throws JMSException
     {
         // temporary destinations do not have names and are not registered in the JNDI namespace.
-        super("NAME_NOT_SET");
+        super(session, "NAME_NOT_SET");
     }
 
     //-- TemporaryDestination Interface
+    /**
+     * Specify whether this temporary destination is deleted.
+     *
+     * @return true is this temporary destination is deleted.
+     */
     public boolean isdeleted()
     {
         return _isDeleted;
     }
 
     //-- TemporaryTopic Interface
+    /**
+     * Delete this temporary destinaiton
+     *
+     * @throws JMSException If deleting this temporary queue fails due to some error. 
+     */
     public void delete() throws JMSException
     {
         // todo delete this temporary queue
