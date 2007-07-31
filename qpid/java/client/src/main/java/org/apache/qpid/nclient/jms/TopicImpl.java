@@ -18,6 +18,7 @@
 package org.apache.qpid.nclient.jms;
 
 import javax.jms.Topic;
+import javax.jms.JMSException;
 
 /**
  * Implementation of the javax.jms.Topic interface.
@@ -27,10 +28,14 @@ public class TopicImpl extends DestinationImpl implements Topic
     //--- Constructor
     /**
      * Create a new TopicImpl with a given name.
+     *
+     * @param name The name of this topic
+     * @param session The session used to create this queue.
+     * @throws JMSException If the topic name is not valid
      */
-    public TopicImpl(String name)
+    public TopicImpl(SessionImpl session, String name) throws JMSException
     {
-        super(name);
+        super(session, name);
     }
 
     //--- javax.jsm.Topic Interface 

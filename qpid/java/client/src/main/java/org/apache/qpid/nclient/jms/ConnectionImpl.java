@@ -134,7 +134,6 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     public String getClientID() throws JMSException
     {
         checkNotClosed();
-
         return _clientID;
     }
 
@@ -225,8 +224,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             // start all the sessions
             for (SessionImpl session : _sessions)
             {
-                //TODO session.start();
-                //TODO Exception handling
+                session.start();
             }
             _started = true;
         }
@@ -247,11 +245,10 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         checkNotClosed();
         if (_started)
         {
-            // start all the sessions
+            // stop all the sessions
             for (SessionImpl session : _sessions)
             {
-                //TODO session.stop();
-                //TODO Exception handling
+                session.stop();
             }
             _started = false;
         }
@@ -282,8 +279,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             // close all the sessions
             for (SessionImpl session : _sessions)
             {
-                //TODO session.close();
-                //TODO Exception handling
+                session.close();
             }
             // close the underlaying Qpid connection
             try
@@ -337,13 +333,24 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     //-------------- QueueConnection API
 
-    public QueueSession createQueueSession(boolean b, int i) throws JMSException
+    /**
+     * Create a QueueSession.
+     *
+     * @param transacted      Indicates whether the session is transacted.
+     * @param acknowledgeMode Indicates whether the consumer or the
+     *                        client will acknowledge any messages it receives; ignored if the session
+     *                        is transacted. Legal values are <code>Session.AUTO_ACKNOWLEDGE</code>,
+     *                        <code>Session.CLIENT_ACKNOWLEDGE</code> and <code>Session.DUPS_OK_ACKNOWLEDGE</code>.
+     * @return A queueSession object/
+     * @throws JMSException If creating a QueueSession fails due to some internal error.
+     */
+    public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
-        //TODO: create a queue session
-        QueueSessionImpl queueSession = null;
+        QueueSessionImpl queueSession = new QueueSessionImpl(this, transacted, acknowledgeMode);
+        // add this session to the list of handled sessions.
         _sessions.add(queueSession);
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return queueSession;
     }
 
     /**

@@ -29,10 +29,14 @@ public class QueueImpl extends DestinationImpl implements Queue
     //--- Constructor
     /**
      * Create a new QueueImpl with a given name.
+     *
+     * @param name    The name of this queue.
+     * @param session The session used to create this queue.
+     * @throws JMSException If the queue name is not valid
      */
-    public QueueImpl(String name)
+    protected QueueImpl(SessionImpl session, String name) throws JMSException
     {
-        super(name);
+        super(session, name);
     }
 
     //---- Interface javax.jms.Queue

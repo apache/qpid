@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpid.nclient.jms.message.*;
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Option;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -111,7 +112,7 @@ public class SessionImpl implements Session
         _acknowledgeMode = acknowledgeMode;
         try
         {
-            // create the qpid session
+            // create the qpid session with an expiry  <= 0 so that the session does not expire
             _qpidSession = _connection.getQpidConnection().createSession(0);
             // set transacted if required
             if (_transacted)
@@ -153,9 +154,8 @@ public class SessionImpl implements Session
     }
 
     /**
-     * Creates a <CODE>Message</CODE> object that holds all the
-     * standard message header information. It can be sent when a message
-     * containing only header information is sufficient.
+     * Creates a <code>Message</code> object that holds all the standard message header information.
+     * It can be sent when a message containing only header information is sufficient.
      * We simply return a ByteMessage
      *
      * @return A Message.
@@ -167,7 +167,7 @@ public class SessionImpl implements Session
     }
 
     /**
-     * Creates an <CODE>ObjectMessage</CODE> used to send a message
+     * Creates an <code>ObjectMessage</code> used to send a message
      * that contains a serializable Java object.
      *
      * @return An ObjectMessage.
@@ -180,7 +180,7 @@ public class SessionImpl implements Session
     }
 
     /**
-     * Creates an initialized <CODE>ObjectMessage</CODE> used to send a message that contains
+     * Creates an initialized <code>ObjectMessage</code> used to send a message that contains
      * a serializable Java object.
      *
      * @param serializable The object to use to initialize this message.
@@ -195,7 +195,7 @@ public class SessionImpl implements Session
     }
 
     /**
-     * Creates a <CODE>StreamMessage</CODE>  used to send a
+     * Creates a <code>StreamMessage</code>  used to send a
      * self-defining stream of primitive values in the Java programming
      * language.
      *
@@ -209,7 +209,7 @@ public class SessionImpl implements Session
     }
 
     /**
-     * Creates a <CODE>TextMessage</CODE> object used to send a message containing a String.
+     * Creates a <code>TextMessage</code> object used to send a message containing a String.
      *
      * @return A TextMessage object
      * @throws JMSException If Creating an TextMessage object fails due to some internal error.
@@ -221,7 +221,7 @@ public class SessionImpl implements Session
     }
 
     /**
-     * Creates an initialized <CODE>TextMessage</CODE>  used to send
+     * Creates an initialized <code>TextMessage</code>  used to send
      * a message containing a String.
      *
      * @param text The string used to initialize this message.
@@ -320,13 +320,13 @@ public class SessionImpl implements Session
     /**
      * Closes this session.
      * <p> The JMS specification says
-     * <P> This call will block until a <CODE>receive</CODE> call or message
+     * <P> This call will block until a <code>receive</code> call or message
      * listener in progress has completed. A blocked message consumer
-     * <CODE>receive</CODE> call returns <CODE>null</CODE> when this session is closed.
+     * <code>receive</code> call returns <code>null</code> when this session is closed.
      * <P>Closing a transacted session must roll back the transaction in progress.
-     * <P>This method is the only <CODE>Session</CODE> method that can be called concurrently.
-     * <P>Invoking any other <CODE>Session</CODE> method on a closed session
-     * must throw a <CODE>javax.jms.IllegalStateException</CODE>.
+     * <P>This method is the only <code>Session</code> method that can be called concurrently.
+     * <P>Invoking any other <code>Session</code> method on a closed session
+     * must throw a <code>javax.jms.IllegalStateException</code>.
      * <p> Closing a closed session must <I>not</I> throw an exception.
      *
      * @throws JMSException If closing the session fails due to some internal error.
@@ -443,7 +443,7 @@ public class SessionImpl implements Session
     /**
      * Creates a MessageConsumer for the specified destination.
      *
-     * @param destination The <CODE>Destination</CODE> to access
+     * @param destination The <code>Destination</code> to access
      * @return A new MessageConsumer for the specified destination.
      * @throws JMSException                If the session fails to create a MessageConsumer due to some internal error.
      * @throws InvalidDestinationException If an invalid destination is specified.
@@ -456,7 +456,7 @@ public class SessionImpl implements Session
     /**
      * Creates a MessageConsumer for the specified destination, using a message selector.
      *
-     * @param destination     The <CODE>Destination</CODE> to access
+     * @param destination     The <code>Destination</code> to access
      * @param messageSelector Only messages with properties matching the message selector expression are delivered.
      * @return A new MessageConsumer for the specified destination.
      * @throws JMSException                If the session fails to create a MessageConsumer due to some internal error.
@@ -478,7 +478,7 @@ public class SessionImpl implements Session
      * NoLocal attribute allows a consumer to inhibit the delivery of messages published by its
      * own connection. The default value for this attribute is False.
      *
-     * @param destination     The <CODE>Destination</CODE> to access
+     * @param destination     The <code>Destination</code> to access
      * @param messageSelector Only messages with properties matching the message selector expression are delivered.
      * @param noLocal         If true, and the destination is a topic, inhibits the delivery of messages published
      *                        by its own connection.
@@ -505,17 +505,16 @@ public class SessionImpl implements Session
      * The physical creation of queues is an administrative task and is not
      * to be initiated by the JMS API. The one exception is the
      * creation of temporary queues, which is accomplished with the
-     * <CODE>createTemporaryQueue</CODE> method.
+     * <code>createTemporaryQueue</code> method.
      *
-     * @param queueName the name of this <CODE>Queue</CODE>
-     * @return a <CODE>Queue</CODE> with the given name
+     * @param queueName the name of this <code>Queue</code>
+     * @return a <code>Queue</code> with the given name
      * @throws JMSException If the session fails to create a queue due to some internal error.
      */
     public Queue createQueue(String queueName) throws JMSException
     {
         checkNotClosed();
-        // todo: check that this destiantion name does exist
-        return new QueueImpl(queueName);
+        return new QueueImpl(this, queueName);
     }
 
     /**
@@ -528,23 +527,22 @@ public class SessionImpl implements Session
      * The physical creation of queues is an administrative task and is not
      * to be initiated by the JMS API. The one exception is the
      * creation of temporary queues, which is accomplished with the
-     * <CODE>createTemporaryTopic</CODE> method.
+     * <code>createTemporaryTopic</code> method.
      *
-     * @param topicName The name of this <CODE>Topic</CODE>
-     * @return a <CODE>Topic</CODE> with the given name
+     * @param topicName The name of this <code>Topic</code>
+     * @return a <code>Topic</code> with the given name
      * @throws JMSException If the session fails to create a topic due to some internal error.
      */
     public Topic createTopic(String topicName) throws JMSException
     {
         checkNotClosed();
-        // todo: check that this destiantion name does exist
-        return new TopicImpl(topicName);
+        return new TopicImpl(this, topicName);
     }
 
     /**
      * Creates a durable subscriber to the specified topic,
      *
-     * @param topic The non-temporary <CODE>Topic</CODE> to subscribe to.
+     * @param topic The non-temporary <code>Topic</code> to subscribe to.
      * @param name  The name used to identify this subscription.
      * @return A durable subscriber to the specified topic,
      * @throws JMSException                If creating a subscriber fails due to some internal error.
@@ -561,11 +559,11 @@ public class SessionImpl implements Session
      * Creates a durable subscriber to the specified topic, using a message selector and specifying whether messages
      * published by its
      * own connection should be delivered to it.
-     * <p> A client can change an existing durable subscription by creating a durable <CODE>TopicSubscriber</CODE> with
+     * <p> A client can change an existing durable subscription by creating a durable <code>TopicSubscriber</code> with
      * the same name and a new topic and/or message selector. Changing a durable subscriber is equivalent to
      * unsubscribing (deleting) the old one and creating a new one.
      *
-     * @param topic           The non-temporary <CODE>Topic</CODE> to subscribe to.
+     * @param topic           The non-temporary <code>Topic</code> to subscribe to.
      * @param name            The name used to identify this subscription.
      * @param messageSelector Only messages with properties matching the message selector expression are delivered.
      * @param noLocal         If set, inhibits the delivery of messages published by its own connection
@@ -585,7 +583,7 @@ public class SessionImpl implements Session
     /**
      * Create a QueueBrowser to peek at the messages on the specified queue.
      *
-     * @param queue The <CODE>Queue</CODE> to browse.
+     * @param queue The <code>Queue</code> to browse.
      * @return A QueueBrowser.
      * @throws JMSException                If creating a browser fails due to some internal error.
      * @throws InvalidDestinationException If an invalid queue is specified.
@@ -598,7 +596,7 @@ public class SessionImpl implements Session
     /**
      * Create a QueueBrowser to peek at the messages on the specified queue using a message selector.
      *
-     * @param queue           The <CODE>Queue</CODE> to browse.
+     * @param queue           The <code>Queue</code> to browse.
      * @param messageSelector Only messages with properties matching the message selector expression are delivered.
      * @return A QueueBrowser.
      * @throws JMSException                If creating a browser fails due to some internal error.
@@ -620,7 +618,7 @@ public class SessionImpl implements Session
      */
     public TemporaryQueue createTemporaryQueue() throws JMSException
     {
-        return new TemporaryQueueImpl();
+        return new TemporaryQueueImpl(this);
     }
 
     /**
@@ -631,7 +629,7 @@ public class SessionImpl implements Session
      */
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
-        return new TemporaryTopicImpl();
+        return new TemporaryTopicImpl(this);
     }
 
     /**
@@ -641,7 +639,7 @@ public class SessionImpl implements Session
      * subscriber by its provider.
      * <p/>
      * <P>It is erroneous for a client to delete a durable subscription
-     * while there is an active <CODE>TopicSubscriber</CODE> for the
+     * while there is an active <code>TopicSubscriber</code> for the
      * subscription, or while a consumed message is part of a pending
      * transaction or has not been acknowledged in the session.
      *
@@ -657,6 +655,43 @@ public class SessionImpl implements Session
     }
 
     //----- Protected methods
+
+    /**
+     * Start the flow of message to this session.
+     *
+     * @throws JMSException If starting the session fails due to some communication error.
+     */
+    protected void start() throws JMSException
+    {
+        try
+        {
+            // TODO: make sure that the correct options are used
+            _qpidSession.sessionFlow(Option.SUSPEND);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+    }
+
+     /**
+     * Stop the flow of message to this session.
+     *
+     * @throws JMSException If stopping the session fails due to some communication error.
+     */
+    protected void stop() throws JMSException
+    {
+        try
+        {
+            // TODO: make sure that the correct options are used
+            _qpidSession.sessionFlow(Option.RESUME);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+    }
+
     /**
      * Notify this session that a message is processed
      *
