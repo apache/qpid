@@ -329,6 +329,7 @@ nobase_include_HEADERS = \
   qpid/framing/SequenceNumber.h \
   qpid/framing/SequenceNumberSet.h \
   qpid/framing/Value.h \
+  qpid/framing/Visitor.h \
   qpid/framing/Uuid.h \
   qpid/framing/amqp_framing.h \
   qpid/framing/amqp_types.h \
