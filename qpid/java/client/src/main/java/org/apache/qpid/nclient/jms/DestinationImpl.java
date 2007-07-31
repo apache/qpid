@@ -18,6 +18,7 @@
 package org.apache.qpid.nclient.jms;
 
 import javax.jms.Destination;
+import javax.jms.JMSException;
 
 /**
  * Implementation of the JMS Destination interface
@@ -29,13 +30,24 @@ public class DestinationImpl implements Destination
      */
     protected String _name = null;
 
+    /**
+     * The session used to create this destination
+     */
+    protected SessionImpl _session;
+
     //--- Constructor
     /**
      * Create a new DestinationImpl with a given name.
-     * @param name The name of this destination 
+     *
+     * @param name The name of this destination.
+     * @param session The session used to create this destination.
+     * @throws JMSException If the destiantion name is not valid 
      */
-    protected DestinationImpl(String name)
+    protected DestinationImpl(SessionImpl session,  String name)  throws JMSException
     {
+        // TODO validate that this destination name exists
+        //_session.getQpidSession()
+        _session = session;
         _name = name;
     }
 

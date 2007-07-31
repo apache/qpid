@@ -32,10 +32,16 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic, Tem
     private boolean _isDeleted = false;
 
     //--- constructor
-    public TemporaryTopicImpl()
+     /**
+     * Create a new TemporaryTopicImpl with a given name.
+     *
+     * @param session The session used to create this TemporaryTopicImpl.
+     * @throws JMSException If creating the TemporaryTopicImpl fails due to some error.
+     */
+    public TemporaryTopicImpl(SessionImpl session) throws JMSException
     {
-        // temporary destinations do not have names and are not registered in the JNDI namespace.
-        super("NAME_NOT_SET");
+        // temporary destinations do not have names.
+        super(session, "NAME_NOT_SET");
     }
 
     //-- TemporaryDestination Interface
