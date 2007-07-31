@@ -18,10 +18,10 @@
  */
 package org.apache.qpid.nclient.api;
 
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Option;
-
 import java.util.Set;
+
+import org.apache.qpidity.Option;
+import org.apache.qpidity.QpidException;
 
 /**
  * Used to receive messages from a queue
@@ -33,6 +33,7 @@ public interface MessageReceiver extends Resource
      *
      * @return This receiver set of options.
      */
+	
     public Set<Option> getOptions();
 
     /**
