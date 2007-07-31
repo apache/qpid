@@ -7,8 +7,8 @@
     <ProjectGuid>{BA1B0032-4CE6-40DD-A2DC-119F0FFA0A1D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Client.Tests</RootNamespace>
-    <AssemblyName>Qpid.Client.Tests</AssemblyName>
+    <RootNamespace>Apache.Qpid.Client.Tests</RootNamespace>
+    <AssemblyName>Apache.Qpid.Client.Tests</AssemblyName>
     <StartupObject>
     </StartupObject>
   </PropertyGroup>
@@ -71,6 +71,10 @@
     <Compile Include="url\ConnectionUrlTest.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Qpid.Buffer\Qpid.Buffer.csproj">
+      <Project>{44384DF2-B0A4-4580-BDBC-EE4BAA87D995}</Project>
+      <Name>Qpid.Buffer</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Qpid.Messaging\Qpid.Messaging.csproj">
       <Project>{6688F826-C58E-4C1B-AA1F-22AFAB4B7D07}</Project>
       <Name>Qpid.Messaging</Name>

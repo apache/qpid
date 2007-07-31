@@ -22,7 +22,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace Qpid.Sasl
+namespace Apache.Qpid.Sasl
 {
    /// <summary>
    /// Rough HMAC MD5 implementation as presented in
@@ -112,4 +112,4 @@ namespace Qpid.Sasl
 
    } // class MD5HMAC
 
-} // namespace Qpid.Sasl
+} // namespace Apache.Qpid.Sasl

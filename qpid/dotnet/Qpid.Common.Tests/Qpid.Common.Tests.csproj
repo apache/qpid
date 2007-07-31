@@ -7,8 +7,8 @@
     <ProjectGuid>{F83624B0-762B-4D82-900D-FF4C1B36E36E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Common.Tests</RootNamespace>
-    <AssemblyName>Qpid.Common.Tests</AssemblyName>
+    <RootNamespace>Apache.Qpid.Tests</RootNamespace>
+    <AssemblyName>Apache.Qpid.Common.Tests</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

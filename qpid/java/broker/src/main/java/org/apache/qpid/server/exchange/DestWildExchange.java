@@ -21,11 +21,9 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
@@ -35,17 +33,11 @@ import org.apache.qpid.server.queue.AMQQueue;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,7 +51,7 @@ public class DestWildExchange extends AbstractExchange
     private static final Logger _logger = Logger.getLogger(DestWildExchange.class);
 
     private ConcurrentHashMap<AMQShortString, List<AMQQueue>> _routingKey2queues =
-        new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
+            new ConcurrentHashMap<AMQShortString, List<AMQQueue>>();
     // private ConcurrentHashMap<AMQShortString, AMQQueue> _routingKey2queue = new ConcurrentHashMap<AMQShortString, AMQQueue>();
     private static final String TOPIC_SEPARATOR = ".";
     private static final String AMQP_STAR = "*";
@@ -92,7 +84,7 @@ public class DestWildExchange extends AbstractExchange
                     queueList.add(q.getName().toString());
                 }
 
-                Object[] bindingItemValues = { key.toString(), queueList.toArray(new String[0]) };
+                Object[] bindingItemValues = {key.toString(), queueList.toArray(new String[0])};
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
@@ -311,6 +303,11 @@ public class DestWildExchange extends AbstractExchange
         }
     }
 
+    public Map<AMQShortString, List<AMQQueue>> getBindings()
+    {
+        return _routingKey2queues;
+    }
+
     private List<AMQQueue> getMatchedQueues(AMQShortString routingKey)
     {
         List<AMQQueue> list = new LinkedList<AMQQueue>();
@@ -358,8 +355,8 @@ public class DestWildExchange extends AbstractExchange
                         if (queueList.size() > (depth + queueskip))
                         { // a hash and it is the last entry
                             matching =
-                                queueList.get(depth + queueskip).equals(AMQP_HASH)
-                                && (queueList.size() == (depth + queueskip + 1));
+                                    queueList.get(depth + queueskip).equals(AMQP_HASH)
+                                    && (queueList.size() == (depth + queueskip + 1));
                         }
                     }
                     else if (routingkeyList.size() > (depth + routingskip))

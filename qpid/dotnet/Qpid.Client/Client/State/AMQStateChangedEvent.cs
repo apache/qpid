@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Client.State
+namespace Apache.Qpid.Client.State
 {
     public class AMQStateChangedEvent
     {

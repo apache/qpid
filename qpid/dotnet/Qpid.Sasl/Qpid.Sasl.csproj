@@ -7,8 +7,8 @@
     <ProjectGuid>{1465B0EE-6452-42A6-AB73-B2F9EABEEE75}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Sasl</RootNamespace>
-    <AssemblyName>Qpid.Sasl</AssemblyName>
+    <RootNamespace>Apache.Qpid.Sasl</RootNamespace>
+    <AssemblyName>Apache.Qpid.Sasl</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>

@@ -22,9 +22,9 @@ using System;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
-using Qpid.Messaging;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests
+namespace Apache.Qpid.Client.Tests
 {
    /// <summary>
    /// Tests that when sending undeliverable messages with the 

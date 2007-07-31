@@ -18,10 +18,10 @@
  * under the License.
  *
  */
-using Qpid.Client.Protocol;
-using Qpid.Client.State;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Client.State;
 
-namespace Qpid.Client.Handler
+namespace Apache.Qpid.Client.Handler
 {
     public class ConnectionOpenOkMethodHandler : IStateAwareMethodListener
     {
@@ -31,4 +31,5 @@ namespace Qpid.Client.Handler
         }
     }
 }
+
 

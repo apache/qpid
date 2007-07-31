@@ -23,10 +23,10 @@ using System;
 
 using log4net;
 using NUnit.Framework;
-using Qpid.Messaging;
-using Qpid.Client.Message;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Message;
 
-namespace Qpid.Client.Tests.Messages
+namespace Apache.Qpid.Client.Tests.Messages
 {
    /// <summary>
    /// Ensure a factory creates messages correctly
@@ -109,5 +109,6 @@ namespace Qpid.Client.Tests.Messages
       }
 
    }
-} // namespace Qpid.Client.Tests.Messages
+} // namespace Apache.Qpid.Client.Tests.Messages
+
 

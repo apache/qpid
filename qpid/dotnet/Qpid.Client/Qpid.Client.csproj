@@ -7,8 +7,8 @@
     <ProjectGuid>{68987C05-3768-452C-A6FC-6BA1D372852F}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Client</RootNamespace>
-    <AssemblyName>Qpid.Client</AssemblyName>
+    <RootNamespace>Apache.Qpid.Client</RootNamespace>
+    <AssemblyName>Apache.Qpid.Client</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -120,6 +120,7 @@
     <Compile Include="Client\Transport\Socket\Blocking\SslSocketConnector.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\SocketConnector.cs" />
     <Compile Include="Client\Transport\Socket\Blocking\ISocketConnector.cs" />
+    <Compile Include="Client\Util\FlowControlQueue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="qms\BrokerInfo.cs" />
     <Compile Include="qms\ConnectionInfo.cs" />

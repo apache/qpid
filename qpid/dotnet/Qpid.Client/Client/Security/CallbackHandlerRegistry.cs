@@ -23,12 +23,12 @@ using System;
 using System.Collections;
 using System.Configuration;
 using System.Text;
-using Qpid.Sasl;
-using Qpid.Sasl.Mechanisms;
+using Apache.Qpid.Sasl;
+using Apache.Qpid.Sasl.Mechanisms;
 
-using Qpid.Client.Configuration;
+using Apache.Qpid.Client.Configuration;
 
-namespace Qpid.Client.Security
+namespace Apache.Qpid.Client.Security
 {
 
    /// <summary>
@@ -55,12 +55,12 @@ namespace Qpid.Client.Security
    /// <configuration>
    ///   <configSections>
    ///      <sectionGroup name="qpid.client">
-   ///         <section name="authentication" type="Qpid.Client.Configuration.AuthenticationConfigurationSectionHandler, Qpid.Client"/>
+   ///         <section name="authentication" type="Apache.Qpid.Client.Configuration.AuthenticationConfigurationSectionHandler, Apache.Qpid.Client"/>
    ///      </sectionGroup>
    ///   </configSections>
    ///   <qpid.client>
    ///      <authentication>
-   ///         <add key="TEST" value="Qpid.Client.Tests.Security.TestCallbackHandler, Qpid.Client.Tests"/>
+   ///         <add key="TEST" value="Apache.Qpid.Client.Tests.Security.TestCallbackHandler, Apache.Qpid.Client.Tests"/>
    ///      </authentication>
    ///   </qpid.client>
    /// </configuration>

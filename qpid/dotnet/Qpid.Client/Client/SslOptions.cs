@@ -21,7 +21,7 @@
 using System;
 using System.Security.Cryptography.X509Certificates;
 
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
    /// <summary>
    /// Configures SSL-related options to connect to an AMQP broker.

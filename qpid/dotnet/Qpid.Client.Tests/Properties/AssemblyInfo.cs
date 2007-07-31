@@ -26,11 +26,11 @@ using log4net.Config;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Qpid.Client.Tests")]
+[assembly: AssemblyTitle("Apache.Qpid.Client.Tests")]
 [assembly: AssemblyDescription("Test Suite for Qpid Clients")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Apache Qpid")]
-[assembly: AssemblyProduct("Qpid.Client.Tests")]
+[assembly: AssemblyProduct("Apache.Qpid.Client.Tests")]
 [assembly: AssemblyCopyright("Copyright (c) 2006 The Apache Software Foundation")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

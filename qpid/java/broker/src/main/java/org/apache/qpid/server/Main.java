@@ -34,6 +34,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.Logger;
@@ -48,6 +49,7 @@ import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
+import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.protocol.AMQPFastProtocolHandler;
 import org.apache.qpid.server.protocol.AMQPProtocolProvider;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -55,11 +57,19 @@ import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.url.URLSyntaxException;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.BindException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.List;
+
 /**
  * Main entry point for AMQPD.
  *
  */
-@SuppressWarnings({ "AccessStaticViaInstance" })
+@SuppressWarnings({"AccessStaticViaInstance"})
 public class Main
 {
     /** Used for debugging. */
@@ -133,6 +143,12 @@ public class Main
             OptionBuilder.withArgName("port").hasArg()
                          .withDescription("listen on the specified port. Overrides any value in the config file")
                          .withLongOpt("port").create("p");
+        Option mport =
+                OptionBuilder.withArgName("mport").hasArg()
+                        .withDescription("listen on the specified management port. Overrides any value in the config file")
+                        .withLongOpt("mport").create("m");
+
+
         Option bind =
             OptionBuilder.withArgName("bind").hasArg()
                          .withDescription("bind to the specified address. Overrides any value in the config file")
@@ -153,6 +169,7 @@ public class Main
         options.addOption(logconfig);
         options.addOption(logwatchconfig);
         options.addOption(port);
+        options.addOption(mport);
         options.addOption(bind);
     }
 
@@ -203,15 +220,19 @@ public class Main
             catch (InitException e)
             {
                 System.out.println(e.getMessage());
+                _brokerLogger.error("Initialisation Error : " + e.getMessage());
+
             }
             catch (ConfigurationException e)
             {
                 System.out.println("Error configuring message broker: " + e);
+                _brokerLogger.error("Error configuring message broker: " + e);
                 e.printStackTrace();
             }
             catch (Exception e)
             {
                 System.out.println("Error intialising message broker: " + e);
+                _brokerLogger.error("Error intialising message broker: " + e);
                 e.printStackTrace();
             }
         }
@@ -260,7 +281,15 @@ public class Main
             configureLogging(logConfigFile, logWatchConfig);
         }
 
-        ApplicationRegistry.initialise(new ConfigurationFileApplicationRegistry(configFile));
+        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile);
+
+
+        updateManagementPort(config.getConfiguration(), commandLine.getOptionValue("m"));
+
+
+
+        ApplicationRegistry.initialise(config);
+
 
         // fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues
         // that are causing the broker build to pick up the wrong properties file and hence say
@@ -316,6 +345,29 @@ public class Main
         }
 
         bind(port, connectorConfig);
+    }
+
+    /**
+     * Update the configuration data with the management port.
+     * @param configuration
+     * @param managementPort The string from the command line
+     */
+    private void updateManagementPort(Configuration configuration, String managementPort)
+    {
+        if (managementPort != null)
+        {
+            int mport;
+            int defaultMPort = configuration.getInt(JMXManagedObjectRegistry.MANAGEMENT_PORT_CONFIG_PATH);
+            try
+            {
+                mport = Integer.parseInt(managementPort);
+                configuration.setProperty(JMXManagedObjectRegistry.MANAGEMENT_PORT_CONFIG_PATH, mport);
+            }
+            catch (NumberFormatException e)
+            {
+                _logger.warn("Invalid management port: " + managementPort + " will use default:" + defaultMPort, e);
+            }
+        }
     }
 
     protected void setupVirtualHosts(String configFileParent, String configFilePath)

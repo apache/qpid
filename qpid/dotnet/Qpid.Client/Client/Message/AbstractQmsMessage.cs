@@ -22,11 +22,11 @@ using System;
 using System.Collections;
 using System.Text;
 using log4net;
-using Qpid.Framing;
-using Qpid.Messaging;
-using Qpid.Buffer;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public abstract class AbstractQmsMessage : AMQMessage, IMessage
     {
@@ -326,7 +326,7 @@ namespace Qpid.Client.Message
             // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
             if (_channel != null)
             {
-                // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
+                // we set multiple to true here since acknowledgement implies acknowledge of all count messages
                 // received on the session
                 _channel.AcknowledgeMessage((ulong)DeliveryTag, true);
             }

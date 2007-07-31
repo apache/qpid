@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="Qpid.Buffer" default="test">
+<project name="Apache.Qpid.Buffer" default="test">
 
    <target name="build">
         <csc target="library" 

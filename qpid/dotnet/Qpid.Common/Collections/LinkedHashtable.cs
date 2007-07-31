@@ -21,7 +21,7 @@
 using System;
 using System.Collections;
 
-namespace Qpid.Collections
+namespace Apache.Qpid.Collections
 {
     public class LinkedHashtable : IDictionary
     {

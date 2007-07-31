@@ -425,7 +425,7 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
     class SustainedRateAdapter implements MessageListener, Runnable
     {
         private SustainedTestClient _client;
-        private long _batchVariance = 3; //no. batches to allow drifting
+        private long _batchVariance = Integer.getInteger("batchVariance", 3); //no. batches to allow drifting
         private long _timeVariance = TEN_MILLI_SEC * 5; // no. nanos between send and report delay (10ms)
         private volatile long _delay;   //in nanos
         private long _sent;
@@ -434,9 +434,11 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
         private static final long NO_CLIENT_SLEEP = 1000; // 1s
         private volatile boolean NO_CLIENTS = true;
         private int _delayShifting;
-        private static final int REPORTS_WITHOUT_CHANGE = 5;
+        private final int REPORTS_WITHOUT_CHANGE =  Integer.getInteger("stableReportCount", 5);
         private boolean _warmedup = false;
         private static final long EXPECTED_TIME_PER_BATCH = 100000L;
+        private int _warmUpBatches = Integer.getInteger("warmUpBatches", 10);
+
 
         SustainedRateAdapter(SustainedTestClient client)
         {
@@ -492,8 +494,6 @@ public class SustainedTestClient extends TestCase3BasicPubSub implements Excepti
         }
 
         CountDownLatch _warmup = new CountDownLatch(1);
-
-        int _warmUpBatches = Integer.getInteger("warmUpBatches", 10);
 
         int _numBatches = 10000;
 

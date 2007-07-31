@@ -20,10 +20,10 @@
  */
 using System;
 using System.Threading;
-using Qpid.Client.Protocol;
+using Apache.Qpid.Client.Protocol;
 using log4net;
 
-namespace Qpid.Client.State
+namespace Apache.Qpid.Client.State
 {
     public class StateWaiter : IStateListener
     {

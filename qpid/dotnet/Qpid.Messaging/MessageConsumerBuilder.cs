@@ -18,25 +18,25 @@
  * under the License.
  *
  */
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
     public class MessageConsumerBuilder
     {
-        public const int DEFAULT_PREFETCH_HIGH = 5000;
-
         private bool _noLocal = false;
         private bool _exclusive = false;
         private bool _durable = false;
         private string _subscriptionName = null;
         private IChannel _channel;
         private readonly string _queueName;
-        private int _prefetchLow = 2500;
-        private int _prefetchHigh = DEFAULT_PREFETCH_HIGH;
+        private int _prefetchLow;
+        private int _prefetchHigh;
 
         public MessageConsumerBuilder(IChannel channel, string queueName)
         {
             _channel = channel;
             _queueName = queueName;
+            _prefetchHigh = _channel.DefaultPrefetchHigh;
+            _prefetchLow = _channel.DefaultPrefetchLow;
         }
 
         public MessageConsumerBuilder WithPrefetchLow(int prefetchLow)

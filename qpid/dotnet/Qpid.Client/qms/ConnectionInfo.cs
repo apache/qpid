@@ -20,7 +20,7 @@
  */
 using System.Collections;
 
-namespace Qpid.Client.Qms
+namespace Apache.Qpid.Client.Qms
 {
     class ConnectionUrlConstants 
     {

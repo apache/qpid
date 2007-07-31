@@ -18,11 +18,11 @@
  * under the License.
  *
  */
-using Qpid.Codec;
-using Qpid.Codec.Demux;
-using Qpid.Framing;
+using Apache.Qpid.Codec;
+using Apache.Qpid.Codec.Demux;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
     public class AMQProtocolProvider
     {

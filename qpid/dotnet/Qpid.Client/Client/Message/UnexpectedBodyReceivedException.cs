@@ -22,7 +22,7 @@ using System;
 using System.Runtime.Serialization;
 using log4net;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     /// <summary>
     /// Raised when a message body is received unexpectedly by the client. This typically occurs when the
@@ -52,5 +52,6 @@ namespace Qpid.Client.Message
         }
     }
 }
+
 
 

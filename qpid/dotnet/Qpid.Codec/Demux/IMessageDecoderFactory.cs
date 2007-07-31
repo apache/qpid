@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Codec.Demux
+namespace Apache.Qpid.Codec.Demux
 {
     public interface IMessageDecoderFactory
     {
@@ -28,4 +28,5 @@ namespace Qpid.Codec.Demux
         IMessageDecoder NewDecoder();
     }
 }
+
 

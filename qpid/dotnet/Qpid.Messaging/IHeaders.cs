@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
     /// <summary>
     /// IHeaders represents the header fields of an AMQ message and provides methods to access those fields. There are accessor methods to

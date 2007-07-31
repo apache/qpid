@@ -22,7 +22,7 @@ using System;
 using System.Text;
 using log4net;
 
-namespace Qpid.Client.Qms.Failover
+namespace Apache.Qpid.Client.Qms.Failover
 {
     public class FailoverRoundRobin : IFailoverMethod
     {

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Codec
+namespace Apache.Qpid.Codec
 {
     public interface IProtocolCodecFactory
     {
@@ -33,4 +33,5 @@ namespace Qpid.Codec
         }
     }
 }
+
 

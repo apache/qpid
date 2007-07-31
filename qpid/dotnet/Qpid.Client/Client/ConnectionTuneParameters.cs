@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Client
+namespace Apache.Qpid.Client
 {
     public class ConnectionTuneParameters
     {
@@ -79,4 +79,5 @@ namespace Qpid.Client
         }
     }
 }
+
 

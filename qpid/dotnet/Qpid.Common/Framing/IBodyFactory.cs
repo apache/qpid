@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     /// <summary>
     /// Any class that is capable of turning a stream of bytes into an AMQ structure must implement this interface.

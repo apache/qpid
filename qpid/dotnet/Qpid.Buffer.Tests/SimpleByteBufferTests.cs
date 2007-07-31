@@ -20,9 +20,9 @@
  */
 
 using NUnit.Framework;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Buffer.Tests
+namespace Apache.Qpid.Buffer.Tests
 {
    /// <summary>
    /// Tests for the SimpleByteBuffer class
@@ -329,4 +329,5 @@ namespace Qpid.Buffer.Tests
 
    } // class SimpleByteBufferTests
 }
+
 

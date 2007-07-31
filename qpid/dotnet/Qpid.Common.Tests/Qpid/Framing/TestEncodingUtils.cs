@@ -20,10 +20,10 @@
  */
 using System;
 using NUnit.Framework;
-using Qpid.Buffer;
-using Qpid.Framing;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Framing.Tests
+namespace Apache.Qpid.Framing.Tests
 {
     [TestFixture]
     public class TestEncodingUtils

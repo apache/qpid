@@ -22,7 +22,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid
+namespace Apache.Qpid
 {
     /// <summary>
     /// Thrown when a message has been bounced by the broker, indicating it could not be delivered.

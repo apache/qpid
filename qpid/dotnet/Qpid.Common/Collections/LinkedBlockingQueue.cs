@@ -21,7 +21,7 @@
 using System;
 using System.Threading;
 
-namespace Qpid.Collections
+namespace Apache.Qpid.Collections
 {
     public class LinkedBlockingQueue : BlockingQueue
     {             
@@ -380,4 +380,5 @@ namespace Qpid.Collections
         }                       
     }
 }
+
 

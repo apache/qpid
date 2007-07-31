@@ -483,9 +483,9 @@ public class CommandLineParser
     }
 
     /**
-     * If a command line has been parsed, calling this method sets all of its parsed options as system properties.
+     * If a command line has been parsed, calling this method sets all of its parsed options into the specified properties.
      */
-    public void addCommandLineToSysProperties()
+    public void addCommandLineToProperties(Properties properties)
     {
         if (parsedProperties != null)
         {
@@ -494,7 +494,7 @@ public class CommandLineParser
                 String name = (String) propKey;
                 String value = parsedProperties.getProperty(name);
 
-                System.setProperty(name, value);
+                properties.setProperty(name, value);
             }
         }
     }
@@ -607,7 +607,9 @@ public class CommandLineParser
      * instrucitons and calling System.exit on errors. Extracts all trailing name=value pairs from the command line,
      * and sets them all as system properties and also returns a map of properties containing them.
      *
-     * @param args The command line.
+     * @param args        The command line.
+     * @param commandLine The command line parser.
+     * @param properties  The properties object to inject all parsed properties into (optional may be <tt>null</tt>).
      *
      * @return A set of properties containing all name=value pairs from the command line.
      *
@@ -619,7 +621,7 @@ public class CommandLineParser
      * @todo Allow the Properties to add trailing options to be specified as an argument rather than hard coding
      *       system properties. Again, gives the caller the option to decide.
      */
-    public static Properties processCommandLine(String[] args, CommandLineParser commandLine)
+    public static Properties processCommandLine(String[] args, CommandLineParser commandLine, Properties properties)
     {
         // Capture the command line arguments or display errors and correct usage and then exit.
         Properties options = null;
@@ -630,7 +632,7 @@ public class CommandLineParser
 
             // Add all the trailing command line options (name=value pairs) to system properties. They may be picked up
             // from there.
-            commandLine.addCommandLineToSysProperties();
+            commandLine.addCommandLineToProperties(properties);
         }
         catch (IllegalArgumentException e)
         {

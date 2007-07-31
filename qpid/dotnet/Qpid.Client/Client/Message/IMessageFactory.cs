@@ -19,9 +19,9 @@
  *
  */
 using System.Collections;
-using Qpid.Framing;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
     public interface IMessageFactory
     {
@@ -48,4 +48,5 @@ namespace Qpid.Client.Message
         AbstractQmsMessage CreateMessage(string mimeType);
     }
 }
+
 

@@ -22,7 +22,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     [Serializable]
     public class AMQProtocolHeaderException : AMQException

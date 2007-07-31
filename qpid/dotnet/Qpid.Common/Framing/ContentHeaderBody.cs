@@ -19,9 +19,9 @@
  *
  */
 using System;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     public class ContentHeaderBody : IBody
     {

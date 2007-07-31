@@ -7,8 +7,8 @@
     <ProjectGuid>{22D0D0C2-77AF-4DE3-B456-7FF3893F9F88}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Codec</RootNamespace>
-    <AssemblyName>Qpid.Codec</AssemblyName>
+    <RootNamespace>Apache.Qpid.Codec</RootNamespace>
+    <AssemblyName>Apache.Qpid.Codec</AssemblyName>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
