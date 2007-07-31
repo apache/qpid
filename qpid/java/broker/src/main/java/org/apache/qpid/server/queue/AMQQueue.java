@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.JMException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
@@ -45,11 +46,11 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.messageStore.StorableMessage;
 import org.apache.qpid.server.messageStore.StorableQueue;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
+
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -162,22 +163,22 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     }
 
     public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
-            throws AMQException
+        throws AMQException
     {
         this(name, durable, owner, autoDelete, virtualHost, AsyncDeliveryConfig.getAsyncDeliveryExecutor(),
-             new SubscriptionSet(), new SubscriptionImpl.Factory());
+            new SubscriptionSet(), new SubscriptionImpl.Factory());
     }
 
     protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete,
-                       VirtualHost virtualHost, SubscriptionSet subscribers) throws AMQException
+        VirtualHost virtualHost, SubscriptionSet subscribers) throws AMQException
     {
         this(name, durable, owner, autoDelete, virtualHost, AsyncDeliveryConfig.getAsyncDeliveryExecutor(), subscribers,
-             new SubscriptionImpl.Factory());
+            new SubscriptionImpl.Factory());
     }
 
     protected AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete,
-                       VirtualHost virtualHost, Executor asyncDelivery, SubscriptionSet subscribers,
-                       SubscriptionFactory subscriptionFactory) throws AMQException
+        VirtualHost virtualHost, Executor asyncDelivery, SubscriptionSet subscribers,
+        SubscriptionFactory subscriptionFactory) throws AMQException
     {
         if (name == null)
         {
@@ -259,7 +260,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     }
 
     /**
-     * Returns messages within the given range of message Ids.
+     * Returns messages within the given range of message Ids
      *
      * @param fromMessageId
      * @param toMessageId
@@ -291,220 +292,38 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     }
 
     /**
-     * Moves messages from this queue to another queue, and also commits the move on the message store. Delivery activity
-     * on the queues being moved between is suspended during the move.
+     * moves messages from this queue to another queue. to do this the approach is following- - setup the queue for
+     * moving messages (stop the async delivery) - get all the messages available in the given message id range - setup
+     * the other queue for moving messages (stop the async delivery) - send these available messages to the other queue
+     * (enqueue in other queue) - Once sending to other Queue is successful, remove messages from this queue - remove
+     * locks from both queues and start async delivery
      *
-     * @param fromMessageId The first message id to move.
-     * @param toMessageId   The last message id to move.
-     * @param queueName     The queue to move the messages to.
-     * @param storeContext  The context of the message store under which to perform the move. This is associated with
-     *                      the stores transactional context.
+     * @param fromMessageId
+     * @param toMessageId
+     * @param queueName
+     * @param storeContext
      */
     public synchronized void moveMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        StoreContext storeContext)
+        StoreContext storeContext)
     {
-        AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-
-        MessageStore fromStore = getVirtualHost().getMessageStore();
-        MessageStore toStore = toQueue.getVirtualHost().getMessageStore();
-
-        if (toStore != fromStore)
-        {
-            throw new RuntimeException("Can only move messages between queues on the same message store.");
-        }
-
+        // prepare the delivery manager for moving messages by stopping the async delivery and creating a lock
+        AMQQueue anotherQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
         try
         {
-            // Obtain locks to prevent activity on the queues being moved between.
             startMovingMessages();
-            toQueue.startMovingMessages();
-
-            // Get the list of messages to move.
             List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
 
-            try
-            {
-                fromStore.beginTran(storeContext);
+            // move messages to another queue
+            anotherQueue.startMovingMessages();
+            anotherQueue.enqueueMovedMessages(storeContext, foundMessagesList);
 
-                // Move the messages in on the message store.
-                for (AMQMessage message : foundMessagesList)
-                {
-                    fromStore.dequeueMessage(storeContext, _name, message.getMessageId());
-                    toStore.enqueueMessage(storeContext, toQueue._name, message.getMessageId());
-                }
-
-                // Commit and flush the move transcations.
-                try
-                {
-                    fromStore.commitTran(storeContext);
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
-                }
-
-                // Move the messages on the in-memory queues.
-                toQueue.enqueueMovedMessages(storeContext, foundMessagesList);
-                _deliveryMgr.removeMovedMessages(foundMessagesList);
-            }
-            // Abort the move transactions on move failures.
-            catch (AMQException e)
-            {
-                try
-                {
-                    fromStore.abortTran(storeContext);
-                }
-                catch (AMQException ae)
-                {
-                    throw new RuntimeException("Failed to abort transaction whilst moving messages on message store.", ae);
-                }
-            }
+            // moving is successful, now remove from original queue
+            _deliveryMgr.removeMovedMessages(foundMessagesList);
         }
-        // Release locks to allow activity on the queues being moved between to continue.
         finally
         {
-            toQueue.stopMovingMessages();
-            stopMovingMessages();
-        }
-    }
-
-    /**
-     * Copies messages on this queue to another queue, and also commits the move on the message store. Delivery activity
-     * on the queues being moved between is suspended during the move.
-     *
-     * @param fromMessageId The first message id to move.
-     * @param toMessageId   The last message id to move.
-     * @param queueName     The queue to move the messages to.
-     * @param storeContext  The context of the message store under which to perform the move. This is associated with
-     *                      the stores transactional context.
-     */
-    public synchronized void copyMessagesToAnotherQueue(long fromMessageId, long toMessageId, String queueName,
-                                                        StoreContext storeContext)
-    {
-        AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-
-        MessageStore fromStore = getVirtualHost().getMessageStore();
-        MessageStore toStore = toQueue.getVirtualHost().getMessageStore();
-
-        if (toStore != fromStore)
-        {
-            throw new RuntimeException("Can only move messages between queues on the same message store.");
-        }
-
-        try
-        {
-            // Obtain locks to prevent activity on the queues being moved between.
-            startMovingMessages();
-            toQueue.startMovingMessages();
-
-            // Get the list of messages to move.
-            List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
-
-            try
-            {
-                fromStore.beginTran(storeContext);
-
-                // Move the messages in on the message store.
-                for (AMQMessage message : foundMessagesList)
-                {
-                    toStore.enqueueMessage(storeContext, toQueue._name, message.getMessageId());
-                    message.takeReference();
-                }
-
-                // Commit and flush the move transcations.
-                try
-                {
-                    fromStore.commitTran(storeContext);
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
-                }
-
-                // Move the messages on the in-memory queues.
-                toQueue.enqueueMovedMessages(storeContext, foundMessagesList);
-            }
-            // Abort the move transactions on move failures.
-            catch (AMQException e)
-            {
-                try
-                {
-                    fromStore.abortTran(storeContext);
-                }
-                catch (AMQException ae)
-                {
-                    throw new RuntimeException("Failed to abort transaction whilst moving messages on message store.", ae);
-                }
-            }
-        }
-        // Release locks to allow activity on the queues being moved between to continue.
-        finally
-        {
-            toQueue.stopMovingMessages();
-            stopMovingMessages();
-        }
-    }
-
-    /**
-     * Removes messages from this queue, and also commits the remove on the message store. Delivery activity
-     * on the queues being moved between is suspended during the remove.
-     *
-     * @param fromMessageId The first message id to move.
-     * @param toMessageId   The last message id to move.
-     * @param storeContext  The context of the message store under which to perform the move. This is associated with
-     *                      the stores transactional context.
-     */
-    public synchronized void removeMessagesFromQueue(long fromMessageId, long toMessageId, StoreContext storeContext)
-    {
-        MessageStore fromStore = getVirtualHost().getMessageStore();
-
-        try
-        {
-            // Obtain locks to prevent activity on the queues being moved between.
-            startMovingMessages();
-
-            // Get the list of messages to move.
-            List<AMQMessage> foundMessagesList = getMessagesOnTheQueue(fromMessageId, toMessageId);
-
-            try
-            {
-                fromStore.beginTran(storeContext);
-
-                // remove the messages in on the message store.
-                for (AMQMessage message : foundMessagesList)
-                {
-                    fromStore.dequeueMessage(storeContext, _name, message.getMessageId());
-                }
-
-                // Commit and flush the move transcations.
-                try
-                {
-                    fromStore.commitTran(storeContext);
-                }
-                catch (AMQException e)
-                {
-                    throw new RuntimeException("Failed to commit transaction whilst moving messages on message store.", e);
-                }
-
-                // remove the messages on the in-memory queues.
-                _deliveryMgr.removeMovedMessages(foundMessagesList);
-            }
-            // Abort the move transactions on move failures.
-            catch (AMQException e)
-            {
-                try
-                {
-                    fromStore.abortTran(storeContext);
-                }
-                catch (AMQException ae)
-                {
-                    throw new RuntimeException("Failed to abort transaction whilst moving messages on message store.", ae);
-                }
-            }
-        }
-        // Release locks to allow activity on the queues being moved between to continue.
-        finally
-        {
+            // remove the lock and start the async delivery
+            anotherQueue.stopMovingMessages();
             stopMovingMessages();
         }
     }
@@ -639,7 +458,7 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
     }
 
     public void registerProtocolSession(AMQProtocolSession ps, int channel, AMQShortString consumerTag, boolean acks,
-                                        FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException
+        FieldTable filters, boolean noLocal, boolean exclusive) throws AMQException
     {
         if (incrementSubscriberCount() > 1)
         {
@@ -662,12 +481,13 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
 
         if (_logger.isDebugEnabled())
         {
-            _logger.debug(MessageFormat.format("Registering protocol session {0} with channel {1} and "
-                                               + "consumer tag {2} with {3}", ps, channel, consumerTag, this));
+            _logger.debug(MessageFormat.format(
+                    "Registering protocol session {0} with channel {1} and " + "consumer tag {2} with {3}", ps, channel,
+                    consumerTag, this));
         }
 
         Subscription subscription =
-                _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, this);
+            _subscriptionFactory.createSubscription(channel, ps, consumerTag, acks, filters, noLocal, this);
 
         if (subscription.filtersMessages())
         {
@@ -705,8 +525,8 @@ public class AMQQueue implements Managable, Comparable, StorableQueue
         if (_logger.isDebugEnabled())
         {
             _logger.debug(MessageFormat.format(
-                    "Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}",
-                    ps, channel, consumerTag, this));
+                    "Unregistering protocol session {0} with channel {1} and consumer tag {2} from {3}", ps, channel,
+                    consumerTag, this));
         }
 
         Subscription removedSubscription;

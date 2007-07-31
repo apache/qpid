@@ -1,47 +1,46 @@
 /*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
  *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.    
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
+ * 
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.log4j.Logger;
-
-import org.apache.qpid.AMQChannelClosedException;
-import org.apache.qpid.AMQConnectionClosedException;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQChannelClosedException;
+import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.util.CommandLineParser;
+import org.apache.qpid.url.URLSyntaxException;
+import org.apache.log4j.Logger;
 
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
 import javax.jms.Session;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
-
 import java.io.IOException;
 import java.util.Properties;
 
 public class PersistentTestManual
 {
     private static final Logger _logger = Logger.getLogger(PersistentTestManual.class);
+
 
     private static final String QUEUE = "direct://amq.direct//PersistentTest-Queue2?durable='true',exclusive='true'";
 
@@ -90,7 +89,7 @@ public class PersistentTestManual
     public void test() throws AMQException, URLSyntaxException
     {
 
-        // Create the Durable Queue
+        //Create the Durable Queue
         try
         {
             _session.createConsumer(_session.createQueue(QUEUE)).close();
@@ -122,17 +121,16 @@ public class PersistentTestManual
                     System.out.println("Continuing....");
                 }
 
-                // Test queue is still there.
-                AMQConnection connection =
-                    new AMQConnection(_brokerDetails, _username, _password, "DifferentClientID", _virtualpath);
+                //Test queue is still there.
+                AMQConnection connection = new AMQConnection(_brokerDetails, _username, _password, "DifferentClientID", _virtualpath);
 
                 AMQSession session = (AMQSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
                 try
                 {
                     session.createConsumer(session.createQueue(QUEUE));
-                    _logger.error("Create consumer succeeded."
-                        + " This shouldn't be allowed as this means the queue didn't exist when it should");
+                    _logger.error("Create consumer succeeded." +
+                                  " This shouldn't be allowed as this means the queue didn't exist when it should");
 
                     connection.close();
 
@@ -191,7 +189,6 @@ public class PersistentTestManual
         {
             //
         }
-
         System.exit(0);
     }
 
@@ -199,7 +196,7 @@ public class PersistentTestManual
     {
         String TEST_TEXT = "init";
 
-        // Create a new session to send producer
+        //Create a new session to send producer
         Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         Queue q = session.createQueue(QUEUE);
@@ -207,8 +204,9 @@ public class PersistentTestManual
 
         producer.send(session.createTextMessage(TEST_TEXT));
 
-        // create a new consumer on the original session
+        //create a new consumer on the original session
         TextMessage m = (TextMessage) _session.createConsumer(q).receive();
+
 
         if ((m != null) && m.getText().equals(TEST_TEXT))
         {
@@ -218,7 +216,6 @@ public class PersistentTestManual
         {
             _logger.error("Incorrect values returned from Queue Test:" + m);
             System.exit(0);
-
             return false;
         }
     }
@@ -262,8 +259,8 @@ public class PersistentTestManual
     {
         PersistentTestManual test;
 
-        Properties options =
-            CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][] {}), System.getProperties());
+        Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][]{}));
+
 
         test = new PersistentTestManual(options);
         try

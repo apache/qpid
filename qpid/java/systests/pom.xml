@@ -79,9 +79,6 @@
                 <configuration>
                     <testSourceDirectory>${basedir}/src/main</testSourceDirectory>
                     <testClassesDirectory>target/classes</testClassesDirectory>
-                    <includes>
-                        <include>**/*Test.class</include>
-                    </includes>
                 </configuration>
             </plugin>
 

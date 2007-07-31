@@ -39,11 +39,8 @@
         <java.source.version>1.5</java.source.version>
         <qpid.version>${pom.version}</qpid.version>
         <qpid.targetDir>${project.build.directory}</qpid.targetDir>
-
-        <!-- This is an assembly/distribution pom so no test code exists -->
-        <maven.test.skip>true</maven.test.skip>
     </properties>
-
+   
     <repositories>
       <repository>
         <id>repo1.maven.org</id>
@@ -134,8 +131,6 @@
                 </executions>
             </plugin>
         </plugins>
-
-         <defaultGoal>assembly:assembly</defaultGoal>
     </build>
 
     <profiles>
