@@ -15,7 +15,7 @@
     KIND, either express or implied. See the License for the
     specific language governing permissions and limitations
     under the License.
-  -->
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
@@ -38,17 +38,17 @@
     </properties>
     
     <repositories>
-          <repository>
+        <repository>
             <id>repo1.maven.org</id>
             <name>Maven eclipse Repository</name>
             <url>http://repo1.maven.org/eclipse</url>
-          </repository>
-          <repository>
+        </repository>
+        <repository>
             <id>apache.snapshots</id>
             <name>Apache SNAPSHOT Repository</name>
             <url>http://people.apache.org/repo/m2-snapshot-repository</url>
             <snapshots>
-              <enabled>true</enabled>
+                <enabled>true</enabled>
             </snapshots>
         </repository>
     </repositories>
@@ -197,46 +197,43 @@
                 <directory>icons/</directory>
                 <targetPath>icons/</targetPath>
                 <includes>
-                  <include>**</include>
+                    <include>**</include>
                 </includes>
             </resource>
             <resource>                
                 <directory>icons/</directory>
                 <targetPath>/</targetPath>
                 <includes>
-                  <include>splash.bmp</include>
+                    <include>splash.bmp</include>
                 </includes>
             </resource>
             <resource>
-              <directory>${basedir}</directory>
-              <targetPath>/</targetPath>
-              <includes>
-                <include>plugin.xml</include>
-                <include>plugin.properties</include>
-              </includes>  
+                <directory>${basedir}</directory>
+                <targetPath>/</targetPath>
+                <includes>
+                    <include>plugin.xml</include>
+                    <include>plugin.properties</include>
+                </includes>  
             </resource>
-      </resources>
+        </resources>
         <plugins>
             <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
             </plugin>
-            -->
 
-            <!-- This is required to identify the JAR to eclipse as a plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <configuration>
-                  <archive>
-                    <manifestFile>META-INF/MANIFEST.MF</manifestFile>
-                  </archive>
-                  <finalName>${artifactId}_${version}</finalName>
+                    <archive>
+                        <manifestFile>META-INF/MANIFEST.MF</manifestFile>
+                    </archive>
+                    <finalName>${artifactId}_${version}</finalName>
                 </configuration>
-              </plugin>
+            </plugin>
 
-            <!--
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

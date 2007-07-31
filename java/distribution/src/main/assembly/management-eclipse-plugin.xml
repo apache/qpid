@@ -24,34 +24,27 @@
   <formats>
     <format>zip</format>
   </formats>
-
+<!--
+  <moduleSets>
+      <moduleSet>
+          <includes>
+              <include>org.apache.qpid.management:org.apache.qpid.management.ui</include>
+          </includes>
+          <binaries>
+              <includeDependencies>true</includeDependencies>
+              <unpack>false</unpack>
+          </binaries>
+      </moduleSet>
+  </moduleSets>
+ -->
   <fileSets>
-
-  <!-- Include the currently hardwired Apache Legal bits -->
-    <fileSet>
-      <directory>../resources</directory>
-      <outputDirectory>qpidmc</outputDirectory>
-      <includes>
-          <include>DISCLAIMER</include>
-          <include>LICENSE</include>
-          <include>NOTICE</include>
-          <include>README</include>
-      </includes>
-      <fileMode>0444</fileMode>
-    </fileSet>
-
     <fileSet>
       <directory>src/main/release</directory>
       <outputDirectory>qpidmc</outputDirectory>
+      <includes>
+        <include>DISCLAIMER</include>
+      </includes>
     </fileSet>
-
-    <!-- Include any release information -->
-    <fileSet>
-      <directory>../release-docs</directory>
-      <outputDirectory>qpidmc</outputDirectory>
-    </fileSet>
-
-
     <fileSet>
       <directory>..</directory>
       <outputDirectory>qpidmc</outputDirectory>
@@ -59,20 +52,27 @@
         <include>*.txt</include>
       </includes>
     </fileSet>
-
+    <fileSet>
+      <directory>src/main/release/docs</directory>
+      <outputDirectory>qpidmc/docs</outputDirectory>
+      <includes>
+        <include>RELEASE_NOTES.txt</include>
+      </includes>
+    </fileSet>
     <fileSet>
       <directory>../management/eclipse-plugin/src/main/resources/win32/configuration</directory>
       <outputDirectory>qpidmc/configuration</outputDirectory>
+      <includes>
+        <include>**</include>
+      </includes>
     </fileSet>
-
     <fileSet>
       <directory>../management/eclipse-plugin/src/main/resources</directory>
       <outputDirectory>qpidmc/eclipse</outputDirectory>
       <includes>
         <include>*.*</include>
-      </includes>
+      </includes>      
     </fileSet>
-
     <fileSet>
       <directory>../management/eclipse-plugin</directory>
       <outputDirectory>qpidmc</outputDirectory>
@@ -80,20 +80,14 @@
         <include>README.txt</include>
       </includes>
     </fileSet>
-
     <fileSet>
       <directory>../management/eclipse-plugin/bin</directory>
       <outputDirectory>qpidmc/bin</outputDirectory>
-      <excludes>
-        <!-- Exclude the Unix scripts -->
-        <exclude>qpidmc*.sh</exclude>
-      </excludes>
-      <fileMode>0777</fileMode>
+      <includes>
+        <include>**</include>
+      </includes>
+      <fileMode>777</fileMode>
     </fileSet>
-
-    <!-- Required to make eclipse load the JMXRemote SASL pluging -->
-    <!-- This should be removed as JMXRemote SASL module is not ASF license friendly -->
-    <!-- However management console doesn't seem to work without it -->
     <fileSet>
       <directory>../management/eclipse-plugin/src/main/resources/sasl</directory>
       <outputDirectory>qpidmc/eclipse/plugins/jmxremote.sasl_1.0.1/META-INF</outputDirectory>
@@ -113,7 +107,7 @@
         <exclude>org.apache.qpid:qpid-common</exclude>
         <exclude>org.apache.qpid:qpid-broker</exclude>
         <exclude>org.apache.qpid:qpid-client</exclude>
-        <exclude>commons-cli:commons-cli</exclude>
+        <exclude>commons-cli:commons-cli</exclude>        
         <exclude>commons-configuration:commons-configuration</exclude>
         <exclude>commons-lang:commons-lang</exclude>
         <exclude>org.apache.mina:mina-filter-ssl</exclude>

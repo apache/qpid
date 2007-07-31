@@ -27,4 +27,4 @@ export JAVA=java \
        JAVA_MEM=-Xmx1024m \
        QPID_CLASSPATH=$QPID_LIBS
 
-. qpid-run org.apache.qpid.tools.security.Passwd "$@"
+. qpid-run org.apache.qpid.server.security.Passwd "$@"
