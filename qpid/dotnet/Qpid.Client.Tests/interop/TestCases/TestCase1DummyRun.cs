@@ -1,10 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Text;
 using log4net;
-using Qpid.Messaging;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests.interop.TestCases
+namespace Apache.Qpid.Client.Tests.interop.TestCases
 {
     /// <summary>
     /// Implements tet case 1, dummy run. This test case sends no test messages, it exists to confirm that the test harness

@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
    /// <summary>
    /// Defines an object capable of publishing messages

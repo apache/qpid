@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-using Qpid.Framing;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
     public interface IProtocolWriter
     {

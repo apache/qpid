@@ -21,7 +21,7 @@
 using System;
 using System.Collections;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
    public sealed class AMQTypeMap
    {

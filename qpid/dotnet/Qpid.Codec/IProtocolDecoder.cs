@@ -19,9 +19,9 @@
  *
  */
 using System;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Codec
+namespace Apache.Qpid.Codec
 {
     public interface IProtocolDecoder : IDisposable
     {
@@ -37,4 +37,5 @@ namespace Qpid.Codec
         void Decode(ByteBuffer input, IProtocolDecoderOutput output);
     }
 }
+
 

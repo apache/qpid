@@ -18,9 +18,9 @@
  * under the License.
  *
  */
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     /// <summary>
     /// There will be an implementation of this interface for each content type. All content types have associated

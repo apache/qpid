@@ -20,9 +20,9 @@
  */
 using System;
 using System.IO;
-using Qpid.Client.Qms;
+using Apache.Qpid.Client.Qms;
 
-namespace Qpid.Client.Transport.Socket.Blocking
+namespace Apache.Qpid.Client.Transport.Socket.Blocking
 {
    interface ISocketConnector : IDisposable
    {
@@ -30,4 +30,5 @@ namespace Qpid.Client.Transport.Socket.Blocking
       Stream Connect(IBrokerInfo broker);
    }
 }
+
 

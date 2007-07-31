@@ -46,7 +46,6 @@ import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.url.URLSyntaxException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +67,6 @@ import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
@@ -1148,7 +1146,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
-            _logger.info("Not a hard-error connection not closing.");
+            _logger.info("Not a hard-error connection not closing: " + cause.getMessage());
         }
     }
 

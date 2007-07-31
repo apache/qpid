@@ -21,7 +21,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid.Client.Failover
+namespace Apache.Qpid.Client.Failover
 {
     /// <summary>
     /// This exception is thrown when failover is taking place and we need to let other

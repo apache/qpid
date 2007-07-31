@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     
     /// <summary>

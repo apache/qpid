@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Buffer
+namespace Apache.Qpid.Buffer
 {
    /// <summary>
    /// Abstract class implementing a byte buffer

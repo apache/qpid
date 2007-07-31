@@ -23,11 +23,11 @@ using System;
 
 using log4net;
 using NUnit.Framework;
-using Qpid.Client;
-using Qpid.Client.Message;
-using Qpid.Messaging;
+using Apache.Qpid.Client;
+using Apache.Qpid.Client.Message;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Tests.Channel
+namespace Apache.Qpid.Client.Tests.Channel
 {
    /// <summary>
    /// Test that channels can create messages correctly
@@ -74,5 +74,6 @@ namespace Qpid.Client.Tests.Channel
          Assert.IsInstanceOfType(typeof(ITextMessage), msg);
       }
    }
-} // namespace Qpid.Client.Tests.Channel
+} // namespace Apache.Qpid.Client.Tests.Channel
+
 

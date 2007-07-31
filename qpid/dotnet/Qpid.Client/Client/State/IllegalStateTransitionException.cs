@@ -21,7 +21,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid.Client.State
+namespace Apache.Qpid.Client.State
 {
     [Serializable]
     public class IllegalStateTransitionException : AMQException
@@ -69,5 +69,6 @@ namespace Qpid.Client.State
         }
     }
 }
+
 
 

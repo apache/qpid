@@ -20,9 +20,9 @@
  */
 using System;
 using System.Collections;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Codec.Demux
+namespace Apache.Qpid.Codec.Demux
 {
     public class DemuxingProtocolCodecFactory : IProtocolCodecFactory
     {
@@ -382,5 +382,6 @@ namespace Qpid.Codec.Demux
         }
     }
 }
+
 
 

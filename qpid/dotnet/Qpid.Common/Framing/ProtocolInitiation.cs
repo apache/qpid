@@ -24,12 +24,12 @@ using System.Configuration;
 using System.Reflection;
 using System.Xml;
 using log4net;
-using Qpid.Buffer;
-using Qpid.Codec;
-using Qpid.Codec.Demux;
-using Qpid.Common;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Codec;
+using Apache.Qpid.Codec.Demux;
+using Apache.Qpid.Common;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
     public class ProtocolInitiation : IDataBlock, IEncodableAMQDataBlock
     {

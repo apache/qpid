@@ -1,10 +1,10 @@
 using System;
 using System.Collections;
 using System.Text;
-using Qpid.Framing;
-using Qpid.Messaging;
+using Apache.Qpid.Framing;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Client.Message
+namespace Apache.Qpid.Client.Message
 {
    internal class QpidHeaders : IHeaders
    {

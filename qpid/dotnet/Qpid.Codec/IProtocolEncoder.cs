@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Codec
+namespace Apache.Qpid.Codec
 {
     public interface IProtocolEncoder : IDisposable
     {
@@ -37,4 +37,5 @@ namespace Qpid.Codec
         void Encode(Object message, IProtocolEncoderOutput output);
     }
 }
+
 

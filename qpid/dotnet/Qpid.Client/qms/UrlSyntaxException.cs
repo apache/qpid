@@ -22,7 +22,7 @@ using System;
 using System.Runtime.Serialization;
 using System.Text;
 
-namespace Qpid.Client.Qms
+namespace Apache.Qpid.Client.Qms
 {
     [Serializable]
     public class UrlSyntaxException : UriFormatException

@@ -19,9 +19,9 @@
  *
  */
 using System;
-using Qpid.Framing;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Protocol.Listener
+namespace Apache.Qpid.Client.Protocol.Listener
 {
     public class SpecificMethodFrameListener : BlockingMethodFrameListener
     {
@@ -38,4 +38,5 @@ namespace Qpid.Client.Protocol.Listener
         }
     }
 }
+
 

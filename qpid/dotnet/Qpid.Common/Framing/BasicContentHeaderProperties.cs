@@ -20,10 +20,10 @@
  */
 using System;
 using log4net;
-using Qpid.Buffer;
-using Qpid.Messaging;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Messaging;
 
-namespace Qpid.Framing
+namespace Apache.Qpid.Framing
 {
    public class BasicContentHeaderProperties : IContentHeaderProperties
    {

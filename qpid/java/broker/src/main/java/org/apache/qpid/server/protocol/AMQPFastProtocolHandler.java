@@ -44,6 +44,9 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
 import org.apache.qpid.ssl.SSLContextFactory;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 /**
  * The protocol handler handles "protocol events" for all connections. The state
  * associated with an individual connection is accessed through the protocol session.
@@ -80,7 +83,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         final AMQCodecFactory codecFactory = new AMQCodecFactory(true);
 
         createSession(protocolSession, _applicationRegistry, codecFactory);
-        _logger.info("Protocol session created");
+        _logger.info("Protocol session created for:" + protocolSession.getRemoteAddress());
 
         final ProtocolCodecFilter pcf = new ProtocolCodecFilter(codecFactory);
 
@@ -127,12 +130,12 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     public void sessionOpened(IoSession protocolSession) throws Exception
     {
-        _logger.info("Session opened");
+        _logger.info("Session opened for:" + protocolSession.getRemoteAddress());
     }
 
     public void sessionClosed(IoSession protocolSession) throws Exception
     {
-        _logger.info("Protocol Session closed");
+        _logger.info("Protocol Session closed for:" + protocolSession.getRemoteAddress());
         final AMQProtocolSession amqProtocolSession = AMQMinaProtocolSession.getAMQProtocolSession(protocolSession);
         // fixme  -- this can be null
         if (amqProtocolSession != null)
@@ -143,7 +146,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
     public void sessionIdle(IoSession session, IdleStatus status) throws Exception
     {
-        _logger.debug("Protocol Session [" + this + "] idle: " + status);
+        _logger.debug("Protocol Session [" + this + "] idle: " + status + " :for:" + session.getRemoteAddress());
         if (IdleStatus.WRITER_IDLE.equals(status))
         {
             // write heartbeat frame:
@@ -167,7 +170,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
 
             protocolSession.close();
 
-            _logger.error("Error in protocol initiation " + session + ": " + throwable.getMessage(), throwable);
+            _logger.error("Error in protocol initiation " + session + ":" + protocolSession.getRemoteAddress() + " :" + throwable.getMessage(), throwable);
         }
         else if (throwable instanceof IOException)
         {
@@ -178,13 +181,14 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
 
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.write(ConnectionCloseBody.createAMQFrame(0, session.getProtocolMajorVersion(),
-                    session.getProtocolMinorVersion(), // AMQP version (major, minor)
-                    0, // classId
-                    0, // methodId
-                    200, // replyCode
-                    new AMQShortString(throwable.getMessage()) // replyText
-                ));
+            protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
+                                                                     session.getProtocolMajorVersion(),
+                                                                     session.getProtocolMinorVersion(),    // AMQP version (major, minor)
+                                                                     0,    // classId
+                                                                     0,    // methodId
+                                                                     200,    // replyCode
+                                                                     new AMQShortString(throwable.getMessage())    // replyText
+            ));
             protocolSession.close();
         }
     }

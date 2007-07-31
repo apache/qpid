@@ -21,7 +21,7 @@
 
 using System;
 
-namespace Qpid.Buffer
+namespace Apache.Qpid.Buffer
 {
    /// <summary>
    /// Allocates <see cref="ByteBuffer"/>'s and manages them. Please 
@@ -45,5 +45,6 @@ namespace Qpid.Buffer
 
    } // interface IByteBufferAllocator
 }
+
 
 

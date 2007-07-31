@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<project name="Qpid.Sasl" default="test">
+<project name="Apache.Qpid.Sasl" default="test">
 
    <target name="build">
         <csc target="library" 

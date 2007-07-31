@@ -20,7 +20,7 @@
  */
 using System;
 
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
    /// <summary>
    /// Describes an object that can be used to receive (consume)

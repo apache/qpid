@@ -21,12 +21,12 @@
 using System;
 using System.Collections;
 using log4net;
-using Qpid.Buffer;
-using Qpid.Codec;
-using Qpid.Codec.Support;
-using Qpid.Framing;
+using Apache.Qpid.Buffer;
+using Apache.Qpid.Codec;
+using Apache.Qpid.Codec.Support;
+using Apache.Qpid.Framing;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
     public class AmqpChannel : IProtocolChannel
     {
@@ -107,4 +107,5 @@ namespace Qpid.Client.Transport
 
     }
 }
+
 

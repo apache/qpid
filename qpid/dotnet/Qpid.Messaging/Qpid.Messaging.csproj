@@ -7,8 +7,8 @@
     <ProjectGuid>{6688F826-C58E-4C1B-AA1F-22AFAB4B7D07}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Qpid.Messaging</RootNamespace>
-    <AssemblyName>Qpid.Messaging</AssemblyName>
+    <RootNamespace>Apache.Qpid.Messaging</RootNamespace>
+    <AssemblyName>Apache.Qpid.Messaging</AssemblyName>
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">

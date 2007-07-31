@@ -20,9 +20,9 @@
  */
 using System;
 using log4net;
-using Qpid.Buffer;
+using Apache.Qpid.Buffer;
 
-namespace Qpid.Codec
+namespace Apache.Qpid.Codec
 {
    public abstract class CumulativeProtocolDecoder : IProtocolDecoder
    {

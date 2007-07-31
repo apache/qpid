@@ -20,12 +20,12 @@
  */
 using System;
 using System.Threading;
-using Qpid.Client.Protocol;
-using Qpid.Codec;
-using Qpid.Framing;
+using Apache.Qpid.Client.Protocol;
+using Apache.Qpid.Codec;
+using Apache.Qpid.Framing;
 using log4net;
 
-namespace Qpid.Client.Transport
+namespace Apache.Qpid.Client.Transport
 {
    /// <summary>
    /// <see cref="IProtocolDecoderOutput"/> implementation that forwards
@@ -55,5 +55,6 @@ namespace Qpid.Client.Transport
          }
       }
    }
-} // namespace Qpid.Client.Transport
+} // namespace Apache.Qpid.Client.Transport
+
 

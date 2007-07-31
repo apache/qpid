@@ -18,11 +18,12 @@
  * under the License.
  *
  */
-namespace Qpid.Codec.Demux
+namespace Apache.Qpid.Codec.Demux
 {
     public enum MessageDecoderResult
     {
         OK, NOT_OK, NEED_DATA
     }
 }
+
 

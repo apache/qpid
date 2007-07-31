@@ -18,15 +18,17 @@
  */
 package org.apache.qpid.example.publisher;
 
-import javax.jms.Message;
+import org.apache.log4j.Logger;
+import org.apache.qpid.client.BasicMessageProducer;
+
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
-import org.apache.qpid.client.BasicMessageProducer;
-import org.apache.log4j.Logger;
+import javax.jms.Message;
+import javax.jms.Session;
 
 /**
- * Subclass of Publisher which uses QPID functionality to send a heartbeat message
- * Note immediate flag not available via JMS MessageProducer
+ * Subclass of Publisher which uses QPID functionality to send a heartbeat message Note immediate flag not available via
+ * JMS MessageProducer
  */
 public class MonitorPublisher extends Publisher
 {
@@ -40,14 +42,45 @@ public class MonitorPublisher extends Publisher
         super();
     }
 
-     /*
-     * Publishes a non-persistent message using transacted session
-     */
+    /*
+    * Publishes a message using given details
+    */
+    public boolean sendMessage(Session session, Message message, int deliveryMode,
+                                        boolean immediate, boolean commit) throws UndeliveredMessageException
+    {
+        try
+        {
+            _producer = (BasicMessageProducer) session.createProducer(_destination);
+
+            _producer.send(message, deliveryMode, immediate);
+
+            if (commit)
+            {
+                //commit the message send and close the transaction
+                _session.commit();
+            }
+
+        }
+        catch (JMSException e)
+        {
+            //Have to assume our commit failed but do not rollback here as channel closed
+            _log.error(e);
+            e.printStackTrace();
+            throw new UndeliveredMessageException("Cannot deliver immediate message", e);
+        }
+
+        _log.info(_name + " finished sending message: " + message);
+        return true;
+    }
+
+    /*
+    * Publishes a non-persistent message using transacted session
+    */
     public boolean sendImmediateMessage(Message message) throws UndeliveredMessageException
     {
         try
         {
-             _producer = (BasicMessageProducer)_session.createProducer(_destination);
+            _producer = (BasicMessageProducer) _session.createProducer(_destination);
 
             //Send message via our producer which is not persistent and is immediate
             //NB: not available via jms interface MessageProducer
@@ -62,7 +95,7 @@ public class MonitorPublisher extends Publisher
             //Have to assume our commit failed but do not rollback here as channel closed
             _log.error(e);
             e.printStackTrace();
-            throw new UndeliveredMessageException("Cannot deliver immediate message",e);
+            throw new UndeliveredMessageException("Cannot deliver immediate message", e);
         }
 
         _log.info(_name + " finished sending message: " + message);

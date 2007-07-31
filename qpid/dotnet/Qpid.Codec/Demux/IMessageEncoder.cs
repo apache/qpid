@@ -21,7 +21,7 @@
 using System;
 using System.Collections;
 
-namespace Qpid.Codec.Demux
+namespace Apache.Qpid.Codec.Demux
 {
     public interface IMessageEncoder
     {
@@ -44,4 +44,5 @@ namespace Qpid.Codec.Demux
         void Encode(Object message, IProtocolEncoderOutput output);
     }
 }
+
 

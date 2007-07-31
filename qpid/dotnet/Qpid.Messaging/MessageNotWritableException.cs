@@ -21,7 +21,7 @@
 using System;
 using System.Runtime.Serialization;
 
-namespace Qpid.Messaging
+namespace Apache.Qpid.Messaging
 {
     [Serializable]
     public class MessageNotWriteableException : QpidException
