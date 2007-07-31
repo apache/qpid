@@ -87,8 +87,45 @@ public class SessionImpl implements Session
      * This session connection
      */
     private ConnectionImpl _connection;
-    //--- javax.jms.Session API
 
+    //--- Constructor
+    /**
+     * Create a JMS Session
+     *
+     * @param connection      The ConnectionImpl object from which the Session is created.
+     * @param transacted      Indicates if the session transacted.
+     * @param acknowledgeMode The session's acknowledgement mode. This value is ignored and set to
+     *                        {@link Session#SESSION_TRANSACTED} if the <code>transacted</code> parameter is true.
+     * @throws JMSSecurityException If the user could not be authenticated.
+     * @throws JMSException         In case of internal error.
+     */
+    protected SessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode) throws JMSException
+    {
+        _connection = connection;
+        _transacted = transacted;
+        // for transacted sessions we ignore the acknowledgeMode and use GenericAckMode.SESSION_TRANSACTED
+        if (_transacted)
+        {
+            acknowledgeMode = Session.SESSION_TRANSACTED;
+        }
+        _acknowledgeMode = acknowledgeMode;
+        try
+        {
+            // create the qpid session
+            _qpidSession = _connection.getQpidConnection().createSession(0);
+            // set transacted if required
+            if (_transacted)
+            {
+                _qpidSession.setTransacted();
+            }
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+    }
+
+    //--- javax.jms.Session API
     /**
      * Creates a <CODE>BytesMessage</CODE> object used to send a message
      * containing a stream of uninterpreted bytes.
@@ -245,7 +282,7 @@ public class SessionImpl implements Session
         try
         {
             // Note: this operation makes sure that asynch message processing has returned
-            _qpidSession.commit();
+            _qpidSession.txCommit();
         }
         catch (QpidException e)
         {
@@ -272,7 +309,7 @@ public class SessionImpl implements Session
         try
         {
             // Note: this operation makes sure that asynch message processing has returned
-            _qpidSession.rollback();
+            _qpidSession.txRollback();
         }
         catch (org.apache.qpidity.QpidException e)
         {
@@ -482,7 +519,7 @@ public class SessionImpl implements Session
     }
 
     /**
-     * reates a topic identity given a Topicname.
+     * Creates a topic identity given a Topicname.
      * <P>This facility is provided for the rare cases where clients need to
      * dynamically manipulate queue identity. It allows the creation of a
      * queue identity with a provider-specific name. Clients that depend
@@ -575,25 +612,23 @@ public class SessionImpl implements Session
         return new QueueBrowserImpl(this, queue, messageSelector);
     }
 
-     /**
-    * Create a TemporaryQueue. Its lifetime will be tha of the Connection unless it is deleted earlier.
-    *
-    * @return A temporary queue.
-    *
-    * @exception JMSException If creating the temporary queue fails due to some internal error.
-    */
+    /**
+     * Create a TemporaryQueue. Its lifetime will be tha of the Connection unless it is deleted earlier.
+     *
+     * @return A temporary queue.
+     * @throws JMSException If creating the temporary queue fails due to some internal error.
+     */
     public TemporaryQueue createTemporaryQueue() throws JMSException
     {
         return new TemporaryQueueImpl();
     }
 
-   /**
-    * Create a TemporaryTopic. Its lifetime will be tha of the Connection unless it is deleted earlier.
-    *
-    * @return A temporary topic.
-    *
-    * @exception JMSException If creating the temporary topic fails due to some internal error.
-    */
+    /**
+     * Create a TemporaryTopic. Its lifetime will be tha of the Connection unless it is deleted earlier.
+     *
+     * @return A temporary topic.
+     * @throws JMSException If creating the temporary topic fails due to some internal error.
+     */
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
         return new TemporaryTopicImpl();
@@ -665,6 +700,7 @@ public class SessionImpl implements Session
     /**
      * Validate that the destination is valid i.e. it is not null
      *
+     * @param dest The destination to be checked
      * @throws InvalidDestinationException If the destination not valid.
      */
     protected void checkDestination(Destination dest) throws InvalidDestinationException
@@ -727,8 +763,17 @@ public class SessionImpl implements Session
         //else there is no effect
     }
 
-    //------ Private Methods
+    /**
+     * Access to the underlying Qpid Session
+     *
+     * @return The associated Qpid Session.
+     */
+    protected org.apache.qpid.nclient.api.Session getQpidSession()
+    {
+        return _qpidSession;
+    }
 
+    //------ Private Methods
     /**
      * Close the producer and the consumers of this session
      *
