@@ -24,8 +24,8 @@ import javax.jms.JMSException;
 import java.util.Enumeration;
 
 /**
- * A <CODE>ConnectionMetaDataImpl</CODE> object provides information describing the
- * JMS <CODE>Connection</CODE>.
+ * Implements javax.jms.ConnectionMetaData
+ * A ConnectionMetaDataImpl provides information describing the JMS <code>Connection</code>.
  */
 public class ConnectionMetaDataImpl implements ConnectionMetaData
 {

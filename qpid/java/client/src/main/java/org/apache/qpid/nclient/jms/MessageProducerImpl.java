@@ -23,7 +23,7 @@ import javax.jms.Destination;
 import javax.jms.Message;
 
 /**
- * 
+ *  Implements  MessageProducer
  */
 public class MessageProducerImpl extends MessageActor implements MessageProducer
 {
