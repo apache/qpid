@@ -24,16 +24,21 @@ import java.util.UUID;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.Header;
+import org.apache.qpidity.api.Message;
+import org.apache.qpidity.api.StreamingMessageListener;
 
 /**
- * A session is associated with a connection.
- * <p> When created a Session is not attached with an underlying channel. Unsuspended a Session is
- * equivalent to attaching a communication channel that can be used to communicate with the broker.
+ * <p>A session is associated with a connection.
+ * When created a Session is not attached with an underlying channel.
+ * Session is single threaded </p>
  */
 public interface Session
 {
 
-    //--- Session housekeeping methods
+    //------------------------------------------------------ 
+	//                 Session housekeeping methods 
+	//------------------------------------------------------
+	
     /**
      * Close this session and any associated resources.
      *
@@ -69,38 +74,118 @@ public interface Session
      */
     public void sessionResume(UUID sessionId) throws QpidException;
 
-    /**
-     * -------------------------------------
-     * Messaging methods
-     * -------------------------------------
-     */
-
+    
+    //------------------------------------------------------ 
+	//                 Messaging methods 
+    //                   Producer           
+	//------------------------------------------------------
+    
 	/**
-     * Transfer the given message.
+     * Transfer the given message. 
+     * This is a convinience method
      *
-     * @param queueName The queue this sender is sending messages.
-     * @return A sender for queue queueName
-     * @throws QpidException If the session fails to create the sended due to some error
+     * @param destination The exchange the message being sent.
+     * @return msg The Message to be sent
+     * @throws QpidException If the session fails to send the message due to some error
      */
     public void messageTransfer(String destination,Message msg)throws QpidException; 
     
-    public void messageTransfer(Option... options)throws QpidException; 
-    
     /**
      * Transfer the given message.
+     * <p> Following are the valid options for messageTransfer
+     * <ul>
+     * <li> CONFIRM
+     * <li> PRE_ACCQUIRE
+     * </ul>
+     * </p>
+     * 
+     * <p> In the absence of a particular option, the defaul value is:
+     * <ul>
+     * <li> CONFIRM = false
+     * <li> NO-ACCQUIRE
+     * </ul>
+     * </p>
      *
-     * @param 
-     * @throws QpidException If the session fails to create the sended due to some error
+     * @param destination The exchange the message being sent.
+     * @return options set of options
+     * @throws QpidException If the session fails to send the message due to some error
+     */
+    public void messageTransfer(String destination,Option... options)throws QpidException; 
+    
+    /**
+     * Add the following headers to content bearing frame
+     *
+     * @param Header Either DeliveryProperties or ApplicationProperties
+     * @throws QpidException If the session fails to execute the method due to some error
      */
     public void messageHeaders(Header ... headers)throws QpidException; 
-    		     
-    public void messageBody(byte[] src)throws QpidException; 
-    		     
-    public void messageClose()throws QpidException; 
+    
+    /**
+     * Add the following byte array to the content.
+     * This method is useful when streaming large messages
+     *
+     * @param src data to be added or streamed
+     * @throws QpidException If the session fails to execute the method due to some error
+     */
+    public void data(byte[] src)throws QpidException; 
+    
+    /**
+     * Signals the end of data for the message.     * 
+     * This method is useful when streaming large messages
+     *
+     * @throws QpidException If the session fails to execute the method due to some error
+     */    
+    public void endData()throws QpidException; 
 
     /**
-     * Create a message receiver for receiving messages from queue queueName.
-     * <p> Following are the valid options for createReceive
+     * Acknowledge the receipt of this message.
+     * <p>The message must have been previously acquired either by receiving it in
+     * pre-acquire mode or by explicitly acquiring it.
+     *
+     * @throws QpidException         If the acknowledgement of the message fails due to some error.
+     * @throws IllegalStateException If this messages is not acquired.
+     */
+    public void messageAcknowledge() throws QpidException;
+
+    /**
+     * Reject a previously acquired message.
+     * <p> A rejected message will not be delivered to any receiver
+     * and may be either discarded or moved to the broker dead letter queue.
+     *
+     * @throws QpidException         If this message cannot be rejected dus to some error
+     * @throws IllegalStateException If this message is not acquired.
+     */
+    public void messageReject() throws QpidException;
+
+    /**
+     * Try to acquire this message hence releasing it form the queue. This means that once acknowledged,
+     * this message will not be delivered to any other receiver.
+     * <p> As this message may have been consumed by another receiver, message acquisition can fail.
+     * The outcome of the acquisition is returned as a Boolean.
+     *
+     * @return True if the message is successfully acquired, False otherwise.
+     * @throws QpidException         If this message cannot be acquired dus to some error
+     * @throws IllegalStateException If this message has already been acquired.
+     */
+    public boolean messageAcquire() throws QpidException;
+
+    /**
+     * Give up responsibility for processing this message.
+     *
+     * @throws QpidException          If this message cannot be released dus to some error.
+     * @throws IllegalStateException  If this message has already been acknowledged.
+     */
+    public void messageRelease() throws QpidException;
+    
+    
+    //------------------------------------------------------ 
+	//                 Messaging methods 
+    //                   Consumer           
+	//------------------------------------------------------
+    
+    /**
+     * Create a message receiver for receiving messages from queue queueName. 
+     * <p> Following are the valid options for messageSubscribe
      * <ul>
      * <li> NO_LOCAL
      * <li> EXCLUSIVE
@@ -108,7 +193,7 @@ public interface Session
      * <li> CONFIRM
      * </ul>
      * </p>
-     * <p/>
+     * 
      * <p> In the absence of a particular option, the defaul value is:
      * <ul>
      * <li> NO_LOCAL = false
@@ -116,22 +201,44 @@ public interface Session
      * <li> PRE-ACCQUIRE
      * <li> CONFIRM = false
      * </ul>
-     * </p>
+     * </p> 
      *
-     * @param queueName The queue this receiver is receiving messages from.
+     * @param queue The queue this receiver is receiving messages from.
+     * @param destination The destination for the subscriber ,a.k.a the delivery tag.
      * @param options   Set of Options.
-     * @return A receiver for queue queueName.
      * @throws QpidException If the session fails to create the receiver due to some error.
      * @see Option
      */
-    public MessageReceiver createReceiver(String queueName, Option... options) throws QpidException;
-    //Todo: Do we need to define more specific exceptions like queue name not valid?
+    public void messageSubscribe(String queue, String destination, Map<String,?> filter, Option ... _options) throws QpidException;
+    
 
     /**
-     * -------------------------------------
-     * Transaction methods
-     * -------------------------------------
+     * Cancels a subscription
+     * 
+     * @param destination The destination for the subscriber used at subscription
      */
+    public void messageCancel(String destination) throws QpidException;
+    
+    /**
+     * We currently allow one listerner per destination
+     * 
+     * @param destination
+     * @param listener
+     */
+    public void addMessageListener(String destination,StreamingMessageListener listener);
+        
+    /**
+     * We currently allow one listerner per destination
+     * 
+     * @param destination
+     * @param listener
+     */
+    public void addMessageListener(String destination,MessageListener listener);
+    
+    
+    // -----------------------------------------------
+    //            Transaction methods 
+    //  ----------------------------------------------
 
     /**
      * Commit the receipt and the delivery of all messages exchanged by this session resources.
@@ -149,21 +256,11 @@ public interface Session
      */
     public void txRollback() throws QpidException, IllegalStateException;
 
-    /**
-     * Set this session as transacted.
-     * <p> This operation is irreversible.
-     *
-     * @throws QpidException         If the session fails to be transacted due to some error.
-     * @throws IllegalStateException If this session is already transacted.
-     */
-    public void setTransacted() throws QpidException, IllegalStateException;
-
-    /**
-     * -------------------------------------
-     * Queue methods
-     * -------------------------------------
-     */
-
+    
+    //---------------------------------------------
+    //            Queue methods 
+    //---------------------------------------------
+    
     /**
      * Declare a queue with the given queueName
      * <p> Following are the valid options for declareQueue
@@ -241,6 +338,11 @@ public interface Session
      */
     public void queueDelete(String queueName, Option... options) throws QpidException;
 
+    
+    // -------------------------------------- 
+    //              exhcange methods 
+    // --------------------------------------
+    
     /**
      * Declare an exchange.
      * <p> Following are the valid options for createReceive
@@ -263,8 +365,7 @@ public interface Session
      */
     public void exchangeDeclare(String exchangeName, String exchangeClass, String alternateExchange,
                                 Map<String, ?> arguments, Option... options) throws QpidException;
-    //Todo: Do we need to define more specific exceptions like exchange already exist?
-
+    
     /**
      * Delete an exchange.
      * <p> Following are the valid options for createReceive
