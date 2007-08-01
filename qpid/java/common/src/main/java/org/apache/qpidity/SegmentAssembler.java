@@ -22,6 +22,7 @@ package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
 
+
 /**
  * SegmentAssembler is a stateful handler that aggregates Frame events
  * into Segment events. This should only be used where it is necessary
@@ -50,7 +51,10 @@ class SegmentAssembler<C> implements Handler<Event<C,Frame>>
             segment = new Segment();
         }
 
-        segment.add(frame);
+        for (ByteBuffer fragment : frame)
+        {
+            segment.add(fragment);
+        }
 
         if (frame.isLastFrame())
         {

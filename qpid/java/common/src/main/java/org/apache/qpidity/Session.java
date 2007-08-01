@@ -29,7 +29,7 @@ import java.util.Map;
  * @author Rafael H. Schloming
  */
 
-public class Session extends Invoker implements DelegateResolver<Session>
+public class Session extends Invoker
 {
 
     // channel may be null
@@ -37,7 +37,6 @@ public class Session extends Invoker implements DelegateResolver<Session>
     private int command_id = 0;
     // XXX
     final Map<Integer,Handler<Struct>> handlers = new HashMap<Integer,Handler<Struct>>();
-    final private Delegate<Session> delegate = new SessionDelegate();
 
     public void attach(Channel channel)
     {
@@ -60,11 +59,6 @@ public class Session extends Invoker implements DelegateResolver<Session>
     protected StructFactory getFactory()
     {
         return channel.getFactory();
-    }
-
-    public Delegate<Session> resolve(Struct struct)
-    {
-        return delegate;
     }
 
 }

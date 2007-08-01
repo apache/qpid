@@ -22,8 +22,6 @@ package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
 
-import java.util.Map;
-import java.util.UUID;
 
 /**
  * BBEncoder
@@ -31,7 +29,7 @@ import java.util.UUID;
  * @author Rafael H. Schloming
  */
 
-class BBEncoder implements Encoder
+class BBEncoder extends AbstractEncoder
 {
 
     private final ByteBuffer out;
@@ -40,75 +38,14 @@ class BBEncoder implements Encoder
         this.out = out;
     }
 
-    public void writeBit(boolean b)
+    @Override protected void put(byte b)
     {
-        //throw new Error("TODO");
+        out.put(b);
     }
 
-    public void writeOctet(short b)
+    @Override protected void put(ByteBuffer src)
     {
-        assert b < 0x100;
-        out.put((byte) b);
-    }
-
-    public void writeShort(int s)
-    {
-        assert s < 0x10000;
-        out.putShort((short) s);
-    }
-
-    public void writeLong(long i)
-    {
-        assert i < 0x100000000L;
-        out.putInt((int) i);
-    }
-
-    public void writeLonglong(long l)
-    {
-        throw new Error("TODO");
-    }
-
-
-    public void writeTimestamp(long l)
-    {
-        throw new Error("TODO");
-    }
-
-
-    public void writeShortstr(String s)
-    {
-        if (s.length() > 255) {
-            throw new IllegalArgumentException(s);
-        }
-        writeOctet((short) s.length());
-        out.put(s.getBytes());
-    }
-
-    public void writeLongstr(String s)
-    {
-        writeLong(s.length());
-        out.put(s.getBytes());
-    }
-
-
-    public void writeTable(Map<String,?> table)
-    {
-        //throw new Error("TODO");
-    }
-
-    public void writeRfc1982LongSet(Range<Long>[] ranges)
-    {
-        throw new Error("TODO");
-    }
-
-    public void writeUuid(UUID uuid)
-    {
-        throw new Error("TODO");
-    }
-
-    public void writeContent(String c)
-    {
-        throw new Error("TODO");
+        out.put(src);
     }
 
 }

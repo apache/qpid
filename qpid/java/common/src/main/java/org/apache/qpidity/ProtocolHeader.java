@@ -20,33 +20,45 @@
  */
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
-
 
 /**
- * BBDecoder
+ * ProtocolHeader
  *
  * @author Rafael H. Schloming
  */
 
-class BBDecoder extends AbstractDecoder
+class ProtocolHeader
 {
 
-    private final ByteBuffer in;
+    final private byte instance;
+    final private byte major;
+    final private byte minor;
 
-    public BBDecoder(ByteBuffer in)
+    public ProtocolHeader(byte instance, byte major, byte minor)
     {
-        this.in = in;
+        this.instance = instance;
+        this.major = major;
+        this.minor = minor;
     }
 
-    protected byte get()
+    public byte getInstance()
     {
-        return in.get();
+        return instance;
     }
 
-    protected void get(byte[] bytes)
+    public byte getMajor()
     {
-        in.get(bytes);
+        return major;
+    }
+
+    public byte getMinor()
+    {
+        return minor;
+    }
+
+    public String toString()
+    {
+        return String.format("AMQP.%d %d-%d", instance, major, minor);
     }
 
 }

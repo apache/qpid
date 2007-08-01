@@ -20,33 +20,28 @@
  */
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
-
 
 /**
- * BBDecoder
+ * ProtocolError
  *
  * @author Rafael H. Schloming
  */
 
-class BBDecoder extends AbstractDecoder
+class ProtocolError
 {
 
-    private final ByteBuffer in;
+    private final String format;
+    private final Object[] args;
 
-    public BBDecoder(ByteBuffer in)
+    public ProtocolError(String format, Object ... args)
     {
-        this.in = in;
+        this.format = format;
+        this.args = args;
     }
 
-    protected byte get()
+    public String getMessage()
     {
-        return in.get();
-    }
-
-    protected void get(byte[] bytes)
-    {
-        in.get(bytes);
+        return String.format(format, args);
     }
 
 }

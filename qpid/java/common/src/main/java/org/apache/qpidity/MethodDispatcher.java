@@ -22,26 +22,35 @@ package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
 
+import java.util.Iterator;
+
+
 /**
  * A MethodDispatcher parses and dispatches a method segment.
  *
  * @author Rafael H. Schloming
  */
 
-class MethodDispatcher<C extends DelegateResolver<C>>
-    implements Handler<Event<C,Segment>>
+class MethodDispatcher<C> implements Handler<Event<C,Segment>>
 {
 
-    // XXX: should be passed in
-    final private StructFactory factory = new StructFactory_v0_10();
+    final private StructFactory factory;
+    final private DelegateResolver<C> resolver;
+
+    public MethodDispatcher(StructFactory factory, DelegateResolver<C> resolver)
+    {
+        this.factory = factory;
+        this.resolver = resolver;
+    }
 
     public void handle(Event<C,Segment> event)
     {
         System.out.println("got method segment:\n  " + event.target);
-        ByteBuffer bb = event.target.getPayload();
-        int type = bb.getInt();
-        Struct struct = factory.create(type, new BBDecoder(bb));
-        Delegate<C> delegate = event.context.resolve(struct);
+        Iterator<ByteBuffer> fragments = event.target.getFragments();
+        Decoder dec = new FragmentDecoder(fragments);
+        int type = (int) dec.readLong();
+        Struct struct = factory.create(type, dec);
+        Delegate<C> delegate = resolver.resolve(struct);
         struct.delegate(event.context, delegate);
     }
 

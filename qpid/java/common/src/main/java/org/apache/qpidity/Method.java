@@ -31,4 +31,8 @@ interface Method extends Struct {
 
     int getEncodedType();
 
+    byte getEncodedTrack();
+
+    byte getSegmentType();
+
 }

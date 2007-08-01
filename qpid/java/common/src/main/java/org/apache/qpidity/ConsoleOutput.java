@@ -22,31 +22,21 @@ package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
 
+import static org.apache.qpidity.Functions.*;
+
 
 /**
- * BBDecoder
+ * ConsoleOutput
  *
  * @author Rafael H. Schloming
  */
 
-class BBDecoder extends AbstractDecoder
+class ConsoleOutput implements Handler<ByteBuffer>
 {
 
-    private final ByteBuffer in;
-
-    public BBDecoder(ByteBuffer in)
+    public void handle(ByteBuffer buf)
     {
-        this.in = in;
-    }
-
-    protected byte get()
-    {
-        return in.get();
-    }
-
-    protected void get(byte[] bytes)
-    {
-        in.get(bytes);
+        System.out.println(str(buf));
     }
 
 }
