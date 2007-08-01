@@ -52,7 +52,7 @@ in C++ using Qpid.  Qpid implements the AMQP messaging specification.
 Summary: An AMQP message broker daemon
 Group: System Environment/Daemons
 Requires: %name = %version-%release
-Requires: openais
+@REQUIRES_OPENAIS@
 
 %description -n %{qpidd}
 A message broker daemon that receives stores and routes messages using
@@ -63,7 +63,7 @@ Summary: Libraries and header files for developing Qpid broker extensions
 Group: Development/System
 Requires: %name-devel = %version-%release
 Requires: %{qpidd} = %version-%release
-Requires: openais-devel
+@REQUIRES_OPENAIS_DEVEL@
 
 %description -n %{qpidd}-devel
 Libraries and header files for developing extensions to the
