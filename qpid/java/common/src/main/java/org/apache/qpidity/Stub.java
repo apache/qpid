@@ -1,32 +1,47 @@
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.lang.annotation.*;
 
+import java.nio.ByteBuffer;
+
 import static org.apache.qpidity.Option.*;
+
 
 public class Stub {
 
-    private static Connection conn = new Connection();
+    private static Connection conn = new Connection(new ConsoleOutput());
 
-    private static void frame(short track, short type, boolean first, boolean last) {
+    static
+    {
+        conn.init(new ProtocolHeader((byte) 1, (byte) 0, (byte) 10));
+    }
+
+    private static void frame(byte track, byte type, boolean first, boolean last) {
         frame(track, type, first, last, null);
     }
 
-    private static void frame(short track, short type, boolean first, boolean last, Method m) {
+    private static void frame(byte track, byte type, boolean first, boolean last, Method m) {
         SizeEncoder sizer = new SizeEncoder();
         if (m != null) {
+            sizer.writeLong(m.getEncodedType());
             m.write(sizer);
+            sizer.flush();
         }
-        ByteBuffer buf = ByteBuffer.allocate(sizer.getSize() + 4);
+        ByteBuffer buf = ByteBuffer.allocate(sizer.getSize());
         if (m != null) {
-            buf.putInt(m.getEncodedType());
-            m.write(new BBEncoder(buf));
+            Encoder enc = new BBEncoder(buf);
+            enc.writeLong(m.getEncodedType());
+            m.write(enc);
+            enc.flush();
         }
         buf.flip();
-        Frame frame = new Frame((short)0, track, type, true, true, first, last, buf);
-        conn.handle(frame);
+        byte flags = 0;
+        if (first) { flags |= Frame.FIRST_FRAME; }
+        if (last) { flags |= Frame.LAST_FRAME; }
+        Frame frame = new Frame(flags, type, track, 0);
+        frame.addFragment(buf);
+        conn.frame(frame);
     }
 
     public static final void main(String[] args) {
@@ -59,7 +74,16 @@ class ChannelDelegate extends Delegate<Channel> {
     public @Override void sessionOpen(Channel channel, SessionOpen open) {
         Session ssn = new Session();
         ssn.attach(channel);
-        System.out.println("Session Open");
+        long lifetime = open.getDetachedlifetime();
+        System.out.println("Session Opened lifetime = " + lifetime);
+        try
+        {
+            ssn.sessionAttached(UUID.randomUUID(), lifetime);
+        }
+        catch (QpidException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
 }
@@ -74,11 +98,11 @@ class SessionDelegate extends Delegate<Session> {
         System.out.println("got an exchange declare: " + ed.getExchange() + ", " + ed.getType());
         try
         {
-        	session.queueDeclare("asdf", "alternate", null);
+            session.queueDeclare("asdf", "alternate", null);
         }
-        catch(Exception e)
+        catch(QpidException e)
         {
-        	
+            throw new RuntimeException(e);
         }
     }
 

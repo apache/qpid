@@ -28,10 +28,10 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-class TypeSwitch<C> extends Switch<Short,Event<C,Frame>>
+class TypeSwitch<C> extends Switch<Byte,Event<C,Frame>>
 {
 
-    public Short resolve(Event<C,Frame> event)
+    public Byte resolve(Event<C,Frame> event)
     {
         return event.target.getType();
     }

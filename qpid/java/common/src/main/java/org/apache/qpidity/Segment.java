@@ -20,10 +20,14 @@
  */
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
-
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+
+import java.nio.ByteBuffer;
+
+import static org.apache.qpidity.Functions.*;
+
 
 /**
  * Segment
@@ -31,50 +35,40 @@ import java.util.Collection;
  * @author Rafael H. Schloming
  */
 
-class Segment
+class Segment implements Iterable<ByteBuffer>
 {
 
-    private final Collection<Frame> frames = new ArrayList<Frame>();
+    private final Collection<ByteBuffer> fragments = new ArrayList<ByteBuffer>();
 
-    public void add(Frame frame)
+    public void add(ByteBuffer fragment)
     {
-        frames.add(frame);
+        fragments.add(fragment);
     }
 
-    public ByteBuffer getPayload()
+    public Iterator<ByteBuffer> getFragments()
     {
-        // we should probably use our own decoder interface here so
-        // that we can directly read from the incoming frame objects
-        // and automatically skip frame boundaries without copying
-        // everything in order to get a contiguous byte buffer
-        int capacity = 0;
-        for (Frame frame : frames)
-        {
-            capacity += frame.getSize();
-        }
-        ByteBuffer buf = ByteBuffer.allocate(capacity);
-        for (Frame frame : frames)
-        {
-            buf.put(frame.getPayload());
-        }
-        buf.flip();
-        return buf;
+        return new SliceIterator(fragments.iterator());
+    }
+
+    public Iterator<ByteBuffer> iterator()
+    {
+        return getFragments();
     }
 
     public String toString()
     {
-        StringBuffer buf = new StringBuffer();
-        String sep = ",\n  ";
+        StringBuilder str = new StringBuilder();
+        String sep = " | ";
 
-        for (Frame f : frames)
+        for (ByteBuffer buf : this)
         {
-            buf.append(f.toString());
-            buf.append(sep);
+            str.append(str(buf));
+            str.append(sep);
         }
 
-        buf.setLength(buf.length() - sep.length());
+        str.setLength(str.length() - sep.length());
 
-        return buf.toString();
+        return str.toString();
     }
 
 }

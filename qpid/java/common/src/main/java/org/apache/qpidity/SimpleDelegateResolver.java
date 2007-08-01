@@ -20,33 +20,26 @@
  */
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
-
 
 /**
- * BBDecoder
+ * SimpleDelegateResolver
  *
  * @author Rafael H. Schloming
  */
 
-class BBDecoder extends AbstractDecoder
+class SimpleDelegateResolver<C> implements DelegateResolver<C>
 {
 
-    private final ByteBuffer in;
+    private final Delegate<C> delegate;
 
-    public BBDecoder(ByteBuffer in)
+    public SimpleDelegateResolver(Delegate<C> delegate)
     {
-        this.in = in;
+        this.delegate = delegate;
     }
 
-    protected byte get()
+    public Delegate<C> resolve(Struct struct)
     {
-        return in.get();
-    }
-
-    protected void get(byte[] bytes)
-    {
-        in.get(bytes);
+        return delegate;
     }
 
 }

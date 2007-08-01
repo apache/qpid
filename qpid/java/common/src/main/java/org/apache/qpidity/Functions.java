@@ -24,29 +24,57 @@ import java.nio.ByteBuffer;
 
 
 /**
- * BBDecoder
+ * Functions
  *
  * @author Rafael H. Schloming
  */
 
-class BBDecoder extends AbstractDecoder
+class Functions
 {
 
-    private final ByteBuffer in;
-
-    public BBDecoder(ByteBuffer in)
+    public static final short unsigned(byte b)
     {
-        this.in = in;
+        return (short) ((0x100 + b) & 0xFF);
     }
 
-    protected byte get()
+    public static final int unsigned(short s)
     {
-        return in.get();
+        return (0x10000 + s) & 0xFFFF;
     }
 
-    protected void get(byte[] bytes)
+    public static final long unsigned(int i)
     {
-        in.get(bytes);
+        return (0x1000000000L + i) & 0xFFFFFFFFL;
+    }
+
+    public static final byte lsb(int i)
+    {
+        return (byte) (0xFF & i);
+    }
+
+    public static final byte lsb(long l)
+    {
+        return (byte) (0xFF & l);
+    }
+
+    public static final String str(ByteBuffer buf)
+    {
+        return str(buf, buf.limit());
+    }
+
+    public static final String str(ByteBuffer buf, int limit)
+    {
+        StringBuilder str = new StringBuilder();
+        for (int i = 0; i < limit; i++)
+        {
+            if (i > 0 && i % 2 == 0)
+            {
+                str.append(" ");
+            }
+            str.append(String.format("%02x", buf.get(i)));
+        }
+
+        return str.toString();
     }
 
 }

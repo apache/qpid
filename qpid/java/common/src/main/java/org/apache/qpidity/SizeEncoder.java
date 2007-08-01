@@ -23,7 +23,7 @@ package org.apache.qpidity;
 import java.nio.ByteBuffer;
 
 import java.util.Map;
-import java.util.UUID;
+
 
 /**
  * SizeEncoder
@@ -31,7 +31,7 @@ import java.util.UUID;
  * @author Rafael H. Schloming
  */
 
-class SizeEncoder implements Encoder
+class SizeEncoder extends AbstractEncoder
 {
 
     private int size;
@@ -52,39 +52,17 @@ class SizeEncoder implements Encoder
         this.size = size;
     }
 
-    public void writeBit(boolean b)
-    {
-        //throw new Error("TODO");
-    }
-
-    public void writeOctet(short b)
+    @Override protected void put(byte b)
     {
         size += 1;
     }
 
-    public void writeShort(int s)
+    @Override protected void put(ByteBuffer src)
     {
-        size += 2;
+        size += src.remaining();
     }
 
-    public void writeLong(long i)
-    {
-        size += 4;
-    }
-
-    public void writeLonglong(long l)
-    {
-        size += 8;
-    }
-
-
-    public void writeTimestamp(long l)
-    {
-        size += 8;
-    }
-
-
-    public void writeShortstr(String s)
+    @Override public void writeShortstr(String s)
     {
         if (s.length() > 255) {
             throw new IllegalArgumentException(s);
@@ -93,30 +71,10 @@ class SizeEncoder implements Encoder
         size += s.length();
     }
 
-    public void writeLongstr(String s)
+    @Override public void writeLongstr(String s)
     {
-        throw new Error("TODO");
-    }
-
-
-    public void writeTable(Map<String,?> table)
-    {
-        //throw new Error("TODO");
-    }
-
-    public void writeRfc1982LongSet(Range<Long>[] ranges)
-    {
-        throw new Error("TODO");
-    }
-
-    public void writeUuid(UUID uuid)
-    {
-        throw new Error("TODO");
-    }
-
-    public void writeContent(String c)
-    {
-        throw new Error("TODO");
+        writeLong(s.length());
+        size += s.length();
     }
 
 }

@@ -29,12 +29,13 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-class ContentHandler<C extends DelegateResolver<C>> extends TypeSwitch<C>
+class ContentHandler<C> extends TypeSwitch<C>
 {
 
-    public ContentHandler()
+    public ContentHandler(StructFactory factory, DelegateResolver<C> resolver)
     {
-        map(Frame.METHOD, new SegmentAssembler<C>(new MethodDispatcher<C>()));
+        MethodDispatcher<C> md = new MethodDispatcher<C>(factory, resolver);
+        map(Frame.METHOD, new SegmentAssembler<C>(md));
         map(Frame.HEADER, new SegmentAssembler<C>(new HeaderHandler<C>()));
         map(Frame.BODY, new BodyHandler<C>());
     }
