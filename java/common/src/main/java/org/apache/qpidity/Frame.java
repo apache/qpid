@@ -21,7 +21,13 @@
 package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Iterator;
+
+import static org.apache.qpidity.Functions.*;
+
 
 /**
  * Frame
@@ -29,103 +35,127 @@ import java.nio.ShortBuffer;
  * @author Rafael H. Schloming
  */
 
-class Frame
+class Frame implements Iterable<ByteBuffer>
 {
+    public static final int HEADER_SIZE = 12;
 
-    public static final short L1 = 0;
-    public static final short L2 = 1;
-    public static final short L3 = 2;
-    public static final short L4 = 3;
+    // XXX: enums?
+    public static final byte L1 = 0;
+    public static final byte L2 = 1;
+    public static final byte L3 = 2;
+    public static final byte L4 = 3;
 
-    public static final short METHOD = 1;
-    public static final short HEADER = 2;
-    public static final short BODY = 3;
+    public static final byte METHOD = 1;
+    public static final byte HEADER = 2;
+    public static final byte BODY = 3;
 
-    final private short channel;
-    final private short track;
-    final private short type;
-    final private boolean firstSegment;
-    final private boolean lastSegment;
-    final private boolean firstFrame;
-    final private boolean lastFrame;
-    final private ByteBuffer payload;
+    public static final byte RESERVED = 0x0;
 
-    // XXX
-    final private int sequence = 0;
+    public static final byte FIRST_SEG = 0x8;
+    public static final byte LAST_SEG = 0x4;
+    public static final byte FIRST_FRAME = 0x2;
+    public static final byte LAST_FRAME = 0x1;
 
-    public Frame(short channel, short track, short type, boolean firstSegment,
-                 boolean lastSegment, boolean firstFrame, boolean lastFrame,
-                 ByteBuffer payload)
+    final private byte flags;
+    final private byte type;
+    final private byte track;
+    final private int channel;
+    final private List<ByteBuffer> fragments;
+    private int size;
+
+    public Frame(byte flags, byte type, byte track, int channel)
     {
-        this.channel = channel;
-        this.track = track;
+        this.flags = flags;
         this.type = type;
-        this.firstSegment = firstSegment;
-        this.lastSegment = lastSegment;
-        this.firstFrame = firstFrame;
-        this.lastFrame = lastFrame;
-        this.payload = payload;
+        this.track = track;
+        this.channel = channel;
+        this.size = 0;
+        this.fragments = new ArrayList<ByteBuffer>();
     }
 
-    public short getChannel()
+    public void addFragment(ByteBuffer fragment)
+    {
+        fragments.add(fragment);
+        size += fragment.remaining();
+    }
+
+    public int getChannel()
     {
         return channel;
     }
 
-    public short getTrack()
+    public int getSize()
     {
-        return track;
+        return size;
     }
 
-    public short getType()
+    public byte getType()
     {
         return type;
     }
 
+    public byte getTrack()
+    {
+        return track;
+    }
+
+    private boolean flag(byte mask)
+    {
+        return (flags & mask) != 0;
+    }
+
     public boolean isFirstSegment()
     {
-        return firstSegment;
+        return flag(FIRST_SEG);
     }
 
     public boolean isLastSegment()
     {
-        return lastSegment;
+        return flag(LAST_SEG);
     }
 
     public boolean isFirstFrame()
     {
-        return firstFrame;
+        return flag(FIRST_FRAME);
     }
 
     public boolean isLastFrame()
     {
-        return lastFrame;
+        return flag(LAST_FRAME);
     }
 
-    public ByteBuffer getPayload()
+    public Iterator<ByteBuffer> getFragments()
     {
-        return payload.slice();
+        return new SliceIterator(fragments.iterator());
     }
 
-    public int getSize()
+    public Iterator<ByteBuffer> iterator()
     {
-        return payload.remaining();
+        return getFragments();
     }
 
     public String toString()
     {
         StringBuilder str = new StringBuilder();
         str.append(String.format
-                   ("[%05d %05d %1d %1d %d%d%d%d]", channel, getSize(), track, type,
-                    firstSegment ? 1 : 0, lastSegment ? 1 : 0,
-                    firstFrame ? 1 : 0, lastFrame ? 1 : 0));
-        ShortBuffer shorts = payload.asShortBuffer();
-        for (int i = 0; i < shorts.limit(); i++) {
-            str.append(String.format(" %04x", shorts.get(i)));
-            if (str.length() > 70) {
-                str.append(" ...");
-                break;
+                   ("[%05d %05d %1d %1d %d%d%d%d]", getChannel(), getSize(),
+                    getTrack(), getType(),
+                    isFirstSegment() ? 1 : 0, isLastSegment() ? 1 : 0,
+                    isFirstFrame() ? 1 : 0, isLastFrame() ? 1 : 0));
+
+        boolean first = true;
+        for (ByteBuffer buf : this)
+        {
+            if (first)
+            {
+                first = false;
             }
+            else
+            {
+                str.append(" | ");
+            }
+
+            str.append(str(buf));
         }
 
         return str.toString();

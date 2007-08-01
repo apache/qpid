@@ -49,4 +49,6 @@ public interface Encoder
 
     void writeContent(String c);
 
+    void flush();
+
 }

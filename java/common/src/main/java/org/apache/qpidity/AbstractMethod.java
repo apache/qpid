@@ -20,7 +20,6 @@
  */
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
 
 /**
  * AbstractMethod
@@ -28,4 +27,19 @@ import java.nio.ByteBuffer;
  * @author Rafael H. Schloming
  */
 
-abstract class AbstractMethod extends AbstractStruct implements Method {}
+abstract class AbstractMethod extends AbstractStruct implements Method {
+
+    public byte getEncodedTrack()
+    {
+        // XXX
+        return Frame.L2;
+    }
+
+    // XXX: do we need a segment base type?
+    public byte getSegmentType()
+    {
+        // XXX
+        return Frame.METHOD;
+    }
+
+}

@@ -22,31 +22,38 @@ package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
 
+import java.util.Iterator;
+
 
 /**
- * BBDecoder
+ * SliceIterator
  *
  * @author Rafael H. Schloming
  */
 
-class BBDecoder extends AbstractDecoder
+class SliceIterator implements Iterator<ByteBuffer>
 {
 
-    private final ByteBuffer in;
+    final private Iterator<ByteBuffer> iterator;
 
-    public BBDecoder(ByteBuffer in)
+    public SliceIterator(Iterator<ByteBuffer> iterator)
     {
-        this.in = in;
+        this.iterator = iterator;
     }
 
-    protected byte get()
+    public boolean hasNext()
     {
-        return in.get();
+        return iterator.hasNext();
     }
 
-    protected void get(byte[] bytes)
+    public ByteBuffer next()
     {
-        in.get(bytes);
+        return iterator.next().slice();
+    }
+
+    public void remove()
+    {
+        throw new UnsupportedOperationException();
     }
 
 }

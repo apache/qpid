@@ -20,33 +20,20 @@
  */
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
-
 
 /**
- * BBDecoder
+ * ProtocolHandler
  *
  * @author Rafael H. Schloming
  */
 
-class BBDecoder extends AbstractDecoder
+interface ProtocolHandler
 {
 
-    private final ByteBuffer in;
+    void init(ProtocolHeader header);
 
-    public BBDecoder(ByteBuffer in)
-    {
-        this.in = in;
-    }
+    void frame(Frame frame);
 
-    protected byte get()
-    {
-        return in.get();
-    }
-
-    protected void get(byte[] bytes)
-    {
-        in.get(bytes);
-    }
+    void error(ProtocolError error);
 
 }

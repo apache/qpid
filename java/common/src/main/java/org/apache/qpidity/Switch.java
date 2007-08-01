@@ -44,6 +44,12 @@ abstract class Switch<K,E> implements Handler<E>
     {
         K key = resolve(event);
         Handler<E> handler = handlers.get(key);
+        if (handler == null)
+        {
+            throw new IllegalStateException("no such key: " + key +
+                                            " this = " + this +
+                                            " handlers = " + handlers);
+        }
         handler.handle(event);
     }
 

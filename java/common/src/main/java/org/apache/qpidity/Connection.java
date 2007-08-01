@@ -23,6 +23,9 @@ package org.apache.qpidity;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.nio.ByteBuffer;
+
+
 /**
  * Connection
  *
@@ -33,27 +36,79 @@ import java.util.Map;
  * short instead of Short
  */
 
-class Connection implements Handler<Frame>
+class Connection implements ProtocolActions
 {
 
-    final private Map<Short,Channel> channels = new HashMap<Short,Channel>();
-    final private StructFactory factory = new StructFactory_v0_10();
+    final private Handler<ByteBuffer> input;
+    final private Handler<ByteBuffer> output;
 
-    public void handle(Frame frame)
+    final private Map<Integer,Channel> channels = new HashMap<Integer,Channel>();
+    private StructFactory factory;
+
+    // XXX
+    private int maxFrame = 64*1024;
+
+    public Connection(Handler<ByteBuffer> output)
+    {
+        this.input = new InputHandler(this);
+        this.output = output;
+    }
+
+    public Handler<ByteBuffer> getInputHandler()
+    {
+        return input;
+    }
+
+    public Handler<ByteBuffer> getOutputHandler()
+    {
+        return output;
+    }
+
+    public StructFactory getFactory()
+    {
+        return factory;
+    }
+
+    public int getMaxFrame()
+    {
+        return maxFrame;
+    }
+
+    public void init(ProtocolHeader header)
+    {
+        System.out.println(header);
+        // XXX: hardcoded versions
+        if (header.getMajor() != 0 && header.getMinor() != 10)
+        {
+            ByteBuffer buf = ByteBuffer.allocate(8);
+            buf.put("AMQP".getBytes());
+            buf.put((byte) 1);
+            buf.put((byte) 1);
+            buf.put((byte) 0);
+            buf.put((byte) 10);
+            buf.flip();
+            output.handle(buf);
+            // XXX: how do we close the connection?
+        } else {
+            factory = new StructFactory_v0_10();
+        }
+    }
+
+    public void frame(Frame frame)
     {
         Channel channel = channels.get(frame.getChannel());
         if (channel == null)
         {
-            channel = new Channel(this);
+            channel = new Channel(this, frame.getChannel());
             channels.put(frame.getChannel(), channel);
         }
 
         channel.handle(frame);
     }
 
-    public StructFactory getFactory()
+    public void error(ProtocolError error)
     {
-        return factory;
+        throw new RuntimeException(error.getMessage());
     }
 
 }

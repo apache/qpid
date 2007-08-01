@@ -20,32 +20,43 @@
  */
 package org.apache.qpidity;
 
-
 /**
  * Channel
  *
  * @author Rafael H. Schloming
  */
 
-class Channel extends Invoker
-    implements Handler<Frame>, DelegateResolver<Channel>
+class Channel extends Invoker implements Handler<Frame>
 {
 
     final private Connection connection;
+    final private int channel;
     final private TrackSwitch<Channel> tracks;
-
 
     // session may be null
     private Session session;
 
-    public Channel(Connection connection)
+    public Channel(Connection connection, int channel)
     {
         this.connection = connection;
+        this.channel = channel;
+
+        DelegateResolver<Channel> chDR =
+            new SimpleDelegateResolver<Channel>(new ChannelDelegate());
+        DelegateResolver<Session> ssnDR =
+            new SimpleDelegateResolver<Session>(new SessionDelegate());
+
         tracks = new TrackSwitch<Channel>();
-        tracks.map(Frame.L1, new MethodHandler<Channel>());
-        tracks.map(Frame.L2, new MethodHandler<Channel>());
-        tracks.map(Frame.L3, new SessionResolver<Frame>(new MethodHandler<Session>()));
-        tracks.map(Frame.L4, new SessionResolver<Frame>(new ContentHandler<Session>()));
+        tracks.map(Frame.L1, new MethodHandler<Channel>(getFactory(), chDR));
+        tracks.map(Frame.L2, new MethodHandler<Channel>(getFactory(), chDR));
+        tracks.map(Frame.L3, new SessionResolver<Frame>
+                   (new MethodHandler<Session>(getFactory(), ssnDR)));
+        tracks.map(Frame.L4, new SessionResolver<Frame>
+                   (new ContentHandler<Session>(getFactory(), ssnDR)));
+    }
+
+    public int getEncodedChannel() {
+        return channel;
     }
 
     public Session getSession()
@@ -63,19 +74,30 @@ class Channel extends Invoker
         tracks.handle(new Event<Channel,Frame>(this, frame));
     }
 
-    public void write(Writable writable)
+    public void write(Method m)
     {
-        System.out.println("writing: " + writable);
+        SizeEncoder sizer = new SizeEncoder();
+        sizer.writeLong(m.getEncodedType());
+        m.write(sizer);
+        sizer.flush();
+        int size = sizer.getSize();
+
+        // XXX: need to set header flags properly
+        SegmentEncoder enc = new SegmentEncoder(connection.getOutputHandler(),
+                                                connection.getMaxFrame(),
+                                                (byte) 0x0,
+                                                m.getEncodedTrack(),
+                                                m.getSegmentType(),
+                                                channel,
+                                                size);
+        enc.writeLong(m.getEncodedType());
+        m.write(enc);
+        enc.flush();
     }
 
     protected StructFactory getFactory()
     {
         return connection.getFactory();
-    }
-
-    public Delegate<Channel> resolve(Struct struct)
-    {
-        return new ChannelDelegate();
     }
 
     protected void invoke(Method m)
