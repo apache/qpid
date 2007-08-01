@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+require 'amqpgen'
+
+#
+# Run a set of code generation templates.
+#
+
+if ARGV.size < 3
+  puts <<EOS
+Usage: #{ARGV[0]} OUTDIR  SPEC.xml [ ... ] TEMPLATE.rb [ ... ]
+Parse all SPEC.xml files to create an AMQP model, run each TEMPLATE
+putting the resulting files under OUTDIR. Prints a list of files
+generated to standard output.
+
+If OUTDIR is '-'  then just prints file list without generating files.
+EOS
+  exit 1
+end
+outdir=ARGV[0]
+specs=ARGV.grep(/\.xml$/)
+templates=ARGV.grep(/\.rb$/)
+Amqp=AmqpRoot.new(*specs)
+templates.each { |t| require t }

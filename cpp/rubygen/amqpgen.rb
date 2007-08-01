@@ -135,12 +135,13 @@ class AmqpRoot < AmqpElement
   def classes()
     @cache_classes ||= elements.collect("class") { |c| AmqpClass.new(c,self) }.sort_by_name
   end
-
+  
+  # Return all methods on all classes.
+  def methods() classes.collect { |c| c.methods }.flatten;  end
+  
   # Return all methods on chassis for all classes.
   def methods_on(chassis)
-    classes.collect { |c|
-      c.methods_on(chassis)
-    }.flatten
+    classes.collect { |c| c.methods_on(chassis) }.flatten
   end
 
   # Merge contents of elements.
@@ -188,6 +189,12 @@ class Generator
     }
     # Note if we stopped mid-line
     @midline = /[^\n]\z/ === str
+  end
+
+  # Append str + '\n' to generated code.
+  def genl(str="")
+    gen str
+    gen "\n"
   end
 
   # Generate code with added prefix.

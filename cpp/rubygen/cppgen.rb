@@ -105,6 +105,7 @@ class CppGen < Generator
 
   # Write a header file. 
   def h_file(path)
+    path = (/\.h$/ === path ? path : path+".h")
     guard=path.upcase.tr('./-','_')
     file(path) { 
       gen "#ifndef #{guard}\n"
@@ -122,5 +123,29 @@ class CppGen < Generator
       yield
     end
   end
+
+  def include(header) genl "#include \"#{header}\""; end
+
+  def scope(open="{",close="}", &block) 
+    genl open; indent(&block); genl close
+  end
+
+  def namespace(name, &block) 
+    names = name.split("::")
+    names.each { |n| genl "namespace #{n} {" }
+    yield
+    genl('}'*names.size+" // "+name)
+  end
+
+  def struct_class(type, name, *bases, &block)
+    gen "#{type} #{name}"
+    gen ": #{bases.join(', ')}" unless bases.empty
+    genl "{"
+    yield
+    genl "};"
+  end
+
+  def struct(name, *bases, &block) struc_class("struct", bases, &block); end
+  def class_(name, *bases, &block) struc_class("struct", bases, &block); end
 end
 
