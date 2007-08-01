@@ -23,6 +23,9 @@ package org.apache.qpidity;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.qpidity.api.Message;
+import org.apache.qpidity.api.StreamingMessageListener;
+
 /**
  * Session
  *
@@ -37,6 +40,8 @@ public class Session extends Invoker
     private int command_id = 0;
     // XXX
     final Map<Integer,Handler<Struct>> handlers = new HashMap<Integer,Handler<Struct>>();
+    
+    Map<String,StreamingMessageListener> messagListeners = new HashMap<String,StreamingMessageListener>();    
 
     public void attach(Channel channel)
     {
@@ -61,4 +66,63 @@ public class Session extends Invoker
         return channel.getFactory();
     }
 
+    // -----------------------------------------
+    //          Messaging Methods
+    // ------------------------------------------
+    public void messageTransfer(String destination, Message msg) throws QpidException
+	{
+				
+	}
+    
+	public void data(byte[] src) throws QpidException
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void endData() throws QpidException
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void messageHeaders(Header... headers) throws QpidException
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void messageTransfer(String destination,Option... options) throws QpidException
+	{
+		// TODO Auto-generated method stub
+		
+	}
+	
+	public void messageAcknowledge() throws QpidException
+	{
+		// TODO Auto-generated method stub		
+	}
+
+	public boolean messageAcquire() throws QpidException
+	{
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public void messageReject() throws QpidException
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void messageRelease() throws QpidException
+	{
+		// TODO Auto-generated method stub		
+	}	
+	
+    public void addMessageListener(String destination,StreamingMessageListener listener)
+    {
+    	messagListeners.put(destination, listener);
+    }    
+    
 }
