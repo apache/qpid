@@ -142,20 +142,29 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-# Check for cluster requirements.
+# Check for cluster requirements. Need openais 0.80.3 or higher.x1
 save_ldflags=$LDFLAGS  
-  LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
+LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
 AC_CHECK_LIB([cpg],[cpg_local_get],[cpg_lib=yes])
 AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes])
-if test x$cpg_lib = xyes -a x$cpg_h = xyes; then
-   enable_CLUSTER=yes; 
-   CPPFLAGS+=" -DCLUSTER"
-else
-   enable_CLUSTER=no; 
-   LDFLAGS=$save_ldflags	    
+test x$cpg_lib = xyes -a x$cpg_h = xyes && enable_CLUSTER=yes 
+
+if test x$enable_CLUSTER = xyes; then
+  AC_ARG_ENABLE([cluster],  
+    [AS_HELP_STRING([--disable-cluster],
+      [disable cluster functionality (default enabled)])],
+    [enable_CLUSTER=$enableval])   
 fi
 AM_CONDITIONAL([CLUSTER], [test x$enable_CLUSTER = xyes])
-
+if test x$enable_CLUSTER = xyes; then
+  CPPFLAGS+=" -DCLUSTER"
+  REQUIRES_OPENAIS="Requires: openais"
+  AC_SUBST(REQUIRES_OPENAIS)
+  REQUIRES_OPENAIS_DEVEL="Requires: openais-devel"
+  AC_SUBST(REQUIRES_OPENAIS_DEVEL)
+else
+   LDFLAGS=$save_ldflags	    
+fi
 	
 # Files to generate	
 AC_CONFIG_FILES([
