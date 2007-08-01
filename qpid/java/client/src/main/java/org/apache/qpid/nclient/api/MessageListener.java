@@ -18,14 +18,20 @@
  */
 package org.apache.qpid.nclient.api;
 
+import org.apache.qpidity.api.Message;
+
 /**
  * MessageListeners are used to asynchronously receive messages.
  */
 public interface MessageListener
 {
     /**
-     * Deliver a message to the listener.
-     *
+     * <p>Deliver a message to the listener.
+     * You will be notified when the whole message is received
+     * However, underneath the message might be streamed off disk
+     * or network buffers.
+     * </p>
+     * 
      * @param message The message delivered to the listner. 
      */
     public void onMessage(Message message);
