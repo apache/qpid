@@ -22,11 +22,12 @@ import java.util.Set;
 
 import org.apache.qpidity.Option;
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.api.Message;
 
 /**
  * Used to receive messages from a queue
  */
-public interface MessageReceiver extends Resource
+public interface MessageReceiver
 {
     /**
      * Get this receiver options.
