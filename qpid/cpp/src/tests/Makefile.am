@@ -14,6 +14,7 @@ check_PROGRAMS=
 check_LTLIBRARIES=
 TESTS=
 EXTRA_DIST=
+CLEANFILES=
 
 #
 # Unit test programs.
@@ -171,7 +172,7 @@ all-am: .valgrind.supp .valgrindrc
 # ltmain invocations, one may corrupt the temporaries of the other.
 .NOTPARALLEL:
 
-CLEANFILES=valgrind.out *.log *.vglog .valgrindrc .valgrind.supp dummy_test $(unit_wrappers)
+CLEANFILES+=valgrind.out *.log *.vglog .valgrindrc .valgrind.supp dummy_test $(unit_wrappers)
 MAINTAINERCLEANFILES=gen.mk
 
 interop_runner_SOURCES = 	\

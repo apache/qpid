@@ -90,28 +90,7 @@ CPPUNIT_CXXFLAGS=$CPPUNIT_CFLAGS
 AC_SUBST(CPPUNIT_LIBS)
 AC_SUBST(CPPUNIT_CXXFLAGS)
 
-AC_ARG_ENABLE([apr-platform],
-  [AS_HELP_STRING([--enable-apr-platform],
-    [use the Apache Portable Runtime library for platform (default no)])],
-  [case $enableval in
-    yes|no) enable_APR_PLATFORM=$enableval;;
-    *) AC_MSG_ERROR([Invalid value for --enable-apr-platform: $enableval]);;
-   esac],
-  [enable_APR_PLATFORM=no]
-)
-AM_CONDITIONAL([USE_APR_PLATFORM], [test x$enable_APR_PLATFORM = xyes])
-
-APR_MINIMUM_VERSION=1.2.2
-AC_SUBST(APR_MINIMUM_VERSION)
-AC_SUBST(APR_CXXFLAGS)
-AC_SUBST(USE_APR_PLATFORM)
-
-if test "$enable_APR_PLATFORM" = yes; then
-  PKG_CHECK_MODULES([APR], [apr-1 >= $APR_MINIMUM_VERSION])
-  APR_CXXFLAGS="$APR_CFLAGS -DUSE_APR_PLATFORM=1"
-  USE_APR_PLATFORM=1
-fi
-
+# Enable Valgrind	
 AC_ARG_ENABLE([valgrind],
   [AS_HELP_STRING([--enable-valgrind],
     [run valgrind memory checker on tests, if available (default yes)])],
@@ -131,6 +110,22 @@ test "$enable_VALGRIND" = no && VALGRIND=
 # If rpmlint is availalbe we'll run it when building RPMs.
 AC_CHECK_PROG([RPMLINT], [rpmlint], [rpmlint])
 AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
+
+# Code generation: generated code is included in the distribution
+# so code generation is only required in an svn checkout.
+# It requires several external tools and files, which we check for here.
+
+AC_CHECK_PROG([RUBY], [ruby], [ruby])
+AC_CHECK_PROG([JAVA], [java], [java])
+AC_CHECK_PROG([JAVAC], [javac], [javc])
+test -n "$RUBY" -a -n "$JAVA" -a -n "$JAVAC" && generate=yes
+
+specdir=`pwd`/$srcdir/../specs  
+AMQP_XML=$specdir/amqp-transitional.0-10.xml
+AC_SUBST(AMQP_XML)
+ls $AMQP_XML >/dev/null 2>&1 || generate=no
+
+AM_CONDITIONAL([GENERATE], [test x$generate = xyes])
 
 # URL and download URL for the package.
 URL=http://rhm.et.redhat.com/qpidc
