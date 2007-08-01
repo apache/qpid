@@ -1,16 +1,13 @@
 RUBY CODE GENERATOR
 
-amqpgen.rb: builds an AMQP model from XML files and provides generic code generation functions (e.g. capitalization of names etc)
+Run ./generate for usage.
+Examples in samples/
 
-cppgen.rb: C++ specific code generation functions.
+For example:
+ ./generate . ../../specs/amqp.0-9.xml samples/Proxy.rb 
+will generate
 
-A template is a ruby file that generates one or more source files.
 
-For an example run
- samples/runme test <amqp.xml files>
-
-The first argument is a directory for generated files, remaining arguments
-are xml files.
 
 
 

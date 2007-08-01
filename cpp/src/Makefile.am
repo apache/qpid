@@ -1,30 +1,74 @@
 SUBDIRS = . tests
 
-# Generated code
--include generate.mk
+## Generated code
 
-generate.mk $(generated_cpp) $(generated_h): gen/timestamp
+# Note: generated soure and makefiles included in distribution so a
+# distribution can be built without code generation tools and XML
+# sources.
 
-gen/timestamp: generate.sh $(generator)
-	$(srcdir)/generate.sh
-	touch $@
+EXTRA_DIST= $(platform_dist) 
+
+EXTRA_DIST += gen/generate.mk generate.sh $(generated_cpp) $(generated_h) \
+  rubygen.mk $(rgen_srcs) 
+
+# AMQP_XML is defined in ../configure.ac
+specs=@AMQP_XML@ $(top_srcdir)/xml/cluster.xml
+
+# Makefiles are either generated or copied from $srcdir.
+sinclude gen/generate.mk
+sinclude rubygen.mk
+
+DISTCLEANFILES=gen/generate.mk rubygen.mk
+
+if GENERATE
+
+# Java code generator.
+# Must generate into a separate gen directory because otherwise
+# there's no way to figure out which files are generated.
+
+gentools_dir=$(top_srcdir)/gentools
+
+gen/generate.mk: generate.sh $(specs) $(generator)
+	env gentools_dir=$(gentools_dir) specs="$(specs)" $(srcdir)/generate.sh
+
+gen $(generated_cpp) $(generated_h): gen/generate.mk
 
 # Empty rule in case a generator file is renamed/removed.
 $(generator):
 
-DISTCLEANFILES=generate.mk
-
-clean-gen:
+maintainer-clean-local:
 	rm -rf gen
 
-maintainer-clean-local:
-	clean-gen
+# Ruby generator.
 
-EXTRA_DIST=generate.sh $(generated_cpp) $(generated_h) $(platform_dist)
+rgen_dir=$(top_srcdir)/rubygen
+rgen_tdir=$(rgen_dir)/templates
+rgen_script=$(rgen_dir)/generate
+rgen_cmd=ruby -I $(rgen_dir) $(rgen_script)
 
-AM_CXXFLAGS = $(WARNING_CFLAGS) $(APR_CXXFLAGS)
+rgen_templates=$(rgen_tdir)/frame_body_lists.rb
+
+rubygen.mk: $(rgen_script) $(specs) $(rgen_templates)
+	echo rgen_srcs=`$(rgen_cmd) - $(specs) $(rgen_templates)` > $@
+	echo rgen_srcs=`$(rgen_cmd) . $(specs) $(rgen_templates)` 
+
+$(rgen_srcs): rubygen.mk
+
+else				# !GENERATE
+# If not generating, copy generated makefiles from source dir to build dir.
+gen/generate.mk:
+	cp $(srcdir)/$@ $@
+rubygen.mk:
+	cp $(srcdir)/$@ $@
+endif				# GENERATE
+
+## Compiler flags
+
+AM_CXXFLAGS = $(WARNING_CFLAGS)
 AM_LDFLAGS = -version-info $(LIBTOOL_VERSION_INFO_ARG)
 INCLUDES = -Igen -I$(srcdir)/gen
+
+## Automake macros to build libraries and executables.
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
@@ -32,21 +76,6 @@ qpidd_LDADD =					\
 
 sbin_PROGRAMS = qpidd
 qpidd_SOURCES = qpidd.cpp
-
-apr_plat_src = \
-  qpid/sys/apr/APRBase.cpp \
-  qpid/sys/apr/APRPool.cpp \
-  qpid/sys/apr/Socket.cpp \
-  qpid/sys/apr/Time.cpp \
-  qpid/sys/apr/Thread.cpp \
-  qpid/sys/apr/Shlib.cpp
-
-apr_plat_hdr = \
-  qpid/sys/apr/APRBase.h \
-  qpid/sys/apr/APRPool.h \
-  qpid/sys/apr/Condition.h \
-  qpid/sys/apr/Mutex.h \
-  qpid/sys/apr/Thread.h
 
 posix_plat_src = \
   qpid/sys/epoll/EpollPoller.cpp \
@@ -64,15 +93,8 @@ posix_plat_hdr = \
   qpid/sys/posix/Mutex.h \
   qpid/sys/posix/Thread.h
 
-if USE_APR_PLATFORM
- platform_dist=$(posix_plat_src) $(posix_plat_hdr)
- platform_src = $(apr_plat_src)
- platform_hdr = $(apr_plat_hdr)
-else
- platform_dist=$(apr_plat_src) $(apr_plat_hdr)
- platform_src = $(posix_plat_src)
- platform_hdr = $(posix_plat_hdr)
-endif
+platform_src = $(posix_plat_src)
+platform_hdr = $(posix_plat_hdr)
 
 lib_LTLIBRARIES = libqpidcommon.la libqpidbroker.la libqpidclient.la
 
@@ -91,7 +113,6 @@ libqpidcommon_la_LIBADD = \
   -lboost_program_options \
   -luuid \
   libLogger.la \
-  $(APR_LIBS) \
   $(LIB_DLOPEN) \
   $(LIB_CLOCK_GETTIME)
 
