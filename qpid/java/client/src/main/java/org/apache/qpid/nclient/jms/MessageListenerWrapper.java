@@ -18,9 +18,9 @@
 package org.apache.qpid.nclient.jms;
 
 import org.apache.qpid.nclient.api.MessageListener;
-import org.apache.qpid.nclient.api.Message;
 import org.apache.qpid.nclient.jms.message.AbstractJMSMessage;
 import org.apache.qpid.nclient.jms.message.QpidMessage;
+import org.apache.qpidity.api.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,12 +78,12 @@ public class MessageListenerWrapper implements MessageListener
                 _consumer.getSession().acknowledgeMessage(jmsMessage);
             }
             // The JMS specs says:
-            /* The result of a listener throwing a RuntimeException depends on the session’s
+            /* The result of a listener throwing a RuntimeException depends on the sessionï¿½s
             * acknowledgment mode.
-            • --- AUTO_ACKNOWLEDGE or DUPS_OK_ACKNOWLEDGE - the message
+            ï¿½ --- AUTO_ACKNOWLEDGE or DUPS_OK_ACKNOWLEDGE - the message
             * will be immediately redelivered. The number of times a JMS provider will
             * redeliver the same message before giving up is provider-dependent.
-            • --- CLIENT_ACKNOWLEDGE - the next message for the listener is delivered.
+            ï¿½ --- CLIENT_ACKNOWLEDGE - the next message for the listener is delivered.
             * --- Transacted Session - the next message for the listener is delivered.
             *
             * The number of time we try redelivering the message is 0
@@ -99,7 +99,7 @@ public class MessageListenerWrapper implements MessageListener
             // If the session has been recovered we then need to redelivered this message
             if (_consumer.getSession().isInRecovery())
             {
-                message.release();
+                //message.release();
             }
             // Tell the jms Session to ack this message if required
             else if (!_consumer.getSession().getTransacted())
