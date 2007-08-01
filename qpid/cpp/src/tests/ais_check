@@ -34,6 +34,6 @@ fi
 
 FAILED=0
 for test in `cat ais_tests`; do
-    $srcdir/$test || FAILED=`expr $FAILED + 1`
+    ./$test || FAILED=`expr $FAILED + 1`
 done
 exit $FAILED

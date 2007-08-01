@@ -14,12 +14,8 @@ export JAVA JAVAC
   perl -ne '/^(include |if |else|endif)/ or print' Makefile.am \
       | make -f - abs_srcdir=`dirname $(pwd)` gen.mk > /dev/null )
 
-# Bootstrap generated code.
-(cd src; ./generate.sh)
-
 automake
 autoconf
-
 
 if [ "$1" = "-build" -o "$1" = "--build" ] ; then
     shift

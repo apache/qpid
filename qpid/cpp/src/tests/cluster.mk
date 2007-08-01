@@ -21,6 +21,7 @@ AIS_TESTS=
 ais_check: ais_tests
 ais_tests:
 	echo $(AIS_TESTS) >$@
+CLEANFILES+=ais_tests
 
 AIS_TESTS+=Cpg
 check_PROGRAMS+=Cpg

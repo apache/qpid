@@ -1,19 +1,19 @@
 # !/bin/sh
 # Generate code from AMQP specification.
-# srcdir must 
+# specs and gentools_dir are set by Makefile
 # 
-srcdir=`dirname $0`
 set -e
 
-gentools_dir="$srcdir/../gentools"
-specs_dir="$srcdir/../../specs"
-specs="$specs_dir/amqp-transitional.0-10.xml $srcdir/../xml/cluster.xml"
-
 test -z "$JAVA" && JAVA=java ; 
-test -z "$JAVAC" && JAVAC=javac ; 
+test -z "$JAVAC" && JAVAC=javac ;
+
+checkspecs() {
+    for s in $specs; do test -f $s || return 1; done
+    return 0
+}
 
 # Can we generate code?
-if { test -d $gentools_dir && test -d $specs_dir && \
+if { test -d $gentools_dir && checkspecs &&
     which $JAVA && which $JAVAC; } > /dev/null;
 then
     echo "Generating code."
@@ -40,8 +40,8 @@ make_assign() {
 	make_assign "generator" "" $specs \
 	    `find ../gentools \( -name '*.java' -o -name '*.tmpl' \) -print`
     fi
-) > generate.mk-t
-mv generate.mk-t generate.mk
+) > gen/generate.mk-t
+mv gen/generate.mk-t gen/generate.mk
 
 
 
