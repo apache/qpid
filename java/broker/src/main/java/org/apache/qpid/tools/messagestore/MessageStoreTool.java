@@ -40,6 +40,8 @@ import org.apache.qpid.tools.messagestore.commands.Load;
 import org.apache.qpid.tools.messagestore.commands.Quit;
 import org.apache.qpid.tools.messagestore.commands.Select;
 import org.apache.qpid.tools.messagestore.commands.Show;
+import org.apache.qpid.tools.messagestore.commands.Move;
+import org.apache.qpid.tools.messagestore.commands.Purge;
 import org.apache.qpid.tools.utils.CommandParser;
 import org.apache.qpid.tools.utils.Console;
 import org.apache.qpid.tools.utils.SimpleCommandParser;
@@ -241,6 +243,8 @@ public class MessageStoreTool
         _commands.put("help", new Help(this));
         _commands.put("list", new List(this));
         _commands.put("load", new Load(this));
+        _commands.put("move", new Move(this));
+        _commands.put("purge", new Purge(this));
         _commands.put("quit", new Quit(this));
         _commands.put("select", new Select(this));
         _commands.put("show", new Show(this));

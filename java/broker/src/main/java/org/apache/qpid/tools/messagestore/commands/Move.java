@@ -21,10 +21,12 @@
 package org.apache.qpid.tools.messagestore.commands;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 
+import java.util.LinkedList;
 import java.util.List;
 
 public class Move extends AbstractCommand
@@ -34,7 +36,7 @@ public class Move extends AbstractCommand
      * Since the Coopy command is not associated with a real channel we can safely create our own store context
      * for use in the few methods that require one.
      */
-    private StoreContext _storeContext = new StoreContext();
+    protected StoreContext _storeContext = new StoreContext();
 
     public Move(MessageStoreTool tool)
     {
@@ -43,9 +45,9 @@ public class Move extends AbstractCommand
 
     public String help()
     {
-        return "Move messages between queues.\n" +
+        return "Move messages between queues.";/*\n" +
                "The currently selected message set will be moved to the specifed queue.\n" +
-               "Alternatively the values can be provided on the command line.";
+               "Alternatively the values can be provided on the command line.";*/
     }
 
     public String usage()
@@ -110,6 +112,17 @@ public class Move extends AbstractCommand
         Long previous = null;
         Long start = null;
 
+        if (msgids == null)
+        {
+            msgids = allMessageIDs(fromQueue);
+        }
+
+        if (msgids == null || msgids.size() == 0)
+        {
+            _console.println("No Messages to move.");
+            return;
+        }
+
         for (long id : msgids)
         {
             if (previous != null)
@@ -126,18 +139,44 @@ public class Move extends AbstractCommand
                     if (start != null)
                     {
                         //move a range of ids
-                        doCommand(fromQueue, start, id, toQueue, _storeContext);
+                        doCommand(fromQueue, start, id, toQueue);
+                        start = null;
                     }
                     else
                     {
                         //move a single id
-                        doCommand(fromQueue, id, id, toQueue, _storeContext);
+                        doCommand(fromQueue, id, id, toQueue);
                     }
                 }
             }
 
             previous = id;
         }
+
+        if (start != null)
+        {
+            //move a range of ids
+            doCommand(fromQueue, start, previous, toQueue);
+        }
+    }
+
+    private List<Long> allMessageIDs(AMQQueue fromQueue)
+    {
+        List<Long> ids = new LinkedList<Long>();
+
+        if (fromQueue != null)
+        {
+            List<AMQMessage> messages = fromQueue.getMessagesOnTheQueue();
+            if (messages != null)
+            {
+                for (AMQMessage msg : messages)
+                {
+                    ids.add(msg.getMessageId());
+                }
+            }
+        }
+
+        return ids;
     }
 
     protected boolean checkRequirements(AMQQueue fromQueue, AMQQueue toQueue, List<Long> msgids)
@@ -159,7 +198,7 @@ public class Move extends AbstractCommand
         return true;
     }
 
-    protected void doCommand(AMQQueue fromQueue, long start, long id, AMQQueue toQueue, StoreContext storeContext)
+    protected void doCommand(AMQQueue fromQueue, long start, long id, AMQQueue toQueue)
     {
         fromQueue.moveMessagesToAnotherQueue(start, id, toQueue.getName().toString(), _storeContext);
     }

@@ -61,8 +61,8 @@ public class Purge extends Move
         return true;
     }
 
-    protected void doCommand(AMQQueue fromQueue, long start, long end, AMQQueue toQueue, StoreContext storeContext)
+    protected void doCommand(AMQQueue fromQueue, long start, long end, AMQQueue toQueue)
     {
-        fromQueue.removeMessagesFromQueue(start, end, storeContext);
+        fromQueue.removeMessagesFromQueue(start, end, _storeContext);
     }
 }

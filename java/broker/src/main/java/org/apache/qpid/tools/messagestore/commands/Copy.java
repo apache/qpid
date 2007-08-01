@@ -21,7 +21,6 @@
 package org.apache.qpid.tools.messagestore.commands;
 
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 
 public class Copy extends Move
@@ -33,9 +32,9 @@ public class Copy extends Move
 
     public String help()
     {
-        return "Copy messages between queues.\n" +
+        return "Copy messages between queues.";/*\n" +
                "The currently selected message set will be copied to the specifed queue.\n" +
-               "Alternatively the values can be provided on the command line.";
+               "Alternatively the values can be provided on the command line."; */
     }
 
     public String usage()
@@ -48,9 +47,9 @@ public class Copy extends Move
         return "copy";
     }
 
-    protected void doCommand(AMQQueue fromQueue, long start, long end, AMQQueue toQueue, StoreContext storeContext)
+    protected void doCommand(AMQQueue fromQueue, long start, long end, AMQQueue toQueue)
     {
-        fromQueue.copyMessagesToAnotherQueue(start, end, toQueue.getName().toString(), storeContext);
+        fromQueue.copyMessagesToAnotherQueue(start, end, toQueue.getName().toString(), _storeContext);
     }
 
 }
