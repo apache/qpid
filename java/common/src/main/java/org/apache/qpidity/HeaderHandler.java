@@ -33,6 +33,7 @@ class HeaderHandler<C> implements Handler<Event<C,Segment>>
     public void handle(Event<C,Segment> event)
     {
         System.out.println("got header segment:\n  " + event.target);
+        
     }
 
 }
