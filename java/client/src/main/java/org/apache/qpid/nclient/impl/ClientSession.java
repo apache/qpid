@@ -1,63 +1,22 @@
 package org.apache.qpid.nclient.impl;
 
-import org.apache.qpid.nclient.api.Message;
-import org.apache.qpid.nclient.api.MessageReceiver;
-import org.apache.qpidity.Header;
+import java.util.Map;
+
+import org.apache.qpid.nclient.api.MessageListener;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Session;
 
 public class ClientSession extends Session implements org.apache.qpid.nclient.api.Session
 {	
-	/**
-	 * ---------------------------------------------------
-	 * Message methods
-	 * ---------------------------------------------------
-	 */
-	/*public MessageSender createSender(String queueName) throws QpidException
+	public void addMessageListener(String destination,MessageListener listener)
 	{
-		return null;
-	}*/
-
-	public MessageReceiver createReceiver(String queueName, Option... options) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		return null;
+		super.addMessageListener(destination, new StreamingListenerAdapter(listener));
 	}
-
-	public void setTransacted() throws QpidException, IllegalStateException
+	
+	//temproary until rafi updates the xml when the new message stuff is voted in.
+	public void messageSubscribe(String queue, String destination, Map<String, ?> filter, Option... _options) throws QpidException
 	{
-		// TODO Auto-generated method stub
-		
+		// TODO Auto-generated method stub		
 	}
-
-	public void messageBody(byte[] src) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void messageClose() throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void messageHeaders(Header... headers) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void messageTransfer(String destination, Message msg) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void messageTransfer(Option... options) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}	
 }
