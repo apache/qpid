@@ -17,7 +17,6 @@
  */
 package org.apache.qpid.nclient.jms;
 
-import org.apache.qpid.nclient.api.ExceptionListener;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.JMSException;
@@ -25,7 +24,7 @@ import javax.jms.JMSException;
 /**
  * An exception listner 
  */
-public class QpidExceptionListenerImpl implements ExceptionListener
+public class QpidExceptionListenerImpl //implements ExceptionListener
 {
     private javax.jms.ExceptionListener _jmsExceptionListener;
 

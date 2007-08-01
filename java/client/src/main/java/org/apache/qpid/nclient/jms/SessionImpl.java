@@ -112,7 +112,7 @@ public class SessionImpl implements Session
             // set transacted if required
             if (_transacted)
             {
-                _qpidSession.setTransacted();
+                //_qpidSession.setTransacted();
             }
         }
         catch (QpidException e)

@@ -76,7 +76,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         _messageSelector = messageSelector;
         _noLocal = noLocal;
         _subscriptionName = subscriptionName;
-        try
+        /*try
         {
             // TODO define the relevant options 
             _qpidReceiver = _session.getQpidSession().createReceiver(destination.getName(), null);
@@ -84,7 +84,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         catch (QpidException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+        }*/
     }
     //----- Message consumer API
 
