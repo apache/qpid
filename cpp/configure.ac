@@ -153,12 +153,14 @@ fi
 AM_CONDITIONAL([CLUSTER], [test x$enable_CLUSTER = xyes])
 if test x$enable_CLUSTER = xyes; then
   CPPFLAGS+=" -DCLUSTER"
-  REQUIRES_OPENAIS="Requires: openais"
-  AC_SUBST(REQUIRES_OPENAIS)
-  REQUIRES_OPENAIS_DEVEL="Requires: openais-devel"
-  AC_SUBST(REQUIRES_OPENAIS_DEVEL)
+  SPEC_REQUIRES_OPENAIS="Requires: openais"
+  AC_SUBST(SPEC_REQUIRES_OPENAIS)
+  SPEC_REQUIRES_OPENAIS_DEVEL="Requires: openais-devel"
+  AC_SUBST(SPEC_REQUIRES_OPENAIS_DEVEL)
 else
-   LDFLAGS=$save_ldflags	    
+  SPEC_CONFIGURE_OPTS=--disable-cluster  
+  AC_SUBST(SPEC_CONFIGURE_OPTS)
+  LDFLAGS=$save_ldflags	    
 fi
 	
 # Files to generate	
