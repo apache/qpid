@@ -41,11 +41,12 @@
         <generated.package>org/apache/qpid/framing</generated.package>
         <generated.dir>${generated.path}/${generated.package}</generated.dir>
         <generated.timestamp>${generated.dir}/timestamp</generated.timestamp>
-        <specs.dir>${topDirectoryLocation}/../specs</specs.dir>
+        <specs.dir>${basedir}/../../specs</specs.dir>
+        <mllib.dir>${basedir}/../../python</mllib.dir>
     </properties>
 
     <build>
-        <plugins>          
+        <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -57,17 +58,41 @@
                             <tasks>
                                 <echo>"${generated.path}"</echo>
                                 <ant antfile="protocol-version.xml" />
-                                <exec executable="python">
+<!--                                <exec executable="python">
                                   <arg line="generate"/>
                                   <arg line="${generated.path}"/>
                                   <arg line="org.apache.qpidity"/>
                                   <arg line="${specs.dir}/amqp-transitional.0-10.xml"/>
-                                </exec>
+                                </exec> -->
                             </tasks>
                             <sourceRoot>${generated.path}</sourceRoot>
                         </configuration>
                         <goals>
                             <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.qpid</groupId>
+                <artifactId>jython-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>jython</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <params>
+                                <param>-Dpython.cachedir.skip=true</param>
+                                <param>-Dpython.path=${basedir}/jython-lib.jar/Lib:${mllib.dir}</param>
+                                <param>${basedir}/generate</param>
+                                <param>${generated.path}</param>
+                                <param>org.apache.qpidity</param>
+                                <param>${specs.dir}/amqp-transitional.0-10.xml</param>
+                            </params>
+                        </configuration>
+                        <goals>
+                          <goal>jython</goal>
                         </goals>
                     </execution>
                 </executions>
