@@ -63,6 +63,11 @@ public class CommonSessionDelegate extends Delegate<Session>
 	//  If these methods are generated as part of the delegate then
 	//  I can call these methods from the BodyHandler and HeaderHandler
 	//  in a generic way
+	
+	
+	//  I have used destination to indicate my intent of receiving 
+	//  some form of correlation to know which consumer this data belongs to.
+	//  It can be anything as long as I can make the right correlation
 	// ----------------------------------------------------------------
 	public void data(Session context,String destination,byte[] src) throws QpidException
 	{
