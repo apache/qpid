@@ -2,12 +2,8 @@
 
 # Interim code generation script.
 
-import sys, os
+import sys, os, mllib
 from cStringIO import StringIO
-
-sys.path.append("../../python")
-
-import mllib
 
 out_dir=sys.argv[1]
 out_pkg = sys.argv[2]
