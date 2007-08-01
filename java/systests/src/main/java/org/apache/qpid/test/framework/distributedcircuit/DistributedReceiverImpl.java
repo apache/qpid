@@ -18,31 +18,36 @@
  * under the License.
  *
  */
-package org.apache.qpid.test.framework;
+package org.apache.qpid.test.framework.distributedcircuit;
+
+import org.apache.qpid.test.framework.Assertion;
+import org.apache.qpid.test.framework.Receiver;
 
 /**
- * A Receiver is a {@link CircuitEnd} that represents the status of the receiving side of a test circuit. Its main
- * purpose is to provide assertions that can be applied to check the behaviour of the receivers.
- *
  * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities
- * <tr><td> Provide assertion that the receivers received no exceptions.
- * <tr><td> Provide assertion that the receivers received all test messages sent to it.
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td>
  * </table>
  */
-public interface Receiver
+public class DistributedReceiverImpl implements Receiver
 {
     /**
      * Provides an assertion that the receivers encountered no exceptions.
      *
      * @return An assertion that the receivers encountered no exceptions.
      */
-    public Assertion noExceptionsAssertion();
+    public Assertion noExceptionsAssertion()
+    {
+        throw new RuntimeException("Not implemented.");
+    }
 
     /**
      * Provides an assertion that the receivers got all messages that were sent to it.
      *
      * @return An assertion that the receivers got all messages that were sent to it.
      */
-    public Assertion allMessagesAssertion();
+    public Assertion allMessagesAssertion()
+    {
+        throw new RuntimeException("Not implemented.");
+    }
 }

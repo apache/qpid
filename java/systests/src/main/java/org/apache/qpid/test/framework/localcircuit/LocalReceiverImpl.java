@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.test.framework.localcircuit;
 
-import org.apache.qpid.test.framework.localcircuit.CircuitImpl;
-import org.apache.qpid.test.framework.CircuitEndBase;
-import org.apache.qpid.test.framework.Receiver;
-import org.apache.qpid.test.framework.Assertion;
+import org.apache.qpid.test.framework.*;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 /**
- * Provides an implementation of the {@link org.apache.qpid.test.framework.Receiver} interface that wraps a single message producer and consumer on
- * a single session.
+ * Provides an implementation of the {@link Receiver} interface that wraps a single message producer and consumer on
+ * a single controlSession, as a {@link CircuitEnd}. A local receiver also acts as a circuit end, because for a locally
+ * located circuit the assertions may be applied directly, there does not need to be any inter process messaging
+ * between the publisher and its single circuit end, in order to ascertain its status.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
@@ -41,21 +40,32 @@ import javax.jms.Session;
  * <tr><td> Provide assertion that the receivers received all test messages sent to it.
  * </table>
  */
-public class ReceiverImpl extends CircuitEndBase implements Receiver
+public class LocalReceiverImpl extends CircuitEndBase implements Receiver
 {
     /** Holds a reference to the containing circuit. */
-    private CircuitImpl circuit;
+    private LocalCircuitImpl circuit;
 
     /**
-     * Creates a circuit end point on the specified producer, consumer and session.
+     * Creates a circuit end point on the specified producer, consumer and controlSession.
      *
      * @param producer The message producer for the circuit end point.
      * @param consumer The message consumer for the circuit end point.
-     * @param session  The session for the circuit end point.
+     * @param session  The controlSession for the circuit end point.
      */
-    public ReceiverImpl(MessageProducer producer, MessageConsumer consumer, Session session)
+    public LocalReceiverImpl(MessageProducer producer, MessageConsumer consumer, Session session,
+        MessageMonitor messageMonitor, ExceptionMonitor exceptionMonitor)
     {
-        super(producer, consumer, session);
+        super(producer, consumer, session, messageMonitor, exceptionMonitor);
+    }
+
+    /**
+     * Creates a circuit end point from the producer, consumer and controlSession in a circuit end base implementation.
+     *
+     * @param end The circuit end base implementation to take producers and consumers from.
+     */
+    public LocalReceiverImpl(CircuitEndBase end)
+    {
+        super(end.getProducer(), end.getConsumer(), end.getSession(), end.getMessageMonitor(), end.getExceptionMonitor());
     }
 
     /**
@@ -83,7 +93,7 @@ public class ReceiverImpl extends CircuitEndBase implements Receiver
      *
      * @param circuit The containing circuit.
      */
-    public void setCircuit(CircuitImpl circuit)
+    public void setCircuit(LocalCircuitImpl circuit)
     {
         this.circuit = circuit;
     }

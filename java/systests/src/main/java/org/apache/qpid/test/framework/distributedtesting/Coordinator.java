@@ -25,18 +25,23 @@ import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
+import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
-import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.TestClientDetails;
+import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.listeners.XMLTestListener;
 import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
 
+import uk.co.thebadgerset.junit.extensions.AsymptoticTestDecorator;
 import uk.co.thebadgerset.junit.extensions.TKTestResult;
 import uk.co.thebadgerset.junit.extensions.TKTestRunner;
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
+import uk.co.thebadgerset.junit.extensions.listeners.CSVTestListener;
 import uk.co.thebadgerset.junit.extensions.util.CommandLineParser;
+import uk.co.thebadgerset.junit.extensions.util.MathUtils;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
@@ -120,17 +125,43 @@ public class Coordinator extends TKTestRunner
     /** Flag that indicates that all test clients should be terminated upon completion of the test cases. */
     protected boolean terminate;
 
+    /** Flag that indicates the CSV results listener should be used to output results. */
+    protected boolean csvResults;
+
+    /** Flag that indiciates the XML results listener should be used to output results. */
+    protected boolean xmlResults;
+
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
      *
-     * @param brokerUrl   The URL of the broker to connect to.
-     * @param virtualHost The virtual host to run all tests on. Optional, may be <tt>null</tt>.
-     * @param reportDir   The directory to write out test results to.
-     * @param engine      The distributed test engine type to run the tests with.
+     * @param repetitions   The number of times to repeat the test, or test batch size.
+     * @param duration      The length of time to run the tests for. -1 means no duration has been set.
+     * @param threads       The concurrency levels to ramp up to.
+     * @param delay         A delay in milliseconds between test runs.
+     * @param params        The sets of 'size' parameters to pass to test.
+     * @param testCaseName  The name of the test case to run.
+     * @param reportDir     The directory to output the test results to.
+     * @param runName       The name of the test run; used to name the output file.
+     * @param verbose       Whether to print comments during test run.
+     * @param brokerUrl     The URL of the broker to connect to.
+     * @param virtualHost   The virtual host to run all tests on. Optional, may be <tt>null</tt>.
+     * @param engine        The distributed test engine type to run the tests with.
+     * @param terminate     <tt>true</tt> if test client nodes should be terminated at the end of the tests.
+     * @param csv           <tt>true</tt> if the CSV results listener should be attached.
+     * @param xml           <tt>true</tt> if the XML results listener should be attached.
      */
-    public Coordinator(String brokerUrl, String virtualHost, String reportDir, TestEngine engine, boolean terminate)
+    public Coordinator(Integer repetitions, Long duration, int[] threads, int delay, int[] params, String testCaseName,
+        String reportDir, String runName, boolean verbose, String brokerUrl, String virtualHost, TestEngine engine,
+        boolean terminate, boolean csv, boolean xml)
     {
-        log.debug("Coordinator(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost + "): called");
+        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, verbose);
+
+        log.debug("public Coordinator(Integer repetitions = " + repetitions + " , Long duration = " + duration
+            + ", int[] threads = " + Arrays.toString(threads) + ", int delay = " + delay + ", int[] params = "
+            + Arrays.toString(params) + ", String testCaseName = " + testCaseName + ", String reportDir = " + reportDir
+            + ", String runName = " + runName + ", boolean verbose = " + verbose + ", String brokerUrl = " + brokerUrl
+            + ", String virtualHost =" + virtualHost + ", TestEngine engine = " + engine + ", boolean terminate = "
+            + terminate + ", boolean csv = " + csv + ", boolean xml = " + xml + "): called");
 
         // Retain the connection parameters.
         this.brokerUrl = brokerUrl;
@@ -138,6 +169,8 @@ public class Coordinator extends TKTestRunner
         this.reportDir = reportDir;
         this.engine = engine;
         this.terminate = terminate;
+        this.csvResults = csv;
+        this.xmlResults = xml;
     }
 
     /**
@@ -158,6 +191,8 @@ public class Coordinator extends TKTestRunner
      */
     public static void main(String[] args)
     {
+        NDC.push("coordinator");
+        log.debug("public static void main(String[] args = " + Arrays.toString(args) + "): called");
         console.info("Qpid Distributed Test Coordinator.");
 
         // Override the default broker url to be localhost:5672.
@@ -181,7 +216,25 @@ public class Coordinator extends TKTestRunner
                                     "e", "The test execution engine to use. Default is interop.", "engine", "interop",
                                     "^interop$|^fanout$", "true"
                                 },
-                                { "t", "Terminate test clients on completion of tests.", "flag", "false" }
+                                { "t", "Terminate test clients on completion of tests.", null, "false" },
+                                { "-csv", "Output test results in CSV format.", null, "false" },
+                                { "-xml", "Output test results in XML format.", null, "false" },
+                                {
+                                    "c", "The number of tests to run concurrently.", "num", "false",
+                                    MathUtils.SEQUENCE_REGEXP
+                                },
+                                { "r", "The number of times to repeat each test.", "num", "false" },
+                                {
+                                    "d", "The length of time to run the tests for.", "duration", "false",
+                                    MathUtils.DURATION_REGEXP
+                                },
+                                {
+                                    "f", "The maximum rate to call the tests at.", "frequency", "false",
+                                    "^([1-9][0-9]*)/([1-9][0-9]*)$"
+                                },
+                                { "s", "The size parameter to run tests with.", "size", "false", MathUtils.SEQUENCE_REGEXP },
+                                { "v", "Verbose mode.", null, "false" },
+                                { "n", "A name for this test run, used to name the output file.", "name", "true" }
                             }), testContextProperties));
 
             // Extract the command line options.
@@ -192,16 +245,29 @@ public class Coordinator extends TKTestRunner
             String testEngine = options.getProperty("e");
             TestEngine engine = "fanout".equals(testEngine) ? TestEngine.FANOUT : TestEngine.INTEROP;
             boolean terminate = options.getPropertyAsBoolean("t");
+            boolean csvResults = options.getPropertyAsBoolean("-csv");
+            boolean xmlResults = options.getPropertyAsBoolean("-xml");
+
+            String threadsString = options.getProperty("c");
+            Integer repetitions = options.getPropertyAsInteger("r");
+            String durationString = options.getProperty("d");
+            String paramsString = options.getProperty("s");
+            boolean verbose = options.getPropertyAsBoolean("v");
+            String testRunName = options.getProperty("n");
+
+            int[] threads = (threadsString == null) ? null : MathUtils.parseSequence(threadsString);
+            int[] params = (paramsString == null) ? null : MathUtils.parseSequence(paramsString);
+            Long duration = (durationString == null) ? null : MathUtils.parseDuration(durationString);
 
             // If broker or virtual host settings were specified as command line options, override the defaults in the
             // test context properties with them.
 
             // Collection all of the test cases to be run.
-            Collection<Class<? extends DistributedTestCase>> testCaseClasses =
-                new ArrayList<Class<? extends DistributedTestCase>>();
+            Collection<Class<? extends FrameworkBaseCase>> testCaseClasses =
+                new ArrayList<Class<? extends FrameworkBaseCase>>();
 
             // Scan for available test cases using a classpath scanner.
-            // ClasspathScanner.getMatches(InteropTestCase.class, "^Test.*", true);
+            // ClasspathScanner.getMatches(DistributedTestCase.class, "^Test.*", true);
 
             // Hard code the test classes till the classpath scanner is fixed.
             // Collections.addAll(testCaseClasses, InteropTestCase1DummyRun.class, InteropTestCase2BasicP2P.class,
@@ -222,7 +288,7 @@ public class Coordinator extends TKTestRunner
                 {
                     Class nextClass = Class.forName(nextFreeArg);
 
-                    if (DistributedTestCase.class.isAssignableFrom(nextClass))
+                    if (FrameworkBaseCase.class.isAssignableFrom(nextClass))
                     {
                         testCaseClasses.add(nextClass);
                         console.info("Found distributed test case: " + nextFreeArg);
@@ -237,7 +303,8 @@ public class Coordinator extends TKTestRunner
             // Check that some test classes were actually found.
             if (testCaseClasses.isEmpty())
             {
-                throw new RuntimeException("No test cases implementing InteropTestCase were specified on the command line.");
+                throw new RuntimeException(
+                    "No test cases implementing DistributedTestCase were specified on the command line.");
             }
 
             // Extract the names of all the test classes, to pass to the start method.
@@ -250,7 +317,9 @@ public class Coordinator extends TKTestRunner
             }
 
             // Create a coordinator and begin its test procedure.
-            Coordinator coordinator = new Coordinator(brokerUrl, virtualHost, reportDir, engine, terminate);
+            Coordinator coordinator =
+                new Coordinator(repetitions, duration, threads, 0, params, null, reportDir, testRunName, verbose, brokerUrl,
+                    virtualHost, engine, terminate, csvResults, xmlResults);
 
             TestResult testResult = coordinator.start(testClassNames);
 
@@ -306,9 +375,14 @@ public class Coordinator extends TKTestRunner
         conversation.send(controlTopic, invite);
 
         // Wait for a short time, to give test clients an opportunity to reply to the invitation.
-        Collection<Message> enlists = conversation.receiveAll(0, 3000);
-
+        Collection<Message> enlists = conversation.receiveAll(0, 500);
         enlistedClients = extractEnlists(enlists);
+
+        for (TestClientDetails client : enlistedClients)
+        {
+            log.debug("Got enlisted test client: " + client);
+            console.info("Test node " + client.clientName + " available.");
+        }
 
         // Run the test in the suite using JUnit.
         TestResult result = null;
@@ -357,7 +431,20 @@ public class Coordinator extends TKTestRunner
             clientDetails.clientName = enlist.getStringProperty("CLIENT_NAME");
             clientDetails.privateControlKey = enlist.getStringProperty("CLIENT_PRIVATE_CONTROL_KEY");
 
-            enlistedClients.add(clientDetails);
+            String replyType = enlist.getStringProperty("CONTROL_TYPE");
+
+            if ("ENLIST".equals(replyType))
+            {
+                enlistedClients.add(clientDetails);
+            }
+            else if ("DECLINE".equals(replyType))
+            {
+                log.debug("Test client " + clientDetails.clientName + " declined the invite.");
+            }
+            else
+            {
+                log.warn("Got an unknown reply type, " + replyType + ", to the invite.");
+            }
         }
 
         return enlistedClients;
@@ -395,9 +482,9 @@ public class Coordinator extends TKTestRunner
                 Test nextTest = suite.testAt(i);
                 log.debug("suite.testAt(" + i + ") = " + nextTest);
 
-                if (nextTest instanceof DistributedTestCase)
+                if (nextTest instanceof FrameworkBaseCase)
                 {
-                    log.debug("nextTest is a DistributedTestCase");
+                    log.debug("nextTest is a FrameworkBaseCase");
                 }
             }
 
@@ -408,13 +495,13 @@ public class Coordinator extends TKTestRunner
         // Wrap the tests in a suitable distributed test decorator, to perform the invite/test cycle.
         targetTest = newTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
 
-        TestSuite suite = new TestSuite();
-        suite.addTest(targetTest);
+        // TestSuite suite = new TestSuite();
+        // suite.addTest(targetTest);
 
         // Wrap the tests in a scaled test decorator to them them as a 'batch' in one thread.
         // targetTest = new ScaledTestDecorator(targetTest, new int[] { 1 });
 
-        return super.doRun(suite, wait);
+        return super.doRun(targetTest, wait);
     }
 
     /**
@@ -466,20 +553,48 @@ public class Coordinator extends TKTestRunner
             // Create the results file (make the name of this configurable as a command line parameter).
             Writer timingsWriter;
 
-            try
+            // Set up an XML results listener to output the timings to the results file, if requested on the command line.
+            if (xmlResults)
             {
-                File timingsFile = new File(reportDirFile, "TEST." + currentTestClassName + ".xml");
-                timingsWriter = new BufferedWriter(new FileWriter(timingsFile), 20000);
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException("Unable to create the log file to write test results to: " + e, e);
+                try
+                {
+                    File timingsFile = new File(reportDirFile, "TEST." + currentTestClassName + ".xml");
+                    timingsWriter = new BufferedWriter(new FileWriter(timingsFile), 20000);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Unable to create the log file to write test results to: " + e, e);
+                }
+
+                XMLTestListener listener = new XMLTestListener(timingsWriter, currentTestClassName);
+                result.addListener(listener);
+                result.addTKTestListener(listener);
+
+                registerShutdownHook(listener);
             }
 
-            // Set up an XML results listener to output the timings to the results file.
-            XMLTestListener listener = new XMLTestListener(timingsWriter, currentTestClassName);
-            result.addListener(listener);
-            result.addTKTestListener(listener);
+            // Set up an CSV results listener to output the timings to the results file, if requested on the command line.
+            if (csvResults)
+            {
+                try
+                {
+                    File timingsFile =
+                        new File(reportDirFile, testRunName + "-" + TIME_STAMP_FORMAT.format(new Date()) + "-timings.csv");
+                    timingsWriter = new BufferedWriter(new FileWriter(timingsFile), 20000);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException("Unable to create the log file to write test results to: " + e, e);
+                }
+
+                CSVTestListener listener = new CSVTestListener(timingsWriter);
+                result.addListener(listener);
+                result.addTKTestListener(listener);
+
+                // Register the results listeners shutdown hook to flush its data if the test framework is shutdown
+                // prematurely.
+                registerShutdownHook(listener);
+            }
 
             // Register the results listeners shutdown hook to flush its data if the test framework is shutdown
             // prematurely.

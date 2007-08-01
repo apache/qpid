@@ -18,39 +18,46 @@
  * under the License.
  *
  */
-package org.apache.qpid.test.framework;
+package org.apache.qpid.test.framework.distributedcircuit;
+
+import org.apache.qpid.test.framework.Assertion;
+import org.apache.qpid.test.framework.Publisher;
 
 /**
- * A Publisher is a {@link CircuitEnd} that represents the status of the publishing side of a test circuit. Its main
- * purpose is to provide assertions that can be applied to test the behaviour of the publishers.
- *
  * <p/><table id="crc"><caption>CRC Card</caption>
- * <tr><th> Responsibilities
- * <tr><td> Provide assertion that the publishers received no exceptions.
- * <tr><td> Provide assertion that the publishers received a no consumers error code on every message.
- * <tr><td> Provide assertion that the publishers received a no route error code on every message.
+ * <tr><th> Responsibilities <th> Collaborations
+ * <tr><td>
  * </table>
  */
-public interface Publisher
+public class DistributedPublisherImpl implements Publisher
 {
     /**
      * Provides an assertion that the publisher encountered no exceptions.
      *
      * @return An assertion that the publisher encountered no exceptions.
      */
-    public Assertion noExceptionsAssertion();
+    public Assertion noExceptionsAssertion()
+    {
+        throw new RuntimeException("Not implemented.");
+    }
 
     /**
      * Provides an assertion that the publisher got a no consumers exception on every message.
      *
      * @return An assertion that the publisher got a no consumers exception on every message.
      */
-    public Assertion noConsumersAssertion();
+    public Assertion noConsumersAssertion()
+    {
+        throw new RuntimeException("Not implemented.");
+    }
 
     /**
      * Provides an assertion that the publisher got a no rout exception on every message.
      *
      * @return An assertion that the publisher got a no rout exception on every message.
      */
-    public Assertion noRouteAssertion();
+    public Assertion noRouteAssertion()
+    {
+        throw new RuntimeException("Not implemented.");
+    }
 }

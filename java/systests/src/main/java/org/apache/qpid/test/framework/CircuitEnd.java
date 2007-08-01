@@ -74,4 +74,18 @@ public interface CircuitEnd
      * @throws JMSException Any JMSExceptions occurring during the close are allowed to fall through.
      */
     public void close() throws JMSException;
+
+    /**
+     * Returns the message monitor for reporting on received messages on this circuit end.
+     *
+     * @return The message monitor for this circuit end.
+     */
+    public MessageMonitor getMessageMonitor();
+
+    /**
+     * Returns the exception monitor for reporting on exceptions received on this circuit end.
+     *
+     * @return The exception monitor for this circuit end.
+     */
+    public ExceptionMonitor getExceptionMonitor();
 }

@@ -26,6 +26,7 @@ import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
 
+import uk.co.thebadgerset.junit.extensions.ShutdownHookable;
 import uk.co.thebadgerset.junit.extensions.listeners.TKTestListener;
 
 import java.io.IOException;
@@ -62,7 +63,7 @@ import java.util.*;
  *       the ant XML formatter, and a more structured one for outputing results with timings and summaries from
  *       performance tests.
  */
-public class XMLTestListener implements TKTestListener
+public class XMLTestListener implements TKTestListener, ShutdownHookable
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(XMLTestListener.class);
@@ -348,6 +349,22 @@ public class XMLTestListener implements TKTestListener
         {
             throw new RuntimeException("Unable to write the test results.", e);
         }
+    }
+
+    /**
+     * Supplies the shutdown hook.
+     *
+     * @return The shut down hook.
+     */
+    public Thread getShutdownHook()
+    {
+        return new Thread(new Runnable()
+                {
+                    public void run()
+                    {
+                        log.debug("XMLTestListener::ShutdownHook: called");
+                    }
+                });
     }
 
     /**

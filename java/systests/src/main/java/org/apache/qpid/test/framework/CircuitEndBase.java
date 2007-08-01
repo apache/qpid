@@ -41,21 +41,31 @@ public class CircuitEndBase implements CircuitEnd
     /** Holds the single message consumer. */
     MessageConsumer consumer;
 
-    /** Holds the session for the circuit end. */
+    /** Holds the controlSession for the circuit end. */
     Session session;
 
+    /** Holds the message monitor for the circuit end. */
+    MessageMonitor messageMonitor;
+
+    /** Holds the exception monitor for the circuit end. */
+    ExceptionMonitor exceptionMonitor;
+
     /**
-     * Creates a circuit end point on the specified producer, consumer and session.
+     * Creates a circuit end point on the specified producer, consumer and controlSession.
      *
      * @param producer The message producer for the circuit end point.
      * @param consumer The message consumer for the circuit end point.
-     * @param session  The session for the circuit end point.
+     * @param session  The controlSession for the circuit end point.
      */
-    public CircuitEndBase(MessageProducer producer, MessageConsumer consumer, Session session)
+    public CircuitEndBase(MessageProducer producer, MessageConsumer consumer, Session session, MessageMonitor messageMonitor,
+        ExceptionMonitor exceptionMonitor)
     {
         this.producer = producer;
         this.consumer = consumer;
         this.session = session;
+
+        this.messageMonitor = messageMonitor;
+        this.exceptionMonitor = exceptionMonitor;
     }
 
     /**
@@ -115,5 +125,25 @@ public class CircuitEndBase implements CircuitEnd
         {
             consumer.close();
         }
+    }
+
+    /**
+     * Returns the message monitor for reporting on received messages on this circuit end.
+     *
+     * @return The message monitor for this circuit end.
+     */
+    public MessageMonitor getMessageMonitor()
+    {
+        return messageMonitor;
+    }
+
+    /**
+     * Returns the exception monitor for reporting on exceptions received on this circuit end.
+     *
+     * @return The exception monitor for this circuit end.
+     */
+    public ExceptionMonitor getExceptionMonitor()
+    {
+        return exceptionMonitor;
     }
 }

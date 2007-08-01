@@ -22,9 +22,8 @@ package org.apache.qpid.test.framework.sequencers;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.distributedtesting.DistributedTestCase;
-import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.Circuit;
+import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.util.ConversationFactory;
 
 import java.util.LinkedList;
@@ -37,10 +36,10 @@ import java.util.Properties;
  * <tr><td>
  * </table>
  */
-public abstract class BaseDistributedTestSequencer implements DistributedTestSequencer
+public abstract class BaseCircuitFactory implements CircuitFactory
 {
     /** Used for debugging. */
-    private final Logger log = Logger.getLogger(DistributedTestCase.class);
+    private final Logger log = Logger.getLogger(BaseCircuitFactory.class);
 
     /** Holds the contact details for the sending test client. */
     protected TestClientDetails sender;

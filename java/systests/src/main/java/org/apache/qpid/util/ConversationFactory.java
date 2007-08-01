@@ -87,7 +87,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * <p/>Conversation correlation id's are generated on a per thread basis.
  *
- * <p/>The same session is shared amongst all conversations. Calls to send are therefore synchronized because JMS
+ * <p/>The same controlSession is shared amongst all conversations. Calls to send are therefore synchronized because JMS
  * sessions are not multi-threaded.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
@@ -108,7 +108,7 @@ public class ConversationFactory
     /** Holds the connection over which the conversation is conducted. */
     private Connection connection;
 
-    /** Holds the session over which the conversation is conduxted. */
+    /** Holds the controlSession over which the conversation is conduxted. */
     private Session session;
 
     /** The message consumer for incoming messages. */
@@ -219,9 +219,9 @@ public class ConversationFactory
     }
 
     /**
-     * Gets the session over which the conversation is conducted.
+     * Gets the controlSession over which the conversation is conducted.
      *
-     * @return The session over which the conversation is conducted.
+     * @return The controlSession over which the conversation is conducted.
      */
     public Session getSession()
     {

@@ -22,6 +22,8 @@ package org.apache.qpid.test.framework.sequencers;
 
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Circuit;
+import org.apache.qpid.test.framework.TestClientDetails;
+import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
@@ -41,8 +43,14 @@ import java.util.Properties;
  * <tr><td> Provide a standard test procedure over a test circuit.
  * <tr><td> Construct test circuits appropriate to a tests context.
  * </table>
+ *
+ * @todo The sequence test method is deprecated, in favour of using test circuits instead. This interface might be
+ *       better renamed to somethign like CircuitFactory, also the split between this interface and
+ *       DistributedTestSequencer could be removed and DistributedTestCase functionality merged into FrameworkBaseCase.
+ *       This is so that any test case written on top of the framework base case can be distributed, without having
+ *       to extend a different base test class.
  */
-public interface TestCaseSequencer
+public interface CircuitFactory
 {
     /**
      * Holds a test coordinating conversation with the test clients. This should consist of assigning the test roles,
@@ -52,6 +60,8 @@ public interface TestCaseSequencer
      * @param testCircuit    The test circuit.
      * @param assertions     The list of assertions to apply to the test circuit.
      * @param testProperties The test case definition.
+     *
+     * @deprecated Use test circuits and Circuit.test instead.
      */
     public void sequenceTest(Circuit testCircuit, List<Assertion> assertions, Properties testProperties);
 
@@ -63,4 +73,39 @@ public interface TestCaseSequencer
      * @return A test circuit.
      */
     public Circuit createCircuit(ParsedProperties testProperties);
+
+    /**
+     * Sets the sender test client to coordinate the test with.
+     *
+     * @param sender The contact details of the sending client in the test.
+     */
+    public void setSender(TestClientDetails sender);
+
+    /**
+     * Sets the receiving test client to coordinate the test with.
+     *
+     * @param receiver The contact details of the sending client in the test.
+     */
+    public void setReceiver(TestClientDetails receiver);
+
+    /**
+     * Supplies the sending test client.
+     *
+     * @return The sending test client.
+     */
+    public TestClientDetails getSender();
+
+    /**
+     * Supplies the receiving test client.
+     *
+     * @return The receiving test client.
+     */
+    public List<TestClientDetails> getReceivers();
+
+    /**
+     * Accepts the conversation factory over which to hold the test coordinating conversation.
+     *
+     * @param conversationFactory The conversation factory to coordinate the test over.
+     */
+    public void setConversationFactory(ConversationFactory conversationFactory);
 }

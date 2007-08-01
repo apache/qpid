@@ -57,7 +57,7 @@ import java.util.concurrent.CountDownLatch;
  * <tr><td> Send required number of test messages using pub/sub. <tr><td> Generate test reports.
  * </table>
  */
-public class SustainedClientTestCase extends TestCase3BasicPubSub implements ExceptionListener
+public class SustainedClientTestCase extends TestCase3BasicPubSub implements ExceptionListener, MessageListener
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(SustainedClientTestCase.class);
@@ -205,8 +205,9 @@ public class SustainedClientTestCase extends TestCase3BasicPubSub implements Exc
         }
     }
 
-    /** Performs the test case actions. */
-    public void start() throws JMSException
+    /** Performs the test case actions.
+     * @param numMessages*/
+    public void start(int numMessages) throws JMSException
     {
         log.debug("public void start(): called");
 
@@ -235,7 +236,7 @@ public class SustainedClientTestCase extends TestCase3BasicPubSub implements Exc
     /**
      * Gets a report on the actions performed by the test case in its assigned role.
      *
-     * @param session The session to create the report message in.
+     * @param session The controlSession to create the report message in.
      *
      * @return The report message.
      *
@@ -243,7 +244,7 @@ public class SustainedClientTestCase extends TestCase3BasicPubSub implements Exc
      */
     public Message getReport(Session session) throws JMSException
     {
-        log.debug("public Message getReport(Session session): called");
+        log.debug("public Message getReport(Session controlSession): called");
 
         // Close the test connections.
         for (int i = 0; i < connection.length; i++)
@@ -318,7 +319,7 @@ public class SustainedClientTestCase extends TestCase3BasicPubSub implements Exc
          * @param clientname      The _client id used to identify this connection.
          * @param batchSize       The number of messages that are to be sent per batch. Note: This is not used to
          *                        control the interval between sending reports.
-         * @param session         The session used for communication.
+         * @param session         The controlSession used for communication.
          * @param sendDestination The destination that update reports should be sent to.
          *
          * @throws JMSException My occur if creatingthe Producer fails

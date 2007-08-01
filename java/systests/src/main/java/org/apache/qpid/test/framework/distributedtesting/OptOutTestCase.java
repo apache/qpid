@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.test.framework.distributedtesting;
 
-import org.apache.qpid.test.framework.sequencers.DistributedTestSequencer;
+import org.apache.qpid.test.framework.sequencers.CircuitFactory;
+import org.apache.qpid.test.framework.FrameworkBaseCase;
 
 /**
  * An OptOutTestCase is a test case that automatically fails. It is used when a list of test clients has been generated
@@ -32,7 +33,7 @@ import org.apache.qpid.test.framework.sequencers.DistributedTestSequencer;
  * <tr><td> Fail the test with a suitable reason.
  * </table>
  */
-public class OptOutTestCase extends DistributedTestCase
+public class OptOutTestCase extends FrameworkBaseCase
 {
     /**
      * Creates a new coordinating test case with the specified name.
@@ -47,9 +48,9 @@ public class OptOutTestCase extends DistributedTestCase
     /** Generates an appropriate test failure assertion. */
     public void testOptOut()
     {
-        DistributedTestSequencer sequencer = getDistributedTestSequencer();
+        CircuitFactory circuitFactory = getCircuitFactory();
 
-        fail("One of " + sequencer.getSender() + " and " + getDistributedTestSequencer().getReceivers()
+        fail("One of " + circuitFactory.getSender() + " and " + getCircuitFactory().getReceivers()
             + " opted out of the test.");
     }
 

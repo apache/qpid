@@ -25,9 +25,10 @@ import junit.framework.TestResult;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.sequencers.DistributedTestSequencer;
-import org.apache.qpid.test.framework.sequencers.InteropTestSequencer;
+import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.TestClientDetails;
+import org.apache.qpid.test.framework.sequencers.CircuitFactory;
+import org.apache.qpid.test.framework.sequencers.InteropCircuitFactory;
 import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
@@ -48,7 +49,7 @@ import java.util.*;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Broadcast test invitations and collect enlists. <td> {@link org.apache.qpid.util.ConversationFactory}.
  * <tr><td> Output test failures for clients unwilling to run the test case. <td> {@link Coordinator}
- * <tr><td> Execute distributed test cases. <td> {@link DistributedTestCase}
+ * <tr><td> Execute distributed test cases. <td> {@link FrameworkBaseCase}
  * <tr><td> Fail non participating pairings. <td> {@link OptOutTestCase}
  * </table>
  */
@@ -74,7 +75,7 @@ public class InteropTestDecorator extends DistributedTestDecorator
     /**
      * Broadcasts a test invitation and accetps enlisting from participating clients. The wrapped test case is
      * then repeated for every combination of test clients (provided the wrapped test case extends
-     * {@link DistributedTestCase}.
+     * {@link FrameworkBaseCase}.
      *
      * <p/>Any JMSExceptions during the invite/enlist conversation will be allowed to fall through as runtime exceptions,
      * resulting in the non-completion of the test run.
@@ -89,9 +90,9 @@ public class InteropTestDecorator extends DistributedTestDecorator
 
         Collection<Test> tests = testSuite.getAllUnderlyingTests();
 
-        for (Test test : tests)
+        for (Test test : getAllUnderlyingTests())
         {
-            DistributedTestCase coordTest = (DistributedTestCase) test;
+            FrameworkBaseCase coordTest = (FrameworkBaseCase) test;
 
             // Broadcast the invitation to find out what clients are available to test.
             Set<TestClientDetails> enlists = signupClients(coordTest);
@@ -105,14 +106,14 @@ public class InteropTestDecorator extends DistributedTestDecorator
 
             for (List<TestClientDetails> failPair : failPairs)
             {
-                // Create a distributed test sequencer for the test.
-                DistributedTestSequencer sequencer = getDistributedTestSequencer();
+                // Create a distributed test circuit factory for the test.
+                CircuitFactory circuitFactory = getTestSequencer();
 
                 // Create an automatic failure test for the opted out test pair.
-                DistributedTestCase failTest = new OptOutTestCase("testOptOut");
-                sequencer.setSender(failPair.get(0));
-                sequencer.setReceiver(failPair.get(1));
-                failTest.setTestSequencer(sequencer);
+                FrameworkBaseCase failTest = new OptOutTestCase("testOptOut");
+                circuitFactory.setSender(failPair.get(0));
+                circuitFactory.setReceiver(failPair.get(1));
+                failTest.setCircuitFactory(circuitFactory);
 
                 failTest.run(testResult);
             }
@@ -122,18 +123,18 @@ public class InteropTestDecorator extends DistributedTestDecorator
 
             for (List<TestClientDetails> enlistedPair : enlistedPairs)
             {
-                // Create a distributed test sequencer for the test.
-                DistributedTestSequencer sequencer = getDistributedTestSequencer();
+                // Create a distributed test circuit factory for the test.
+                CircuitFactory circuitFactory = getTestSequencer();
 
-                // Set the sending and receiving client details on the test sequencer.
-                sequencer.setSender(enlistedPair.get(0));
-                sequencer.setReceiver(enlistedPair.get(1));
+                // Set the sending and receiving client details on the test circuitFactory.
+                circuitFactory.setSender(enlistedPair.get(0));
+                circuitFactory.setReceiver(enlistedPair.get(1));
 
                 // Pass down the connection to hold the coordination conversation over.
-                sequencer.setConversationFactory(conversationFactory);
+                circuitFactory.setConversationFactory(conversationFactory);
 
                 // Execute the test case.
-                coordTest.setTestSequencer(sequencer);
+                coordTest.setCircuitFactory(circuitFactory);
                 coordTest.run(testResult);
             }
         }
@@ -145,9 +146,9 @@ public class InteropTestDecorator extends DistributedTestDecorator
      *
      * @return A distributed test sequencer.
      */
-    public DistributedTestSequencer getDistributedTestSequencer()
+    public CircuitFactory getTestSequencer()
     {
-        return new InteropTestSequencer();
+        return new InteropCircuitFactory();
     }
 
     /**

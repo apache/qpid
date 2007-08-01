@@ -22,7 +22,7 @@ package org.apache.qpid.interop.testcases;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.distributedtesting.DistributedTestCase;
+import org.apache.qpid.test.framework.FrameworkBaseCase;
 
 import java.util.Properties;
 
@@ -33,10 +33,10 @@ import java.util.Properties;
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Setup p2p test parameters and compare with test output. <td> {@link DistributedTestCase}
+ * <tr><td> Setup p2p test parameters and compare with test output. <td> {@link FrameworkBaseCase}
  * </table>
  */
-public class InteropTestCase2BasicP2P extends DistributedTestCase
+public class InteropTestCase2BasicP2P extends FrameworkBaseCase
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(InteropTestCase2BasicP2P.class);
@@ -65,7 +65,7 @@ public class InteropTestCase2BasicP2P extends DistributedTestCase
         testConfig.setProperty("P2P_QUEUE_AND_KEY_NAME", "tc2queue");
         testConfig.put("P2P_NUM_MESSAGES", 50);
 
-        /*Message[] reports =*/ getTestSequencer().sequenceTest(null, null, testConfig);
+        /*Message[] reports =*/ getCircuitFactory().sequenceTest(null, null, testConfig);
 
         // Compare sender and receivers reports.
         /*int messagesSent = reports[0].getIntProperty("MESSAGE_COUNT");

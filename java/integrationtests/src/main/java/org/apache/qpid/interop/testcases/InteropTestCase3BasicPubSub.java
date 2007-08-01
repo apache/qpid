@@ -22,17 +22,17 @@ package org.apache.qpid.interop.testcases;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.distributedtesting.DistributedTestCase;
+import org.apache.qpid.test.framework.FrameworkBaseCase;
 
 import java.util.Properties;
 
 /**
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Setup pub/sub test parameters and compare with test output. <td> {@link DistributedTestCase}
+ * <tr><td> Setup pub/sub test parameters and compare with test output. <td> {@link FrameworkBaseCase}
  * </table>
  */
-public class InteropTestCase3BasicPubSub extends DistributedTestCase
+public class InteropTestCase3BasicPubSub extends FrameworkBaseCase
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(InteropTestCase3BasicPubSub.class);
@@ -62,7 +62,7 @@ public class InteropTestCase3BasicPubSub extends DistributedTestCase
         testConfig.put("PUBSUB_NUM_MESSAGES", 10);
         testConfig.put("PUBSUB_NUM_RECEIVERS", 5);
 
-        /*Message[] reports =*/ getTestSequencer().sequenceTest(null, null, testConfig);
+        /*Message[] reports =*/ getCircuitFactory().sequenceTest(null, null, testConfig);
 
         // Compare sender and receivers reports.
         /*int messagesSent = reports[0].getIntProperty("MESSAGE_COUNT");

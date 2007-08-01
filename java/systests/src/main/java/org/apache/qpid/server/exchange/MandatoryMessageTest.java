@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.test.framework.sequencers.TestCaseSequencer;
 import org.apache.qpid.test.framework.Circuit;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import static org.apache.qpid.test.framework.MessagingTestConfigProperties.*;
+import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
@@ -85,9 +85,10 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
         // Run the default test sequence over the test circuit checking for no errors.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /** Check that an mandatory message is committed succesfully in a transaction when a consumer is connected. */
@@ -98,49 +99,50 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
         // Run the default test sequence over the test circuit checking for no errors.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /**
      * Check that a mandatory message is sent succesfully, not using transactions, when a consumer is disconnected but
      * the route exists.
      */
-    public void test_QPID_517_MandatoryOkConsumerDisconnectedNoTxP2P() throws Exception
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedNoTxP2P()
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PROPNAME, false);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-
         // Disconnect the consumer.
-        testCircuit.getReceiver().getConsumer().close();
+        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
 
         // Send one message with no errors.
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /**
      * Check that a mandatory message is sent succesfully, in a transaction, when a consumer is disconnected but
      * the route exists.
      */
-    public void test_QPID_517_MandatoryOkConsumerDisconnectedTxP2P() throws Exception
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedTxP2P()
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PROPNAME, true);
         testProps.setProperty(PUBSUB_PROPNAME, false);
 
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-
         // Disconnect the consumer.
-        testCircuit.getReceiver().getConsumer().close();
+        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
 
         // Send one message with no errors.
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /** Check that an mandatory message results in no route code, not using transactions, when no consumer is connected. */
@@ -155,9 +157,10 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
     }
 
     /** Check that an mandatory message results in no route code, upon transaction commit, when a consumer is connected. */
@@ -172,9 +175,10 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
     }
 
     /** Check that an mandatory message is sent succesfully not using transactions when a consumer is connected. */
@@ -185,9 +189,10 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
         // Run the default test sequence over the test circuit checking for no errors.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /** Check that an mandatory message is committed succesfully in a transaction when a consumer is connected. */
@@ -198,16 +203,17 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(PUBSUB_PROPNAME, true);
 
         // Run the default test sequence over the test circuit checking for no errors.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /**
      * Check that a mandatory message is sent succesfully, not using transactions, when a consumer is disconnected but
      * the route exists.
      */
-    public void test_QPID_517_MandatoryOkConsumerDisconnectedNoTxPubSub() throws Exception
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedNoTxPubSub()
     {
         // Ensure transactional sessions are off.
         testProps.setProperty(TRANSACTED_PROPNAME, false);
@@ -216,21 +222,21 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         // Use durable subscriptions, so that the route remains open with no subscribers.
         testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
 
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-
         // Disconnect the consumer.
-        testCircuit.getReceiver().getConsumer().close();
+        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
 
         // Send one message with no errors.
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /**
      * Check that a mandatory message is sent succesfully, in a transaction, when a consumer is disconnected but
      * the route exists.
      */
-    public void test_QPID_517_MandatoryOkConsumerDisconnectedTxPubSub() throws Exception
+    public void test_QPID_517_MandatoryOkConsumerDisconnectedTxPubSub()
     {
         // Ensure transactional sessions are on.
         testProps.setProperty(TRANSACTED_PROPNAME, true);
@@ -239,14 +245,14 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         // Use durable subscriptions, so that the route remains open with no subscribers.
         testProps.setProperty(DURABLE_SUBSCRIPTION_PROPNAME, true);
 
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-
         // Disconnect the consumer.
-        testCircuit.getReceiver().getConsumer().close();
+        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, false);
+
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
 
         // Send one message with no errors.
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noExceptionsAssertion()), testProps);
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noExceptionsAssertion())));
     }
 
     /** Check that an mandatory message results in no route code, not using transactions, when no consumer is connected. */
@@ -261,9 +267,10 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
     }
 
     /** Check that an mandatory message results in no route code, upon transaction commit, when a consumer is connected. */
@@ -278,9 +285,10 @@ public class MandatoryMessageTest extends FrameworkBaseCase
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, false);
 
         // Send one message and get a linked no route exception.
-        TestCaseSequencer sequencer = getTestSequencer();
-        Circuit testCircuit = sequencer.createCircuit(testProps);
-        sequencer.sequenceTest(testCircuit, assertionList(testCircuit.getPublisher().noRouteAssertion()), testProps);
+        CircuitFactory circuitFactory = getCircuitFactory();
+        Circuit testCircuit = circuitFactory.createCircuit(testProps);
+
+        assertNoFailures(testCircuit.test(1, assertionList(testCircuit.getPublisher().noRouteAssertion())));
     }
 
     protected void setUp() throws Exception
@@ -295,5 +303,6 @@ public class MandatoryMessageTest extends FrameworkBaseCase
 
         /** Bind the receivers consumer by default. */
         testProps.setProperty(RECEIVER_CONSUMER_BIND_PROPNAME, true);
+        testProps.setProperty(RECEIVER_CONSUMER_ACTIVE_PROPNAME, true);
     }
 }

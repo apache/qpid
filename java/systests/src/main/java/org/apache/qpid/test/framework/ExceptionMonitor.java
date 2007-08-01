@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.test.framework;
 
+import org.apache.log4j.Logger;
+
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 
@@ -39,6 +41,9 @@ import java.util.List;
  */
 public class ExceptionMonitor implements ExceptionListener
 {
+    /** Used for debugging. */
+    private final Logger log = Logger.getLogger(ExceptionMonitor.class);
+
     /** Holds the received exceptions. */
     List<JMSException> exceptions = new ArrayList<JMSException>();
 
@@ -49,6 +54,8 @@ public class ExceptionMonitor implements ExceptionListener
      */
     public void onException(JMSException e)
     {
+        log.debug("public void onException(JMSException e): called");
+
         exceptions.add(e);
     }
 

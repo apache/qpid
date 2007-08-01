@@ -22,7 +22,7 @@ package org.apache.qpid.interop.testcases;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.distributedtesting.DistributedTestCase;
+import org.apache.qpid.test.framework.FrameworkBaseCase;
 
 import java.util.Properties;
 
@@ -33,10 +33,10 @@ import java.util.Properties;
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Exercises the interop testing framework without actually sending any test messages.
- *     <td> {@link org.apache.qpid.test.framework.distributedtesting.DistributedTestCase}
+ *     <td> {@link FrameworkBaseCase}
  * </table>
  */
-public class InteropTestCase1DummyRun extends DistributedTestCase
+public class InteropTestCase1DummyRun extends FrameworkBaseCase
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(InteropTestCase1DummyRun.class);
@@ -63,7 +63,7 @@ public class InteropTestCase1DummyRun extends DistributedTestCase
         Properties testConfig = new Properties();
         testConfig.put("TEST_NAME", "TC1_DummyRun");
 
-        /*Message[] reports =*/ getTestSequencer().sequenceTest(null, null, testConfig);
+        /*Message[] reports =*/ getCircuitFactory().sequenceTest(null, null, testConfig);
 
         // Compare sender and receivers reports.
         // Assert.assertEquals("Expected to get 2 dummy reports.", 2, reports.length);

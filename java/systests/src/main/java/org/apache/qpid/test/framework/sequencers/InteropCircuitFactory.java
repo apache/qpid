@@ -22,10 +22,11 @@ package org.apache.qpid.test.framework.sequencers;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Circuit;
+import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.distributedcircuit.DistributedCircuitImpl;
 import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
@@ -35,6 +36,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
@@ -44,10 +46,28 @@ import java.util.Properties;
  * <tr><td>
  * </table>
  */
-public class InteropTestSequencer extends BaseDistributedTestSequencer
+public class InteropCircuitFactory extends BaseCircuitFactory
 {
     /** Used for debugging. */
-    Logger log = Logger.getLogger(InteropTestSequencer.class);
+    Logger log = Logger.getLogger(InteropCircuitFactory.class);
+
+    /**
+     * Creates a test circuit for the test, configered by the test parameters specified.
+     *
+     * @param testProperties The test parameters.
+     * @return A test circuit.
+     */
+    public Circuit createCircuit(ParsedProperties testProperties)
+    {
+        log.debug("public Circuit createCircuit(ParsedProperties testProperties): called");
+
+        List<TestClientDetails> senders = new LinkedList<TestClientDetails>();
+        senders.add(getSender());
+        List<TestClientDetails> receivers = getReceivers();
+        ConversationFactory conversationFactory = getConversationFactory();
+
+        return DistributedCircuitImpl.createCircuit(testProperties, senders, receivers, conversationFactory);
+    }
 
     /**
      * Holds a test coordinating conversation with the test clients. This should consist of assigning the test roles,
@@ -122,16 +142,5 @@ public class InteropTestSequencer extends BaseDistributedTestSequencer
         {
             throw new RuntimeException("JMSException not handled.");
         }
-    }
-
-    /**
-     * Creates a test circuit for the test, configered by the test parameters specified.
-     *
-     * @param testProperties The test parameters.
-     * @return A test circuit.
-     */
-    public Circuit createCircuit(ParsedProperties testProperties)
-    {
-        throw new RuntimeException("Not implemented.");
     }
 }

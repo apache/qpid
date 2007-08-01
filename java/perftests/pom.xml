@@ -72,6 +72,11 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-systests</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
         </dependency>
@@ -85,9 +90,10 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>compile</scope>
         </dependency>
 
-        <dependency>  
+        <dependency>
             <groupId>org.slf4j</groupId> 
             <artifactId>slf4j-log4j12</artifactId>  
             <version>1.4.0</version>  
@@ -354,11 +360,32 @@
                 <configuration>
                     <descriptors>
                         <descriptor>jar-with-dependencies.xml</descriptor>
-                        <descriptor>dist-zip.xml</descriptor>
+                        <!--<descriptor>dist-zip.xml</descriptor>-->
                     </descriptors>
                     <outputDirectory>target</outputDirectory>
                     <workDirectory>target/assembly/work</workDirectory>
                 </configuration>
+            </plugin>
+
+            <!-- Build a manifest only jar with all the required jars for the broker in its classpath. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>                   
+                    <execution>
+                        <id>test_jar</id>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <addClasspath>true</addClasspath>                           
+                                </manifest>
+                            </archive>
+                        </configuration>      
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>          
             </plugin>
 
         </plugins>

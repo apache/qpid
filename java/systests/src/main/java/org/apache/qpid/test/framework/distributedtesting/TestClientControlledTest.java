@@ -26,9 +26,14 @@ import javax.jms.MessageListener;
 import javax.jms.Session;
 
 /**
- * InteropClientTestCase provides an interface that classes implementing test cases from the interop testing spec
- * (http://cwiki.apache.org/confluence/display/qpid/Interop+Testing+Specification) should implement. Implementations
- * must be Java beans, that is, to provide a default constructor and to implement the {@link #getName} method.
+ * TestClientControlledTest provides an interface that classes implementing test cases to run on a {@link TestClient}
+ * node can use. Implementations must be Java beans, that is, to provide a default constructor and to implement the
+ * {@link #getName} method.
+ *
+ * <p/>The methods specified in this interface are called when the {@link TestClient} receives control instructions to
+ * apply to the test. There are control instructions to present the test case with the test invite, so that it may
+ * choose whether or not to participate in the test, assign the test to play the sender or receiver role, start the
+ * test and obtain the test status report.
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities
@@ -39,7 +44,7 @@ import javax.jms.Session;
  * <tr><td> Generate test reports.
  * </table>
  */
-public interface InteropClientTestCase extends MessageListener
+public interface TestClientControlledTest
 {
     /** Defines the possible test case roles that an interop test case can take on. */
     public enum Roles
@@ -84,14 +89,16 @@ public interface InteropClientTestCase extends MessageListener
     /**
      * Performs the test case actions. Returning from here, indicates that the sending role has completed its test.
      *
+     * @param numMessages The number of test messages to send.
+     *
      * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.
      */
-    public void start() throws JMSException;
+    public void start(int numMessages) throws JMSException;
 
     /**
      * Gets a report on the actions performed by the test case in its assigned role.
      *
-     * @param session The session to create the report message in.
+     * @param session The controlSession to create the report message in.
      *
      * @return The report message.
      *

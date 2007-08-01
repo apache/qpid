@@ -22,13 +22,16 @@ package org.apache.qpid.test.framework;
 
 import junit.framework.TestCase;
 
+import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.test.framework.sequencers.TestCaseSequencer;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.test.framework.localcircuit.CircuitImpl;
+import org.apache.qpid.test.framework.localcircuit.LocalCircuitImpl;
+import org.apache.qpid.test.framework.sequencers.CircuitFactory;
+import org.apache.qpid.util.ConversationFactory;
 
+import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
 import java.util.ArrayList;
@@ -47,10 +50,13 @@ import java.util.Properties;
  * <tr><td> Convert failed assertions to error messages.
  * </table>
  */
-public class FrameworkBaseCase extends TestCase
+public class FrameworkBaseCase extends AsymptoticTestCase
 {
+    /** Used for debugging purposes. */
+    private static final Logger log = Logger.getLogger(FrameworkBaseCase.class);
+
     /** Holds the test sequencer to create and run test circuits with. */
-    protected TestCaseSequencer testSequencer = new DefaultTestSequencer();
+    protected CircuitFactory circuitFactory = new DefaultCircuitFactory();
 
     /**
      * Creates a new test case with the specified name.
@@ -69,20 +75,20 @@ public class FrameworkBaseCase extends TestCase
      *
      * @return The test case sequencer.
      */
-    protected TestCaseSequencer getTestSequencer()
+    protected CircuitFactory getCircuitFactory()
     {
-        return testSequencer;
+        return circuitFactory;
     }
 
     /**
-     * Overrides the default test sequencer. Test decorators can use this to supply distributed test sequencers or other
-     * test sequencer specializations.
+     * Overrides the default test circuit factory. Test decorators can use this to supply distributed test sequencers or
+     * other test circuit factory specializations.
      *
-     * @param sequencer The new test sequencer.
+     * @param circuitFactory The new test circuit factory.
      */
-    public void setTestSequencer(TestCaseSequencer sequencer)
+    public void setCircuitFactory(CircuitFactory circuitFactory)
     {
-        this.testSequencer = sequencer;
+        this.circuitFactory = circuitFactory;
     }
 
     /**
@@ -112,6 +118,8 @@ public class FrameworkBaseCase extends TestCase
      */
     protected void assertNoFailures(List<Assertion> asserts)
     {
+        log.debug("protected void assertNoFailures(List<Assertion> asserts = " + asserts + "): called");
+
         // Check if there are no assertion failures, and return without doing anything if so.
         if ((asserts == null) || asserts.isEmpty())
         {
@@ -175,10 +183,25 @@ public class FrameworkBaseCase extends TestCase
     }
 
     /**
-     * DefaultTestSequencer is a test sequencer that creates test circuits with publishing and receiving ends rooted
+     * Should provide a translation from the junit method name of a test to its test case name as known to the test
+     * clients that will run the test. The purpose of this is to convert the JUnit method name into the correct test
+     * case name to place into the test invite. For example the method "testP2P" might map onto the interop test case
+     * name "TC2_BasicP2P".
+     *
+     * @param methodName The name of the JUnit test method.
+     *
+     * @return The name of the corresponding interop test case.
+     */
+    public String getTestCaseNameForTestMethod(String methodName)
+    {
+        return methodName;
+    }
+
+    /**
+     * DefaultCircuitFactory is a test sequencer that creates test circuits with publishing and receiving ends rooted
      * on the same JVM.
      */
-    public class DefaultTestSequencer implements TestCaseSequencer
+    public class DefaultCircuitFactory implements CircuitFactory
     {
         /**
          * Holds a test coordinating conversation with the test clients. This should consist of assigning the test roles,
@@ -201,7 +224,57 @@ public class FrameworkBaseCase extends TestCase
          */
         public Circuit createCircuit(ParsedProperties testProperties)
         {
-            return CircuitImpl.createCircuit(testProperties);
+            return LocalCircuitImpl.createCircuit(testProperties);
+        }
+
+        /**
+         * Sets the sender test client to coordinate the test with.
+         *
+         * @param sender The contact details of the sending client in the test.
+         */
+        public void setSender(TestClientDetails sender)
+        {
+            throw new RuntimeException("Not implemented.");
+        }
+
+        /**
+         * Sets the receiving test client to coordinate the test with.
+         *
+         * @param receiver The contact details of the sending client in the test.
+         */
+        public void setReceiver(TestClientDetails receiver)
+        {
+            throw new RuntimeException("Not implemented.");
+        }
+
+        /**
+         * Supplies the sending test client.
+         *
+         * @return The sending test client.
+         */
+        public TestClientDetails getSender()
+        {
+            throw new RuntimeException("Not implemented.");
+        }
+
+        /**
+         * Supplies the receiving test client.
+         *
+         * @return The receiving test client.
+         */
+        public List<TestClientDetails> getReceivers()
+        {
+            throw new RuntimeException("Not implemented.");
+        }
+
+        /**
+         * Accepts the conversation factory over which to hold the test coordinating conversation.
+         *
+         * @param conversationFactory The conversation factory to coordinate the test over.
+         */
+        public void setConversationFactory(ConversationFactory conversationFactory)
+        {
+            throw new RuntimeException("Not implemented.");
         }
     }
 }

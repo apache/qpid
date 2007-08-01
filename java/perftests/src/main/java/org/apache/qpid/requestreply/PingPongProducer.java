@@ -395,10 +395,10 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the connection to the broker. */
     protected Connection _connection;
 
-    /** Holds the session on which ping replies are received. */
+    /** Holds the controlSession on which ping replies are received. */
     protected Session _consumerSession;
 
-    /** Holds the producer session, needed to create ping messages. */
+    /** Holds the producer controlSession, needed to create ping messages. */
     protected Session _producerSession;
 
     /** Holds the destination where the response messages will arrive. */
@@ -1305,8 +1305,8 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     }
 
     /**
-     * Convenience method to commit the transaction on the specified session. If the session to commit on is not a
-     * transactional session, this method does nothing (unless the failover after send flag is set).
+     * Convenience method to commit the transaction on the specified controlSession. If the controlSession to commit on is not a
+     * transactional controlSession, this method does nothing (unless the failover after send flag is set).
      *
      * <p/>If the {@link #_failAfterSend} flag is set, this will prompt the user to kill the broker before the commit is
      * applied. This flag applies whether the pinger is transactional or not.
@@ -1315,9 +1315,9 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      * is applied. If the {@link #_failAfterCommit} flag is set, this will prompt the user to kill the broker after the
      * commit is applied. These flags will only apply if using a transactional pinger.
      *
-     * @param session The session to commit
+     * @param session The controlSession to commit
      *
-     * @return <tt>true</tt> if the session was committed, <tt>false</tt> if it was not.
+     * @return <tt>true</tt> if the controlSession was committed, <tt>false</tt> if it was not.
      *
      * @throws javax.jms.JMSException If the commit fails and then the rollback fails.
      *
@@ -1327,7 +1327,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      */
     protected boolean commitTx(Session session) throws JMSException
     {
-        // log.debug("protected void commitTx(Session session): called");
+        // log.debug("protected void commitTx(Session controlSession): called");
 
         boolean committed = false;
 

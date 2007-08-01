@@ -22,9 +22,9 @@ package org.apache.qpid.interop.clienttestcases;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.distributedtesting.InteropClientTestCase;
-import org.apache.qpid.test.framework.distributedtesting.TestClient;
 import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.distributedtesting.TestClient;
+import org.apache.qpid.test.framework.distributedtesting.TestClientControlledTest;
 
 import javax.jms.*;
 
@@ -42,7 +42,7 @@ import javax.jms.*;
  * <tr><td> Generate test reports.
  * </table>
  */
-public class TestCase3BasicPubSub implements InteropClientTestCase
+public class TestCase3BasicPubSub implements TestClientControlledTest, MessageListener
 {
     /** Used for debugging. */
     private static final Logger log = Logger.getLogger(TestCase3BasicPubSub.class);
@@ -174,9 +174,11 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
     /**
      * Performs the test case actions. Returning from here, indicates that the sending role has completed its test.
      *
+     * @param numMessages The number of test messages to send.
+     *
      * @throws JMSException Any JMSException resulting from reading the message are allowed to fall through.
      */
-    public void start() throws JMSException
+    public void start(int numMessages) throws JMSException
     {
         log.debug("public void start(): called");
 
@@ -185,7 +187,7 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
         {
             Message testMessage = session[0].createTextMessage("test");
 
-            for (int i = 0; i < numMessages; i++)
+            for (int i = 0; i < this.numMessages; i++)
             {
                 producer.send(testMessage);
 
@@ -198,7 +200,7 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
     /**
      * Gets a report on the actions performed by the test case in its assigned role.
      *
-     * @param session The session to create the report message in.
+     * @param session The controlSession to create the report message in.
      *
      * @return The report message.
      *
@@ -206,7 +208,7 @@ public class TestCase3BasicPubSub implements InteropClientTestCase
      */
     public Message getReport(Session session) throws JMSException
     {
-        log.debug("public Message getReport(Session session): called");
+        log.debug("public Message getReport(Session controlSession): called");
 
         // Close the test connections.
         for (Connection conn : connection)

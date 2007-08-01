@@ -22,10 +22,11 @@ package org.apache.qpid.test.framework.sequencers;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Circuit;
+import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.distributedcircuit.DistributedCircuitImpl;
 import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
@@ -35,19 +36,55 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 
 /**
+ * FanOutCircuitFactory is a circuit factory that creates distributed test circuits. Given a set of participating
+ * test client nodes, it assigns one node to the SENDER role and the remainder to the RECEIVER role.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td>
  * </table>
+ *
+ * @todo Adapt this to be an n*m topology circuit factory. Need to add circuit topology definitions to the test
+ *       parameters. Place n senders onto the available test clients, and m receivers. Where n or m is larger than
+ *       the available nodes, start stacking multiple test clients on each node. There will also be an option that
+ *       indicates whether nodes can play both roles, and how many nodes out of all available may be assigned to
+ *       each role.
+ *
+ * @todo The createCircuit methods on this and InteropCircuitFactory are going to be identical. This is because the
+ *       partitioning into senders and receivers is already done by the test decorators. Either eliminate these factories
+ *       as unnesesary, or move the partitioning functionaility into the factories, in which case the test decorators
+ *       can probably be merged or eliminated. There is confusion over the placement of responsibilities between the
+ *       factories and the test decorators... although the test decorators may well do more than just circuit creation
+ *       in the future. For example, there may have to be a special decorator for test repetition that does one circuit
+ *       creation, but the runs many tests over it, in which case the handling of responsibilities becomes clearer.
  */
-public class FanOutTestSequencer extends BaseDistributedTestSequencer
+public class FanOutCircuitFactory extends BaseCircuitFactory
 {
     /** Used for debugging. */
-    Logger log = Logger.getLogger(FanOutTestSequencer.class);
+    Logger log = Logger.getLogger(FanOutCircuitFactory.class);
+
+    /**
+     * Creates a test circuit for the test, configered by the test parameters specified.
+     *
+     * @param testProperties The test parameters.
+     * @return A test circuit.
+     */
+    public Circuit createCircuit(ParsedProperties testProperties)
+    {
+        log.debug("public Circuit createCircuit(ParsedProperties testProperties): called");
+
+        List<TestClientDetails> senders = new LinkedList<TestClientDetails>();
+        senders.add(getSender());
+        List<TestClientDetails> receivers = getReceivers();
+        ConversationFactory conversationFactory = getConversationFactory();
+
+        return DistributedCircuitImpl.createCircuit(testProperties, senders, receivers, conversationFactory);
+    }
 
     /**
      * Holds a test coordinating conversation with the test clients. This should consist of assigning the test roles,
@@ -57,6 +94,8 @@ public class FanOutTestSequencer extends BaseDistributedTestSequencer
      * @param testCircuit    The test circuit.
      * @param assertions     The list of assertions to apply to the test circuit.
      * @param testProperties The test case definition.
+     *
+     * @deprecated Scheduled for removal once existing tests converted over to use test circuits.
      */
     public void sequenceTest(Circuit testCircuit, List<Assertion> assertions, Properties testProperties)
     {
@@ -68,7 +107,7 @@ public class FanOutTestSequencer extends BaseDistributedTestSequencer
 
         try
         {
-            // Create a conversation on the sender clients private control rouete.
+            // Create a conversation on the sender clients private control route.
             Session session = conversationFactory.getSession();
             Destination senderControlTopic = session.createTopic(sender.privateControlKey);
             ConversationFactory.Conversation senderConversation = conversationFactory.startConversation();
@@ -117,17 +156,6 @@ public class FanOutTestSequencer extends BaseDistributedTestSequencer
     }
 
     /**
-     * Creates a test circuit for the test, configered by the test parameters specified.
-     *
-     * @param testProperties The test parameters.
-     * @return A test circuit.
-     */
-    public Circuit createCircuit(ParsedProperties testProperties)
-    {
-        throw new RuntimeException("Not implemented.");
-    }
-
-    /**
      * Assigns the receivers role to the specified test client that is to act as a receivers during the test. This method
      * does not always wait for the receiving clients to confirm their role assignments. This is because this method
      * may be called from an 'onMessage' method, when a client is joining the test at a later point in time, and it
@@ -139,6 +167,8 @@ public class FanOutTestSequencer extends BaseDistributedTestSequencer
      * @param confirm        Indicates whether role confirmation should be waited for.
      *
      * @throws JMSException Any JMSExceptions occurring during the conversation are allowed to fall through.
+     *
+     * @deprecated Scheduled for removal once existing tests converted over to use test circuits.
      */
     protected void assignReceiverRole(TestClientDetails receiver, Properties testProperties, boolean confirm)
         throws JMSException

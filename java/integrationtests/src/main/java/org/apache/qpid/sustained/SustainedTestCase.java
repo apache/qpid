@@ -23,8 +23,8 @@ package org.apache.qpid.sustained;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.framework.distributedtesting.DistributedTestCase;
 import org.apache.qpid.test.framework.DropInTest;
+import org.apache.qpid.test.framework.FrameworkBaseCase;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -32,7 +32,7 @@ import javax.jms.Message;
 import java.util.Properties;
 
 /**
- * SustainedTestCase is a {@link org.apache.qpid.test.framework.distributedtesting.DistributedTestCase} that runs the "Perf_SustainedPubSub" test case. This consists of one
+ * SustainedTestCase is a {@link FrameworkBaseCase} that runs the "Perf_SustainedPubSub" test case. This consists of one
  * test client sending, and several receiving, and attempts to find the highest rate at which messages can be broadcast
  * to the receivers. It is also a {@link DropInTest} to which more test clients may be added during a test run.
  *
@@ -41,7 +41,7 @@ import java.util.Properties;
  * <tr><td>
  * </table>
  */
-public class SustainedTestCase extends DistributedTestCase implements DropInTest
+public class SustainedTestCase extends FrameworkBaseCase implements DropInTest
 {
     /** Used for debugging. */
     Logger log = Logger.getLogger(SustainedTestCase.class);
@@ -78,7 +78,7 @@ public class SustainedTestCase extends DistributedTestCase implements DropInTest
 
         log.info("Created Config: " + testConfig.entrySet().toArray());
 
-        getTestSequencer().sequenceTest(null, null, testConfig);
+        getCircuitFactory().sequenceTest(null, null, testConfig);
     }
 
     /**

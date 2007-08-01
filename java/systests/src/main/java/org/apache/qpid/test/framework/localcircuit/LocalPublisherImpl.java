@@ -22,7 +22,6 @@ package org.apache.qpid.test.framework.localcircuit;
 
 import org.apache.qpid.client.AMQNoConsumersException;
 import org.apache.qpid.client.AMQNoRouteException;
-import org.apache.qpid.test.framework.localcircuit.CircuitImpl;
 import org.apache.qpid.test.framework.*;
 
 import javax.jms.MessageConsumer;
@@ -30,8 +29,10 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 /**
- * Provides an implementation of the {@link org.apache.qpid.test.framework.Publisher} interface that wraps a single message producer and consumer on
- * a single session.
+ * Provides an implementation of the {@link Publisher} interface and wraps a single message producer and consumer on
+ * a single controlSession, as a {@link CircuitEnd}. A local publisher also acts as a circuit end, because for a locally
+ * located circuit the assertions may be applied directly, there does not need to be any inter process messaging
+ * between the publisher and its single circuit end, in order to ascertain its status.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
@@ -42,21 +43,32 @@ import javax.jms.Session;
  * <tr><td> Provide assertion that the publisher received a no route error code.
  * </table>
  */
-public class PublisherImpl extends CircuitEndBase implements Publisher
+public class LocalPublisherImpl extends CircuitEndBase implements Publisher
 {
     /** Holds a reference to the containing circuit. */
-    private CircuitImpl circuit;
+    private LocalCircuitImpl circuit;
 
     /**
-     * Creates a circuit end point on the specified producer, consumer and session.
+     * Creates a circuit end point on the specified producer, consumer and controlSession.
      *
      * @param producer The message producer for the circuit end point.
      * @param consumer The message consumer for the circuit end point.
-     * @param session  The session for the circuit end point.
+     * @param session  The controlSession for the circuit end point.
      */
-    public PublisherImpl(MessageProducer producer, MessageConsumer consumer, Session session)
+    public LocalPublisherImpl(MessageProducer producer, MessageConsumer consumer, Session session,
+        MessageMonitor messageMonitor, ExceptionMonitor exceptionMonitor)
     {
-        super(producer, consumer, session);
+        super(producer, consumer, session, messageMonitor, exceptionMonitor);
+    }
+
+    /**
+     * Creates a circuit end point from the producer, consumer and controlSession in a circuit end base implementation.
+     *
+     * @param end The circuit end base implementation to take producers and consumers from.
+     */
+    public LocalPublisherImpl(CircuitEndBase end)
+    {
+        super(end.getProducer(), end.getConsumer(), end.getSession(), end.getMessageMonitor(), end.getExceptionMonitor());
     }
 
     /**
@@ -77,6 +89,7 @@ public class PublisherImpl extends CircuitEndBase implements Publisher
                     if (!connectionExceptionMonitor.assertNoExceptions())
                     {
                         passed = false;
+
                         addError("Was expecting no exceptions.\n");
                         addError("Got the following exceptions on the connection, "
                             + circuit.getConnectionExceptionMonitor());
@@ -85,6 +98,7 @@ public class PublisherImpl extends CircuitEndBase implements Publisher
                     if (!sessionExceptionMonitor.assertNoExceptions())
                     {
                         passed = false;
+
                         addError("Was expecting no exceptions.\n");
                         addError("Got the following exceptions on the producer, " + circuit.getExceptionMonitor());
                     }
@@ -110,6 +124,8 @@ public class PublisherImpl extends CircuitEndBase implements Publisher
 
                     if (!connectionExceptionMonitor.assertOneJMSExceptionWithLinkedCause(AMQNoConsumersException.class))
                     {
+                        passed = false;
+
                         addError("Was expecting linked exception type " + AMQNoConsumersException.class.getName()
                             + " on the connection.\n");
                         addError((connectionExceptionMonitor.size() > 0)
@@ -138,6 +154,8 @@ public class PublisherImpl extends CircuitEndBase implements Publisher
 
                     if (!connectionExceptionMonitor.assertOneJMSExceptionWithLinkedCause(AMQNoRouteException.class))
                     {
+                        passed = false;
+
                         addError("Was expecting linked exception type " + AMQNoRouteException.class.getName()
                             + " on the connection.\n");
                         addError((connectionExceptionMonitor.size() > 0)
@@ -155,7 +173,7 @@ public class PublisherImpl extends CircuitEndBase implements Publisher
      *
      * @param circuit The containing circuit.
      */
-    public void setCircuit(CircuitImpl circuit)
+    public void setCircuit(LocalCircuitImpl circuit)
     {
         this.circuit = circuit;
     }

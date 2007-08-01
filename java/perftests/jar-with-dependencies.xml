@@ -16,32 +16,51 @@
     specific language governing permissions and limitations
     under the License.
 -->
-<!-- This is an assembly descriptor that produces a jar file that contains all the
-     dependencies, fully expanded into a single jar, required to run the tests of
-     a maven project. 
- -->
+<!-- This is an assembly descriptor that produces a distribution that contains all the
+     dependencies, with a manifest only jar that references them, required to run the 
+     tests of a maven project. 
+-->
 <assembly>
-  <id>all-test-deps</id>
-  <formats>
-    <format>jar</format>
-  </formats>
-  <includeBaseDirectory>false</includeBaseDirectory>
-  <dependencySets>
-    <dependencySet>
-      <outputDirectory></outputDirectory>
-      <outputFileNameMapping></outputFileNameMapping>
-      <unpack>true</unpack>
-      <scope>test</scope>
-    </dependencySet>
-  </dependencySets>
-  <fileSets>
-    <fileSet>
-      <directory>target/classes</directory>
-      <outputDirectory></outputDirectory>
-    </fileSet>
-    <fileSet>
-      <directory>target/test-classes</directory>
-      <outputDirectory></outputDirectory>
-    </fileSet>
-  </fileSets>
+    <id>all-test-deps</id>
+    <formats>
+        <format>tar.gz</format>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <unpack>false</unpack>
+            <scope>test</scope>
+        </dependencySet>
+    </dependencySets>
+    <fileSets>
+        <fileSet>
+            <directory>target/classes</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+        <fileSet>
+            <directory>target/test-classes</directory>
+            <outputDirectory></outputDirectory>
+        </fileSet>
+
+        <!-- Include the build artifact. -->
+        <fileSet>
+            <directory>target</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>qpid-perftests-1.0-incubating-M2-SNAPSHOT.jar</include>
+            </includes>
+        </fileSet>
+
+        <!-- Include the classpath only jar. -->
+        <fileSet>
+            <directory>target</directory>
+            <outputDirectory></outputDirectory>
+            <includes>
+                <include>qpid-perftests-1.0-incubating-M2-SNAPSHOT-tests.jar</include>
+            </includes>
+        </fileSet>
+        
+    </fileSets>
 </assembly>

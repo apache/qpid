@@ -21,6 +21,7 @@
 package org.apache.qpid.test.framework.distributedtesting;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import org.apache.qpid.interop.clienttestcases.TestCase1DummyRun;
 import org.apache.qpid.interop.clienttestcases.TestCase2BasicP2P;
@@ -28,17 +29,14 @@ import org.apache.qpid.interop.clienttestcases.TestCase3BasicPubSub;
 import org.apache.qpid.sustained.SustainedClientTestCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.distributedcircuit.TestClientCircuitEnd;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
 import javax.jms.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Implements a test client as described in the interop testing spec
@@ -57,8 +55,8 @@ import java.util.Map;
  *
  * <p><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Handle all incoming control messages. <td> {@link InteropClientTestCase}
- * <tr><td> Configure and look up test cases by name. <td> {@link InteropClientTestCase}
+ * <tr><td> Handle all incoming control messages. <td> {@link TestClientControlledTest}
+ * <tr><td> Configure and look up test cases by name. <td> {@link TestClientControlledTest}
  * </table>
  */
 public class TestClient implements MessageListener
@@ -86,10 +84,10 @@ public class TestClient implements MessageListener
         TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
 
     /** Holds all the test cases loaded from the classpath. */
-    Map<String, InteropClientTestCase> testCases = new HashMap<String, InteropClientTestCase>();
+    Map<String, TestClientControlledTest> testCases = new HashMap<String, TestClientControlledTest>();
 
     /** Holds the test case currently being run by this client. */
-    protected InteropClientTestCase currentTestCase;
+    protected TestClientControlledTest currentTestCase;
 
     /** Holds the connection to the broker that the test is being coordinated on. */
     protected Connection connection;
@@ -97,7 +95,7 @@ public class TestClient implements MessageListener
     /** Holds the message producer to hold the test coordination over. */
     protected MessageProducer producer;
 
-    /** Holds the JMS session for the test coordination. */
+    /** Holds the JMS controlSession for the test coordination. */
     protected Session session;
 
     /** Holds the name of this client, with a default value. */
@@ -113,11 +111,12 @@ public class TestClient implements MessageListener
      * @param brokerUrl   The url of the broker to connect to.
      * @param virtualHost The virtual host to conect to.
      * @param clientName  The client name to use.
+     * @param join        Flag to indicate that this client should attempt to join running tests.
      */
     public TestClient(String brokerUrl, String virtualHost, String clientName, boolean join)
     {
-        log.debug("public SustainedTestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
-            + ", String clientName = " + clientName + "): called");
+        log.debug("public TestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
+            + ", String clientName = " + clientName + ", boolean join = " + join + "): called");
 
         // Retain the connection parameters.
         this.brokerUrl = brokerUrl;
@@ -140,6 +139,9 @@ public class TestClient implements MessageListener
      */
     public static void main(String[] args)
     {
+        log.debug("public static void main(String[] args = " + Arrays.toString(args) + "): called");
+        console.info("Qpid Distributed Test Client.");
+
         // Override the default broker url to be localhost:5672.
         testContextProperties.setProperty(MessagingTestConfigProperties.BROKER_PROPNAME, "tcp://localhost:5672");
 
@@ -163,18 +165,22 @@ public class TestClient implements MessageListener
         String brokerUrl = options.getProperty("b");
         String virtualHost = options.getProperty("h");
         String clientName = options.getProperty("n");
+        clientName = (clientName == null) ? CLIENT_NAME : clientName;
         boolean join = options.getPropertyAsBoolean("j");
 
+        // To distinguish logging output set up an NDC on the client name.
+        NDC.push(clientName);
+
         // Create a test client and start it running.
-        TestClient client = new TestClient(brokerUrl, virtualHost, (clientName == null) ? CLIENT_NAME : clientName, join);
+        TestClient client = new TestClient(brokerUrl, virtualHost, clientName, join);
 
         // Use a class path scanner to find all the interop test case implementations.
         // Hard code the test classes till the classpath scanner is fixed.
-        Collection<Class<? extends InteropClientTestCase>> testCaseClasses =
-            new ArrayList<Class<? extends InteropClientTestCase>>();
-        // ClasspathScanner.getMatches(InteropClientTestCase.class, "^TestCase.*", true);
+        Collection<Class<? extends TestClientControlledTest>> testCaseClasses =
+            new ArrayList<Class<? extends TestClientControlledTest>>();
+        // ClasspathScanner.getMatches(TestClientControlledTest.class, "^TestCase.*", true);
         Collections.addAll(testCaseClasses, TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class,
-            SustainedClientTestCase.class);
+            SustainedClientTestCase.class, TestClientCircuitEnd.class);
 
         try
         {
@@ -183,6 +189,7 @@ public class TestClient implements MessageListener
         catch (Exception e)
         {
             log.error("The test client was unable to start.", e);
+            console.info(e.getMessage());
             System.exit(1);
         }
     }
@@ -195,16 +202,17 @@ public class TestClient implements MessageListener
      *
      * @throws JMSException Any underlying JMSExceptions are allowed to fall through.
      */
-    protected void start(Collection<Class<? extends InteropClientTestCase>> testCaseClasses) throws JMSException
+    protected void start(Collection<Class<? extends TestClientControlledTest>> testCaseClasses) throws JMSException
     {
-        log.debug("private void start(): called");
+        log.debug("protected void start(Collection<Class<? extends TestClientControlledTest>> testCaseClasses = "
+            + testCaseClasses + "): called");
 
         // Create all the test case implementations and index them by the test names.
-        for (Class<? extends InteropClientTestCase> nextClass : testCaseClasses)
+        for (Class<? extends TestClientControlledTest> nextClass : testCaseClasses)
         {
             try
             {
-                InteropClientTestCase testCase = nextClass.newInstance();
+                TestClientControlledTest testCase = nextClass.newInstance();
                 testCases.put(testCase.getName(), testCase);
             }
             catch (InstantiationException e)
@@ -259,6 +267,7 @@ public class TestClient implements MessageListener
      */
     public void onMessage(Message message)
     {
+        NDC.push(clientName);
         log.debug("public void onMessage(Message message = " + message + "): called");
 
         try
@@ -266,7 +275,7 @@ public class TestClient implements MessageListener
             String controlType = message.getStringProperty("CONTROL_TYPE");
             String testName = message.getStringProperty("TEST_NAME");
 
-            log.info("onMessage(Message message = " + message + "): for '" + controlType + "' to '" + testName + "'");
+            log.debug("Received control of type '" + controlType + "' for the test '" + testName + "'");
 
             // Check if the message is a test invite.
             if ("INVITE".equals(controlType))
@@ -280,13 +289,21 @@ public class TestClient implements MessageListener
                     log.debug("Got an invite to test: " + testName);
 
                     // Check if the requested test case is available.
-                    InteropClientTestCase testCase = testCases.get(testName);
+                    TestClientControlledTest testCase = testCases.get(testName);
 
                     if (testCase != null)
                     {
+                        log.debug("Found implementing class for test '" + testName + "', enlisting for it.");
+
+                        // Check if the test case will accept the invitation.
+                        enlist = testCase.acceptInvite(message);
+
+                        log.debug("The test case "
+                            + (enlist ? " accepted the invite, enlisting for it."
+                                      : " did not accept the invite, not enlisting."));
+
                         // Make the requested test case the current test case.
                         currentTestCase = testCase;
-                        enlist = true;
                     }
                     else
                     {
@@ -295,7 +312,7 @@ public class TestClient implements MessageListener
                 }
                 else
                 {
-                    log.debug("Got a compulsory invite.");
+                    log.debug("Got a compulsory invite, enlisting for it.");
 
                     enlist = true;
                 }
@@ -309,7 +326,20 @@ public class TestClient implements MessageListener
                     enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + clientName);
                     enlistMessage.setJMSCorrelationID(message.getJMSCorrelationID());
 
-                    log.info("Sending Message '" + enlistMessage + "'. to " + message.getJMSReplyTo());
+                    log.debug("Sending enlist message '" + enlistMessage + "' to " + message.getJMSReplyTo());
+
+                    producer.send(message.getJMSReplyTo(), enlistMessage);
+                }
+                else
+                {
+                    // Reply with the client name in an Decline message.
+                    Message enlistMessage = session.createMessage();
+                    enlistMessage.setStringProperty("CONTROL_TYPE", "DECLINE");
+                    enlistMessage.setStringProperty("CLIENT_NAME", clientName);
+                    enlistMessage.setStringProperty("CLIENT_PRIVATE_CONTROL_KEY", "iop.control." + clientName);
+                    enlistMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+
+                    log.debug("Sending decline message '" + enlistMessage + "' to " + message.getJMSReplyTo());
 
                     producer.send(message.getJMSReplyTo(), enlistMessage);
                 }
@@ -321,14 +351,17 @@ public class TestClient implements MessageListener
 
                 log.debug("Got a role assignment to role: " + roleName);
 
-                InteropClientTestCase.Roles role = Enum.valueOf(InteropClientTestCase.Roles.class, roleName);
+                TestClientControlledTest.Roles role = Enum.valueOf(TestClientControlledTest.Roles.class, roleName);
 
                 currentTestCase.assignRole(role, message);
 
                 // Reply by accepting the role in an Accept Role message.
                 Message acceptRoleMessage = session.createMessage();
+                acceptRoleMessage.setStringProperty("CLIENT_NAME", clientName);
                 acceptRoleMessage.setStringProperty("CONTROL_TYPE", "ACCEPT_ROLE");
                 acceptRoleMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+
+                log.debug("Sending accept role message '" + acceptRoleMessage + "' to " + message.getJMSReplyTo());
 
                 producer.send(message.getJMSReplyTo(), acceptRoleMessage);
             }
@@ -338,8 +371,21 @@ public class TestClient implements MessageListener
                 {
                     log.debug("Got a start notification.");
 
+                    // Extract the number of test messages to send from the start notification.
+                    int numMessages;
+
+                    try
+                    {
+                        numMessages = message.getIntProperty("MESSAGE_COUNT");
+                    }
+                    catch (JMSException e)
+                    {
+                        // If the number of messages is not specified, use the default of one.
+                        numMessages = 1;
+                    }
+
                     // Start the current test case.
-                    currentTestCase.start();
+                    currentTestCase.start(numMessages);
                 }
                 else
                 {
@@ -348,8 +394,11 @@ public class TestClient implements MessageListener
 
                 // Generate the report from the test case and reply with it as a Report message.
                 Message reportMessage = currentTestCase.getReport(session);
+                reportMessage.setStringProperty("CLIENT_NAME", clientName);
                 reportMessage.setStringProperty("CONTROL_TYPE", "REPORT");
                 reportMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+
+                log.debug("Sending report message '" + reportMessage + "' to " + message.getJMSReplyTo());
 
                 producer.send(message.getJMSReplyTo(), reportMessage);
             }
@@ -370,8 +419,18 @@ public class TestClient implements MessageListener
         catch (JMSException e)
         {
             // Log a warning about this, but otherwise ignore it.
-            log.warn("A JMSException occurred whilst handling a message.");
-            log.debug("Got JMSException whilst handling message: " + message, e);
+            log.warn("Got JMSException whilst handling message: " + message, e);
+        }
+        // Log any runtimes that fall through this message handler. These are fatal errors for the test client.
+        catch (RuntimeException e)
+        {
+            log.error("The test client message handler got an unhandled exception: ", e);
+            console.info("The message handler got an unhandled exception, terminating the test client.");
+            System.exit(1);
+        }
+        finally
+        {
+            NDC.pop();
         }
     }
 }

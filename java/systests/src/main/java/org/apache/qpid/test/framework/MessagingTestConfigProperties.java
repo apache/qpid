@@ -24,6 +24,8 @@ import org.apache.qpid.jms.Session;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
+import java.util.Properties;
+
 /**
  * MessagingTestConfigProperties defines a set of property names and default values for specifying a messaging topology,
  * and test parameters for running a messaging test over that topology. A Properties object holding some of these
@@ -67,8 +69,11 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Provide the names and defaults of all test parameters.
  * </table>
+ *
+ * @todo Put a type-safe wrapper around these properties, but continue to store the parameters as properties. This is
+ *       simply to ensure that it is a simple matter to serialize/deserialize string/string pairs onto messages.
  */
-public class MessagingTestConfigProperties
+public class MessagingTestConfigProperties extends ParsedProperties
 {
     // ====================== Connection Properties ==================================
 
@@ -130,6 +135,18 @@ public class MessagingTestConfigProperties
 
     /** Holds the default value of the receivers consumer flag. */
     public static final boolean RECEIVER_CONSUMER_BIND_DEFAULT = true;
+
+    /** Holds the name of the property to get the publishers consumer active flag from. */
+    public static final String PUBLISHER_CONSUMER_ACTIVE_PROPNAME = "publisherConsumerActive";
+
+    /** Holds the default value of the publishers consumer active flag. */
+    public static final boolean PUBLISHER_CONSUMER_ACTIVE_DEFAULT = true;
+
+    /** Holds the name of the property to get the receivers consumer active flag from. */
+    public static final String RECEIVER_CONSUMER_ACTIVE_PROPNAME = "receiverConsumerActive";
+
+    /** Holds the default value of the receivers consumer active flag. */
+    public static final boolean RECEIVER_CONSUMER_ACTIVE_DEFAULT = true;
 
     /** Holds the name of the property to get the destination name root from. */
     public static final String SEND_DESTINATION_NAME_ROOT_PROPNAME = "sendDestinationRoot";
@@ -214,7 +231,7 @@ public class MessagingTestConfigProperties
     public static final boolean DURABLE_DESTS_DEFAULT = false;
 
     /** Holds the name of the proeprty to set the prefetch size from. */
-    public static final String PREFECTH_PROPNAME = "prefetch";
+    public static final String PREFETCH_PROPNAME = "prefetch";
 
     /** Defines the default prefetch size to use when consuming messages. */
     public static final int PREFETCH_DEFAULT = 100;
@@ -275,6 +292,8 @@ public class MessagingTestConfigProperties
         defaults.setPropertyIfNull(PUBLISHER_CONSUMER_BIND_PROPNAME, PUBLISHER_CONSUMER_BIND_DEFAULT);
         defaults.setPropertyIfNull(RECEIVER_PRODUCER_BIND_PROPNAME, RECEIVER_PRODUCER_BIND_DEFAULT);
         defaults.setPropertyIfNull(RECEIVER_CONSUMER_BIND_PROPNAME, RECEIVER_CONSUMER_BIND_DEFAULT);
+        defaults.setPropertyIfNull(PUBLISHER_CONSUMER_ACTIVE_PROPNAME, PUBLISHER_CONSUMER_ACTIVE_DEFAULT);
+        defaults.setPropertyIfNull(RECEIVER_CONSUMER_ACTIVE_PROPNAME, RECEIVER_CONSUMER_ACTIVE_DEFAULT);
         defaults.setPropertyIfNull(SEND_DESTINATION_NAME_ROOT_PROPNAME, SEND_DESTINATION_NAME_ROOT_DEFAULT);
         defaults.setPropertyIfNull(RECEIVE_DESTINATION_NAME_ROOT_PROPNAME, RECEIVE_DESTINATION_NAME_ROOT_DEFAULT);
         defaults.setPropertyIfNull(PERSISTENT_MODE_PROPNAME, PERSISTENT_MODE_DEFAULT);
@@ -294,10 +313,173 @@ public class MessagingTestConfigProperties
         defaults.setPropertyIfNull(ACK_MODE_PROPNAME, ACK_MODE_DEFAULT);
         defaults.setPropertyIfNull(DURABLE_SUBSCRIPTION_PROPNAME, DURABLE_SUBSCRIPTION_DEFAULT);
         defaults.setPropertyIfNull(MAX_PENDING_PROPNAME, MAX_PENDING_DEFAULT);
-        defaults.setPropertyIfNull(PREFECTH_PROPNAME, PREFETCH_DEFAULT);
+        defaults.setPropertyIfNull(PREFETCH_PROPNAME, PREFETCH_DEFAULT);
         defaults.setPropertyIfNull(NO_LOCAL_PROPNAME, NO_LOCAL_DEFAULT);
         defaults.setPropertyIfNull(EXCLUSIVE_PROPNAME, EXCLUSIVE_DEFAULT);
         defaults.setPropertyIfNull(IMMEDIATE_PROPNAME, IMMEDIATE_DEFAULT);
         defaults.setPropertyIfNull(MANDATORY_PROPNAME, MANDATORY_DEFAULT);
+    }
+
+    /**
+     * Creates a test configuration based on the defaults.
+     */
+    public MessagingTestConfigProperties()
+    {
+        super(defaults);
+    }
+
+    /**
+     * Creates a test configuration based on the supplied properties.
+     *
+     * @param properties The test configuration.
+     */
+    public MessagingTestConfigProperties(Properties properties)
+    {
+        super(properties);
+    }
+
+    public int getMessageSize()
+    {
+        return getPropertyAsInteger(MESSAGE_SIZE_PROPNAME);
+    }
+
+    public boolean getPublisherProducerBind()
+    {
+        return getPropertyAsBoolean(PUBLISHER_PRODUCER_BIND_PROPNAME);
+    }
+
+    public boolean getPublisherConsumerBind()
+    {
+        return getPropertyAsBoolean(PUBLISHER_CONSUMER_BIND_PROPNAME);
+    }
+
+    public boolean getReceiverProducerBind()
+    {
+        return getPropertyAsBoolean(RECEIVER_PRODUCER_BIND_PROPNAME);
+    }
+
+    public boolean getReceiverConsumerBind()
+    {
+        return getPropertyAsBoolean(RECEIVER_CONSUMER_BIND_PROPNAME);
+    }
+
+    public boolean getPublisherConsumerActive()
+    {
+        return getPropertyAsBoolean(PUBLISHER_CONSUMER_ACTIVE_PROPNAME);
+    }
+
+    public boolean getReceiverConsumerActive()
+    {
+        return getPropertyAsBoolean(RECEIVER_CONSUMER_ACTIVE_PROPNAME);
+    }
+
+    public String getSendDestinationNameRoot()
+    {
+        return getProperty(SEND_DESTINATION_NAME_ROOT_PROPNAME);
+    }
+
+    public String getReceiveDestinationNameRoot()
+    {
+        return getProperty(RECEIVE_DESTINATION_NAME_ROOT_PROPNAME);
+    }
+
+    public boolean getPersistentMode()
+    {
+        return getPropertyAsBoolean(PERSISTENT_MODE_PROPNAME);
+    }
+
+    public boolean getTransacted()
+    {
+        return getPropertyAsBoolean(TRANSACTED_PROPNAME);
+    }
+
+    public String getBroker()
+    {
+        return getProperty(BROKER_PROPNAME);
+    }
+
+    public String getVirtualHost()
+    {
+        return getProperty(VIRTUAL_HOST_PROPNAME);
+    }
+
+    public String getRate()
+    {
+        return getProperty(RATE_PROPNAME);
+    }
+
+    public boolean getPubsub()
+    {
+        return getPropertyAsBoolean(PUBSUB_PROPNAME);
+    }
+
+    public String getUsername()
+    {
+        return getProperty(USERNAME_PROPNAME);
+    }
+
+    public String getPassword()
+    {
+        return getProperty(PASSWORD_PROPNAME);
+    }
+
+    public int getDestinationCount()
+    {
+        return getPropertyAsInteger(DESTINATION_COUNT_PROPNAME);
+    }
+
+    public long getTimeout()
+    {
+        return getPropertyAsLong(TIMEOUT_PROPNAME);
+    }
+
+    public int getTxBatchSize()
+    {
+        return getPropertyAsInteger(TX_BATCH_SIZE_PROPNAME);
+    }
+
+    public boolean getDurableDests()
+    {
+        return getPropertyAsBoolean(DURABLE_DESTS_PROPNAME);
+    }
+
+    public int getAckMode()
+    {
+        return getPropertyAsInteger(ACK_MODE_PROPNAME);
+    }
+
+    public boolean getDurableSubscription()
+    {
+        return getPropertyAsBoolean(DURABLE_SUBSCRIPTION_PROPNAME);
+    }
+
+    public int getMaxPending()
+    {
+        return getPropertyAsInteger(MAX_PENDING_PROPNAME);
+    }
+
+    public int getPrefecth()
+    {
+        return getPropertyAsInteger(PREFETCH_PROPNAME);
+    }
+
+    public boolean getNoLocal()
+    {
+        return getPropertyAsBoolean(NO_LOCAL_PROPNAME);
+    }
+
+    public boolean getExclusive()
+    {
+        return getPropertyAsBoolean(EXCLUSIVE_PROPNAME);
+    }
+
+    public boolean getImmediate()
+    {
+        return getPropertyAsBoolean(IMMEDIATE_PROPNAME);
+    }
+
+    public boolean getMandatory()
+    {
+        return getPropertyAsBoolean(MANDATORY_PROPNAME);
     }
 }
