@@ -19,7 +19,6 @@ package org.apache.qpid.nclient.jms;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpid.nclient.api.Resource;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.IllegalStateException;
@@ -44,11 +43,6 @@ public abstract class MessageActor
      * This messageActor's session
      */
     SessionImpl _session;
-
-    /**
-     * The underlying Qpid Resource
-     */
-    Resource _qpidResource;
 
     /**
      * The JMS destination this actor is set for.
@@ -120,14 +114,20 @@ public abstract class MessageActor
         if (!_isClosed)
         {
             // close the underlying qpid resource
-            try
+           /* try
             {
-                _qpidResource.close();
+            	// Arnaud I can't see where this var is initialized
+            	// I assume it's the session
+                //_qpidResource.close();
+            	
+            	
             }
             catch (QpidException e)
             {
                 throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-            }
+            }*/
+        	
+        	_session.close(); //is this correct ?
             _isClosed = true;
         }
     }
