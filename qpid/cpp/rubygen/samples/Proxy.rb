@@ -148,6 +148,6 @@ EOS
 end
 
 
-ProxyGen.new("client", ARGV[0], Amqp).generate;
-ProxyGen.new("server", ARGV[0], Amqp).generate;
+ProxyGen.new("client", ARGV[0], amqp).generate;
+ProxyGen.new("server", ARGV[0], amqp).generate;
     
