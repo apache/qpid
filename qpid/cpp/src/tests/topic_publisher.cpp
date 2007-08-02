@@ -121,8 +121,7 @@ int main(int argc, char** argv) {
 
             //set up listener
             Publisher publisher(&channel, "topic_control", args.transactional);
-            string tag("mytag");
-            channel.consume(response, tag, &publisher, AckMode(args.ackmode));
+            channel.consume(response, "mytag", &publisher, AckMode(args.ackmode));
             channel.start();
 
             int batchSize(args.batches);
