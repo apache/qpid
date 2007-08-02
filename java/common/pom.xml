@@ -84,7 +84,7 @@
                         <configuration>
                             <params>
                                 <param>-Dpython.cachedir.skip=true</param>
-                                <param>-Dpython.path=${basedir}/jython-lib.jar/Lib:${mllib.dir}</param>
+                                <param>-Dpython.path=${basedir}/jython-lib.jar/Lib${path.separator}${mllib.dir}</param>
                                 <param>${basedir}/generate</param>
                                 <param>${generated.path}</param>
                                 <param>org.apache.qpidity</param>
