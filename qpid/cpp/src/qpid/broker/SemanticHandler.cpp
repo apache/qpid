@@ -68,7 +68,11 @@ void SemanticHandler::handleMethodInContext(boost::shared_ptr<qpid::framing::AMQ
         handleL4(method, context);
         //(if the frameset is complete) we can move the execution-mark
         //forward 
-        ++(incoming.hwm);
+
+        //temporary hack until channel management is moved to its own handler:
+        if (method->amqpClassId() != ChannelOpenBody::CLASS_ID) {
+            ++(incoming.hwm);
+        }
 
         //note: need to be more sophisticated than this if we execute
         //commands that arrive within an active message frameset (that
@@ -175,8 +179,11 @@ RequestId SemanticHandler::send(shared_ptr<AMQBody> body, Correlator::Action act
     Mutex::ScopedLock l(outLock);
     uint8_t type(body->type());
     if (type == REQUEST_BODY || type == RESPONSE_BODY || type == METHOD_BODY) {
-        ++outgoing.hwm;
-        //std::cout << "[" << this << "] allocated: " << outgoing.hwm.getValue() << " to " << *body  << std::endl;
+        //temporary hack until channel management is moved to its own handler:
+        if (dynamic_pointer_cast<AMQMethodBody>(body)->amqpClassId() != ChannelOpenBody::CLASS_ID) {
+            ++outgoing.hwm;
+            //std::cout << "[" << this << "] allocated: " << outgoing.hwm.getValue() << " to " << *body  << std::endl;
+        }
     }
     return ChannelAdapter::send(body, action);
 }

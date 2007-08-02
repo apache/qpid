@@ -26,7 +26,7 @@ class Message:
     self.frame = frame
     self.method = frame.method_type
     self.content = content
-    if self.method.klass.name != "execution":
+    if self.method.is_l4_command():
       self.command_id = self.channel.incoming_completion.sequence.next()
       #print "allocated: ", self.command_id, "to ", self.method.klass.name, "_", self.method.name
       

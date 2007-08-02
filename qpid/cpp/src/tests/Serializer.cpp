@@ -61,12 +61,17 @@ struct Tester {
     }
 };
 
+void execute(Serializer& s, Serializer::Task t) 
+{
+    s.execute(t);
+}
+
 BOOST_AUTO_TEST_CASE(testSingleThread) {
     // Verify that we call in the same thread by default.
     Tester tester;
     Serializer s;
     for (int i = 0; i < 100; ++i) 
-        s.execute(boost::bind(&Tester::test, &tester));
+        execute(s, boost::bind(&Tester::test, &tester));
     // All should be executed in this thread.
     BOOST_CHECK_EQUAL(0u, tester.collisions);
     BOOST_CHECK_EQUAL(100u, tester.count);
@@ -80,7 +85,7 @@ BOOST_AUTO_TEST_CASE(testSingleThreadNoImmediate) {
     Tester tester;
     Serializer s(false);
     for (int i = 0; i < 100; ++i)
-        s.execute(boost::bind(&Tester::test, &tester));
+        execute(s, boost::bind(&Tester::test, &tester));
     {
         // Wait for dispatch thread to complete.
         Mutex::ScopedLock l(tester.lock);
@@ -95,7 +100,7 @@ BOOST_AUTO_TEST_CASE(testSingleThreadNoImmediate) {
 
 struct Caller : public Runnable, public Tester {
     Caller(Serializer& s) : serializer(s) {}
-    void run() { serializer.execute(boost::bind(&Tester::test, this)); }
+    void run() { execute(serializer, boost::bind(&Tester::test, this)); }
     Serializer& serializer;
 };
 
@@ -134,7 +139,7 @@ BOOST_AUTO_TEST_CASE(testExternalDispatch) {
     serializer.reset(new Serializer(false, &notifyDispatch));
     Tester tester;
     for (int i = 0; i < 100; ++i) 
-        serializer->execute(boost::bind(&Tester::test, &tester));
+        execute(*serializer, boost::bind(&Tester::test, &tester));
     {
         // Wait for dispatch thread to complete.
         Mutex::ScopedLock l(tester.lock);

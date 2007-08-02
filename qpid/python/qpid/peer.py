@@ -376,7 +376,7 @@ class OutgoingCompletion:
 
   def next_command(self, method):
     #the following test is a hack until the track/sub-channel is available
-    if method.klass.name != "execution":
+    if method.is_l4_command():
       self.command_id = self.sequence.next()
 
   def reset(self):
@@ -424,13 +424,6 @@ class IncomingCompletion:
     self.sequence = Sequence(1) #issues ids for incoming commands
     self.mark = 0               #id of last command of whose completion notification was sent to the other peer
     self.channel = channel
-
-  def next_id(self, method):
-    #the following test is a hack until the track/sub-channel is available
-    if method.klass.name != "execution":
-      return self.sequence.next()
-    else:
-      return 0
 
   def reset(self):
     self.sequence = Sequence(1) #reset counter

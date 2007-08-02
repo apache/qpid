@@ -26,6 +26,7 @@
 #include "qpid/QpidError.h"
 #include "ClientChannel.h"
 #include "Connector.h"
+#include "ConnectionHandler.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
@@ -79,17 +80,15 @@ class Connection : public ConnectionForChannel
     framing::ProtocolVersion version;
     const uint32_t max_frame_size;
     ChannelMap channels;
+    ConnectionHandler handler;
     Connector defaultConnector;
     Connector* connector;
     framing::OutputHandler* out;
     bool isOpen;
     sys::Mutex shutdownLock;
-    Channel channel0;
     bool debug;
         
     void erase(framing::ChannelId);
-    void channelException(
-        Channel&, framing::AMQMethodBody*, const QpidError&);
     void closeChannels();
     bool markClosed();
 
@@ -174,7 +173,7 @@ class Connection : public ConnectionForChannel
     inline uint32_t getMaxFrameSize(){ return max_frame_size; }
 
     /** @return protocol version in use on this connection. */ 
-    framing::ProtocolVersion getVersion() const { return version; }
+    //framing::ProtocolVersion getVersion() const { return version; }
 };
 
 }} // namespace qpid::client
