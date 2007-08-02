@@ -16,7 +16,7 @@ If OUTDIR is '-'  then just prints file list without generating files.
 EOS
   exit 1
 end
-outdir=ARGV[0]
+Outdir=ARGV[0]
 specs=ARGV.grep(/\.xml$/)
 templates=ARGV.grep(/\.rb$/)
 Amqp=AmqpRoot.new(*specs)
