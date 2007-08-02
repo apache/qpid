@@ -191,6 +191,9 @@ class Method(Metadata):
     self.docs = docs
     self.response = False
 
+  def is_l4_command(self):
+    return self.klass.name not in ["execution", "channel", "connection"]
+
   def arguments(self, *args, **kwargs):
     nargs = len(args) + len(kwargs)
     maxargs = len(self.fields)

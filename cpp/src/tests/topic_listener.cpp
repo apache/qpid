@@ -111,8 +111,7 @@ int main(int argc, char** argv){
             channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, control, "topic_control", bindArgs);
             //set up listener
             Listener listener(&channel, response.getName(), args.transactional);
-            string tag;
-            channel.consume(control, tag, &listener, AckMode(args.ackmode));
+            channel.consume(control, "c1", &listener, AckMode(args.ackmode));
             cout << "topic_listener: Consuming." << endl;
             channel.run();
             connection.close();

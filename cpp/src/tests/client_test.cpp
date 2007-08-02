@@ -41,7 +41,6 @@ using namespace qpid::client;
 using namespace qpid::sys;
 using std::string;
 
-bool verbose = false;
 
 /**
  * A simple message listener implementation that prints out the
@@ -50,9 +49,10 @@ bool verbose = false;
  */
 class SimpleListener : public virtual MessageListener{
     Monitor* monitor;
+    bool verbose;
 
 public:
-    inline SimpleListener(Monitor* _monitor) : monitor(_monitor){}
+    inline SimpleListener(Monitor* _monitor, bool debug) : monitor(_monitor), verbose(debug) {}
 
     inline virtual void received(Message& msg){
         if (verbose)
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 	//montior to use to notify the main thread when that message
 	//is received.
 	Monitor monitor;
-	SimpleListener listener(&monitor);
+	SimpleListener listener(&monitor, opts.trace);
 	string tag("MyTag");
 	channel.consume(queue, tag, &listener);
 	if (opts.trace) std::cout << "Registered consumer." << std::endl;
@@ -118,11 +118,6 @@ int main(int argc, char** argv)
 	msg.setData(data);
 	channel.publish(msg, exchange, "MyTopic");
 	if (opts.trace) std::cout << "Published message: " << data << std::endl;
-        if (opts.trace) {
-            std::cout << "Publication " 
-                      << (channel.synchWithServer(qpid::sys::TIME_SEC * 1) ? " DID " : " did NOT ") 
-                      << "complete"  << std::endl;
-        }
 
 	{
             Monitor::ScopedLock l(monitor);
