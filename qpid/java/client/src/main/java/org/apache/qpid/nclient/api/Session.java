@@ -88,7 +88,7 @@ public interface Session
      * @return msg The Message to be sent
      * @throws QpidException If the session fails to send the message due to some error
      */
-    public void messageTransfer(String destination,Message msg)throws QpidException; 
+    public void messageTransfer(String destination,Message msg,Option... options)throws QpidException; 
     
     /**
      * Transfer the given message.
@@ -211,6 +211,7 @@ public interface Session
      */
     public void messageSubscribe(String queue, String destination, Map<String,?> filter, Option ... _options) throws QpidException;
     
+    public void messageSubscribe(String queue, String destination, Map<String,?> filter,StreamingMessageListener listener,Option ... _options) throws QpidException;
 
     /**
      * Cancels a subscription
@@ -225,7 +226,7 @@ public interface Session
      * @param destination
      * @param listener
      */
-    public void addMessageListener(String destination,StreamingMessageListener listener);
+    public void setMessageListener(String destination,StreamingMessageListener listener);
         
     /**
      * We currently allow one listerner per destination
@@ -233,7 +234,7 @@ public interface Session
      * @param destination
      * @param listener
      */
-    public void addMessageListener(String destination,MessageListener listener);
+    public void setMessageListener(String destination,MessageListener listener);
     
     
     // -----------------------------------------------
@@ -255,7 +256,14 @@ public interface Session
      * @throws IllegalStateException If this session is not transacted.
      */
     public void txRollback() throws QpidException, IllegalStateException;
-
+    
+    
+    /**
+     * Selects the session for transactions
+     * 
+     * @throws QpidException
+     */
+    public void txSelect() throws QpidException;
     
     //---------------------------------------------
     //            Queue methods 
