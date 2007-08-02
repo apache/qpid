@@ -49,7 +49,8 @@ Queue::Queue(const string& _name, bool _autodelete,
     next(0),
     exclusive(0),
     persistenceId(0),
-    serializer(false)
+    serializer(false),
+    dispatchCallback(boost::bind(&Queue::dispatch, this))
 {
 }
 
@@ -79,7 +80,7 @@ void Queue::recover(Message::shared_ptr& msg){
 void Queue::process(Message::shared_ptr& msg){
  
     push(msg);
-    serializer.execute(boost::bind(&Queue::dispatch, this));
+    serializer.execute(dispatchCallback);
    
 }
 
@@ -89,13 +90,13 @@ void Queue::requeue(Message::shared_ptr& msg){
     	Mutex::ScopedLock locker(messageLock);
     	messages.push_front(msg);
     }
-    serializer.execute(boost::bind(&Queue::dispatch, this));
+    serializer.execute(dispatchCallback);
    
 }
 
 
 void Queue::requestDispatch(){
-    serializer.execute(boost::bind(&Queue::dispatch, this));
+    serializer.execute(dispatchCallback);
 }
 
 
