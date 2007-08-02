@@ -14,7 +14,7 @@ From the link above you can access our Getting Started Guide, FAQ, Build How To
 and detailed developer documentation.
 
 
-Known Issues/OUtstanding Work
+Known Issues/Outstanding Work
 -----------------------------
 
 You can view the outstanding task list for Qpid by visiting our JIRA:
