@@ -68,6 +68,12 @@ class AmqpMethod
   def body_name() @cache_body_name ||= amqp_parent.name.caps+name.caps+"Body"; end
 end
 
+# Additional methods for AmqpClass
+class AmqpClass
+  def cppname() @cache_cppname ||= name.caps; end
+  def body_name() @cache_body_name ||= name.caps+"Body";  end
+end
+
 # Additional methos for AmqpRoot
 class AmqpRoot
   # FIXME aconway 2007-06-20: fix u_int types, should be uint
@@ -91,11 +97,6 @@ class AmqpRoot
   def member_type(amqptype) lookup(amqptype)[0]; end
   def param_type(amqptype) t=lookup(amqptype); t[1] or t[0]; end
   def return_type(amqptype) t=lookup(amqptype); t[2] or t[0]; end
-end
-
-# Additional methods for AmqpClass
-class AmqpClass
-  def cppname() @cache_cppname ||= name.caps; end
 end
 
 class CppGen < Generator
