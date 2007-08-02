@@ -44,6 +44,22 @@
             <outputDirectory></outputDirectory>
         </fileSet>
 
+    <!-- Include all the test scripts, both generated and hand-written. -->
+    <fileSet>
+      <directory>target</directory>
+      <outputDirectory></outputDirectory>
+      <includes>
+          <include>*.sh</include>
+      </includes>
+    </fileSet>
+    <fileSet>
+      <directory>etc/scripts</directory>
+      <outputDirectory></outputDirectory>
+      <includes>
+          <include>*.sh</include>
+      </includes>
+    </fileSet>
+
         <!-- Include the build artifact. -->
         <fileSet>
             <directory>target</directory>
@@ -53,12 +69,12 @@
             </includes>
         </fileSet>
 
-        <!-- Include the classpath only jar. -->
+        <!-- Include the manifest with classpath jar. -->
         <fileSet>
             <directory>target</directory>
             <outputDirectory></outputDirectory>
             <includes>
-                <include>qpid-perftests-1.0-incubating-M2-SNAPSHOT-tests.jar</include>
+                <include>qpid-perftests-${qpid.version}.jar</include>
             </includes>
         </fileSet>
         

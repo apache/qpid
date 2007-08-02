@@ -142,7 +142,7 @@
 
                 <configuration>
                     <scriptOutDirectory>target</scriptOutDirectory>
-                    <testJar>${project.build.finalName}-all-test-deps.jar</testJar>
+                    <testJar>${project.build.finalName}.jar</testJar>
                     <systemproperties>
                         <property>
                             <name>-Xms</name>
@@ -382,7 +382,7 @@
                             </archive>
                         </configuration>      
                         <goals>
-                            <goal>test-jar</goal>
+                            <goal>jar</goal>
                         </goals>
                     </execution>
                 </executions>          
