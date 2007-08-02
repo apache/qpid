@@ -75,7 +75,8 @@ namespace qpid {
             std::auto_ptr<QueuePolicy> policy;            
             QueueBindings bindings;
             boost::shared_ptr<Exchange> alternateExchange;
-	    qpid::sys::Serializer serializer;
+            qpid::sys::Serializer serializer;
+            qpid::sys::Serializer::Task dispatchCallback;
 
             void pop();
             void push(Message::shared_ptr& msg);

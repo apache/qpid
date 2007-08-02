@@ -66,7 +66,7 @@ class Serializer : private boost::noncopyable, private Runnable
      * paramater to the constructor was true. Otherwise task will be
      * enqueued for execution by a dispatch thread.
      */
-    void execute(Task task);
+    void execute(Task& task);
 
     /** Execute pending tasks sequentially in calling thread.
      * Drains the task queue and returns, does not block for more tasks.
