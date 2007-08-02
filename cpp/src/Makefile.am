@@ -229,12 +229,21 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ClientChannel.cpp			\
   qpid/client/ClientExchange.cpp		\
   qpid/client/ClientQueue.cpp			\
-  qpid/client/BasicMessageChannel.cpp		\
   qpid/client/Connector.cpp			\
-  qpid/client/IncomingMessage.cpp		\
   qpid/client/MessageListener.cpp		\
   qpid/client/ResponseHandler.cpp		\
-  qpid/client/ReturnedMessageHandler.cpp
+  qpid/client/ReturnedMessageHandler.cpp	\
+  qpid/client/Correlator.cpp			\
+  qpid/client/CompletionTracker.cpp		\
+  qpid/client/ChannelHandler.cpp		\
+  qpid/client/ConnectionHandler.cpp		\
+  qpid/client/ExecutionHandler.cpp		\
+  qpid/client/FutureCompletion.cpp		\
+  qpid/client/FutureResponse.cpp		\
+  qpid/client/FutureFactory.cpp			\
+  qpid/client/ReceivedContent.cpp		\
+  qpid/client/StateManager.cpp
+
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
@@ -306,19 +315,29 @@ nobase_include_HEADERS = \
   qpid/broker/TransactionalStore.h \
   qpid/broker/TxAck.h \
   qpid/client/AckMode.h \
-  qpid/client/BasicMessageChannel.h \
   qpid/client/ClientChannel.h \
   qpid/client/ClientExchange.h \
   qpid/client/ClientMessage.h \
   qpid/client/ClientQueue.h \
   qpid/client/Connection.h \
   qpid/client/Connector.h \
-  qpid/client/IncomingMessage.h \
   qpid/client/MessageChannel.h \
   qpid/client/MessageListener.h \
   qpid/client/MethodBodyInstances.h \
   qpid/client/ResponseHandler.h \
   qpid/client/ReturnedMessageHandler.h \
+  qpid/client/BlockingQueue.h \
+  qpid/client/Correlator.h \
+  qpid/client/CompletionTracker.h \
+  qpid/client/ChannelHandler.h \
+  qpid/client/ChainableFrameHandler.h	\
+  qpid/client/ConnectionHandler.h \
+  qpid/client/ExecutionHandler.h \
+  qpid/client/FutureCompletion.h \
+  qpid/client/FutureResponse.h \
+  qpid/client/FutureFactory.h \
+  qpid/client/ReceivedContent.h \
+  qpid/client/StateManager.h \
   qpid/framing/AMQBody.h \
   qpid/framing/AMQContentBody.h \
   qpid/framing/AMQDataBlock.h \
