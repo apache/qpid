@@ -76,4 +76,11 @@ public interface Connection
             throws
             QpidException;
 
+    /**
+     * If the communication layer detects a serious problem with a connection, it
+     * informs the connection's ExceptionListener
+     *
+     * @param exceptionListner The execptionListener
+     */
+    public void setExceptionListener(ExceptionListener exceptionListner);
 }
