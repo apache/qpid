@@ -378,7 +378,7 @@ public class TestClient implements MessageListener
                     {
                         numMessages = message.getIntProperty("MESSAGE_COUNT");
                     }
-                    catch (JMSException e)
+                    catch (NumberFormatException e)
                     {
                         // If the number of messages is not specified, use the default of one.
                         numMessages = 1;
