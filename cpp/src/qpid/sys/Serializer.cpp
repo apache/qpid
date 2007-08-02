@@ -64,7 +64,7 @@ void Serializer::dispatch(Task& task) {
     }
 }
 
-void Serializer::execute(Task task) {
+void Serializer::execute(Task& task) {
     bool needNotify = false;
     {
         Mutex::ScopedLock l(lock);
