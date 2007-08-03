@@ -1,5 +1,6 @@
 package org.apache.qpid.nclient.impl;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpidity.api.Message;
@@ -12,6 +13,8 @@ import org.apache.qpidity.*;
 public class ClientSession implements org.apache.qpid.nclient.Session
 {
 
+	Map<String,MessagePartListener> messagListeners = new HashMap<String,MessagePartListener>();    
+	
     //------------------------------------------------------
     //                 Session housekeeping methods
     //------------------------------------------------------
@@ -64,11 +67,6 @@ public class ClientSession implements org.apache.qpid.nclient.Session
     }
 
     public void messageCancel(String destination) throws QpidException
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void setMessageListener(String destination, MessagePartListener listener)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -146,5 +144,10 @@ public class ClientSession implements org.apache.qpid.nclient.Session
     public void exchangeDelete(String exchangeName, Option... options) throws QpidException
     {
         //To change body of implemented methods use File | Settings | File Templates.
+    }
+    
+    public void setMessageListener(String destination,MessagePartListener listener)
+    {
+    	messagListeners.put(destination, listener);
     }
 }
