@@ -27,9 +27,8 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-interface Method extends Struct {
-
-    int getEncodedType();
+interface Method extends Struct
+{
 
     byte getEncodedTrack();
 

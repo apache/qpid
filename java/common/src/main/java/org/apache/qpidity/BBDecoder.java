@@ -34,8 +34,9 @@ class BBDecoder extends AbstractDecoder
 
     private final ByteBuffer in;
 
-    public BBDecoder(ByteBuffer in)
+    public BBDecoder(StructFactory factory, ByteBuffer in)
     {
+        super(factory);
         this.in = in;
     }
 

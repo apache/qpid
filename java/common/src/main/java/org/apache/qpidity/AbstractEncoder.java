@@ -155,6 +155,16 @@ abstract class AbstractEncoder implements Encoder
         throw new Error("Deprecated");
     }
 
+    public void writeLongStruct(Struct s)
+    {
+        SizeEncoder sizer = new SizeEncoder();
+        sizer.writeShort(s.getEncodedType());
+        s.write(sizer);
+        writeLong(sizer.getSize());
+        writeShort(s.getEncodedType());
+        s.write(this);
+    }
+
     public void flush()
     {
         flushBits();

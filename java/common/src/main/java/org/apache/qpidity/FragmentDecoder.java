@@ -40,8 +40,9 @@ class FragmentDecoder extends AbstractDecoder
     private final Iterator<ByteBuffer> fragments;
     private ByteBuffer current;
 
-    public FragmentDecoder(Iterator<ByteBuffer> fragments)
+    public FragmentDecoder(StructFactory factory, Iterator<ByteBuffer> fragments)
     {
+        super(factory);
         this.fragments = fragments;
         this.current = null;
     }
