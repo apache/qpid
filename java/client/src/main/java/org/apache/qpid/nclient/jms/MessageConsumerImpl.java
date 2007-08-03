@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.nclient.jms;
 
-import org.apache.qpid.nclient.api.MessageReceiver;
+//import org.apache.qpid.nclient.api.MessageReceiver;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.JMSException;
@@ -33,7 +33,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     /**
      * The underlying qpid receiver
      */
-    private MessageReceiver _qpidReceiver;
+    /*    private MessageReceiver _qpidReceiver;*/
 
     /**
      * This MessageConsumer's messageselector.
@@ -186,14 +186,14 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      */
     void stop() throws JMSException
     {
-        try
+        /*try
         {
             _qpidReceiver.stop();
         }
         catch (QpidException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+            }*/
     }
 
     /**
@@ -203,13 +203,13 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      */
     void start() throws JMSException
     {
-        try
+        /*try
         {
             _qpidReceiver.start();
         }
         catch (QpidException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+            }*/
     }
 }
