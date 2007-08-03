@@ -69,60 +69,55 @@ public class Session extends Invoker
     // -----------------------------------------
     //          Messaging Methods
     // ------------------------------------------
-    public void messageTransfer(String destination, Message msg) throws QpidException
-	{
-				
-	}
-    
-	public void data(byte[] src) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void endData() throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void messageHeaders(Header... headers) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
-
-	public void messageTransfer(String destination,Option... options) throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
+    public void messageTransfer(String destination, Message msg, Option ... _options) throws QpidException
+    {
 	
-	public void messageAcknowledge() throws QpidException
-	{
-		// TODO Auto-generated method stub		
-	}
+    }
 
-	public boolean messageAcquire() throws QpidException
-	{
-		// TODO Auto-generated method stub
-		return false;
-	}
+    public void data(byte[] src) throws QpidException
+    {
+        // TODO Auto-generated method stub
+    }
 
-	public void messageReject() throws QpidException
-	{
-		// TODO Auto-generated method stub
-		
-	}
+    public void endData() throws QpidException
+    {
+        // TODO Auto-generated method stub
+    }
 
-	public void messageRelease() throws QpidException
-	{
-		// TODO Auto-generated method stub		
-	}	
-	
-    public void addMessageListener(String destination,StreamingMessageListener listener)
+    public void messageHeaders(Header... headers) throws QpidException
+    {
+        // TODO Auto-generated method stub
+    }
+
+    public void messageTransfer(String destination,Option... options) throws QpidException
+    {
+        // TODO Auto-generated method stub
+    }
+
+    public void messageAcknowledge() throws QpidException
+    {
+        // TODO Auto-generated method stub
+    }
+
+    public boolean messageAcquire() throws QpidException
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public void messageReject() throws QpidException
+    {
+        // TODO Auto-generated method stub
+    }
+
+    public void messageRelease() throws QpidException
+    {
+        // TODO Auto-generated method stub
+    }
+
+    public void setMessageListener(String destination,StreamingMessageListener listener)
     {
     	messagListeners.put(destination, listener);
-    }    
-    
+    }
+
 }
