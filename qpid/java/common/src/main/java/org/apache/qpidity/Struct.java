@@ -27,4 +27,9 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-interface Struct extends Delegator, Writable {}
+interface Struct extends Delegator, Writable
+{
+
+    int getEncodedType();
+
+}

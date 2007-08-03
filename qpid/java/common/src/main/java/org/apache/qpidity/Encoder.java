@@ -51,4 +51,6 @@ public interface Encoder
 
     void flush();
 
+    void writeLongStruct(Struct s);
+
 }

@@ -88,7 +88,7 @@
                                 <param>${basedir}/generate</param>
                                 <param>${generated.path}</param>
                                 <param>org.apache.qpidity</param>
-                                <param>${specs.dir}/amqp-transitional.0-10.xml</param>
+                                <param>${specs.dir}/amqp.0-10-preview.xml</param>
                             </params>
                         </configuration>
                         <goals>
