@@ -17,14 +17,12 @@
  */
 package org.apache.qpid.nclient.jms;
 
-import org.apache.qpid.nclient.api.MessageListener;
+import org.apache.qpid.nclient.MessageListener;
 import org.apache.qpid.nclient.jms.message.AbstractJMSMessage;
 import org.apache.qpid.nclient.jms.message.QpidMessage;
 import org.apache.qpidity.api.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.jms.JMSException;
 
 /**
  * This is a wrapper for the JMS message listener
@@ -57,13 +55,13 @@ public class MessageListenerWrapper implements MessageListener
         _consumer = consumer;
     }
 
-    //---- org.apache.qpid.nclient.api.MessageListener API
+    //---- org.apache.qpid.nclient.MessageListener API
     /**
      * Deliver a message to the listener.
      *
      * @param message The message delivered to the listner.
      */
-    public void onMessage(Message message)
+    public void messageTransfer(Message message)
     {
         try
         {

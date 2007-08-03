@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.nclient.api;
+package org.apache.qpid.nclient;
 
 import org.apache.qpidity.api.Message;
 
@@ -26,7 +26,7 @@ import org.apache.qpidity.api.Message;
 public interface MessageListener
 {
     /**
-     * <p>Deliver a message to the listener.
+     * <p>Transfer a message to the listener.
      * You will be notified when the whole message is received
      * However, underneath the message might be streamed off disk
      * or network buffers.
@@ -34,5 +34,5 @@ public interface MessageListener
      * 
      * @param message The message delivered to the listner. 
      */
-    public void onMessage(Message message);
+    public void messageTransfer(Message message);
 }

@@ -19,6 +19,7 @@ package org.apache.qpid.nclient.jms;
 
 //import org.apache.qpid.nclient.api.MessageReceiver;
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Option;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -30,10 +31,6 @@ import javax.jms.Message;
  */
 public class MessageConsumerImpl extends MessageActor implements MessageConsumer
 {
-    /**
-     * The underlying qpid receiver
-     */
-    /*    private MessageReceiver _qpidReceiver;*/
 
     /**
      * This MessageConsumer's messageselector.
@@ -55,7 +52,12 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     /**
      * A MessageListener set up for this consumer.
      */
-    private MessageListener _messageListener = null;
+    private MessageListener _messageListener;
+
+    /**
+     * A warpper around the JSM message listener 
+     */
+    private MessageListenerWrapper _messageListenerWrapper;
 
     //----- Constructors
     /**
@@ -79,7 +81,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         /*try
         {
             // TODO define the relevant options 
-            _qpidReceiver = _session.getQpidSession().createReceiver(destination.getName(), null);
+            _qpidReceiver = _session.getQpidSession().createReceiver(destination.getName(), Option.DURABLE);
+            _qpidResource = _qpidReceiver;
         }
         catch (QpidException e)
         {
@@ -131,7 +134,17 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
         checkNotClosed();
-        // TODO: create a message listener wrapper
+        _messageListener = messageListener;
+        if( messageListener == null )
+        {
+
+          _messageListenerWrapper = null;
+        }
+        else
+        {
+            _messageListenerWrapper = new MessageListenerWrapper(this);          
+              //TODO      _qpidReceiver.setAsynchronous(_messageListenerWrapper);
+        }
     }
 
     /**
