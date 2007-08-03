@@ -35,6 +35,13 @@ import static org.apache.qpidity.Functions.*;
 abstract class AbstractDecoder implements Decoder
 {
 
+    private final StructFactory factory;
+
+    protected AbstractDecoder(StructFactory factory)
+    {
+        this.factory = factory;
+    }
+
     protected abstract byte get();
 
     protected abstract void get(byte[] bytes);
@@ -144,6 +151,13 @@ abstract class AbstractDecoder implements Decoder
     public String readContent()
     {
         throw new Error("Deprecated");
+    }
+
+    public Struct readLongStruct()
+    {
+        long size = readLong();
+        int type = readShort();
+        return factory.create(type, this);
     }
 
 }

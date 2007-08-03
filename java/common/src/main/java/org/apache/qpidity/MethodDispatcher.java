@@ -47,7 +47,7 @@ class MethodDispatcher<C> implements Handler<Event<C,Segment>>
     {
         System.out.println("got method segment:\n  " + event.target);
         Iterator<ByteBuffer> fragments = event.target.getFragments();
-        Decoder dec = new FragmentDecoder(fragments);
+        Decoder dec = new FragmentDecoder(factory, fragments);
         int type = (int) dec.readLong();
         Struct struct = factory.create(type, dec);
         Delegate<C> delegate = resolver.resolve(struct);
