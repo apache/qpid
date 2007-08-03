@@ -168,12 +168,12 @@ public interface Session
      * @param queue       The queue this receiver is receiving messages from.
      * @param destination The destination for the subscriber ,a.k.a the delivery tag.
      * @param listener    The listener for this destination. When big message are transfered then
-     *                    it is recommended to use a {@link StreamingMessageListener}.
+     *                    it is recommended to use a {@link MessagePartListener}.
      * @param options     Set of Options.
      * @param filter      The filters to apply to consumed messages.
      * @throws QpidException If the session fails to create the receiver due to some error.
      */
-    public void messageSubscribe(String queue, String destination, MessageListener listener, Map<String, ?> filter,
+    public void messageSubscribe(String queue, String destination, MessagePartListener listener, Map<String, ?> filter,
                                  Option... options) throws QpidException;
 
     /**
@@ -192,9 +192,9 @@ public interface Session
      *
      * @param destination The destination the listener is associated with.
      * @param listener    The new listener for this destination. When big message are transfered then
-     *                    it is recommended to use a {@link StreamingMessageListener}.
+     *                    it is recommended to use a {@link MessagePartListener}.
      */
-    public void setMessageListener(String destination, MessageListener listener);
+    public void setMessageListener(String destination, MessagePartListener listener);
 
 
     /**
