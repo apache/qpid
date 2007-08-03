@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpid.nclient.jms.message.*;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Option;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -72,7 +71,7 @@ public class SessionImpl implements Session
     /**
      * The underlying QpidSession
      */
-    private org.apache.qpid.nclient.api.Session _qpidSession;
+    private org.apache.qpid.nclient.Session _qpidSession;
 
     /**
      * Indicates whether this session is recovering
@@ -337,7 +336,7 @@ public class SessionImpl implements Session
             // close the underlaying QpidSession
             try
             {
-                _qpidSession.sessionClose();
+                _qpidSession.close();
             }
             catch (org.apache.qpidity.QpidException e)
             {
@@ -463,7 +462,6 @@ public class SessionImpl implements Session
      */
     public MessageConsumer createConsumer(Destination destination, String messageSelector) throws JMSException
     {
-
         return createConsumer(destination, messageSelector, false);
     }
 
@@ -664,11 +662,12 @@ public class SessionImpl implements Session
     /**
      * Remove a message actor form this session
      * <p> This method is called when an actor is independently closed.
+     *
      * @param actor The closed actor.
      */
     protected void closeMessageActor(MessageActor actor)
     {
-       _messageActors.remove(actor);
+        _messageActors.remove(actor);
     }
 
     /**
@@ -678,15 +677,7 @@ public class SessionImpl implements Session
      */
     protected void start() throws JMSException
     {
-        try
-        {
-            // TODO: make sure that the correct options are used
-            _qpidSession.sessionFlow(Option.SUSPEND);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+        // TODO: make sure that the correct options are used
     }
 
     /**
@@ -696,15 +687,7 @@ public class SessionImpl implements Session
      */
     protected void stop() throws JMSException
     {
-        try
-        {
             // TODO: make sure that the correct options are used
-            _qpidSession.sessionFlow(Option.RESUME);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
     }
 
     /**
@@ -818,7 +801,7 @@ public class SessionImpl implements Session
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpid.nclient.api.Session getQpidSession()
+    protected org.apache.qpid.nclient.Session getQpidSession()
     {
         return _qpidSession;
     }

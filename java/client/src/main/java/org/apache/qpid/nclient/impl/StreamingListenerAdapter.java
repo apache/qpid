@@ -1,10 +1,10 @@
 package org.apache.qpid.nclient.impl;
 
-import org.apache.qpid.nclient.api.MessageListener;
+import org.apache.qpid.nclient.MessageListener;
+import org.apache.qpid.nclient.StreamingMessageListener;
 import org.apache.qpidity.Header;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.api.StreamingMessageListener;
 
 public class StreamingListenerAdapter implements StreamingMessageListener
 {
@@ -16,23 +16,18 @@ public class StreamingListenerAdapter implements StreamingMessageListener
 		_adaptee = l;
 	}
 
-	public void data(byte[] src)
+	public void addData(byte[] src)
 	{
 		_currentMsg.appendData(src);
 	}
 
-	public void endData()
-	{
-		_adaptee.onMessage(_currentMsg);
-	}
-
-	public void messageHeaders(Header... headers)
+	public void addMessageHeaders(Header... headers)
 	{
 		//_currentMsg add the headers
 	}
 
-	public void messageTransfer(String destination, Option... options)
+	public void messageTransfer(Message message)
 	{
-		// _currentMsg create message from factory
+		_adaptee.messageTransfer(_currentMsg);
 	}
 }
