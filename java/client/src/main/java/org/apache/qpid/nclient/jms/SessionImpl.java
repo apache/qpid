@@ -30,6 +30,7 @@ import javax.jms.MessageListener;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.LinkedList;
 
 /**
  * Implementation of the JMS Session interface
@@ -40,6 +41,28 @@ public class SessionImpl implements Session
      * this session's logger
      */
     private static final Logger _logger = LoggerFactory.getLogger(SessionImpl.class);
+
+    /**
+     * A queue for incoming messages including synch and asych messages.
+     */
+    private LinkedList<QpidMessage> _incomingAsynchronousMessages = new LinkedList<QpidMessage>();
+
+    //--- Session thread locking
+    /**
+     * indicates that the sessionThread has stopped
+     */
+    private boolean _hasStopped = false;
+
+    /**
+     * lock for the sessionThread to wiat on when the session is stopped
+     */
+    private Object _stoppingLock = new Object();
+
+    /**
+     * lock for the stopper thread to wait on when the sessionThread is stopping
+     */
+    private Object _stoppingJoin = new Object();
+
 
     /**
      * The messageActors of this session.
@@ -57,6 +80,16 @@ public class SessionImpl implements Session
      * Indicates whether this session is closed.
      */
     private boolean _isClosed = false;
+
+    /**
+     * Indicates whether this session is closing.
+     */
+    private boolean _isClosing = false;
+
+    /**
+     * Indicates whether this session is stopped.
+     */
+    private boolean _isStopped = false;
 
     /**
      * Used to indicate whether or not this is a transactional session.
@@ -687,7 +720,7 @@ public class SessionImpl implements Session
      */
     protected void stop() throws JMSException
     {
-            // TODO: make sure that the correct options are used
+        // TODO: make sure that the correct options are used
     }
 
     /**
@@ -819,4 +852,111 @@ public class SessionImpl implements Session
             messageActor.closeMessageActor();
         }
     }
+
+    //------ Inner classes
+
+    /**
+     * A MessageDispatcherThread is attached to every SessionImpl.
+     * <p/>
+     * This thread is responsible for removing messages from m_incomingMessages and
+     * dispatching them to the appropriate MessageConsumer.
+     * <p> Messages have to be dispatched serially.
+     *
+     * @message runtimeExceptionThrownByOnMessage Warning! Asynchronous message consumer {0} from session {1} has thrown a RunTimeException "{2}".
+     */
+    private class MessageDispatcherThread extends Thread
+    {
+        //--- Constructor
+        /**
+         * Create a Deamon thread for dispatching messages to this session listeners.
+         */
+        MessageDispatcherThread()
+        {
+            super("MessageDispatcher");
+            // this thread is Deamon
+            setDaemon(true);
+        }
+
+        /**
+         * Use to run this thread.
+         */
+        public void run()
+        {
+            QpidMessage message = null;
+
+            // deliver messages to consumers until the stop flag is set.
+            do
+            {
+                // When this session is not closing and and stopped
+                // then this thread needs to wait until messages are delivered.
+                synchronized (_incomingAsynchronousMessages)
+                {
+                    while (!_isClosing && !_isStopped && _incomingAsynchronousMessages.isEmpty())
+                    {
+                        try
+                        {
+                            _incomingAsynchronousMessages.wait();
+                        }
+                        catch (InterruptedException ie)
+                        {
+                            /* ignore */
+                        }
+                    }
+                }
+                // If this session is stopped then we need to wait on the stoppingLock
+                synchronized (_stoppingLock)
+                {
+                    try
+                    {
+                        while (_isStopped)
+                        {
+                            // if the session is stopped we have to notify the stopper thread
+                            synchronized (_stoppingJoin)
+                            {
+                                _hasStopped = true;
+                                _stoppingJoin.notify();
+                            }
+                            _stoppingLock.wait();
+                        }
+                    }
+                    catch (Exception ie)
+                    {
+                        /* ignore */
+                    }
+                }
+                synchronized (_incomingAsynchronousMessages)
+                {
+                    if (!_isClosing && !_incomingAsynchronousMessages.isEmpty())
+                    {
+                        message = _incomingAsynchronousMessages.getFirst();
+                    }
+                }
+
+              /*  if (message != null)
+                {
+                    MessageConsumerImpl mc;
+                    synchronized (_actors)
+                    {
+                        mc = (MessageConsumerImpl) m_actors.get(actorMessage.consumerID);
+                    }
+                    boolean consumed = false;
+                    if (mc != null)
+                    {
+                        try
+                        {
+                            consumed = mc.onMessage(actorMessage.genericMessage);
+                        }
+                        catch (RuntimeException t)
+                        {
+                            // the JMS specification tells us to flag that to the client!
+                            log.errorb(SessionThread.class.getName(), "runtimeExceptionThrownByOnMessage", new Object[]{mc, m_sessionID, t}, t);
+                        }
+                    }
+                } */
+                message = null;
+            }
+            while (!_isClosing);   // repeat as long as this session is not closing
+        }
+    }
+
 }
