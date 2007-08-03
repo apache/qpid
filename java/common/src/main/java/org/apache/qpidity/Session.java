@@ -24,8 +24,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.api.StreamingMessageListener;
-
 /**
  * Session
  *
@@ -39,9 +37,7 @@ public class Session extends Invoker
     Channel channel;
     private int command_id = 0;
     // XXX
-    final Map<Integer,Handler<Struct>> handlers = new HashMap<Integer,Handler<Struct>>();
-    
-    Map<String,StreamingMessageListener> messagListeners = new HashMap<String,StreamingMessageListener>();    
+    final Map<Integer,Handler<Struct>> handlers = new HashMap<Integer,Handler<Struct>>();   
 
     public void attach(Channel channel)
     {
@@ -113,11 +109,6 @@ public class Session extends Invoker
     public void messageRelease() throws QpidException
     {
         // TODO Auto-generated method stub
-    }
-
-    public void setMessageListener(String destination,StreamingMessageListener listener)
-    {
-    	messagListeners.put(destination, listener);
-    }
+    }   
 
 }

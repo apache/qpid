@@ -20,9 +20,6 @@
  */
 package org.apache.qpidity;
 
-import org.apache.qpidity.api.StreamingMessageListener;
-
-
 /**
  * CommonSessionDelegate
  */
@@ -44,41 +41,5 @@ public class CommonSessionDelegate extends Delegate<Session>
 
     @Override public void sessionSuspend(Session session, SessionSuspend struct) {}
 
-    @Override public void sessionDetached(Session session, SessionDetached struct) {}
-
-    @Override public void messageTransfer(Session context, MessageTransfer struct)
-    {
-        StreamingMessageListener l = context.messagListeners.get(struct.getDestination());
-        l.messageTransfer(struct.getDestination(),new Option[0]);
-    }
-
-    // ---------------------------------------------------------------
-    //  Non generated methods - but would like if they are also generated.
-    //  These methods should be called from Body and Header Handlers.
-    //  If these methods are generated as part of the delegate then
-    //  I can call these methods from the BodyHandler and HeaderHandler
-    //  in a generic way
-
-    //  I have used destination to indicate my intent of receiving
-    //  some form of correlation to know which consumer this data belongs to.
-    //  It can be anything as long as I can make the right correlation
-    // ----------------------------------------------------------------
-    public void data(Session context,String destination,byte[] src) throws QpidException
-    {
-        StreamingMessageListener l = context.messagListeners.get(destination);
-        l.data(src);
-    }
-
-    public void endData(Session context,String destination) throws QpidException
-    {
-        StreamingMessageListener l = context.messagListeners.get(destination);
-        l.endData();
-    }
-
-    public void messageHeaders(Session context,String destination,Header... headers) throws QpidException
-    {
-        StreamingMessageListener l = context.messagListeners.get(destination);
-        l.endData();
-    }
-
+    @Override public void sessionDetached(Session session, SessionDetached struct) {}    
 }
