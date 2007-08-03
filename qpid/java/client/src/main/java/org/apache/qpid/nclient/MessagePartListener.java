@@ -20,20 +20,17 @@ package org.apache.qpid.nclient;
 import org.apache.qpidity.Header;
 
 /**
- * <p>This message listener is useful if you need to
- * know when each message part becomes available
- * as opposed to knowing when the whole message arrives.</p>
- * <p/>
+ * Assembles message parts.
  * <p> The sequence of event for transferring a message is as follows:
  * <ul>
- * <li> n calls to addMessageHeaders (should be usually one or two)
+ * <li> messageHeaders
  * <li> n calls to addData
- * <li> {@link org.apache.qpid.nclient.MessageListener#messageTransfer}(<code>null</code>).
+ * <li> messageReceived
  * </ul>
  * This is up to the implementation to assembled the message when the different parts
  * are transferred.
  */
-public interface StreamingMessageListener extends MessageListener
+public interface MessagePartListener
 {
     /**
      * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}
@@ -41,7 +38,7 @@ public interface StreamingMessageListener extends MessageListener
      *
      * @param headers Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
      */
-    public void addMessageHeaders(Header... headers);
+    public void messageHeaders(Header... headers);
 
     /**
      * Add the following byte array to the content of the message being received
@@ -49,5 +46,10 @@ public interface StreamingMessageListener extends MessageListener
      * @param data Data to be added or streamed.
      */
     public void addData(byte[] data);
+
+    /**
+     * Indicates that the message has been fully received. 
+     */
+    public void messageReceived();
 
 }

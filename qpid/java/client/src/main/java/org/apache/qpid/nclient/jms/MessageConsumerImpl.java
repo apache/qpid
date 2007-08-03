@@ -18,8 +18,6 @@
 package org.apache.qpid.nclient.jms;
 
 //import org.apache.qpid.nclient.api.MessageReceiver;
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Option;
 
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -50,7 +48,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     protected String _subscriptionName;
 
     /**
-     * A MessageListener set up for this consumer.
+     * A MessagePartListener set up for this consumer.
      */
     private MessageListener _messageListener;
 
@@ -107,7 +105,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     }
 
     /**
-     * Gets this MessageConsumer's <CODE>MessageListener</CODE>.
+     * Gets this MessageConsumer's <CODE>MessagePartListener</CODE>.
      *
      * @return The listener for the MessageConsumer, or null if no listener is set
      * @throws JMSException if getting the message listener fails due to some internal error.
@@ -119,7 +117,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     }
 
     /**
-     * Sets the MessageConsumer's <CODE>MessageListener</CODE>.
+     * Sets the MessageConsumer's <CODE>MessagePartListener</CODE>.
      * <p> The JMS specification says:
      * <P>Setting the message listener to null is the equivalent of
      * unsetting the message listener for the message consumer.

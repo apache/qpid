@@ -3,7 +3,7 @@ package org.apache.qpid.nclient.impl;
 import java.util.Map;
 
 import org.apache.qpidity.api.Message;
-import org.apache.qpid.nclient.MessageListener;
+import org.apache.qpid.nclient.MessagePartListener;
 import org.apache.qpidity.*;
 
 /**
@@ -57,7 +57,7 @@ public class ClientSession implements org.apache.qpid.nclient.Session
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void messageSubscribe(String queue, String destination, MessageListener listener, Map<String, ?> filter,
+    public void messageSubscribe(String queue, String destination, MessagePartListener listener, Map<String, ?> filter,
                                  Option... options) throws QpidException
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -68,7 +68,7 @@ public class ClientSession implements org.apache.qpid.nclient.Session
         //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void setMessageListener(String destination, MessageListener listener)
+    public void setMessageListener(String destination, MessagePartListener listener)
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
