@@ -76,6 +76,8 @@ end
 class AmqpMethod < AmqpElement
   def initialize(xml, amqp) super; end
 
+  def index attr["index"];  end
+
   def fields()
     @cache_fields ||= elements.collect("field") { |f| AmqpField.new(f,self); }
   end
@@ -99,7 +101,7 @@ end
 # AMQP class element.
 class AmqpClass < AmqpElement
   def initialize(xml,amqp) super; end
-
+  def index attr["index"];  end
   def methods()
     @cache_methods ||= elements.collect("method") { |el|
       AmqpMethod.new(el,self)
@@ -171,12 +173,16 @@ class Generator
   end
 
   # Create a new file, set @out. 
-  def file(file)
+  def file(file, &block)
     puts file                   
     if (@outdir != "-")         
       path=Pathname.new "#{@outdir}/#{file}"
       path.parent.mkpath
-      path.open('w') { |@out| yield }
+      if &block
+        path.open('w') { |@out| yield }
+      else
+       path.open('w')
+      end
     end
   end
 
