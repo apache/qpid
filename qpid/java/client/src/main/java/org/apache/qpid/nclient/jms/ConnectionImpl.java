@@ -25,6 +25,7 @@ import javax.jms.*;
 import javax.jms.IllegalStateException;
 import javax.jms.Session;
 import javax.jms.ExceptionListener;
+import javax.jms.Connection;
 import java.util.Vector;
 
 
@@ -85,7 +86,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     /**
      * The QpidConeection instance that is mapped with thie JMS connection
      */
-    org.apache.qpid.nclient.api.Connection _qpidConnection;
+    org.apache.qpid.nclient.Connection _qpidConnection;
 
     /**
      * This is the exception listener for this qpid connection.
@@ -436,7 +437,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @return This JMS connection underlying Qpid Connection.
      */
-    protected org.apache.qpid.nclient.api.Connection getQpidConnection()
+    protected org.apache.qpid.nclient.Connection getQpidConnection()
     {
         return _qpidConnection;
     }

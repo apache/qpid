@@ -60,7 +60,6 @@ public abstract class MessageActor
 
     protected MessageActor(SessionImpl session, DestinationImpl destination)
     {
-        // TODO create the qpidResource _qpidResource =
         _session = session;
         _destination = destination;
     }

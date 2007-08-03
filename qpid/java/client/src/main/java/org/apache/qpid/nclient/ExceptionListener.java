@@ -16,24 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.nclient.api;
+package org.apache.qpid.nclient;
 
 import org.apache.qpidity.QpidException;
 
 /**
- * This session�s resources are control under the scope of a distributed transaction.
+ * If the communication layer detects a serious problem with a <CODE>connection</CODE>, it
+ * informs the connection's ExceptionListener
  */
-public interface DtxSession extends Session
+public interface ExceptionListener
 {
-
     /**
-     * Get the XA resource associated with this session.
+     * If the communication layer detects a serious problem with a connection, it
+     * informs the connection's ExceptionListener
      *
-     * @return this session XA resource.
-     * @throws QpidException If the session fails to retrieve its associated XA resource
-     *                       due to some error.
+     * @param exception The exception comming from the communication layer.
+     * @see Connection
      */
-    public javax.transaction.xa.XAResource getDTXResource()
-            throws
-            QpidException;
+    public void onException(QpidException exception);
 }
