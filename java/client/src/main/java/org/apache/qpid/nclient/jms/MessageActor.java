@@ -37,17 +37,23 @@ public abstract class MessageActor
     /**
      * Indicates whether this MessageActor is closed.
      */
-    boolean _isClosed = false;
+    private boolean _isClosed = false;
 
     /**
      * This messageActor's session
      */
-    SessionImpl _session;
+    private SessionImpl _session;
 
     /**
      * The JMS destination this actor is set for.
      */
-    DestinationImpl _destination;
+    private DestinationImpl _destination;
+
+
+    /**
+     * The ID of this actor for the session.
+     */
+    private String _messageActorID;
 
     //-- Constructor
 
@@ -140,5 +146,16 @@ public abstract class MessageActor
     {
         return _session;
     }
+
+    /**
+     * Get the ID of this actor within its session.
+     *  
+     * @return This actor ID.
+     */
+    protected String getMessageActorID()
+    {
+        return _messageActorID;
+    }
+
 
 }
