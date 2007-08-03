@@ -17,9 +17,9 @@
  */
 package org.apache.qpid.nclient.jms;
 
-import org.apache.qpid.nclient.MessagePartListener;
-import org.apache.qpid.nclient.jms.message.AbstractJMSMessage;
+import org.apache.qpid.nclient.MessageListener;
 import org.apache.qpid.nclient.jms.message.QpidMessage;
+import org.apache.qpid.nclient.jms.message.AbstractJMSMessage;
 import org.apache.qpidity.api.Message;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 /**
  * This is a wrapper for the JMS message listener
  */
-public class MessageListenerWrapper implements MessagePartListener
+public class MessageListenerWrapper implements MessageListener
 {
     /**
      * Used for debugging.
@@ -61,7 +61,7 @@ public class MessageListenerWrapper implements MessagePartListener
      *
      * @param message The message delivered to the listner.
      */
-    public void messageTransfer(Message message)
+    public void onMessage(Message message)
     {
         try
         {
