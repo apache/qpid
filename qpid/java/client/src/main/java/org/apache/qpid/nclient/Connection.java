@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpid.nclient.api;
+package org.apache.qpid.nclient;
 
 
 import java.net.URL;
@@ -34,18 +34,14 @@ public interface Connection
      * @param url The URL of the broker.
      * @throws QpidException If the communication layer fails to connect with the broker.
      */
-    public void connect(URL url)
-            throws
-            QpidException;
+    public void connect(URL url) throws QpidException;
 
     /**
      * Close this connection.
      *
      * @throws QpidException if the communication layer fails to close the connection.
      */
-    public void close()
-            throws
-            QpidException;
+    public void close() throws QpidException;
 
 
     /**
@@ -57,9 +53,7 @@ public interface Connection
      * @return A Newly created (suspended) session.
      * @throws QpidException If the connection fails to create a session due to some internal error.
      */
-    public Session createSession(int expiryInSeconds)
-            throws
-            QpidException;
+    public Session createSession(int expiryInSeconds) throws QpidException;
 
     /**
      * Create a DtxSession for this connection.
@@ -72,9 +66,7 @@ public interface Connection
      * @return A Newly created (suspended) DtxSession.
      * @throws QpidException If the connection fails to create a DtxSession due to some internal error.
      */
-    public DtxSession createDTXSession(int expiryInSeconds)
-            throws
-            QpidException;
+    public DtxSession createDTXSession(int expiryInSeconds) throws QpidException;
 
     /**
      * If the communication layer detects a serious problem with a connection, it
