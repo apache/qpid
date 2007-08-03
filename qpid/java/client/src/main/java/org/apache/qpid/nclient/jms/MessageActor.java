@@ -47,7 +47,7 @@ public abstract class MessageActor
     /**
      * The JMS destination this actor is set for.
      */
-    private DestinationImpl _destination;
+    DestinationImpl _destination;
 
 
     /**
