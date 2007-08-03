@@ -323,7 +323,7 @@ public interface Session
      * @param queueName The queue to be purged
      * @throws QpidException If the session fails to purge the queue due to some error.
      */
-    public void queuePurge(String queueName, Option... options) throws QpidException;
+    public void queuePurge(String queueName) throws QpidException;
 
     /**
      * Delet a queue.

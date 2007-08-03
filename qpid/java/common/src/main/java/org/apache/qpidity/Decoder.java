@@ -49,4 +49,6 @@ public interface Decoder
 
     String readContent();
 
+    Struct readLongStruct();
+
 }
