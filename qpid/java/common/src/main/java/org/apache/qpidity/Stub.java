@@ -74,7 +74,7 @@ class ChannelDelegate extends Delegate<Channel> {
     public @Override void sessionOpen(Channel channel, SessionOpen open) {
         Session ssn = new Session();
         ssn.attach(channel);
-        long lifetime = open.getDetachedlifetime();
+        long lifetime = open.getDetachedLifetime();
         System.out.println("Session Opened lifetime = " + lifetime);
         try
         {

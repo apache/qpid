@@ -62,7 +62,7 @@ def camel(offset, *args):
   parts = []
   for a in args:
     parts.extend(a.split("-"))
-  return "".join(parts[:offset] + [p.capitalize() for p in parts[offset:]])
+  return "".join(parts[:offset] + [p[0].upper() + p[1:] for p in parts[offset:]])
 
 def dromedary(s):
   return s[0].lower() + s[1:]
@@ -71,10 +71,17 @@ def scream(*args):
   return "_".join([a.replace("-", "_").upper() for a in args])
 
 DOMAINS = {}
+STRUCTS = {}
 EXCLUDE = {"access-ticket": True}
 
 for d in spec.query["amqp/domain"]:
-  DOMAINS[d["@name"]] = d["@type"]
+  name = d["@name"]
+  type = d["@type"]
+  if type != None:
+    DOMAINS[name] = d["@type"]
+  elif d["struct"] != None:
+    DOMAINS[name] = name
+    STRUCTS[name] = camel(0, name)
 
 def resolve(type):
   if DOMAINS.has_key(type) and DOMAINS[type] != type:
@@ -82,46 +89,61 @@ def resolve(type):
   else:
     return type
 
+def jtype(type):
+  if STRUCTS.has_key(type):
+    return STRUCTS[type]
+  else:
+    return TYPES[type]
 
 OPTIONS = {}
 
 class Struct:
 
-  def __init__(self, type, name):
-    self.type = type
+  def __init__(self, name, base, type):
     self.name = name
+    self.base = base
+    self.type = type
     self.fields = []
 
   def field(self, type, name):
     self.fields.append((type, name))
 
   def interface(self, out):
-    out.line("public interface %s extends Method {" % self.name)
+    out.line("public interface %s extends %s {" % (self.name, self.base))
     out.line()
-    out.line("    public static final int TYPE = %d;" % self.type)
+    if self.type != None:
+      out.line("    public static final int TYPE = %d;" % self.type)
     out.line()
     for type, name in self.fields:
-      out.line("    %s %s();" % (TYPES[type], camel(1, "get", name)))
+      out.line("    %s %s();" % (jtype(type), camel(1, "get", name)))
     out.line()
     out.line("}")
 
   def impl(self, out):
-    out.line("class %s%s extends AbstractMethod implements %s {" %
-             (self.name, isfx, self.name))
+    out.line("class %s%s extends Abstract%s implements %s {" %
+             (self.name, isfx, self.base, self.name))
 
     out.line()
     out.line("    public int getEncodedType() {")
-    out.line("        return TYPE;")
+    if self.type == None:
+      out.line("        throw new UnsupportedOperationException();")
+    else:
+      out.line("        return TYPE;")
     out.line("    }")
 
     out.line()
     for type, name in self.fields:
-      out.line("    private final %s %s;" % (TYPES[type], name))
+      out.line("    private final %s %s;" % (jtype(type), name))
 
     out.line()
     out.line("    %s%s(Decoder dec) {" % (self.name, isfx))
     for type, name in self.fields:
-      out.line("        %s = dec.read%s();" % (name, camel(0, type)))
+      if TYPES.has_key(type):
+        out.line("        %s = dec.read%s();" % (name, camel(0, type)))
+      elif STRUCTS.has_key(type):
+        out.line("        %s = new %s%s(dec);" % (name, STRUCTS[type], isfx))
+      else:
+        raise Exception("unknown type: %s" % type)
     out.line("    }")
 
     out.line()
@@ -157,14 +179,19 @@ class Struct:
 
     out.line()
     for type, name in self.fields:
-      out.line("    public %s %s() {" % (TYPES[type], camel(1, "get", name)))
+      out.line("    public %s %s() {" % (jtype(type), camel(1, "get", name)))
       out.line("        return %s;" % name)
       out.line("    }")
 
     out.line()
     out.line("    public void write(Encoder enc) {")
     for type, name in self.fields:
-      out.line("        enc.write%s(%s);" % (camel(0, type), name))
+      if TYPES.has_key(type):
+        out.line("        enc.write%s(%s);" % (camel(0, type), name))
+      elif STRUCTS.has_key(type):
+        out.line("        %s.write(enc);" % name)
+      else:
+        raise Exception("unknown type: %s" % type)
     out.line("    }")
 
     out.line("}")
@@ -177,7 +204,7 @@ class Struct:
       if OPTIONS.has_key(name):
         var = True
       else:
-        params.append("%s %s" % (TYPES[type], name))
+        params.append("%s %s" % (jtype(type), name))
     if var:
       params.append("Option ... _options")
     return ", ".join(params)
@@ -197,13 +224,36 @@ class Struct:
 CLASSES = {"file": False, "basic": False, "stream": False, "tunnel": False}
 FIELDS = {"ticket": False}
 
+class Visitor(mllib.transforms.Visitor):
+
+  def __init__(self):
+    self.structs = []
+
+  def do_method(self, m):
+    if CLASSES.get(m.parent["@name"], True):
+      name = camel(0, m.parent["@name"], m["@name"])
+      type = int(m.parent["@index"])*256 + int(m["@index"])
+      self.structs.append((name, "Method", type, m))
+
+  def do_domain(self, d):
+    s = d["struct"]
+    if s:
+      name = camel(0, d["@name"])
+      st = s["@type"]
+      if st in (None, "none", ""):
+        type = None
+      else:
+        type = int(st)
+      self.structs.append((name, "Struct", type, s))
+
+v = Visitor()
+spec.dispatch(v)
+
 opts = Output(out_dir, out_pkg, "Option")
 opts.line("public enum Option {")
 structs = []
-for m in spec.query["amqp/class/method",
-                    lambda m: CLASSES.get(m.parent["@name"], True)]:
-  struct = Struct(int(m.parent["@index"])*256 + int(m["@index"]),
-                  camel(0, m.parent["@name"], m["@name"]))
+for name, base, typecode, m in v.structs:
+  struct = Struct(name, base, typecode)
   for f in m.query["field", lambda f: FIELDS.get(f["@name"], True)]:
     type = resolve(f["@domain"])
     name = camel(1, f["@name"])
@@ -241,6 +291,7 @@ ifct.line("class %s implements StructFactory {" % ifct_name)
 ifct.line("    public Struct create(int type, Decoder dec) {")
 ifct.line("        switch (type) {")
 for s in structs:
+  if s.type == None: continue
   ifct.line("        case %s.TYPE:" % s.name)
   ifct.line("            return new %s%s(dec);" % (s.name, isfx))
 ifct.line("        default:")
@@ -276,15 +327,10 @@ inv.line("    protected abstract void invoke(Method method, Handler<Struct> hand
 inv.line("    protected abstract StructFactory getFactory();")
 inv.line()
 for s in structs:
+  if s.base != "Method": continue
   dname = dromedary(s.name)
   inv.line("    public void %s(%s) throws QpidException {" % (dname, s.parameters()))
   inv.line("        invoke(getFactory().new%s(%s));" % (s.name, s.arguments()))
   inv.line("    }")
 inv.line("}")
 inv.write()
-
-for pset in ("DeliveryProperties", "ApplicationProperties"):
-  hdrs = Output(out_dir, out_pkg, pset)
-  hdrs.line("public interface %s extends Header {}" % pset)
-  hdrs.write()
-
