@@ -139,6 +139,15 @@ public class TopicSessionImpl extends SessionImpl implements TopicSession
     {
         checkNotClosed();
         checkDestination(topic);
-        return new TopicSubscriberImpl(this, topic, messageSelector, noLocal, null);
-    }       
+        TopicSubscriber topicSubscriber;
+        try
+        {
+            topicSubscriber = new TopicSubscriberImpl(this, topic, messageSelector, noLocal, null);
+        }
+        catch (Exception e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+        return topicSubscriber;
+    }
 }

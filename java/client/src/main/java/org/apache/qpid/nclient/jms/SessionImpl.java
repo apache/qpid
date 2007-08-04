@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpid.nclient.jms.message.*;
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Range;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -28,9 +29,9 @@ import javax.jms.Session;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import java.io.Serializable;
-import java.util.Vector;
 import java.util.LinkedList;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 /**
  * Implementation of the JMS Session interface
@@ -43,43 +44,41 @@ public class SessionImpl implements Session
     private static final Logger _logger = LoggerFactory.getLogger(SessionImpl.class);
 
     /**
-     * A queue for incoming messages including synch and asych messages.
+     * A queue for incoming asynch messages.
      */
-    private LinkedList<QpidMessage> _incomingAsynchronousMessages = new LinkedList<QpidMessage>();
+    private final LinkedList<IncomingMessage> _incomingAsynchronousMessages = new LinkedList<IncomingMessage>();
 
-    //--- Session thread locking
+    //--- MessageDispatcherThread and Session locking
     /**
-     * indicates that the sessionThread has stopped
+     * indicates that the MessageDispatcherThread has stopped
      */
     private boolean _hasStopped = false;
 
     /**
-     * lock for the sessionThread to wait until the session is stopped
+     * lock for the MessageDispatcherThread to wait until the session is stopped
      */
-    private Object _stoppingLock = new Object();
+    private final Object _stoppingLock = new Object();
 
     /**
-     * lock for the stopper thread to wait on when the sessionThread is stopping
+     * lock for the stopper thread to wait on when the MessageDispatcherThread is stopping
      */
-    private Object _stoppingJoin = new Object();
+    private final Object _stoppingJoin = new Object();
 
     /**
      * thread to dispatch messages to async consumers
      */
     private MessageDispatcherThread _messageDispatcherThread = null;
-
+    //----END
 
     /**
      * The messageActors of this session.
      */
-    private HashMap<String, MessageActor> _messageActors = new HashMap<String, MessageActor>();
+    private final HashMap<String, MessageActor> _messageActors = new HashMap<String, MessageActor>();
 
     /**
      * All the not yet acknoledged messages
-     * We use a vector as access to this list has to be synchronised
-     * This is because messages are acked from messagelistner threads
      */
-    private Vector<QpidMessage> _unacknowledgedMessages = new Vector<QpidMessage>();
+    private final ArrayList<QpidMessage> _unacknowledgedMessages = new ArrayList<QpidMessage>();
 
     /**
      * Indicates whether this session is closed.
@@ -156,10 +155,8 @@ public class SessionImpl implements Session
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
-        // Create and start a MessageDispatcherThread
-        // This thread is dispatching messages to the async consumers
-        _messageDispatcherThread = new MessageDispatcherThread();
-        _messageDispatcherThread.start();
+        // init the message dispatcher.
+        initMessageDispatcherThread();
     }
 
     //--- javax.jms.Session API
@@ -379,10 +376,9 @@ public class SessionImpl implements Session
                 // that will stop the sessionThread
                 if (_isStopped)
                 {
-                    start();
+                    startDispatchThread();
                 }
-
-                //stop the sessionThread
+                //notify the sessionThread
                 synchronized (_incomingAsynchronousMessages)
                 {
                     _incomingAsynchronousMessages.notifyAll();
@@ -401,8 +397,9 @@ public class SessionImpl implements Session
             // from now all the session methods will throw a IllegalStateException
             _isClosed = true;
             // close all the actors
-            closeAllActors();
+            closeAllMessageActors();
             _messageActors.clear();
+            // We may have a thread trying to add a message
             synchronized (_incomingAsynchronousMessages)
             {
                 _incomingAsynchronousMessages.clear();
@@ -417,7 +414,6 @@ public class SessionImpl implements Session
             {
                 throw ExceptionHelper.convertQpidExceptionToJMSException(e);
             }
-
         }
     }
 
@@ -451,8 +447,17 @@ public class SessionImpl implements Session
         // release all unack messages
         for (QpidMessage message : _unacknowledgedMessages)
         {
-            // release all those messages
-            //Todo: message.getQpidMEssage.release();
+            // release this message
+            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+            try
+            {
+                getQpidSession().messageRelease(range);
+            }
+            catch (QpidException e)
+            {
+                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            }
+            // TODO We can be a little bit cleverer and build a set of ranges
         }
     }
 
@@ -559,12 +564,20 @@ public class SessionImpl implements Session
      * @throws InvalidDestinationException If an invalid destination is specified.
      * @throws InvalidSelectorException    If the message selector is invalid.
      */
-    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal) throws
-                                                                                                            JMSException
+    public MessageConsumer createConsumer(Destination destination, String messageSelector, boolean noLocal)
+            throws JMSException
     {
         checkNotClosed();
         checkDestination(destination);
-        MessageConsumerImpl consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null);
+        MessageConsumerImpl consumer = null;
+        try
+        {
+            consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null);
+        }
+        catch (Exception e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
         // register this actor with the session
         _messageActors.put(consumer.getMessageActorID(), consumer);
         return consumer;
@@ -647,12 +660,21 @@ public class SessionImpl implements Session
      * @throws InvalidDestinationException If an invalid topic is specified.
      * @throws InvalidSelectorException    If the message selector is invalid.
      */
-    public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector,
-                                                   boolean noLocal) throws JMSException
+    public TopicSubscriber createDurableSubscriber(Topic topic, String name, String messageSelector, boolean noLocal)
+            throws JMSException
     {
         checkNotClosed();
         checkDestination(topic);
-        TopicSubscriberImpl subscriber = new TopicSubscriberImpl(this, topic, messageSelector, noLocal, _connection.getClientID() + ":" + name);
+        TopicSubscriberImpl subscriber;
+        try
+        {
+            subscriber = new TopicSubscriberImpl(this, topic, messageSelector, noLocal,
+                                                 _connection.getClientID() + ":" + name);
+        }
+        catch (Exception e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
         _messageActors.put(subscriber.getMessageActorID(), subscriber);
         return subscriber;
     }
@@ -739,43 +761,71 @@ public class SessionImpl implements Session
      * Remove a message actor form this session
      * <p> This method is called when an actor is independently closed.
      *
-     * @param actor The closed actor.
+     * @param messageActor The closed actor.
      */
-    protected void closeMessageActor(MessageActor actor)
+    protected void closeMessageActor(MessageActor messageActor)
     {
-        _messageActors.remove(actor);
+        _messageActors.remove(messageActor.getMessageActorID());
+    }
+
+    /**
+     * Idincates whether this session is stopped.
+     *
+     * @return True is this session is stopped, false otherwise.
+     */
+    protected boolean isStopped()
+    {
+        return _isStopped;
     }
 
     /**
      * Start the flow of message to this session.
      *
-     * @throws JMSException If starting the session fails due to some communication error.
+     * @throws Exception If starting the session fails due to some communication error.
      */
-    protected void start() throws JMSException
+    protected synchronized void start() throws Exception
     {
         if (_isStopped)
         {
-            synchronized (_stoppingLock)
+            // start all the MessageActors
+            for (MessageActor messageActor : _messageActors.values())
             {
-                _isStopped = false;
-                _stoppingLock.notify();
+                messageActor.start();
             }
-            synchronized (_stoppingJoin)
-            {
-                _hasStopped = false;
-            }
+            startDispatchThread();
+        }
+    }
+
+    /**
+     * Restart delivery of asynch messages
+     */
+    private void startDispatchThread()
+    {
+        synchronized (_stoppingLock)
+        {
+            _isStopped = false;
+            _stoppingLock.notify();
+        }
+        synchronized (_stoppingJoin)
+        {
+            _hasStopped = false;
         }
     }
 
     /**
      * Stop the flow of message to this session.
      *
-     * @throws JMSException If stopping the session fails due to some communication error.
+     * @throws Exception If stopping the session fails due to some communication error.
      */
-    protected void stop() throws JMSException
+    protected synchronized void stop() throws Exception
     {
         if (!_isClosing && !_isStopped)
         {
+            // stop all the MessageActors
+            for (MessageActor messageActor : _messageActors.values())
+            {
+                messageActor.stop();
+            }
             synchronized (_incomingAsynchronousMessages)
             {
                 _isStopped = true;
@@ -808,6 +858,21 @@ public class SessionImpl implements Session
     protected void preProcessMessage(QpidMessage message)
     {
         _inRecovery = false;
+    }
+
+    /**
+     * Dispatch this message to this session asynchronous consumers
+     *
+     * @param consumerID The consumer ID.
+     * @param message    The message to be dispatched.
+     */
+    public void dispatchMessage(String consumerID, QpidMessage message)
+    {
+        synchronized (_incomingAsynchronousMessages)
+        {
+            _incomingAsynchronousMessages.addLast(new IncomingMessage(consumerID, message));
+            _incomingAsynchronousMessages.notifyAll();
+        }
     }
 
     /**
@@ -850,7 +915,8 @@ public class SessionImpl implements Session
     {
         if (dest == null)
         {
-            throw new javax.jms.InvalidDestinationException("Invalid destination specified: " + dest, "Invalid destination");
+            throw new javax.jms.InvalidDestinationException("Invalid destination specified: " + dest,
+                                                            "Invalid destination");
         }
     }
 
@@ -869,14 +935,25 @@ public class SessionImpl implements Session
         {
             // messages will be acknowldeged by the client application.
             // store this message for acknowledging it afterward
-            _unacknowledgedMessages.add(message);
+            synchronized (_unacknowledgedMessages)
+            {
+                _unacknowledgedMessages.add(message);
+            }
         }
         else
         {
             // acknowledge this message
-            // TODO: message.acknowledgeQpidMessge();
+            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+            try
+            {
+                getQpidSession().messageAcknowledge(range);
+            }
+            catch (QpidException e)
+            {
+                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            }
         }
-        //TODO: Implement DUPS OK heuristic
+        //tobedone: Implement DUPS OK heuristic
     }
 
     /**
@@ -895,13 +972,25 @@ public class SessionImpl implements Session
         checkNotClosed();
         if (getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
         {
-            for (QpidMessage message : _unacknowledgedMessages)
+            synchronized (_unacknowledgedMessages)
             {
-                // acknowledge this message
-                // TODO: message.acknowledgeQpidMessge();
+                for (QpidMessage message : _unacknowledgedMessages)
+                {
+                    // acknowledge this message
+                    Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+                    try
+                    {
+                        getQpidSession().messageAcknowledge(range);
+                    }
+                    catch (QpidException e)
+                    {
+                        throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+                    }
+                    // TODO We can be a little bit cleverer and build a set of ranges
+                }
+                //empty the list of unack messages
+                _unacknowledgedMessages.clear();
             }
-            //empty the list of unack messages
-            _unacknowledgedMessages.clear();
         }
         //else there is no effect
     }
@@ -916,13 +1005,23 @@ public class SessionImpl implements Session
         return _qpidSession;
     }
 
+    /**
+     * Get this session's conneciton
+     *
+     * @return This session's connection
+     */
+    protected ConnectionImpl getConnection()
+    {
+        return _connection;
+    }
+
     //------ Private Methods
     /**
      * Close the producer and the consumers of this session
      *
      * @throws JMSException If one of the MessaeActor cannot be closed due to some internal error.
      */
-    private void closeAllActors() throws JMSException
+    private void closeAllMessageActors() throws JMSException
     {
         for (MessageActor messageActor : _messageActors.values())
         {
@@ -930,7 +1029,64 @@ public class SessionImpl implements Session
         }
     }
 
+    /**
+     * create and start the MessageDispatcherThread.
+     */
+    private synchronized void initMessageDispatcherThread()
+    {
+        // Create and start a MessageDispatcherThread
+        // This thread is dispatching messages to the async consumers
+        _messageDispatcherThread = new MessageDispatcherThread();
+        _messageDispatcherThread.start();
+    }
+
     //------ Inner classes
+
+    /**
+     * Convenient class for storing incoming messages associated with a consumer ID.
+     * <p> Those messages are enqueued in _incomingAsynchronousMessages
+     */
+    private class IncomingMessage
+    {
+        // The consumer ID
+        private String _consumerId;
+        // The message
+        private QpidMessage _message;
+
+        //-- constructor
+        /**
+         * Creat a new incoming message
+         *
+         * @param consumerId The consumer ID
+         * @param message    The message to be delivered
+         */
+        IncomingMessage(String consumerId, QpidMessage message)
+        {
+            _consumerId = consumerId;
+            _message = message;
+        }
+
+        // Getters
+        /**
+         * Get the consumer ID
+         *
+         * @return The consumer ID for this message
+         */
+        public String getConsumerId()
+        {
+            return _consumerId;
+        }
+
+        /**
+         * Get the message.
+         *
+         * @return The message.
+         */
+        public QpidMessage getMessage()
+        {
+            return _message;
+        }
+    }
 
     /**
      * A MessageDispatcherThread is attached to every SessionImpl.
@@ -957,9 +1113,8 @@ public class SessionImpl implements Session
          */
         public void run()
         {
-            QpidMessage message = null;
-
-            // deliver messages to consumers until the stop flag is set.
+            IncomingMessage message = null;
+            // deliver messages to asynchronous consumers until the stop flag is set.
             do
             {
                 // When this session is not closing and and stopped
@@ -1012,19 +1167,19 @@ public class SessionImpl implements Session
                     MessageConsumerImpl mc;
                     synchronized (_messageActors)
                     {
-                        mc = null; // todo _messageActors.get(message.consumerID);
+                        mc = (MessageConsumerImpl) _messageActors.get(message.getConsumerId());
                     }
-                    boolean consumed = false;
                     if (mc != null)
                     {
                         try
                         {
-                            // todo call onMessage
+                            mc.onMessage(message.getMessage());
                         }
                         catch (RuntimeException t)
                         {
                             // the JMS specification tells us to flag that to the client!
-                            _logger.error("Warning! Asynchronous message consumer" + mc + " from session " + this + " has thrown a RunTimeException " + t);
+                            _logger.error(
+                                    "Warning! Asynchronous message consumer" + mc + " from session " + this + " has thrown a RunTimeException " + t);
                         }
                     }
                 }

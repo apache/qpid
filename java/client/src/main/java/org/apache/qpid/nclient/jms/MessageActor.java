@@ -32,12 +32,12 @@ public abstract class MessageActor
     /**
      * Used for debugging.
      */
-    private static final Logger _logger = LoggerFactory.getLogger(MessageActor.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(MessageActor.class);
 
     /**
      * Indicates whether this MessageActor is closed.
      */
-    private boolean _isClosed = false;
+    protected boolean _isClosed = false;
 
     /**
      * This messageActor's session
@@ -49,6 +49,10 @@ public abstract class MessageActor
      */
     DestinationImpl _destination;
 
+    /**
+     * Indicates that this actor is stopped
+     */
+    protected boolean _isStopped;
 
     /**
      * The ID of this actor for the session.
@@ -59,9 +63,9 @@ public abstract class MessageActor
 
     //TODO define the parameters
 
-     protected MessageActor()
+    protected MessageActor()
     {
-        
+
     }
 
     protected MessageActor(SessionImpl session, DestinationImpl destination)
@@ -87,7 +91,30 @@ public abstract class MessageActor
     }
 
     //-- protected methods
-     /**
+
+    /**
+     * Stop this message actor
+     *
+     * @throws Exception If the consumer cannot be stopped due to some internal error.
+     */
+    protected void stop() throws Exception
+    {
+        _isStopped = true;
+    }
+
+    /**
+     * Start this message Actor
+     *
+     * @throws Exception If the consumer cannot be started due to some internal error.
+     */
+    protected void start() throws Exception
+    {
+
+        _isStopped = false;
+
+    }
+
+    /**
      * Check if this MessageActor is not closed.
      * <p> If the MessageActor is closed, throw a javax.jms.IllegalStateException.
      * <p> The method is not synchronized, since MessageProducers can only be used by a single thread.
@@ -118,38 +145,32 @@ public abstract class MessageActor
     {
         if (!_isClosed)
         {
-            // close the underlying qpid resource
-           /* try
+            try
             {
-            	// Arnaud I can't see where this var is initialized
-            	// I assume it's the session
-                //_qpidResource.close();
-            	
-            	
+                // cancle this destination 
+                getSession().getQpidSession().messageCancel(getMessageActorID());
             }
             catch (QpidException e)
             {
                 throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-            }*/
-        	
-        	_session.close(); //is this correct ?
+            }
             _isClosed = true;
         }
     }
 
     /**
-     * Get the associated session object. 
+     * Get the associated session object.
      *
      * @return This Actor's Session.
      */
-    protected  SessionImpl getSession()
+    protected SessionImpl getSession()
     {
         return _session;
     }
 
     /**
      * Get the ID of this actor within its session.
-     *  
+     *
      * @return This actor ID.
      */
     protected String getMessageActorID()
