@@ -1,6 +1,6 @@
 package org.apache.qpidity.api;
 
-import org.apache.qpidity.ApplicationProperties;
+import org.apache.qpidity.MessageProperties;
 import org.apache.qpidity.DeliveryProperties;
 
 /*
@@ -24,7 +24,7 @@ import org.apache.qpidity.DeliveryProperties;
 
 public interface Message
 {
-	public ApplicationProperties getApplicationProperties();
+	public MessageProperties getMessageProperties();
 
 	public DeliveryProperties getDeliveryProperties();
         
