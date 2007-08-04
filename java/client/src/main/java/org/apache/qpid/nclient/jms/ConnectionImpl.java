@@ -225,7 +225,14 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             // start all the sessions
             for (SessionImpl session : _sessions)
             {
-                session.start();
+                try
+                {
+                    session.start();
+                }
+                catch (Exception e)
+                {
+                   throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+                }
             }
             _started = true;
         }
@@ -249,7 +256,14 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             // stop all the sessions
             for (SessionImpl session : _sessions)
             {
-                session.stop();
+                try
+                {
+                    session.stop();
+                }
+                catch (Exception e)
+                {
+                   throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+                }
             }
             _started = false;
         }

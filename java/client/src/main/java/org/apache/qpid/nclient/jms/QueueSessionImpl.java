@@ -123,7 +123,16 @@ public class QueueSessionImpl extends SessionImpl implements QueueSession
     {
         checkNotClosed();
         checkDestination(queue);
-        return new QueueReceiverImpl(this, queue, messageSelector);
+        QueueReceiver receiver;
+        try
+        {
+            receiver =  new QueueReceiverImpl(this, queue, messageSelector);
+        }
+        catch (Exception e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+        return receiver;
     }
 
     /**
