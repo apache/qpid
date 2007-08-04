@@ -22,22 +22,29 @@ import org.apache.qpidity.QpidException;
 import javax.jms.JMSException;
 
 /**
- *Helper class for handling exceptions
+ * Helper class for handling exceptions
  */
 public class ExceptionHelper
 {
     static public JMSException convertQpidExceptionToJMSException(Exception exception)
     {
         JMSException jmsException = null;
-        if (exception instanceof QpidException)
+        if (!(exception instanceof JMSException))
         {
-            jmsException = new JMSException(exception.getMessage(), ((QpidException) exception).getErrorCode());
+            if (exception instanceof QpidException)
+            {
+                jmsException = new JMSException(exception.getMessage(), ((QpidException) exception).getErrorCode());
+            }
+            else
+            {
+                jmsException = new JMSException(exception.getMessage());
+            }
+            jmsException.setLinkedException(exception);
         }
         else
         {
-            jmsException = new JMSException(exception.getMessage());
+            jmsException = (JMSException) exception;
         }
-        jmsException.setLinkedException(exception);
         return jmsException;
     }
 }
