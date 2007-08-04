@@ -170,14 +170,18 @@ public interface Session
      * @param listener    The listener for this destination. When big message are transfered then
      *                    it is recommended to use a {@link MessagePartListener}.
      * @param options     Set of Options.
-     * @param filter      The filters to apply to consumed messages.
+     * @param filter      A set of filters for the subscription. The syntax and semantics of these filters depends
+     *                    on the providers implementation.
      * @throws QpidException If the session fails to create the receiver due to some error.
      */
     public void messageSubscribe(String queue, String destination, MessagePartListener listener, Map<String, ?> filter,
                                  Option... options) throws QpidException;
 
     /**
-     * Cancels a subscription with a ginven destination.
+     * This method cancels a consumer. This does not affect already delivered messages, but it does
+     * mean the server will not send any more messages for that destination. The client may receive an
+     * arbitrary number of messages in between sending the cancel method and receiving the
+     * notification of completion of the cancel command.
      *
      * @param destination The destination for the subscriber used at subscription
      * @throws QpidException If cancelling the subscription fails due to some error.
@@ -185,17 +189,82 @@ public interface Session
     public void messageCancel(String destination) throws QpidException;
 
     /**
-     * Associate a message listener with a destination.
+     * Associate a message part listener with a destination.
      * We currently allow one listerner per destination this means
      * that the previous message listener is replaced. This is done gracefully i.e. the message
      * listener is replaced once it return from the processing of a message.
      *
      * @param destination The destination the listener is associated with.
-     * @param listener    The new listener for this destination. When big message are transfered then
-     *                    it is recommended to use a {@link MessagePartListener}.
+     * @param listener    The new listener for this destination.
      */
     public void setMessageListener(String destination, MessagePartListener listener);
 
+    /**
+     * Sets the mode of flow control used for a given destination.
+     * <p/>
+     * With credit based flow control, the broker continually maintains its current
+     * credit balance with the recipient. The credit balance consists of two values, a message
+     * count, and a byte count. Whenever message data is sent, both counts must be decremented.
+     * If either value reaches zero, the flow of message data must stop. Additional credit is
+     * received via the {@link Session#messageFlow} method.
+     * <p/>
+     * Window based flow control is identical to credit based flow control, however message
+     * acknowledgment implicitly grants a single unit of message credit, and the size of the
+     * message in byte credits for each acknowledged message.
+     *
+     * @param destination The destination to set the flow mode on.
+     * @param mode        <ul> <li>credit (0): choose credit based flow control
+     *                    <li> window (1): choose window based flow control</ul>
+     * @throws QpidException If setting the flow mode fails due to some error.
+     */
+    public void messageFlowMode(String destination, short mode) throws QpidException;
+
+
+    /**
+     * This method controls the flow of message data to a given destination. It is used by the
+     * recipient of messages to dynamically match the incoming rate of message flow to its
+     * processing or forwarding capacity. Upon receipt of this method, the sender must add "value"
+     * number of the specified unit to the available credit balance for the specified destination.
+     * A value of 0 indicates an infinite amount of credit. This disables any limit for
+     * the given unit until the credit balance is zeroed with {@link Session#messageStop}
+     * or {@link Session#messageFlush}.
+     *
+     * @param destination The destination to set the flow.
+     * @param unit        Specifies the unit of credit balance.
+     *                    <p/>
+     *                    One of: <ul>
+     *                    <li> message (0)
+     *                    <li> byte    (1)
+     *                    </ul>
+     * @param value       Number of credits, a value of 0 indicates an infinite amount of credit.
+     * @throws QpidException If setting the flow fails due to some error.
+     */
+    public void messageFlow(String destination, short unit, long value) throws QpidException;
+
+    /**
+     * Forces the broker to exhaust its credit supply.
+     * <p> The broker's credit will always be zero when
+     * this method completes. This method does not complete until all the message transfers occur.
+     * <p> This method returns true if messages have been flushed
+     * (i.e. the queue was not empty and the credit greater then zero).
+     * It returns false if the queue was empty.
+     *
+     * @param destination The destination to call flush on.
+     * @return True is messages were flushed, false otherwise.
+     * @throws QpidException If flushing fails due to some error.
+     */
+    public boolean messageFlush(String destination) throws QpidException;
+
+    /**
+     * On receipt of this method, the brokers MUST set his credit to zero for the given
+     * destination. This obeys the generic semantics of command completion, i.e. when confirmation
+     * is issued credit MUST be zero and no further messages will be sent until such a time as
+     * further credit is received.
+     *
+     * @param destination The destination to stop.
+     * @throws QpidException If stopping fails due to some error.     
+     */
+    public void messageStop(String destination) throws QpidException;
 
     /**
      * Acknowledge the receipt of ranges of messages.
