@@ -89,6 +89,27 @@ public class ClientSession implements org.apache.qpid.nclient.Session
     public void messageRelease(Range... range) throws QpidException
     {
         //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+
+    public void messageFlowMode(String destination, short mode)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void messageFlow(String destination, short unit, long value)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public boolean messageFlush(String destination)
+    {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void messageStop(String destination)
+    {
+        //To change body of implemented methods use File | Settings | File Templates.
     }// -----------------------------------------------
     //            Local transaction methods
     //  ----------------------------------------------

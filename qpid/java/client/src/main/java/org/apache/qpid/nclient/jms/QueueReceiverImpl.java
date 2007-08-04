@@ -33,9 +33,9 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
      * @param session         The session from which the QueueReceiverImpl is instantiated.
      * @param queue           The default queue for this QueueReceiverImpl.
      * @param messageSelector the message selector for this QueueReceiverImpl.  
-     * @throws JMSException If the QueueReceiverImpl cannot be created due to some internal error.
+     * @throws Exception If the QueueReceiverImpl cannot be created due to some internal error.
      */
-    protected QueueReceiverImpl(SessionImpl session, Queue queue, String messageSelector) throws JMSException
+    protected QueueReceiverImpl(SessionImpl session, Queue queue, String messageSelector) throws Exception
     {
         super(session, (DestinationImpl) queue, messageSelector, false, null);
     }

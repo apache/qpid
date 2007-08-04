@@ -21,6 +21,7 @@
 package  org.apache.qpid.nclient.jms.message;
 
 import javax.jms.JMSException;
+import javax.jms.Message;
 
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.ContentHeaderProperties;
@@ -132,4 +133,18 @@ public class QpidMessage
     {
         return getPropertyHeaders().getTimestamp(propertyName);
     }
+
+    public Message getJMSMessage()
+    {
+        // todo
+        return null;
+    }
+
+    public Long getMessageID()
+    {
+        //todo
+        return new Long(1);
+    }
 }
+
+
