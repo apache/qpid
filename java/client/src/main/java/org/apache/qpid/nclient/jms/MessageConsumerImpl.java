@@ -20,6 +20,8 @@ package org.apache.qpid.nclient.jms;
 //import org.apache.qpid.nclient.api.MessageReceiver;
 
 import org.apache.qpid.nclient.jms.message.QpidMessage;
+import org.apache.qpid.nclient.jms.filter.JMSSelectorFilter;
+import org.apache.qpid.nclient.jms.filter.MessageFilter;
 import org.apache.qpid.nclient.impl.MessagePartListenerAdapter;
 import org.apache.qpid.nclient.MessagePartListener;
 import org.apache.qpidity.Range;
@@ -33,12 +35,18 @@ import javax.jms.*;
  */
 public class MessageConsumerImpl extends MessageActor implements MessageConsumer
 {
-    public static final short MESSAGE_FLOW_MODE = 0; // we use message flow mode
+    // we can receive up to 100 messages for an asynchronous listener
+    public static final int MAX_MESSAGE_TRANSFERRED = 100;
 
     /**
      * This MessageConsumer's messageselector.
      */
     private String _messageSelector = null;
+
+    /**
+     * The message selector filter associated with this consumer message selector
+     */
+    private MessageFilter _filter = null;
 
     /**
      * NoLocal
@@ -51,6 +59,11 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * The subscription name
      */
     protected String _subscriptionName;
+
+    /**
+     * Indicates whether this consumer receives pre-acquired messages
+     */
+    private boolean _preAcquire = true;
 
     /**
      * A MessagePartListener set up for this consumer.
@@ -71,7 +84,17 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * Indicates that this consumer is receiving a synch message
      */
     private boolean _isReceiving = false;
-   
+
+    /**
+     * Indicates that a nowait is receiving a message.
+     */
+    private boolean _isNoWaitIsReceiving = false;
+
+    /**
+     * Number of mesages received asynchronously
+     * Nether exceed MAX_MESSAGE_TRANSFERRED
+     */
+    private int _messageAsyncrhonouslyReceived = 0;
 
     //----- Constructors
     /**
@@ -89,7 +112,11 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                                   boolean noLocal, String subscriptionName) throws Exception
     {
         super(session, destination);
-        _messageSelector = messageSelector;
+        if (messageSelector != null)
+        {
+            _messageSelector = messageSelector;
+            _filter = new JMSSelectorFilter(messageSelector);
+        }
         _noLocal = noLocal;
         _subscriptionName = subscriptionName;
         _isStopped = getSession().isStopped();
@@ -102,24 +129,37 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
              * asynchronous or directly to this consumer when it is synchronously accessed.
              */
             MessagePartListener messageAssembler = new MessagePartListenerAdapter(new QpidMessageListener(this));
-            // we use the default options:  EXCLUSIVE = false, PRE-ACCQUIRE and CONFIRM = off
-            if (_noLocal)
+            getSession().getQpidSession()
+                    .messageSubscribe(destination.getName(), getMessageActorID(),
+                                      org.apache.qpid.nclient.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                      // When the message selctor is set we do not acquire the messages
+                                      _messageSelector != null ? org.apache.qpid.nclient.Session.ACQUIRE_MODE_NO_ACQUIRE : org.apache.qpid.nclient.Session.ACQUIRE_MODE_PRE_ACQUIRE,
+                                      messageAssembler, null, _noLocal ? Option.NO_LOCAL : Option.NO_OPTION);
+            if (_messageSelector != null)
             {
-                getSession().getQpidSession()
-                        .messageSubscribe(destination.getName(), getMessageActorID(), messageAssembler, null,
-                                          Option.NO_LOCAL);
-            }
-            else
-            {
-                getSession().getQpidSession()
-                        .messageSubscribe(destination.getName(), getMessageActorID(), messageAssembler, null);
+                _preAcquire = false;
             }
         }
         else
         {
             // this is a topic we need to create a temporary queue for this consumer
             // unless this is a durable subscriber
+            if (subscriptionName != null)
+            {
+                // this ia a durable subscriber
+                // create a persistent queue for this subscriber
+                // getSession().getQpidSession().queueDeclare(destination.getName());
+            }
+            else
+            {
+                // this is a non durable subscriber
+                // create a temporary queue
+
+            }
         }
+        // set the flow mode
+        getSession().getQpidSession()
+                .messageFlowMode(getMessageActorID(), org.apache.qpid.nclient.Session.MESSAGE_FLOW_MODE_CREDIT);
     }
     //----- Message consumer API
 
@@ -168,7 +208,35 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         // this method is synchronized as onMessage also access _messagelistener
         // onMessage, getMessageListener and this method are the only synchronized methods
         checkNotClosed();
-        _messageListener = messageListener;
+        try
+        {
+            _messageListener = messageListener;
+            if (messageListener != null)
+            {
+                resetAsynchMessageReceived();
+            }
+        }
+        catch (Exception e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+    }
+
+    /**
+     * Contact the broker and ask for the delivery of MAX_MESSAGE_TRANSFERRED messages
+     *
+     * @throws QpidException If there is a communication error
+     */
+    private void resetAsynchMessageReceived() throws QpidException
+    {
+        if (!_isStopped && _messageAsyncrhonouslyReceived >= MAX_MESSAGE_TRANSFERRED)
+        {
+            getSession().getQpidSession().messageStop(getMessageActorID());
+        }
+        _messageAsyncrhonouslyReceived = 0;
+        getSession().getQpidSession()
+                .messageFlow(getMessageActorID(), org.apache.qpid.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                             MAX_MESSAGE_TRANSFERRED);
     }
 
     /**
@@ -265,7 +333,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             if (!_isStopped)
             {
                 // if this consumer is stopped then this will be call when starting
-                getSession().getQpidSession().messageFlow(getMessageActorID(), MESSAGE_FLOW_MODE, 1);
+                getSession().getQpidSession()
+                        .messageFlow(getMessageActorID(), org.apache.qpid.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
                 received = getSession().getQpidSession().messageFlush(getMessageActorID());
             }
             if (!received && timeout < 0)
@@ -275,6 +344,11 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             }
             else
             {
+                // right we need to let onMessage know that a nowait is potentially waiting for a message
+                if (timeout < 0)
+                {
+                    _isNoWaitIsReceiving = true;
+                }
                 while (_incomingMessage == null && !_isClosed)
                 {
                     try
@@ -295,9 +369,10 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                     getSession().acknowledgeMessage(_incomingMessage);
                 }
                 _incomingMessage = null;
-                // We now release any message received for this consumer
-                _isReceiving = false;
             }
+            // We now release any message received for this consumer
+            _isReceiving = false;
+            _isNoWaitIsReceiving = false;
         }
         return result;
     }
@@ -329,7 +404,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             {
                 // there is a synch call waiting for a message to be delivered
                 // so tell the broker to deliver a message
-                getSession().getQpidSession().messageFlow(getMessageActorID(), MESSAGE_FLOW_MODE, 1);
+                getSession().getQpidSession()
+                        .messageFlow(getMessageActorID(), org.apache.qpid.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
                 getSession().getQpidSession().messageFlush(getMessageActorID());
             }
         }
@@ -344,64 +420,109 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     {
         try
         {
+            // if there is a message selector then we need to evaluate it.
+            boolean messageOk = true;
+            if (_messageSelector != null)
+            {
+                messageOk = _filter.matches(message.getJMSMessage());
+            }
+            // right now we need to acquire this message if needed
+            if (!_preAcquire && messageOk)
+            {
+                messageOk = acquireMessage(message);
+            }
+
             // if this consumer is synchronous then set the current message and
             // notify the waiting thread
             if (_messageListener == null)
             {
                 synchronized (_incomingMessageLock)
                 {
-                    if (_isReceiving)
+                    if (messageOk)
                     {
-                        _incomingMessage = message;
-                        _incomingMessageLock.notify();
+                        // we have received a proper message that we can deliver
+                        if (_isReceiving)
+                        {
+                            _incomingMessage = message;
+                            _incomingMessageLock.notify();
+                        }
+                        else
+                        {
+                            // this message has been received after a received as returned
+                            // we need to release it
+                            releaseMessage(message);
+                        }
                     }
                     else
                     {
-                        // this message has been received after a received as returned
-                        // we need to release it
-                        releaseMessage(message);
+                        // oups the message did not match the selector or we did not manage to acquire it
+                        // If the receiver is still waiting for a message
+                        // then we need to request a new one from the server
+                        if (_isReceiving)
+                        {
+                            getSession().getQpidSession()
+                                    .messageFlow(getMessageActorID(),
+                                                 org.apache.qpid.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                            boolean received = getSession().getQpidSession().messageFlush(getMessageActorID());
+                            if (!received && _isNoWaitIsReceiving)
+                            {
+                                // Right a message nowait is waiting for a message
+                                // but no one can be delivered it then need to return
+                                _incomingMessageLock.notify();
+                            }
+                        }
                     }
                 }
             }
             else
             {
-                // This is an asynchronous message
-                // tell the session that a message is in process
-                getSession().preProcessMessage(message);
-                // If the session is transacted we need to ack the message first
-                // This is because a message is associated with its tx only when acked
-                if (getSession().getTransacted())
+                _messageAsyncrhonouslyReceived++;
+                if (_messageAsyncrhonouslyReceived >= MAX_MESSAGE_TRANSFERRED)
                 {
-                    getSession().acknowledgeMessage(message);
+                    // ask the server for the delivery of MAX_MESSAGE_TRANSFERRED more messages
+                    resetAsynchMessageReceived();
                 }
-                // The JMS specs says:
-                /* The result of a listener throwing a RuntimeException depends on the session?s
-                * acknowledgment mode.
-                ? --- AUTO_ACKNOWLEDGE or DUPS_OK_ACKNOWLEDGE - the message
-                * will be immediately redelivered. The number of times a JMS provider will
-                * redeliver the same message before giving up is provider-dependent.
-                ? --- CLIENT_ACKNOWLEDGE - the next message for the listener is delivered.
-                * --- Transacted Session - the next message for the listener is delivered.
-                *
-                * The number of time we try redelivering the message is 0
-                **/
-                try
+                // only deliver the message if it is valid 
+                if (messageOk)
                 {
-                    _messageListener.onMessage(message.getJMSMessage());
-                }
-                catch (RuntimeException re)
-                {
-                    // do nothing as this message will not be redelivered
-                }
-                // If the session has been recovered we then need to redelivered this message
-                if (getSession().isInRecovery())
-                {
-                    releaseMessage(message);
-                }
-                else if (!getSession().getTransacted())
-                {
-                    // Tell the jms Session to ack this message if required
-                    getSession().acknowledgeMessage(message);
+                    // This is an asynchronous message
+                    // tell the session that a message is in process
+                    getSession().preProcessMessage(message);
+                    // If the session is transacted we need to ack the message first
+                    // This is because a message is associated with its tx only when acked
+                    if (getSession().getTransacted())
+                    {
+                        getSession().acknowledgeMessage(message);
+                    }
+                    // The JMS specs says:
+                    /* The result of a listener throwing a RuntimeException depends on the session?s
+                    * acknowledgment mode.
+                    ? --- AUTO_ACKNOWLEDGE or DUPS_OK_ACKNOWLEDGE - the message
+                    * will be immediately redelivered. The number of times a JMS provider will
+                    * redeliver the same message before giving up is provider-dependent.
+                    ? --- CLIENT_ACKNOWLEDGE - the next message for the listener is delivered.
+                    * --- Transacted Session - the next message for the listener is delivered.
+                    *
+                    * The number of time we try redelivering the message is 0
+                    **/
+                    try
+                    {
+                        _messageListener.onMessage(message.getJMSMessage());
+                    }
+                    catch (RuntimeException re)
+                    {
+                        // do nothing as this message will not be redelivered
+                    }
+                    // If the session has been recovered we then need to redelivered this message
+                    if (getSession().isInRecovery())
+                    {
+                        releaseMessage(message);
+                    }
+                    else if (!getSession().getTransacted())
+                    {
+                        // Tell the jms Session to ack this message if required
+                        getSession().acknowledgeMessage(message);
+                    }
                 }
             }
         }
@@ -415,27 +536,37 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * Release a message
      *
      * @param message The message to be released
-     * @throws JMSException If the message cannot be released due to some internal error.
+     * @throws QpidException If the message cannot be released due to some internal error.
      */
-    private void releaseMessage(QpidMessage message) throws JMSException
+    private void releaseMessage(QpidMessage message) throws QpidException
     {
-        Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
-        try
+        if (_preAcquire)
         {
+            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
             getSession().getQpidSession().messageRelease(range);
         }
-        catch (QpidException e)
+    }
+
+    /**
+     * Acquire a message
+     *
+     * @param message The message to be acquired
+     * @return true if the message has been acquired, false otherwise.
+     * @throws QpidException If the message cannot be acquired due to some internal error.
+     */
+    private boolean acquireMessage(QpidMessage message) throws QpidException
+    {
+        boolean result = false;
+        if (!_preAcquire)
         {
-            // notify the Exception listener
-            if (getSession().getConnection().getExceptionListener() != null)
+            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+
+            Range<Long>[] rangeResult = getSession().getQpidSession().messageAcquire(range);
+            if (rangeResult.length > 0)
             {
-                getSession().getConnection().getExceptionListener()
-                        .onException(ExceptionHelper.convertQpidExceptionToJMSException(e));
-            }
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Excpetion when releasing message " + message, e);
+                result = rangeResult[0].getLower().compareTo(message.getMessageID()) == 0;
             }
         }
+        return result;
     }
 }
