@@ -175,8 +175,9 @@ void ConnectionHandler::handle(AMQMethodBody::shared_ptr method)
         if (method->isA<ConnectionCloseBody>()) {
             send(make_shared_ptr(new ConnectionCloseOkBody(version)));
             setState(CLOSED);
-            if (onClose) {
-                onClose();
+            if (onError) {
+                ConnectionCloseBody::shared_ptr c(shared_polymorphic_cast<ConnectionCloseBody>(method));
+                onError(c->getReplyCode(), c->getReplyText());
             }
         } else {
             error(503, "Unexpected method on channel zero.", method->amqpClassId(), method->amqpMethodId());

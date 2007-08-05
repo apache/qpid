@@ -76,6 +76,10 @@ end
 class AmqpMethod < AmqpElement
   def initialize(xml, amqp) super; end
 
+  def content()
+    attributes["content"]
+  end
+
   def index() attributes["index"];  end
 
   def fields()
@@ -84,7 +88,7 @@ class AmqpMethod < AmqpElement
 
   # Responses to this method (0-9)
   def responses()
-    @cache_responses ||= elements.collect("response") { |el| new AmqpMethod(el,self) }
+    @cache_responses ||= elements.collect("response") { |el| AmqpMethod.new(el,self) }
   end
 
   # Methods this method responds to (0-9)
@@ -178,7 +182,7 @@ class Generator
     if (@outdir != "-")         
       path=Pathname.new "#{@outdir}/#{file}"
       path.parent.mkpath
-        path.open('w') { |@out| yield }
+      path.open('w') { |@out| yield }
     end
   end
 

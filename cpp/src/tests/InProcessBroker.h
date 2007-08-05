@@ -134,30 +134,7 @@ std::ostream& operator<<(
 }
 
 } // namespace broker
-
-
-namespace client {
-/** An in-process client+broker all in one. */
-class InProcessBrokerClient : public client::Connection {
-  public:
-    broker::InProcessBroker broker;
-    broker::InProcessBroker::Conversation& conversation;
-    
-    /** Constructor creates broker and opens client connection. */
-    InProcessBrokerClient(
-        u_int32_t max_frame_size=65536,
-        framing::ProtocolVersion version= framing::highestProtocolVersion
-    ) : client::Connection(false, max_frame_size, version),
-        broker(version),
-        conversation(broker.conversation)
-    {
-        setConnector(broker);
-        open("");
-    }
-};
-
-
-}} // namespace qpid::client
+} // namespace qpid
 
 
 #endif // _tests_InProcessBroker_h
