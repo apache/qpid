@@ -23,6 +23,7 @@
  */
 #include <string>
 #include "qpid/framing/BasicHeaderProperties.h"
+#include "qpid/framing/MethodContent.h"
 
 namespace qpid {
 namespace client {
@@ -35,11 +36,11 @@ namespace client {
  */
 // FIXME aconway 2007-04-05: Should be based on MessageTransfer properties not
 // basic header properties.
-class Message : public framing::BasicHeaderProperties {
+class Message : public framing::BasicHeaderProperties, public framing::MethodContent {
   public:
     Message(const std::string& data_=std::string()) : data(data_) {}
 
-    std::string getData() const { return data; }
+    const std::string& getData() const { return data; }
     void setData(const std::string& _data) { data = _data; }
 
     std::string getDestination() const { return destination; }
@@ -51,6 +52,8 @@ class Message : public framing::BasicHeaderProperties {
 
     bool isRedelivered() const { return redelivered; }
     void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
+
+    const HeaderProperties& getMethodHeaders() const { return *this; }
 
   private:
     std::string data;

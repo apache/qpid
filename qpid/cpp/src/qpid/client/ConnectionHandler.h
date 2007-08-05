@@ -61,6 +61,7 @@ class ConnectionHandler : private StateManager,
 
 public:
     typedef boost::function<void()> CloseListener;    
+    typedef boost::function<void(uint16_t, const std::string&)> ErrorListener;    
 
     ConnectionHandler();
 
@@ -73,6 +74,7 @@ public:
     void close();
 
     CloseListener onClose;
+    ErrorListener onError;
 };
 
 }}

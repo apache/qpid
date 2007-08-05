@@ -128,7 +128,7 @@ class CppGen < Generator
 
   # Write a .cpp file.
   def cpp_file(path)
-    file (path) do
+    file(path) do
       gen Copyright
       yield
     end
