@@ -49,8 +49,7 @@ rgen_cmd=ruby -I $(rgen_dir) $(rgen_script)
 rgen_templates=$(rgen_tdir)/frame_body_lists.rb
 
 rubygen.mk: $(rgen_script) $(specs) $(rgen_templates)
-	echo rgen_srcs=`$(rgen_cmd) - $(specs) $(rgen_templates)` > $@
-	echo rgen_srcs=`$(rgen_cmd) . $(specs) $(rgen_templates)` 
+	gen=`$(rgen_cmd) . $(specs) $(rgen_templates)` ; echo Generated $$gen; echo "rgen_srcs=$$gen" > $@
 
 $(rgen_srcs): rubygen.mk
 
