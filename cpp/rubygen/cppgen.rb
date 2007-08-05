@@ -27,6 +27,12 @@ Copyright=<<EOS
  *
  */
 
+///
+/// This file was automatically generated from the AMQP specification.
+/// Do not edit.
+///
+
+
 EOS
 
 CppKeywords = Set.new(["and", "and_eq", "asm", "auto", "bitand",
@@ -62,16 +68,17 @@ end
 
 # Additional methods for AmqpMethod
 class AmqpMethod
-  def cppname() @cache_cppname ||= name.lcaps.cppsafe; end
-  def param_names() @cache_param_names ||= fields.collect { |f| f.cppname }; end
-  def signature() @cache_signature ||= fields.collect { |f| f.cpptype+" "+f.cppname }; end
-  def body_name() @cache_body_name ||= amqp_parent.name.caps+name.caps+"Body"; end
+  def cppname() name.lcaps.cppsafe; end
+  def param_names() fields.collect { |f| f.cppname }; end
+  def signature() fields.collect { |f| f.cpptype+" "+f.cppname }; end
+  def body_name() amqp_parent.name.caps+name.caps+"Body"; end
 end
 
 # Additional methods for AmqpClass
 class AmqpClass
-  def cppname() @cache_cppname ||= name.caps; end
-  def body_name() @cache_body_name ||= name.caps+"Body";  end
+  def cppname() name.caps; end
+  def body_name() cppname+"Body"
+  end
 end
 
 # Additional methos for AmqpRoot
@@ -87,7 +94,9 @@ class AmqpRoot
     "longstr"=>["string", "const string&"],
     "shortstr"=>["string", "const string&"],
     "table"=>["FieldTable", "const FieldTable&", "const FieldTable&"],
-    "content"=>["Content", "const Content&", "const Content&"]
+    "content"=>["Content", "const Content&", "const Content&"],
+    "rfc1982-long-set"=>["SequenceNumberSet", "const SequenceNumberSet&", "const SequenceNumberSet&"],
+    "uuid"=>["Uuid", "const Uuid&", "const Uuid&"]
   }
 
   def lookup(amqptype)
@@ -125,28 +134,37 @@ class CppGen < Generator
     end
   end
 
-  def include(header) genl "#include \"#{header}\""; end
+  def include(header)
+    genl /<.*>/.match(header) ? "#include #{header}" : "#include \"#{header}\""
+  end
 
   def scope(open="{",close="}", &block) 
     genl open; indent(&block); genl close
   end
 
   def namespace(name, &block) 
+    genl
     names = name.split("::")
     names.each { |n| genl "namespace #{n} {" }
+    genl
     yield
+    genl
     genl('}'*names.size+" // "+name)
+    genl
   end
 
   def struct_class(type, name, *bases, &block)
+    genl
     gen "#{type} #{name}"
-    gen ": #{bases.join(', ')}" unless bases.empty
+    gen ": #{bases.join(', ')}" unless bases.empty?
     genl "{"
     yield
     genl "};"
+    genl
   end
 
-  def struct(name, *bases, &block) struc_class("struct", bases, &block); end
-  def class_(name, *bases, &block) struc_class("struct", bases, &block); end
+  def struct(name, *bases, &block) struct_class("struct", name, bases, &block); end
+  def class_(name, *bases, &block) struct_class("class", name, bases, &block); end
+  def typedef(type, name) genl "typedef #{type} #{name};" end
 end
 
