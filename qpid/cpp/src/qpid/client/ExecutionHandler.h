@@ -43,6 +43,7 @@ class ExecutionHandler :
     Correlator correlation;
     CompletionTracker completion;
     framing::ProtocolVersion version;
+    uint64_t maxFrameSize;
 
     void complete(uint32_t mark, framing::SequenceNumberSet range);    
     void flush();
@@ -50,7 +51,9 @@ class ExecutionHandler :
 public:
     BlockingQueue<ReceivedContent::shared_ptr> received; 
 
-    ExecutionHandler();
+    ExecutionHandler(uint64_t maxFrameSize = 65536);
+
+    void setMaxFrameSize(uint64_t size) { maxFrameSize = size; }
 
     void handle(framing::AMQFrame& frame);
     void send(framing::AMQBody::shared_ptr command, 
@@ -58,11 +61,9 @@ public:
               Correlator::Listener g = Correlator::Listener());
     void sendContent(framing::AMQBody::shared_ptr command, 
                      const framing::BasicHeaderProperties& headers, const std::string& data, 
-                     uint64_t frameSize,
                      CompletionTracker::Listener f = CompletionTracker::Listener(), 
                      Correlator::Listener g = Correlator::Listener());
-
-    void sendContent(framing::AMQBody::shared_ptr content);
+    void sendFlush();
 };
 
 }}

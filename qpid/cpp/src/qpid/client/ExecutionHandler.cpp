@@ -50,7 +50,8 @@ bool invoke(AMQBody::shared_ptr body, Invocable* target)
     return body->type() == METHOD_BODY && shared_polymorphic_cast<AMQMethodBody>(body)->invoke(target);
 }
 
-ExecutionHandler::ExecutionHandler() : version(framing::highestProtocolVersion) {}
+ExecutionHandler::ExecutionHandler(uint64_t _maxFrameSize) : 
+    version(framing::highestProtocolVersion), maxFrameSize(_maxFrameSize) {}
 
 //incoming:
 void ExecutionHandler::handle(AMQFrame& frame)
@@ -97,6 +98,12 @@ void ExecutionHandler::flush()
     //make_shared_ptr(new ExecutionCompleteBody(getVersion(), incoming.hwm.getValue(), SequenceNumberSet())));
 }
 
+void ExecutionHandler::sendFlush()
+{
+    AMQFrame frame(version, 0, make_shared_ptr(new ExecutionFlushBody(version)));
+    out(frame);        
+}
+
 void ExecutionHandler::send(AMQBody::shared_ptr command, CompletionTracker::Listener f, Correlator::Listener g)
 {
     //allocate id:
@@ -111,21 +118,9 @@ void ExecutionHandler::send(AMQBody::shared_ptr command, CompletionTracker::List
 
     AMQFrame frame(version, 0/*id will be filled in be channel handler*/, command);
     out(frame);
-
-    if (f) {
-        AMQFrame frame(version, 0, make_shared_ptr(new ExecutionFlushBody(version)));
-        out(frame);        
-    }
-}
-
-void ExecutionHandler::sendContent(framing::AMQBody::shared_ptr content)
-{
-    AMQFrame frame(version, 0/*id will be filled in be channel handler*/, content);
-    out(frame);
 }
 
 void ExecutionHandler::sendContent(AMQBody::shared_ptr command, const BasicHeaderProperties& headers, const std::string& data, 
-                                   uint64_t frameSize,
                                    CompletionTracker::Listener f, Correlator::Listener g)
 {
     send(command, f, g);
@@ -139,7 +134,7 @@ void ExecutionHandler::sendContent(AMQBody::shared_ptr command, const BasicHeade
     u_int64_t data_length = data.length();
     if(data_length > 0){
         //frame itself uses 8 bytes
-        u_int32_t frag_size = frameSize - 8;
+        u_int32_t frag_size = maxFrameSize - 8;
         if(data_length < frag_size){
             AMQFrame frame(version, 0, make_shared_ptr(new AMQContentBody(data)));
             out(frame);
