@@ -25,11 +25,8 @@
 #include <string>
 #include "qpid/QpidError.h"
 #include "ClientChannel.h"
-#include "Connector.h"
-#include "ConnectionHandler.h"
-#include "qpid/sys/Mutex.h"
-#include "qpid/sys/ShutdownHandler.h"
-#include "qpid/sys/TimeoutHandler.h"
+#include "ConnectionImpl.h"
+#include "Session.h"
 
 
 namespace qpid {
@@ -41,22 +38,6 @@ namespace qpid {
  * Connection and Channel.
  */
 namespace client {
-
-/**
- * \internal provide access to selected private channel functions
- * for the Connection without making it a friend of the entire channel.
- */
-class ConnectionForChannel :
-        public framing::InputHandler,
-        public framing::OutputHandler,
-        public sys::TimeoutHandler, 
-        public sys::ShutdownHandler
-        
-{
-  private:
-  friend class Channel;
-    virtual void erase(framing::ChannelId) = 0;
-};
 
 
 /**
@@ -70,30 +51,17 @@ class ConnectionForChannel :
  * 
  * \ingroup clientapi
  */
-class Connection : public ConnectionForChannel
+class Connection
 {
-    typedef std::map<framing::ChannelId, Channel*> ChannelMap;
-
     framing::ChannelId channelIdCounter;
-    static const std::string OK;
-
     framing::ProtocolVersion version;
     const uint32_t max_frame_size;
-    ChannelMap channels;
-    ConnectionHandler handler;
-    Connector defaultConnector;
-    Connector* connector;
-    framing::OutputHandler* out;
+    ConnectionImpl::shared_ptr impl;
     bool isOpen;
-    sys::Mutex shutdownLock;
     bool debug;
-        
-    void erase(framing::ChannelId);
-    void closeChannels();
-    bool markClosed();
 
     // TODO aconway 2007-01-26: too many friendships, untagle these classes.
-  friend class Channel;
+    friend class Channel;
     
   public:
     /**
@@ -111,6 +79,7 @@ class Connection : public ConnectionForChannel
      */
     Connection(bool debug = false, uint32_t max_frame_size = 65536,
                framing::ProtocolVersion=framing::highestProtocolVersion);
+    Connection(boost::shared_ptr<Connector>);
     ~Connection();
 
     /**
@@ -136,13 +105,12 @@ class Connection : public ConnectionForChannel
               const std::string& virtualhost = "/");
 
     /**
-     * Close the connection with optional error information for the peer.
+     * Close the connection
      *
      * Any further use of this connection (without reopening it) will
      * not succeed.
      */
-    void close(framing::ReplyCode=200, const std::string& msg=OK,
-               framing::ClassId = 0, framing::MethodId = 0);
+    void close();
 
     /**
      * Associate a Channel with this connection and open it for use.
@@ -156,24 +124,7 @@ class Connection : public ConnectionForChannel
      */
     void openChannel(Channel&);
 
-
-    // TODO aconway 2007-01-26: can these be private?
-    void send(framing::AMQFrame&);
-    void received(framing::AMQFrame&);
-    void idleOut();
-    void idleIn();
-    void shutdown();
-    
-    /**\internal used for testing */
-    void setConnector(Connector& connector);
-    
-    /**
-     * @return the maximum frame size in use on this connection
-     */
-    inline uint32_t getMaxFrameSize(){ return max_frame_size; }
-
-    /** @return protocol version in use on this connection. */ 
-    //framing::ProtocolVersion getVersion() const { return version; }
+    Session newSession();
 };
 
 }} // namespace qpid::client

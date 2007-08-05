@@ -26,9 +26,8 @@
 #include "ClientExchange.h"
 #include "ClientMessage.h"
 #include "ClientQueue.h"
-#include "ChannelHandler.h"
-#include "ExecutionHandler.h"
-#include "FutureFactory.h"
+#include "ConnectionImpl.h"
+#include "SessionCore.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
@@ -71,7 +70,6 @@ class Channel : private sys::Runnable
     typedef std::map<std::string, Consumer> ConsumerMap;
         
     mutable sys::Mutex lock;
-    Connection* connection;
     sys::Thread dispatcher;
 
     uint16_t prefetch;
@@ -85,11 +83,10 @@ class Channel : private sys::Runnable
     bool running;
 
     ConsumerMap consumers;
-    ExecutionHandler executionHandler;
-    ChannelHandler channelHandler;
+    ConnectionImpl::shared_ptr connection;
+    SessionCore::shared_ptr session;
     framing::ChannelId channelId;
     BlockingQueue<ReceivedContent::shared_ptr> gets;
-    FutureFactory futures;
 
     void stop();
 
@@ -121,7 +118,7 @@ class Channel : private sys::Runnable
                 sync, body, BodyType::CLASS_ID, BodyType::METHOD_ID));
     }
 
-    void open(framing::ChannelId, Connection&);
+    void open(ConnectionImpl::shared_ptr, SessionCore::shared_ptr);
     void closeInternal();
     void peerClose(uint16_t, const std::string&);
 
@@ -256,9 +253,6 @@ class Channel : private sys::Runnable
     
     /** True if the channel is open */
     bool isOpen() const;
-
-    /** Get the connection associated with this channel */
-    Connection& getConnection() { return *connection; }
 
     /** Return the protocol version */
     framing::ProtocolVersion getVersion() const { return version ; }

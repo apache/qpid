@@ -46,10 +46,10 @@ rgen_tdir=$(rgen_dir)/templates
 rgen_script=$(rgen_dir)/generate
 rgen_cmd=ruby -I $(rgen_dir) $(rgen_script)
 
-rgen_templates=$(rgen_tdir)/frame_body_lists.rb
+rgen_templates=$(rgen_tdir)/frame_body_lists.rb $(rgen_tdir)/Session.rb
 
 rubygen.mk: $(rgen_script) $(specs) $(rgen_templates)
-	gen=`$(rgen_cmd) . $(specs) $(rgen_templates)` ; echo Generated $$gen; echo "rgen_srcs=$$gen" > $@
+	gen=`$(rgen_cmd) . $(specs) $(rgen_templates)` ; echo Generated $$gen; echo rgen_srcs=$$gen > $@
 
 $(rgen_srcs): rubygen.mk
 
@@ -228,6 +228,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ClientChannel.cpp			\
   qpid/client/ClientExchange.cpp		\
   qpid/client/ClientQueue.cpp			\
+  qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/MessageListener.cpp		\
   qpid/client/ResponseHandler.cpp		\
@@ -241,6 +242,8 @@ libqpidclient_la_SOURCES =			\
   qpid/client/FutureResponse.cpp		\
   qpid/client/FutureFactory.cpp			\
   qpid/client/ReceivedContent.cpp		\
+  qpid/client/Session.cpp			\
+  qpid/client/SessionCore.cpp			\
   qpid/client/StateManager.cpp
 
 
@@ -319,6 +322,7 @@ nobase_include_HEADERS = \
   qpid/client/ClientMessage.h \
   qpid/client/ClientQueue.h \
   qpid/client/Connection.h \
+  qpid/client/ConnectionImpl.h \
   qpid/client/Connector.h \
   qpid/client/MessageChannel.h \
   qpid/client/MessageListener.h \
@@ -336,6 +340,9 @@ nobase_include_HEADERS = \
   qpid/client/FutureResponse.h \
   qpid/client/FutureFactory.h \
   qpid/client/ReceivedContent.h \
+  qpid/client/Response.h \
+  qpid/client/Session.h \
+  qpid/client/SessionCore.h \
   qpid/client/StateManager.h \
   qpid/framing/AMQBody.h \
   qpid/framing/AMQContentBody.h \
@@ -356,6 +363,7 @@ nobase_include_HEADERS = \
   qpid/framing/HeaderProperties.h \
   qpid/framing/InitiationHandler.h \
   qpid/framing/InputHandler.h \
+  qpid/framing/MethodContent.h \
   qpid/framing/MethodContext.h \
   qpid/framing/OutputHandler.h \
   qpid/framing/ProtocolInitiation.h \

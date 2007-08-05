@@ -33,6 +33,7 @@
 #include "qpid/framing/Responder.h"
 #include "InProcessBroker.h"
 #include "qpid/client/Connection.h"
+#include "qpid/client/Connector.h"
 #include "qpid/client/ClientExchange.h"
 #include "qpid/client/ClientQueue.h"
 #include "qpid/framing/Correlator.h"
@@ -386,9 +387,8 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_ASSERT_EQUAL(string(expect, sizeof(expect)-1), boost::lexical_cast<string>(frame))
 
     void testRequestResponseRoundtrip() {
-        broker::InProcessBroker ibroker(version);
-        client::Connection clientConnection;
-        clientConnection.setConnector(ibroker);
+        boost::shared_ptr<broker::InProcessBroker> ibroker(new broker::InProcessBroker(version));
+        client::Connection clientConnection(boost::static_pointer_cast<client::Connector>(ibroker));
         clientConnection.open("");
         client::Channel c;
         clientConnection.openChannel(c);
@@ -399,7 +399,9 @@ class FramingTest : public CppUnit::TestCase
         c.declareExchange(exchange);
         c.declareQueue(queue);
         c.bind(exchange, queue, "MyTopic", framing::FieldTable());
-        broker::InProcessBroker::Conversation::const_iterator i = ibroker.conversation.begin();
+        c.close();
+        clientConnection.close();
+        broker::InProcessBroker::Conversation::const_iterator i = ibroker->conversation.begin();
         ASSERT_FRAME("BROKER: Frame[channel=0; ConnectionStart: versionMajor=0; versionMinor=10; serverProperties={}; mechanisms=PLAIN; locales=en_US]", *i++);
         ASSERT_FRAME("CLIENT: Frame[channel=0; ConnectionStartOk: clientProperties={}; mechanism=PLAIN; response=\000guest\000guest; locale=en_US]", *i++);
         ASSERT_FRAME("BROKER: Frame[channel=0; ConnectionTune: channelMax=32767; frameMax=65536; heartbeat=0]", *i++);
