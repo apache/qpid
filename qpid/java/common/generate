@@ -264,6 +264,7 @@ for name, base, typecode, m in v.structs:
         OPTIONS[name] = opt_name
         opts.line("    %s," % opt_name)
   structs.append(struct)
+opts.line("    %s," % "NO_OPTION")  
 opts.line("}")
 opts.write()
 
