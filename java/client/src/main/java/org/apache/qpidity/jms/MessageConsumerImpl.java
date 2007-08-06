@@ -348,7 +348,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // This indicate to the delivery thread to deliver the message to this consumer
             // as it can happens that a message is delivered after a receive operation as returned.
             _isReceiving = true;
-            boolean received = false;
+            int received = 0;
             if (!_isStopped)
             {
                 // if this consumer is stopped then this will be call when starting
@@ -356,7 +356,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                         .messageFlow(getMessageActorID(), org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
                 received = getSession().getQpidSession().messageFlush(getMessageActorID());
             }
-            if (!received && timeout < 0)
+            if ( received == 0 && timeout < 0)
             {
                 // this is a nowait and we havent received a message then we must immediatly return
                 result = null;
@@ -489,8 +489,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                             getSession().getQpidSession()
                                     .messageFlow(getMessageActorID(),
                                                  org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
-                            boolean received = getSession().getQpidSession().messageFlush(getMessageActorID());
-                            if (!received && _isNoWaitIsReceiving)
+                            int received = getSession().getQpidSession().messageFlush(getMessageActorID());
+                            if ( received == 0  && _isNoWaitIsReceiving)
                             {
                                 // Right a message nowait is waiting for a message
                                 // but no one can be delivered it then need to return
