@@ -108,7 +108,7 @@ public class SessionImpl implements Session
     /**
      * The underlying QpidSession
      */
-    private org.apache.qpidity.Session _qpidSession;
+    private org.apache.qpidity.client.Session _qpidSession;
 
     /**
      * Indicates whether this session is recovering
@@ -132,7 +132,7 @@ public class SessionImpl implements Session
      * @throws QpidException In case of internal error.
      */
     protected SessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode, boolean isXA)
-            throws QpidException
+          throws QpidException
     {
         _connection = connection;
         _transacted = transacted;
@@ -142,6 +142,8 @@ public class SessionImpl implements Session
             acknowledgeMode = Session.SESSION_TRANSACTED;
         }
         _acknowledgeMode = acknowledgeMode;
+   /*
+        
         // create the qpid session with an expiry  <= 0 so that the session does not expire
         _qpidSession = _connection.getQpidConnection().createSession(0);
         // set transacted if required
@@ -149,6 +151,7 @@ public class SessionImpl implements Session
         {
             _qpidSession.txSelect();
         }
+   */     
         // init the message dispatcher.
         initMessageDispatcherThread();
     }
@@ -1036,7 +1039,7 @@ public class SessionImpl implements Session
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpidity.Session getQpidSession()
+    protected org.apache.qpidity.client.Session getQpidSession()
     {
         return _qpidSession;
     }

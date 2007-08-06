@@ -16,9 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity;
+package org.apache.qpidity.client;
 
 import javax.transaction.xa.Xid;
+
+import org.apache.qpidity.Option;
+import org.apache.qpidity.QpidException;
 
 /**
  * This session�s resources are control under the scope of a distributed transaction.
