@@ -17,8 +17,6 @@
  */
 package org.apache.qpid.nclient.jms;
 
-//import org.apache.qpid.nclient.api.MessageReceiver;
-
 import org.apache.qpid.nclient.jms.message.QpidMessage;
 import org.apache.qpid.nclient.jms.filter.JMSSelectorFilter;
 import org.apache.qpid.nclient.jms.filter.MessageFilter;
@@ -27,6 +25,7 @@ import org.apache.qpid.nclient.MessagePartListener;
 import org.apache.qpidity.Range;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Option;
+import org.apache.qpidity.exchange.ExchangeDefaults;
 
 import javax.jms.*;
 
@@ -120,15 +119,16 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         _noLocal = noLocal;
         _subscriptionName = subscriptionName;
         _isStopped = getSession().isStopped();
+        // let's create a message part assembler
+        /**
+         * A Qpid message listener that pushes messages to this consumer session when this consumer is
+         * asynchronous or directly to this consumer when it is synchronously accessed.
+         */
+        MessagePartListener messageAssembler = new MessagePartListenerAdapter(new QpidMessageListener(this));
+
         if (destination instanceof Queue)
         {
             // this is a queue we expect that this queue exists
-            // let's create a message part assembler
-            /**
-             * A Qpid message listener that pushes messages to this consumer session when this consumer is
-             * asynchronous or directly to this consumer when it is synchronously accessed.
-             */
-            MessagePartListener messageAssembler = new MessagePartListenerAdapter(new QpidMessageListener(this));
             getSession().getQpidSession()
                     .messageSubscribe(destination.getName(), getMessageActorID(),
                                       org.apache.qpid.nclient.Session.CONFIRM_MODE_NOT_REQUIRED,
@@ -144,25 +144,44 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         {
             // this is a topic we need to create a temporary queue for this consumer
             // unless this is a durable subscriber
+            String queueName;
             if (subscriptionName != null)
             {
                 // this ia a durable subscriber
                 // create a persistent queue for this subscriber
-                // getSession().getQpidSession().queueDeclare(destination.getName());
+                queueName = "topic-" + subscriptionName;
+                getSession().getQpidSession()
+                        .queueDeclare(queueName, null, null, Option.EXCLUSIVE, Option.DURABLE);
             }
             else
             {
                 // this is a non durable subscriber
                 // create a temporary queue
-
+                queueName = "topic-" + getMessageActorID();
+                getSession().getQpidSession()
+                        .queueDeclare(queueName, null, null, Option.AUTO_DELETE, Option.EXCLUSIVE);
             }
+            // bind this queue with the topic exchange
+            getSession().getQpidSession()
+                    .queueBind(queueName, ExchangeDefaults.TOPIC_EXCHANGE_NAME, destination.getName(), null);
+            // subscribe to this topic 
+            getSession().getQpidSession()
+                    .messageSubscribe(queueName, getMessageActorID(),
+                                      org.apache.qpid.nclient.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                      // We always acquire the messages
+                                      org.apache.qpid.nclient.Session.ACQUIRE_MODE_PRE_ACQUIRE, messageAssembler, null,
+                                      _noLocal ? Option.NO_LOCAL : Option.NO_OPTION,
+                                      // Request exclusive subscription access, meaning only this subscription
+                                      // can access the queue.
+                                      Option.EXCLUSIVE);
+
         }
         // set the flow mode
         getSession().getQpidSession()
                 .messageFlowMode(getMessageActorID(), org.apache.qpid.nclient.Session.MESSAGE_FLOW_MODE_CREDIT);
     }
-    //----- Message consumer API
 
+    //----- Message consumer API
     /**
      * Gets this  MessageConsumer's message selector.
      *
@@ -426,7 +445,14 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             {
                 messageOk = _filter.matches(message.getJMSMessage());
             }
-            // right now we need to acquire this message if needed
+            if (!messageOk && _preAcquire)
+            {
+                // this is the case for topics
+                // We need to ack this message
+                acknowledgeMessage(message);
+            }
+            // now we need to acquire this message if needed
+            // this is the case of queue with a message selector set
             if (!_preAcquire && messageOk)
             {
                 messageOk = acquireMessage(message);
@@ -568,5 +594,20 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             }
         }
         return result;
+    }
+
+    /**
+     * Acknowledge a message
+     *
+     * @param message The message to be acknowledged
+     * @throws QpidException If the message cannot be acquired due to some internal error.
+     */
+    private void acknowledgeMessage(QpidMessage message) throws QpidException
+    {
+        if (!_preAcquire)
+        {
+            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+            getSession().getQpidSession().messageAcknowledge(range);
+        }
     }
 }
