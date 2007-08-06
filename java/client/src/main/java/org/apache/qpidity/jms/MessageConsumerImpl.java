@@ -19,12 +19,12 @@ package org.apache.qpidity.jms;
 
 import org.apache.qpidity.jms.message.QpidMessage;
 import org.apache.qpidity.impl.MessagePartListenerAdapter;
-import org.apache.qpidity.MessagePartListener;
 import org.apache.qpidity.Range;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.filter.MessageFilter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
+import org.apache.qpidity.client.MessagePartListener;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 
 import javax.jms.*;
@@ -131,9 +131,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // this is a queue we expect that this queue exists
             getSession().getQpidSession()
                     .messageSubscribe(destination.getName(), getMessageActorID(),
-                                      org.apache.qpidity.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                      org.apache.qpidity.client.Session.CONFIRM_MODE_NOT_REQUIRED,
                                       // When the message selctor is set we do not acquire the messages
-                                      _messageSelector != null ? org.apache.qpidity.Session.ACQUIRE_MODE_NO_ACQUIRE : org.apache.qpidity.Session.ACQUIRE_MODE_PRE_ACQUIRE,
+                                      _messageSelector != null ? org.apache.qpidity.client.Session.ACQUIRE_MODE_NO_ACQUIRE : org.apache.qpidity.client.Session.ACQUIRE_MODE_PRE_ACQUIRE,
                                       messageAssembler, null, _noLocal ? Option.NO_LOCAL : Option.NO_OPTION);
             if (_messageSelector != null)
             {
@@ -167,9 +167,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // subscribe to this topic 
             getSession().getQpidSession()
                     .messageSubscribe(queueName, getMessageActorID(),
-                                      org.apache.qpidity.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                      org.apache.qpidity.client.Session.CONFIRM_MODE_NOT_REQUIRED,
                                       // We always acquire the messages
-                                      org.apache.qpidity.Session.ACQUIRE_MODE_PRE_ACQUIRE, messageAssembler, null,
+                                      org.apache.qpidity.client.Session.ACQUIRE_MODE_PRE_ACQUIRE, messageAssembler, null,
                                       _noLocal ? Option.NO_LOCAL : Option.NO_OPTION,
                                       // Request exclusive subscription access, meaning only this subscription
                                       // can access the queue.
@@ -178,7 +178,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         }
         // set the flow mode
         getSession().getQpidSession()
-                .messageFlowMode(getMessageActorID(), org.apache.qpidity.Session.MESSAGE_FLOW_MODE_CREDIT);
+                .messageFlowMode(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_MODE_CREDIT);
     }
 
     //----- Message consumer API
@@ -254,7 +254,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         }
         _messageAsyncrhonouslyReceived = 0;
         getSession().getQpidSession()
-                .messageFlow(getMessageActorID(), org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,
                              MAX_MESSAGE_TRANSFERRED);
     }
 
@@ -353,8 +353,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             {
                 // if this consumer is stopped then this will be call when starting
                 getSession().getQpidSession()
-                        .messageFlow(getMessageActorID(), org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
-                received = getSession().getQpidSession().messageFlush(getMessageActorID());
+                        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                received = 0; //getSession().getQpidSession().messageFlush(getMessageActorID());
             }
             if ( received == 0 && timeout < 0)
             {
@@ -424,7 +424,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 // there is a synch call waiting for a message to be delivered
                 // so tell the broker to deliver a message
                 getSession().getQpidSession()
-                        .messageFlow(getMessageActorID(), org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
                 getSession().getQpidSession().messageFlush(getMessageActorID());
             }
         }
@@ -488,8 +488,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                         {
                             getSession().getQpidSession()
                                     .messageFlow(getMessageActorID(),
-                                                 org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
-                            int received = getSession().getQpidSession().messageFlush(getMessageActorID());
+                                                 org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+                            int received = 0; //getSession().getQpidSession().messageFlush(getMessageActorID());
                             if ( received == 0  && _isNoWaitIsReceiving)
                             {
                                 // Right a message nowait is waiting for a message

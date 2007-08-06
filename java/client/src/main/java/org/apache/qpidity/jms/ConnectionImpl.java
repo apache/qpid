@@ -86,7 +86,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     /**
      * The QpidConeection instance that is mapped with thie JMS connection
      */
-    org.apache.qpidity.Connection _qpidConnection;
+    org.apache.qpidity.client.Connection _qpidConnection;
 
     /**
      * This is the exception listener for this qpid connection.
@@ -370,7 +370,15 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     public synchronized QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
-        QueueSessionImpl queueSession = new QueueSessionImpl(this, transacted, acknowledgeMode);
+        QueueSessionImpl queueSession = null;
+        try
+        {
+            queueSession = new QueueSessionImpl(this, transacted, acknowledgeMode);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
         // add this session to the list of handled sessions.
         _sessions.add(queueSession);
         return queueSession;
@@ -403,11 +411,20 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *                        <code>Session.DUPS_OK_ACKNOWLEDGE</code>.
      * @return a newly created topic session
      * @throws JMSException If creating the session fails due to some internal error.
+     * @throws QpidException 
      */
     public synchronized TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
-        TopicSessionImpl session = new TopicSessionImpl(this, transacted, acknowledgeMode);
+        TopicSessionImpl session = null;
+        try
+        {
+            session = new TopicSessionImpl(this, transacted, acknowledgeMode);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
         // add the session with this Connection's sessions
         // important for when the Connection is closed.
         _sessions.add(session);
@@ -460,7 +477,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @return This JMS connection underlying Qpid Connection.
      */
-    protected org.apache.qpidity.Connection getQpidConnection()
+    protected org.apache.qpidity.client.Connection getQpidConnection()
     {
         return _qpidConnection;
     }

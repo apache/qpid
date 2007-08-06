@@ -17,9 +17,9 @@
  */
 package org.apache.qpidity.jms;
 
+import org.apache.qpidity.client.MessagePartListener;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 import org.apache.qpidity.filter.MessageFilter;
-import org.apache.qpidity.MessagePartListener;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.impl.MessagePartListenerAdapter;
 
@@ -94,9 +94,9 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
         // this is a queue we expect that this queue exists
         getSession().getQpidSession()
                 .messageSubscribe(queue.getQueueName(), getMessageActorID(),
-                                  org.apache.qpidity.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                  org.apache.qpidity.client.Session.CONFIRM_MODE_NOT_REQUIRED,
                                   // We do not acquire those messages
-                                  org.apache.qpidity.Session.ACQUIRE_MODE_NO_ACQUIRE, messageAssembler, null);
+                                  org.apache.qpidity.client.Session.ACQUIRE_MODE_NO_ACQUIRE, messageAssembler, null);
 
     }
 
@@ -171,9 +171,9 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
         try
         {
             getSession().getQpidSession()
-                    .messageFlow(getMessageActorID(), org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                    .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,
                                  _maxbatchlength);
-            _batchLength = getSession().getQpidSession().messageFlush(getMessageActorID());
+            _batchLength = 0; //getSession().getQpidSession().messageFlush(getMessageActorID());
         }
         catch (QpidException e)
         {

@@ -16,22 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity;
+package org.apache.qpidity.client;
 
-import org.apache.qpidity.QpidException;
+import org.apache.qpidity.api.Message;
 
 /**
- * If the communication layer detects a serious problem with a <CODE>connection</CODE>, it
- * informs the connection's ExceptionListener
+ *A message listener
  */
-public interface ExceptionListener
+public interface MessageListener
 {
     /**
-     * If the communication layer detects a serious problem with a connection, it
-     * informs the connection's ExceptionListener
-     *
-     * @param exception The exception comming from the communication layer.
-     * @see Connection
+     * Process an incoming message.
+     * 
+     * @param message The incoming message.
      */
-    public void onException(QpidException exception);
+    public void onMessage(Message message);
 }
