@@ -32,6 +32,7 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -56,6 +57,32 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DestWildExchange extends AbstractExchange
 {
+
+    public static final ExchangeType<DestWildExchange> TYPE = new ExchangeType<DestWildExchange>()
+    {
+
+        public AMQShortString getName()
+        {
+            return ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
+        }
+
+        public Class<DestWildExchange> getExchangeClass()
+        {
+            return DestWildExchange.class;
+        }
+
+        public DestWildExchange newInstance(VirtualHost host,
+                                            AMQShortString name,
+                                            boolean durable,
+                                            boolean autoDelete) throws AMQException
+        {
+            DestWildExchange exch = new DestWildExchange();
+            exch.initialise(host,name,durable,autoDelete);
+            return exch;
+        }
+    };
+
+
     private static final Logger _logger = Logger.getLogger(DestWildExchange.class);
 
     private ConcurrentHashMap<AMQShortString, List<AMQQueue>> _routingKey2queues =

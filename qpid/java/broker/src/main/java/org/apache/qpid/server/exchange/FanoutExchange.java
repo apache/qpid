@@ -31,6 +31,7 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -49,7 +50,35 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 public class FanoutExchange extends AbstractExchange
 {
+
+
     private static final Logger _logger = Logger.getLogger(FanoutExchange.class);
+
+
+    public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
+        {
+
+            public AMQShortString getName()
+            {
+                return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
+            }
+
+            public Class<FanoutExchange> getExchangeClass()
+            {
+                return FanoutExchange.class;
+            }
+
+            public FanoutExchange newInstance(VirtualHost host,
+                                                AMQShortString name,
+                                                boolean durable,
+                                                boolean autoDelete) throws AMQException
+            {
+                FanoutExchange exch = new FanoutExchange();
+                exch.initialise(host,name,durable,autoDelete);
+                return exch;
+            }
+        };
+
 
     /**
      * Maps from queue name to queue instances

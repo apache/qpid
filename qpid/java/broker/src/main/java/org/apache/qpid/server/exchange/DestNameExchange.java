@@ -48,6 +48,7 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class DestNameExchange extends AbstractExchange
 {
@@ -57,6 +58,30 @@ public class DestNameExchange extends AbstractExchange
      * Maps from queue name to queue instances
      */
     private final Index _index = new Index();
+
+    public static final ExchangeType<DestNameExchange> TYPE = new ExchangeType<DestNameExchange>()
+    {
+
+        public AMQShortString getName()
+        {
+            return ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+        }
+
+        public Class<DestNameExchange> getExchangeClass()
+        {
+            return DestNameExchange.class;
+        }
+
+        public DestNameExchange newInstance(VirtualHost host,
+                                            AMQShortString name,
+                                            boolean durable,
+                                            boolean autoDelete) throws AMQException
+        {
+            DestNameExchange exch = new DestNameExchange();
+            exch.initialise(host,name,durable,autoDelete);
+            return exch;
+        }
+    };
 
     /**
      * MBean class implementing the management interfaces.

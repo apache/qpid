@@ -49,7 +49,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     protected boolean _durable;
     protected String _exchangeType;
-    protected int _ticket;
+
 
     private VirtualHost _virtualHost;
 
@@ -114,11 +114,6 @@ public abstract class AbstractExchange implements Exchange, Managable
             return _exchangeType;
         }
 
-        public Integer getTicketNo()
-        {
-            return _ticket;
-        }
-
         public boolean isDurable()
         {
             return _durable;
@@ -155,13 +150,12 @@ public abstract class AbstractExchange implements Exchange, Managable
      */
     protected abstract ExchangeMBean createMBean() throws AMQException;
 
-    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException
+    public void initialise(VirtualHost host, AMQShortString name, boolean durable, boolean autoDelete) throws AMQException
     {
         _virtualHost = host;
         _name = name;
         _durable = durable;
         _autoDelete = autoDelete;
-        _ticket = ticket;
         _exchangeMbean = createMBean();
         _exchangeMbean.register();
     }
@@ -174,11 +168,6 @@ public abstract class AbstractExchange implements Exchange, Managable
     public boolean isAutoDelete()
     {
         return _autoDelete;
-    }
-
-    public int getTicket()
-    {
-        return _ticket;
     }
 
     public void close() throws AMQException

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 
