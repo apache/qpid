@@ -47,7 +47,7 @@ class ConnectionImpl : public framing::FrameHandler,
 
     void incoming(framing::AMQFrame& frame);    
     void closed();
-    void closed(uint16_t, const std::string&);
+    void closedByPeer(uint16_t, const std::string&);
     void idleOut();
     void idleIn();
     void shutdown();

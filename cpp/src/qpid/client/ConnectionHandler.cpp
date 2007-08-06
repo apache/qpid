@@ -185,10 +185,10 @@ void ConnectionHandler::handle(AMQMethodBody::shared_ptr method)
         break;
     case CLOSING:
         if (method->isA<ConnectionCloseOkBody>()) {
-            setState(CLOSED);
             if (onClose) {
                 onClose();
             }
+            setState(CLOSED);
         } else {
             QPID_LOG(warning, "Received frame on channel zero while closing connection; frame ignored.");        
         }
