@@ -34,6 +34,7 @@
 #include "qpid/sys/Time.h"
 #include <cstdlib>
 #include <iostream>
+#include <iomanip>
 #include <time.h>
 
 using namespace qpid::client;
@@ -44,29 +45,46 @@ using std::string;
 bool done = 0;
 
 
-class Listener : public MessageListener{
+struct timespec operator-(const struct timespec& lhs, const struct timespec& rhs) {
+	timespec r;
+	r.tv_nsec = lhs.tv_nsec - rhs.tv_nsec;
+	r.tv_sec = lhs.tv_sec - rhs.tv_sec;
+	if (r.tv_nsec < 0) {
+		r.tv_nsec += 1000000000;
+		r.tv_sec -= 1;
+	}
+	return r;
+}
 
+std::ostream& operator<<(std::ostream& o, const struct timespec& ts) {
+	o << ts.tv_sec << "." << std::setw(9) << std::setfill('0') << std::right << ts.tv_nsec;
+	return o;
+}
+
+double toDouble(const struct timespec& ts) {
+	return double(ts.tv_nsec)/1000000000 + ts.tv_sec;
+}
+
+class Listener : public MessageListener{
 
 void set_time() {
     timespec ts;
     if (::clock_gettime(CLOCK_REALTIME, &ts))
 	std::cout << "Error" << std::endl;
-    _ts_sec = ts.tv_sec;
-    _ts_nsec = ts.tv_nsec;
+    startTime = ts;
   }
 
 void print_time() {
     timespec ts;
     if (::clock_gettime(CLOCK_REALTIME, &ts))
 	std::cout << "Error" << std::endl;
-    std::cout << "Total Time:" << ts.tv_sec-_ts_sec <<"." <<ts.tv_nsec - _ts_nsec << std::endl;
-    float rate = messageCount*2/(ts.tv_sec-_ts_sec);
+    std::cout << "Total Time:" << ts-startTime << std::endl;
+    double rate = messageCount*2/toDouble(ts-startTime);
     std::cout << "returned Messages:" << messageCount  << std::endl;
     std::cout << "round trip Rate:" << rate  << std::endl;
   }
 
-  time_t _ts_sec;	  ///< Timestamp of journal initilailization
-  u_int32_t _ts_nsec;     ///< Timestamp of journal initilailization
+  struct timespec startTime;
   int messageCount;
 
  public:
@@ -131,27 +149,22 @@ int main() {
 
 
 
-  time_t _ts_sec;	  ///< Timestamp of journal initilailization
-  u_int32_t _ts_nsec;     ///< Timestamp of journal initilailization
-    timespec ts;
-    if (::clock_gettime(CLOCK_REALTIME, &ts))
-	std::cout << "Error" << std::endl;
-    _ts_sec = ts.tv_sec;
-    _ts_nsec = ts.tv_nsec;
+	struct timespec startTime;
+	if (::clock_gettime(CLOCK_REALTIME, &startTime))
+		std::cout << "Error" << std::endl;
 
-
-	
 	for (int i=0; i<count; i++) {
-	    msg.setData("Message 0123456789 ");
-	    channel.publish(msg, Exchange::STANDARD_TOPIC_EXCHANGE, queueName);
+		msg.setData("Message 0123456789 ");
+		channel.publish(msg, Exchange::STANDARD_TOPIC_EXCHANGE, queueName);
 	}
 
-    if (::clock_gettime(CLOCK_REALTIME, &ts))
-	std::cout << "Error" << std::endl;
-    std::cout << "publish Time:" << ts.tv_sec-_ts_sec <<"." <<ts.tv_nsec - _ts_nsec << std::endl;
-    float rate = count/(ts.tv_sec-_ts_sec);
-    std::cout << "publish Messages:" << count  << std::endl;
-    std::cout << "publish Rate:" << rate  << std::endl;
+	struct timespec endTime;
+	if (::clock_gettime(CLOCK_REALTIME, &endTime))
+		std::cout << "Error" << std::endl;
+	std::cout << "publish Time:" << endTime-startTime << std::endl;
+	double rate = count/toDouble(endTime-startTime);
+	std::cout << "publish Messages:" << count  << std::endl;
+	std::cout << "publish Rate:" << rate  << std::endl;
 
 
 	msg.setData(queueName);  // last message to queue.
