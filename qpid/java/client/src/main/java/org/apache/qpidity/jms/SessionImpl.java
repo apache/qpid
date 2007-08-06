@@ -129,8 +129,7 @@ public class SessionImpl implements Session
      * @param acknowledgeMode The session's acknowledgement mode. This value is ignored and set to
      *                        {@link Session#SESSION_TRANSACTED} if the <code>transacted</code> parameter is true.
      * @param isXA            Indicates whether this session is an XA session.
-     * @throws JMSSecurityException If the user could not be authenticated.
-     * @throws QpidException        In case of internal error.
+     * @throws QpidException In case of internal error.
      */
     protected SessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode, boolean isXA)
             throws QpidException
@@ -717,7 +716,15 @@ public class SessionImpl implements Session
     {
         checkNotClosed();
         checkDestination(queue);
-        QueueBrowserImpl browser = new QueueBrowserImpl(this, queue, messageSelector);
+        QueueBrowserImpl browser;
+        try
+        {
+            browser = new QueueBrowserImpl(this, queue, messageSelector);
+        }
+        catch (Exception e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
         // register this actor with the session
         _messageActors.put(browser.getMessageActorID(), browser);
         return browser;

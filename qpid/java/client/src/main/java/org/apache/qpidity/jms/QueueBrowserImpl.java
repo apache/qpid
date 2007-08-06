@@ -17,10 +17,18 @@
  */
 package org.apache.qpidity.jms;
 
+import org.apache.qpidity.filter.JMSSelectorFilter;
+import org.apache.qpidity.filter.MessageFilter;
+import org.apache.qpidity.MessagePartListener;
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.impl.MessagePartListenerAdapter;
+
 import javax.jms.QueueBrowser;
 import javax.jms.JMSException;
 import javax.jms.Queue;
+import javax.jms.Message;
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 
 /**
  * Implementation of the JMS QueueBrowser interface
@@ -32,6 +40,36 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
      */
     private String _messageSelector = null;
 
+    /**
+     * The message selector filter associated with this browser
+     */
+    private MessageFilter _filter = null;
+
+    /**
+     * The batch of messages to browse.
+     */
+    private Message[] _messages;
+
+    /**
+     * The number of messages read from current batch.
+     */
+    private int _browsed = 0;
+
+    /**
+     * The number of messages received from current batch.
+     */
+    private int _received = 0;
+
+    /**
+     * Indicates whether the last message has been received.
+     */
+    private int _batchLength;
+
+    /**
+     * The batch max size
+     */
+    private final int _maxbatchlength = 10;
+
     //--- constructor
 
     /**
@@ -40,13 +78,26 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
      * @param session         The session of this browser.
      * @param queue           The queue name for this browser
      * @param messageSelector only messages with properties matching the message selector expression are delivered.
-     * @throws JMSException In case of internal problem when creating this browser.
+     * @throws Exception In case of internal problem when creating this browser.
      */
-    protected QueueBrowserImpl(SessionImpl session, Queue queue, String messageSelector) throws JMSException
+    protected QueueBrowserImpl(SessionImpl session, Queue queue, String messageSelector) throws Exception
     {
         super(session, (DestinationImpl) queue);
-        _messageSelector = messageSelector;
-        //-- TODO: Create the QPid browser
+        // this is an array representing a batch of messages for this browser.
+        _messages = new Message[_maxbatchlength];
+        if (messageSelector != null)
+        {
+            _messageSelector = messageSelector;
+            _filter = new JMSSelectorFilter(messageSelector);
+        }
+        MessagePartListener messageAssembler = new MessagePartListenerAdapter(new QpidBrowserListener(this));
+        // this is a queue we expect that this queue exists
+        getSession().getQpidSession()
+                .messageSubscribe(queue.getQueueName(), getMessageActorID(),
+                                  org.apache.qpidity.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                  // We do not acquire those messages
+                                  org.apache.qpidity.Session.ACQUIRE_MODE_NO_ACQUIRE, messageAssembler, null);
+
     }
 
     //--- javax.jms.QueueBrowser API
@@ -58,9 +109,10 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
      */
     public Enumeration getEnumeration() throws JMSException
     {
-        // TODO
-        return null;
+        requestMessages();
+        return new MessageEnumeration();
     }
+
 
     /**
      * Get the queue associated with this queue browser.
@@ -70,6 +122,7 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
      */
     public Queue getQueue() throws JMSException
     {
+        checkNotClosed();
         return (Queue) _destination;
     }
 
@@ -81,6 +134,130 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
      */
     public String getMessageSelector() throws JMSException
     {
+        checkNotClosed();
         return _messageSelector;
     }
+
+    //-- overwritten methods.  
+    /**
+     * Closes the browser and deregister it from its session.
+     *
+     * @throws JMSException if the MessaeActor cannot be closed due to some internal error.
+     */
+    public void close() throws JMSException
+    {
+        synchronized (_messages)
+        {
+            _received = 0;
+            _browsed = 0;
+            _batchLength = 0;
+            _messages.notify();
+        }
+        super.close();
+    }
+
+    //-- nonpublic methods
+    /**
+     * Request _maxbatchlength messages
+     *
+     * @throws JMSException If requesting more messages fails due to some internal error.
+     */
+    private void requestMessages() throws JMSException
+    {
+        _browsed = 0;
+        _received = 0;
+        // request messages
+        int received = 0;
+        try
+        {
+            getSession().getQpidSession()
+                    .messageFlow(getMessageActorID(), org.apache.qpidity.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                                 _maxbatchlength);
+            _batchLength = getSession().getQpidSession().messageFlush(getMessageActorID());
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+    }
+
+    /**
+     * This method is invoked by the listener when a message is dispatched to this browser.
+     *
+     * @param m A received message
+     */
+    protected void receiveMessage(Message m)
+    {
+        synchronized (_messages)
+        {
+            _messages[_received] = m;
+            _received++;
+            _messages.notify();
+        }
+    }
+
+    //-- inner class
+    /**
+     * This is an implementation of the Enumeration interface.
+     */
+    private class MessageEnumeration implements Enumeration
+    {
+        /*
+        * Whether this enumeration has any more elements.
+        *
+        * @return True if there any more elements.
+        */
+        public boolean hasMoreElements()
+        {
+            boolean result = false;
+            // Try to work out whether there are any more messages available.
+            try
+            {
+                if (_browsed >= _maxbatchlength)
+                {
+                    requestMessages();
+                }
+                synchronized (_messages)
+                {
+                    while (_received == _browsed && _batchLength > _browsed)
+                    {
+                        // we expect more messages
+                        _messages.wait();
+                    }
+                    if (_browsed < _received && _batchLength != _browsed)
+                    {
+                        result = true;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // If no batch could be returned, the result should be false, therefore do nothing
+            }
+            return result;
+        }
+
+        /**
+         * Get the next message element
+         *
+         * @return The next element.
+         */
+        public Object nextElement()
+        {
+            if (hasMoreElements())
+            {
+                synchronized (_messages)
+                {
+                    Message message = _messages[_browsed];
+                    _browsed = _browsed + 1;
+                    return message;
+                }
+            }
+            else
+            {
+                throw new NoSuchElementException();
+            }
+        }
+    }
+
 }
