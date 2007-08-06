@@ -30,6 +30,7 @@ ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c) : connector(c)
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
     handler.out = boost::bind(&Connector::send, connector, _1);
     handler.onClose = boost::bind(&ConnectionImpl::closed, this);
+    handler.onError = boost::bind(&ConnectionImpl::closedByPeer, this, _1, _2);
     connector->setInputHandler(&handler);
     connector->setTimeoutHandler(this);
     connector->setShutdownHandler(this);
@@ -88,10 +89,10 @@ void ConnectionImpl::close()
 
 void ConnectionImpl::closed()
 {
-    closed(200, "OK");
+    closedByPeer(200, "OK");
 }
 
-void ConnectionImpl::closed(uint16_t code, const std::string& text)
+void ConnectionImpl::closedByPeer(uint16_t code, const std::string& text)
 {
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); i++) {
         i->second->closed(code, text);
@@ -114,7 +115,7 @@ void ConnectionImpl::idleOut()
 void ConnectionImpl::shutdown() {
     //this indicates that the socket to the server has closed
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); i++) {
-        i->second->closed(0, "Unexpected scoket closure.");
+        i->second->closed(0, "Unexpected socket closure.");
     }
     sessions.clear();
 }
