@@ -43,7 +43,8 @@ public:
     }
     template <class T> bool isA() 
     {
-        return future->getResponse()->isA<T>();
+        framing::AMQMethodBody::shared_ptr response(future->getResponse());
+        return response && response->isA<T>();
     }
     
     void sync()
