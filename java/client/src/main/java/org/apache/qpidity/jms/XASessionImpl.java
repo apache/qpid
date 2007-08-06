@@ -18,7 +18,7 @@
 package org.apache.qpidity.jms;
 
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.DtxSession;
+import org.apache.qpidity.client.DtxSession;
 
 import javax.jms.XASession;
 import javax.jms.Session;
@@ -111,7 +111,7 @@ public class XASessionImpl extends SessionImpl implements XASession
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpidity.DtxSession getQpidSession()
+    protected org.apache.qpidity.client.DtxSession getQpidSession()
     {
         return _qpidDtxSession;
     }

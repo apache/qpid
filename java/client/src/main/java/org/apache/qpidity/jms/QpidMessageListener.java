@@ -17,9 +17,9 @@
  */
 package org.apache.qpidity.jms;
 
-import org.apache.qpidity.MessageListener;
 import org.apache.qpidity.jms.message.QpidMessage;
 import org.apache.qpidity.api.Message;
+import org.apache.qpidity.client.MessageListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

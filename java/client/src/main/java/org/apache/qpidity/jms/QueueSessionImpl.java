@@ -20,6 +20,8 @@ package org.apache.qpidity.jms;
 import javax.jms.*;
 import javax.jms.IllegalStateException;
 
+import org.apache.qpidity.QpidException;
+
 /**
  * Implementation of javax.jms.QueueSession
  */
@@ -37,9 +39,9 @@ public class QueueSessionImpl extends SessionImpl implements QueueSession
      * @throws javax.jms.JMSSecurityException If the user could not be authenticated.
      * @throws javax.jms.JMSException         In case of internal error.
      */
-    protected QueueSessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode) throws JMSException
+    protected QueueSessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode) throws QpidException, JMSException
     {
-        super(connection, transacted, acknowledgeMode);
+        super(connection, transacted, acknowledgeMode,false);
     }
 
     //-- Overwritten methods

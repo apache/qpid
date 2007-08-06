@@ -1,9 +1,9 @@
 package org.apache.qpidity.impl;
 
-import org.apache.qpidity.MessagePartListener;
-import org.apache.qpidity.MessageListener;
 import org.apache.qpidity.Header;
 import org.apache.qpidity.api.Message;
+import org.apache.qpidity.client.MessageListener;
+import org.apache.qpidity.client.MessagePartListener;
 
 public class MessagePartListenerAdapter implements MessagePartListener
 {

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity;
+package org.apache.qpidity.client;
 
 
 import java.net.URL;

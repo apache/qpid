@@ -2,7 +2,7 @@ package org.apache.qpidity.impl;
 
 import org.apache.qpidity.CommonSessionDelegate;
 import org.apache.qpidity.ExchangeQueryOk;
-import org.apache.qpidity.Session;
+import org.apache.qpidity.client.Session;
 
 
 public class ClientSessionDelegate extends CommonSessionDelegate
