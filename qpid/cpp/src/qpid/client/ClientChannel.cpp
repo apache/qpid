@@ -220,7 +220,9 @@ void Channel::cancel(const std::string& tag, bool synch) {
 bool Channel::get(Message& msg, const Queue& queue, AckMode ackMode) {
 
     AMQMethodBody::shared_ptr request(new BasicGetBody(version, 0, queue.getName(), ackMode));
+    
     Response response = session->send(request, true);
+    session->flush();
     if (response.isA<BasicGetEmptyBody>()) {
         return false;
     } else {
