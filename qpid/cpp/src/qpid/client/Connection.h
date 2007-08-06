@@ -59,9 +59,6 @@ class Connection
     ConnectionImpl::shared_ptr impl;
     bool isOpen;
     bool debug;
-
-    // TODO aconway 2007-01-26: too many friendships, untagle these classes.
-    friend class Channel;
     
   public:
     /**
