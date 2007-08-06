@@ -49,6 +49,7 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /**
  * An exchange that binds queues based on a set of required headers and header values
@@ -80,6 +81,33 @@ import org.apache.qpid.server.queue.AMQQueue;
 public class HeadersExchange extends AbstractExchange
 {
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
+
+
+
+    public static final ExchangeType<HeadersExchange> TYPE = new ExchangeType<HeadersExchange>()
+        {
+
+            public AMQShortString getName()
+            {
+                return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
+            }
+
+            public Class<HeadersExchange> getExchangeClass()
+            {
+                return HeadersExchange.class;
+            }
+
+            public HeadersExchange newInstance(VirtualHost host,
+                                                AMQShortString name,
+                                                boolean durable,
+                                                boolean autoDelete) throws AMQException
+            {
+                HeadersExchange exch = new HeadersExchange();
+                exch.initialise(host,name,durable,autoDelete);
+                return exch;
+            }
+        };
+
 
     private final List<Registration> _bindings = new CopyOnWriteArrayList<Registration>();
 
