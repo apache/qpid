@@ -60,7 +60,7 @@ void print_time() {
     if (::clock_gettime(CLOCK_REALTIME, &ts))
 	std::cout << "Error" << std::endl;
     std::cout << "Total Time:" << ts.tv_sec-_ts_sec <<"." <<ts.tv_nsec - _ts_nsec << std::endl;
-    float rate = messageCount/(ts.tv_sec-_ts_sec);
+    float rate = messageCount*2/(ts.tv_sec-_ts_sec);
     std::cout << "returned Messages:" << messageCount  << std::endl;
     std::cout << "round trip Rate:" << rate  << std::endl;
   }
@@ -123,7 +123,7 @@ int main() {
 
 	std::cout << "Setup return queue:"<< queueNameC << std::endl;
 	
-	int count = 100000;
+	int count = 500000;
         Listener listener(count);
         channel.consume(completion, queueNameC, &listener);
 	std::cout << "Setup consumer:"<< queueNameC << std::endl;
