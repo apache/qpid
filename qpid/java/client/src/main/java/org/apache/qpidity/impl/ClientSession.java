@@ -4,13 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.MessagePartListener;
+import org.apache.qpidity.client.MessagePartListener;
 import org.apache.qpidity.*;
 
 /**
  * Implements a Qpid Sesion. 
  */
-public class ClientSession implements org.apache.qpidity.Session
+public class ClientSession implements org.apache.qpidity.client.Session
 {
 
 	Map<String,MessagePartListener> messagListeners = new HashMap<String,MessagePartListener>();
