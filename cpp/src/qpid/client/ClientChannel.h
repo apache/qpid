@@ -76,9 +76,6 @@ class Channel : private sys::Runnable
     const bool transactional;
     framing::ProtocolVersion version;
 
-    uint16_t errorCode;
-    std::string errorText;
-
     sys::Mutex stopLock;
     bool running;
 
@@ -120,13 +117,11 @@ class Channel : private sys::Runnable
 
     void open(ConnectionImpl::shared_ptr, SessionCore::shared_ptr);
     void closeInternal();
-    void peerClose(uint16_t, const std::string&);
+    void join();
 
     // FIXME aconway 2007-02-23: Get rid of friendships.
     friend class Connection;
-    friend class BasicMessageChannel; // for sendAndReceive.
-    friend class MessageMessageChannel; // for sendAndReceive.
-        
+
   public:
     /**
      * Creates a channel object.
