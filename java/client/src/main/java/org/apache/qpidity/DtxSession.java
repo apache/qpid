@@ -18,7 +18,7 @@
  */
 package org.apache.qpidity;
 
-import org.apache.qpidity.QpidException;
+import javax.transaction.xa.Xid;
 
 /**
  * This session�s resources are control under the scope of a distributed transaction.
@@ -27,11 +27,112 @@ public interface DtxSession extends Session
 {
 
     /**
-     * Get the XA resource associated with this session.
+     * This method is called when messages should be produced and consumed on behalf a transaction
+     * branch identified by xid.
+     * possible options are:
+     * <ul>
+     * <li> {@link Option#JOIN}:  Indicate that the start applies to joining a transaction previously seen.
+     * <li> {@link Option#RESUME}: Indicate that the start applies to resuming a suspended transaction branch specified.
+     * </ul>
      *
-     * @return this session XA resource.
-     * @throws QpidException If the session fails to retrieve its associated XA resource
-     *                       due to some error.
+     * @param xid     Specifies the xid of the transaction branch to be started.
+     * @param options Possible options are: {@link Option#JOIN} and {@link Option#RESUME}.
+     * @throws QpidException If the session fails to start due to some error
      */
-    public javax.transaction.xa.XAResource getDTXResource() throws QpidException;
+    public void dtxDemarcationStart(Xid xid, Option... options) throws QpidException;
+
+    /**
+     * This method is called when the work done on behalf a transaction branch finishes or needs to
+     * be suspended.
+     * possible options are:
+     * <ul>
+     * <li> {@link Option#FAIL}: indicates that this portion of work has failed;
+     * otherwise this portion of work has
+     * completed successfully.
+     * <li> {@link Option#SUSPEND}: Indicates that the transaction branch is
+     * temporarily suspended in an incomplete state.
+     * </ul>
+     *
+     * @param xid     Specifies the xid of the transaction branch to be ended.
+     * @param options Available options are: {@link Option#FAIL} and {@link Option#SUSPEND}.
+     * @throws QpidException If the session fails to end due to some error
+     */
+    public void dtxDemarcationEnd(Xid xid, Option... options) throws QpidException;
+
+    /**
+     * Commit the work done on behalf a transaction branch. This method commits the work associated
+     * with xid. Any produced messages are made available and any consumed messages are discarded.
+     * possible option is:
+     * <ul>
+     * <li> {@link Option#ONE_PHASE}: When set then one-phase commit optimization is used.
+     * </ul>
+     *
+     * @param xid     Specifies the xid of the transaction branch to be committed.
+     * @param options Available option is: {@link Option#ONE_PHASE}
+     * @throws QpidException If the session fails to commit due to some error
+     */
+    public void dtxCoordinationCommit(Xid xid, Option... options) throws QpidException;
+
+    /**
+     * This method is called to forget about a heuristically completed transaction branch.
+     *
+     * @param xid Specifies the xid of the transaction branch to be forgotten.
+     * @throws QpidException If the session fails to forget due to some error
+     */
+    public void dtxCoordinationForget(Xid xid) throws QpidException;
+
+    /**
+     * This method obtains the current transaction timeout value in seconds. If set-timeout was not
+     * used prior to invoking this method, the return value is the default timeout; otherwise, the
+     * value used in the previous set-timeout call is returned.
+     *
+     * @param xid Specifies the xid of the transaction branch for getting the timeout.
+     * @return The current transaction timeout value in seconds.
+     * @throws QpidException If the session fails to get the timeout due to some error
+     */
+    public long dtxCoordinationGetTimeout(Xid xid) throws QpidException;
+
+    /**
+     * This method prepares for commitment any message produced or consumed on behalf of xid.
+     *
+     * @param xid Specifies the xid of the transaction branch that can be prepared.
+     * @return The status of the prepare operation: can be one of those:
+     *         xa-ok: Normal execution.
+     *         <p/>
+     *         xa-rdonly: The transaction branch was read-only and has been committed.
+     *         <p/>
+     *         xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+     *         reason.
+     *         <p/>
+     *         xa-rbtimeout: The work represented by this transaction branch took too long.
+     * @throws QpidException If the session fails to prepare due to some error
+     */
+    public short dtxCoordinationPrepare(Xid xid) throws QpidException;
+
+    /**
+     * This method is called to obtain a list of transaction branches that are in a prepared or
+     * heuristically completed state.
+     *
+     * @return a array of xids to be recovered.
+     * @throws QpidException If the session fails to recover due to some error
+     */
+    public Xid[] dtxCoordinationRecover() throws QpidException;
+
+    /**
+     * This method rolls back the work associated with xid. Any produced messages are discarded and
+     * any consumed messages are re-enqueued.
+     *
+     * @param xid Specifies the xid of the transaction branch that can be rolled back.
+     * @throws QpidException If the session fails to rollback due to some error
+     */
+    public void dtxCoordinationRollback(Xid xid) throws QpidException;
+
+    /**
+     * Sets the specified transaction branch timeout value in seconds.
+     *
+     * @param xid     Specifies the xid of the transaction branch for setting the timeout.
+     * @param timeout The transaction timeout value in seconds.
+     * @throws QpidException If the session fails to set the timeout due to some error
+     */
+    public void dtxCoordinationSetTimeout(Xid xid, long timeout) throws QpidException;
 }
