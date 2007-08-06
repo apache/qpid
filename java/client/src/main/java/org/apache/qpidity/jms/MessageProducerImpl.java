@@ -305,10 +305,10 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
             throw new IllegalArgumentException("Time to live must be non-negative - supplied value was " + timeToLive);
         }
         // check that the message is not a foreign one
-
+        // todo
         // set the properties
 
-        //
+        // todo
 
         // dispatch it
         // todo getSession().getQpidSession().messageTransfer(((DestinationImpl) destination).getExchangeName(), message, Option);

@@ -20,6 +20,7 @@ package org.apache.qpidity.jms;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.JMSException;
+import javax.transaction.xa.XAException;
 
 /**
  * Helper class for handling exceptions
@@ -46,5 +47,13 @@ public class ExceptionHelper
             jmsException = (JMSException) exception;
         }
         return jmsException;
+    }
+
+    static public XAException convertQpidExceptionToXAException(QpidException exception)
+    {
+        String qpidErrorCode = exception.getErrorCode();
+        // todo map this error to an XA code
+        int xaCode = XAException.XAER_PROTO;
+        return new XAException(xaCode);
     }
 }
