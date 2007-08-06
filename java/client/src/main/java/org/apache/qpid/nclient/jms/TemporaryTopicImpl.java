@@ -17,6 +17,8 @@
  */
 package org.apache.qpid.nclient.jms;
 
+import org.apache.qpidity.QpidException;
+
 import javax.jms.TemporaryTopic;
 import javax.jms.JMSException;
 
@@ -36,9 +38,9 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic, Tem
      * Create a new TemporaryTopicImpl with a given name.
      *
      * @param session The session used to create this TemporaryTopicImpl.
-     * @throws JMSException If creating the TemporaryTopicImpl fails due to some error.
+     * @throws QpidException If creating the TemporaryTopicImpl fails due to some error.
      */
-    public TemporaryTopicImpl(SessionImpl session) throws JMSException
+    protected TemporaryTopicImpl(SessionImpl session) throws QpidException
     {
         // temporary destinations do not have names.
         super(session, "NAME_NOT_SET");

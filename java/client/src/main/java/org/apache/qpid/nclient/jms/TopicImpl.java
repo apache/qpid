@@ -17,8 +17,11 @@
  */
 package org.apache.qpid.nclient.jms;
 
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.exchange.ExchangeDefaults;
+import org.apache.qpidity.url.BindingURL;
+
 import javax.jms.Topic;
-import javax.jms.JMSException;
 
 /**
  * Implementation of the javax.jms.Topic interface.
@@ -29,16 +32,30 @@ public class TopicImpl extends DestinationImpl implements Topic
     /**
      * Create a new TopicImpl with a given name.
      *
-     * @param name The name of this topic
+     * @param name    The name of this topic
      * @param session The session used to create this queue.
-     * @throws JMSException If the topic name is not valid
+     * @throws QpidException If the topic name is not valid
      */
-    public TopicImpl(SessionImpl session, String name) throws JMSException
+    public TopicImpl(SessionImpl session, String name) throws QpidException
     {
         super(session, name);
+        _exchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
+        _exchangeClass = ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
     }
 
-    //--- javax.jsm.Topic Interface 
+    /**
+     * Create a TopicImpl from a binding URL
+     *
+     * @param session The session used to create this Topic.
+     * @param binding The URL
+     * @throws QpidException If the URL is not valid
+     */
+    protected TopicImpl(SessionImpl session, BindingURL binding) throws QpidException
+    {
+        super(session, binding);
+    }
+
+    //--- javax.jsm.Topic Interface
     /**
      * Gets the name of this topic.
      *

@@ -569,7 +569,7 @@ public class SessionImpl implements Session
     {
         checkNotClosed();
         checkDestination(destination);
-        MessageConsumerImpl consumer = null;
+        MessageConsumerImpl consumer;
         try
         {
             consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null);
@@ -602,7 +602,16 @@ public class SessionImpl implements Session
     public Queue createQueue(String queueName) throws JMSException
     {
         checkNotClosed();
-        return new QueueImpl(this, queueName);
+        Queue result;
+        try
+        {
+            result = new QueueImpl(this, queueName);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+        return result;
     }
 
     /**
@@ -624,7 +633,16 @@ public class SessionImpl implements Session
     public Topic createTopic(String topicName) throws JMSException
     {
         checkNotClosed();
-        return new TopicImpl(this, topicName);
+        Topic result;
+        try
+        {
+            result = new TopicImpl(this, topicName);
+        }
+        catch (QpidException e)
+        {
+           throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+        return result;
     }
 
     /**
@@ -713,25 +731,43 @@ public class SessionImpl implements Session
     }
 
     /**
-     * Create a TemporaryQueue. Its lifetime will be tha of the Connection unless it is deleted earlier.
+     * Create a TemporaryQueue. Its lifetime will be the Connection unless it is deleted earlier.
      *
      * @return A temporary queue.
      * @throws JMSException If creating the temporary queue fails due to some internal error.
      */
     public TemporaryQueue createTemporaryQueue() throws JMSException
     {
-        return new TemporaryQueueImpl(this);
+        TemporaryQueue result;
+        try
+        {
+            result = new TemporaryQueueImpl(this);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+        return result;
     }
 
     /**
-     * Create a TemporaryTopic. Its lifetime will be tha of the Connection unless it is deleted earlier.
+     * Create a TemporaryTopic. Its lifetime will be the Connection unless it is deleted earlier.
      *
      * @return A temporary topic.
      * @throws JMSException If creating the temporary topic fails due to some internal error.
      */
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
-        return new TemporaryTopicImpl(this);
+        TemporaryTopic result;
+        try
+        {
+            result = new TemporaryTopicImpl(this);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+        return result;
     }
 
     /**
