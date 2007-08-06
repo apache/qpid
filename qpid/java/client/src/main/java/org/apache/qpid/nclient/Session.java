@@ -77,23 +77,24 @@ public interface Session
     //------------------------------------------------------
     /**
      * Transfer the given message to a specified exchange.
-     * <p> Following are the valid options for messageTransfer
-     * <ul>
-     * <li> CONFIRM
-     * <li> PRE_ACCQUIRE
-     * </ul>
-     * <p> In the absence of a particular option, the defaul value is:
-     * <ul>
-     * <li> CONFIRM = false
-     * <li> NO-ACCQUIRE
-     * </ul>
      *
-     * @param exchange The exchange the message is being sent.
-     * @param msg      The Message to be sent
-     * @param options  A list of valid options
+     * @param confirmMode <ul> </li>off (0): confirmation is not required, once a message has been transferred in pre-acquire
+     *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
+     *                    transferred
+     *                    <p/>
+     *                    <li> on  (1): an acquired message (whether acquisition was implicit as in pre-acquire mode or
+     *                    explicit as in no-acquire mode) is not considered transferred until the original
+     *                    transfer is complete (signaled via execution.complete)
+     *                    </ul>
+     * @param acquireMode <ul> <li> no-acquire  (0): the message must be explicitly acquired
+     *                    <p/>
+     *                    <li> pre-acquire (1): the message is acquired when the transfer starts
+     *                    </ul>
+     * @param exchange    The exchange the message is being sent.
+     * @param msg         The Message to be sent
      * @throws QpidException If the session fails to send the message due to some error
      */
-    public void messageTransfer(String exchange, Message msg, Option... options) throws QpidException;
+    public void messageTransfer(String exchange, Message msg, short confirmMode, short acquireMode) throws QpidException;
 
     /**
      * Declare the beginning of a message transfer operation. This operation must
@@ -103,31 +104,31 @@ public interface Session
      * <p> In the interval [messageTransfer endData] any attempt to call a method other than
      * {@link Session#addMessageHeaders}, {@link Session#endData} ore {@link Session#close}
      * will result in an exception being thrown.
-     * <p> Following are the valid options for messageTransfer
-     * <ul>
-     * <li> CONFIRM
-     * <li> PRE_ACCQUIRE
-     * </ul>
-     * <p> In the absence of a particular option, the defaul value is:
-     * <ul>
-     * <li> CONFIRM = false
-     * <li> NO-ACCQUIRE
-     * </ul>
      *
-     * @param exchange The exchange the message is being sent.
-     * @param options  Set of options.
+     * @param confirmMode <ul> </li>off (0): confirmation is not required, once a message has been transferred in pre-acquire
+     *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
+     *                    transferred
+     *                    <p/>
+     *                    <li> on  (1): an acquired message (whether acquisition was implicit as in pre-acquire mode or
+     *                    explicit as in no-acquire mode) is not considered transferred until the original
+     *                    transfer is complete (signaled via execution.complete)
+     *                    </ul>
+     * @param acquireMode <ul> <li> no-acquire  (0): the message must be explicitly acquired
+     *                    <p/>
+     *                    <li> pre-acquire (1): the message is acquired when the transfer starts
+     *                    </ul>
+     * @param exchange    The exchange the message is being sent.
      * @throws QpidException If the session fails to send the message due to some error.
      */
-    public void messageTransfer(String exchange, Option... options) throws QpidException;
+    public void messageTransfer(String exchange, short confirmMode, short acquireMode) throws QpidException;
 
     /**
      * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}
-     * or {@link org.apache.qpidity.ApplicationProperties} ) to the message being sent.
+     * or to the message being sent.
      *
      * @param headers Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
      * @throws QpidException If the session fails to execute the method due to some error
      * @see org.apache.qpidity.DeliveryProperties
-     * @see org.apache.qpidity.ApplicationProperties
      */
     public void addMessageHeaders(Header... headers) throws QpidException;
 
@@ -371,7 +372,12 @@ public interface Session
      * <p>In the absence of a particular option, the defaul value is false for each option
      *
      * @param queueName         The name of the delcared queue.
-     * @param alternateExchange Alternate excahnge.
+     * @param alternateExchange If a message is rejected by a queue, then it is sent to the alternate-exchange. A message
+     *                          may be rejected by a queue for the following reasons:
+     *                          <oL> <li> The queue is deleted when it is not empty;
+     *                          <<li> Immediate delivery of a message is requested, but there are no consumers connected to
+     *                          the queue. </ol>
+     * @param arguments         Used for backward compatibility
      * @param options           Set of Options.
      * @throws QpidException If the session fails to declare the queue due to some error.
      * @see Option
@@ -385,6 +391,7 @@ public interface Session
      * @param queueName    The queue to be bound.
      * @param exchangeName The exchange name.
      * @param routingKey   The routing key.
+     * @param arguments    Used for backward compatibility
      * @throws QpidException If the session fails to bind the queue due to some error.
      */
     public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
@@ -396,6 +403,7 @@ public interface Session
      * @param queueName    The queue to be unbound.
      * @param exchangeName The exchange name.
      * @param routingKey   The routing key.
+     * @param arguments    Used for backward compatibility
      * @throws QpidException If the session fails to unbind the queue due to some error.
      */
     public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
@@ -448,9 +456,12 @@ public interface Session
      * <p/>
      * <p>In the absence of a particular option, the defaul value is false for each option</p>     *
      *
-     * @param exchangeName  The exchange name.
-     * @param exchangeClass The fully qualified name of the exchange class.
-     * @param options       Set of options.
+     * @param exchangeName      The exchange name.
+     * @param exchangeClass     The fully qualified name of the exchange class.
+     * @param alternateExchange In the event that a message cannot be routed, this is the name of the exchange to which
+     *                          the message will be sent.
+     * @param options           Set of options.
+     * @param arguments         Used for backward compatibility
      * @throws QpidException If the session fails to declare the exchange due to some error.
      * @see Option
      */

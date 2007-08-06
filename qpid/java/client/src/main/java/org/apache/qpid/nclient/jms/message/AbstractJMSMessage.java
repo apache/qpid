@@ -33,17 +33,14 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageNotReadableException;
-import javax.jms.MessageNotWriteableException;
+import javax.jms.*;
 
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.UUID;
 
-public abstract class AbstractJMSMessage extends QpidMessage implements org.apache.qpid.jms.Message
+public abstract class AbstractJMSMessage extends QpidMessage implements Message
 {
     private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
 
