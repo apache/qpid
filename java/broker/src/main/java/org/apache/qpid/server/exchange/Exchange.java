@@ -32,7 +32,7 @@ public interface Exchange
     AMQShortString getName();
     AMQShortString getType();
 
-    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete) throws AMQException;
+    
 
     boolean isDurable();
 
@@ -40,8 +40,6 @@ public interface Exchange
      * @return true if the exchange will be deleted after all queues have been detached
      */
     boolean isAutoDelete();
-
-    int getTicket();
 
     void close() throws AMQException;
 

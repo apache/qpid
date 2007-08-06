@@ -138,7 +138,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
         _channelId = channelId;
         _session = session;
         _producerId = producerId;
-        if (destination != null)
+        if (destination != null  && !(destination instanceof AMQUndefinedDestination))
         {
             declareDestination(destination);
         }
@@ -150,7 +150,7 @@ public class BasicMessageProducer extends Closeable implements org.apache.qpid.j
 
     void resubscribe() throws AMQException
     {
-        if (_destination != null)
+        if (_destination != null && !(_destination instanceof AMQUndefinedDestination))
         {
             declareDestination(_destination);
         }

@@ -52,9 +52,6 @@ public interface ManagedExchange
     @MBeanAttribute(name="ExchangeType", description="Exchange Type")
     String getExchangeType() throws IOException;
 
-    @MBeanAttribute(name="TicketNo", description="Exchange Ticket No")
-    Integer getTicketNo() throws IOException;
-
     /**
      * Tells if the exchange is durable or not.
      * @return true if the exchange is durable.

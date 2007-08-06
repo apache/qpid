@@ -146,6 +146,7 @@ public class VirtualHost implements Accessable
 
         _queueRegistry = new DefaultQueueRegistry(this);
         _exchangeFactory = new DefaultExchangeFactory(this);
+        _exchangeFactory.initialise(hostConfig);
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
         if (store != null)
@@ -163,6 +164,7 @@ public class VirtualHost implements Accessable
         }
 
         _exchangeRegistry.initialise();
+
 
         _logger.warn("VirtualHost authentication Managers require spec change to be operational.");
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);

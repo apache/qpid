@@ -48,7 +48,7 @@ public class ExchangeMBeanTest  extends TestCase
     public void testDirectExchangeMBean() throws Exception
     {
         DestNameExchange exchange = new DestNameExchange();
-        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -62,7 +62,6 @@ public class ExchangeMBeanTest  extends TestCase
         // test general exchange properties
         assertEquals(mbean.getName(), "amq.direct");
         assertEquals(mbean.getExchangeType(), "direct");
-        assertTrue(mbean.getTicketNo() == 0);
         assertTrue(!mbean.isDurable());
         assertTrue(mbean.isAutoDelete());
     }
@@ -75,7 +74,7 @@ public class ExchangeMBeanTest  extends TestCase
     public void testTopicExchangeMBean() throws Exception
     {
         DestWildExchange exchange = new DestWildExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -89,7 +88,6 @@ public class ExchangeMBeanTest  extends TestCase
         // test general exchange properties
         assertEquals(mbean.getName(), "amq.topic");
         assertEquals(mbean.getExchangeType(), "topic");
-        assertTrue(mbean.getTicketNo() == 0);
         assertTrue(!mbean.isDurable());
         assertTrue(mbean.isAutoDelete());
     }
@@ -102,7 +100,7 @@ public class ExchangeMBeanTest  extends TestCase
     public void testHeadersExchangeMBean() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, true);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -116,7 +114,6 @@ public class ExchangeMBeanTest  extends TestCase
         // test general exchange properties
         assertEquals(mbean.getName(), "amq.match");
         assertEquals(mbean.getExchangeType(), "headers");
-        assertTrue(mbean.getTicketNo() == 0);
         assertTrue(!mbean.isDurable());
         assertTrue(mbean.isAutoDelete());
     }
