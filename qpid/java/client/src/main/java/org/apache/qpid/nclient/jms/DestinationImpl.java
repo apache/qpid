@@ -17,8 +17,11 @@
  */
 package org.apache.qpid.nclient.jms;
 
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Option;
+import org.apache.qpidity.url.BindingURL;
+
 import javax.jms.Destination;
-import javax.jms.JMSException;
 
 /**
  * Implementation of the JMS Destination interface
@@ -35,24 +38,60 @@ public class DestinationImpl implements Destination
      */
     protected SessionImpl _session;
 
+    /**
+     * The excahnge name
+     */
+    protected String _exchangeName;
+
+     /**
+     * The excahnge class
+     */
+    protected String _exchangeClass;
+
+     /**
+     * The queu name
+     */
+    protected String _queueName;
+
     //--- Constructor
     /**
      * Create a new DestinationImpl with a given name.
      *
-     * @param name The name of this destination.
+     * @param name    The name of this destination.
      * @param session The session used to create this destination.
-     * @throws JMSException If the destiantion name is not valid 
+     * @throws QpidException If the destiantion name is not valid
      */
-    protected DestinationImpl(SessionImpl session,  String name)  throws JMSException
+    protected DestinationImpl(SessionImpl session, String name) throws QpidException
     {
-        // TODO validate that this destination name exists
-        //_session.getQpidSession()
         _session = session;
         _name = name;
     }
 
+    /**
+     * Create a destiantion from a binding URL
+     *
+     * @param session The session used to create this queue.
+     * @param binding The URL
+     * @throws QpidException If the URL is not valid
+     */
+    protected DestinationImpl(SessionImpl session, BindingURL binding) throws QpidException
+    {
+        _session = session;
+        _exchangeName = binding.getExchangeName();
+        _exchangeClass = binding.getExchangeClass();
+        _name = binding.getDestinationName();
+        //       _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
+        boolean isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
+        boolean isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
+        _queueName = binding.getQueueName();
+        // create this exchange
+        _session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeClass, null, null,
+                                                  isDurable ? Option.DURABLE : Option.NO_OPTION,
+                                                  isAutoDelete ? Option.AUTO_DELETE : Option.NO_OPTION);
+    }
+
     //---- Getters and Setters
-    
+
     /**
      * Gets the name of this destination.
      *
@@ -84,5 +123,20 @@ public class DestinationImpl implements Destination
         return _name;
     }
 
+    // getter methods 
+    public String getQpidQueueName()
+    {
+        return _queueName;
+    }
+
+    public String getExchangeName()
+    {
+        return _exchangeName;
+    }
+
+    public String getExchangeClass()
+    {
+        return _exchangeClass;
+    }
 }
 

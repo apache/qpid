@@ -17,6 +17,11 @@
  */
 package org.apache.qpid.nclient.jms;
 
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Option;
+import org.apache.qpidity.url.BindingURL;
+import org.apache.qpidity.exchange.ExchangeDefaults;
+
 import javax.jms.Queue;
 import javax.jms.JMSException;
 
@@ -32,15 +37,32 @@ public class QueueImpl extends DestinationImpl implements Queue
      *
      * @param name    The name of this queue.
      * @param session The session used to create this queue.
-     * @throws JMSException If the queue name is not valid
+     * @throws QpidException If the queue name is not valid
      */
-    protected QueueImpl(SessionImpl session, String name) throws JMSException
+    protected QueueImpl(SessionImpl session, String name) throws QpidException
     {
         super(session, name);
+        _exchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+        _exchangeClass = ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
+        _queueName = name;
+        // check that this queue exist on the server
+        // As pasive is set the server will not create the queue.
+        session.getQpidSession().queueDeclare(name, null, null, Option.PASSIVE);
+    }
+
+    /**
+     * Create a destiantion from a binding URL
+     *
+     * @param session  The session used to create this queue.
+     * @param binding The URL
+     * @throws QpidException If the URL is not valid
+     */
+    protected QueueImpl(SessionImpl session, BindingURL binding) throws QpidException
+    {
+        super(session, binding);        
     }
 
     //---- Interface javax.jms.Queue
-
     /**
      * Gets the name of this queue.
      *
