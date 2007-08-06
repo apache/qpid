@@ -49,11 +49,14 @@ const std::string empty;
 }}
 
 Channel::Channel(bool _transactional, u_int16_t _prefetch) :
-    prefetch(_prefetch), transactional(_transactional), errorCode(200), errorText("Ok"), running(false)
+    prefetch(_prefetch), transactional(_transactional), running(false)
 {
 }
 
-Channel::~Channel(){}
+Channel::~Channel()
+{
+    join();
+}
 
 void Channel::open(ConnectionImpl::shared_ptr c, SessionCore::shared_ptr s)
 {
@@ -142,15 +145,6 @@ void Channel::close()
             connection.reset();
         }
     }
-    stop();
-}
-
-// Channel closed by peer.
-void Channel::peerClose(uint16_t code, const std::string& message) {
-    assert(isOpen());
-    //record reason:
-    errorCode = code;
-    errorText = message;
     stop();
 }
 
@@ -254,8 +248,12 @@ void Channel::start(){
 void Channel::stop() {
     session->stop();
     gets.close();
+    join();
+}
+
+void Channel::join() {
     Mutex::ScopedLock l(stopLock);
-    if(running) {
+    if(running && dispatcher.id()) {
         dispatcher.join();
         running = false;
     }
