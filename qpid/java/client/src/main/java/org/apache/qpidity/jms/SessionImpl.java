@@ -128,10 +128,12 @@ public class SessionImpl implements Session
      * @param transacted      Indicates if the session transacted.
      * @param acknowledgeMode The session's acknowledgement mode. This value is ignored and set to
      *                        {@link Session#SESSION_TRANSACTED} if the <code>transacted</code> parameter is true.
+     * @param isXA            Indicates whether this session is an XA session.
      * @throws JMSSecurityException If the user could not be authenticated.
-     * @throws JMSException         In case of internal error.
+     * @throws QpidException        In case of internal error.
      */
-    protected SessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode) throws JMSException
+    protected SessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode, boolean isXA)
+            throws QpidException
     {
         _connection = connection;
         _transacted = transacted;
@@ -141,19 +143,12 @@ public class SessionImpl implements Session
             acknowledgeMode = Session.SESSION_TRANSACTED;
         }
         _acknowledgeMode = acknowledgeMode;
-        try
+        // create the qpid session with an expiry  <= 0 so that the session does not expire
+        _qpidSession = _connection.getQpidConnection().createSession(0);
+        // set transacted if required
+        if (_transacted && !isXA)
         {
-            // create the qpid session with an expiry  <= 0 so that the session does not expire
-            _qpidSession = _connection.getQpidConnection().createSession(0);
-            // set transacted if required
-            if (_transacted)
-            {
-                //_qpidSession.setTransacted();
-            }
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            _qpidSession.txSelect();
         }
         // init the message dispatcher.
         initMessageDispatcherThread();
@@ -314,7 +309,6 @@ public class SessionImpl implements Session
         // commit the underlying Qpid Session
         try
         {
-            // Note: this operation makes sure that asynch message processing has returned
             _qpidSession.txCommit();
         }
         catch (QpidException e)
@@ -341,7 +335,6 @@ public class SessionImpl implements Session
         // rollback the underlying Qpid Session
         try
         {
-            // Note: this operation makes sure that asynch message processing has returned
             _qpidSession.txRollback();
         }
         catch (org.apache.qpidity.QpidException e)
@@ -640,7 +633,7 @@ public class SessionImpl implements Session
         }
         catch (QpidException e)
         {
-           throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         return result;
     }

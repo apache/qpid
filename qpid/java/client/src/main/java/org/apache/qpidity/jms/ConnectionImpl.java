@@ -42,7 +42,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     /**
      * Maps from session id (Integer) to SessionImpl instance
      */
-    private final Vector<SessionImpl> _sessions = new Vector<SessionImpl>();
+    protected final Vector<SessionImpl> _sessions = new Vector<SessionImpl>();
 
     /**
      * This is the clientID
@@ -113,10 +113,18 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @return A newly created session
      * @throws JMSException If the Connection object fails to create a session due to some internal error.
      */
-    public Session createSession(boolean transacted, int acknowledgeMode) throws JMSException
+    public synchronized Session createSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
-        SessionImpl session = new SessionImpl(this, transacted, acknowledgeMode);
+        SessionImpl session = null;
+        try
+        {
+            session = new SessionImpl(this, transacted, acknowledgeMode, false);
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
         // add this session with the list of session that are handled by this connection
         _sessions.add(session);
         return session;
@@ -178,7 +186,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @return the <CODE>ExceptionListener</CODE> for this connection
      * @throws JMSException In case of unforeseen problem
      */
-    public ExceptionListener getExceptionListener() throws JMSException
+    public synchronized ExceptionListener getExceptionListener() throws JMSException
     {
         checkNotClosed();
         return _exceptionListener;
@@ -203,7 +211,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @param exceptionListener The connection listener.
      * @throws JMSException If the connection is closed.
      */
-    public void setExceptionListener(ExceptionListener exceptionListener) throws JMSException
+    public synchronized void setExceptionListener(ExceptionListener exceptionListener) throws JMSException
     {
         checkNotClosed();
         _exceptionListener = exceptionListener;
@@ -217,7 +225,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @throws JMSException In case of a problem due to some internal error.
      */
-    public void start() throws JMSException
+    public synchronized void start() throws JMSException
     {
         checkNotClosed();
         if (!_started)
@@ -231,7 +239,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 }
                 catch (Exception e)
                 {
-                   throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+                    throw ExceptionHelper.convertQpidExceptionToJMSException(e);
                 }
             }
             _started = true;
@@ -248,7 +256,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @throws JMSException In case of a problem due to some internal error.
      */
-    public void stop() throws JMSException
+    public synchronized void stop() throws JMSException
     {
         checkNotClosed();
         if (_started)
@@ -262,7 +270,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
                 }
                 catch (Exception e)
                 {
-                   throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+                    throw ExceptionHelper.convertQpidExceptionToJMSException(e);
                 }
             }
             _started = false;
@@ -284,7 +292,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      *
      * @throws JMSException In case of a problem due to some internal error.
      */
-    public void close() throws JMSException
+    public synchronized void close() throws JMSException
     {
         checkNotClosed();
         if (!_isClosed)
@@ -320,8 +328,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @throws JMSException In case of a problem due to some internal error.
      */
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws
-                                                                                                       JMSException
+                                                       ServerSessionPool sessionPool, int maxMessages)
+            throws JMSException
     {
         checkNotClosed();
         return null;
@@ -359,7 +367,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @return A queueSession object/
      * @throws JMSException If creating a QueueSession fails due to some internal error.
      */
-    public QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException
+    public synchronized QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
         QueueSessionImpl queueSession = new QueueSessionImpl(this, transacted, acknowledgeMode);
@@ -380,8 +388,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @throws JMSException In case of a problem due to some internal error.
      */
     public ConnectionConsumer createConnectionConsumer(Queue queue, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws
-                                                                                                       JMSException
+                                                       ServerSessionPool sessionPool, int maxMessages)
+            throws JMSException
     {
         return createConnectionConsumer((Destination) queue, messageSelector, sessionPool, maxMessages);
     }
@@ -396,7 +404,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @return a newly created topic session
      * @throws JMSException If creating the session fails due to some internal error.
      */
-    public TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
+    public synchronized TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
         TopicSessionImpl session = new TopicSessionImpl(this, transacted, acknowledgeMode);
@@ -418,8 +426,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @throws JMSException In case of a problem due to some internal error.
      */
     public ConnectionConsumer createConnectionConsumer(Topic topic, String messageSelector,
-                                                       ServerSessionPool sessionPool, int maxMessages) throws
-                                                                                                       JMSException
+                                                       ServerSessionPool sessionPool, int maxMessages)
+            throws JMSException
     {
         return createConnectionConsumer((Destination) topic, messageSelector, sessionPool, maxMessages);
     }
@@ -442,7 +450,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             {
                 _logger.debug("Connection has been closed. Cannot invoke any further operations.");
             }
-            throw new javax.jms.IllegalStateException("Connection has been closed. Cannot invoke any further operations.");
+            throw new javax.jms.IllegalStateException(
+                    "Connection has been closed. Cannot invoke any further operations.");
         }
     }
 
