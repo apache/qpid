@@ -63,7 +63,7 @@ public:
 
 ${mb_constructor_with_initializers}
 
-    ${CLASS}${METHOD}Body(ProtocolVersion version): ${mb_base_class}(version) {}
+    ${CLASS}${METHOD}Body(ProtocolVersion version=ProtocolVersion()	): ${mb_base_class}(version) {}
     virtual ~${CLASS}${METHOD}Body() {}
     
     // Attribute get methods

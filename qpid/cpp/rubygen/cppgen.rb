@@ -128,6 +128,7 @@ class CppGen < Generator
 
   # Write a .cpp file.
   def cpp_file(path)
+    path = (/\.cpp$/ === path ? path : path+".cpp")
     file(path) do
       gen Copyright
       yield
@@ -157,14 +158,18 @@ class CppGen < Generator
     genl
     gen "#{type} #{name}"
     gen ": #{bases.join(', ')}" unless bases.empty?
-    genl "{"
-    yield
-    genl "};"
-    genl
+    scope(" {","};", &block)
   end
 
   def struct(name, *bases, &block) struct_class("struct", name, bases, &block); end
   def class_(name, *bases, &block) struct_class("class", name, bases, &block); end
-  def typedef(type, name) genl "typedef #{type} #{name};" end
+
+  def typedef(type, name) genl "typedef #{type} #{name};\n" end
+
+  def variant(types) "boost::variant<#{types.join(", ")}>"; end
+  def variantl(types) "boost::variant<#{types.join(", \n")}>"; end
+  def blank_variant(types) variant(["boost::blank"]+types); end
+  def tuple(types) "boost::tuple<#{types.join(', ')}>"; end
+  
 end
 

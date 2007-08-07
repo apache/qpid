@@ -43,13 +43,15 @@ maintainer-clean-local:
 
 rgen_dir=$(top_srcdir)/rubygen
 rgen_tdir=$(rgen_dir)/templates
-rgen_script=$(rgen_dir)/generate
-rgen_cmd=ruby -I $(rgen_dir) $(rgen_script)
+rgen_generator=$(rgen_dir)/generate $(rgen_dir)/amqpgen.rb $(rgen_dir)/cppgen.rb
 
-rgen_templates=$(rgen_tdir)/frame_body_lists.rb $(rgen_tdir)/Session.rb
+rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate
+rgen_templates=$(rgen_tdir)/method_variants.rb $(rgen_tdir)/frame_body_lists.rb  $(rgen_tdir)/Session.rb
 
-rubygen.mk: $(rgen_script) $(specs) $(rgen_templates)
-	gen=`$(rgen_cmd) . $(specs) $(rgen_templates)` ; echo Generated $$gen; echo rgen_srcs=$$gen > $@
+rubygen.mk: $(rgen_generator) $(specs) $(rgen_templates)
+	{ echo "rgen_srcs= \\"; \
+	for f in `$(rgen_cmd) . $(specs) $(rgen_templates) `; do echo "	$$f \\"; done; \
+	echo; } > $@
 
 $(rgen_srcs): rubygen.mk
 
@@ -172,7 +174,11 @@ libqpidcommon_la_SOURCES = \
   qpid/log/Selector.h \
   qpid/log/Statement.cpp \
   qpid/log/Statement.h \
-  qpid/memory.h
+  qpid/memory.h \
+  qpid/framing/Frame.cpp qpid/framing/Frame.h \
+  qpid/framing/method_variants.h \
+  qpid/framing/MethodHolder.cpp qpid/framing/MethodHolder.h
+
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \
@@ -410,3 +416,16 @@ nobase_include_HEADERS = \
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: qpidd
+
+# FIXME aconway 2007-08-06: Use of gch should be conditional on gcc version.
+
+# Pre compiled headers - use BUILT_SOURCES to get them built first.
+BUILT_SOURCES=qpid/framing/method_variants.h.gch
+sinclude qpid/framing/method_variants.h.gch.deps
+CLEANFILES=qpid/framing/method_variants.h.gch qpid/framing/method_variants.h.gch.deps
+
+SUFFIXES=.h.gch
+.h.h.gch:
+	rm -f $@
+	$(CXXCOMPILE) -MT $@ -MD -MP -MF $@.deps -fPIC -DPIC -x c++-header -c -o $@ $<
+
