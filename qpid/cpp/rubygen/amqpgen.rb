@@ -155,7 +155,7 @@ class AmqpRoot < AmqpElement
     from.elements.each { |from_child|
       tag,name = from_child.name, from_child.attributes["name"]
       to_child=to.elements["./#{tag}[@name='#{name}']"]
-      to_child ? merge(to_child, from_child) : to.add(from_child.clone) }
+      to_child ? merge(to_child, from_child) : to.add(from_child.deep_clone) }
   end
 
   private :merge

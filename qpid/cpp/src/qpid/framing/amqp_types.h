@@ -42,6 +42,7 @@ namespace qpid {
 namespace framing {
 
 using std::string;
+typedef uint8_t FrameType;
 typedef uint16_t ChannelId;
 typedef uint64_t RequestId;
 typedef uint64_t ResponseId;
