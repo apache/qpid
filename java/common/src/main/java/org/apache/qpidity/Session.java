@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity;
 
+import java.nio.ByteBuffer;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -35,9 +37,23 @@ public class Session extends Invoker
 
     // channel may be null
     Channel channel;
-    private int command_id = 0;
-    // XXX
-    final Map<Integer,Handler<Struct>> handlers = new HashMap<Integer,Handler<Struct>>();   
+    // outgoing command count
+    private long commandsOut = 0;
+    // XXX: incoming command count not used
+    // incoming command count
+    private long commandsIn = 0;
+    private Map<Long,Method> commands = new HashMap<Long,Method>();
+    private long mark = 0;
+
+    public long getCommandsOut()
+    {
+        return commandsOut;
+    }
+
+    public long getCommandsIn()
+    {
+        return commandsIn;
+    }
 
     public void attach(Channel channel)
     {
@@ -45,70 +61,64 @@ public class Session extends Invoker
         channel.setSession(this);
     }
 
+    public Method getCommand(long id)
+    {
+        System.out.println(id + " " + commands);
+        return commands.get(id);
+    }
+
+    void complete(long lower, long upper)
+    {
+        for (long id = lower; id <= upper; id++)
+        {
+            commands.put(id, null);
+        }
+    }
+
+    void complete(long mark)
+    {
+        complete(this.mark, mark);
+        this.mark = mark;
+    }
+
     protected void invoke(Method m)
     {
-        command_id++;
-        channel.write(m);
+        if (m.getEncodedTrack() == Frame.L4)
+        {
+            long cmd = commandsOut++;
+            commands.put(cmd, m);
+        }
+        channel.method(m);
+    }
+
+    public void headers(Struct ... headers)
+    {
+        channel.headers(headers);
+    }
+
+    public void data(ByteBuffer buf)
+    {
+        channel.data(buf);
+    }
+
+    public void data(String str)
+    {
+        channel.data(str);
+    }
+
+    public void data(byte[] bytes)
+    {
+        channel.data(bytes);
+    }
+
+    public void end()
+    {
+        channel.end();
     }
 
     protected void invoke(Method m, Handler<Struct> handler)
     {
-        invoke(m);
-        handlers.put(command_id, handler);
+        throw new UnsupportedOperationException();
     }
-
-    protected StructFactory getFactory()
-    {
-        return channel.getFactory();
-    }
-
-    // -----------------------------------------
-    //          Messaging Methods
-    // ------------------------------------------
-    public void messageTransfer(String destination, Message msg, Option ... _options) throws QpidException
-    {
-	
-    }
-
-    public void data(byte[] src) throws QpidException
-    {
-        // TODO Auto-generated method stub
-    }
-
-    public void endData() throws QpidException
-    {
-        // TODO Auto-generated method stub
-    }
-
-    public void messageHeaders(Header... headers) throws QpidException
-    {
-        // TODO Auto-generated method stub
-    }
-
-    public void messageTransfer(String destination,Option... options) throws QpidException
-    {
-        // TODO Auto-generated method stub
-    }
-
-    public void messageAcknowledge() throws QpidException
-    {
-        // TODO Auto-generated method stub
-    }
-
-    public boolean messageAcquire() throws QpidException
-    {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    public void messageReject() throws QpidException
-    {
-        // TODO Auto-generated method stub
-    }
-
-    public void messageRelease() throws QpidException
-    {
-        // TODO Auto-generated method stub
-    }   
 
 }

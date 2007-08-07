@@ -10,11 +10,15 @@ import static org.apache.qpidity.Option.*;
 
 public class Stub {
 
-    private static Connection conn = new Connection(new ConsoleOutput());
+    private static final byte major = 0;
+    private static final byte minor = 10;
+
+    private static Connection conn = new Connection(new ConsoleOutput(),
+                                                    SessionDelegateStub.source());
 
     static
     {
-        conn.init(new ProtocolHeader((byte) 1, (byte) 0, (byte) 10));
+        conn.init(new ProtocolHeader((byte) 1, major, minor));
     }
 
     private static void frame(byte track, byte type, boolean first, boolean last) {
@@ -22,21 +26,21 @@ public class Stub {
     }
 
     private static void frame(byte track, byte type, boolean first, boolean last, Method m) {
-        SizeEncoder sizer = new SizeEncoder();
+        SizeEncoder sizer = new SizeEncoder(major, minor);
         if (m != null) {
             sizer.writeLong(m.getEncodedType());
-            m.write(sizer);
+            m.write(sizer, major, minor);
             sizer.flush();
         }
         ByteBuffer buf = ByteBuffer.allocate(sizer.getSize());
         if (m != null) {
-            Encoder enc = new BBEncoder(buf);
+            Encoder enc = new BBEncoder(major, minor, buf);
             enc.writeLong(m.getEncodedType());
-            m.write(enc);
+            m.write(enc, major, minor);
             enc.flush();
         }
         buf.flip();
-        byte flags = 0;
+        byte flags = Frame.VERSION;
         if (first) { flags |= Frame.FIRST_FRAME; }
         if (last) { flags |= Frame.LAST_FRAME; }
         Frame frame = new Frame(flags, type, track, 0);
@@ -45,13 +49,12 @@ public class Stub {
     }
 
     public static final void main(String[] args) {
-        StructFactory f = new StructFactory_v0_10();
-        frame(Frame.L2, Frame.METHOD, true, true, f.newSessionOpen(0));
+        frame(Frame.L2, Frame.METHOD, true, true, new SessionOpen(0));
         frame(Frame.L4, Frame.METHOD, true, false,
-              f.newQueueDeclare("asdf", "alternate", null, DURABLE));
+              new QueueDeclare("asdf", "alternate", null, DURABLE));
         frame(Frame.L4, Frame.METHOD, false, false);
         frame(Frame.L3, Frame.METHOD, true, true,
-              f.newExchangeDeclare("exchange", "type", "alternate", null));
+              new ExchangeDeclare("exchange", "type", "alternate", null));
         frame(Frame.L4, Frame.METHOD, false, true);
         frame(Frame.L4, Frame.HEADER, true, false);
         frame(Frame.L4, Frame.HEADER, false, false);
@@ -60,35 +63,25 @@ public class Stub {
         frame(Frame.L4, Frame.BODY, false, false);
         frame(Frame.L4, Frame.BODY, false, false);
         frame(Frame.L1, Frame.METHOD, true, true,
-              f.newExchangeDeclare("exchange", "type", "alternate", null));
+              new ExchangeDeclare("exchange", "type", "alternate", null));
         frame(Frame.L4, Frame.BODY, false, false);
         frame(Frame.L4, Frame.BODY, false, true);
     }
 
 }
 
-//====: Channel and Session Delegates :=======================================//
+class SessionDelegateStub extends SessionDelegate {
 
-class ChannelDelegate extends Delegate<Channel> {
-
-    public @Override void sessionOpen(Channel channel, SessionOpen open) {
-        Session ssn = new Session();
-        ssn.attach(channel);
-        long lifetime = open.getDetachedLifetime();
-        System.out.println("Session Opened lifetime = " + lifetime);
-        try
+    public static final ConnectionDelegate source()
+    {
+        return new ConnectionDelegate()
         {
-            ssn.sessionAttached(UUID.randomUUID(), lifetime);
-        }
-        catch (QpidException e)
-        {
-            throw new RuntimeException(e);
-        }
+            public SessionDelegate getSessionDelegate()
+            {
+                return new SessionDelegateStub();
+            }
+        };
     }
-
-}
-
-class SessionDelegate extends Delegate<Session> {
 
     public @Override void queueDeclare(Session session, QueueDeclare qd) {
         System.out.println("got a queue declare: " + qd.getQueue());
@@ -96,23 +89,17 @@ class SessionDelegate extends Delegate<Session> {
 
     public @Override void exchangeDeclare(Session session, ExchangeDeclare ed) {
         System.out.println("got an exchange declare: " + ed.getExchange() + ", " + ed.getType());
-        try
-        {
-            session.queueDeclare("asdf", "alternate", null);
-        }
-        catch(QpidException e)
-        {
-            throw new RuntimeException(e);
-        }
+        session.queueDeclare("asdf", "alternate", null);
     }
 
-    /*
-    public @Override void executionResult(Session session, ExecutionResult result) {
-        Handler<Struct> handler = session.handlers.get(result.getCommandId());
-        if (handler != null) {
-            handler.handle(result.getData());
-        }
-        }
-    */
+    public void data(Session ssn, Frame frame)
+    {
+        System.out.println("got data: " + frame);
+    }
+
+    public void headers(Session ssn, Struct ... headers)
+    {
+        System.out.println("got headers: " + headers);
+    }
 
 }

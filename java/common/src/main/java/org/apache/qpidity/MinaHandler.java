@@ -22,6 +22,7 @@ package org.apache.qpidity;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.ConnectFuture;
@@ -45,6 +46,15 @@ import org.apache.mina.transport.socket.nio.SocketConnector;
 class MinaHandler implements IoHandler
 {
 
+    private final ConnectionDelegate delegate;
+    private final InputHandler.State state;
+
+    public MinaHandler(ConnectionDelegate delegate, InputHandler.State state)
+    {
+        this.delegate = delegate;
+        this.state = state;
+    }
+
     public void messageReceived(IoSession ssn, Object obj)
     {
         Connection conn = (Connection) ssn.getAttachment();
@@ -62,21 +72,29 @@ class MinaHandler implements IoHandler
         e.printStackTrace();
     }
 
-    public void sessionCreated(IoSession ssn)
+    public void sessionCreated(final IoSession ssn)
     {
         System.out.println("created " + ssn);
     }
 
     public void sessionOpened(final IoSession ssn)
     {
+        System.out.println("opened " + ssn);
         Connection conn = new Connection(new Handler<java.nio.ByteBuffer>()
                                          {
                                              public void handle(java.nio.ByteBuffer buf)
                                              {
                                                  ssn.write(ByteBuffer.wrap(buf));
                                              }
-                                         });
+                                         },
+                                         delegate,
+                                         state);
         ssn.setAttachment(conn);
+        // XXX
+        synchronized (ssn)
+        {
+            ssn.notifyAll();
+        }
     }
 
     public void sessionClosed(IoSession ssn)
@@ -94,30 +112,48 @@ class MinaHandler implements IoHandler
     {
         ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
         if (args[0].equals("accept")) {
-            accept(args);
+            accept("0.0.0.0", 5672, SessionDelegateStub.source());
         } else if (args[0].equals("connect")) {
-            connect(args);
+            connect("0.0.0.0", 5672, SessionDelegateStub.source());
         }
     }
 
-    public static final void accept(String[] args) throws IOException
+    public static final void accept(String host, int port,
+                                    ConnectionDelegate delegate)
+        throws IOException
     {
         IoAcceptor acceptor = new SocketAcceptor();
-        acceptor.bind(new InetSocketAddress("0.0.0.0", 5672), new MinaHandler());
+        acceptor.bind(new InetSocketAddress(host, port),
+                      new MinaHandler(delegate, InputHandler.State.PROTO_HDR));
     }
 
-    public static final void connect(String[] args)
+    public static final Connection connect(String host, int port,
+                                           ConnectionDelegate delegate)
     {
+        MinaHandler handler = new MinaHandler(delegate,
+                                              InputHandler.State.FRAME_HDR);
+        SocketAddress addr = new InetSocketAddress(host, port);
         IoConnector connector = new SocketConnector();
-        ConnectFuture cf = connector.connect(new InetSocketAddress("0.0.0.0", 5672), new MinaHandler());
+        ConnectFuture cf = connector.connect(addr, handler);
         cf.join();
         IoSession ssn = cf.getSession();
-        ByteBuffer bb = ByteBuffer.allocate(1024);
-        bb.put("AMQP".getBytes());
-        bb.flip();
-        for (int i = 0; i < 10; i++) {
-            ssn.write(bb);
+        // XXX
+        synchronized (ssn)
+        {
+            while (ssn.getAttachment() == null)
+            {
+                try
+                {
+                    ssn.wait();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
         }
+        Connection conn = (Connection) ssn.getAttachment();
+        return conn;
     }
 
 }

@@ -22,9 +22,29 @@ package org.apache.qpidity;
 
 
 /**
- * AbstractStruct
+ * SessionDelegate
  *
  * @author Rafael H. Schloming
  */
 
-public abstract class AbstractStruct implements Struct {}
+public abstract class SessionDelegate extends Delegate<Session>
+{
+
+    public abstract void headers(Session ssn, Struct ... headers);
+
+    public abstract void data(Session ssn, Frame frame);
+
+    @Override public void executionComplete(Session ssn, ExecutionComplete excmp)
+    {
+        Range<Long>[] ranges = excmp.getRangedExecutionSet();
+        if (ranges != null)
+        {
+            for (Range<Long> range : ranges)
+            {
+                ssn.complete(range.getLower(), range.getUpper());
+            }
+        }
+        ssn.complete(excmp.getCumulativeExecutionMark());
+    }
+
+}

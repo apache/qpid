@@ -41,17 +41,27 @@ class Connection implements ProtocolActions
 
     final private Handler<ByteBuffer> input;
     final private Handler<ByteBuffer> output;
+    final private ConnectionDelegate delegate;
 
     final private Map<Integer,Channel> channels = new HashMap<Integer,Channel>();
-    private StructFactory factory;
-
+    // XXX: hardcoded versions
+    private ProtocolHeader header = new ProtocolHeader((byte) 1, (byte) 0, (byte) 10);
     // XXX
     private int maxFrame = 64*1024;
 
-    public Connection(Handler<ByteBuffer> output)
+    public Connection(Handler<ByteBuffer> output,
+                      ConnectionDelegate delegate,
+                      InputHandler.State state)
     {
-        this.input = new InputHandler(this);
+        this.input = new InputHandler(this, state);
         this.output = output;
+        this.delegate = delegate;
+    }
+
+    public Connection(Handler<ByteBuffer> output,
+                      ConnectionDelegate delegate)
+    {
+        this(output, delegate, InputHandler.State.PROTO_HDR);
     }
 
     public Handler<ByteBuffer> getInputHandler()
@@ -64,9 +74,19 @@ class Connection implements ProtocolActions
         return output;
     }
 
-    public StructFactory getFactory()
+    public ProtocolHeader getHeader()
     {
-        return factory;
+        return header;
+    }
+
+    public byte getMajor()
+    {
+        return header.getMajor();
+    }
+
+    public byte getMinor()
+    {
+        return header.getMinor();
     }
 
     public int getMaxFrame()
@@ -74,35 +94,31 @@ class Connection implements ProtocolActions
         return maxFrame;
     }
 
-    public void init(ProtocolHeader header)
+    public void init(ProtocolHeader hdr)
     {
         System.out.println(header);
-        // XXX: hardcoded versions
-        if (header.getMajor() != 0 && header.getMinor() != 10)
+        if (hdr.getMajor() != header.getMajor() &&
+            hdr.getMinor() != header.getMinor())
         {
-            ByteBuffer buf = ByteBuffer.allocate(8);
-            buf.put("AMQP".getBytes());
-            buf.put((byte) 1);
-            buf.put((byte) 1);
-            buf.put((byte) 0);
-            buf.put((byte) 10);
-            buf.flip();
-            output.handle(buf);
+            output.handle(header.toByteBuffer());
             // XXX: how do we close the connection?
-        } else {
-            factory = new StructFactory_v0_10();
         }
+    }
+
+    public Channel getChannel(int number)
+    {
+        Channel channel = channels.get(number);
+        if (channel == null)
+        {
+            channel = new Channel(this, number, delegate.getSessionDelegate());
+            channels.put(number, channel);
+        }
+        return channel;
     }
 
     public void frame(Frame frame)
     {
-        Channel channel = channels.get(frame.getChannel());
-        if (channel == null)
-        {
-            channel = new Channel(this, frame.getChannel());
-            channels.put(frame.getChannel(), channel);
-        }
-
+        Channel channel = getChannel(frame.getChannel());
         channel.handle(frame);
     }
 
