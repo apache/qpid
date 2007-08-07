@@ -80,6 +80,7 @@ class AMQMethodBody : public AMQBody
 
     virtual void printPrefix(std::ostream&) const {}
 
+  friend class MethodHolder;
 };
 
 
