@@ -27,9 +27,27 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-interface Struct extends Delegator, Writable
+public abstract class Struct implements Delegator, Encodable
 {
 
-    int getEncodedType();
+    public static Struct create(int type)
+    {
+        return StructFactory.create(type);
+    }
+
+    // XXX: command subclass?
+    private long id;
+
+    public final long getId()
+    {
+        return id;
+    }
+
+    void setId(long id)
+    {
+        this.id = id;
+    }
+
+    abstract int getEncodedType();
 
 }

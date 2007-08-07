@@ -22,15 +22,14 @@ package org.apache.qpidity;
 
 
 /**
- * A DelegateResolver locates the desired delegate to use for handling
- * a given Struct.
+ * ConnectionDelegate
  *
  * @author Rafael H. Schloming
  */
 
-interface DelegateResolver<C>
+public interface ConnectionDelegate
 {
 
-    Delegate<C> resolve(Struct struct);
+    SessionDelegate getSessionDelegate();
 
 }

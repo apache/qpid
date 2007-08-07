@@ -51,6 +51,8 @@ class Frame implements Iterable<ByteBuffer>
 
     public static final byte RESERVED = 0x0;
 
+    public static final byte VERSION = 0x0;
+
     public static final byte FIRST_SEG = 0x8;
     public static final byte LAST_SEG = 0x4;
     public static final byte FIRST_FRAME = 0x2;

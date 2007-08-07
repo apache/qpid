@@ -37,6 +37,15 @@ import static org.apache.qpidity.Functions.*;
 abstract class AbstractEncoder implements Encoder
 {
 
+    private final byte major;
+    private final byte minor;
+
+    protected AbstractEncoder(byte major, byte minor)
+    {
+        this.major = major;
+        this.minor = minor;
+    }
+
     protected abstract void put(byte b);
 
     protected abstract void put(ByteBuffer src);
@@ -82,7 +91,7 @@ abstract class AbstractEncoder implements Encoder
         assert s < 0x10000;
 
         flushBits();
-        put(lsb(s >> 8));
+        put(lsb(s >>> 8));
         put(lsb(s));
     }
 
@@ -91,22 +100,22 @@ abstract class AbstractEncoder implements Encoder
         assert i < 0x100000000L;
 
         flushBits();
-        put(lsb(i >> 24));
-        put(lsb(i >> 16));
-        put(lsb(i >> 8));
+        put(lsb(i >>> 24));
+        put(lsb(i >>> 16));
+        put(lsb(i >>> 8));
         put(lsb(i));
     }
 
     public void writeLonglong(long l)
     {
         flushBits();
-        put(lsb(l >> 56));
-        put(lsb(l >> 48));
-        put(lsb(l >> 40));
-        put(lsb(l >> 32));
-        put(lsb(l >> 24));
-        put(lsb(l >> 16));
-        put(lsb(l >> 8));
+        put(lsb(l >>> 56));
+        put(lsb(l >>> 48));
+        put(lsb(l >>> 40));
+        put(lsb(l >>> 32));
+        put(lsb(l >>> 24));
+        put(lsb(l >>> 16));
+        put(lsb(l >>> 8));
         put(lsb(l));
     }
 
@@ -120,6 +129,7 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeShortstr(String s)
     {
+        if (s == null) { s = ""; }
         if (s.length() > 255) {
             throw new IllegalArgumentException(s);
         }
@@ -129,6 +139,7 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeLongstr(String s)
     {
+        if (s == null) { s = ""; }
         writeLong(s.length());
         put(ByteBuffer.wrap(s.getBytes()));
     }
@@ -141,13 +152,32 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeRfc1982LongSet(Range<Long>[] ranges)
     {
-        throw new Error("TODO");
+        if (ranges == null)
+        {
+            writeShort((short) 0);
+        }
+        else
+        {
+            writeShort(ranges.length * 8);
+            for (Range<Long> range : ranges)
+            {
+                writeLong(range.getLower());
+                writeLong(range.getUpper());
+            }
+        }
     }
 
     public void writeUuid(UUID uuid)
     {
-        writeLong(uuid.getMostSignificantBits());
-        writeLong(uuid.getLeastSignificantBits());
+        long msb = 0;
+        long lsb = 0;
+        if (uuid != null)
+        {
+            msb = uuid.getMostSignificantBits();
+            uuid.getLeastSignificantBits();
+        }
+        writeLong(msb);
+        writeLong(lsb);
     }
 
     public void writeContent(String c)
@@ -157,12 +187,20 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeLongStruct(Struct s)
     {
-        SizeEncoder sizer = new SizeEncoder();
-        sizer.writeShort(s.getEncodedType());
-        s.write(sizer);
-        writeLong(sizer.getSize());
-        writeShort(s.getEncodedType());
-        s.write(this);
+        if (s == null)
+        {
+            writeLong(0);
+        }
+        else
+        {
+            SizeEncoder sizer = new SizeEncoder(major, minor);
+            sizer.writeShort(s.getEncodedType());
+            s.write(sizer, major, minor);
+
+            writeLong(sizer.getSize());
+            writeShort(s.getEncodedType());
+            s.write(this, major, minor);
+        }
     }
 
     public void flush()

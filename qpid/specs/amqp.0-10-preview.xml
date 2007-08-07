@@ -772,6 +772,12 @@
     </doc>
   </domain>
 
+  <domain name="method-id" type="short">
+    <doc>
+      <!-- TODO: Description required for docs -->
+    </doc>
+  </domain>
+
   <domain name="consumer-tag" type="shortstr" label="consumer tag">
     <doc>
       Identifier for the consumer, valid within the current connection.
@@ -820,7 +826,7 @@
     </doc>
   </domain>
 
-  <domain name="method-id" type="uuid">
+  <domain name="message-id" type="uuid">
     <doc>
       Message-id is an optional property of UUID type which uniquly identifies a message within the
       message system. The message producer is usually responsible for setting the message-id. Note
