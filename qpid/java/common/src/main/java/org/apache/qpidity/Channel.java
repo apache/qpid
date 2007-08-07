@@ -20,6 +20,14 @@
  */
 package org.apache.qpidity;
 
+import java.nio.ByteBuffer;
+
+import java.util.List;
+import java.util.ArrayList;
+
+import static org.apache.qpidity.Frame.*;
+
+
 /**
  * Channel
  *
@@ -32,27 +40,41 @@ class Channel extends Invoker implements Handler<Frame>
     final private Connection connection;
     final private int channel;
     final private TrackSwitch<Channel> tracks;
+    final private Delegate<Channel> delegate;
 
     // session may be null
     private Session session;
 
-    public Channel(Connection connection, int channel)
+    private Method method = null;
+    private List<ByteBuffer> data = null;
+    private int dataSize;
+
+    public Channel(Connection connection, int channel, SessionDelegate delegate)
     {
         this.connection = connection;
         this.channel = channel;
-
-        DelegateResolver<Channel> chDR =
-            new SimpleDelegateResolver<Channel>(new ChannelDelegate());
-        DelegateResolver<Session> ssnDR =
-            new SimpleDelegateResolver<Session>(new SessionDelegate());
+        this.delegate = new ChannelDelegate();
 
         tracks = new TrackSwitch<Channel>();
-        tracks.map(Frame.L1, new MethodHandler<Channel>(getFactory(), chDR));
-        tracks.map(Frame.L2, new MethodHandler<Channel>(getFactory(), chDR));
-        tracks.map(Frame.L3, new SessionResolver<Frame>
-                   (new MethodHandler<Session>(getFactory(), ssnDR)));
-        tracks.map(Frame.L4, new SessionResolver<Frame>
-                   (new ContentHandler<Session>(getFactory(), ssnDR)));
+        tracks.map(L1, new MethodHandler<Channel>
+                   (getMajor(), getMinor(), this.delegate));
+        tracks.map(L2, new MethodHandler<Channel>
+                   (getMajor(), getMinor(), this.delegate));
+        tracks.map(L3, new SessionResolver<Frame>
+                   (new MethodHandler<Session>
+                    (getMajor(), getMinor(), delegate)));
+        tracks.map(L4, new SessionResolver<Frame>
+                   (new ContentHandler(getMajor(), getMinor(), delegate)));
+    }
+
+    public byte getMajor()
+    {
+        return connection.getMajor();
+    }
+
+    public byte getMinor()
+    {
+        return connection.getMinor();
     }
 
     public int getEncodedChannel() {
@@ -74,35 +96,108 @@ class Channel extends Invoker implements Handler<Frame>
         tracks.handle(new Event<Channel,Frame>(this, frame));
     }
 
-    public void write(Method m)
+    private SegmentEncoder newEncoder(byte flags, byte track, byte type, int size)
     {
-        SizeEncoder sizer = new SizeEncoder();
+        return new SegmentEncoder(getMajor(),
+                                  getMinor(),
+                                  connection.getOutputHandler(),
+                                  connection.getMaxFrame(),
+                                  (byte) (flags | VERSION),
+                                  track,
+                                  type,
+                                  channel,
+                                  size);
+    }
+
+    public void method(Method m)
+    {
+        SizeEncoder sizer = new SizeEncoder(getMajor(), getMinor());
         sizer.writeLong(m.getEncodedType());
-        m.write(sizer);
+        m.write(sizer, getMajor(), getMinor());
         sizer.flush();
         int size = sizer.getSize();
 
-        // XXX: need to set header flags properly
-        SegmentEncoder enc = new SegmentEncoder(connection.getOutputHandler(),
-                                                connection.getMaxFrame(),
-                                                (byte) 0x0,
-                                                m.getEncodedTrack(),
-                                                m.getSegmentType(),
-                                                channel,
-                                                size);
+        byte flags = FIRST_SEG;
+
+        if (!m.hasPayload())
+        {
+            flags |= LAST_SEG;
+        }
+
+        SegmentEncoder enc = newEncoder(flags, m.getEncodedTrack(),
+                                        m.getSegmentType(), size);
         enc.writeLong(m.getEncodedType());
-        m.write(enc);
+        m.write(enc, getMajor(), getMinor());
         enc.flush();
+
+        if (m.hasPayload())
+        {
+            method = m;
+        }
     }
 
-    protected StructFactory getFactory()
+    public void headers(Struct ... headers)
     {
-        return connection.getFactory();
+        if (method == null)
+        {
+            throw new IllegalStateException("cannot write headers without method");
+        }
+
+        SizeEncoder sizer = new SizeEncoder(getMajor(), getMinor());
+        for (Struct hdr : headers)
+        {
+            sizer.writeLongStruct(hdr);
+        }
+
+        SegmentEncoder enc = newEncoder((byte) 0x0,
+                                        method.getEncodedTrack(),
+                                        HEADER,
+                                        sizer.getSize());
+        for (Struct hdr : headers)
+        {
+            enc.writeLongStruct(hdr);
+            enc.flush();
+        }
+    }
+
+    public void data(ByteBuffer buf)
+    {
+        if (data == null)
+        {
+            data = new ArrayList<ByteBuffer>();
+            dataSize = 0;
+        }
+        data.add(buf);
+        dataSize += buf.remaining();
+    }
+
+    public void data(String str)
+    {
+        data(str.getBytes());
+    }
+
+    public void data(byte[] bytes)
+    {
+        data(ByteBuffer.wrap(bytes));
+    }
+
+    public void end()
+    {
+        byte flags = LAST_SEG;
+        SegmentEncoder enc = newEncoder(flags, method.getEncodedTrack(),
+                                        BODY, dataSize);
+        for (ByteBuffer buf : data)
+        {
+            enc.put(buf);
+        }
+        enc.flush();
+        data = null;
+        dataSize = 0;
     }
 
     protected void invoke(Method m)
     {
-        write(m);
+        method(m);
     }
 
     protected void invoke(Method m, Handler<Struct> handler)

@@ -20,6 +20,11 @@
  */
 package org.apache.qpidity;
 
+import java.nio.ByteBuffer;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+
 
 /**
  * HeaderHandler
@@ -27,13 +32,33 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-class HeaderHandler<C> implements Handler<Event<C,Segment>>
+class HeaderHandler implements Handler<Event<Session,Segment>>
 {
 
-    public void handle(Event<C,Segment> event)
+    private static final Struct[] EMPTY_STRUCT_ARRAY = {};
+
+    private final byte major;
+    private final byte minor;
+    private final SessionDelegate delegate;
+
+    public HeaderHandler(byte major, byte minor, SessionDelegate delegate)
+    {
+        this.major = major;
+        this.minor = minor;
+        this.delegate = delegate;
+    }
+
+    public void handle(Event<Session,Segment> event)
     {
         System.out.println("got header segment:\n  " + event.target);
-        
+        Iterator<ByteBuffer> fragments = event.target.getFragments();
+        FragmentDecoder dec = new FragmentDecoder(major, minor, fragments);
+        ArrayList<Struct> headers = new ArrayList();
+        while (dec.hasRemaining())
+        {
+            headers.add(dec.readLongStruct());
+        }
+        delegate.headers(event.context, headers.toArray(EMPTY_STRUCT_ARRAY));
     }
 
 }

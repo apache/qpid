@@ -40,23 +40,42 @@ class FragmentDecoder extends AbstractDecoder
     private final Iterator<ByteBuffer> fragments;
     private ByteBuffer current;
 
-    public FragmentDecoder(StructFactory factory, Iterator<ByteBuffer> fragments)
+    public FragmentDecoder(byte major, byte minor, Iterator<ByteBuffer> fragments)
     {
-        super(factory);
+        super(major, minor);
         this.fragments = fragments;
         this.current = null;
     }
 
+    public boolean hasRemaining()
+    {
+        advance();
+        return current != null || fragments.hasNext();
+    }
+
+    private void advance()
+    {
+        while (current == null && fragments.hasNext())
+        {
+            current = fragments.next();
+            if (current.hasRemaining())
+            {
+                break;
+            }
+            else
+            {
+                current = null;
+            }
+        }
+    }
+
     private void preRead()
     {
+        advance();
+
         if (current == null)
         {
-            if (!fragments.hasNext())
-            {
-                throw new BufferUnderflowException();
-            }
-
-            current = fragments.next();
+            throw new BufferUnderflowException();
         }
     }
 

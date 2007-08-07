@@ -27,11 +27,18 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-interface Method extends Struct
+public abstract class Method extends Struct
 {
 
-    byte getEncodedTrack();
+    public abstract boolean hasPayload();
 
-    byte getSegmentType();
+    public abstract byte getEncodedTrack();
+
+    // XXX: do we need a segment base type?
+    public byte getSegmentType()
+    {
+        // XXX
+        return Frame.METHOD;
+    }
 
 }

@@ -49,13 +49,11 @@ class SegmentEncoder extends AbstractEncoder
     private ByteBuffer frame;
     private boolean first;
 
-    public SegmentEncoder(Handler<ByteBuffer> handler, int max,
-                          byte flags,
-                          byte track,
-                          byte type,
-                          int channel,
-                          int remaining)
+    public SegmentEncoder(byte major, byte minor, Handler<ByteBuffer> handler,
+                          int max, byte flags, byte track, byte type,
+                          int channel, int remaining)
     {
+        super(major, minor);
         if (max < HEADER_SIZE + 1)
         {
             throw new IllegalArgumentException
@@ -115,7 +113,7 @@ class SegmentEncoder extends AbstractEncoder
         }
     }
 
-    @Override protected void put(byte b)
+    @Override public void put(byte b)
     {
         preWrite();
         frame.put(b);
@@ -123,7 +121,7 @@ class SegmentEncoder extends AbstractEncoder
         postWrite();
     }
 
-    @Override protected void put(ByteBuffer src)
+    @Override public void put(ByteBuffer src)
     {
         if (src.remaining() > remaining)
         {
@@ -147,7 +145,8 @@ class SegmentEncoder extends AbstractEncoder
         buf.put("AMQP_PROTOCOL_HEADER".getBytes());
         buf.flip();
 
-        SegmentEncoder enc = new SegmentEncoder(new Handler<ByteBuffer>()
+        SegmentEncoder enc = new SegmentEncoder((byte) 0, (byte) 10,
+                                                new Handler<ByteBuffer>()
                                                 {
                                                     public void handle(ByteBuffer frame)
                                                     {

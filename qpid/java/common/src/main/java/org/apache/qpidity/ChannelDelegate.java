@@ -20,15 +20,32 @@
  */
 package org.apache.qpidity;
 
+import java.util.UUID;
+
+
 /**
- * Writable
+ * ChannelDelegate
  *
  * @author Rafael H. Schloming
  */
 
-interface Writable
+class ChannelDelegate extends Delegate<Channel>
 {
 
-    void write(Encoder enc);
+    public @Override void sessionOpen(Channel channel, SessionOpen open)
+    {
+        Session ssn = new Session();
+        ssn.attach(channel);
+        long lifetime = open.getDetachedLifetime();
+        System.out.println("Session Opened lifetime = " + lifetime);
+        ssn.sessionAttached(UUID.randomUUID(), lifetime);
+    }
+
+    public @Override void sessionAttached(Channel channel,
+                                          SessionAttached attached)
+    {
+        System.out.println("Session attached: " + attached.getSessionId() + ", " +
+                           attached.getDetachedLifetime());
+    }
 
 }

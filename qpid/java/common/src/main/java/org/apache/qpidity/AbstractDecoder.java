@@ -35,16 +35,23 @@ import static org.apache.qpidity.Functions.*;
 abstract class AbstractDecoder implements Decoder
 {
 
-    private final StructFactory factory;
+    private final byte major;
+    private final byte minor;
 
-    protected AbstractDecoder(StructFactory factory)
+    protected AbstractDecoder(byte major, byte minor)
     {
-        this.factory = factory;
+        this.major = major;
+        this.minor = minor;
     }
 
     protected abstract byte get();
 
     protected abstract void get(byte[] bytes);
+
+    protected short uget()
+    {
+        return unsigned(get());
+    }
 
     private byte bits = 0x0;
     private byte nbits = 0;
@@ -72,38 +79,38 @@ abstract class AbstractDecoder implements Decoder
     public short readOctet()
     {
         clearBits();
-        return unsigned(get());
+        return uget();
     }
 
     public int readShort()
     {
         clearBits();
-        int i = get() << 8;
-        i |= get();
+        int i = uget() << 8;
+        i |= uget();
         return i;
     }
 
     public long readLong()
     {
         clearBits();
-        long l = get() << 24;
-        l |= get() << 16;
-        l |= get() << 8;
-        l |= get();
+        long l = uget() << 24;
+        l |= uget() << 16;
+        l |= uget() << 8;
+        l |= uget();
         return l;
     }
 
     public long readLonglong()
     {
         clearBits();
-        long l = get() << 56;
-        l |= get() << 48;
-        l |= get() << 40;
-        l |= get() << 32;
-        l |= get() << 24;
-        l |= get() << 16;
-        l |= get() << 8;
-        l |= get();
+        long l = uget() << 56;
+        l |= uget() << 48;
+        l |= uget() << 40;
+        l |= uget() << 32;
+        l |= uget() << 24;
+        l |= uget() << 16;
+        l |= uget() << 8;
+        l |= uget();
         return l;
     }
 
@@ -138,7 +145,20 @@ abstract class AbstractDecoder implements Decoder
 
     public Range<Long>[] readRfc1982LongSet()
     {
-        throw new Error("TODO");
+        int count = readShort()/8;
+        if (count == 0)
+        {
+            return null;
+        }
+        else
+        {
+            Range<Long>[] ranges = new Range[count];
+            for (int i = 0; i < count; i++)
+            {
+                ranges[i] = new Range<Long>(readLong(), readLong());
+            }
+            return ranges;
+        }
     }
 
     public UUID readUuid()
@@ -156,8 +176,17 @@ abstract class AbstractDecoder implements Decoder
     public Struct readLongStruct()
     {
         long size = readLong();
-        int type = readShort();
-        return factory.create(type, this);
+        if (size == 0)
+        {
+            return null;
+        }
+        else
+        {
+            int type = readShort();
+            Struct result = Struct.create(type);
+            result.read(this, major, minor);
+            return result;
+        }
     }
 
 }
