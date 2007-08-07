@@ -16,14 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.client;
+package org.apache.qpidity;
 
 import java.util.Map;
 
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Option;
-import org.apache.qpidity.Header;
-import org.apache.qpidity.Range;
 import org.apache.qpidity.api.Message;
 
 /**
@@ -263,15 +259,13 @@ public interface Session
      * Forces the broker to exhaust its credit supply.
      * <p> The broker's credit will always be zero when
      * this method completes. This method does not complete until all the message transfers occur.
-     * <p> This method returns true if messages have been flushed
-     * (i.e. the queue was not empty and the credit greater then zero).
-     * It returns false if the queue was empty.
+     * <p> This method returns the number of flushed messages. 
      *
      * @param destination The destination to call flush on.
-     * @return True is messages were flushed, false otherwise.
+     * @return The number of flushed messages
      * @throws QpidException If flushing fails due to some error.
      */
-    public boolean messageFlush(String destination) throws QpidException;
+    public int messageFlush(String destination) throws QpidException;
 
     /**
      * On receipt of this method, the brokers MUST set his credit to zero for the given
