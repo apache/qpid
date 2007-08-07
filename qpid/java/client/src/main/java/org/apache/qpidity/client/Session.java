@@ -16,11 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity;
+package org.apache.qpidity.client;
 
 import java.util.Map;
 
 import org.apache.qpidity.api.Message;
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Header;
+import org.apache.qpidity.Option;
+import org.apache.qpidity.Range;
 
 /**
  * <p>A session is associated with a connection.
@@ -44,7 +48,7 @@ public interface Session
     /**
      * Close this session and any associated resources.
      *
-     * @throws QpidException If the communication layer fails to close this session or if an internal error happens
+     * @throws org.apache.qpidity.QpidException If the communication layer fails to close this session or if an internal error happens
      *                       when closing this session resources. .
      */
     public void close() throws QpidException;
@@ -181,7 +185,7 @@ public interface Session
      *                    <li> pre-acquire (1): the message is acquired when the transfer starts
      *                    </ul>
      * @param listener    The listener for this destination. When big message are transfered then
-     *                    it is recommended to use a {@link MessagePartListener}.
+     *                    it is recommended to use a {@link org.apache.qpidity.client.MessagePartListener}.
      * @param options     Set of Options.
      * @param filter      A set of filters for the subscription. The syntax and semantics of these filters depends
      *                    on the providers implementation.
