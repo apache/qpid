@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity;
 
+import java.nio.ByteBuffer;
+
 
 /**
  * ProtocolHeader
@@ -29,6 +31,8 @@ package org.apache.qpidity;
 
 class ProtocolHeader
 {
+
+    private static final byte[] AMQP = {'A', 'M', 'Q', 'P' };
 
     final private byte instance;
     final private byte major;
@@ -54,6 +58,18 @@ class ProtocolHeader
     public byte getMinor()
     {
         return minor;
+    }
+
+    public ByteBuffer toByteBuffer()
+    {
+        ByteBuffer buf = ByteBuffer.allocate(8);
+        buf.put(AMQP);
+        buf.put((byte) 1);
+        buf.put((byte) 1);
+        buf.put((byte) 0);
+        buf.put((byte) 10);
+        buf.flip();
+        return buf;
     }
 
     public String toString()

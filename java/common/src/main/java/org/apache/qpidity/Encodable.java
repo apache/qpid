@@ -22,24 +22,16 @@ package org.apache.qpidity;
 
 
 /**
- * AbstractMethod
+ * Encodable
  *
  * @author Rafael H. Schloming
  */
 
-abstract class AbstractMethod extends AbstractStruct implements Method {
+public interface Encodable
+{
 
-    public byte getEncodedTrack()
-    {
-        // XXX
-        return Frame.L2;
-    }
+    void write(Encoder enc, byte major, byte minor);
 
-    // XXX: do we need a segment base type?
-    public byte getSegmentType()
-    {
-        // XXX
-        return Frame.METHOD;
-    }
+    void read(Decoder dec, byte major, byte minor);
 
 }

@@ -27,12 +27,20 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-class BodyHandler<C> implements Handler<Event<C,Frame>>
+class BodyHandler implements Handler<Event<Session,Frame>>
 {
 
-    public void handle(Event<C,Frame> event)
+    private final SessionDelegate delegate;
+
+    public BodyHandler(SessionDelegate delegate)
+    {
+        this.delegate = delegate;
+    }
+
+    public void handle(Event<Session,Frame> event)
     {
         System.out.println("got body frame: " + event.target);
+        delegate.data(event.context, event.target);
     }
 
 }

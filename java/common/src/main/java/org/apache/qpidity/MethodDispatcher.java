@@ -34,23 +34,29 @@ import java.util.Iterator;
 class MethodDispatcher<C> implements Handler<Event<C,Segment>>
 {
 
-    final private StructFactory factory;
-    final private DelegateResolver<C> resolver;
+    final private byte major;
+    final private byte minor;
+    final private Delegate<C> delegate;
+    // XXX: should be on session
+    private int count = 0;
 
-    public MethodDispatcher(StructFactory factory, DelegateResolver<C> resolver)
+    public MethodDispatcher(byte major, byte minor, Delegate<C> delegate)
     {
-        this.factory = factory;
-        this.resolver = resolver;
+        this.major = major;
+        this.minor = minor;
+        this.delegate = delegate;
     }
 
     public void handle(Event<C,Segment> event)
     {
         System.out.println("got method segment:\n  " + event.target);
         Iterator<ByteBuffer> fragments = event.target.getFragments();
-        Decoder dec = new FragmentDecoder(factory, fragments);
+        Decoder dec = new FragmentDecoder(major, minor, fragments);
         int type = (int) dec.readLong();
-        Struct struct = factory.create(type, dec);
-        Delegate<C> delegate = resolver.resolve(struct);
+        Struct struct = Struct.create(type);
+        struct.setId(count++);
+        struct.read(dec, major, minor);
+        System.out.println("delegating " + struct + "[" + struct.getId() + "] to " + delegate);
         struct.delegate(event.context, delegate);
     }
 

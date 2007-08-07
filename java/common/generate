@@ -9,9 +9,6 @@ out_dir=sys.argv[1]
 out_pkg = sys.argv[2]
 spec_file = sys.argv[3]
 spec = mllib.xml_parse(spec_file)
-major = spec["amqp/@major"]
-minor = spec["amqp/@minor"]
-isfx = "_v%s_%s" % (major, minor)
 
 class Output:
 
@@ -58,6 +55,13 @@ TYPES = {
   "long-struct": "Struct"
   }
 
+TRACKS = {
+  "connection": "Frame.L1",
+  "session": "Frame.L2",
+  "execution": "Frame.L3",
+  None: None
+  }
+
 def camel(offset, *args):
   parts = []
   for a in args:
@@ -99,29 +103,23 @@ OPTIONS = {}
 
 class Struct:
 
-  def __init__(self, name, base, type):
+  def __init__(self, name, base, type, track, content):
     self.name = name
     self.base = base
     self.type = type
+    self.track = track
+    self.content = content
     self.fields = []
 
   def field(self, type, name):
     self.fields.append((type, name))
 
-  def interface(self, out):
-    out.line("public interface %s extends %s {" % (self.name, self.base))
-    out.line()
-    if self.type != None:
-      out.line("    public static final int TYPE = %d;" % self.type)
-    out.line()
-    for type, name in self.fields:
-      out.line("    %s %s();" % (jtype(type), camel(1, "get", name)))
-    out.line()
-    out.line("}")
-
   def impl(self, out):
-    out.line("class %s%s extends Abstract%s implements %s {" %
-             (self.name, isfx, self.base, self.name))
+    out.line("public class %s extends %s {" % (self.name, self.base))
+
+    if self.type != None:
+      out.line()
+      out.line("    public static final int TYPE = %d;" % self.type)
 
     out.line()
     out.line("    public int getEncodedType() {")
@@ -131,23 +129,30 @@ class Struct:
       out.line("        return TYPE;")
     out.line("    }")
 
-    out.line()
-    for type, name in self.fields:
-      out.line("    private final %s %s;" % (jtype(type), name))
-
-    out.line()
-    out.line("    %s%s(Decoder dec) {" % (self.name, isfx))
-    for type, name in self.fields:
-      if TYPES.has_key(type):
-        out.line("        %s = dec.read%s();" % (name, camel(0, type)))
-      elif STRUCTS.has_key(type):
-        out.line("        %s = new %s%s(dec);" % (name, STRUCTS[type], isfx))
+    if self.base == "Method":
+      out.line()
+      out.line("    public boolean hasPayload() {")
+      if self.content:
+        out.line("        return true;")
       else:
-        raise Exception("unknown type: %s" % type)
-    out.line("    }")
+        out.line("        return false;")
+      out.line("    }")
+
+      out.line()
+      out.line("    public byte getEncodedTrack() {")
+      out.line("        return %s;" % self.track)
+      out.line("    }")
 
     out.line()
-    out.line("    %s%s(%s) {" % (self.name, isfx, self.parameters()))
+    for type, name in self.fields:
+      out.line("    private %s %s;" % (jtype(type), name))
+
+    if self.fields:
+      out.line()
+      out.line("    public %s() {}" % self.name)
+
+    out.line()
+    out.line("    public %s(%s) {" % (self.name, self.parameters()))
     opts = False
     for type, name in self.fields:
       if not OPTIONS.has_key(name):
@@ -163,6 +168,7 @@ class Struct:
       for type, name in self.fields:
         if OPTIONS.has_key(name):
           out.line("            case %s: _%s=true; break;" % (OPTIONS[name], name))
+      out.line("            case NO_OPTION: break;")
       out.line('            default: throw new IllegalArgumentException'
                '("invalid option: " + _options[i]);')
       out.line("            }")
@@ -177,19 +183,44 @@ class Struct:
     out.line("        delegate.%s(context, this);" % dromedary(self.name))
     out.line("    }")
 
-    out.line()
     for type, name in self.fields:
+      out.line()
       out.line("    public %s %s() {" % (jtype(type), camel(1, "get", name)))
       out.line("        return %s;" % name)
       out.line("    }")
+      out.line("    public %s %s(%s value) {" %
+               (self.name, camel(1, "set", name), jtype(type)))
+      out.line("        this.%s = value;" % name);
+      out.line("        return this;")
+      out.line("    }")
+      out.line("    public %s %s(%s value) {" % (self.name, name, jtype(type)))
+      out.line("        this.%s = value;" % name);
+      out.line("        return this;")
+      out.line("    }")
 
     out.line()
-    out.line("    public void write(Encoder enc) {")
+    out.line("    public void read(Decoder dec, byte major, byte minor) {")
+    for type, name in self.fields:
+      if TYPES.has_key(type):
+        out.line("        %s = dec.read%s();" % (name, camel(0, type)))
+      elif STRUCTS.has_key(type):
+        out.line("        %s = new %s();" % (name, STRUCTS[type]))
+        out.line("        %s.read(dec, major, minor);" % name)
+      else:
+        raise Exception("unknown type: %s" % type)
+    out.line("    }")
+
+    out.line()
+    out.line("    public void write(Encoder enc, byte major, byte minor) {")
     for type, name in self.fields:
       if TYPES.has_key(type):
         out.line("        enc.write%s(%s);" % (camel(0, type), name))
       elif STRUCTS.has_key(type):
-        out.line("        %s.write(enc);" % name)
+        out.line("        if (%s == null) {" % name)
+        out.line("            new %s().write(enc, major, minor);" % jtype(type))
+        out.line("        } else {")
+        out.line("            %s.write(enc, major, minor);" % name)
+        out.line("        }")
       else:
         raise Exception("unknown type: %s" % type)
     out.line("    }")
@@ -253,7 +284,9 @@ opts = Output(out_dir, out_pkg, "Option")
 opts.line("public enum Option {")
 structs = []
 for name, base, typecode, m in v.structs:
-  struct = Struct(name, base, typecode)
+  struct = Struct(name, base, typecode,
+                  TRACKS.get(m.parent["@name"], "Frame.L4"),
+                  m["@content"] == "1")
   for f in m.query["field", lambda f: FIELDS.get(f["@name"], True)]:
     type = resolve(f["@domain"])
     name = camel(1, f["@name"])
@@ -269,48 +302,24 @@ opts.line("}")
 opts.write()
 
 for s in structs:
-  out = Output(out_dir, out_pkg, s.name)
-  s.interface(out)
-  out.write()
-  iout = Output(out_dir, out_pkg, s.name + isfx)
-  s.impl(iout)
-  iout.write()
+  impl = Output(out_dir, out_pkg, s.name)
+  s.impl(impl)
+  impl.write()
 
 fct = Output(out_dir, out_pkg, "StructFactory")
-fct.line("public interface StructFactory {")
-fct.line("    Struct create(int type, Decoder dec);")
-for s in structs:
-  fct.line()
-  fct.line("    %s new%s(Decoder dec);" % (s.name, s.name))
-  fct.line("    %s new%s(%s);" % (s.name, s.name, s.parameters()))
-fct.line("}")
-fct.write()
-
-ifct_name = "StructFactory%s" % isfx
-ifct = Output(out_dir, out_pkg, ifct_name)
-ifct.line("class %s implements StructFactory {" % ifct_name)
-ifct.line("    public Struct create(int type, Decoder dec) {")
-ifct.line("        switch (type) {")
+fct.line("class StructFactory {")
+fct.line("    public static Struct create(int type) {")
+fct.line("        switch (type) {")
 for s in structs:
   if s.type == None: continue
-  ifct.line("        case %s.TYPE:" % s.name)
-  ifct.line("            return new %s%s(dec);" % (s.name, isfx))
-ifct.line("        default:")
-ifct.line('            throw new IllegalArgumentException("type: " + type);')
-ifct.line("        }")
-ifct.line("    }")
-
-for s in structs:
-  ifct.line("    public %s new%s(Decoder dec) {" % (s.name, s.name))
-  ifct.line("        return new %s%s(dec);" % (s.name, isfx))
-  ifct.line("    }")
-
-  ifct.line("    public %s new%s(%s) {" % (s.name, s.name, s.parameters()))
-  ifct.line("        return new %s%s(%s);" % (s.name, isfx, s.arguments()))
-  ifct.line("    }")
-
-ifct.line("}");
-ifct.write()
+  fct.line("        case %s.TYPE:" % s.name)
+  fct.line("            return new %s();" % s.name)
+fct.line("        default:")
+fct.line('            throw new IllegalArgumentException("type: " + type);')
+fct.line("        }")
+fct.line("    }")
+fct.line("}");
+fct.write()
 
 dlg = Output(out_dir, out_pkg, "Delegate")
 dlg.line("public abstract class Delegate<C> {")
@@ -325,13 +334,12 @@ inv.line("public abstract class Invoker {")
 inv.line()
 inv.line("    protected abstract void invoke(Method method);")
 inv.line("    protected abstract void invoke(Method method, Handler<Struct> handler);")
-inv.line("    protected abstract StructFactory getFactory();")
 inv.line()
 for s in structs:
   if s.base != "Method": continue
   dname = dromedary(s.name)
-  inv.line("    public void %s(%s) throws QpidException {" % (dname, s.parameters()))
-  inv.line("        invoke(getFactory().new%s(%s));" % (s.name, s.arguments()))
+  inv.line("    public void %s(%s) {" % (dname, s.parameters()))
+  inv.line("        invoke(new %s(%s));" % (s.name, s.arguments()))
   inv.line("    }")
 inv.line("}")
 inv.write()

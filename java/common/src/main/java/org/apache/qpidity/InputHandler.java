@@ -34,7 +34,7 @@ import static org.apache.qpidity.InputHandler.State.*;
 class InputHandler implements Handler<ByteBuffer>
 {
 
-    enum State
+    public enum State
     {
         PROTO_HDR,
         PROTO_HDR_M,

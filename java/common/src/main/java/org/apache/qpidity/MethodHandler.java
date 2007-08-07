@@ -32,9 +32,9 @@ package org.apache.qpidity;
 class MethodHandler<C> extends TypeSwitch<C>
 {
 
-    public MethodHandler(StructFactory factory, DelegateResolver<C> resolver)
+    public MethodHandler(byte major, byte minor, Delegate<C> delegate)
     {
-        MethodDispatcher md = new MethodDispatcher<C>(factory, resolver);
+        MethodDispatcher md = new MethodDispatcher<C>(major, minor, delegate);
         map(Frame.METHOD, new SegmentAssembler<C>(md));
     }
 
