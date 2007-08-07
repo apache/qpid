@@ -163,7 +163,7 @@ namespace Apache.Qpid.Client.Tests.interop.TestCases
 
             // Generate a report message containing the count of the number of messages passed.
             IMessage report = channel.CreateMessage();
-            report.Headers.SetString("CONTROL_TYPE", "REPORT");
+            //report.Headers.SetString("CONTROL_TYPE", "REPORT");
             report.Headers.SetInt("MESSAGE_COUNT", messageCount);
 
             return report;

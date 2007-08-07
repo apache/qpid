@@ -34,6 +34,7 @@
    <fileset id='other.builds'>
       <include name="TopicListener/default.build" />	
       <include name="TopicPublisher/default.build" />	
+      <include name="TestClient/default.build" />	
    </fileset>
    <!--
       Prepare environment for a debug build

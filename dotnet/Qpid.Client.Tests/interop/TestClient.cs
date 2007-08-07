@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Text;
+using System.Threading;
 using Apache.Qpid.Messaging;
 using Apache.Qpid.Client.Qms;
 using log4net;
@@ -28,7 +29,7 @@ namespace Apache.Qpid.Client.Tests.interop
     /// <tr><td> Configure and look up test cases by name. <td> {@link InteropClientTestCase}
     /// </table>
     /// </summary>
-    class TestClient
+    public class TestClient
     {
         private static ILog log = LogManager.GetLogger(typeof(TestClient));
 
@@ -39,7 +40,7 @@ namespace Apache.Qpid.Client.Tests.interop
         public static string DEFAULT_VIRTUAL_HOST = "";
 
         /// <summary> Defines the default identifying name of this test client. </summary>
-        public static string DEFAULT_CLIENT_NAME = ".net";
+        public static string DEFAULT_CLIENT_NAME = "dotnet";
 
         /// <summary> Holds the URL of the broker to run the tests on. </summary>
         public static string brokerUrl;
@@ -59,6 +60,8 @@ namespace Apache.Qpid.Client.Tests.interop
 
         private IChannel channel;
 
+        /// <summary> Monitor to wait for termination events on. </summary>
+        private static object terminationMonitor = new Object();
 
         /// <summary>
         /// Creates a new interop test client, listenting to the specified broker and virtual host, with the specified
@@ -70,7 +73,7 @@ namespace Apache.Qpid.Client.Tests.interop
         /// <param name="clientName">  The client name to use. </param>
         public TestClient(string brokerUrl, string virtualHost, string clientName)
         {
-            log.Debug("public TestClient(string brokerUrl = " + brokerUrl + ", string virtualHost = " + virtualHost
+            log.Info("public TestClient(string brokerUrl = " + brokerUrl + ", string virtualHost = " + virtualHost
                 + ", string clientName = " + clientName + "): called");
 
             // Retain the connection parameters.
@@ -127,6 +130,12 @@ namespace Apache.Qpid.Client.Tests.interop
                 log.Error("The test client was unable to start.", e);
                 System.Environment.Exit(1);
             }
+
+            // Wait for a signal on the termination monitor before quitting.
+            lock (terminationMonitor)
+            {
+                Monitor.Wait(terminationMonitor);
+            }
         }
 
         /// <summary>
@@ -134,7 +143,7 @@ namespace Apache.Qpid.Client.Tests.interop
         /// </summary>
         private void Start()
         {
-            log.Debug("private void Start(): called");
+            log.Info("private void Start(): called");
 
             // Use a class path scanner to find all the interop test case implementations.
             ArrayList testCaseClasses = new ArrayList();
@@ -150,9 +159,12 @@ namespace Apache.Qpid.Client.Tests.interop
             {
                 InteropClientTestCase testCase = (InteropClientTestCase)Activator.CreateInstance(testClass);
                 testCases.Add(testCase.GetName(), testCase);
+
+                log.Info("Found test case: " + testClass);
             }
 
             // Open a connection to communicate with the coordinator on.
+            log.Info("brokerUrl = " + brokerUrl);
             IConnection connection = CreateConnection(brokerUrl, virtualHost);
 
             channel = connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge);
@@ -161,8 +173,8 @@ namespace Apache.Qpid.Client.Tests.interop
             string responseQueueName = channel.GenerateUniqueName();
             channel.DeclareQueue(responseQueueName, false, true, true);
 
-            channel.Bind(responseQueueName, ExchangeNameDefaults.DIRECT, "iop.control." + clientName);
-            channel.Bind(responseQueueName, ExchangeNameDefaults.DIRECT, "iop.control");
+            channel.Bind(responseQueueName, ExchangeNameDefaults.TOPIC, "iop.control." + clientName);
+            channel.Bind(responseQueueName, ExchangeNameDefaults.TOPIC, "iop.control");
 
             IMessageConsumer consumer = channel.CreateConsumerBuilder(responseQueueName)
                 .Create();
@@ -189,7 +201,7 @@ namespace Apache.Qpid.Client.Tests.interop
         /// <returns> A JMS conneciton. </returns>
         public static IConnection CreateConnection(string brokerUrl, string virtualHost)
         {
-            log.Debug("public static Connection createConnection(string brokerUrl = " + brokerUrl + ", string virtualHost = " 
+            log.Info("public static Connection createConnection(string brokerUrl = " + brokerUrl + ", string virtualHost = " 
                 + virtualHost + "): called");
 
             // Create a connection to the broker.
@@ -207,7 +219,7 @@ namespace Apache.Qpid.Client.Tests.interop
         /// <param name="message"> The incoming message. </param>
         public void OnMessage(IMessage message)
         {
-            log.Debug("public void OnMessage(IMessage message = " + message + "): called");
+            log.Info("public void OnMessage(IMessage message = " + message + "): called");
 
             try
             {
@@ -225,7 +237,7 @@ namespace Apache.Qpid.Client.Tests.interop
 
                     if (testCaseName != null)
                     {
-                        log.Debug("Got an invite to test: " + testCaseName);
+                        log.Info("Got an invite to test: " + testCaseName);
 
                         // Check if the requested test case is available.
                         InteropClientTestCase testCase = (InteropClientTestCase)testCases[testCaseName];
@@ -239,10 +251,12 @@ namespace Apache.Qpid.Client.Tests.interop
                     }
                     else
                     {
-                        log.Debug("Got a compulsory invite.");
+                        log.Info("Got a compulsory invite.");
 
                         enlist = true;
                     }
+
+                    log.Info("enlist = " + enlist);
 
                     if (enlist)
                     {
@@ -254,14 +268,14 @@ namespace Apache.Qpid.Client.Tests.interop
                         enlistMessage.CorrelationId = message.CorrelationId;
 
                         Send(enlistMessage, message.ReplyToRoutingKey);
-                    }
+                    }                    
                 }
                 else if ("ASSIGN_ROLE" == controlType)
                 {
                     // Assign the role to the current test case.
                     string roleName = message.Headers.GetString("ROLE");
     
-                    log.Debug("Got a role assignment to role: " + roleName);
+                    log.Info("Got a role assignment to role: " + roleName);
     
                     Roles role;
 
@@ -287,14 +301,14 @@ namespace Apache.Qpid.Client.Tests.interop
                 {
                     if ("START" == controlType)
                     {
-                        log.Debug("Got a start notification.");
+                        log.Info("Got a start notification.");
 
                         // Start the current test case.
                         currentTestCase.Start();
                     }
                     else
                     {
-                        log.Debug("Got a status request.");
+                        log.Info("Got a status request.");
                     }
 
                     // Generate the report from the test case and reply with it as a Report message.
@@ -321,7 +335,7 @@ namespace Apache.Qpid.Client.Tests.interop
             {
                 // Log a warning about this, but otherwise ignore it.
                 log.Warn("A QpidException occurred whilst handling a message.");
-                log.Debug("Got QpidException whilst handling message: " + message, e);
+                log.Info("Got QpidException whilst handling message: " + message, e);
             }
         }
 

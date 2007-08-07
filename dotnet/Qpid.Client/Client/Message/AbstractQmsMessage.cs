@@ -30,6 +30,8 @@ namespace Apache.Qpid.Client.Message
 {
     public abstract class AbstractQmsMessage : AMQMessage, IMessage
     {
+        private static ILog log = LogManager.GetLogger(typeof(AbstractQmsMessage));
+
         protected bool _redelivered;
 
         protected ByteBuffer _data;
@@ -452,6 +454,8 @@ namespace Apache.Qpid.Client.Message
         private Dest ReadReplyToHeader()
         {
            string replyToEncoding = ContentHeaderProperties.ReplyTo;
+           
+           //log.Info("replyToEncoding = " + replyToEncoding);
 
            if ( replyToEncoding == null )
            {
@@ -469,7 +473,9 @@ namespace Apache.Qpid.Client.Message
 
               // Extract the exchange name and routing key from the split replyto field.
               string exchangeName = split[0];
-              string routingKey = split[1];
+
+              string[] split2 = split[1].Split('/');
+              string routingKey = split2[3];
 
               return new Dest(exchangeName, routingKey);
            }

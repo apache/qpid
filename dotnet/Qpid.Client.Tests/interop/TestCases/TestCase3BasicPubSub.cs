@@ -185,14 +185,14 @@ namespace Apache.Qpid.Client.Tests.interop.TestCases
             log.Debug("public IMessage getReport(IChannel channel): called");
     
             // Close the test connections.
-            foreach (IConnection con in connection)
+            /*foreach (IConnection con in connection)
             {
-                con.Stop();
-            }
+                con.Close();
+            }*/
     
             // Generate a report message containing the count of the number of messages passed.
             IMessage report = channel.CreateMessage();
-            report.Headers.SetString("CONTROL_TYPE", "REPORT");
+            //report.Headers.SetString("CONTROL_TYPE", "REPORT");
             report.Headers.SetInt("MESSAGE_COUNT", messageCount);
     
             return report;
