@@ -95,7 +95,6 @@ public class InteropCircuitFactory extends BaseCircuitFactory
             ConversationFactory.Conversation senderConversation = conversationFactory.startConversation();
             ConversationFactory.Conversation receiverConversation = conversationFactory.startConversation();
 
-            // Assign the sender role to the sending test client.
             Message assignSender = conversationFactory.getSession().createMessage();
             TestUtils.setPropertiesOnMessage(assignSender, testProperties);
             assignSender.setStringProperty("CONTROL_TYPE", "ASSIGN_ROLE");
