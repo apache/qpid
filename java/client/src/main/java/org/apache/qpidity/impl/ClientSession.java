@@ -101,10 +101,10 @@ public class ClientSession implements org.apache.qpidity.client.Session
 
     }
 
-    public boolean messageFlush(String destination) throws QpidException
+    public int messageFlush(String destination) throws QpidException
     {
         // TODO
-        return false;
+        return 1;
     }
 
     public void messageStop(String destination) throws QpidException
