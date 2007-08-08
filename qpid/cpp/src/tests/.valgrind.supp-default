@@ -15,4 +15,50 @@
    obj:/lib64/ld-2.6.so
    obj:*
 }
+{
+   False "possibly leaked" in boost program_options - global std::string var.
+   Memcheck:Leak
+   fun:_Znwj
+   fun:_ZNSs4_Rep9_S_createEjjRKSaIcE
+   obj:/usr/lib/libstdc++.so.6.0.8
+   fun:_ZNSsC1EPKcRKSaIcE
+   obj:/usr/lib/libboost_program_options.so.1.33.1
+}
+{
+   TODO: CONFIRM BENIGN - uninit params to epoll_ctl 
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+   fun:_ZN4qpid3sys14DispatchHandle10startWatchEN5boost10shared_ptrINS0_6PollerEEE
+}
+{
+   TODO: CONFIRM BENIGN - uninit params to epoll_ctl 
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+   fun:_ZN4qpid3sys14DispatchHandle17dispatchCallbacksENS0_6Poller9EventTypeE
+}
+{
+  TODO: CONFIRM BENIGN - uninit params to epoll_ctl (on shutdown)
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+   fun:_ZN4qpid3sys16AsynchIOAcceptor8shutdownEv
+}
+{
+  TODO: CONFIRM BENIGN - uninit params to epoll_ctl (on shutdown)
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+   fun:_ZN4qpid3sys14DispatchHandle12rewatchWriteEv
+}
+{
+   TODO: shutdown leak, not critical but better to fix it. Unjoined thread?
+   Memcheck:Leak
+   fun:calloc
+   fun:_dl_allocate_tls
+   fun:pthread_create@@GLIBC_2.1
+   fun:pthread_create@GLIBC_2.0
+   fun:_ZN4qpid3sys16AsynchIOAcceptor3runEPNS0_29ConnectionInputHandlerFactoryE
+}
 

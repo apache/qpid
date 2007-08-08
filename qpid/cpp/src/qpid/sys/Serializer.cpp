@@ -55,11 +55,11 @@ void Serializer::dispatch(Task& task) {
     try {
         task();
     } catch (const std::exception& e) {
-        QPID_LOG(error, "Unexpected exception in Serializer::dispatch"
+        QPID_LOG(critical, "Unexpected exception in Serializer::dispatch"
                  << e.what());
         assert(0);              // Should not happen.
     } catch (...) {
-        QPID_LOG(error, "Unexpected exception in Serializer::dispatch.");
+        QPID_LOG(critical, "Unexpected exception in Serializer::dispatch.");
         assert(0);              // Should not happen.
     }
 }
