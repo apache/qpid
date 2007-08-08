@@ -21,8 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpidity.jms.message.*;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Range;
 import org.apache.qpidity.RangeSet;
+import org.apache.qpidity.Range;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -143,8 +143,7 @@ public class SessionImpl implements Session
             acknowledgeMode = Session.SESSION_TRANSACTED;
         }
         _acknowledgeMode = acknowledgeMode;
-   /*
-        
+
         // create the qpid session with an expiry  <= 0 so that the session does not expire
         _qpidSession = _connection.getQpidConnection().createSession(0);
         // set transacted if required
@@ -152,7 +151,7 @@ public class SessionImpl implements Session
         {
             _qpidSession.txSelect();
         }
-   */     
+
         // init the message dispatcher.
         initMessageDispatcherThread();
     }
@@ -445,7 +444,8 @@ public class SessionImpl implements Session
         {
             // release this message
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getMessageID());
+            // TODO: messageID is a string but range need a long???
+            // ranges.add(message.getMessageID());
             try
             {
                 getQpidSession().messageRelease(ranges);
@@ -985,7 +985,8 @@ public class SessionImpl implements Session
         {
             // acknowledge this message
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getMessageID());
+            // TODO: messageID is a string but range need a long???
+           // ranges.add(message.getMessageID());
             try
             {
                 getQpidSession().messageAcknowledge(ranges);
@@ -1020,7 +1021,8 @@ public class SessionImpl implements Session
                 {
                     // acknowledge this message
                     RangeSet ranges = new RangeSet();
-                    ranges.add(message.getMessageID());
+                    // TODO: messageID is a string but range need a long???
+                    // ranges.add(message.getMessageID());
                     try
                     {
                         getQpidSession().messageAcknowledge(ranges);
