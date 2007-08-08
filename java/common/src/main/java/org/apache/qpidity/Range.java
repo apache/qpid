@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity;
 
+import static java.lang.Math.*;
+
 
 /**
  * Range
@@ -27,25 +29,57 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-public class Range<C extends Comparable>
+public class Range
 {
-    private final C lower;
-    private final C upper;
+    private final long lower;
+    private final long upper;
 
-    public Range(C lower, C upper)
+    public Range(long lower, long upper)
     {
         this.lower = lower;
         this.upper = upper;
     }
 
-    public C getLower()
+    public long getLower()
     {
         return lower;
     }
 
-    public C getUpper()
+    public long getUpper()
     {
         return upper;
+    }
+
+    public boolean includes(long value)
+    {
+        return lower <= value && value <= upper;
+    }
+
+    public boolean includes(Range range)
+    {
+        return includes(range.lower) && includes(range.upper);
+    }
+
+    public boolean intersects(Range range)
+    {
+        return (includes(range.lower) || includes(range.upper) ||
+                range.includes(lower) || range.includes(upper));
+    }
+
+    public boolean touches(Range range)
+    {
+        return (includes(range.upper + 1) || includes(range.lower - 1) ||
+                range.includes(upper + 1) || range.includes(lower - 1));
+    }
+
+    public Range span(Range range)
+    {
+        return new Range(min(lower, range.lower), max(upper, range.upper));
+    }
+
+    public String toString()
+    {
+        return "[" + lower + ", " + upper + "]";
     }
 
 }

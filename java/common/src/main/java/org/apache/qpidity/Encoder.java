@@ -44,7 +44,7 @@ public interface Encoder
     void writeLongstr(String s);
 
     void writeTable(Map<String,?> table);
-    void writeRfc1982LongSet(Range<Long>[] ranges);
+    void writeRfc1982LongSet(RangeSet ranges);
     void writeUuid(UUID uuid);
 
     void writeContent(String c);

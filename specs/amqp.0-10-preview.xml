@@ -1272,6 +1272,22 @@
     </doc>
   </domain>
 
+  <domain name="execution-header">
+    <doc>
+      The execution header appears on commands after the class and method id, but prior to method
+      arguments.
+    </doc>
+    <struct size="octet" pack="octet">
+      <field name="sync" domain="bit"
+             label="request notification of completion for a specific command">
+        <doc>
+          Indicates that an execution.complete should be sent immediately after processing the
+          command.
+        </doc>
+      </field>
+    </struct>
+  </domain>
+
   <!-- Elementary domains -->
   <domain name="bit" type="bit" label="single bit" />
   <domain name="octet" type="octet" label="single octet" />
@@ -7061,6 +7077,19 @@
 
       <field name="command-id" domain="command-id"/>
       <field name="data" domain="long-struct"/>
+    </method>
+
+    <!-- - Method: execution.sync  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="sync" index="50" label="request notification of completion for issued commands">
+      <doc>
+        Requests notification (via execution.complete) when all commands issued prior to the sync
+        control have been processed. If the recipient of this control has already notified the
+        sender that said commands are complete, it may safely ignore the control.
+      </doc>
+
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
     </method>
 
   </class>
