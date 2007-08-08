@@ -113,25 +113,25 @@ public class ClientSession implements org.apache.qpidity.client.Session
 
     }
 
-    public void messageAcknowledge(Range<Long>... range) throws QpidException
+    public void messageAcknowledge(RangeSet ranges) throws QpidException
     {
         // TODO
 
     }
 
-    public void messageReject(Range<Long>... range) throws QpidException
+    public void messageReject(RangeSet ranges) throws QpidException
     {
         // TODO
 
     }
 
-    public Range<Long>[] messageAcquire(Range<Long>... range) throws QpidException
+    public RangeSet messageAcquire(RangeSet ranges) throws QpidException
     {
         // TODO
         return null;
     }
 
-    public void messageRelease(Range<Long>... range) throws QpidException
+    public void messageRelease(RangeSet ranges) throws QpidException
     {
         // TODO
 

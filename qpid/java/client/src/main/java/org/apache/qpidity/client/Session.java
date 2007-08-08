@@ -24,7 +24,7 @@ import org.apache.qpidity.api.Message;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Header;
 import org.apache.qpidity.Option;
-import org.apache.qpidity.Range;
+import org.apache.qpidity.RangeSet;
 
 /**
  * <p>A session is associated with a connection.
@@ -290,7 +290,7 @@ public interface Session
      * @param range Range of acknowledged messages.
      * @throws QpidException If the acknowledgement of the messages fails due to some error.
      */
-    public void messageAcknowledge(Range<Long>... range) throws QpidException;
+    public void messageAcknowledge(RangeSet ranges) throws QpidException;
 
     /**
      * Reject ranges of acquired messages.
@@ -300,7 +300,7 @@ public interface Session
      * @param range Range of rejected messages.
      * @throws QpidException If those messages cannot be rejected dus to some error
      */
-    public void messageReject(Range<Long>... range) throws QpidException;
+    public void messageReject(RangeSet ranges) throws QpidException;
 
     /**
      * Try to acquire ranges of messages hence releasing them form the queue.
@@ -314,7 +314,7 @@ public interface Session
      * @return Ranges of explicitly acquired messages.
      * @throws QpidException If this message cannot be acquired dus to some error
      */
-    public Range<Long>[] messageAcquire(Range<Long>... range) throws QpidException;
+    public RangeSet messageAcquire(RangeSet range) throws QpidException;
 
     /**
      * Give up responsibility for processing ranges of messages.
@@ -323,7 +323,7 @@ public interface Session
      * @param range Ranges of messages to be released.
      * @throws QpidException If this message cannot be released dus to some error.
      */
-    public void messageRelease(Range<Long>... range) throws QpidException;
+    public void messageRelease(RangeSet range) throws QpidException;
 
     // -----------------------------------------------
     //            Local transaction methods

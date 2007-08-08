@@ -150,7 +150,7 @@ abstract class AbstractEncoder implements Encoder
         //throw new Error("TODO");
     }
 
-    public void writeRfc1982LongSet(Range<Long>[] ranges)
+    public void writeRfc1982LongSet(RangeSet ranges)
     {
         if (ranges == null)
         {
@@ -158,8 +158,8 @@ abstract class AbstractEncoder implements Encoder
         }
         else
         {
-            writeShort(ranges.length * 8);
-            for (Range<Long> range : ranges)
+            writeShort(ranges.size() * 8);
+            for (Range range : ranges)
             {
                 writeLong(range.getLower());
                 writeLong(range.getUpper());

@@ -36,15 +36,20 @@ public abstract class SessionDelegate extends Delegate<Session>
 
     @Override public void executionComplete(Session ssn, ExecutionComplete excmp)
     {
-        Range<Long>[] ranges = excmp.getRangedExecutionSet();
+        RangeSet ranges = excmp.getRangedExecutionSet();
         if (ranges != null)
         {
-            for (Range<Long> range : ranges)
+            for (Range range : ranges)
             {
                 ssn.complete(range.getLower(), range.getUpper());
             }
         }
         ssn.complete(excmp.getCumulativeExecutionMark());
+    }
+
+    @Override public void executionSync(Session ssn, ExecutionSync sync)
+    {
+        ssn.executionComplete(0, ssn.getProcessed());
     }
 
 }

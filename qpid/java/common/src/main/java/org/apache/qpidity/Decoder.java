@@ -44,7 +44,7 @@ public interface Decoder
     String readLongstr();
 
     Map<String,?> readTable();
-    Range<Long>[] readRfc1982LongSet();
+    RangeSet readRfc1982LongSet();
     UUID readUuid();
 
     String readContent();
