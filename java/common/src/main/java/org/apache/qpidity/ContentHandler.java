@@ -34,11 +34,11 @@ class ContentHandler extends TypeSwitch<Session>
 
     public ContentHandler(byte major, byte minor, SessionDelegate delegate)
     {
-        MethodDispatcher<Session> md =
-            new MethodDispatcher<Session>(major, minor, delegate);
-        map(Frame.METHOD, new SegmentAssembler<Session>(md));
-        map(Frame.HEADER, new SegmentAssembler<Session>
-            (new HeaderHandler(major, minor, delegate)));
+        CommandDispatcher disp = new CommandDispatcher(delegate);
+        MethodDecoder<Session> dec = new MethodDecoder<Session>(major, minor, disp);
+        HeaderHandler hh = new HeaderHandler(major, minor, delegate);
+        map(Frame.METHOD, new SegmentAssembler<Session>(dec));
+        map(Frame.HEADER, new SegmentAssembler<Session>(hh));
         map(Frame.BODY, new BodyHandler(delegate));
     }
 
