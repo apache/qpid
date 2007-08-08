@@ -64,7 +64,7 @@ class MinaHandler implements IoHandler
 
     public void messageSent(IoSession ssn, Object obj)
     {
-        System.out.println("TX: " + obj);
+        // do nothing
     }
 
     public void exceptionCaught(IoSession ssn, Throwable e)
@@ -74,7 +74,7 @@ class MinaHandler implements IoHandler
 
     public void sessionCreated(final IoSession ssn)
     {
-        System.out.println("created " + ssn);
+        // do nothing
     }
 
     public void sessionOpened(final IoSession ssn)

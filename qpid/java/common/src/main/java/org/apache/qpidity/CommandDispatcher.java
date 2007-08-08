@@ -22,43 +22,32 @@ package org.apache.qpidity;
 
 
 /**
- * Method
+ * CommandDispatcher
  *
  * @author Rafael H. Schloming
  */
 
-public abstract class Method extends Struct
+class CommandDispatcher implements Handler<Event<Session,Method>>
 {
 
-    public static final Method create(int type)
+    private final Delegate<Session> delegate;
+
+    public CommandDispatcher(Delegate<Session> delegate)
     {
-        // XXX: should generate separate factories for separate
-        // namespaces
-        return (Method) Struct.create(type);
+        this.delegate = delegate;
     }
 
-    // XXX: command subclass?
-    private long id;
-
-    public final long getId()
+    public void handle(Event<Session,Method> event)
     {
-        return id;
-    }
-
-    void setId(long id)
-    {
-        this.id = id;
-    }
-
-    public abstract boolean hasPayload();
-
-    public abstract byte getEncodedTrack();
-
-    // XXX: do we need a segment base type?
-    public byte getSegmentType()
-    {
-        // XXX
-        return Frame.METHOD;
+        Session ssn = event.context;
+        Method method = event.target;
+        method.setId(ssn.nextCommandId());
+        System.out.println("delegating " + method + "[" + method.getId() + "] to " + delegate);
+        method.delegate(ssn, delegate);
+        if (!method.hasPayload())
+        {
+            ssn.processed(method);
+        }
     }
 
 }

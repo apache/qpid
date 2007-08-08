@@ -34,8 +34,9 @@ class MethodHandler<C> extends TypeSwitch<C>
 
     public MethodHandler(byte major, byte minor, Delegate<C> delegate)
     {
-        MethodDispatcher md = new MethodDispatcher<C>(major, minor, delegate);
-        map(Frame.METHOD, new SegmentAssembler<C>(md));
+        MethodDispatcher disp = new MethodDispatcher<C>(delegate);
+        MethodDecoder<C> dec = new MethodDecoder<C>(major, minor, disp);
+        map(Frame.METHOD, new SegmentAssembler<C>(dec));
     }
 
 }

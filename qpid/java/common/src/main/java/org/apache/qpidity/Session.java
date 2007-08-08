@@ -38,7 +38,6 @@ public class Session extends Invoker
     // channel may be null
     Channel channel;
 
-    // XXX: incoming command count not used
     // incoming command count
     private long commandsIn = 0;
     // completed incoming commands
@@ -49,6 +48,11 @@ public class Session extends Invoker
     private Map<Long,Method> commands = new HashMap<Long,Method>();
     private long mark = 0;
 
+    public Map<Long,Method> getOutstandingCommands()
+    {
+        return commands;
+    }
+
     public long getCommandsOut()
     {
         return commandsOut;
@@ -57,6 +61,11 @@ public class Session extends Invoker
     public long getCommandsIn()
     {
         return commandsIn;
+    }
+
+    public long nextCommandId()
+    {
+        return commandsIn++;
     }
 
     public RangeSet getProcessed()
@@ -79,7 +88,7 @@ public class Session extends Invoker
         processed.add(range);
     }
 
-    public void processed(Struct command)
+    public void processed(Method command)
     {
         processed(command.getId());
     }

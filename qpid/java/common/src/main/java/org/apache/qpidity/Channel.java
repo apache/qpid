@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 import static org.apache.qpidity.Frame.*;
+import static org.apache.qpidity.Functions.*;
 
 
 /**
@@ -134,6 +135,8 @@ class Channel extends Invoker implements Handler<Frame>
         {
             method = m;
         }
+
+        System.out.println("sent " + m);
     }
 
     public void headers(Struct ... headers)
@@ -157,6 +160,7 @@ class Channel extends Invoker implements Handler<Frame>
         {
             enc.writeLongStruct(hdr);
             enc.flush();
+            System.out.println("sent " + hdr);
         }
     }
 
@@ -189,6 +193,7 @@ class Channel extends Invoker implements Handler<Frame>
         for (ByteBuffer buf : data)
         {
             enc.put(buf);
+            System.out.println("sent " + str(buf));
         }
         enc.flush();
         data = null;
