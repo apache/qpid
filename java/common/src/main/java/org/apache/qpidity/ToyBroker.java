@@ -58,6 +58,7 @@ class ToyBroker extends SessionDelegate
     {
         queues.put(qd.getQueue(), new LinkedList());
         System.out.println("declared queue: " + qd.getQueue());
+        ssn.processed(qd);
     }
 
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
@@ -120,6 +121,7 @@ class ToyBroker extends SessionDelegate
                 queue.offer(m);
                 System.out.println("queued " + m);
             }
+            ssn.processed(xfr);
             xfr = null;
             frames = null;
         }
@@ -133,8 +135,8 @@ class ToyBroker extends SessionDelegate
         }
         else
         {
-            long id = xfr.getId();
-            Range[] ranges = {new Range<Long>(id, id)};
+            RangeSet ranges = new RangeSet();
+            ranges.add(xfr.getId());
             ssn.messageReject(ranges, 0, "no such destination");
         }
     }

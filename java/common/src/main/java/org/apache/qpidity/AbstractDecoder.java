@@ -143,7 +143,7 @@ abstract class AbstractDecoder implements Decoder
         return null;
     }
 
-    public Range<Long>[] readRfc1982LongSet()
+    public RangeSet readRfc1982LongSet()
     {
         int count = readShort()/8;
         if (count == 0)
@@ -152,10 +152,10 @@ abstract class AbstractDecoder implements Decoder
         }
         else
         {
-            Range<Long>[] ranges = new Range[count];
+            RangeSet ranges = new RangeSet();
             for (int i = 0; i < count; i++)
             {
-                ranges[i] = new Range<Long>(readLong(), readLong());
+                ranges.add(readLong(), readLong());
             }
             return ranges;
         }
