@@ -23,9 +23,6 @@ import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
-import javax.jms.Session;
-import javax.jms.ExceptionListener;
-import javax.jms.Connection;
 import java.util.Vector;
 
 

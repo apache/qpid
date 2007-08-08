@@ -21,7 +21,6 @@ package org.apache.qpidity.client;
 import java.util.Map;
 
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Header;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.RangeSet;
@@ -45,31 +44,31 @@ public interface Session
     //------------------------------------------------------
     //                 Session housekeeping methods
     //------------------------------------------------------
+    
+    /**
+     * Sync method will block until all outstanding commands
+     * are executed.
+     */
+    public void sync();
+    
     /**
      * Close this session and any associated resources.
-     *
-     * @throws org.apache.qpidity.QpidException If the communication layer fails to close this session or if an internal error happens
-     *                       when closing this session resources. .
      */
-    public void close() throws QpidException;
+    public void close();
 
     /**
      * Suspend this session resulting in interrupting the traffic with the broker.
      * <p> The session timer will start to tick in suspend.
      * <p> When a session is suspend any operation of this session and of the associated resources are unavailable.
-     *
-     * @throws QpidException If the communication layer fails to suspend this session
      */
-    public void suspend() throws QpidException;
+    public void suspend();
 
     /**
      * This will resume an existing session
      * <p> Upon resume the session is attached with an underlying channel
      * hence making operation on this session available.
-     *
-     * @throws QpidException If the communication layer fails to execute this properly
      */
-    public void resume() throws QpidException;
+    public void resume();
 
     //------------------------------------------------------ 
     //                 Messaging methods
@@ -92,9 +91,8 @@ public interface Session
      *                    </ul>
      * @param exchange    The exchange the message is being sent.
      * @param msg         The Message to be sent
-     * @throws QpidException If the session fails to send the message due to some error
      */
-    public void messageTransfer(String exchange, Message msg, short confirmMode, short acquireMode) throws QpidException;
+    public void messageTransfer(String exchange, Message msg, short confirmMode, short acquireMode);
 
     /**
      * Declare the beginning of a message transfer operation. This operation must
@@ -118,19 +116,17 @@ public interface Session
      *                    <li> pre-acquire (1): the message is acquired when the transfer starts
      *                    </ul>
      * @param exchange    The exchange the message is being sent.
-     * @throws QpidException If the session fails to send the message due to some error.
      */
-    public void messageTransfer(String exchange, short confirmMode, short acquireMode) throws QpidException;
+    public void messageTransfer(String exchange, short confirmMode, short acquireMode);
 
     /**
      * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}
      * or to the message being sent.
      *
      * @param headers Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
-     * @throws QpidException If the session fails to execute the method due to some error
      * @see org.apache.qpidity.DeliveryProperties
      */
-    public void addMessageHeaders(Header... headers) throws QpidException;
+    public void addMessageHeaders(Header... headers);
 
     /**
      * Add the following byte array to the content of the message being sent.
@@ -138,16 +134,13 @@ public interface Session
      * @param data Data to be added.
      * @param off  Offset from which to start reading data
      * @param len  Number of bytes to be read
-     * @throws QpidException If the session fails to execute the method due to some error
      */
-    public void addData(byte[] data, int off, int len) throws QpidException;
+    public void addData(byte[] data, int off, int len);
 
     /**
      * Signals the end of data for the message.
-     *
-     * @throws QpidException If the session fails to execute the method due to some error
      */
-    public void endData() throws QpidException;
+    public void endData();
 
     //------------------------------------------------------
     //                 Messaging methods
@@ -189,11 +182,9 @@ public interface Session
      * @param options     Set of Options.
      * @param filter      A set of filters for the subscription. The syntax and semantics of these filters depends
      *                    on the providers implementation.
-     * @throws QpidException If the session fails to create the receiver due to some error.
      */
     public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode,
-                                 MessagePartListener listener, Map<String, ?> filter, Option... options)
-            throws QpidException;
+                                 MessagePartListener listener, Map<String, ?> filter, Option... options);
 
     /**
      * This method cancels a consumer. This does not affect already delivered messages, but it does
@@ -202,9 +193,8 @@ public interface Session
      * notification of completion of the cancel command.
      *
      * @param destination The destination for the subscriber used at subscription
-     * @throws QpidException If cancelling the subscription fails due to some error.
      */
-    public void messageCancel(String destination) throws QpidException;
+    public void messageCancel(String destination);
 
     /**
      * Associate a message part listener with a destination.
@@ -235,9 +225,8 @@ public interface Session
      * @param destination The destination to set the flow mode on.
      * @param mode        <ul> <li>credit (0): choose credit based flow control
      *                    <li> window (1): choose window based flow control</ul>
-     * @throws QpidException If setting the flow mode fails due to some error.
      */
-    public void messageFlowMode(String destination, short mode) throws QpidException;
+    public void messageFlowMode(String destination, short mode);
 
 
     /**
@@ -257,9 +246,8 @@ public interface Session
      *                    <li> byte    (1)
      *                    </ul>
      * @param value       Number of credits, a value of 0 indicates an infinite amount of credit.
-     * @throws QpidException If setting the flow fails due to some error.
      */
-    public void messageFlow(String destination, short unit, long value) throws QpidException;
+    public void messageFlow(String destination, short unit, long value);
 
     /**
      * Forces the broker to exhaust its credit supply.
@@ -268,10 +256,10 @@ public interface Session
      * <p> This method returns the number of flushed messages. 
      *
      * @param destination The destination to call flush on.
-     * @return The number of flushed messages
-     * @throws QpidException If flushing fails due to some error.
      */
-    public int messageFlush(String destination) throws QpidException;
+    public void messageFlush(String destination);
+    
+    public int getNoOfUnAckedMessages();
 
     /**
      * On receipt of this method, the brokers MUST set his credit to zero for the given
@@ -280,9 +268,8 @@ public interface Session
      * further credit is received.
      *
      * @param destination The destination to stop.
-     * @throws QpidException If stopping fails due to some error.
      */
-    public void messageStop(String destination) throws QpidException;
+    public void messageStop(String destination);
 
     /**
      * Acknowledge the receipt of ranges of messages.
@@ -290,9 +277,8 @@ public interface Session
      * pre-acquire mode or by explicitly acquiring them.
      *
      * @param ranges Range of acknowledged messages.
-     * @throws QpidException If the acknowledgement of the messages fails due to some error.
      */
-    public void messageAcknowledge(RangeSet ranges) throws QpidException;
+    public void messageAcknowledge(RangeSet ranges);
 
     /**
      * Reject ranges of acquired messages.
@@ -300,9 +286,8 @@ public interface Session
      * and may be either discarded or moved to the broker dead letter queue.
      *
      * @param ranges Range of rejected messages.
-     * @throws QpidException If those messages cannot be rejected dus to some error
      */
-    public void messageReject(RangeSet ranges) throws QpidException;
+    public void messageReject(RangeSet ranges);
 
     /**
      * Try to acquire ranges of messages hence releasing them form the queue.
@@ -313,45 +298,39 @@ public interface Session
      * <p> This method should only be called on non-acquired messages.
      *
      * @param range Ranges of messages to be acquired.
-     * @return Ranges of explicitly acquired messages.
-     * @throws QpidException If this message cannot be acquired dus to some error
      */
-    public RangeSet messageAcquire(RangeSet range) throws QpidException;
+    public void messageAcquire(RangeSet ranges);
 
+    
+    public RangeSet getAccquiredMessages();
+    
     /**
      * Give up responsibility for processing ranges of messages.
      * <p> Released messages are re-enqueued.
      *
      * @param range Ranges of messages to be released.
-     * @throws QpidException If this message cannot be released dus to some error.
      */
-    public void messageRelease(RangeSet range) throws QpidException;
+    public void messageRelease(RangeSet ranges);
 
     // -----------------------------------------------
     //            Local transaction methods
     //  ----------------------------------------------
     /**
      * Selects the session for local transaction support.
-     *
-     * @throws QpidException If selecting this session for local transaction support fails due to some error.
      */
-    public void txSelect() throws QpidException;
+    public void txSelect();
 
     /**
      * Commit the receipt and the delivery of all messages exchanged by this session resources.
-     *
-     * @throws QpidException         If the session fails to commit due to some error.
      * @throws IllegalStateException If this session is not transacted.
      */
-    public void txCommit() throws QpidException, IllegalStateException;
+    public void txCommit() throws IllegalStateException;
 
     /**
      * Rollback the receipt and the delivery of all messages exchanged by this session resources.
-     *
-     * @throws QpidException         If the session fails to rollback due to some error.
      * @throws IllegalStateException If this session is not transacted.
      */
-    public void txRollback() throws QpidException, IllegalStateException;
+    public void txRollback() throws IllegalStateException;
 
     //---------------------------------------------
     //            Queue methods 
@@ -379,11 +358,9 @@ public interface Session
      *                          the queue. </ol>
      * @param arguments         Used for backward compatibility
      * @param options           Set of Options.
-     * @throws QpidException If the session fails to declare the queue due to some error.
      * @see Option
      */
-    public void queueDeclare(String queueName, String alternateExchange, Map<String, ?> arguments, Option... options)
-            throws QpidException;
+    public void queueDeclare(String queueName, String alternateExchange, Map<String, ?> arguments, Option... options);
 
     /**
      * Bind a queue with an exchange.
@@ -392,10 +369,8 @@ public interface Session
      * @param exchangeName The exchange name.
      * @param routingKey   The routing key.
      * @param arguments    Used for backward compatibility
-     * @throws QpidException If the session fails to bind the queue due to some error.
      */
-    public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
-            throws QpidException;
+    public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments);
 
     /**
      * Unbind a queue from an exchange.
@@ -404,18 +379,15 @@ public interface Session
      * @param exchangeName The exchange name.
      * @param routingKey   The routing key.
      * @param arguments    Used for backward compatibility
-     * @throws QpidException If the session fails to unbind the queue due to some error.
      */
-    public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
-            throws QpidException;
+    public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments);
 
     /**
      * Purge a queue. i.e. delete all enqueued messages
      *
      * @param queueName The queue to be purged
-     * @throws QpidException If the session fails to purge the queue due to some error.
      */
-    public void queuePurge(String queueName) throws QpidException;
+    public void queuePurge(String queueName);
 
     /**
      * Delet a queue.
@@ -431,12 +403,11 @@ public interface Session
      *
      * @param queueName The name of the queue to be deleted
      * @param options   Set of options
-     * @throws QpidException If the session fails to delete the queue due to some error.
      * @see Option
      *      <p/>
      *      Following are the valid options
      */
-    public void queueDelete(String queueName, Option... options) throws QpidException;
+    public void queueDelete(String queueName, Option... options);
 
     // --------------------------------------
     //              exhcange methods 
@@ -462,11 +433,10 @@ public interface Session
      *                          the message will be sent.
      * @param options           Set of options.
      * @param arguments         Used for backward compatibility
-     * @throws QpidException If the session fails to declare the exchange due to some error.
      * @see Option
      */
     public void exchangeDeclare(String exchangeName, String exchangeClass, String alternateExchange,
-                                Map<String, ?> arguments, Option... options) throws QpidException;
+                                Map<String, ?> arguments, Option... options);
 
     /**
      * Delete an exchange.
@@ -482,8 +452,15 @@ public interface Session
      *
      * @param exchangeName The name of exchange to be deleted.
      * @param options      Set of options.
-     * @throws QpidException If the session fails to delete the exchange due to some error.
      * @see Option
      */
-    public void exchangeDelete(String exchangeName, Option... options) throws QpidException;
+    public void exchangeDelete(String exchangeName, Option... options);
+    
+    /**
+     * If the session receives a sessionClosed with an error code it
+     * informs the session's ExceptionListener
+     *
+     * @param exceptionListner The execptionListener
+     */
+    public void setExceptionListener(ExceptionListener exceptionListner);
 }

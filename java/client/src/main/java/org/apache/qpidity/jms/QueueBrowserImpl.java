@@ -17,18 +17,18 @@
  */
 package org.apache.qpidity.jms;
 
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Queue;
+import javax.jms.QueueBrowser;
+
 import org.apache.qpidity.client.MessagePartListener;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 import org.apache.qpidity.filter.MessageFilter;
-import org.apache.qpidity.QpidException;
 import org.apache.qpidity.impl.MessagePartListenerAdapter;
-
-import javax.jms.QueueBrowser;
-import javax.jms.JMSException;
-import javax.jms.Queue;
-import javax.jms.Message;
-import java.util.Enumeration;
-import java.util.NoSuchElementException;
 
 /**
  * Implementation of the JMS QueueBrowser interface
@@ -168,17 +168,10 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
         _received = 0;
         // request messages
         int received = 0;
-        try
-        {
-            getSession().getQpidSession()
-                    .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                 _maxbatchlength);
-            _batchLength = 0; //getSession().getQpidSession().messageFlush(getMessageActorID());
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+        getSession().getQpidSession()
+        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                     _maxbatchlength);
+        _batchLength = 0; //getSession().getQpidSession().messageFlush(getMessageActorID());
     }
 
     /**
