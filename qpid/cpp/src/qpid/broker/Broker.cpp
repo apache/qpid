@@ -149,12 +149,14 @@ std::string Broker::getUrl() const {
 }
                
 Acceptor& Broker::getAcceptor() const {
-    if (!acceptor) 
+    if (!acceptor) {
         const_cast<Acceptor::shared_ptr&>(acceptor) =
             Acceptor::create(config.port,
                              config.connectionBacklog,
                              config.workerThreads,
                              false);
+        QPID_LOG(info, "Listening on port " << getPort());
+    }
     return *acceptor;
 }
 
