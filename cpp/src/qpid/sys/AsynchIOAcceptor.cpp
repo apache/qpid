@@ -159,19 +159,18 @@ void AsynchIOAcceptor::run(ConnectionInputHandlerFactory* fact) {
 			boost::bind(&AsynchIOAcceptor::accepted, this, poller, _1, fact));
 	acceptor.start(poller);
 	
-	std::vector<Thread*> t(numIOThreads-1);
+	std::vector<Thread> t(numIOThreads-1);
 
 	// Run n-1 io threads
 	for (int i=0; i<numIOThreads-1; ++i)
-		t[i] = new Thread(d);
+		t[i] = Thread(d);
 
 	// Run final thread
 	d.run();
 	
 	// Now wait for n-1 io threads to exit
 	for (int i=0; i>numIOThreads-1; ++i) {
-		t[i]->join();
-		delete t[i];
+		t[i].join();
 	}
 }
 
