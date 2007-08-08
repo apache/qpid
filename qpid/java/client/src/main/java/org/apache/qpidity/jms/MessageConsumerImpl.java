@@ -591,7 +591,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // TODO: messageID is a string but range need a long???
             // ranges.add(message.getMessageID());
 
-            RangeSet acquired = getSession().getQpidSession().messageAcquire(ranges);
+            getSession().getQpidSession().messageAcquire(ranges);
+            RangeSet acquired = getSession().getQpidSession().getAccquiredMessages();
             if (acquired.size() > 0)
             {
                 result = true; // todo acquired.iterator().next().getLower() == message.getMessageID();

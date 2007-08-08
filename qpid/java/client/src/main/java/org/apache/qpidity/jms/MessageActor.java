@@ -85,15 +85,7 @@ public abstract class MessageActor
         if (!_isClosed)
         {
             closeMessageActor();
-            try
-            {
-                // cancel this destination
-                getSession().getQpidSession().messageCancel(getMessageActorID());
-            }
-            catch (QpidException e)
-            {
-                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-            }
+            getSession().getQpidSession().messageCancel(getMessageActorID());
             //todo: We need to unset the qpid message listener  
             // notify the session that this message actor is closing
             _session.closeMessageActor(this);
@@ -155,6 +147,7 @@ public abstract class MessageActor
     {
         if (!_isClosed)
         {
+            getSession().getQpidSession().messageCancel(getMessageActorID());
             _isClosed = true;
         }
     }

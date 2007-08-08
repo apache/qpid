@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpidity.api.Message;
+import org.apache.qpidity.client.ExceptionListener;
 import org.apache.qpidity.client.MessagePartListener;
 import org.apache.qpidity.*;
 
@@ -15,190 +16,201 @@ public class ClientSession implements org.apache.qpidity.client.Session
 
 	Map<String,MessagePartListener> messagListeners = new HashMap<String,MessagePartListener>();
 
-
-    //------------------------------------------------------
-    //                 Session housekeeping methods
-    //------------------------------------------------------
-    public void close() throws QpidException
+    public void addData(byte[] data, int off, int len)
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void suspend() throws QpidException
+    public void addMessageHeaders(Header... headers)
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void resume() throws QpidException
+    public void close()
     {
-        // TODO
-
-    }//------------------------------------------------------
-    //                 Messaging methods
-    //                   Producer
-    //------------------------------------------------------
-    public void messageTransfer(String exchange, Message msg, short confirmMode, short acquireMode) throws QpidException
-    {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void messageTransfer(String exchange, short confirmMode, short acquireMode) throws QpidException
+    public void endData()
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void addMessageHeaders(Header... headers) throws QpidException
+    public void exchangeDeclare(String exchangeName, String exchangeClass, String alternateExchange, Map<String, ?> arguments, Option... options)
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void addData(byte[] data, int off, int len) throws QpidException
+    public void exchangeDelete(String exchangeName, Option... options)
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void endData() throws QpidException
+    public void messageAcknowledge(RangeSet ranges)
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode,
-                                 MessagePartListener listener, Map<String, ?> filter, Option... options)
-            throws QpidException
+    public void messageAcquire(RangeSet ranges)
     {
-        // TODO
-
+        // TODO Auto-generated method stub
     }
 
-    public void messageCancel(String destination) throws QpidException
+    public void messageCancel(String destination)
     {
-        // TODO
+        // TODO Auto-generated method stub
+        
+    }
 
+    public void messageFlow(String destination, short unit, long value)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void messageFlowMode(String destination, short mode)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void messageFlush(String destination)
+    {
+        // TODO Auto-generated method stub
+    }
+
+    public void messageReject(RangeSet ranges)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void messageRelease(RangeSet ranges)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void messageStop(String destination)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode, MessagePartListener listener, Map<String, ?> filter, Option... options)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void messageTransfer(String exchange, Message msg, short confirmMode, short acquireMode)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void messageTransfer(String exchange, short confirmMode, short acquireMode)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void queueDeclare(String queueName, String alternateExchange, Map<String, ?> arguments, Option... options)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void queueDelete(String queueName, Option... options)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void queuePurge(String queueName)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void resume()
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void setExceptionListener(ExceptionListener exceptionListner)
+    {
+        // TODO Auto-generated method stub
+        
     }
 
     public void setMessageListener(String destination, MessagePartListener listener)
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void messageFlowMode(String destination, short mode) throws QpidException
+    public void suspend()
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void messageFlow(String destination, short unit, long value) throws QpidException
+    public void sync()
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public int messageFlush(String destination) throws QpidException
+    public void txCommit() throws IllegalStateException
     {
-        // TODO
-        return 1;
+        // TODO Auto-generated method stub
+        
     }
 
-    public void messageStop(String destination) throws QpidException
+    public void txRollback() throws IllegalStateException
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void messageAcknowledge(RangeSet ranges) throws QpidException
+    public void txSelect()
     {
-        // TODO
-
+        // TODO Auto-generated method stub
+        
     }
 
-    public void messageReject(RangeSet ranges) throws QpidException
+    public RangeSet getAccquiredMessages()
     {
-        // TODO
-
-    }
-
-    public RangeSet messageAcquire(RangeSet ranges) throws QpidException
-    {
-        // TODO
+        // TODO Auto-generated method stub
         return null;
     }
 
-    public void messageRelease(RangeSet ranges) throws QpidException
+    public int getNoOfUnAckedMessages()
     {
-        // TODO
-
-    }// -----------------------------------------------
-    //            Local transaction methods
-    //  ----------------------------------------------
-    public void txSelect() throws QpidException
-    {
-        // TODO
-
+        // TODO Auto-generated method stub
+        return 0;
     }
 
-    public void txCommit() throws QpidException, IllegalStateException
-    {
-        // TODO
-
-    }
-
-    public void txRollback() throws QpidException, IllegalStateException
-    {
-        // TODO
-
-    }
-
-    public void queueDeclare(String queueName, String alternateExchange, Map<String, ?> arguments, Option... options)
-            throws QpidException
-    {
-        // TODO
-
-    }
-
-    public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
-            throws QpidException
-    {
-        // TODO
-
-    }
-
-    public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments)
-            throws QpidException
-    {
-        // TODO
-
-    }
-
-    public void queuePurge(String queueName) throws QpidException
-    {
-        // TODO
-
-    }
-
-    public void queueDelete(String queueName, Option... options) throws QpidException
-    {
-        // TODO
-
-    }
-
-    public void exchangeDeclare(String exchangeName, String exchangeClass, String alternateExchange,
-                                Map<String, ?> arguments, Option... options) throws QpidException
-    {
-        // TODO
-
-    }
-
-    public void exchangeDelete(String exchangeName, Option... options) throws QpidException
-    {
-        // TODO
-
-    }
+    
 }

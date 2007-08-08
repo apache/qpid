@@ -66,8 +66,8 @@ class ProtocolHeader
         buf.put(AMQP);
         buf.put((byte) 1);
         buf.put((byte) 1);
-        buf.put((byte) 0);
-        buf.put((byte) 10);
+        buf.put( major);
+        buf.put(minor);
         buf.flip();
         return buf;
     }

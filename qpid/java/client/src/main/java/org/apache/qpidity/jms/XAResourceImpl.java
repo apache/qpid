@@ -72,14 +72,7 @@ public class XAResourceImpl implements XAResource
         {
             _logger.debug("commit ", xid);
         }
-        try
-        {
-            _xaSession.getQpidSession().dtxCoordinationCommit(xid, b ? Option.ONE_PHASE : Option.NO_OPTION);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToXAException(e);
-        }
+        _xaSession.getQpidSession().dtxCoordinationCommit(xid, b ? Option.ONE_PHASE : Option.NO_OPTION);
     }
 
     /**
@@ -104,17 +97,10 @@ public class XAResourceImpl implements XAResource
         {
             _logger.debug("end ", xid);
         }
-        try
-        {
-            _xid = null;
-            _xaSession.getQpidSession()
-                    .dtxDemarcationEnd(xid, flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
-                                       flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToXAException(e);
-        }
+        xid = null;
+        _xaSession.getQpidSession()
+                .dtxDemarcationEnd(xid, flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
+                                   flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
     }
 
     /**
@@ -130,15 +116,7 @@ public class XAResourceImpl implements XAResource
         {
             _logger.debug("forget ", xid);
         }
-        try
-        {
-            _xaSession.getQpidSession()
-                    .dtxCoordinationForget(xid);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToXAException(e);
-        }
+        _xaSession.getQpidSession().dtxCoordinationForget(xid);
     }
 
     /**
@@ -155,14 +133,7 @@ public class XAResourceImpl implements XAResource
         int result = 0;
         if (_xid != null)
         {
-            try
-            {
-                result = (int) _xaSession.getQpidSession().dtxCoordinationGetTimeout(_xid);
-            }
-            catch (QpidException e)
-            {
-                throw ExceptionHelper.convertQpidExceptionToXAException(e);
-            }
+            result = (int) _xaSession.getQpidSession().dtxCoordinationGetTimeout(_xid);
         }
         return result;
     }
@@ -198,15 +169,9 @@ public class XAResourceImpl implements XAResource
             _logger.debug("prepare ", xid);
         }
         int result;
-        try
-        {
-            result = _xaSession.getQpidSession()
-                    .dtxCoordinationPrepare(xid);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToXAException(e);
-        }
+        result = _xaSession.getQpidSession()
+        .dtxCoordinationPrepare(xid);
+        
         if (result == XAException.XA_RDONLY)
         {
             throw new XAException(XAException.XA_RDONLY);
@@ -232,16 +197,9 @@ public class XAResourceImpl implements XAResource
      */
     public Xid[] recover(int flag) throws XAException
     {
-        try
-        {
-            // the flag is ignored 
-            return _xaSession.getQpidSession()
-                    .dtxCoordinationRecover();
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToXAException(e);
-        }
+//      the flag is ignored 
+        return _xaSession.getQpidSession()
+                .dtxCoordinationRecover();
     }
 
     /**
@@ -252,16 +210,9 @@ public class XAResourceImpl implements XAResource
      */
     public void rollback(Xid xid) throws XAException
     {
-        try
-        {
-            // the flag is ignored
-            _xaSession.getQpidSession()
-                    .dtxCoordinationRollback(xid);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToXAException(e);
-        }
+//      the flag is ignored
+        _xaSession.getQpidSession()
+                .dtxCoordinationRollback(xid);
     }
 
     /**
@@ -279,17 +230,9 @@ public class XAResourceImpl implements XAResource
         boolean result = false;
         if (_xid != null)
         {
-            try
-            {
-                // the flag is ignored
-                _xaSession.getQpidSession()
-                        .dtxCoordinationSetTimeout(_xid, timeout);
-                result = true;
-            }
-            catch (QpidException e)
-            {
-                throw ExceptionHelper.convertQpidExceptionToXAException(e);
-            }
+            _xaSession.getQpidSession()
+            .dtxCoordinationSetTimeout(_xid, timeout);
+            result = true;
         }
         return result;
     }
@@ -315,15 +258,8 @@ public class XAResourceImpl implements XAResource
             _logger.debug("start ", xid);
         }
         _xid = xid;
-        try
-        {
-            _xaSession.getQpidSession()
-                    .dtxDemarcationStart(xid, flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
-                                         flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToXAException(e);
-        }
+        _xaSession.getQpidSession()
+        .dtxDemarcationStart(xid, flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
+                             flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
     }
 }

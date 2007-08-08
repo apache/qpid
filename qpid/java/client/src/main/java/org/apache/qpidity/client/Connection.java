@@ -51,9 +51,8 @@ public interface Connection
      *
      * @param expiryInSeconds Expiry time expressed in seconds, if the value is <= 0 then the session does not expire.
      * @return A Newly created (suspended) session.
-     * @throws QpidException If the connection fails to create a session due to some internal error.
      */
-    public Session createSession(int expiryInSeconds) throws QpidException;
+    public Session createSession(int expiryInSeconds);
 
     /**
      * Create a DtxSession for this connection.
@@ -64,9 +63,8 @@ public interface Connection
      *
      * @param expiryInSeconds Expiry time expressed in seconds, if the value is <= 0 then the session does not expire.
      * @return A Newly created (suspended) DtxSession.
-     * @throws QpidException If the connection fails to create a DtxSession due to some internal error.
      */
-    public DtxSession createDTXSession(int expiryInSeconds) throws QpidException;
+    public DtxSession createDTXSession(int expiryInSeconds);
 
     /**
      * If the communication layer detects a serious problem with a connection, it
