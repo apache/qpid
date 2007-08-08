@@ -21,11 +21,8 @@
 package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
-
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.qpidity.api.Message;
 /**
  * Session
  *
@@ -160,7 +157,7 @@ public class Session extends Invoker
         channel.data(bytes);
     }
 
-    public void end()
+    public void endData()
     {
         channel.end();
     }
