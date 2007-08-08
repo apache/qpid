@@ -174,11 +174,7 @@ libqpidcommon_la_SOURCES = \
   qpid/log/Selector.h \
   qpid/log/Statement.cpp \
   qpid/log/Statement.h \
-  qpid/memory.h \
-  qpid/framing/Frame.cpp qpid/framing/Frame.h \
-  qpid/framing/method_variants.h \
-  qpid/framing/MethodHolder.cpp qpid/framing/MethodHolder.h
-
+  qpid/memory.h 
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \

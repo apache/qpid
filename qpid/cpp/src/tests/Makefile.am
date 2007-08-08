@@ -43,12 +43,6 @@ check_PROGRAMS+=Shlib
 Shlib_SOURCES=Shlib.cpp
 Shlib_LDADD=-lboost_unit_test_framework $(lib_common)
 
-TESTS+=Frame
-check_PROGRAMS+=Frame
-Frame_SOURCES=Frame.cpp
-Frame_LDADD=-lboost_unit_test_framework $(lib_common)
-
-
 
 # TODO aconway 2007-08-07: Why aren't these tests run automatically?
 
