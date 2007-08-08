@@ -17,6 +17,7 @@
 # under the License.
 #
 
+require "qpid/client"
 require "qpid/queue"
 require "qpid/codec"
 require "qpid/connection"
