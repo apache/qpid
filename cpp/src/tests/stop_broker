@@ -9,8 +9,8 @@ rm -f qpidd.port
 while ../qpidd --check >/dev/null 2>&1; do true; done
 
 # Check qpidd.log.
-egrep 'warn|error|critical' qpidd.log && {
-    echo "Suspicious broker log entries in qpidd.log."
+egrep 'warning|error|critical' qpidd.log && {
+    echo "Suspicious broker log entries in qpidd.log, above."
     ERROR=1
 }
 
