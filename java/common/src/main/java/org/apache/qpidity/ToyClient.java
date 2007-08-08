@@ -40,7 +40,6 @@ class ToyClient extends SessionDelegate
                                    ssn.getCommand((int) l));
             }
         }
-        ssn.processed(reject);
     }
 
     public void headers(Session ssn, Struct ... headers)
@@ -85,6 +84,7 @@ class ToyClient extends SessionDelegate
         ssn.messageTransfer("fdsa", (short) 0, (short) 1);
         ssn.data("this should be rejected");
         ssn.end();
+        ssn.sync();
     }
 
 }

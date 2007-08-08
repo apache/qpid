@@ -20,45 +20,40 @@
  */
 package org.apache.qpidity;
 
+import java.nio.ByteBuffer;
+
+import java.util.Iterator;
+
 
 /**
- * Method
+ * MethodDecoder
  *
  * @author Rafael H. Schloming
  */
 
-public abstract class Method extends Struct
+class MethodDecoder<C> implements Handler<Event<C,Segment>>
 {
 
-    public static final Method create(int type)
+    private final byte major;
+    private final byte minor;
+    private final Handler<Event<C,Method>> handler;
+
+    public MethodDecoder(byte major, byte minor, Handler<Event<C,Method>> handler)
     {
-        // XXX: should generate separate factories for separate
-        // namespaces
-        return (Method) Struct.create(type);
+        this.major = major;
+        this.minor = minor;
+        this.handler = handler;
     }
 
-    // XXX: command subclass?
-    private long id;
-
-    public final long getId()
+    public void handle(Event<C,Segment> event)
     {
-        return id;
-    }
-
-    void setId(long id)
-    {
-        this.id = id;
-    }
-
-    public abstract boolean hasPayload();
-
-    public abstract byte getEncodedTrack();
-
-    // XXX: do we need a segment base type?
-    public byte getSegmentType()
-    {
-        // XXX
-        return Frame.METHOD;
+        System.out.println("got method segment:\n  " + event.target);
+        Iterator<ByteBuffer> fragments = event.target.getFragments();
+        Decoder dec = new FragmentDecoder(major, minor, fragments);
+        int type = (int) dec.readLong();
+        Method method = Method.create(type);
+        method.read(dec, major, minor);
+        handler.handle(new Event<C,Method>(event.context, method));
     }
 
 }

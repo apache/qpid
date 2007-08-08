@@ -35,19 +35,6 @@ public abstract class Struct implements Delegator, Encodable
         return StructFactory.create(type);
     }
 
-    // XXX: command subclass?
-    private long id;
-
-    public final long getId()
-    {
-        return id;
-    }
-
-    void setId(long id)
-    {
-        this.id = id;
-    }
-
     abstract int getEncodedType();
 
 }
