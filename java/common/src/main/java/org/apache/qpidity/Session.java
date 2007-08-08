@@ -39,6 +39,7 @@ public class Session extends Invoker
     private long commandsIn = 0;
     // completed incoming commands
     private final RangeSet processed = new RangeSet();
+    private Range syncPoint = null;
 
     // outgoing command count
     private long commandsOut = 0;
@@ -70,24 +71,56 @@ public class Session extends Invoker
         return processed;
     }
 
+    public void processed(Method command)
+    {
+        processed(command.getId());
+    }
+
     public void processed(long command)
     {
-        processed.add(command);
+        processed(new Range(command, command));
     }
 
     public void processed(long lower, long upper)
     {
-        processed.add(lower, upper);
+        processed(new Range(lower, upper));
     }
 
     public void processed(Range range)
     {
-        processed.add(range);
+        boolean flush;
+        synchronized (processed)
+        {
+            processed.add(range);
+            flush = syncPoint != null && processed.includes(syncPoint);
+        }
+        if (flush)
+        {
+            flushProcessed();
+        }
     }
 
-    public void processed(Method command)
+    void flushProcessed()
     {
-        processed(command.getId());
+        executionComplete(0, processed);
+    }
+
+    void syncPoint()
+    {
+        Range range = new Range(0, getCommandsIn() - 1);
+        boolean flush;
+        synchronized (processed)
+        {
+            flush = processed.includes(range);
+            if (!flush)
+            {
+                syncPoint = range;
+            }
+        }
+        if (flush)
+        {
+            flushProcessed();
+        }
     }
 
     public void attach(Channel channel)

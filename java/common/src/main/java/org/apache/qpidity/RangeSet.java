@@ -47,6 +47,19 @@ public class RangeSet implements Iterable<Range>
         return ranges.iterator();
     }
 
+    public boolean includes(Range range)
+    {
+        for (Range r : this)
+        {
+            if (r.includes(range))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void add(Range range)
     {
         ListIterator<Range> it = ranges.listIterator();
