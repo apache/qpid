@@ -21,7 +21,6 @@ package org.apache.qpidity.client;
 import javax.transaction.xa.Xid;
 
 import org.apache.qpidity.Option;
-import org.apache.qpidity.QpidException;
 
 /**
  * This session�s resources are control under the scope of a distributed transaction.
@@ -40,9 +39,8 @@ public interface DtxSession extends Session
      *
      * @param xid     Specifies the xid of the transaction branch to be started.
      * @param options Possible options are: {@link Option#JOIN} and {@link Option#RESUME}.
-     * @throws QpidException If the session fails to start due to some error
      */
-    public void dtxDemarcationStart(Xid xid, Option... options) throws QpidException;
+    public void dtxDemarcationStart(Xid xid, Option... options);
 
     /**
      * This method is called when the work done on behalf a transaction branch finishes or needs to
@@ -58,9 +56,8 @@ public interface DtxSession extends Session
      *
      * @param xid     Specifies the xid of the transaction branch to be ended.
      * @param options Available options are: {@link Option#FAIL} and {@link Option#SUSPEND}.
-     * @throws QpidException If the session fails to end due to some error
      */
-    public void dtxDemarcationEnd(Xid xid, Option... options) throws QpidException;
+    public void dtxDemarcationEnd(Xid xid, Option... options);
 
     /**
      * Commit the work done on behalf a transaction branch. This method commits the work associated
@@ -72,17 +69,15 @@ public interface DtxSession extends Session
      *
      * @param xid     Specifies the xid of the transaction branch to be committed.
      * @param options Available option is: {@link Option#ONE_PHASE}
-     * @throws QpidException If the session fails to commit due to some error
      */
-    public void dtxCoordinationCommit(Xid xid, Option... options) throws QpidException;
+    public void dtxCoordinationCommit(Xid xid, Option... options);
 
     /**
      * This method is called to forget about a heuristically completed transaction branch.
      *
      * @param xid Specifies the xid of the transaction branch to be forgotten.
-     * @throws QpidException If the session fails to forget due to some error
      */
-    public void dtxCoordinationForget(Xid xid) throws QpidException;
+    public void dtxCoordinationForget(Xid xid);
 
     /**
      * This method obtains the current transaction timeout value in seconds. If set-timeout was not
@@ -91,9 +86,8 @@ public interface DtxSession extends Session
      *
      * @param xid Specifies the xid of the transaction branch for getting the timeout.
      * @return The current transaction timeout value in seconds.
-     * @throws QpidException If the session fails to get the timeout due to some error
      */
-    public long dtxCoordinationGetTimeout(Xid xid) throws QpidException;
+    public long dtxCoordinationGetTimeout(Xid xid);
 
     /**
      * This method prepares for commitment any message produced or consumed on behalf of xid.
@@ -108,34 +102,30 @@ public interface DtxSession extends Session
      *         reason.
      *         <p/>
      *         xa-rbtimeout: The work represented by this transaction branch took too long.
-     * @throws QpidException If the session fails to prepare due to some error
      */
-    public short dtxCoordinationPrepare(Xid xid) throws QpidException;
+    public short dtxCoordinationPrepare(Xid xid);
 
     /**
      * This method is called to obtain a list of transaction branches that are in a prepared or
      * heuristically completed state.
      *
      * @return a array of xids to be recovered.
-     * @throws QpidException If the session fails to recover due to some error
      */
-    public Xid[] dtxCoordinationRecover() throws QpidException;
+    public Xid[] dtxCoordinationRecover();
 
     /**
      * This method rolls back the work associated with xid. Any produced messages are discarded and
      * any consumed messages are re-enqueued.
      *
      * @param xid Specifies the xid of the transaction branch that can be rolled back.
-     * @throws QpidException If the session fails to rollback due to some error
      */
-    public void dtxCoordinationRollback(Xid xid) throws QpidException;
+    public void dtxCoordinationRollback(Xid xid);
 
     /**
      * Sets the specified transaction branch timeout value in seconds.
      *
      * @param xid     Specifies the xid of the transaction branch for setting the timeout.
      * @param timeout The transaction timeout value in seconds.
-     * @throws QpidException If the session fails to set the timeout due to some error
      */
-    public void dtxCoordinationSetTimeout(Xid xid, long timeout) throws QpidException;
+    public void dtxCoordinationSetTimeout(Xid xid, long timeout);
 }

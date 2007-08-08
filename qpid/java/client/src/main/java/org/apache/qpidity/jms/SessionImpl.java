@@ -26,9 +26,6 @@ import org.apache.qpidity.Range;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
-import javax.jms.Session;
-import javax.jms.Message;
-import javax.jms.MessageListener;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.HashMap;
@@ -309,14 +306,7 @@ public class SessionImpl implements Session
             throw new IllegalStateException("Cannot commit non-transacted session", "Session is not transacted");
         }
         // commit the underlying Qpid Session
-        try
-        {
-            _qpidSession.txCommit();
-        }
-        catch (QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+        _qpidSession.txCommit();
     }
 
     /**
@@ -335,14 +325,7 @@ public class SessionImpl implements Session
             throw new IllegalStateException("Cannot rollback non-transacted session", "Session is not transacted");
         }
         // rollback the underlying Qpid Session
-        try
-        {
-            _qpidSession.txRollback();
-        }
-        catch (org.apache.qpidity.QpidException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+        _qpidSession.txRollback();
     }
 
     /**
@@ -401,14 +384,7 @@ public class SessionImpl implements Session
                 _incomingAsynchronousMessages.notifyAll();
             }
             // close the underlaying QpidSession
-            try
-            {
-                _qpidSession.close();
-            }
-            catch (org.apache.qpidity.QpidException e)
-            {
-                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-            }
+            _qpidSession.close();
         }
     }
 
@@ -446,14 +422,7 @@ public class SessionImpl implements Session
             RangeSet ranges = new RangeSet();
             // TODO: messageID is a string but range need a long???
             // ranges.add(message.getMessageID());
-            try
-            {
-                getQpidSession().messageRelease(ranges);
-            }
-            catch (QpidException e)
-            {
-                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-            }
+            getQpidSession().messageRelease(ranges);
             // TODO We can be a little bit cleverer and build a set of ranges
         }
     }
@@ -566,15 +535,17 @@ public class SessionImpl implements Session
     {
         checkNotClosed();
         checkDestination(destination);
-        MessageConsumerImpl consumer;
+        MessageConsumerImpl consumer = null;
         try
         {
             consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null);
         }
         catch (Exception e)
         {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
+        
         // register this actor with the session
         _messageActors.put(consumer.getMessageActorID(), consumer);
         return consumer;
@@ -599,14 +570,15 @@ public class SessionImpl implements Session
     public Queue createQueue(String queueName) throws JMSException
     {
         checkNotClosed();
-        Queue result;
+        Queue result = null;
         try
         {
             result = new QueueImpl(this, queueName);
         }
         catch (QpidException e)
         {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
         return result;
     }
@@ -987,14 +959,7 @@ public class SessionImpl implements Session
             RangeSet ranges = new RangeSet();
             // TODO: messageID is a string but range need a long???
            // ranges.add(message.getMessageID());
-            try
-            {
-                getQpidSession().messageAcknowledge(ranges);
-            }
-            catch (QpidException e)
-            {
-                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-            }
+            getQpidSession().messageAcknowledge(ranges);
         }
         //tobedone: Implement DUPS OK heuristic
     }
@@ -1022,15 +987,8 @@ public class SessionImpl implements Session
                     // acknowledge this message
                     RangeSet ranges = new RangeSet();
                     // TODO: messageID is a string but range need a long???
-                    // ranges.add(message.getMessageID());
-                    try
-                    {
-                        getQpidSession().messageAcknowledge(ranges);
-                    }
-                    catch (QpidException e)
-                    {
-                        throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-                    }
+                    // ranges.add(message.getMessageID()); 
+                    getQpidSession().messageAcknowledge(ranges);
                     // TODO We can be a little bit cleverer and build a set of ranges
                 }
                 //empty the list of unack messages

@@ -79,11 +79,11 @@ class ToyClient extends SessionDelegate
         ssn.headers(new DeliveryProperties(),
                     new MessageProperties());
         ssn.data("this is the data");
-        ssn.end();
+        ssn.endData();
 
         ssn.messageTransfer("fdsa", (short) 0, (short) 1);
         ssn.data("this should be rejected");
-        ssn.end();
+        ssn.endData();
         ssn.sync();
     }
 
