@@ -33,6 +33,7 @@ class ProtocolHeader
 {
 
     private static final byte[] AMQP = {'A', 'M', 'Q', 'P' };
+    private static final byte CLASS = 1;
 
     final private byte instance;
     final private byte major;
@@ -64,9 +65,9 @@ class ProtocolHeader
     {
         ByteBuffer buf = ByteBuffer.allocate(8);
         buf.put(AMQP);
-        buf.put((byte) 1);
-        buf.put((byte) 1);
-        buf.put( major);
+        buf.put(CLASS);
+        buf.put(instance);
+        buf.put(major);
         buf.put(minor);
         buf.flip();
         return buf;
