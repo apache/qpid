@@ -37,11 +37,15 @@ public class Session extends Invoker
 
     // channel may be null
     Channel channel;
-    // outgoing command count
-    private long commandsOut = 0;
+
     // XXX: incoming command count not used
     // incoming command count
     private long commandsIn = 0;
+    // completed incoming commands
+    private final RangeSet processed = new RangeSet();
+
+    // outgoing command count
+    private long commandsOut = 0;
     private Map<Long,Method> commands = new HashMap<Long,Method>();
     private long mark = 0;
 
@@ -55,6 +59,31 @@ public class Session extends Invoker
         return commandsIn;
     }
 
+    public RangeSet getProcessed()
+    {
+        return processed;
+    }
+
+    public void processed(long command)
+    {
+        processed.add(command);
+    }
+
+    public void processed(long lower, long upper)
+    {
+        processed.add(lower, upper);
+    }
+
+    public void processed(Range range)
+    {
+        processed.add(range);
+    }
+
+    public void processed(Struct command)
+    {
+        processed(command.getId());
+    }
+
     public void attach(Channel channel)
     {
         this.channel = channel;
@@ -63,15 +92,24 @@ public class Session extends Invoker
 
     public Method getCommand(long id)
     {
-        System.out.println(id + " " + commands);
-        return commands.get(id);
+        synchronized (commands)
+        {
+            return commands.get(id);
+        }
     }
 
     void complete(long lower, long upper)
     {
-        for (long id = lower; id <= upper; id++)
+        synchronized (commands)
         {
-            commands.put(id, null);
+            for (long id = lower; id <= upper; id++)
+            {
+                commands.remove(id);
+            }
+            if (commands.isEmpty())
+            {
+                commands.notifyAll();
+            }
         }
     }
 
@@ -85,8 +123,10 @@ public class Session extends Invoker
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
-            long cmd = commandsOut++;
-            commands.put(cmd, m);
+            synchronized (commands)
+            {
+                commands.put(commandsOut++, m);
+            }
         }
         channel.method(m);
     }
@@ -114,6 +154,28 @@ public class Session extends Invoker
     public void end()
     {
         channel.end();
+    }
+
+    public void sync()
+    {
+        synchronized (commands)
+        {
+            if (!commands.isEmpty())
+            {
+                executionSync();
+            }
+
+            while (!commands.isEmpty())
+            {
+                try {
+                    commands.wait();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
     }
 
     protected void invoke(Method m, Handler<Struct> handler)

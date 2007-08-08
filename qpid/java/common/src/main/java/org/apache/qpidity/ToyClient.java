@@ -32,7 +32,7 @@ class ToyClient extends SessionDelegate
 
     @Override public void messageReject(Session ssn, MessageReject reject)
     {
-        for (Range<Long> range : reject.getTransfers())
+        for (Range range : reject.getTransfers())
         {
             for (long l = range.getLower(); l <= range.getUpper(); l++)
             {
@@ -40,6 +40,7 @@ class ToyClient extends SessionDelegate
                                    ssn.getCommand((int) l));
             }
         }
+        ssn.processed(reject);
     }
 
     public void headers(Session ssn, Struct ... headers)
@@ -73,6 +74,7 @@ class ToyClient extends SessionDelegate
         ssn.sessionOpen(1234);
 
         ssn.queueDeclare("asdf", null, null);
+        ssn.sync();
 
         ssn.messageTransfer("asdf", (short) 0, (short) 1);
         ssn.headers(new DeliveryProperties(),

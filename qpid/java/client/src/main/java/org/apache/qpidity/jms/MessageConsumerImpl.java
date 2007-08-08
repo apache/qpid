@@ -19,7 +19,7 @@ package org.apache.qpidity.jms;
 
 import org.apache.qpidity.jms.message.QpidMessage;
 import org.apache.qpidity.impl.MessagePartListenerAdapter;
-import org.apache.qpidity.Range;
+import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.filter.MessageFilter;
@@ -568,8 +568,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     {
         if (_preAcquire)
         {
-            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
-            getSession().getQpidSession().messageRelease(range);
+            RangeSet ranges = new RangeSet();
+            ranges.add(message.getMessageID());
+            getSession().getQpidSession().messageRelease(ranges);
         }
     }
 
@@ -585,12 +586,13 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         boolean result = false;
         if (!_preAcquire)
         {
-            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+            RangeSet ranges = new RangeSet();
+            ranges.add(message.getMessageID());
 
-            Range<Long>[] rangeResult = getSession().getQpidSession().messageAcquire(range);
-            if (rangeResult.length > 0)
+            RangeSet acquired = getSession().getQpidSession().messageAcquire(ranges);
+            if (acquired.size() > 0)
             {
-                result = rangeResult[0].getLower().compareTo(message.getMessageID()) == 0;
+                result = acquired.iterator().next().getLower() == message.getMessageID();
             }
         }
         return result;
@@ -606,8 +608,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     {
         if (!_preAcquire)
         {
-            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
-            getSession().getQpidSession().messageAcknowledge(range);
+            RangeSet ranges = new RangeSet();
+            ranges.add(message.getMessageID());
+            getSession().getQpidSession().messageAcknowledge(ranges);
         }
     }
 }

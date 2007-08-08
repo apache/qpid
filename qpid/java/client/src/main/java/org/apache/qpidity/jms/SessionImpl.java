@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpidity.jms.message.*;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Range;
+import org.apache.qpidity.RangeSet;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -443,10 +444,11 @@ public class SessionImpl implements Session
         for (QpidMessage message : _unacknowledgedMessages)
         {
             // release this message
-            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+            RangeSet ranges = new RangeSet();
+            ranges.add(message.getMessageID());
             try
             {
-                getQpidSession().messageRelease(range);
+                getQpidSession().messageRelease(ranges);
             }
             catch (QpidException e)
             {
@@ -982,10 +984,11 @@ public class SessionImpl implements Session
         else
         {
             // acknowledge this message
-            Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+            RangeSet ranges = new RangeSet();
+            ranges.add(message.getMessageID());
             try
             {
-                getQpidSession().messageAcknowledge(range);
+                getQpidSession().messageAcknowledge(ranges);
             }
             catch (QpidException e)
             {
@@ -1016,10 +1019,11 @@ public class SessionImpl implements Session
                 for (QpidMessage message : _unacknowledgedMessages)
                 {
                     // acknowledge this message
-                    Range<Long> range = new Range<Long>(message.getMessageID(), message.getMessageID());
+                    RangeSet ranges = new RangeSet();
+                    ranges.add(message.getMessageID());
                     try
                     {
-                        getQpidSession().messageAcknowledge(range);
+                        getQpidSession().messageAcknowledge(ranges);
                     }
                     catch (QpidException e)
                     {
