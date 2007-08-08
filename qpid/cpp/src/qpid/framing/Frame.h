@@ -1,5 +1,5 @@
-#ifndef _AMQFrame_
-#define _AMQFrame_
+#ifndef QPID_FRAMING_FRAME_H
+#define QPID_FRAMING_FRAME_H
 
 /*
  *
@@ -69,4 +69,4 @@ std::ostream& operator<<(std::ostream&, const Frame&);
 }} // namespace qpid::framing
 
 
-#endif
+#endif  /*!QPID_FRAMING_FRAME_H*/
