@@ -48,9 +48,14 @@ public abstract class SessionDelegate extends Delegate<Session>
         System.out.println("outstanding commands: " + ssn.getOutstandingCommands());
     }
 
+    @Override public void executionFlush(Session ssn, ExecutionFlush flush)
+    {
+        ssn.flushProcessed();
+    }
+
     @Override public void executionSync(Session ssn, ExecutionSync sync)
     {
-        ssn.executionComplete(0, ssn.getProcessed());
+        ssn.syncPoint();
     }
 
 }
