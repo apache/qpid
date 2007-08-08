@@ -20,10 +20,6 @@
  */
 package org.apache.qpidity;
 
-import java.nio.ByteBuffer;
-
-import java.util.Iterator;
-
 
 /**
  * A MethodDispatcher parses and dispatches a method segment.
@@ -31,33 +27,21 @@ import java.util.Iterator;
  * @author Rafael H. Schloming
  */
 
-class MethodDispatcher<C> implements Handler<Event<C,Segment>>
+class MethodDispatcher<C> implements Handler<Event<C,Method>>
 {
 
-    final private byte major;
-    final private byte minor;
     final private Delegate<C> delegate;
-    // XXX: should be on session
-    private int count = 0;
 
-    public MethodDispatcher(byte major, byte minor, Delegate<C> delegate)
+    public MethodDispatcher(Delegate<C> delegate)
     {
-        this.major = major;
-        this.minor = minor;
         this.delegate = delegate;
     }
 
-    public void handle(Event<C,Segment> event)
+    public void handle(Event<C,Method> event)
     {
-        System.out.println("got method segment:\n  " + event.target);
-        Iterator<ByteBuffer> fragments = event.target.getFragments();
-        Decoder dec = new FragmentDecoder(major, minor, fragments);
-        int type = (int) dec.readLong();
-        Struct struct = Struct.create(type);
-        struct.setId(count++);
-        struct.read(dec, major, minor);
-        System.out.println("delegating " + struct + "[" + struct.getId() + "] to " + delegate);
-        struct.delegate(event.context, delegate);
+        Method method = event.target;
+        System.out.println("delegating " + method + " to " + delegate);
+        method.delegate(event.context, delegate);
     }
 
 }

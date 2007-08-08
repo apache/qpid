@@ -45,6 +45,7 @@ public abstract class SessionDelegate extends Delegate<Session>
             }
         }
         ssn.complete(excmp.getCumulativeExecutionMark());
+        System.out.println("outstanding commands: " + ssn.getOutstandingCommands());
     }
 
     @Override public void executionSync(Session ssn, ExecutionSync sync)
