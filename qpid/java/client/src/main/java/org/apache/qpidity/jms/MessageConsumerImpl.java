@@ -569,7 +569,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         if (_preAcquire)
         {
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getMessageID());
+            // TODO: messageID is a string but range need a long???
+            //ranges.add(message.getMessageID());
             getSession().getQpidSession().messageRelease(ranges);
         }
     }
@@ -587,12 +588,13 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         if (!_preAcquire)
         {
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getMessageID());
+            // TODO: messageID is a string but range need a long???
+            // ranges.add(message.getMessageID());
 
             RangeSet acquired = getSession().getQpidSession().messageAcquire(ranges);
             if (acquired.size() > 0)
             {
-                result = acquired.iterator().next().getLower() == message.getMessageID();
+                result = true; // todo acquired.iterator().next().getLower() == message.getMessageID();
             }
         }
         return result;
@@ -609,7 +611,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         if (!_preAcquire)
         {
             RangeSet ranges = new RangeSet();
-            ranges.add(message.getMessageID());
+            // TODO: messageID is a string but range need a long???
+            // ranges.add(message.getMessageID());
             getSession().getQpidSession().messageAcknowledge(ranges);
         }
     }

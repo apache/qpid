@@ -212,6 +212,8 @@ public interface Session
      * that the previous message listener is replaced. This is done gracefully i.e. the message
      * listener is replaced once it return from the processing of a message.
      *
+     * // todo when a listener is null then received messages must be released 
+     *
      * @param destination The destination the listener is associated with.
      * @param listener    The new listener for this destination.
      */
@@ -287,7 +289,7 @@ public interface Session
      * <p>Message must have been previously acquired either by receiving them in
      * pre-acquire mode or by explicitly acquiring them.
      *
-     * @param range Range of acknowledged messages.
+     * @param ranges Range of acknowledged messages.
      * @throws QpidException If the acknowledgement of the messages fails due to some error.
      */
     public void messageAcknowledge(RangeSet ranges) throws QpidException;
@@ -297,7 +299,7 @@ public interface Session
      * <p> A rejected message will not be delivered to any receiver
      * and may be either discarded or moved to the broker dead letter queue.
      *
-     * @param range Range of rejected messages.
+     * @param ranges Range of rejected messages.
      * @throws QpidException If those messages cannot be rejected dus to some error
      */
     public void messageReject(RangeSet ranges) throws QpidException;
