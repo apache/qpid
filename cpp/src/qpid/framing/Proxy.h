@@ -28,6 +28,7 @@ namespace framing {
 class ChannelAdapter;
 class FieldTable;
 class Content;
+class Uuid;
 
 /**
  * Base class for proxies.

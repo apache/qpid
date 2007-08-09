@@ -233,10 +233,6 @@ public class Main
         {
             new File(tmplDir + Utils.fileSeparator + "AMQP_ServerOperations.h.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_ClientOperations.h.tmpl"),
-            new File(tmplDir + Utils.fileSeparator + "AMQP_ServerProxy.h.tmpl"),
-            new File(tmplDir + Utils.fileSeparator + "AMQP_ClientProxy.h.tmpl"),
-            new File(tmplDir + Utils.fileSeparator + "AMQP_ServerProxy.cpp.tmpl"),
-            new File(tmplDir + Utils.fileSeparator + "AMQP_ClientProxy.cpp.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_Constants.h.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_MethodVersionMap.h.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_MethodVersionMap.cpp.tmpl"),
