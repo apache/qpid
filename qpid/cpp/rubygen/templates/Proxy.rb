@@ -36,7 +36,7 @@ class ProxyGen < CppGen
                  
         // Protocol methods
 EOS
-    indent(2) { c.methods_on(@chassis).each { |m| inner_method_decl(m) } }
+    indent(2) { c.amqp_methods_on(@chassis).each { |m| inner_method_decl(m) } }
     gen "\n    }; // class #{cname}\n\n"
   end
 
@@ -48,7 +48,7 @@ EOS
   def inner_class_defn(c)
     cname=c.cppname
     gen "// ==================== class #{cname} ====================\n"
-    c.methods_on(@chassis).each { |m| inner_method_defn(m, cname) }
+    c.amqp_methods_on(@chassis).each { |m| inner_method_defn(m, cname) }
   end
   
   def inner_method_defn(m,cname)
@@ -90,14 +90,14 @@ public:
 
     // Inner class definitions
 EOS
-    @amqp.classes.each{ |c| inner_class_decl(c) }
+    @amqp.amqp_classes.each{ |c| inner_class_decl(c) }
     gen "    // Inner class instance get methods\n"
-    @amqp.classes.each{ |c| get_decl(c) }
+    @amqp.amqp_classes.each{ |c| get_decl(c) }
     gen <<EOS
   private:
     // Inner class instances
 EOS
-    indent { @amqp.classes.each{ |c| gen c.cppname+" "+proxy_member(c)+";\n" } }
+    indent { @amqp.amqp_classes.each{ |c| gen c.cppname+" "+proxy_member(c)+";\n" } }
     gen <<EOS
 }; /* class #{@classname} */
 
@@ -112,7 +112,7 @@ EOS
       include "#{@classname}.h"
       include "qpid/framing/ChannelAdapter.h"
       include "qpid/framing/amqp_types_full.h"
-      @amqp.methods_on(@chassis).each {
+      @amqp.amqp_methods_on(@chassis).each {
         |m| include "qpid/framing/#{m.body_name}.h" }
     gen <<EOS
 namespace qpid {
@@ -121,15 +121,15 @@ namespace framing {
 #{@classname}::#{@classname}(ChannelAdapter& ch) :
 EOS
     gen "    Proxy(ch)"
-    @amqp.classes.each { |c| gen ",\n    "+proxy_member(c)+"(channel)" }
+    @amqp.amqp_classes.each { |c| gen ",\n    "+proxy_member(c)+"(channel)" }
     gen <<EOS
     {}
 
     // Inner class instance get methods
 EOS
-    @amqp.classes.each { |c| get_defn(c) }
+    @amqp.amqp_classes.each { |c| get_defn(c) }
     gen "    // Inner class implementation\n\n"
-    @amqp.classes.each { |c| inner_class_defn(c) }
+    @amqp.amqp_classes.each { |c| inner_class_defn(c) }
     genl "}} // namespae qpid::framing"
   }
    end

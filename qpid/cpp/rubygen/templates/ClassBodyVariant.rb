@@ -10,18 +10,18 @@ class ClassBodyVariant < CppGen
 
   def class_body(c)
     h_file (c.body_name) { 
-      c.methods.each { |m| genl "#include \"#{m.body_name}.h\""; }
+      c.amqp_methods.each { |m| genl "#include \"#{m.body_name}.h\""; }
       genl
       genl "#include <boost/visitor.hpp>"
       genl
       gen "typedef boost::variant<"
-      indent { genl c.methods().collect { |m| m.body_name }.join(",\n") }
+      indent { genl c.amqp_methods().collect { |m| m.body_name }.join(",\n") }
       genl ">  #{c.body_name};"
     }
   end
 
   def generate()
-    @amqp.classes.each{ |c| class_body c }
+    @amqp.amqp_classes.each{ |c| class_body c }
   end
 end
 

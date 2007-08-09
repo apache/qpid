@@ -31,7 +31,7 @@ class #{handlerclass} : Invocable {
     virtual ~#{handlerclass}() {}
     // Protocol methods
 EOS
-    c.methods_on(@chassis).each { |m| handler_method(m) }
+    c.amqp_methods_on(@chassis).each { |m| handler_method(m) }
     gen <<EOS
 }; // class #{handlerclass}
 
@@ -65,13 +65,13 @@ class #{@classname} {
 
     // Inner classes
 EOS
-  indent { @amqp.classes.each { |c| handler_class(c) } }
+  indent { @amqp.amqp_classes.each { |c| handler_class(c) } }
   gen <<EOS
 
     // Method handler get methods
 
 EOS
-  indent { @amqp.classes.each { |c| handler_get(c) } }
+  indent { @amqp.amqp_classes.each { |c| handler_get(c) } }
   gen <<EOS
 }; /* class #{@classname} */
 }

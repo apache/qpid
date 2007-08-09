@@ -162,7 +162,7 @@ class CppGen < Generator
   end
 
   def struct(name, *bases, &block) struct_class("struct", name, bases, &block); end
-  def class_(name, *bases, &block) struct_class("class", name, bases, &block); end
+  def cpp_class(name, *bases, &block) struct_class("class", name, bases, &block); end
 
   def typedef(type, name) genl "typedef #{type} #{name};\n" end
 

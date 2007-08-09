@@ -15,7 +15,7 @@ class FrameBodyListsGen < CppGen
  */
 EOS
       gen "#define METHOD_BODIES() "
-      @amqp.methods.each { |m| gen "\\\n    (#{m.body_name}) " }
+      @amqp.amqp_methods.each { |m| gen "\\\n    (#{m.body_name}) " }
       gen <<EOS
 
 
