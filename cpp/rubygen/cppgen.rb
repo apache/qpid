@@ -69,8 +69,8 @@ end
 # Additional methods for AmqpMethod
 class AmqpMethod
   def cppname() name.lcaps.cppsafe; end
-  def param_names() fields.collect { |f| f.cppname }; end
-  def signature() fields.collect { |f| f.cpptype+" "+f.cppname }; end
+  def param_names() @param_names ||= fields.collect { |f| f.cppname }; end
+  def signature() @signature ||= fields.collect { |f| f.cpptype+" "+f.cppname }; end
   def body_name() amqp_parent.name.caps+name.caps+"Body"; end
 end
 
@@ -96,7 +96,7 @@ class AmqpRoot
     "table"=>["FieldTable", "const FieldTable&", "const FieldTable&"],
     "content"=>["Content", "const Content&", "const Content&"],
     "rfc1982-long-set"=>["SequenceNumberSet", "const SequenceNumberSet&", "const SequenceNumberSet&"],
-    "uuid"=>["Uuid", "const Uuid&", "const Uuid&"]
+    "uuid"=>["string", "const string&"] # FIXME should be: ["Uuid", "const Uuid&", "const Uuid&"]
   }
 
   def lookup(amqptype)
