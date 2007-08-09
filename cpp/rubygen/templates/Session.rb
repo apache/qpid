@@ -24,7 +24,7 @@ class SessionGen < CppGen
   end
 
   def declare_class(c)
-    c.methods_on(@chassis).each { |m| declare_method(m) }
+    c.amqp_methods_on(@chassis).each { |m| declare_method(m) }
   end
 
   def define_method (m)
@@ -55,7 +55,7 @@ class SessionGen < CppGen
   end
 
   def define_class(c)
-    c.methods_on(@chassis).each { |m| define_method(m) }
+    c.amqp_methods_on(@chassis).each { |m| define_method(m) }
   end
 
   def generate()
@@ -92,7 +92,7 @@ public:
     void close() { impl->close(); parent->released(impl); }  
 
 EOS
-  indent { @amqp.classes.each { |c| declare_class(c) if !excludes.include?(c.name) } }
+  indent { @amqp.amqp_classes.each { |c| declare_class(c) if !excludes.include?(c.name) } }
   gen <<EOS
 }; /* class #{@classname} */
 }
@@ -122,7 +122,7 @@ namespace client {
 
 EOS
 
-  @amqp.classes.each { |c| define_class(c) if !excludes.include?(c.name)  }
+  @amqp.amqp_classes.each { |c| define_class(c) if !excludes.include?(c.name)  }
   
   gen <<EOS
 }} // namespace qpid::client
