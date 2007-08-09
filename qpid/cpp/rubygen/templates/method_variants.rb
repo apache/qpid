@@ -24,10 +24,10 @@ class AmqpCppModelGen < CppGen
 
   def gen_class(c)
     varname="#{c.name.caps}Variant"
-    mtypes=c.methods.map { |m| m.body_name }
+    mtypes=c.amqp_methods.map { |m| m.body_name }
     typedef(blank_variant(mtypes), varname)
     genl
-    pairs=c.methods.map { |m| [m.index.to_i,m.body_name] }
+    pairs=c.amqp_methods.map { |m| [m.index.to_i,m.body_name] }
     gen_set_variant(varname, "MethodId", pairs,
                     "%d is not a valid method index in class #{c.name}")
     mtypes.each { |t|
@@ -38,8 +38,8 @@ class AmqpCppModelGen < CppGen
 
   def gen_all()
     varname="MethodVariant"
-    types=@amqp.classes.map { |c| "#{c.name.caps}Variant" }
-    pairs=@amqp.classes.map { |c| [c.index.to_i,"#{c.name.caps}Variant"] }
+    types=@amqp.amqp_classes.map { |c| "#{c.name.caps}Variant" }
+    pairs=@amqp.amqp_classes.map { |c| [c.index.to_i,"#{c.name.caps}Variant"] }
     typedef(blank_variant(types), varname) 
     genl
     gen_set_variant(varname, "ClassId", pairs,
@@ -48,7 +48,7 @@ class AmqpCppModelGen < CppGen
 
   def generate()
     h_file("qpid/framing/method_variants.h") {
-      @amqp.methods.each { |m| include "qpid/framing/#{m.body_name}.h"}
+      @amqp.amqp_methods.each { |m| include "qpid/framing/#{m.body_name}.h"}
       include "qpid/framing/amqp_types.h"
       include "qpid/QpidError.h"
       include "qpid/framing/variant.h"
@@ -58,7 +58,7 @@ class AmqpCppModelGen < CppGen
         genl "// Metafunction returns class variant containing method T."
         genl "template <class T> struct ClassVariant {};"
         genl
-        @amqp.classes.each { |c| gen_class c }
+        @amqp.amqp_classes.each { |c| gen_class c }
       }
       namespace("qpid::framing") {
         gen_all
