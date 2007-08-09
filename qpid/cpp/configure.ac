@@ -178,3 +178,5 @@ AC_CONFIG_FILES([
   ])
 AC_OUTPUT
 
+# Ensure Makefiles will be rebuilt when make first runs.
+touch src/rubygen.mk src/generate.mk
