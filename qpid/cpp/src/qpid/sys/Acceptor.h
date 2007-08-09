@@ -33,7 +33,7 @@ class ConnectionInputHandlerFactory;
 class Acceptor : public qpid::SharedObject<Acceptor>
 {
   public:
-    static Acceptor::shared_ptr create(int16_t port, int backlog, int threads, bool trace = false);
+    static Acceptor::shared_ptr create(int16_t port, int backlog, int threads);
     virtual ~Acceptor() = 0;
     virtual uint16_t getPort() const = 0;
     virtual std::string getHost() const = 0;
