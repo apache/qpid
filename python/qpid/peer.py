@@ -318,7 +318,7 @@ class Channel:
         if self.closed:
           raise Closed(self.reason)
         if not completed:
-          raise close("Timed-out waiting for completion")
+          self.close("Timed-out waiting for completion")
 
     except QueueClosed, e:
       if self.closed:
