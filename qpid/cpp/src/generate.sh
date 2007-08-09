@@ -40,8 +40,8 @@ make_assign() {
 	make_assign "generator" "" $specs \
 	    `find ../gentools \( -name '*.java' -o -name '*.tmpl' \) -print`
     fi
-) > gen/generate.mk-t
-mv gen/generate.mk-t gen/generate.mk
+) > generate.mk-t
+mv generate.mk-t generate.mk
 
 
 
