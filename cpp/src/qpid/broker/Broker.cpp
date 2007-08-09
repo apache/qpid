@@ -153,8 +153,7 @@ Acceptor& Broker::getAcceptor() const {
         const_cast<Acceptor::shared_ptr&>(acceptor) =
             Acceptor::create(config.port,
                              config.connectionBacklog,
-                             config.workerThreads,
-                             false);
+                             config.workerThreads);
         QPID_LOG(info, "Listening on port " << getPort());
     }
     return *acceptor;
