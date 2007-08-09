@@ -42,11 +42,12 @@ public class Session extends Invoker
     // completed incoming commands
     private final RangeSet processed = new RangeSet();
     private Range syncPoint = null;
-
+    
     // outgoing command count
     private long commandsOut = 0;
     private Map<Long,Method> commands = new HashMap<Long,Method>();
     private long mark = 0;
+    
 
     public Map<Long,Method> getOutstandingCommands()
     {
@@ -231,7 +232,6 @@ public class Session extends Invoker
         }
         future.set(result);
     }
-
     protected <T> Future<T> invoke(Method m, Class<T> klass)
     {
         long command = commandsOut;

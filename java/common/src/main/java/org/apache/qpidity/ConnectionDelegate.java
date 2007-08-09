@@ -20,6 +20,17 @@
  */
 package org.apache.qpidity;
 
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
+
 
 /**
  * ConnectionDelegate
@@ -27,9 +38,240 @@ package org.apache.qpidity;
  * @author Rafael H. Schloming
  */
 
-public interface ConnectionDelegate
+/**
+ * Currently only implemented client specific methods
+ * the server specific methods are dummy impls for testing
+ * 
+ * the connectionClose is kind of different for both sides
+ */
+public abstract class ConnectionDelegate extends Delegate<Channel>
 {
+    private String _username;
+    private String _password;
+    private String _mechanism;
+    private String _virtualHost;
+    private SaslClient saslClient;
+    private SaslServer saslServer;
+    private String _locale = "utf8";
+    private int maxFrame = 64*1024;
+    private Condition _negotiationComplete;
+    private Lock _negotiationCompleteLock;
+    
+    public abstract SessionDelegate getSessionDelegate();
+    
+    public void setCondition(Lock negotiationCompleteLock,Condition negotiationComplete)
+    {
+        _negotiationComplete = negotiationComplete;
+        _negotiationCompleteLock = negotiationCompleteLock;
+    }
+    
+    // ----------------------------------------------
+    //           Client side 
+    //-----------------------------------------------
+    @Override public void connectionStart(Channel context, ConnectionStart struct) 
+    {
+        System.out.println("The broker has sent connection-start");
+        
+        String mechanism = null;
+        String response = null;
+        try
+        {
+            mechanism = SecurityHelper.chooseMechanism(struct.getMechanisms());
+            saslClient = Sasl.createSaslClient(new String[]{ mechanism },null, "AMQP", "localhost", null,
+                                                  SecurityHelper.createCallbackHandler(mechanism,_username,_password ));
+            response = new String(saslClient.evaluateChallenge(new byte[0]),_locale);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+           // need error handling
+        }
+        catch (SaslException e)
+        {
+          // need error handling
+        }
+        catch (QpidException e)
+        {
+          //  need error handling
+        }
+                
+        Map<String,?> props = new HashMap<String,String>();        
+        context.connectionStartOk(props, mechanism, response, _locale);
+    }
+    
+    @Override public void connectionSecure(Channel context, ConnectionSecure struct) 
+    {
+        System.out.println("The broker has sent connection-secure with chanllenge " + struct.getChallenge());
+        
+        try
+        {
+            String response = new String(saslClient.evaluateChallenge(struct.getChallenge().getBytes()),_locale);
+            context.connectionSecureOk(response);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+           // need error handling
+        }
+        catch (SaslException e)
+        {
+          // need error handling
+        }        
+    }
+    
+    @Override public void connectionTune(Channel context, ConnectionTune struct) 
+    {
+        System.out.println("The broker has sent connection-tune " + struct.toString());
+        
+        // should update the channel max given by the broker.
+        context.connectionTuneOk(struct.getChannelMax(), struct.getFrameMax(), struct.getHeartbeat());    
+        context.connectionOpen(_virtualHost, null, Option.INSIST);
+    }
+   
+    
+    @Override public void connectionOpenOk(Channel context, ConnectionOpenOk struct) 
+    {
+        String knownHosts = struct.getKnownHosts();
+        System.out.println("The broker has opened the connection for use");
+        System.out.println("The broker supplied the following hosts for failover " + knownHosts);
+        _negotiationCompleteLock.lock();
+        try
+        {
+            _negotiationComplete.signalAll();
+        }
+        finally
+        {
+            _negotiationCompleteLock.unlock();
+        }
+    }
+    
+    public void connectionRedirect(Channel context, ConnectionRedirect struct) 
+    {
+        // not going to bother at the moment
+    }
+    
+    //  ----------------------------------------------
+    //           Server side 
+    //-----------------------------------------------
+    @Override public void connectionStartOk(Channel context, ConnectionStartOk struct) 
+    {
+        //set the client side locale on the server side
+        _locale = struct.getLocale();
+        _mechanism = struct.getMechanism();
+        
+        System.out.println("The client has sent connection-start-ok");
+        
+        //try
+        //{
+            //saslServer = Sasl.createSaslServer(_mechanism, "AMQP", "ABC",null,SecurityHelper.createCallbackHandler(_mechanism,_username,_password));
+            //byte[] challenge = saslServer.evaluateResponse(struct.getResponse().getBytes());
+            byte[] challenge = null;
+            if ( challenge == null)
+            {
+                System.out.println("Authentication sucessfull");
+                context.connectionTune(Integer.MAX_VALUE,maxFrame, 0);
+            }
+            else
+            {
+                System.out.println("Authentication failed");
+                try
+                {
+                    context.connectionSecure(new String(challenge,_locale));
+                }
+                catch(Exception e)
+                {
+                    
+                }
+            }
+            
+            
+        /*}
+        catch (SaslException e)
+        {
+          // need error handling
+        }
+        catch (QpidException e)
+        {
+          //  need error handling
+        }*/
+    }
+    
+    @Override public void connectionTuneOk(Channel context, ConnectionTuneOk struct) 
+    {
+        System.out.println("The client has excepted the tune params");
+    }
+    
+    @Override public void connectionSecureOk(Channel context, ConnectionSecureOk struct) 
+    {
+        System.out.println("The client has sent connection-secure-ok");
+        try
+        {
+            saslServer = Sasl.createSaslServer(_mechanism, "AMQP", "ABC",new HashMap(),SecurityHelper.createCallbackHandler(_mechanism,_username,_password));
+            byte[] challenge = saslServer.evaluateResponse(struct.getResponse().getBytes());
+            if ( challenge == null)
+            {
+                System.out.println("Authentication sucessfull");
+                context.connectionTune(Integer.MAX_VALUE,maxFrame, 0);
+            }
+            else
+            {
+                System.out.println("Authentication failed");
+                try
+                {
+                    context.connectionSecure(new String(challenge,_locale));
+                }
+                catch(Exception e)
+                {
+                    
+                }
+            }
+            
+            
+        }
+        catch (SaslException e)
+        {
+          // need error handling
+        }
+        catch (QpidException e)
+        {
+          //  need error handling
+        }
+    }
+    
+    
+    @Override public void connectionOpen(Channel context, ConnectionOpen struct) 
+    {
+       String hosts = "amqp:1223243232325";
+       System.out.println("The client has sent connection-open-ok");
+       context.connectionOpenOk(hosts);
+    }
+    
+    
+    public String getPassword()
+    {
+        return _password;
+    }
 
-    SessionDelegate getSessionDelegate();
+    public void setPassword(String password)
+    {
+        _password = password;
+    }
 
+    public String getUsername()
+    {
+        return _username;
+    }
+
+    public void setUsername(String username)
+    {
+        _username = username;
+    }
+
+    public String getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    public void setVirtualHost(String host)
+    {
+        _virtualHost = host;
+    }
 }

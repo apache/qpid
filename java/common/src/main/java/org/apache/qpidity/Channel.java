@@ -35,30 +35,31 @@ import static org.apache.qpidity.Functions.*;
  * @author Rafael H. Schloming
  */
 
-class Channel extends Invoker implements Handler<Frame>
+public class Channel extends Invoker implements Handler<Frame>
 {
 
     final private Connection connection;
     final private int channel;
     final private TrackSwitch<Channel> tracks;
     final private Delegate<Channel> delegate;
-
+    final private SessionDelegate sessionDelegate;
     // session may be null
     private Session session;
 
     private Method method = null;
     private List<ByteBuffer> data = null;
     private int dataSize;
-
+    
     public Channel(Connection connection, int channel, SessionDelegate delegate)
     {
         this.connection = connection;
         this.channel = channel;
         this.delegate = new ChannelDelegate();
-
+        this.sessionDelegate = delegate;
+        
         tracks = new TrackSwitch<Channel>();
         tracks.map(L1, new MethodHandler<Channel>
-                   (getMajor(), getMinor(), this.delegate));
+                   (getMajor(), getMinor(), connection.getConnectionDelegate()));
         tracks.map(L2, new MethodHandler<Channel>
                    (getMajor(), getMinor(), this.delegate));
         tracks.map(L3, new SessionResolver<Frame>
