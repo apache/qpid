@@ -56,7 +56,7 @@ public class PropertyExpression implements Expression
             }
             catch (Exception e)
             {
-                throw new QpidException("cannot evaluate property ", "message selector", e);
+                throw new QpidException("cannot evaluate property ", 0, e);
             }
         }
         return result;

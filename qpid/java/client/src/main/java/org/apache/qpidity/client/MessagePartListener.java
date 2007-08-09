@@ -17,7 +17,9 @@
  */
 package org.apache.qpidity.client;
 
-import org.apache.qpidity.Header;
+import java.nio.ByteBuffer;
+
+import org.apache.qpidity.Struct;
 
 /**
  * Assembles message parts.
@@ -31,21 +33,21 @@ import org.apache.qpidity.Header;
  * are transferred.
  */
 public interface MessagePartListener
-{
+{    
     /**
      * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}
      * or {@link org.apache.qpidity.ApplicationProperties} ) to the message being received.
      *
      * @param headers Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
      */
-    public void messageHeaders(Header... headers);
+    public void messageHeaders(Struct... headers);
 
     /**
      * Add the following byte array to the content of the message being received
      *
      * @param data Data to be added or streamed.
      */
-    public void addData(byte[] data);
+    public void addData(ByteBuffer src);
 
     /**
      * Indicates that the message has been fully received. 

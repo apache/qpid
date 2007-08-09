@@ -131,9 +131,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // this is a queue we expect that this queue exists
             getSession().getQpidSession()
                     .messageSubscribe(destination.getName(), getMessageActorID(),
-                                      org.apache.qpidity.client.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                      org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                       // When the message selctor is set we do not acquire the messages
-                                      _messageSelector != null ? org.apache.qpidity.client.Session.ACQUIRE_MODE_NO_ACQUIRE : org.apache.qpidity.client.Session.ACQUIRE_MODE_PRE_ACQUIRE,
+                                      _messageSelector != null ? org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE : org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
                                       messageAssembler, null, _noLocal ? Option.NO_LOCAL : Option.NO_OPTION);
             if (_messageSelector != null)
             {
@@ -167,9 +167,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // subscribe to this topic 
             getSession().getQpidSession()
                     .messageSubscribe(queueName, getMessageActorID(),
-                                      org.apache.qpidity.client.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                      org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                       // We always acquire the messages
-                                      org.apache.qpidity.client.Session.ACQUIRE_MODE_PRE_ACQUIRE, messageAssembler, null,
+                                      org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE, messageAssembler, null,
                                       _noLocal ? Option.NO_LOCAL : Option.NO_OPTION,
                                       // Request exclusive subscription access, meaning only this subscription
                                       // can access the queue.
@@ -591,7 +591,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // TODO: messageID is a string but range need a long???
             // ranges.add(message.getMessageID());
 
-            getSession().getQpidSession().messageAcquire(ranges);
+            getSession().getQpidSession().messageAcquire(ranges, org.apache.qpidity.client.Session.ACQUIRE_ANY_AVAILABLE_MESSAGE);
             RangeSet acquired = getSession().getQpidSession().getAccquiredMessages();
             if (acquired.size() > 0)
             {
