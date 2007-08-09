@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -90,7 +90,7 @@ Options:
         "True if we are running with the old 0-8 spec."
         # NB: AMQP 0-8 identifies itself as 8-0 for historical reasons.
         return self.spec.major==8 and self.spec.minor==0
-            
+
     def _parseargs(self, args):
         # Defaults
         self.setBroker("localhost")
@@ -125,7 +125,7 @@ Options:
             self.tests=findmodules("tests")
             if self.use08spec():
                 self.tests+=findmodules("tests_0-8")
-            elif self.spec.major == 0 and self.spec.minor == 10:    
+            elif self.spec.major == 0 and self.spec.minor == 10:
                 self.tests+=findmodules("tests_0-10")
             else:
                 self.tests+=findmodules("tests_0-9")
@@ -140,13 +140,13 @@ Options:
         # Use our IgnoringTestSuite in the test loader.
         unittest.TestLoader.suiteClass = IgnoringTestSuite
         return unittest.defaultTestLoader.loadTestsFromNames(self.tests)
-        
+
     def run(self, args=sys.argv[1:]):
         self._parseargs(args)
         runner = unittest.TextTestRunner(descriptions=False,
                                          verbosity=self.verbose)
         result = runner.run(self.testSuite())
-            
+
         if (self.ignore):
             print "======================================="
             print "NOTE: the following tests were ignored:"
@@ -180,7 +180,7 @@ class TestBase(unittest.TestCase):
     Deletes queues and exchanges after.  Tests call
     self.queue_declare(channel, ...) and self.exchange_declare(chanel,
     ...) which are wrappers for the Channel functions that note
-    resources to clean up later. 
+    resources to clean up later.
     """
 
     def setUp(self):
@@ -199,9 +199,9 @@ class TestBase(unittest.TestCase):
         except:
             print "Error on tearDown:", sys.exc_info()
 
-        if not self.client.closed:    
+        if not self.client.closed:
             self.client.channel(0).connection_close(reply_code=200)
-        else:    
+        else:
             self.client.close()
 
     def connect(self, *args, **keys):
@@ -213,7 +213,7 @@ class TestBase(unittest.TestCase):
         reply = channel.queue_declare(*args, **keys)
         self.queues.append((channel, reply.queue))
         return reply
-            
+
     def exchange_declare(self, channel=None, ticket=0, exchange='',
                          type='', passive=False, durable=False,
                          auto_delete=False,
@@ -227,7 +227,7 @@ class TestBase(unittest.TestCase):
         """Generate a unique string, unique for this TestBase instance"""
         if not "uniqueCounter" in dir(self): self.uniqueCounter = 1;
         return "Test Message " + str(self.uniqueCounter)
-        
+
     def consume(self, queueName):
         """Consume from named queue returns the Queue object."""
         if testrunner.use08spec():
@@ -271,7 +271,7 @@ class TestBase(unittest.TestCase):
             self.assertEqual(body, msg.body)
             if (properties):
                 self.assertEqual(properties, msg.application_headers)
-        
+
     def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
         """
         Publish a message and consume it, assert it comes back intact.
@@ -286,7 +286,7 @@ class TestBase(unittest.TestCase):
         self.assertEqual(expectedCode, message.reply_code)
 
 
-    def assertConnectionException(self, expectedCode, message): 
+    def assertConnectionException(self, expectedCode, message):
         if not isinstance(message, Message): self.fail("expected connection_close method, got %s" % (message))
         self.assertEqual("connection", message.method.klass.name)
         self.assertEqual("close", message.method.name)
