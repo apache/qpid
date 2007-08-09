@@ -55,7 +55,7 @@ using boost::in_place;
 
 template <class T>
 void destroyT(void* ptr) { static_cast<T*>(ptr)->~T(); }
-void nullDestroy(void*) {}
+inline void nullDestroy(void*) {}
 
 /**
  * A "blob" is a chunk of memory which can contain a single object at

@@ -1,5 +1,5 @@
-#ifndef QPID_FRAMING_METHODBODYHOLDER_H
-#define QPID_FRAMING_METHODBODYHOLDER_H
+#ifndef QPID_FRAMING_METHODHOLDER_H
+#define QPID_FRAMING_METHODHOLDER_H
 
 /*
  *
@@ -22,14 +22,17 @@
  *
  */
 
-#include "qpid/framing/method_variants.h"
+#include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Blob.h"
+#include "qpid/framing/MethodHolderMaxSize.h" // Generated file.
 
-#include <boost/type_traits/has_nothrow_copy.hpp>
+#include <utility>
 
 namespace qpid {
 namespace framing {
 
 class AMQMethodBody;
+class Buffer;
 
 /**
  * Holder for arbitrary method body.
@@ -37,44 +40,47 @@ class AMQMethodBody;
 class MethodHolder
 {
   public:
+    typedef std::pair<ClassId, MethodId> Id; 
+
+    template <class T>static Id idOf() {
+        return std::make_pair(T::CLASS_ID, T::METHOD_ID); }
+
     MethodHolder() {}
-    MethodHolder(const MethodVariant& mv) : method(mv) {}
+    MethodHolder(const Id& id) { construct(id); }
+    MethodHolder(ClassId& c, MethodId& m) { construct(std::make_pair(c,m)); }
 
-    /** Construct from a concrete method body type.
-     * ClassVariant<T>::value is the containing class variant.
-     */
-    template <class T>
-    MethodHolder(const T& t)
-        : method(typename ClassVariant<T>::value(t)) {}
+    template <class M>
+    MethodHolder(const M& m) : blob(m), id(idOf<M>()) {}
 
-    /** Construct from class/method ID, set the method accordingly. */
-    MethodHolder(ClassId, MethodId);
+    template <class M>
+    MethodHolder& operator=(const M& m) { blob=m; id=idOf<M>(); return *this; }
 
-    /** Set the method to the type corresponding to ClassId, MethodId */
-    void setMethod(ClassId, MethodId);
-    
-    AMQMethodBody* getMethod();
-    const AMQMethodBody* getMethod() const;
-    
-    MethodVariant method;
+    /** Construct the method body corresponding to Id */
+    void construct(const Id&);
 
     void encode(Buffer&) const;
     void decode(Buffer&);
     uint32_t size() const;
+            
+    AMQMethodBody* get() {
+        return static_cast<AMQMethodBody*>(blob.get());
+    }
+    const AMQMethodBody* get() const {
+        return static_cast<const AMQMethodBody*>(blob.get());
+    }
+
+    AMQMethodBody* operator* () { return get(); }
+    const AMQMethodBody* operator*() const { return get(); }
+    AMQMethodBody* operator-> () { return get(); }
+    const AMQMethodBody* operator->() const { return get(); }
+
+  private:
+    Blob<MAX_METHODBODY_SIZE> blob;
+    Id id;
 };
 
-inline std::ostream& operator<<(std::ostream& out, const MethodHolder& h) {
-    return out << h.method;
-}
-
+std::ostream& operator<<(std::ostream& out, const MethodHolder& h);
 
 }} // namespace qpid::framing
 
-namespace boost {
-template<> struct has_nothrow_copy<qpid::framing::MethodHolder> 
-    : public boost::true_type {};
-}
-
-
-
-#endif  /*!QPID_FRAMING_METHODBODYHOLDER_H*/
+#endif  /*!QPID_FRAMING_METHODHOLDER_H*/
