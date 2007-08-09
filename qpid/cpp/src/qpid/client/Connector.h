@@ -34,9 +34,10 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Socket.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/AsynchIO.h"
 
 namespace qpid {
-
+	
 namespace client {
 
 class Connector : public framing::OutputHandler, 
@@ -62,13 +63,14 @@ class Connector : public framing::OutputHandler,
     framing::InitiationHandler* initialiser;
     framing::OutputHandler* output;
 	
-    framing::Buffer inbuf;
     framing::Buffer outbuf;
 
     sys::Mutex writeLock;
     sys::Thread receiver;
 
     sys::Socket socket;
+
+    sys::Poller::shared_ptr poller;
 
     void checkIdle(ssize_t status);
     void writeBlock(framing::AMQDataBlock* data);
@@ -78,7 +80,10 @@ class Connector : public framing::OutputHandler,
     void run();
     void handleClosed();
     bool closeInternal();
-
+    
+    void readbuff(qpid::sys::AsynchIO&, qpid::sys::AsynchIO::Buffer*);
+    void eof(qpid::sys::AsynchIO&);
+    
   friend class Channel;
   public:
     Connector(framing::ProtocolVersion pVersion,
