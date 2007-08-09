@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,7 +30,7 @@ from message import Message
 from queue import Queue, Closed as QueueClosed
 from content import Content
 from cStringIO import StringIO
-from time import time 
+from time import time
 
 class Sequence:
 
@@ -266,12 +266,12 @@ class Channel:
         self.request(frame, future.put_response, content)
         if not frame.method.responses: return None
         else: return future
-      
+
       self.request(frame, self.queue_response, content)
       if not frame.method.responses:
         if self.use_execution_layer and type.is_l4_command():
           self.execution_flush()
-          self.completion.wait()                  
+          self.completion.wait()
           if self.closed:
             raise Closed(self.reason)
         return None
@@ -314,7 +314,7 @@ class Channel:
       elif self.synchronous and not frame.method.response \
                and self.use_execution_layer and frame.method.is_l4_command():
         self.execution_flush()
-        completed = self.completion.wait(timeout=10)                  
+        completed = self.completion.wait(timeout=10)
         if self.closed:
           raise Closed(self.reason)
         if not completed:
@@ -367,7 +367,7 @@ class OutgoingCompletion:
   """
   Manages completion of outgoing commands i.e. command sent by this peer
   """
-  
+
   def __init__(self):
     self.condition = threading.Condition()
 
@@ -439,7 +439,3 @@ class IncomingCompletion:
       #TODO: record and manage the ranges properly
       range = [mark, mark]
       self.channel.execution_complete(cumulative_execution_mark=self.mark, ranged_execution_set=range)
-      
-      
-      
-      
