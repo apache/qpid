@@ -136,7 +136,9 @@ class CppGen < Generator
   end
 
   def include(header)
-    genl /<.*>/.match(header) ? "#include #{header}" : "#include \"#{header}\""
+    header+=".h" unless /(\.h|[">])$/===header
+    header="\"#{header}\"" unless /(^<.*>$)|(^".*"$)/===header
+    genl "#include #{header}"
   end
 
   def scope(open="{",close="}", &block) 
@@ -154,11 +156,11 @@ class CppGen < Generator
     genl
   end
 
-  def struct_class(type, name, *bases, &block)
+  def struct_class(type, name, bases, &block)
     genl
     gen "#{type} #{name}"
     gen ": #{bases.join(', ')}" unless bases.empty?
-    scope(" {","};", &block)
+    scope(" {","};") { yield }
   end
 
   def struct(name, *bases, &block) struct_class("struct", name, bases, &block); end
