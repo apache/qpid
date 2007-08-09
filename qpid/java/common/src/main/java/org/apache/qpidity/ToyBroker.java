@@ -60,6 +60,12 @@ class ToyBroker extends SessionDelegate
         System.out.println("declared queue: " + qd.getQueue());
     }
 
+    @Override public void queueQuery(Session ssn, QueueQuery qq)
+    {
+        QueueQueryResult result = new QueueQueryResult().queue(qq.getQueue());
+        ssn.executionResult(qq.getId(), result);
+    }
+
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
         this.xfr = xfr;

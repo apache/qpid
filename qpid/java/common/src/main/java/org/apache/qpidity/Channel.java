@@ -205,7 +205,7 @@ class Channel extends Invoker implements Handler<Frame>
         method(m);
     }
 
-    protected void invoke(Method m, Handler<Struct> handler)
+    protected <T> Future<T> invoke(Method m, Class<T> cls)
     {
         throw new UnsupportedOperationException();
     }
