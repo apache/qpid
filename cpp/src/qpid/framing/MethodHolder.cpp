@@ -20,74 +20,37 @@
  */
 
 #include "MethodHolder.h"
-#include "amqp_types.h"
+#include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/variant.h"
+
+// Note: MethodHolder::construct is in a separate generated file
+// MethodHolder_construct.cpp
 
 using namespace boost;
 
 namespace qpid {
 namespace framing {
 
-struct SetVariantVisitor : public NoBlankVisitor<> {
-    QPID_USING_NOBLANK();
-    MethodId id;
-    SetVariantVisitor(MethodId m) : id(m) {}
-    template <class T> void operator()(T& t) const { setVariant(t, id); }
-};
-
-inline void setVariant(MethodVariant& var, ClassId c, MethodId m) {
-    setVariant(var,c);
-    boost::apply_visitor(SetVariantVisitor(m), var);
-}
-
-void MethodHolder::setMethod(ClassId c, MethodId m) {
-    setVariant(method, c, m);
-}
-
-MethodHolder::MethodHolder(ClassId c, MethodId m) {
-    setMethod(c,m);
-}
-
-struct GetClassId : public NoBlankVisitor<ClassId> {
-    QPID_USING_NOBLANK(ClassId);
-    template <class T> ClassId operator()(const T&) const {
-        return T::CLASS_ID;
-    }
-};
-
-struct GetMethodId : public NoBlankVisitor<MethodId> {
-    QPID_USING_NOBLANK(ClassId);
-    template <class T> MethodId operator()(const T&) const {
-        return T::METHOD_ID;
-    }
-};
-
 void MethodHolder::encode(Buffer& b) const {
-    const AMQMethodBody* body = getMethod();
+    const AMQMethodBody* body = get();
     b.putShort(body->amqpClassId());
     b.putShort(body->amqpMethodId());
     body->encodeContent(b);
 }
 
 void MethodHolder::decode(Buffer& b) {
-    ClassId classId = b.getShort();
-    ClassId methodId = b.getShort();
-    setVariant(method, classId, methodId);
-    getMethod()->decodeContent(b);
+    construct(std::make_pair(b.getShort(), b.getShort()));
+    get()->decodeContent(b);
 }
 
 uint32_t  MethodHolder::size() const {
-    return sizeof(ClassId)+sizeof(MethodId)+getMethod()->size();
+    return sizeof(Id)+get()->size();
 }
 
-
-AMQMethodBody* MethodHolder::getMethod() {
-    return applyApplyVisitor(AddressVisitor<AMQMethodBody*>(), method);
-}
-
-const AMQMethodBody* MethodHolder::getMethod() const {
-    return const_cast<MethodHolder*>(this)->getMethod();
+std::ostream& operator<<(std::ostream& out, const MethodHolder& h) {
+    h.get()->print(out);
+    return out;
 }
 
 }} // namespace qpid::framing
