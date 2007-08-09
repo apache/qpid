@@ -14,9 +14,8 @@ export JAVA JAVAC
   perl -ne '/^(include |if |else|endif)/ or print' Makefile.am \
       | make -f - abs_srcdir=`dirname $(pwd)` gen.mk > /dev/null )
 
-# Create initial empty Makefile include files, make will generate the real contents.
+# Create empty Makefile include files, make will generate the real contents.
 touch src/rubygen.mk src/generate.mk
-
 automake
 autoconf
 
