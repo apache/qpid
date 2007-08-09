@@ -1,5 +1,7 @@
 package org.apache.qpidity.api;
 
+import java.nio.ByteBuffer;
+
 import org.apache.qpidity.MessageProperties;
 import org.apache.qpidity.DeliveryProperties;
 
@@ -43,6 +45,8 @@ public interface Message
 	 */
 	public void appendData(byte[] src);
 
+    public void appendData(ByteBuffer src);
+    
 	/**
 	 * This will abstract the underlying message data.
 	 * The Message implementation may not hold all message

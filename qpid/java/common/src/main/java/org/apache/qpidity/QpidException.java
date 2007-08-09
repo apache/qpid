@@ -25,12 +25,9 @@ package org.apache.qpidity;
 public class QpidException extends Exception
 {
     /**
-     * This exception error code.
-     * <p> This error code is used for internationalisation purpose.
-     * <p> This error code is set from the AMQP ones.
-     * <TODO> So we may want to use the AMQP error code directly.
+     * AMQP error code
      */
-    private String _errorCode;
+    private int _errorCode;
 
     /**
      * Constructor for a Qpid Exception.
@@ -38,12 +35,19 @@ public class QpidException extends Exception
      * they are unknown.
      * @param message    A description of the reason of this exception .
      * @param errorCode  A string specifyin the error code of this exception.
-     * @param cause      The linked Execption.
+     * @param cause      The linked Execption.    * 
+     * 
      */
-    public QpidException(String message, String errorCode, Throwable cause)
+    public QpidException(String message, int errorCode, Throwable cause)
     {
         super(message, cause);
         _errorCode = errorCode;
+    }
+    
+    //hack to get rid of a compile error from a  generated class
+    public QpidException(String message, String errorCode, Throwable cause)
+    {
+        
     }
 
     /**
@@ -51,7 +55,7 @@ public class QpidException extends Exception
      *
      * @return This exception error code.
      */
-    public String getErrorCode()
+    public int getErrorCode()
     {
         return _errorCode;
     }

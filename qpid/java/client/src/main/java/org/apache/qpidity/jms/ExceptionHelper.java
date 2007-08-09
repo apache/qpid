@@ -34,7 +34,7 @@ public class ExceptionHelper
         {
             if (exception instanceof QpidException)
             {
-                jmsException = new JMSException(exception.getMessage(), ((QpidException) exception).getErrorCode());
+                jmsException = new JMSException(exception.getMessage(), String.valueOf(((QpidException) exception).getErrorCode()));
             }
             else
             {
@@ -51,7 +51,7 @@ public class ExceptionHelper
 
     static public XAException convertQpidExceptionToXAException(QpidException exception)
     {
-        String qpidErrorCode = exception.getErrorCode();
+        String qpidErrorCode = String.valueOf(exception.getErrorCode());
         // todo map this error to an XA code
         int xaCode = XAException.XAER_PROTO;
         return new XAException(xaCode);

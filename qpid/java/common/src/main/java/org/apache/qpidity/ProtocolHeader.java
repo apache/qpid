@@ -29,7 +29,9 @@ import java.nio.ByteBuffer;
  * @author Rafael H. Schloming
  */
 
-class ProtocolHeader
+//RA making this public until we sort out the package issues
+
+public class ProtocolHeader
 {
 
     private static final byte[] AMQP = {'A', 'M', 'Q', 'P' };

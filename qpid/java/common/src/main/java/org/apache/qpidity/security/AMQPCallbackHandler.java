@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,28 +18,11 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
+package org.apache.qpidity.security;
 
-/**
- * CommonSessionDelegate
- */
+import javax.security.auth.callback.CallbackHandler;
 
-public class CommonSessionDelegate extends Delegate<Session>
+public interface AMQPCallbackHandler extends CallbackHandler
 {
-
-    @Override public void sessionAttached(Session session, SessionAttached struct) {}
-
-    @Override public void sessionFlow(Session session, SessionFlow struct) {}
-
-    @Override public void sessionFlowOk(Session session, SessionFlowOk struct) {}
-
-    @Override public void sessionClose(Session session, SessionClose struct) {}
-
-    @Override public void sessionClosed(Session session, SessionClosed struct) {}
-
-    @Override public void sessionResume(Session session, SessionResume struct) {}
-
-    @Override public void sessionSuspend(Session session, SessionSuspend struct) {}
-
-    @Override public void sessionDetached(Session session, SessionDetached struct) {}    
+    void initialise(String username,String password);    
 }
