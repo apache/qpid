@@ -191,7 +191,10 @@ class Channel:
     self.incoming_completion = IncomingCompletion(self)
 
     # Use reliable framing if version == 0-9.
-    self.reliable = (spec.major == 0 and spec.minor == 9)
+    if spec.major == 0 and spec.minor == 9:
+      self.invoker = self.invoke_reliable
+    else:
+      self.invoker = self.invoke_method
     self.use_execution_layer = (spec.major == 0 and spec.minor == 10)
     self.synchronous = True
 
@@ -260,36 +263,38 @@ class Channel:
     self.completion.next_command(type)
     content = kwargs.pop("content", None)
     frame = Method(type, type.arguments(*args, **kwargs))
-    if self.reliable:
-      if not self.synchronous:
-        future = Future()
-        self.request(frame, future.put_response, content)
-        if not frame.method.responses: return None
-        else: return future
+    return self.invoker(frame, content)
 
-      self.request(frame, self.queue_response, content)
-      if not frame.method.responses:
-        if self.use_execution_layer and type.is_l4_command():
-          self.execution_flush()
-          self.completion.wait()
-          if self.closed:
-            raise Closed(self.reason)
-        return None
-      try:
-        resp = self.responses.get()
-        if resp.method_type.content:
-          return Message(self, resp, read_content(self.responses))
-        else:
-          return Message(self, resp)
+  # used for 0-9
+  def invoke_reliable(self, frame, content = None):
+    if not self.synchronous:
+      future = Future()
+      self.request(frame, future.put_response, content)
+      if not frame.method.responses: return None
+      else: return future
 
-      except QueueClosed, e:
+    self.request(frame, self.queue_response, content)
+    if not frame.method.responses:
+      if self.use_execution_layer and type.is_l4_command():
+        self.execution_flush()
+        self.completion.wait()
         if self.closed:
           raise Closed(self.reason)
-        else:
-          raise e
-    else:
-      return self.invoke_method(frame, content)
+      return None
+    try:
+      resp = self.responses.get()
+      if resp.method_type.content:
+        return Message(self, resp, read_content(self.responses))
+      else:
+        return Message(self, resp)
 
+    except QueueClosed, e:
+      if self.closed:
+        raise Closed(self.reason)
+      else:
+        raise e
+
+  # used for 0-8 and 0-10
   def invoke_method(self, frame, content = None):
     self.write(frame, content)
 
