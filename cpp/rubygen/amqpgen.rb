@@ -106,16 +106,16 @@ end
 class AmqpClass < AmqpElement
   def initialize(xml,amqp) super; end
   def index() attributes["index"];  end
-  def methods()
-    @cache_methods ||= elements.collect("method") { |el|
+  def amqp_methods()
+    @cache_amqp_methods ||= elements.collect("method") { |el|
       AmqpMethod.new(el,self)
     }.sort_by_name
   end
 
   # chassis should be "client" or "server"
-  def methods_on(chassis)
-    @cache_methods_on ||= { }
-    @cache_methods_on[chassis] ||= elements.collect("method/chassis[@name='#{chassis}']/..") { |m|
+  def amqp_methods_on(chassis)
+    @cache_amqp_methods_on ||= { }
+    @cache_amqp_methods_on[chassis] ||= elements.collect("method/chassis[@name='#{chassis}']/..") { |m|
       AmqpMethod.new(m,self)
     }.sort_by_name
   end
@@ -139,17 +139,17 @@ class AmqpRoot < AmqpElement
     attributes["major"]+"-"+attributes["minor"]
   end
 
-  def classes()
-    @cache_classes ||= elements.collect("class") { |c| AmqpClass.new(c,self) }.sort_by_name
+  def amqp_classes()
+    @cache_amqp_classes ||= elements.collect("class") { |c| AmqpClass.new(c,self) }.sort_by_name
   end
   
   # Return all methods on all classes.
-  def methods() classes.collect { |c| c.methods }.flatten;  end
+  def amqp_methods() amqp_classes.collect { |c| c.amqp_methods }.flatten;  end
   
   # Return all methods on chassis for all classes.
-  def methods_on(chassis)
-    @cache_methods_on ||= { }
-    @cache_methods_on[chassis] ||= classes.collect { |c| c.methods_on(chassis) }.flatten
+  def amqp_methods_on(chassis)
+    @cache_amqp_methods_on ||= { }
+    @cache_amqp_methods_on[chassis] ||= amqp_classes.collect { |c| c.amqp_methods_on(chassis) }.flatten
   end
 
   # Merge contents of elements.
