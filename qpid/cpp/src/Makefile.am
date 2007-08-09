@@ -56,8 +56,9 @@ rgen_generator=$(rgen_dir)/generate		\
 
 rubygen.mk $(rgen_srcs): rubygen.timestamp
 rubygen.timestamp: $(rgen_generator) $(specs) $(rgen_templates)
-	{ echo -n "rgen_srcs= "; \
-	for f in `$(rgen_cmd) . $(specs) $(rgen_templates) `; do echo "\\"; echo -n "	$$f "; done; \
+	srcs=`$(rgen_cmd) . $(specs) $(rgen_templates) ` && { \
+	echo -n "rgen_srcs= "; \
+	for f in $$srcs; do echo "\\"; echo -n "	$$f "; done; \
 	echo; } > rubygen.mk
 	touch $@
 else				# !GENERATE
