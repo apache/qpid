@@ -8,7 +8,7 @@ SUBDIRS = . tests
 
 EXTRA_DIST= $(platform_dist) 
 
-EXTRA_DIST += gen/generate.mk generate.sh $(generated_cpp) $(generated_h) \
+EXTRA_DIST += generate.mk generate.sh $(generated_cpp) $(generated_h) \
   rubygen.mk $(rgen_srcs) 
 
 # AMQP_XML is defined in ../configure.ac
