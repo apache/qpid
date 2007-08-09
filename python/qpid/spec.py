@@ -42,7 +42,9 @@ class SpecContainer:
   def add(self, item):
     if self.byname.has_key(item.name):
       raise ValueError("duplicate name: %s" % item)
-    if self.byid.has_key(item.id):
+    if item.id == None:
+      item.id = len(self)
+    elif self.byid.has_key(item.id):
       raise ValueError("duplicate id: %s" % item)
     self.indexes[item] = len(self.items)
     self.items.append(item)
@@ -144,14 +146,25 @@ class Domain(Metadata):
 
   PRINT=["name", "type"]
 
-  def __init__(self, spec, id, name, type, description, docs):
+  def __init__(self, spec, name, type, description, docs):
     Metadata.__init__(self)
     self.spec = spec
-    self.id = id
+    self.id = None
     self.name = name
     self.type = type
     self.description = description
     self.docs = docs
+
+class Struct(Metadata):
+
+  PRINT=["size", "type", "pack"]
+
+  def __init__(self, size, type, pack):
+    Metadata.__init__(self)
+    self.size = size
+    self.type = type
+    self.pack = pack
+    self.fields = SpecContainer()
 
 class Class(Metadata):
 
@@ -177,7 +190,7 @@ class Method(Metadata):
 
   PRINT=["name", "id"]
 
-  def __init__(self, klass, name, id, content, responses, synchronous,
+  def __init__(self, klass, name, id, content, responses, result, synchronous,
                description, docs):
     Metadata.__init__(self)
     self.klass = klass
@@ -185,6 +198,7 @@ class Method(Metadata):
     self.id = id
     self.content = content
     self.responses = responses
+    self.result = result
     self.synchronous = synchronous
     self.fields = SpecContainer()
     self.description = description
@@ -224,8 +238,8 @@ class Method(Metadata):
       if f.docs:
         s += "\n\n" + "\n\n".join([fill(f.docs[0], 4, f.name)] +
                                   [fill(d, 4) for d in f.docs[1:]])
-    if self.responses:    
-      s += "\n\nValid responses: "    
+    if self.responses:
+      s += "\n\nValid responses: "
       for r in self.responses:
         s += r.name + " "
     return s
@@ -243,8 +257,8 @@ class Method(Metadata):
               "content": None,
               "uuid": "",
               "rfc1982_long": 0,
-              "rfc1982_long_set": []
-              }
+              "rfc1982_long_set": [],
+              "long_struct": None}
 
   def define_method(self, name):
     g = {Method.METHOD: self}
@@ -280,6 +294,16 @@ class Field(Metadata):
     self.domain = domain
     self.description = description
     self.docs = docs
+
+def get_result(nd, spec):
+  result = nd["result"]
+  if not result: return None
+  name = result["@domain"]
+  if name != None: return spec.domains.byname[name]
+  st_nd = result["struct"]
+  st = Struct(st_nd["@size"], st_nd["@type"], st_nd["@pack"])
+  load_fields(st_nd, st.fields, spec.domains.byname)
+  return st
 
 def get_desc(nd):
   label = nd["@label"]
@@ -321,11 +345,24 @@ def load(specfile, *errata):
         spec.constants.add(const)
       except ValueError, e:
         print "Warning:", e
+
     # domains are typedefs
+    structs = []
     for nd in root.query["domain"]:
-      spec.domains.add(Domain(spec, nd.index(), pythonize(nd["@name"]),
-                              pythonize(nd["@type"]), get_desc(nd),
-                              get_docs(nd)))
+      type = nd["@type"]
+      if type == None:
+        st_nd = nd["struct"]
+        type = Struct(st_nd["@size"], st_nd["@type"], st_nd["@pack"])
+        structs.append((type, st_nd))
+      else:
+        type = pythonize(type)
+      domain = Domain(spec, pythonize(nd["@name"]), type, get_desc(nd),
+                      get_docs(nd))
+      spec.domains.add(domain)
+
+    # structs
+    for st, st_nd in structs:
+      load_fields(st_nd, st.fields, spec.domains.byname)
 
     # classes
     for c_nd in root.query["class"]:
@@ -348,6 +385,7 @@ def load(specfile, *errata):
                         int(m_nd["@index"]),
                         m_nd["@content"] == "1",
                         [pythonize(nd["@name"]) for nd in m_nd.query["response"]],
+                        get_result(m_nd, spec),
                         m_nd["@synchronous"] == "1",
                         get_desc(m_nd),
                         get_docs(m_nd))
