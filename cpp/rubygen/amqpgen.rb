@@ -115,22 +115,35 @@ class AmqpClass < AmqpElement
   # chassis should be "client" or "server"
   def amqp_methods_on(chassis)
     @cache_amqp_methods_on ||= { }
-    @cache_amqp_methods_on[chassis] ||= elements.collect("method/chassis[@name='#{chassis}']/..") { |m|
+
+    els = elements.collect("method/chassis[@name='#{chassis}']/..") { |m|
       AmqpMethod.new(m,self)
     }.sort_by_name
-  end
+    @cache_amqp_methods_on[chassis] ||= els
+end
 end
 
 # AMQP root element.
 class AmqpRoot < AmqpElement
 
+    # FIXME aconway - something namespace-related in ruby 1.8.6
+    # breaks all the xpath expressions with [@attr] tests.
+    # Not clear if this is a ruby bug or error in my xpath,
+    # current workaround is to simply delete the namespace node.
+  def newDoc(xmlFile)
+    root=Document.new(File.new(xmlFile)).root
+    root.delete_namespace
+    throw "Internal error, FIXME comment in aqmpgen.rb." unless (root.namespaces.empty?)
+    root
+  end
+
   # Initialize with output directory and spec files from ARGV.
   def initialize(*specs)
     specs.size or raise "No XML spec files."
     specs.each { |f| File.exists?(f) or raise "Invalid XML file: #{f}"}
-    super Document.new(File.new(specs.shift)).root, nil
+    super newDoc(specs.shift), nil
     specs.each { |s|            # Merge in additional specs
-      root=Document.new(File.new(s)).root
+      root=newDoc s
       merge(self,root)
     }
   end
