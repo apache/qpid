@@ -103,13 +103,24 @@ OPTIONS = {}
 
 class Struct:
 
-  def __init__(self, name, base, type, track, content):
+  def __init__(self, node, name, base, type, track, content):
+    self.node = node
     self.name = name
     self.base = base
     self.type = type
     self.track = track
     self.content = content
     self.fields = []
+
+  def result(self):
+    r = self.node["result"]
+    if not r: return
+    name = r["@domain"]
+    if not name:
+      name = self.name + "Result"
+    else:
+      name = camel(0, name)
+    return name
 
   def field(self, type, name):
     self.fields.append((type, name))
@@ -265,6 +276,7 @@ class Visitor(mllib.transforms.Visitor):
       name = camel(0, m.parent["@name"], m["@name"])
       type = int(m.parent["@index"])*256 + int(m["@index"])
       self.structs.append((name, "Method", type, m))
+      self.descend(m)
 
   def do_domain(self, d):
     s = d["struct"]
@@ -276,6 +288,15 @@ class Visitor(mllib.transforms.Visitor):
       else:
         type = int(st)
       self.structs.append((name, "Struct", type, s))
+    self.descend(d)
+
+  def do_result(self, r):
+    s = r["struct"]
+    if s:
+      name = camel(0, r.parent.parent["@name"], r.parent["@name"], "Result")
+      type = int(r.parent.parent["@index"]) * 256 + int(s["@type"])
+      self.structs.append((name, "Result", type, s))
+    self.descend(r)
 
 v = Visitor()
 spec.dispatch(v)
@@ -284,7 +305,7 @@ opts = Output(out_dir, out_pkg, "Option")
 opts.line("public enum Option {")
 structs = []
 for name, base, typecode, m in v.structs:
-  struct = Struct(name, base, typecode,
+  struct = Struct(m, name, base, typecode,
                   TRACKS.get(m.parent["@name"], "Frame.L4"),
                   m["@content"] == "1")
   for f in m.query["field", lambda f: FIELDS.get(f["@name"], True)]:
@@ -297,7 +318,7 @@ for name, base, typecode, m in v.structs:
         OPTIONS[name] = opt_name
         opts.line("    %s," % opt_name)
   structs.append(struct)
-opts.line("    %s," % "NO_OPTION")  
+opts.line("    %s," % "NO_OPTION")
 opts.line("}")
 opts.write()
 
@@ -333,13 +354,22 @@ inv = Output(out_dir, out_pkg, "Invoker")
 inv.line("public abstract class Invoker {")
 inv.line()
 inv.line("    protected abstract void invoke(Method method);")
-inv.line("    protected abstract void invoke(Method method, Handler<Struct> handler);")
+inv.line("    protected abstract <T> Future<T> invoke(Method method, Class<T> resultClass);")
 inv.line()
 for s in structs:
   if s.base != "Method": continue
   dname = dromedary(s.name)
-  inv.line("    public void %s(%s) {" % (dname, s.parameters()))
-  inv.line("        invoke(new %s(%s));" % (s.name, s.arguments()))
+  result = s.result()
+  if result:
+    result_type = "Future<%s>" % result
+  else:
+    result_type = "void"
+  inv.line("    public %s %s(%s) {" % (result_type, dname, s.parameters()))
+  if result:
+    inv.line("        return invoke(new %s(%s), %s.class);" %
+             (s.name, s.arguments(), result))
+  else:
+    inv.line("        invoke(new %s(%s));" % (s.name, s.arguments()))
   inv.line("    }")
 inv.line("}")
 inv.write()

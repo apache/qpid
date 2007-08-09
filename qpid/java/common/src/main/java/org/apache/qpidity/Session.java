@@ -23,6 +23,8 @@ package org.apache.qpidity;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+
+
 /**
  * Session
  *
@@ -217,9 +219,86 @@ public class Session extends Invoker
         }
     }
 
-    protected void invoke(Method m, Handler<Struct> handler)
+    private Map<Long,ResultFuture<?>> results =
+        new HashMap<Long,ResultFuture<?>>();
+
+    void result(long command, Struct result)
     {
-        throw new UnsupportedOperationException();
+        ResultFuture<?> future;
+        synchronized (results)
+        {
+            future = results.remove(command);
+        }
+        future.set(result);
+    }
+
+    protected <T> Future<T> invoke(Method m, Class<T> klass)
+    {
+        long command = commandsOut;
+        ResultFuture<T> future = new ResultFuture<T>(klass);
+        synchronized (results)
+        {
+            results.put(command, future);
+        }
+        invoke(m);
+        return future;
+    }
+
+    private class ResultFuture<T> implements Future<T>
+    {
+
+        private final Class<T> klass;
+        private T result;
+
+        private ResultFuture(Class<T> klass)
+        {
+            this.klass = klass;
+        }
+
+        private void set(Struct result)
+        {
+            synchronized (this)
+            {
+                this.result = klass.cast(result);
+                notifyAll();
+            }
+        }
+
+        public T get(long timeout, int nanos)
+        {
+            synchronized (this)
+            {
+                while (!isDone())
+                {
+                    try
+                    {
+                        wait(timeout, nanos);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public T get(long timeout)
+        {
+            return get(timeout, 0);
+        }
+
+        public T get()
+        {
+            return get(0);
+        }
+
+        public boolean isDone()
+        {
+            return result != null;
+        }
+
     }
 
 }
