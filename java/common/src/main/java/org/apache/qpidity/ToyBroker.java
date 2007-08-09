@@ -190,13 +190,20 @@ class ToyBroker extends SessionDelegate
     {
         final Map<String,Queue<Message>> queues =
             new HashMap<String,Queue<Message>>();
-        MinaHandler.accept("0.0.0.0", 5672, new ConnectionDelegate()
-                           {
-                               public SessionDelegate getSessionDelegate()
-                               {
-                                   return new ToyBroker(queues);
-                               }
-                           });
+        
+        ConnectionDelegate delegate = new ConnectionDelegate()
+        {
+            public SessionDelegate getSessionDelegate()
+            {
+                return new ToyBroker(queues);
+            }
+        };
+        
+        //hack
+        delegate.setUsername("guest");
+        delegate.setPassword("guest");
+        
+        MinaHandler.accept("0.0.0.0", 5672, delegate);
     }
 
 }

@@ -94,9 +94,9 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
         // this is a queue we expect that this queue exists
         getSession().getQpidSession()
                 .messageSubscribe(queue.getQueueName(), getMessageActorID(),
-                                  org.apache.qpidity.client.Session.CONFIRM_MODE_NOT_REQUIRED,
+                                  org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                   // We do not acquire those messages
-                                  org.apache.qpidity.client.Session.ACQUIRE_MODE_NO_ACQUIRE, messageAssembler, null);
+                                  org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE, messageAssembler, null);
 
     }
 

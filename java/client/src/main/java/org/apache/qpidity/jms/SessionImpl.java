@@ -384,7 +384,7 @@ public class SessionImpl implements Session
                 _incomingAsynchronousMessages.notifyAll();
             }
             // close the underlaying QpidSession
-            _qpidSession.close();
+            _qpidSession.sessionClose();
         }
     }
 

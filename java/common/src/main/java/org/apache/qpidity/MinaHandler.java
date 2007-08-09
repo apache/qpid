@@ -42,8 +42,8 @@ import org.apache.mina.transport.socket.nio.SocketConnector;
  *
  * @author Rafael H. Schloming
  */
-
-class MinaHandler implements IoHandler
+//RA making this public until we sort out the package issues
+public class MinaHandler implements IoHandler
 {
 
     private final ConnectionDelegate delegate;
@@ -124,7 +124,8 @@ class MinaHandler implements IoHandler
     {
         IoAcceptor acceptor = new SocketAcceptor();
         acceptor.bind(new InetSocketAddress(host, port),
-                      new MinaHandler(delegate, InputHandler.State.PROTO_HDR));
+                      new MinaHandler(delegate, InputHandler.State.PROTO_HDR));       
+        
     }
 
     public static final Connection connect(String host, int port,

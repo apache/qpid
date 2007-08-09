@@ -35,7 +35,8 @@ import static org.apache.qpidity.Functions.*;
  * @author Rafael H. Schloming
  */
 
-class Frame implements Iterable<ByteBuffer>
+// RA: changed it to public until we sort the package issues
+public class Frame implements Iterable<ByteBuffer>
 {
     public static final int HEADER_SIZE = 12;
 

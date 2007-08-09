@@ -36,7 +36,8 @@ import java.nio.ByteBuffer;
  * short instead of Short
  */
 
-class Connection implements ProtocolActions
+// RA making this public until we sort out the package issues
+public class Connection implements ProtocolActions
 {
 
     final private Handler<ByteBuffer> input;
@@ -58,6 +59,11 @@ class Connection implements ProtocolActions
         this.delegate = delegate;
     }
 
+    public ConnectionDelegate getConnectionDelegate()
+    {
+        return delegate;
+    }
+    
     public Connection(Handler<ByteBuffer> output,
                       ConnectionDelegate delegate)
     {
@@ -103,6 +109,9 @@ class Connection implements ProtocolActions
             output.handle(header.toByteBuffer());
             // XXX: how do we close the connection?
         }
+        
+        // not sure if this is the right place
+        getChannel(0).connectionStart(header.getMajor(), header.getMinor(), null, "PLAIN", "utf8");
     }
 
     public Channel getChannel(int number)

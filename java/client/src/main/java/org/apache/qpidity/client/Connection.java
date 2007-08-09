@@ -28,6 +28,17 @@ import org.apache.qpidity.QpidException;
  */
 public interface Connection
 {
+   /**
+    * Establish the connection using the given parameters
+    * 
+    * @param host
+    * @param port
+    * @param username
+    * @param password
+    * @throws QpidException
+    */ 
+   public void connect(String host, int port,String virtualHost,String username, String password) throws QpidException;
+    
     /**
      * Establish the connection with the broker identified by the provided URL.
      *
@@ -52,7 +63,7 @@ public interface Connection
      * @param expiryInSeconds Expiry time expressed in seconds, if the value is <= 0 then the session does not expire.
      * @return A Newly created (suspended) session.
      */
-    public Session createSession(int expiryInSeconds);
+    public Session createSession(long expiryInSeconds);
 
     /**
      * Create a DtxSession for this connection.

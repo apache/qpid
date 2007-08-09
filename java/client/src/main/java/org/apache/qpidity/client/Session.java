@@ -18,12 +18,14 @@
  */
 package org.apache.qpidity.client;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.UUID;
 
-import org.apache.qpidity.api.Message;
-import org.apache.qpidity.Header;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.RangeSet;
+import org.apache.qpidity.Struct;
+import org.apache.qpidity.api.Message;
 
 /**
  * <p>A session is associated with a connection.
@@ -32,10 +34,12 @@ import org.apache.qpidity.RangeSet;
  */
 public interface Session
 {
-    public static final short ACQUIRE_MODE_NO_ACQUIRE = 0;
-    public static final short ACQUIRE_MODE_PRE_ACQUIRE = 1;
-    public static final short CONFIRM_MODE_REQUIRED = 1;
-    public static final short CONFIRM_MODE_NOT_REQUIRED = 0;
+    public static final short ACQUIRE_ANY_AVAILABLE_MESSAGE = 0;
+    public static final short ACQUIRE_MESSAGES_IF_ALL_ARE_AVAILABLE = 0;
+    public static final short TRANSFER_ACQUIRE_MODE_NO_ACQUIRE = 0;
+    public static final short TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE = 1;
+    public static final short TRANSFER_CONFIRM_MODE_REQUIRED = 1;
+    public static final short TRANSFER_CONFIRM_MODE_NOT_REQUIRED = 0;
     public static final short MESSAGE_FLOW_MODE_CREDIT = 0;
     public static final short MESSAGE_FLOW_MODE_WINDOW = 1;
     public static final short MESSAGE_FLOW_UNIT_MESSAGE = 0;
@@ -54,21 +58,21 @@ public interface Session
     /**
      * Close this session and any associated resources.
      */
-    public void close();
+    public void sessionClose();
 
     /**
      * Suspend this session resulting in interrupting the traffic with the broker.
      * <p> The session timer will start to tick in suspend.
      * <p> When a session is suspend any operation of this session and of the associated resources are unavailable.
      */
-    public void suspend();
+    public void sessionSuspend();
 
     /**
      * This will resume an existing session
      * <p> Upon resume the session is attached with an underlying channel
      * hence making operation on this session available.
      */
-    public void resume();
+    public void sessionResume(UUID sessionId);
 
     //------------------------------------------------------ 
     //                 Messaging methods
@@ -92,7 +96,7 @@ public interface Session
      * @param exchange    The exchange the message is being sent.
      * @param msg         The Message to be sent
      */
-    public void messageTransfer(String exchange, Message msg, short confirmMode, short acquireMode);
+    public void messageTransfer(String destination, Message msg, short confirmMode, short acquireMode);
 
     /**
      * Declare the beginning of a message transfer operation. This operation must
@@ -117,26 +121,38 @@ public interface Session
      *                    </ul>
      * @param exchange    The exchange the message is being sent.
      */
-    public void messageTransfer(String exchange, short confirmMode, short acquireMode);
+    public void messageTransfer(String destination, short confirmMode, short acquireMode);
 
     /**
      * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}
      * or to the message being sent.
      *
-     * @param headers Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
+     * @param headers are Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
      * @see org.apache.qpidity.DeliveryProperties
      */
-    public void addMessageHeaders(Header... headers);
+    public void headers(Struct... headers);
 
     /**
      * Add the following byte array to the content of the message being sent.
      *
      * @param data Data to be added.
-     * @param off  Offset from which to start reading data
-     * @param len  Number of bytes to be read
      */
-    public void addData(byte[] data, int off, int len);
+    public void data(byte[] data);
+    
+    /**
+     * Add the following ByteBuffer to the content of the message being sent.
+     *
+     * @param data Data to be added.
+     */    
+    public void data(ByteBuffer buf);
 
+    /**
+     * Add the following String to the content of the message being sent.
+     *
+     * @param data Data to be added.
+     */    
+    public void data(String str);
+    
     /**
      * Signals the end of data for the message.
      */
@@ -258,8 +274,6 @@ public interface Session
      * @param destination The destination to call flush on.
      */
     public void messageFlush(String destination);
-    
-    public int getNoOfUnAckedMessages();
 
     /**
      * On receipt of this method, the brokers MUST set his credit to zero for the given
@@ -286,8 +300,12 @@ public interface Session
      * and may be either discarded or moved to the broker dead letter queue.
      *
      * @param ranges Range of rejected messages.
+     * @param code TODO
+     * @param text TODO
      */
-    public void messageReject(RangeSet ranges);
+    public void messageReject(RangeSet ranges, int code, String text);
+    
+    public RangeSet getRejectedMessages();
 
     /**
      * Try to acquire ranges of messages hence releasing them form the queue.
@@ -296,10 +314,10 @@ public interface Session
      * message acquisition can fail.
      * The outcome of the acquisition is returned as an array of ranges of qcquired messages.
      * <p> This method should only be called on non-acquired messages.
-     *
+     * @param mode TODO
      * @param range Ranges of messages to be acquired.
      */
-    public void messageAcquire(RangeSet ranges);
+    public void messageAcquire(RangeSet ranges, short mode);
 
     
     public RangeSet getAccquiredMessages();
