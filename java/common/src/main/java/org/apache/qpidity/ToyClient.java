@@ -85,6 +85,9 @@ class ToyClient extends SessionDelegate
         ssn.data("this should be rejected");
         ssn.endData();
         ssn.sync();
+
+        Future<QueueQueryResult> future = ssn.queueQuery("asdf");
+        System.out.println(future.get().getQueue());
     }
 
 }

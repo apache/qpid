@@ -1,7 +1,6 @@
 package org.apache.qpidity.impl;
 
 import org.apache.qpidity.CommonSessionDelegate;
-import org.apache.qpidity.ExchangeQueryOk;
 import org.apache.qpidity.client.Session;
 
 
@@ -42,11 +41,5 @@ public class ClientSessionDelegate extends CommonSessionDelegate
         MessagePartListener l = context.messagListeners.get(destination);
         l.endData();
     }*/
-
-
-    // --------------------------------------------
-    //   Exchange related functionality
-    // --------------------------------------------
-    public void exchangeQueryOk(Session session, ExchangeQueryOk struct) {}
 
 }
