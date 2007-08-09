@@ -49,7 +49,7 @@ class AsynchIOAcceptor : public Acceptor {
 	const uint16_t listeningPort;
 
 public:
-    AsynchIOAcceptor(int16_t port, int backlog, int threads, bool trace);
+    AsynchIOAcceptor(int16_t port, int backlog, int threads);
     ~AsynchIOAcceptor() {}
     void run(ConnectionInputHandlerFactory* factory);
     void shutdown();
@@ -61,13 +61,13 @@ private:
     void accepted(Poller::shared_ptr, const Socket&, ConnectionInputHandlerFactory*);
 };
 
-Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads, bool trace)
+Acceptor::shared_ptr Acceptor::create(int16_t port, int backlog, int threads)
 {
     return
-    	Acceptor::shared_ptr(new AsynchIOAcceptor(port, backlog, threads, trace));
+    	Acceptor::shared_ptr(new AsynchIOAcceptor(port, backlog, threads));
 }
 
-AsynchIOAcceptor::AsynchIOAcceptor(int16_t port, int backlog, int threads, bool) :
+AsynchIOAcceptor::AsynchIOAcceptor(int16_t port, int backlog, int threads) :
  	poller(new Poller),
  	numIOThreads(threads),
  	listeningPort(listener.listen(port, backlog))
