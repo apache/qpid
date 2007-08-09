@@ -15,10 +15,10 @@ EXTRA_DIST += gen/generate.mk generate.sh $(generated_cpp) $(generated_h) \
 specs=@AMQP_XML@ $(top_srcdir)/xml/cluster.xml
 
 # Makefiles are either generated or copied from $srcdir.
-sinclude gen/generate.mk
-sinclude rubygen.mk
+include generate.mk
+include rubygen.mk
 
-DISTCLEANFILES=gen/generate.mk rubygen.mk
+DISTCLEANFILES=generate.mk rubygen.mk
 
 if GENERATE
 
@@ -28,10 +28,10 @@ if GENERATE
 
 gentools_dir=$(top_srcdir)/gentools
 
-gen/generate.mk: generate.sh $(specs) $(generator)
+generate.mk $(generated_cpp) $(generated_h): generate.timestamp
+generate.timestamp: generate.sh $(specs) $(generator)
 	env gentools_dir=$(gentools_dir) specs="$(specs)" $(srcdir)/generate.sh
-
-gen $(generated_cpp) $(generated_h): gen/generate.mk
+	touch $@
 
 # Empty rule in case a generator file is renamed/removed.
 $(generator):
@@ -43,21 +43,26 @@ maintainer-clean-local:
 
 rgen_dir=$(top_srcdir)/rubygen
 rgen_tdir=$(rgen_dir)/templates
-rgen_generator=$(rgen_dir)/generate $(rgen_dir)/amqpgen.rb $(rgen_dir)/cppgen.rb
-
 rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate
-rgen_templates=$(rgen_tdir)/method_variants.rb $(rgen_tdir)/frame_body_lists.rb  $(rgen_tdir)/Session.rb
 
-rubygen.mk: $(rgen_generator) $(specs) $(rgen_templates)
-	{ echo "rgen_srcs= \\"; \
-	for f in `$(rgen_cmd) . $(specs) $(rgen_templates) `; do echo "	$$f \\"; done; \
-	echo; } > $@
+rgen_templates=$(rgen_tdir)/method_variants.rb	\
+	$(rgen_tdir)/frame_body_lists.rb	\
+	$(rgen_tdir)/Session.rb			\
+	$(rgen_tdir)/Proxy.rb
 
-$(rgen_srcs): rubygen.mk
+rgen_generator=$(rgen_dir)/generate		\
+	$(rgen_dir)/amqpgen.rb			\
+	$(rgen_dir)/cppgen.rb
 
+rubygen.mk $(rgen_srcs): rubygen.timestamp
+rubygen.timestamp: $(rgen_generator) $(specs) $(rgen_templates)
+	{ echo -n "rgen_srcs= "; \
+	for f in `$(rgen_cmd) . $(specs) $(rgen_templates) `; do echo "\\"; echo -n "	$$f "; done; \
+	echo; } > rubygen.mk
+	touch $@
 else				# !GENERATE
 # If not generating, copy generated makefiles from source dir to build dir.
-gen/generate.mk:
+generate.mk:
 	cp $(srcdir)/$@ $@
 rubygen.mk:
 	cp $(srcdir)/$@ $@
@@ -150,10 +155,10 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Handler.h \
   qpid/framing/FrameHandler.h \
   qpid/framing/HandlerUpdater.h \
-  gen/qpid/framing/AMQP_ClientProxy.cpp \
+  qpid/framing/AMQP_ClientProxy.cpp \
+  qpid/framing/AMQP_ServerProxy.cpp \
   gen/qpid/framing/AMQP_HighestVersion.h \
   gen/qpid/framing/AMQP_MethodVersionMap.cpp \
-  gen/qpid/framing/AMQP_ServerProxy.cpp \
   qpid/Exception.cpp \
   qpid/Plugin.h \
   qpid/Plugin.cpp \
@@ -412,16 +417,4 @@ nobase_include_HEADERS = \
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: qpidd
-
-# FIXME aconway 2007-08-06: Use of gch should be conditional on gcc version.
-
-# Pre compiled headers - use BUILT_SOURCES to get them built first.
-BUILT_SOURCES=qpid/framing/method_variants.h.gch
-sinclude qpid/framing/method_variants.h.gch.deps
-CLEANFILES=qpid/framing/method_variants.h.gch qpid/framing/method_variants.h.gch.deps
-
-SUFFIXES=.h.gch
-.h.h.gch:
-	rm -f $@
-	$(CXXCOMPILE) -MT $@ -MD -MP -MF $@.deps -fPIC -DPIC -x c++-header -c -o $@ $<
 

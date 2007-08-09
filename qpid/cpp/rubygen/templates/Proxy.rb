@@ -8,9 +8,8 @@ class ProxyGen < CppGen
     super(outdir, amqp)
     @chassis=chassis
     @classname="AMQP_#{@chassis.caps}Proxy"
+    @filename="qpid/framing/#{@classname}"
   end
-
-  def include(m) gen "#include \"#{m.body_name}.h\"\n"; end
 
   def proxy_member(c) c.name.lcaps+"Proxy"; end
   
@@ -22,6 +21,7 @@ class ProxyGen < CppGen
     {
       private:
         ChannelAdapter& channel;
+        RequestId responseTo;
 
       public:
         // Constructors and destructors
@@ -31,7 +31,9 @@ class ProxyGen < CppGen
         virtual ~#{cname}() {}
 
         static #{cname}& get(#{@classname}& proxy) { return proxy.get#{cname}();}
-
+        // set for response correlation
+        void setResponseTo(RequestId r) { responseTo = r; }
+                 
         // Protocol methods
 EOS
     indent(2) { c.methods_on(@chassis).each { |m| inner_method_decl(m) } }
@@ -39,7 +41,8 @@ EOS
   end
 
   def inner_method_decl(m)
-    gen "virtual void #{m.cppname}(#{m.signature.join(",\n            ")})\n\n";
+    genl "virtual RequestId #{m.cppname}(#{m.signature.join(",\n            ")});"
+    genl
   end
 
   def inner_class_defn(c)
@@ -49,30 +52,16 @@ EOS
   end
   
   def inner_method_defn(m,cname)
-    if m.response?
-      rettype="void"
-      ret=""
-      sigadd=["RequestId responseTo"]
-      paramadd=["channel.getVersion(), responseTo"]
-    else
-      rettype="RequestId"
-      ret="return "
-      sigadd=[]
-      paramadd=["channel.getVersion()"]
-    end
-    sig=(m.signature+sigadd).join(", ")
-    params=(paramadd+m.param_names).join(",\n            ")
-    gen <<EOS
-#{rettype} #{@classname}::#{cname}::#{m.cppname}(#{sig}) {
-    #{ret}channel.send(new #{m.body_name}(#{params}));
-}
-
-EOS
+    genl "RequestId #{@classname}::#{cname}::#{m.cppname}(#{m.signature.join(", ")})"
+    scope { 
+      params=(["channel.getVersion()"]+m.param_names).join(", ")
+      genl "return channel.send(make_shared_ptr(new #{m.body_name}(#{params})));"
+    }
   end
 
   def get_decl(c)
     cname=c.name.caps
-    gen "    #{cname}& #{@classname}::get#{cname}();\n"
+    gen "    #{cname}& get#{cname}();\n"
   end
   
   def get_defn(c)
@@ -87,7 +76,7 @@ EOS
 
   def generate
     # .h file
-    h_file(@classname+".h") {
+    h_file(@filename) {
       gen <<EOS
 #include "qpid/framing/Proxy.h"
 
@@ -118,14 +107,13 @@ EOS
   }
 
   # .cpp file
-  cpp_file(@classname+".cpp") {
-    gen <<EOS
-#include <sstream>
-#include "#{@classname}.h"
-#include "qpid/framing/ChannelAdapter.h"
-#include "qpid/framing/amqp_types_full.h"
-EOS
-    @amqp.methods_on(@chassis).each { |m| include(m) }
+  cpp_file(@filename) {
+      include "<sstream>"
+      include "#{@classname}.h"
+      include "qpid/framing/ChannelAdapter.h"
+      include "qpid/framing/amqp_types_full.h"
+      @amqp.methods_on(@chassis).each {
+        |m| include "qpid/framing/#{m.body_name}.h" }
     gen <<EOS
 namespace qpid {
 namespace framing {
@@ -142,7 +130,7 @@ EOS
     @amqp.classes.each { |c| get_defn(c) }
     gen "    // Inner class implementation\n\n"
     @amqp.classes.each { |c| inner_class_defn(c) }
-    gen "}} // namespae qpid::framing"
+    genl "}} // namespae qpid::framing"
   }
    end
 end
