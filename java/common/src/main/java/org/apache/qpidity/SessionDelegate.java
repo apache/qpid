@@ -34,6 +34,11 @@ public abstract class SessionDelegate extends Delegate<Session>
 
     public abstract void data(Session ssn, Frame frame);
 
+    @Override public void executionResult(Session ssn, ExecutionResult result)
+    {
+        ssn.result(result.getCommandId(), result.getData());
+    }
+
     @Override public void executionComplete(Session ssn, ExecutionComplete excmp)
     {
         RangeSet ranges = excmp.getRangedExecutionSet();

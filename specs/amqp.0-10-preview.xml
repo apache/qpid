@@ -1278,11 +1278,10 @@
       arguments.
     </doc>
     <struct size="octet" pack="octet">
-      <field name="sync" domain="bit"
-             label="request notification of completion for a specific command">
+      <field name="sync" domain="bit" label="request notification of completion for a specific command">
         <doc>
-          Indicates that an execution.complete should be sent immediately after processing the
-          command.
+          Indicates that the peer sending the request wants to be notified when this command is
+          completed.
         </doc>
       </field>
     </struct>
@@ -1343,7 +1342,7 @@
     <chassis name="server" implement="MUST" />
     <chassis name="client" implement="MUST" />
 
-    <!-- - Method: connextion.start  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.start  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="start" synchronous="1" index="10" label="start connection negotiation">
       <doc>
@@ -1449,7 +1448,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.start-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.start-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="start-ok" synchronous="1" index="11"
       label="select security mechanism and locale">
@@ -1517,7 +1516,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.secure - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.secure - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="secure" synchronous="1" index="20" label="security mechanism challenge">
       <doc>
@@ -1537,7 +1536,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.secure-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.secure-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="secure-ok" synchronous="1" index="21" label="security mechanism response">
       <doc>
@@ -1556,7 +1555,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.tune - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.tune - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="tune" synchronous="1" index="30" label="propose connection tuning parameters">
       <doc>
@@ -1618,7 +1617,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.tune-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.tune-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="tune-ok" synchronous="1" index="31"
       label="negotiate connection tuning parameters">
@@ -1679,7 +1678,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.open - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.open - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="open" synchronous="1" index="40" label="open connection to virtual host">
       <doc>
@@ -1744,7 +1743,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.open-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.open-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="open-ok" synchronous="1" index="41" label="signal that connection is ready">
       <doc>
@@ -1756,7 +1755,7 @@
       <field name="known-hosts" domain="known-hosts" />
     </method>
 
-    <!-- - Method: connextion.redirect - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.redirect - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="redirect" synchronous="1" index="42" label="redirects client to other server">
       <doc>
@@ -1786,7 +1785,7 @@
       <field name="known-hosts" domain="known-hosts" />
     </method>
 
-    <!-- - Method: connextion.close  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.close  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="close" synchronous="1" index="50" label="request a connection close">
       <doc>
@@ -1827,7 +1826,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.close-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.close-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="close-ok" synchronous="1" index="51" label="confirm a connection close">
       <doc>
@@ -2655,13 +2654,10 @@
 
     <method name="query" synchronous="1" index="30" label="request information about an exchange">
       <doc>
-        This method is used to request information on a particular exchange. That information is
-        conveyed by an query-ok method.
+        This method is used to request information on a particular exchange.
       </doc>
 
       <chassis name="server" implement="MUST" />
-
-      <response name="query-ok" />
 
       <field name="ticket" domain="access-ticket">
         <rule name="validity" on-failure="access-refused">
@@ -2678,43 +2674,41 @@
            the default exchange is implied.
         </doc>
       </field>
-    </method>
 
-    <!-- - Method: exchange.query-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="31">
+          <doc>
+            This is sent in response to a query request and conveys information on a particular
+            exchange.
+          </doc>
 
-    <method name="query-ok" synchronous="1" index="31" label="return exchange information">
-      <doc>
-        This method is used in response to a query request and conveys information on a particular
-        exchange.
-      </doc>
+          <field name="type" domain="shortstr" label="indicate the exchange type">
+            <doc>
+               The type of the exchange. Will be empty if the exchange is not found.
+            </doc>
+          </field>
 
-      <chassis name="client" implement="MUST" />
+          <field name="durable" domain="bit" label="indicate the durability">
+            <doc>
+               The durability of the exchange, i.e. if set the exchange is durable. Will not be set if
+               the exchange is not found.
+            </doc>
+          </field>
 
-      <field name="type" domain="shortstr" label="indicate the exchange type">
-        <doc>
-           The type of the exchange. Will be empty if the exchange is not found.
-        </doc>
-      </field>
+          <field name="not-found" domain="bit" label="indicate an unknown exchange">
+            <doc>
+               If set, the exchange for which information was requested is not known.
+            </doc>
+          </field>
 
-      <field name="durable" domain="bit" label="indicate the durability">
-        <doc>
-           The durability of the exchange, i.e. if set the exchange is durable. Will not be set if
-           the exchange is not found.
-        </doc>
-      </field>
-
-      <field name="not-found" domain="bit" label="indicate an unknown exchange">
-        <doc>
-           If set, the exchange for which information was requested is not known.
-        </doc>
-      </field>
-
-      <field name="arguments" domain="table" label="other unspecified exchange properties">
-        <doc>
-          A set of properties of the exchange whose syntax and semantics depends on the server
-          implementation. Will be empty if the exchange is not found.
-        </doc>
-      </field>
+          <field name="arguments" domain="table" label="other unspecified exchange properties">
+            <doc>
+              A set of properties of the exchange whose syntax and semantics depends on the server
+              implementation. Will be empty if the exchange is not found.
+            </doc>
+          </field>
+        </struct>
+      </result>
     </method>
 
   </class>
@@ -2733,7 +2727,7 @@
             / C:BIND
             / C:PURGE
             / C:DELETE
-            / C:QUERY S:QUERY-OK
+            / C:QUERY
             / C:UNBIND
     </doc>
 
@@ -3362,52 +3356,49 @@
 
       <chassis name="server" implement="MUST" />
 
-      <response name="query-ok" />
 
       <field name="queue" domain="queue-name" label="the queried queue">
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: queue.query-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="61">
+          <doc>
+            This is sent in response to queue.query, and conveys the requested information about a
+            queue.
+          </doc>
 
-    <method name="query-ok" synchronous="1" index="61" label="convey information about a queue">
-      <doc>
-        This method is sent in response to queue.query, and conveys the requested information about
-        a queue.
-      </doc>
+          <field name="queue" domain="queue-name">
+            <doc>
+              Reports the name of the queue.
+            </doc>
+            <assert check="notnull" />
+          </field>
 
-      <chassis name="client" implement="MUST" />
+          <field name="alternate-exchange" domain="exchange-name" />
 
-      <field name="queue" domain="queue-name">
-        <doc>
-          Reports the name of the queue.
-        </doc>
-        <assert check="notnull" />
-      </field>
+          <field name="durable" domain="bit" />
 
-      <field name="alternate-exchange" domain="exchange-name" />
+          <field name="exclusive" domain="bit" />
 
-      <field name="durable" domain="bit" />
+          <field name="auto-delete" domain="bit" />
 
-      <field name="exclusive" domain="bit" />
+          <field name="arguments" domain="table" />
 
-      <field name="auto-delete" domain="bit" />
+          <field name="message-count" domain="long" label="number of messages in queue">
+            <doc>
+              Reports the number of messages in the queue.
+            </doc>
+          </field>
 
-      <field name="arguments" domain="table" />
-
-      <field name="message-count" domain="long" label="number of messages in queue">
-        <doc>
-          Reports the number of messages in the queue.
-        </doc>
-      </field>
-
-      <field name="consumer-count" domain="long" label="number of consumers">
-        <doc>
-          Reports the number of active consumers for the queue. Note that consumers can suspend
-          activity (Session.Flow) in which case they do not appear in this count.
-        </doc>
-      </field>
+          <field name="consumer-count" domain="long" label="number of consumers">
+            <doc>
+              Reports the number of active consumers for the queue. Note that consumers can suspend
+              activity (Session.Flow) in which case they do not appear in this count.
+            </doc>
+          </field>
+        </struct>
+      </result>
     </method>
 
   </class>
@@ -5104,6 +5095,7 @@
         <assert check="notnull" />
       </field>
     </method>
+
   </class>
 
   <!-- == Class: tx ============================================================================ -->
@@ -5180,7 +5172,7 @@
 
     <doc type="grammar">
       dtx-demarcation = C:SELECT *demarcation
-      demarcation     = C:START S:START-OK C:END S:END-OK
+      demarcation     = C:START C:END
     </doc>
 
     <rule name="access-control">
@@ -5247,13 +5239,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="start-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5302,34 +5292,31 @@
 
         <assert check="notnull" />
       </field>
+
+      <result>
+        <struct size="long" type="21">
+          <doc>
+            This confirms to the client that the transaction branch is started or specify the error
+            condition.
+          </doc>
+
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
+
+              xa-ok: Normal execution.
+
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
+
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
+
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
-
-    <!-- - Method: dtx-demarcation.start-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="start-ok" synchronous="1" index="21" label="Confirm dtx start">
-      <doc>
-        This method confirms to the client that the transaction branch is started or specify the
-        error condition.
-      </doc>
-
-      <chassis name="client" implement="MAY" />
-
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
-
-          xa-ok: Normal execution.
-
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-
-        <assert check="notnull" />
-      </field>
-    </method>
-
 
     <!-- - Method: dtx-demarcation.end - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -5376,20 +5363,18 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="end-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
             realms touched by this transaction.
           </doc>
         </rule>
-        
+
         <assert check="notnull" />
       </field>
 
@@ -5418,8 +5403,8 @@
           <doc>
             An implementation MAY elect to roll a transaction back if this failure notification is
             recieved. Should an implementation elect to implement this behaviour, and this bit is
-            set, then then the transaction branch SHOULD be marked as rollback-only and the end-ok
-            response SHOULD have the xa-rbrollback response set.
+            set, then then the transaction branch SHOULD be marked as rollback-only and the end
+            result SHOULD have the xa-rbrollback status set.
           </doc>
         </rule>
 
@@ -5440,33 +5425,31 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-demarcation.end-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="31">
+          <doc>
+            This method confirms to the client that the transaction branch is ended or specify the
+            error condition.
+          </doc>
 
-    <method name="end-ok" synchronous="1" index="31" label="Confirm distributed dtx end">
-      <doc>
-        This method confirms to the client that the transaction branch is ended or specify the error
-        condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution.
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason. If an implementation chooses to implement rollback-on-failure behaviour, then
+                  this value should be selected if the dtx-demarcation.end.fail bit was set.
 
-          xa-ok: Normal execution.
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
 
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason. If an implementation chooses to implement rollback-on-failure behaviour, then
-              this value should be selected if the dtx-demarcation.end.fail bit was set.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-
-        <assert check="notnull" />
-      </field>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
   </class>
@@ -5486,16 +5469,16 @@
                           / outcome
                           / recovery
       command             = C:SET-TIMEOUT
-                          / C:GET-TIMEOUT S:GET-TIMEOUT-OK
+                          / C:GET-TIMEOUT
       outcome             = one-phase-commit
                           / one-phase-rollback
                           / two-phase-commit
                           / two-phase-rollback
-      one-phase-commit    = C:COMMIT S:COMMIT-OK
-      one-phase-rollback  = C:ROLLBACK S:ROLLBACK-OK
-      two-phase-commit    = C:PREPARE S:PREPARE-OK C:COMMIT S:COMMIT-OK
-      two-phase-rollback  = C:PREPARE S:PREPARE-OK C:ROLLBACK S:ROLLBACK-OK
-      recovery            = C:RECOVER S:RECOVER-OK *recovery-outcome
+      one-phase-commit    = C:COMMIT
+      one-phase-rollback  = C:ROLLBACK
+      two-phase-commit    = C:PREPARE C:COMMIT
+      two-phase-rollback  = C:PREPARE C:ROLLBACK
+      recovery            = C:RECOVER *recovery-outcome
       recovery-outcome    = one-phase-commit
                           / one-phase-rollback
                           / C:FORGET
@@ -5536,13 +5519,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="commit-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5594,43 +5575,41 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.commit-ok  - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="11">
+          <doc>
+            This confirms to the client that the transaction branch is committed or specify the
+            error condition.
+          </doc>
 
-    <method name="commit-ok" synchronous="1" index="11" label="Confirm dtx commit">
-      <doc>
-        This method confirms to the client that the transaction branch is committed or specify the
-        error condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
+                  branch may have been heuristically completed.
 
-          xa-ok: Normal execution
+              xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was committed.
 
-          xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
-              branch may have been heuristically completed.
+              xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was rolled back.
 
-          xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was committed.
+              xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
+                transaction branch was partially committed and partially rolled back.
 
-          xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was rolled back.
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
 
-          xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
-            transaction branch was partially committed and partially rolled back.
-
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-        <assert check="notnull" />
-      </field>
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.forget - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5660,7 +5639,7 @@
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5712,8 +5691,6 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="get-timeout-ok" />
-
       <field name="xid" domain="xid" label="Transaction xid">
         <doc>
           Specifies the xid of the transaction branch for getting the timeout.
@@ -5728,23 +5705,21 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.get-timeout-ok - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="31">
+          <doc>
+            Returns the value of the timeout last specified through set-timeout.
+          </doc>
 
-    <method name="get-timeout-ok" synchronous="1" index="31" label="Return dtx timeout">
-      <doc>
-        Returns the value of the timeout last specified through set-timeout.
-      </doc>
-
-      <chassis name="client" implement="MAY" />
-
-      <field name="timeout" domain="long" label="The current transaction timeout value">
-        <doc>
-          The current transaction timeout value in seconds.
-        </doc>
-        <assert check="notnull" />
-      </field>
+          <field name="timeout" domain="long" label="The current transaction timeout value">
+            <doc>
+              The current transaction timeout value in seconds.
+            </doc>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.prepare  - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5784,13 +5759,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="prepare-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5822,34 +5795,32 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.prepare-ok - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="41">
+          <doc>
+            This method confirms to the client that the transaction branch is prepared or specify the
+            error condition.
+          </doc>
 
-    <method name="prepare-ok" synchronous="1" index="41" label="Confirm dtx prepare">
-      <doc>
-        This method confirms to the client that the transaction branch is prepared or specify the
-        error condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution.
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-rdonly: The transaction branch was read-only and has been committed.
 
-          xa-ok: Normal execution.
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
 
-          xa-rdonly: The transaction branch was read-only and has been committed.
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
 
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-
-        <assert check="notnull" />
-      </field>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.recover  - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5883,13 +5854,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="recover-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5921,33 +5890,31 @@
         </doc>
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.recover-ok - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="recover-ok" synchronous="1" index="51" label="List of recovered xids">
-      <doc>
-        Returns to the client a table with single item that is a sequence of transaction xids that
-        are in a prepared or heuristically completed state.
-      </doc>
-
-      <chassis name="client" implement="MAY" />
-
-      <field name="in-doubt" domain="table" label="Table of xids to be recovered">
-        <doc>
-          Table containing the sequence of xids to be recovered (xids that are in a prepared or
-          heuristically completed state).
-        </doc>
-
-        <rule name="xid-sequence">
+      <result>
+        <struct size="long" type="51">
           <doc>
-            The field table must contain a field called 'xids' of type sequence of longstrs
-            representing the xids that are in a prepared or heuristically completed state.
+            Returns to the client a table with single item that is a sequence of transaction xids that
+            are in a prepared or heuristically completed state.
           </doc>
-        </rule>
 
-        <assert check="notnull" />
-      </field>
+          <field name="in-doubt" domain="table" label="Table of xids to be recovered">
+            <doc>
+              Table containing the sequence of xids to be recovered (xids that are in a prepared or
+              heuristically completed state).
+            </doc>
+
+            <rule name="xid-sequence">
+              <doc>
+                The field table must contain a field called 'xids' of type sequence of longstrs
+                representing the xids that are in a prepared or heuristically completed state.
+              </doc>
+            </rule>
+
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.rollback - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5974,13 +5941,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="rollback-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -6012,43 +5977,41 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.rollback-ok  - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="61">
+          <doc>
+            This method confirms to the client that the transaction branch is rolled back or specify the
+            error condition.
+          </doc>
 
-    <method name="rollback-ok" synchronous="1" index="61" label="Confirm dtx rollback">
-      <doc>
-        This method confirms to the client that the transaction branch is rolled back or specify the
-        error condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
+                  branch may have been heuristically completed.
 
-          xa-ok: Normal execution
+              xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was committed.
 
-          xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
-              branch may have been heuristically completed.
+              xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was rolled back.
 
-          xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was committed.
+              xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was partially committed and partially rolled back.
 
-          xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was rolled back.
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
 
-          xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was partially committed and partially rolled back.
-
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-        <assert check="notnull" />
-      </field>
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.set-timeout  - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -6084,7 +6047,7 @@
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -6568,6 +6531,51 @@
       <field name="destination" domain="destination" />
     </method>
 
+    <!-- - Method: message.get - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="get" index="40" label="direct access to a queue">
+      <doc>
+        This method provides a direct access to the messages in a queue using a synchronous dialogue
+        that is designed for specific types of application where synchronous functionality is more
+        important than performance.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+
+      <response name="empty" />
+
+      <field name="ticket" domain="access-ticket">
+        <rule name="ticket-required" on-failure="access-refused">
+          <doc>
+            The client MUST provide a valid access ticket giving "read" access rights to the realm
+            for the queue from which the message will be consumed.
+          </doc>
+        </rule>
+      </field>
+
+      <field name="queue" domain="queue-name">
+        <doc>
+          Specifies the name of the queue to consume from. If the queue name is null, refers to the
+          current queue for the session, which is the last declared queue.
+        </doc>
+        <rule name="empty-name">
+          <doc>
+            If the client did not previously declare a queue, and the queue name in this method is
+            empty, the server MUST raise a connection exception with reply code 530 (not allowed).
+          </doc>
+        </rule>
+      </field>
+
+      <field name="destination" domain="destination">
+        <doc>
+          On normal completion of the get request (i.e. a response of ok). A message will be
+          transferred to the supplied destination.
+        </doc>
+      </field>
+
+      <field name="no-ack" domain="no-ack" />
+    </method>
+
     <!-- - Method: message.recover - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="recover" index="50" label="redeliver unacknowledged messages">
@@ -6727,6 +6735,70 @@
       </field>
 
       <field name="identifier" domain="shortstr" label="checkpoint identifier" />
+    </method>
+
+    <!-- - Method: message.qos - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="qos" index="110" label="specify quality of service">
+      <doc>
+        This method requests a specific quality of service. The QoS can be specified for the current
+        session or for all sessions on the connection. The particular properties and semantics of a
+        qos method always depend on the content class semantics. Though the qos method could in
+        principle apply to both peers, it is currently meaningful only for the server.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+
+      <field name="prefetch-size" domain="long" label="prefetch window in octets">
+        <doc>
+          The client can request that messages be sent in advance so that when the client finishes
+          processing a message, the following message is already held locally, rather than needing
+          to be sent within the session. Prefetching gives a performance improvement. This field
+          specifies the prefetch window size in octets. The server will send a message in advance if
+          it is equal to or smaller in size than the available prefetch size (and also falls into
+          other prefetch limits). May be set to zero, meaning "no specific limit", although other
+          prefetch limits may still apply. The prefetch-size is ignored if the no-ack option is set.
+        </doc>
+        <rule name="non-responsive-client">
+          <doc>
+            The server MUST ignore this setting when the client is not processing any messages -
+            i.e. the prefetch size does not limit the transfer of single messages to a client, only
+            the sending in advance of more messages while the client still has one or more
+            unacknowledged messages.
+          </doc>
+          <doc type="scenario">
+            Define a QoS prefetch-size limit and send a single message that exceeds that limit.
+            Verify that the message arrives correctly.
+          </doc>
+        </rule>
+      </field>
+
+      <field name="prefetch-count" domain="short" label="prefetch window in messages">
+        <doc>
+          Specifies a prefetch window in terms of whole messages. This field may be used in
+          combination with the prefetch-size field; a message will only be sent in advance if both
+          prefetch windows (and those at the session and connection level) allow it. The
+          prefetch-count is ignored if the no-ack option is set.
+        </doc>
+        <rule name="prefetch-maximum">
+          <doc>
+            The server may send less data in advance than allowed by the client's specified prefetch
+            windows but it MUST NOT send more.
+          </doc>
+          <doc type="scenario">
+            Define a QoS prefetch-size limit and a prefetch-count limit greater than one. Send
+            multiple messages that exceed the prefetch size. Verify that no more than one message
+            arrives at once.
+          </doc>
+        </rule>
+      </field>
+
+      <field name="global" domain="bit" label="apply to entire connection">
+        <doc>
+          By default the QoS settings apply to the current session only. If this field is set, they
+          are applied to the entire connection.
+        </doc>
+      </field>
     </method>
 
     <!-- - Method: message.flow-mode - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -6899,13 +6971,10 @@
     <method name="query" synchronous="1" index="10"
       label="request information about bindings to an exchange">
       <doc>
-        This method is used to request information on the bindings to a particular exchange.  That
-        information is conveyed in a query-ok method.
+        This method is used to request information on the bindings to a particular exchange.
       </doc>
 
       <chassis name="server" implement="MUST" />
-
-      <response name="query-ok" />
 
       <field name="ticket" domain="access-ticket">
         <rule name="validity" on-failure="access-refused">
@@ -6942,52 +7011,50 @@
           will ignore the arguments on bindings when searching for a match
         </doc>
       </field>
+
+      <result>
+        <struct size="long" type="11">
+          <doc>
+            This method is used in response to a query and conveys information on the bindings to a
+            particular exchange.
+          </doc>
+
+          <field name="exchange-not-found" domain="bit" label="indicate an unknown exchange">
+            <doc>
+               If set, the exchange for which information was requested is not known.
+            </doc>
+          </field>
+
+          <field name="queue-not-found" domain="bit" label="indicate an unknown queue">
+            <doc>
+               If set, the queue specified is not known.
+            </doc>
+          </field>
+
+          <field name="queue-not-matched" domain="bit" label="indicate no matching queue">
+            <doc>
+              A bit which if set indicates that no binding was found from the specified exchange to the
+              specified queue.
+            </doc>
+          </field>
+
+          <field name="key-not-matched" domain="bit" label="indicate no matching routing key">
+            <doc>
+              A bit which if set indicates that no binding was found from the specified exchange with
+              the specified routing key.
+            </doc>
+          </field>
+
+          <field name="args-not-matched" domain="bit" label="indicate no matching args">
+            <doc>
+              A bit which if set indicates that no binding was found from the specified exchange with
+              the specified arguments.
+            </doc>
+          </field>
+        </struct>
+      </result>
     </method>
 
-    <!-- - Method: binding.query-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="query-ok" synchronous="1" index="11"
-      label="returns information about bindings to exchange">
-      <doc>
-        This method is used in response to a query and conveys information on the bindings to a
-        particular exchange.
-      </doc>
-
-      <chassis name="client" implement="MUST" />
-
-      <field name="exchange-not-found" domain="bit" label="indicate an unknown exchange">
-        <doc>
-           If set, the exchange for which information was requested is not known.
-        </doc>
-      </field>
-
-      <field name="queue-not-found" domain="bit" label="indicate an unknown queue">
-        <doc>
-           If set, the queue specified is not known.
-        </doc>
-      </field>
-
-      <field name="queue-not-matched" domain="bit" label="indicate no matching queue">
-        <doc>
-          A bit which if set indicates that no binding was found from the specified exchange to the
-          specified queue.
-        </doc>
-      </field>
-
-      <field name="key-not-matched" domain="bit" label="indicate no matching routing key">
-        <doc>
-          A bit which if set indicates that no binding was found from the specified exchange with
-          the specified routing key.
-        </doc>
-      </field>
-
-      <field name="args-not-matched" domain="bit" label="indicate no matching args">
-        <doc>
-          A bit which if set indicates that no binding was found from the specified exchange with
-          the specified arguments.
-        </doc>
-      </field>
-    </method>
   </class>
 
   <!-- == Class: execution ===================================================================== -->
@@ -7084,7 +7151,7 @@
     <method name="sync" index="50" label="request notification of completion for issued commands">
       <doc>
         Requests notification (via execution.complete) when all commands issued prior to the sync
-        control have been processed. If the recipient of this control has already notified the
+        control are complete. If the recipient of this control has already notified the
         sender that said commands are complete, it may safely ignore the control.
       </doc>
 
