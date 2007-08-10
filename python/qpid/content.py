@@ -48,3 +48,11 @@ class Content:
 
   def __delitem__(self, name):
     del self.properties[name]
+
+  def __str__(self):
+    if self.children:
+      return "%s [%s] %s" % (self.properties,
+                             ", ".join(map(str, self.children)),
+                             self.body)
+    else:
+      return "%s %s" % (self.properties, self.body)
