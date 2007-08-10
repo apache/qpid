@@ -51,6 +51,11 @@ const SequenceNumber SequenceNumber::operator++(int)
     return old;
 }
 
+SequenceNumber SequenceNumber::operator+(uint32_t i) const
+{
+    return SequenceNumber(value + i);
+}
+
 bool SequenceNumber::operator<(const SequenceNumber& other) const
 {
     return (value - other.value) < 0;
@@ -59,6 +64,16 @@ bool SequenceNumber::operator<(const SequenceNumber& other) const
 bool SequenceNumber::operator>(const SequenceNumber& other) const
 {
     return other < *this;
+}
+
+bool SequenceNumber::operator<=(const SequenceNumber& other) const
+{
+    return *this == other || *this < other; 
+}
+
+bool SequenceNumber::operator>=(const SequenceNumber& other) const
+{
+    return *this == other || *this > other; 
 }
 
 namespace qpid {

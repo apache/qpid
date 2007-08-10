@@ -22,13 +22,13 @@
 #define _DeliveryAdapter_
 
 #include "BrokerMessageBase.h"
+#include "DeliveryId.h"
 #include "DeliveryToken.h"
 #include "qpid/framing/amqp_types.h"
 
 namespace qpid {
 namespace broker {
 
-    typedef framing::RequestId DeliveryId;
     /**
      * The intention behind this interface is to separate the generic
      * handling of some form of message delivery to clients that is

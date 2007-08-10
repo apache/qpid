@@ -26,7 +26,7 @@ using std::bind2nd;
 using std::mem_fun_ref;
 using namespace qpid::broker;
 
-DtxAck::DtxAck(AccumulatedAck& acked, std::list<DeliveryRecord>& unacked)
+DtxAck::DtxAck(const AccumulatedAck& acked, std::list<DeliveryRecord>& unacked)
 {
     remove_copy_if(unacked.begin(), unacked.end(), inserter(pending, pending.end()), 
                    not1(bind2nd(mem_fun_ref(&DeliveryRecord::coveredBy), &acked)));
@@ -38,7 +38,7 @@ bool DtxAck::prepare(TransactionContext* ctxt) throw()
     try{
         //record dequeue in the store
         for (ack_iterator i = pending.begin(); i != pending.end(); i++) {
-            i->discard(ctxt);
+            i->dequeue(ctxt);
         }
         return true;
     }catch(...){

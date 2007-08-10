@@ -29,77 +29,182 @@ using namespace qpid::broker;
 
 class AccumulatedAckTest : public CppUnit::TestCase  
 {
-        CPPUNIT_TEST_SUITE(AccumulatedAckTest);
-        CPPUNIT_TEST(testGeneral);
-        CPPUNIT_TEST(testCovers);
-        CPPUNIT_TEST(testUpdateAndConsolidate);
-        CPPUNIT_TEST_SUITE_END();
+    CPPUNIT_TEST_SUITE(AccumulatedAckTest);
+    CPPUNIT_TEST(testGeneral);
+    CPPUNIT_TEST(testCovers);
+    CPPUNIT_TEST(testCase1);
+    CPPUNIT_TEST(testCase2);
+    CPPUNIT_TEST(testCase3);
+    CPPUNIT_TEST(testCase4);
+    CPPUNIT_TEST(testConsolidation1);
+    CPPUNIT_TEST(testConsolidation2);
+    CPPUNIT_TEST(testConsolidation3);
+    CPPUNIT_TEST_SUITE_END();
 
-    public:
-        void testGeneral()
-        {
-            AccumulatedAck ack(0);
-            ack.clear();
-            ack.update(3,3);
-            ack.update(7,7);
-            ack.update(9,9);
-            ack.update(1,2);
-            ack.update(4,5);
-            ack.update(6,6);
+public:
+    bool covers(const AccumulatedAck& ack, int i)
+    {
+        return ack.covers(DeliveryId(i));
+    }
 
-            for(int i = 1; i <= 7; i++) CPPUNIT_ASSERT(ack.covers(i));
-            CPPUNIT_ASSERT(ack.covers(9));
+    void update(AccumulatedAck& ack, int start, int end)
+    {
+        ack.update(DeliveryId(start), DeliveryId(end));
+    }
 
-            CPPUNIT_ASSERT(!ack.covers(8));
-            CPPUNIT_ASSERT(!ack.covers(10));
+    void testGeneral()
+    {
+        AccumulatedAck ack(0);
+        ack.clear();
+        update(ack, 3,3);
+        update(ack, 7,7);
+        update(ack, 9,9);
+        update(ack, 1,2);
+        update(ack, 4,5);
+        update(ack, 6,6);
 
-            ack.consolidate();
+        for(int i = 1; i <= 7; i++) CPPUNIT_ASSERT(covers(ack, i));
+        CPPUNIT_ASSERT(covers(ack, 9));
 
-            for(int i = 1; i <= 7; i++) CPPUNIT_ASSERT(ack.covers(i));
-            CPPUNIT_ASSERT(ack.covers(9));
+        CPPUNIT_ASSERT(!covers(ack, 8));
+        CPPUNIT_ASSERT(!covers(ack, 10));
 
-            CPPUNIT_ASSERT(!ack.covers(8));
-            CPPUNIT_ASSERT(!ack.covers(10));
+        ack.consolidate();
+
+        for(int i = 1; i <= 7; i++) CPPUNIT_ASSERT(covers(ack, i));
+        CPPUNIT_ASSERT(covers(ack, 9));
+
+        CPPUNIT_ASSERT(!covers(ack, 8));
+        CPPUNIT_ASSERT(!covers(ack, 10));
+    }
+
+    void testCovers()
+    {
+        AccumulatedAck ack(5);
+        update(ack, 7, 7);
+        update(ack, 9, 9);
+
+        CPPUNIT_ASSERT(covers(ack, 1));
+        CPPUNIT_ASSERT(covers(ack, 2));
+        CPPUNIT_ASSERT(covers(ack, 3));
+        CPPUNIT_ASSERT(covers(ack, 4));
+        CPPUNIT_ASSERT(covers(ack, 5));
+        CPPUNIT_ASSERT(covers(ack, 7));
+        CPPUNIT_ASSERT(covers(ack, 9));
+
+        CPPUNIT_ASSERT(!covers(ack, 6));
+        CPPUNIT_ASSERT(!covers(ack, 8));
+        CPPUNIT_ASSERT(!covers(ack, 10));
+    }
+
+    void testCase1()
+    {
+        AccumulatedAck ack(3);
+        update(ack, 1,2);
+        for(int i = 1; i <= 3; i++) CPPUNIT_ASSERT(covers(ack, i));
+        CPPUNIT_ASSERT(!covers(ack, 4));
+    }
+
+    void testCase2()
+    {
+        AccumulatedAck ack(3);
+        update(ack, 3,6);
+        for(int i = 1; i <= 6; i++) CPPUNIT_ASSERT(covers(ack, i));
+        CPPUNIT_ASSERT(!covers(ack, 7));
+    }
+
+    void testCase3()
+    {
+        AccumulatedAck ack(3);
+        update(ack, 4,6);
+        for(int i = 1; i <= 6; i++) {
+            CPPUNIT_ASSERT(covers(ack, i));
         }
+        CPPUNIT_ASSERT(!covers(ack, 7));
+    }
 
-        void testCovers()
-        {
-            AccumulatedAck ack(5);
-            ack.individual.push_back(7);
-            ack.individual.push_back(9);
-            
-            CPPUNIT_ASSERT(ack.covers(1));
-            CPPUNIT_ASSERT(ack.covers(2));
-            CPPUNIT_ASSERT(ack.covers(3));
-            CPPUNIT_ASSERT(ack.covers(4));
-            CPPUNIT_ASSERT(ack.covers(5));
-            CPPUNIT_ASSERT(ack.covers(7));
-            CPPUNIT_ASSERT(ack.covers(9));
-
-            CPPUNIT_ASSERT(!ack.covers(6));
-            CPPUNIT_ASSERT(!ack.covers(8));
-            CPPUNIT_ASSERT(!ack.covers(10));
+    void testCase4()
+    {
+        AccumulatedAck ack(3);
+        update(ack, 5,6);
+        for(int i = 1; i <= 6; i++) {
+            if (i == 4) CPPUNIT_ASSERT(!covers(ack, i));
+            else CPPUNIT_ASSERT(covers(ack, i));
         }
+        CPPUNIT_ASSERT(!covers(ack, 7));
+    }
 
-        void testUpdateAndConsolidate()
-        {
-            AccumulatedAck ack(0);
-            ack.update(1, 1);
-            ack.update(3, 3);
-            ack.update(10, 10);
-            ack.update(8, 8);
-            ack.update(6, 6);
-            ack.update(3, 3);
-            ack.update(2, 2);
-            ack.update(0, 5);
-            ack.consolidate();
-            CPPUNIT_ASSERT_EQUAL((uint64_t) 6, ack.range);
-            CPPUNIT_ASSERT_EQUAL((size_t) 2, ack.individual.size());
-            list<uint64_t>::iterator i = ack.individual.begin();
-            CPPUNIT_ASSERT_EQUAL((uint64_t) 8, *i);
-            i++;
-            CPPUNIT_ASSERT_EQUAL((uint64_t) 10, *i);
-        }
+    void testConsolidation1()
+    {
+        AccumulatedAck ack(3);
+        update(ack, 7,7);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 3, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+
+        update(ack, 8,9);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 3, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+
+        update(ack, 1,2);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 3, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+
+        update(ack, 4,5);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 5, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+
+        update(ack, 6,6);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 9, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 0, ack.ranges.size());
+
+        for(int i = 1; i <= 9; i++) CPPUNIT_ASSERT(covers(ack, i));
+        CPPUNIT_ASSERT(!covers(ack, 10));
+    }
+
+    void testConsolidation2()
+    {
+        AccumulatedAck ack(0);
+        update(ack, 10,12);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 0, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+
+        update(ack, 7,9);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 0, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 7, ack.ranges.front().start.getValue());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 12, ack.ranges.front().end.getValue());
+
+        update(ack, 5,7);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 0, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 5, ack.ranges.front().start.getValue());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 12, ack.ranges.front().end.getValue());
+
+        update(ack, 3,4);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 0, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 1, ack.ranges.size());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 3, ack.ranges.front().start.getValue());
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 12, ack.ranges.front().end.getValue());
+
+        update(ack, 1,2);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 12, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 0, ack.ranges.size());
+
+        for(int i = 1; i <= 12; i++) CPPUNIT_ASSERT(covers(ack, i));
+        CPPUNIT_ASSERT(!covers(ack, 13));
+    }
+
+    void testConsolidation3()
+    {
+        AccumulatedAck ack(0);
+        update(ack, 10,12);
+        update(ack, 6,7);
+        update(ack, 3,4);
+        update(ack, 1,15);
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 15, ack.mark.getValue());
+        CPPUNIT_ASSERT_EQUAL((size_t) 0, ack.ranges.size());
+    }
+
 };
 
 // Make this test suite a plugin.

@@ -77,9 +77,9 @@ public:
         }
 
         //assume msgs 1-5, 7 and 9 are all acked (i.e. 6, 8 & 10 are not)
-        acked.range = 5;
-        acked.individual.push_back(7);
-        acked.individual.push_back(9);
+        acked.mark = 5;
+        acked.update(7, 7);
+        acked.update(9, 9);
     }      
 
     void testPrepare()

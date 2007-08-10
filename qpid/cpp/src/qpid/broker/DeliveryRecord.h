@@ -23,10 +23,12 @@
 
 #include <algorithm>
 #include <list>
+#include <ostream>
 #include "AccumulatedAck.h"
 #include "BrokerMessage.h"
 #include "Prefetch.h"
 #include "BrokerQueue.h"
+#include "DeliveryId.h"
 
 namespace qpid {
     namespace broker {
@@ -39,20 +41,27 @@ namespace qpid {
             mutable Message::shared_ptr msg;
             mutable Queue::shared_ptr queue;
             const std::string consumerTag;
-            const uint64_t deliveryTag;
+            const DeliveryId deliveryTag;
             bool pull;
 
         public:
-            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const std::string consumerTag, const uint64_t deliveryTag);
-            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const uint64_t deliveryTag);
+            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const std::string consumerTag, const DeliveryId deliveryTag);
+            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const DeliveryId deliveryTag);
             
-            void discard(TransactionContext* ctxt = 0) const;
-            bool matches(uint64_t tag) const;
+            void dequeue(TransactionContext* ctxt = 0) const;
+            bool matches(DeliveryId tag) const;
+            bool matchOrAfter(DeliveryId tag) const;
+            bool after(DeliveryId tag) const;
             bool coveredBy(const AccumulatedAck* const range) const;
             void requeue() const;
             void redeliver(Channel* const) const;
-            void addTo(Prefetch* const prefetch) const;
-            void subtractFrom(Prefetch* const prefetch) const;
+            void updateByteCredit(uint32_t& credit) const;
+            void addTo(Prefetch&) const;
+            void subtractFrom(Prefetch&) const;
+            const std::string& getConsumerTag() const { return consumerTag; } 
+            bool isPull() const { return pull; }
+            
+            friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
         };
 
         typedef std::list<DeliveryRecord>::iterator ack_iterator; 
