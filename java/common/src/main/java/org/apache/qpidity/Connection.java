@@ -111,6 +111,8 @@ public class Connection implements ProtocolActions
         }
         
         // not sure if this is the right place
+        System.out.println("\n--------------------Broker Start Connection Negotiation -----------------------\n");
+        
         getChannel(0).connectionStart(header.getMajor(), header.getMinor(), null, "PLAIN", "utf8");
     }
 

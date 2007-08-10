@@ -1,5 +1,6 @@
 package org.apache.qpidity.api;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.qpidity.MessageProperties;
@@ -43,16 +44,16 @@ public interface Message
 	 * </ul>
 	 * @param src
 	 */
-	public void appendData(byte[] src);
+	public void appendData(byte[] src) throws IOException;
 
-    public void appendData(ByteBuffer src);
+    public void appendData(ByteBuffer src) throws IOException;
     
 	/**
 	 * This will abstract the underlying message data.
 	 * The Message implementation may not hold all message
 	 * data in memory (especially in the case of large messages)
 	 * 
-	 * The read function might copy data from a 
+	 * The read function might copy data from
 	 * <ul>
 	 * <li> From memory (Ex: ByteBuffer)
 	 * <li> From Disk
@@ -60,7 +61,8 @@ public interface Message
 	 * </ul>
 	 * @param target
 	 */
-    public void readData(byte[] target);   
+    public void readData(byte[] target) throws IOException;   
 
+    public ByteBuffer readData() throws IOException; 
 }
 

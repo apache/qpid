@@ -20,6 +20,7 @@ package org.apache.qpidity.client;
 
 
 import java.net.URL;
+import java.util.UUID;
 
 import org.apache.qpidity.QpidException;
 
@@ -46,7 +47,7 @@ public interface Connection
      * @throws QpidException If the communication layer fails to connect with the broker.
      */
     public void connect(URL url) throws QpidException;
-
+    
     /**
      * Close this connection.
      *
@@ -83,5 +84,6 @@ public interface Connection
      *
      * @param exceptionListner The execptionListener
      */
+    
     public void setExceptionListener(ExceptionListener exceptionListner);
 }
