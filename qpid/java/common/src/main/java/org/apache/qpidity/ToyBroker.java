@@ -20,18 +20,15 @@
  */
 package org.apache.qpidity;
 
+import static org.apache.qpidity.Functions.str;
+
 import java.io.IOException;
-
 import java.nio.ByteBuffer;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-
-import static org.apache.qpidity.Functions.*;
 
 
 /**
@@ -43,21 +40,28 @@ import static org.apache.qpidity.Functions.*;
 class ToyBroker extends SessionDelegate
 {
 
-    private Map<String,Queue<Message>> queues;
+    private ToyExchange exchange;
     private MessageTransfer xfr = null;
     private DeliveryProperties props = null;
     private Struct[] headers = null;
     private List<Frame> frames = null;
-
-    public ToyBroker(Map<String,Queue<Message>> queues)
+    private Map<String,String> consumers = new HashMap<String,String>();
+    
+    public ToyBroker(ToyExchange exchange)
     {
-        this.queues = queues;
+        this.exchange = exchange;
     }
 
     @Override public void queueDeclare(Session ssn, QueueDeclare qd)
     {
-        queues.put(qd.getQueue(), new LinkedList());
-        System.out.println("declared queue: " + qd.getQueue());
+        exchange.createQueue(qd.getQueue());
+        System.out.println("\n==================> declared queue: " + qd.getQueue() + "\n");
+    }
+    
+    @Override public void queueBind(Session ssn, QueueBind qb)
+    {
+        exchange.bindQueue(qb.getExchange(), qb.getRoutingKey(),qb.getQueue());
+        System.out.println("\n==================> bound queue: " + qb.getQueue() + " with routing key " + qb.getRoutingKey() + "\n");
     }
 
     @Override public void queueQuery(Session ssn, QueueQuery qq)
@@ -65,6 +69,12 @@ class ToyBroker extends SessionDelegate
         QueueQueryResult result = new QueueQueryResult().queue(qq.getQueue());
         ssn.executionResult(qq.getId(), result);
     }
+    
+    @Override public void messageSubscribe(Session ssn, MessageSubscribe ms)
+    {
+        consumers.put(ms.getDestination(),ms.getQueue());
+        System.out.println("\n==================> message subscribe : " + ms.getDestination() + "\n");
+    }    
 
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
@@ -88,16 +98,7 @@ class ToyBroker extends SessionDelegate
                 props = (DeliveryProperties) hdr;
             }
         }
-
-        if (props != null && !props.getDiscardUnroutable())
-        {
-            String dest = xfr.getDestination();
-            if (!queues.containsKey(dest))
-            {
-                reject(ssn);
-            }
-        }
-
+        
         this.headers = headers;
     }
 
@@ -115,16 +116,17 @@ class ToyBroker extends SessionDelegate
         if (frame.isLastSegment() && frame.isLastFrame())
         {
             String dest = xfr.getDestination();
-            Queue queue = queues.get(dest);
-            if (queue == null)
+            Message m = new Message(headers, frames);
+            
+            if (exchange.route(dest,props.getRoutingKey(),m))
             {
-                reject(ssn);
+                System.out.println("queued " + m);
+                dispatchMessages(ssn);
             }
             else
             {
-                Message m = new Message(headers, frames);
-                queue.offer(m);
-                System.out.println("queued " + m);
+                
+                reject(ssn);
             }
             ssn.processed(xfr);
             xfr = null;
@@ -145,8 +147,35 @@ class ToyBroker extends SessionDelegate
             ssn.messageReject(ranges, 0, "no such destination");
         }
     }
+    
+    private void transferMessage(Session ssn,String dest, Message m)
+    {
+        System.out.println("\n==================> Transfering message to: " +dest + "\n");
+        ssn.messageTransfer(dest, (short)0, (short)0);
+        ssn.headers(m.headers);
+        for (Frame f : m.frames)
+        {
+            for (ByteBuffer b : f)
+            {
+                ssn.data(b);
+            }
+        }
+        ssn.endData();
+    }
+    
+    public void dispatchMessages(Session ssn)
+    {
+        for (String dest: consumers.keySet())
+        {
+            Message m = exchange.getQueue(consumers.get(dest)).poll();
+            if(m != null)
+            {
+                transferMessage(ssn,dest,m);
+            }
+        }
+    }
 
-    private class Message
+    class Message
     {
         private final Struct[] headers;
         private final List<Frame> frames;
@@ -188,14 +217,12 @@ class ToyBroker extends SessionDelegate
 
     public static final void main(String[] args) throws IOException
     {
-        final Map<String,Queue<Message>> queues =
-            new HashMap<String,Queue<Message>>();
-        
+        final ToyExchange exchange = new ToyExchange();        
         ConnectionDelegate delegate = new ConnectionDelegate()
         {
             public SessionDelegate getSessionDelegate()
             {
-                return new ToyBroker(queues);
+                return new ToyBroker(exchange);
             }
         };
         

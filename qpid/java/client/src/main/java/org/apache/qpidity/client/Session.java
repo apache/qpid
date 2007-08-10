@@ -20,7 +20,6 @@ package org.apache.qpidity.client;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpidity.Option;
 import org.apache.qpidity.RangeSet;
@@ -66,13 +65,6 @@ public interface Session
      * <p> When a session is suspend any operation of this session and of the associated resources are unavailable.
      */
     public void sessionSuspend();
-
-    /**
-     * This will resume an existing session
-     * <p> Upon resume the session is attached with an underlying channel
-     * hence making operation on this session available.
-     */
-    public void sessionResume(UUID sessionId);
 
     //------------------------------------------------------ 
     //                 Messaging methods

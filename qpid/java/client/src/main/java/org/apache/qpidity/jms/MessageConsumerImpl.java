@@ -18,13 +18,13 @@
 package org.apache.qpidity.jms;
 
 import org.apache.qpidity.jms.message.QpidMessage;
-import org.apache.qpidity.impl.MessagePartListenerAdapter;
 import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Option;
 import org.apache.qpidity.filter.MessageFilter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 import org.apache.qpidity.client.MessagePartListener;
+import org.apache.qpidity.client.util.MessagePartListenerAdapter;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 
 import javax.jms.*;
