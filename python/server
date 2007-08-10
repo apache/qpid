@@ -3,22 +3,54 @@ import qpid
 from qpid.connection import Connection, listen
 from qpid.delegate import Delegate
 from qpid.peer import Peer
+from qpid import Struct
 
 class Server(Delegate):
+
+  def __init__(self):
+    Delegate.__init__(self)
+    self.queues = {}
+    self.bindings = {}
 
   def connection_open(self, ch, msg):
     msg.open_ok()
 
-  def channel_open(self, ch, msg):
-    print "channel %s open" % ch.id
-    msg.open_ok()
+  def session_open(self, ch, msg):
+    print "session open on channel %s" % ch.id
+    msg.attached()
+
+  def execution_flush(self, ch, msg):
+    pass
+
+  def queue_declare(self, ch, msg):
+    self.queues[msg.queue] = []
+    print "queue declared: %s" % msg.queue
+    msg.complete()
+
+  def queue_bind(self, ch, msg):
+    if self.bindings.has_key(msg.exchange):
+      queues = self.bindings[msg.exchange]
+    else:
+      queues = set()
+      self.bindings[msg.exchange] = queues
+    queues.add((msg.routing_key, msg.queue))
+    msg.complete()
+
+  def queue_query(self, ch, msg):
+    st = Struct(msg.method.result)
+    ch.execution_result(msg.command_id, st)
+    msg.complete()
+
+  def message_subscribe(self, ch, msg):
+    print msg
+    msg.complete()
 
   def message_transfer(self, ch, msg):
-    print msg.body
-    msg.ok()
+    print msg.content
+    msg.complete()
 
 
-spec = qpid.spec.load("../specs/amqp.0-9.xml")
+spec = qpid.spec.load("../specs/amqp.0-10-preview.xml")
 
 for io in listen("0.0.0.0", 5672):
   c = Connection(io, spec)

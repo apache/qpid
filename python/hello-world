@@ -3,13 +3,13 @@ import qpid
 from qpid.client import Client
 from qpid.content import Content
 
-client = Client("127.0.0.1", 5672, qpid.spec.load("../specs/amqp.0-9.xml",
-                                                  "../specs/amqp-errata.0-9.xml"))
+client = Client("127.0.0.1", 5672, qpid.spec.load("../specs/amqp.0-10-preview.xml"))
 client.start({"LOGIN": "guest", "PASSWORD": "guest"})
 ch = client.channel(1)
-ch.channel_open()
+ch.session_open()
 ch.queue_declare(queue="test")
 ch.queue_bind(exchange="amq.direct", queue="test", routing_key="test")
-ch.message_consume(queue="test", destination="test")
-ch.message_transfer(destination="amq.direct", routing_key="test",
-                    body="hello world")
+print ch.queue_query(queue="test")
+ch.message_subscribe(queue="test", destination="test")
+ch.message_transfer(destination="amq.direct",
+                    content=Content("hello world"))
