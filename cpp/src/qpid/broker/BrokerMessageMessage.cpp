@@ -188,7 +188,7 @@ void MessageMessage::transferMessage(
 }
 
 
-void MessageMessage::deliver(ChannelAdapter& channel, uint64_t, DeliveryToken::shared_ptr token, uint32_t framesize)
+void MessageMessage::deliver(ChannelAdapter& channel, DeliveryId, DeliveryToken::shared_ptr token, uint32_t framesize)
 {
     transferMessage(channel, shared_polymorphic_cast<MessageDeliveryToken>(token)->destination, framesize);
 }
@@ -319,6 +319,14 @@ MessageTransferBody* MessageMessage::copyTransfer(const ProtocolVersion& version
 MessageMessage::ReferencePtr MessageMessage::getReference() const {
     return reference;
 }
+
+uint32_t MessageMessage::getRequiredCredit() const
+{
+    //TODO: change when encoding changes. Should be the payload of any
+    //header & body frames.
+    return transfer->size();
+}
+
 
 DeliveryToken::shared_ptr MessageMessage::getToken(const std::string& destination)
 {

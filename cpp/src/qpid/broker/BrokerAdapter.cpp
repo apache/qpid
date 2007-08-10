@@ -325,7 +325,7 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
     //also version specific behaviour now)
     if (newTag.empty()) newTag = tagGenerator.generate();
     DeliveryToken::shared_ptr token(BasicMessage::createConsumeToken(newTag));
-    channel.consume(token, newTag, queue, !noAck, exclusive, noLocal ? &connection : 0, &fields);
+    channel.consume(token, newTag, queue, noLocal, !noAck, exclusive, &fields);
 
     if(!nowait) client.consumeOk(newTag);
 
@@ -365,7 +365,11 @@ void BrokerAdapter::BasicHandlerImpl::get(uint16_t /*ticket*/, const string& que
 } 
         
 void BrokerAdapter::BasicHandlerImpl::ack(uint64_t deliveryTag, bool multiple){
-	channel.ack(deliveryTag, multiple);
+    if (multiple) {
+        channel.ackCumulative(deliveryTag);
+    } else {
+        channel.ackRange(deliveryTag, deliveryTag);
+    }
 } 
         
 void BrokerAdapter::BasicHandlerImpl::reject(uint64_t /*deliveryTag*/, bool /*requeue*/){} 

@@ -83,6 +83,15 @@ class MessageHandlerImpl :
                  const std::string& identifier );
 
     void transfer(const framing::MethodContext& context);
+
+    void flow(const std::string& destination, u_int8_t unit, u_int32_t value);
+    
+    void flowMode(const std::string& destination, u_int8_t mode);
+    
+    void flush(const std::string& destination);
+
+    void stop(const std::string& destination);
+
   private:
     ReferenceRegistry references;
 };
