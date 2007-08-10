@@ -26,9 +26,9 @@ import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
 import org.apache.qpidity.client.MessagePartListener;
+import org.apache.qpidity.client.util.MessagePartListenerAdapter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 import org.apache.qpidity.filter.MessageFilter;
-import org.apache.qpidity.impl.MessagePartListenerAdapter;
 
 /**
  * Implementation of the JMS QueueBrowser interface

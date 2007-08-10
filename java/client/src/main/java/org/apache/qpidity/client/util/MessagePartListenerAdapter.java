@@ -1,8 +1,8 @@
-package org.apache.qpidity.impl;
+package org.apache.qpidity.client.util;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 import org.apache.qpidity.DeliveryProperties;
@@ -13,11 +13,12 @@ import org.apache.qpidity.client.MessageListener;
 import org.apache.qpidity.client.MessagePartListener;
 
 /** 
+ * This is a simple message assembler.
+ * Will call onMessage method of the adaptee 
+ * when all message data is read.
  * 
- * Will call onMessage method as soon as data is avialable
- * The client can then start to process the data while
- * the rest of the data is read.
- *
+ * This is a good convinience utility for handling
+ * small messages
  */
 public class MessagePartListenerAdapter implements MessagePartListener
 {
@@ -25,7 +26,7 @@ public class MessagePartListenerAdapter implements MessagePartListener
 	Message _currentMsg;
     DeliveryProperties _currentDeliveryProps;
     MessageProperties _currentMessageProps;
-	
+    
 	public MessagePartListenerAdapter(MessageListener listener)
 	{
 		_adaptee = listener;
@@ -37,12 +38,12 @@ public class MessagePartListenerAdapter implements MessagePartListener
             ByteBuffer _readBuffer;
             private int dataSize; 
             
-            public void appendData(byte[] src)
+            public void appendData(byte[] src) throws IOException
             {
                 appendData(ByteBuffer.wrap(src));
             }
 
-            public void appendData(ByteBuffer src)
+            public void appendData(ByteBuffer src) throws IOException
             {
                 _data.offer(src);
                 dataSize += src.remaining();
@@ -61,9 +62,9 @@ public class MessagePartListenerAdapter implements MessagePartListener
             // since we provide the message only after completion
             // we can assume that when this method is called we have
             // received all data.
-            public void readData(byte[] target)
+            public void readData(byte[] target) throws IOException
             {
-                if (_readBuffer == null)
+                if (_data.size() >0 && _readBuffer == null)
                 {
                     buildReadBuffer();
                 }
@@ -71,20 +72,59 @@ public class MessagePartListenerAdapter implements MessagePartListener
                 _readBuffer.get(target);
             }
             
+            public ByteBuffer readData() throws IOException
+            {
+                if (_data.size() >0 && _readBuffer == null)
+                {
+                    buildReadBuffer();
+                }
+                
+                return _readBuffer;
+            }
+            
             private void buildReadBuffer()
             {
-                _readBuffer = ByteBuffer.allocate(dataSize);
-                for(ByteBuffer buf:_data)
+                //optimize for the simple cases
+                if(_data.size() == 1)
                 {
-                    _readBuffer.put(buf);
+                    _readBuffer = _data.element().duplicate();
                 }
+                else
+                {
+                    _readBuffer = ByteBuffer.allocate(dataSize);
+                    for(ByteBuffer buf:_data)
+                    {
+                        _readBuffer.put(buf);
+                    }
+                }
+            }
+            
+            //hack for testing
+            @Override public String toString()
+            {
+                if (_data.size() >0 && _readBuffer == null)
+                {
+                    buildReadBuffer();
+                }
+                byte[] b = new byte[_readBuffer.limit()];
+                _readBuffer.get(b);
+                return new String(b);
             }
         };
     }
     
     public void addData(ByteBuffer src)
     {
-        _currentMsg.appendData(src);
+        try
+        {
+            _currentMsg.appendData(src);
+        }
+        catch(IOException e)
+        {
+            // A chance for IO exception
+            // doesn't occur as we are using 
+            // a ByteBuffer
+        }
     }
 
 	public void messageHeaders(Struct... headers)
@@ -103,7 +143,7 @@ public class MessagePartListenerAdapter implements MessagePartListener
 	}
     
 	public void messageReceived()
-	{
+	{        
         _adaptee.onMessage(_currentMsg);
 	}
 }

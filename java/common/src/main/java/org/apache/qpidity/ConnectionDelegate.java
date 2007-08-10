@@ -46,8 +46,8 @@ import javax.security.sasl.SaslServer;
  */
 public abstract class ConnectionDelegate extends Delegate<Channel>
 {
-    private String _username;
-    private String _password;
+    private String _username = "guest";
+    private String _password = "guest";;
     private String _mechanism;
     private String _virtualHost;
     private SaslClient saslClient;
@@ -70,6 +70,7 @@ public abstract class ConnectionDelegate extends Delegate<Channel>
     //-----------------------------------------------
     @Override public void connectionStart(Channel context, ConnectionStart struct) 
     {
+        System.out.println("\n--------------------Client Start Connection Negotiation -----------------------\n");
         System.out.println("The broker has sent connection-start");
         
         String mechanism = null;
@@ -132,15 +133,19 @@ public abstract class ConnectionDelegate extends Delegate<Channel>
         String knownHosts = struct.getKnownHosts();
         System.out.println("The broker has opened the connection for use");
         System.out.println("The broker supplied the following hosts for failover " + knownHosts);
-        _negotiationCompleteLock.lock();
-        try
+        if(_negotiationCompleteLock != null)
         {
-            _negotiationComplete.signalAll();
+            _negotiationCompleteLock.lock();
+            try
+            {
+                _negotiationComplete.signalAll();
+            }
+            finally
+            {
+                _negotiationCompleteLock.unlock();
+            }
         }
-        finally
-        {
-            _negotiationCompleteLock.unlock();
-        }
+        System.out.println("\n-------------------- Client End Connection Negotiation -----------------------\n");
     }
     
     public void connectionRedirect(Channel context, ConnectionRedirect struct) 
@@ -240,8 +245,9 @@ public abstract class ConnectionDelegate extends Delegate<Channel>
     @Override public void connectionOpen(Channel context, ConnectionOpen struct) 
     {
        String hosts = "amqp:1223243232325";
-       System.out.println("The client has sent connection-open-ok");
+       System.out.println("The client has sent connection-open");
        context.connectionOpenOk(hosts);
+       System.out.println("\n-------------------- Broker End Connection Negotiation -----------------------\n");
     }
     
     
