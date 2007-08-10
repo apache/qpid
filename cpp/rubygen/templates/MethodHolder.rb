@@ -22,7 +22,7 @@ class MethodHolderGen < CppGen
       genl "using namespace std;"
       genl "using namespace qpid::framing;"
       genl
-      scope("int main(int argc, char** argv) {") {
+      scope("int main(int, char** argv) {") {
         genl "size_t maxSize=0;"
         @amqp.amqp_methods.each { |m|
           genl "maxSize=max(maxSize, sizeof(#{m.body_name}));" }
