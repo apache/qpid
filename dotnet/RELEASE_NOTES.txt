@@ -45,6 +45,7 @@ Improvement    QPID-489     Create new build system for .NET Client
 Improvement    QPID-490     Improve AmqChannel.PurgeQueue() and AmqChannel.DeleteQueue() methods       
 Improvement    QPID-495     Implement default timeouts for AttainState and SyncWriter operations       
 
+Bug            QPID-546     .Net does not handle reply to fields correctly.
 Bug            QPID-237     Build broken because of missing IBytesMessage.Reset() impl in Qpid.Client.Message.QpidBytesMessage       
 Bug            QPID-238     Wrong call to string.Split() in AbstractQmsMessage.GetExchangeName()       
 Bug            QPID-239     Use of assembly name vs. assembly path in AMQConnection.LoadTransportFromAssembly()       
