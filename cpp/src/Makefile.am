@@ -74,7 +74,9 @@ noinst_PROGRAMS=generate_MethodHolderMaxSize_h
 generate_MethodHolderMaxSize_h_SOURCES=generate_MethodHolderMaxSize_h.cpp
 qpid/framing/MethodHolderMaxSize.h: generate_MethodHolderMaxSize_h
 	./generate_MethodHolderMaxSize_h
+BUILT_SOURCES=qpid/framing/MethodHolderMaxSize.h
 CLEANFILES=qpid/framing/MethodHolderMaxSize.h
+
 
 ## Compiler flags
 
@@ -169,7 +171,6 @@ libqpidcommon_la_SOURCES = \
   gen/qpid/framing/AMQP_HighestVersion.h \
   gen/qpid/framing/AMQP_MethodVersionMap.cpp \
   qpid/framing/MethodHolder.h qpid/framing/MethodHolder.cpp \
-  qpid/framing/MethodHolderMaxSize.h \
   qpid/framing/MethodHolder_construct.cpp \
   qpid/Exception.cpp \
   qpid/Plugin.h \
@@ -428,5 +429,6 @@ nobase_include_HEADERS = \
   qpid/shared_ptr.h
 
 # Force build of qpidd during dist phase so help2man will work.
-dist-hook: qpidd
+dist-hook: $(BUILT_SOURCES)
+	$(MAKE) qpidd
 
