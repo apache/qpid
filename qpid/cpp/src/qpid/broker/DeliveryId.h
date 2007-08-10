@@ -18,30 +18,17 @@
  * under the License.
  *
  */
-#ifndef _DtxAck_
-#define _DtxAck_
+#ifndef _DeliveryId_
+#define _DeliveryId_
 
-#include <algorithm>
-#include <functional>
-#include <list>
-#include "AccumulatedAck.h"
-#include "DeliveryRecord.h"
-#include "TxOp.h"
+#include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
-    namespace broker {
-        class DtxAck : public TxOp{
-            std::list<DeliveryRecord> pending;
+namespace broker {
 
-        public:
-            DtxAck(const AccumulatedAck& acked, std::list<DeliveryRecord>& unacked);
-            virtual bool prepare(TransactionContext* ctxt) throw();
-            virtual void commit() throw();
-            virtual void rollback() throw();
-            virtual ~DtxAck(){}
-        };
-    }
-}
+    typedef framing::SequenceNumber DeliveryId;
+
+}}
 
 
 #endif

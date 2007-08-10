@@ -280,6 +280,7 @@ nobase_include_HEADERS = \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.h \
   qpid/broker/DeliveryAdapter.h \
+  qpid/broker/DeliveryId.h \
   qpid/broker/DeliveryToken.h \
   qpid/broker/DirectExchange.h \
   qpid/broker/DtxAck.h \

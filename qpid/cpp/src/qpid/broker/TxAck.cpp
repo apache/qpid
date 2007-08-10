@@ -36,7 +36,7 @@ bool TxAck::prepare(TransactionContext* ctxt) throw(){
         //dequeue all acked messages from their queues
         for (ack_iterator i = unacked.begin(); i != unacked.end(); i++) {
             if (i->coveredBy(&acked)) {
-                i->discard(ctxt);
+                i->dequeue(ctxt);
             }
         }
         return true;

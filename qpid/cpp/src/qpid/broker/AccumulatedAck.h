@@ -24,9 +24,23 @@
 #include <algorithm>
 #include <functional>
 #include <list>
+#include <ostream>
+#include "DeliveryId.h"
 
 namespace qpid {
     namespace broker {
+
+        struct Range
+        {
+            DeliveryId start;
+            DeliveryId end;
+
+            Range(DeliveryId s, DeliveryId e);
+            bool contains(DeliveryId i) const;
+            bool intersect(const Range& r) const;
+            bool merge(const Range& r);
+            bool mergeable(const DeliveryId& r) const;
+        };
         /**
          * Keeps an accumulated record of acked messages (by delivery
          * tag).
@@ -37,19 +51,21 @@ namespace qpid {
              * If not zero, then everything up to this value has been
              * acked.
              */
-            uint64_t range;
+            DeliveryId mark;
             /**
              * List of individually acked messages that are not
              * included in the range marked by 'range'.
              */
-            std::list<uint64_t> individual;
+            std::list<Range> ranges;
 
-            AccumulatedAck(uint64_t r) : range(r) {}
-            void update(uint64_t firstTag, uint64_t lastTag);
+            AccumulatedAck(DeliveryId r) : mark(r) {}
+            void update(DeliveryId firstTag, DeliveryId lastTag);
             void consolidate();
             void clear();
-            bool covers(uint64_t tag) const;
+            bool covers(DeliveryId tag) const;
         };
+        std::ostream& operator<<(std::ostream&, const Range&);
+        std::ostream& operator<<(std::ostream&, const AccumulatedAck&);
     }
 }
 

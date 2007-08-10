@@ -27,7 +27,7 @@ using std::string;
 DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg, 
                                Queue::shared_ptr _queue, 
                                const string _consumerTag, 
-                               const uint64_t _deliveryTag) : msg(_msg), 
+                               const DeliveryId _deliveryTag) : msg(_msg), 
                                                                queue(_queue), 
                                                                consumerTag(_consumerTag),
                                                                deliveryTag(_deliveryTag),
@@ -35,19 +35,27 @@ DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg,
 
 DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg, 
                                Queue::shared_ptr _queue, 
-                               const uint64_t _deliveryTag) : msg(_msg), 
+                               const DeliveryId _deliveryTag) : msg(_msg), 
                                                                queue(_queue), 
                                                                consumerTag(""),
                                                                deliveryTag(_deliveryTag),
                                                                pull(true){}
 
 
-void DeliveryRecord::discard(TransactionContext* ctxt) const{
+void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
     queue->dequeue(ctxt, msg);
 }
 
-bool DeliveryRecord::matches(uint64_t tag) const{
+bool DeliveryRecord::matches(DeliveryId tag) const{
     return deliveryTag == tag;
+}
+
+bool DeliveryRecord::matchOrAfter(DeliveryId tag) const{
+    return matches(tag) || after(tag);
+}
+
+bool DeliveryRecord::after(DeliveryId tag) const{
+    return deliveryTag > tag;
 }
 
 bool DeliveryRecord::coveredBy(const AccumulatedAck* const range) const{
@@ -68,20 +76,38 @@ void DeliveryRecord::requeue() const{
     queue->requeue(msg);
 }
 
-void DeliveryRecord::addTo(Prefetch* const prefetch) const{
+void DeliveryRecord::updateByteCredit(uint32_t& credit) const
+{
+    credit += msg->getRequiredCredit();
+}
+
+
+void DeliveryRecord::addTo(Prefetch& prefetch) const{
     if(!pull){
         //ignore 'pulled' messages (i.e. those that were sent in
         //response to get) when calculating prefetch
-        prefetch->size += msg->contentSize();
-        prefetch->count++;
+        prefetch.size += msg->contentSize();
+        prefetch.count++;
     }    
 }
 
-void DeliveryRecord::subtractFrom(Prefetch* const prefetch) const{
+void DeliveryRecord::subtractFrom(Prefetch& prefetch) const{
     if(!pull){
         //ignore 'pulled' messages (i.e. those that were sent in
         //response to get) when calculating prefetch
-        prefetch->size -= msg->contentSize();
-        prefetch->count--;
+        prefetch.size -= msg->contentSize();
+        prefetch.count--;
     }
 }
+
+namespace qpid {
+namespace broker {
+
+std::ostream& operator<<(std::ostream& out, const DeliveryRecord& r) {
+    out << "{" << "id=" << r.deliveryTag.getValue();
+    out << ", consumer=" << r.consumerTag;
+    out << ", queue=" << r.queue->getName() << "}";
+    return out;
+}
+
+}}
