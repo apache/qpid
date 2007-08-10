@@ -9,11 +9,6 @@ SUBSCRIBERS=10
 MESSAGES=2000
 BATCHES=10
 
-# Setup path to publisher/subscriber
-dir=$(dirname $0)
-publisher=$dir/topic_publisher
-subscriber=$dir/topic_listener
-
 while getopts "s:m:b:" opt ; do
     case $opt in
 	s) SUBSCRIBERS=$OPTARG ;;
@@ -29,11 +24,11 @@ done
 subscribe() {
     echo Start subscriber $1
     LOG="subscriber_$1.log"
-    $subscriber > $LOG 2>&1 && rm -f $LOG 
+    ./topic_listener > $LOG 2>&1 && rm -f $LOG 
 }
 
 publish() {
-    $publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS
+    ./topic_publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS
 }
 
 for ((i=$SUBSCRIBERS ; i--; )); do
