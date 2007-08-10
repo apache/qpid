@@ -22,7 +22,6 @@
 #include "MethodHolder.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/Buffer.h"
-#include "qpid/framing/variant.h"
 
 // Note: MethodHolder::construct is in a separate generated file
 // MethodHolder_construct.cpp
