@@ -18,3 +18,26 @@
 #
 
 import spec, codec, connection, content, peer, delegate, client
+
+class Struct:
+
+  def __init__(self, type):
+    self.__dict__["type"] = type
+    self.__dict__["_values"] = {}
+
+  def _check(self, attr):
+    field = self.type.fields.byname.get(attr)
+    if field == None:
+      raise AttributeError(attr)
+    return field
+
+  def __setattr__(self, attr, value):
+    self._check(attr)
+    self._values[attr] = value
+
+  def __getattr__(self, attr):
+    field = self._check(attr)
+    return self._values.get(attr, field.default())
+
+  def __str__(self):
+    return "%s %s" % (self.type.type, self._values)

@@ -74,7 +74,7 @@ def listen(host, port, predicate = lambda: True):
 class Connection:
 
   def __init__(self, io, spec):
-    self.codec = codec.Codec(io)
+    self.codec = codec.Codec(io, spec)
     self.spec = spec
     self.FRAME_END = self.spec.constants.byname["frame_end"].id
 
@@ -95,7 +95,7 @@ class Connection:
     c.encode_octet(self.spec.constants.byname[frame.type].id)
     c.encode_short(frame.channel)
     body = StringIO()
-    enc = codec.Codec(body)
+    enc = codec.Codec(body, self.spec)
     frame.encode(enc)
     enc.flush()
     c.encode_longstr(body.getvalue())
@@ -106,7 +106,7 @@ class Connection:
     type = self.spec.constants.byid[c.decode_octet()].name
     channel = c.decode_short()
     body = c.decode_longstr()
-    dec = codec.Codec(StringIO(body))
+    dec = codec.Codec(StringIO(body), self.spec)
     frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
     frame.channel = channel
     end = c.decode_octet()

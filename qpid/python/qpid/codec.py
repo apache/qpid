@@ -26,7 +26,7 @@ fields.
 The unit test for this module is located in tests/codec.py
 """
 
-import re
+import re, qpid
 from cStringIO import StringIO
 from struct import *
 from reference import ReferenceId
@@ -40,11 +40,12 @@ class Codec:
   class that handles encoding/decoding of AMQP primitives
   """
 
-  def __init__(self, stream):
+  def __init__(self, stream, spec):
     """
     initializing the stream/fields used
     """
     self.stream = stream
+    self.spec = spec
     self.nwrote = 0
     self.nread = 0
     self.incoming_bits = []
@@ -163,7 +164,7 @@ class Codec:
 
     # short int's valid range is [0,65535]
     if (o < 0 or o > 65535):
-        raise ValueError('Valid range of short int is [0,65535]')
+        raise ValueError('Valid range of short int is [0,65535]: %s' % o)
 
     self.pack("!H", o)
 
@@ -255,7 +256,7 @@ class Codec:
     encodes a table data structure in network byte order
     """
     enc = StringIO()
-    codec = Codec(enc)
+    codec = Codec(enc, self.spec)
     if tbl:
       for key, value in tbl.items():
         if len(key) > 128:
@@ -356,3 +357,21 @@ class Codec:
 
   def decode_uuid(self):
     return self.decode_longstr()
+
+  def encode_long_struct(self, s):
+    enc = StringIO()
+    codec = Codec(enc, self.spec)
+    type = s.type
+    codec.encode_short(type.type)
+    for f in type.fields:
+      codec.encode(f.type, getattr(s, f.name))
+    codec.flush()
+    self.encode_longstr(enc.getvalue())
+
+  def decode_long_struct(self):
+    codec = Codec(StringIO(self.decode_longstr()), self.spec)
+    type = self.spec.structs[codec.decode_short()]
+    s = qpid.Struct(type)
+    for f in type.fields:
+      setattr(s, f.name, codec.decode(f.type))
+    return s
