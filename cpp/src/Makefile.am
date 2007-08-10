@@ -162,6 +162,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Handler.h \
   qpid/framing/FrameHandler.h \
   qpid/framing/HandlerUpdater.h \
+  qpid/framing/Blob.h \
   qpid/framing/AMQP_ClientProxy.cpp \
   qpid/framing/AMQP_ServerProxy.cpp \
   gen/qpid/framing/AMQP_HighestVersion.h \
