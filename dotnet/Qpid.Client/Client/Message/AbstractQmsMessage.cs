@@ -38,41 +38,36 @@ namespace Apache.Qpid.Client.Message
         protected bool _readableMessage = false;
         private QpidHeaders _headers;
 
-#region new_java_ctrs
-
         protected AbstractQmsMessage(ByteBuffer data)
             : base(new BasicContentHeaderProperties())
         {
-           Init(data);
+            Init(data);
         }
 
         protected AbstractQmsMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, ByteBuffer data)
             : this(contentHeader, deliveryTag)
         {
-           Init(data);
+            Init(data);
         }
 
         protected AbstractQmsMessage(BasicContentHeaderProperties contentHeader, long deliveryTag) : base(contentHeader, deliveryTag)
         {
-           Init(null);
+            Init(null);
         }
 
         private void Init(ByteBuffer data)
         {
-           _data = data;
-           if ( _data != null )
-           {
-              _data.Acquire();
-           }
-           _readableMessage = (data != null);
-           if ( ContentHeaderProperties.Headers == null )
-              ContentHeaderProperties.Headers = new FieldTable();
-           _headers = new QpidHeaders(ContentHeaderProperties.Headers);
+            _data = data;
+            if ( _data != null )
+            {
+                _data.Acquire();
+            }
+            _readableMessage = (data != null);
+            if ( ContentHeaderProperties.Headers == null )
+                ContentHeaderProperties.Headers = new FieldTable();
+            _headers = new QpidHeaders(ContentHeaderProperties.Headers);
         }
 
-#endregion
-
-        #region Properties
         //
         // Properties
         //
@@ -82,7 +77,8 @@ namespace Apache.Qpid.Client.Message
         /// </summary>
         public string MessageId
         {
-            get {
+            get 
+            {
                 if (ContentHeaderProperties.MessageId == null)
                 {
                     ContentHeaderProperties.MessageId = "ID:" + DeliveryTag;
@@ -145,12 +141,11 @@ namespace Apache.Qpid.Client.Message
         {
             get
             {
-                Dest dest = ReadReplyToHeader();
-                return dest.ExchangeName;
+                return ReadReplyToHeader().ExchangeName;
             }
             set
             {
-                Dest dest = ReadReplyToHeader();
+                BindingURL dest = ReadReplyToHeader();
                 dest.ExchangeName = value;
                 WriteReplyToHeader(dest);
             }
@@ -163,18 +158,15 @@ namespace Apache.Qpid.Client.Message
         {
             get
             {
-                Dest dest = ReadReplyToHeader();
-                return dest.RoutingKey;
+                return ReadReplyToHeader().RoutingKey;
             }
             set
             {
-                Dest dest = ReadReplyToHeader();
+                BindingURL dest = ReadReplyToHeader();
                 dest.RoutingKey = value;
                 WriteReplyToHeader(dest);
             }
         }
-
-
 
         /// <summary>
         /// Non-persistent (1) or persistent (2)
@@ -186,12 +178,12 @@ namespace Apache.Qpid.Client.Message
                 byte b = ContentHeaderProperties.DeliveryMode;
                 switch (b)
                 {
-                    case 1:
-                        return DeliveryMode.NonPersistent;
-                    case 2:
-                        return DeliveryMode.Persistent;
-                    default:
-                        throw new QpidException("Illegal value for delivery mode in content header properties");
+                case 1:
+                    return DeliveryMode.NonPersistent;
+                case 2:
+                    return DeliveryMode.Persistent;
+                default:
+                    throw new QpidException("Illegal value for delivery mode in content header properties");
                 }                
             }
             set
@@ -200,9 +192,9 @@ namespace Apache.Qpid.Client.Message
             }
         }        
 
-       /// <summary>
-       /// True, if this is a redelivered message
-       /// </summary>
+        /// <summary>
+        /// True, if this is a redelivered message
+        /// </summary>
         public bool Redelivered
         {
             get { return _redelivered; }
@@ -319,8 +311,6 @@ namespace Apache.Qpid.Client.Message
                 _data = value;
             }
         }
-        #endregion // Properties
-
 
         public void Acknowledge()
         {
@@ -434,10 +424,10 @@ namespace Apache.Qpid.Client.Message
 
         protected void CheckReadable()
         {
-           if ( !_readableMessage )
-           {
-              throw new MessageNotReadableException("You need to call reset() to make the message readable");
-           }
+            if ( !_readableMessage )
+            {
+                throw new MessageNotReadableException("You need to call reset() to make the message readable");
+            }
         }
 
         /// <summary>
@@ -451,40 +441,254 @@ namespace Apache.Qpid.Client.Message
         /// </summary>
         /// 
         /// <returns>A destination initialized to the replyto location if a replyto field was set, or an empty destination otherwise.</returns>
-        private Dest ReadReplyToHeader()
+        private BindingURL ReadReplyToHeader()
         {
-           string replyToEncoding = ContentHeaderProperties.ReplyTo;
+            string replyToEncoding = ContentHeaderProperties.ReplyTo;
+            //log.Debug("replyToEncoding = " + replyToEncoding);
+
+            BindingURL bindingUrl = new BindingURL(replyToEncoding);
+            //log.Debug("bindingUrl = " + bindingUrl.ToString());
+
+            return bindingUrl;
            
-           //log.Info("replyToEncoding = " + replyToEncoding);
+            //log.Info("replyToEncoding = " + replyToEncoding);
 
-           if ( replyToEncoding == null )
-           {
-              return new Dest();
-           } else
-           {
-              // Split the replyto field on a ':'
-              string[] split = replyToEncoding.Split(':');
+//             if ( replyToEncoding == null )
+//             {
+//                 return new Dest();
+//             } else
+//             {
+//                 // Split the replyto field on a ':'
+//                 string[] split = replyToEncoding.Split(':');
 
-              // Ensure that the replyto field argument only consisted of two parts.
-              if ( split.Length != 2 )
-              {
-                 throw new QpidException("Illegal value in ReplyTo property: " + replyToEncoding);
-              }
+//                 // Ensure that the replyto field argument only consisted of two parts.
+//                 if ( split.Length != 2 )
+//                 {
+//                     throw new QpidException("Illegal value in ReplyTo property: " + replyToEncoding);
+//                 }
 
-              // Extract the exchange name and routing key from the split replyto field.
-              string exchangeName = split[0];
+//                 // Extract the exchange name and routing key from the split replyto field.
+//                 string exchangeName = split[0];
 
-              string[] split2 = split[1].Split('/');
-              string routingKey = split2[3];
+//                 string[] split2 = split[1].Split('/');
+//                 string routingKey = split2[3];
 
-              return new Dest(exchangeName, routingKey);
-           }
+//                 return new Dest(exchangeName, routingKey);
+//             }
         }
 
-        private void WriteReplyToHeader(Dest dest)
+        private void WriteReplyToHeader(BindingURL dest)
         {
-           string encodedDestination = string.Format("{0}:{1}", dest.ExchangeName, dest.RoutingKey);
-           ContentHeaderProperties.ReplyTo = encodedDestination;
+            string encodedDestination = string.Format("{0}:{1}", dest.ExchangeName, dest.RoutingKey);
+            ContentHeaderProperties.ReplyTo = encodedDestination;
         }
+    }
+
+    public class BindingURL
+    {
+        public readonly static string OPTION_EXCLUSIVE = "exclusive";
+        public readonly static string OPTION_AUTODELETE = "autodelete";
+        public readonly static string OPTION_DURABLE = "durable";
+        public readonly static string OPTION_CLIENTID = "clientid";
+        public readonly static string OPTION_SUBSCRIPTION = "subscription";
+        public readonly static string OPTION_ROUTING_KEY = "routingkey";
+
+        /// <summary> Holds the undecoded URL </summary>
+        string url;
+
+        /// <summary> Holds the decoded options. </summary>
+        IDictionary options = new Hashtable();
+        
+        /// <summary> Holds the decoded exchange class. </summary>
+        string exchangeClass;
+
+        /// <summary> Holds the decoded exchange name. </summary>
+        string exchangeName;
+
+        /// <summary> Holds the destination name. </summary>
+        string destination;
+
+        /// <summary> Holds the decoded queue name. </summary>
+        string queueName;
+
+        /// <summary>
+        /// The binding URL has the format:
+        /// <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
+        /// </summary>
+        public BindingURL(string url)
+        {
+            this.url = url;
+            Parse();
+        }
+
+        public string Url { get { return url; } }
+
+        public string ExchangeClass
+        {
+            get { return exchangeClass; }
+            set { exchangeClass = value; }
+        }
+
+        public string ExchangeName
+        {
+            get { return exchangeName; } 
+            set { exchangeName = value; }
+        }
+
+        public string QueueName
+        {
+            get { return queueName; } 
+            set { queueName = value; }
+        }
+
+        public string DestinationName
+        {
+            get { return destination; } 
+            set { destination = value; }
+        }
+
+        public string RoutingKey {
+            get { return (string)options[OPTION_ROUTING_KEY]; }
+            set { options[OPTION_ROUTING_KEY] = value; }
+        }
+
+        public bool ContainsOption(string key) { return options.Contains(key); }
+
+        public string ToString() 
+        {
+            return "BindingURL: [ ExchangeClass = " + ExchangeClass + ", ExchangeName = " + ExchangeName + ", QueueName = " + QueueName + 
+                ", DestinationName = " + DestinationName + ", RoutingKey = " + RoutingKey + " ] ";
+        }
+
+        private void Parse()
+        {
+            Uri binding = new Uri(url);
+
+            // Extract the URI scheme, this contains the exchange class. It is defaulted to the direct exchange if not specified.
+            string exchangeClass = binding.Scheme;
+
+            if (exchangeClass == null)
+            {
+                url = ExchangeNameDefaults.DIRECT_EXCHANGE_CLASS + "://" + ExchangeNameDefaults.DIRECT + "//" + url;
+                Parse();
+
+                return;
+            }
+            else
+            {
+                this.exchangeClass = exchangeClass;
+            }
+
+            // Extract the host name, this contains the exchange name. It is defaulted to the default direct exchange if not specified.
+            string exchangeName = binding.Host;
+
+            if (exchangeName == null)
+            {
+                if (exchangeClass.Equals(ExchangeNameDefaults.DIRECT_EXCHANGE_CLASS))
+                {
+                    this.exchangeName = "";
+                }
+            }
+            else
+            {
+                this.exchangeName = exchangeName;
+            }
+
+            // Extract the destination and queue name.
+            if ((binding.AbsolutePath == null) || binding.AbsolutePath.Equals(""))
+            {
+                throw new UriFormatException("Destination or Queue required");
+            }
+            else
+            {
+                int slashOffset = binding.AbsolutePath.IndexOf("/", 1);
+                if (slashOffset == -1)
+                {
+                    throw new UriFormatException("Destination required");
+                }
+                else
+                {
+                    String path = binding.AbsolutePath;
+
+                    this.destination = path.Substring(1, slashOffset - 1);
+                    this.queueName = path.Substring(slashOffset + 1);
+                }
+            }
+
+            ParseOptions(options, binding.Query);
+
+            // If the routing key is not set as an option, set it to the destination name.
+            if (!ContainsOption(OPTION_ROUTING_KEY))
+            {
+                options[OPTION_ROUTING_KEY] = destination;
+            }
+        }
+
+        /// <summary>
+        /// options looks like this
+        /// brokerlist='tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'',failover='method?option='value',option='value'
+        /// </summary>
+        public static void ParseOptions(IDictionary optionMap, string options)
+        {
+            // Check that there really are some options to parse.
+            if ((options == null) || (options.IndexOf('=') == -1))
+            {
+                return;
+            }
+
+            int optionIndex = options.IndexOf('=');            
+            string option = options.Substring(0, optionIndex);            
+            int length = options.Length;            
+            int nestedQuotes = 0;
+
+            // Holds the index of the final "'".
+            int valueIndex = optionIndex;
+
+            // Loop over all the options.Dest
+            while ((nestedQuotes > 0) || (valueIndex < length))
+            {
+                valueIndex++;
+
+                if (valueIndex >= length)
+                {
+                    break;
+                }
+
+                if (options[valueIndex] == '\'')
+                {
+                    if ((valueIndex + 1) < options.Length)
+                    {
+                        if ((options[valueIndex + 1] == '&') || 
+                            (options[valueIndex + 1] == ',') ||
+                            (options[valueIndex + 1] == ';') ||
+                            (options[valueIndex + 1] == '\''))
+                        {
+                            nestedQuotes--;
+                            
+                            if (nestedQuotes == 0)
+                            {
+                                // We've found the value of an option
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            nestedQuotes++;
+                        }
+                    }
+                    else
+                    {
+                        // We are at the end of the string
+                        // Check to see if we are corectly closing quotes
+                        if (options[valueIndex] == '\'')
+                        {
+                            nestedQuotes--;
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }        
     }
 }

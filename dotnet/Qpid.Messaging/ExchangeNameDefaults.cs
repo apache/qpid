@@ -24,6 +24,19 @@ namespace Apache.Qpid.Messaging
     {
         public readonly static string TOPIC = "amq.topic";
         public readonly static string DIRECT = "amq.direct";
-        public readonly static string HEADERS = "amq.match";        
+        public readonly static string HEADERS = "amq.match"; 
+        public readonly static string FANOUT = "amq.fanout"; 
+
+        /// <summary> Defines the identifying type name of topic exchanges. </summary>
+        public readonly static string TOPIC_EXCHANGE_CLASS = "topic";
+        
+        /// <summary> Defines the identifying type name of direct exchanges. </summary>
+        public readonly static string DIRECT_EXCHANGE_CLASS = "direct";
+        
+        /// <summary> Defines the identifying type name of headers exchanges. </summary>
+        public readonly static string HEADERS_EXCHANGE_CLASS = "headers";
+        
+        /// <summary> Defines the identifying type name of fanout exchanges. </summary>
+        public readonly static string FANOUT_EXCHANGE_CLASS = "fanout";       
     }
 }

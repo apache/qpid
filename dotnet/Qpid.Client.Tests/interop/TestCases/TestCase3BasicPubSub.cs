@@ -121,6 +121,8 @@ namespace Apache.Qpid.Client.Tests.interop.TestCases
                 publisher = channel[0].CreatePublisherBuilder()
                     .WithExchangeName(ExchangeNameDefaults.TOPIC)
                     .WithRoutingKey(sendDestination)
+                    .WithMandatory(false)
+                    .WithImmediate(false)
                     .Create();
                 break;
     
@@ -187,7 +189,15 @@ namespace Apache.Qpid.Client.Tests.interop.TestCases
             // Close the test connections.
             /*foreach (IConnection con in connection)
             {
-                con.Close();
+                try
+                {
+                    con.Stop();
+                }
+                catch (AMQConnectionClosedException e)
+                {
+                    // The connection has already died due to an error. Log this as a warning.
+                    log.Warn("Connection already closed.");
+                }
             }*/
     
             // Generate a report message containing the count of the number of messages passed.

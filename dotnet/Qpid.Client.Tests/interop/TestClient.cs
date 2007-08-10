@@ -32,13 +32,13 @@ namespace Apache.Qpid.Client.Tests.interop
     public class TestClient
     {
         private static ILog log = LogManager.GetLogger(typeof(TestClient));
-
+      
         /// <summary> Defines the default broker for the tests, localhost, default port. </summary>
         public static string DEFAULT_BROKER_URL = "amqp://guest:guest@clientid/?brokerlist='tcp://localhost:5672'";
-
+      
         /// <summary> Defines the default virtual host to use for the tests, none. </summary>
         public static string DEFAULT_VIRTUAL_HOST = "";
-
+      
         /// <summary> Defines the default identifying name of this test client. </summary>
         public static string DEFAULT_CLIENT_NAME = "dotnet";
 
@@ -74,7 +74,7 @@ namespace Apache.Qpid.Client.Tests.interop
         public TestClient(string brokerUrl, string virtualHost, string clientName)
         {
             log.Info("public TestClient(string brokerUrl = " + brokerUrl + ", string virtualHost = " + virtualHost
-                + ", string clientName = " + clientName + "): called");
+                     + ", string clientName = " + clientName + "): called");
 
             // Retain the connection parameters.
             TestClient.brokerUrl = brokerUrl;
@@ -117,6 +117,8 @@ namespace Apache.Qpid.Client.Tests.interop
                     clientName = nextArg.Substring(2);
                 }
             }
+            
+            NDC.Push(clientName);
 
             // Create a test client and start it running.
             TestClient client = new TestClient(brokerUrl, virtualHost, clientName);
@@ -136,6 +138,8 @@ namespace Apache.Qpid.Client.Tests.interop
             {
                 Monitor.Wait(terminationMonitor);
             }
+
+            NDC.Pop();
         }
 
         /// <summary>
@@ -202,7 +206,7 @@ namespace Apache.Qpid.Client.Tests.interop
         public static IConnection CreateConnection(string brokerUrl, string virtualHost)
         {
             log.Info("public static Connection createConnection(string brokerUrl = " + brokerUrl + ", string virtualHost = " 
-                + virtualHost + "): called");
+                     + virtualHost + "): called");
 
             // Create a connection to the broker.
             IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(brokerUrl);

@@ -159,7 +159,7 @@ namespace Apache.Qpid.Client.Tests.interop.TestCases
             log.Debug("public Message GetReport(IChannel channel): called");
 
             // Close the test connection.
-            connection.Stop();
+            //connection.Stop();
 
             // Generate a report message containing the count of the number of messages passed.
             IMessage report = channel.CreateMessage();
