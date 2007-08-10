@@ -91,6 +91,8 @@ class Spec(Metadata):
     self.classes = SpecContainer()
     # methods indexed by classname_methname
     self.methods = {}
+    # structs by type code
+    self.structs = {}
 
   def post_load(self):
     self.module = self.define_module("amqp%s%s" % (self.major, self.minor))
@@ -295,13 +297,18 @@ class Field(Metadata):
     self.description = description
     self.docs = docs
 
+  def default(self):
+    return Method.DEFAULTS[self.type]
+
 def get_result(nd, spec):
   result = nd["result"]
   if not result: return None
   name = result["@domain"]
   if name != None: return spec.domains.byname[name]
   st_nd = result["struct"]
-  st = Struct(st_nd["@size"], st_nd["@type"], st_nd["@pack"])
+  st = Struct(st_nd["@size"], int(result.parent.parent["@index"])*256 +
+              int(st_nd["@type"]), st_nd["@pack"])
+  spec.structs[st.type] = st
   load_fields(st_nd, st.fields, spec.domains.byname)
   return st
 
@@ -352,7 +359,12 @@ def load(specfile, *errata):
       type = nd["@type"]
       if type == None:
         st_nd = nd["struct"]
-        type = Struct(st_nd["@size"], st_nd["@type"], st_nd["@pack"])
+        code = st_nd["@type"]
+        if code not in (None, "", "none"):
+          code = int(code)
+        type = Struct(st_nd["@size"], code, st_nd["@pack"])
+        if type.type != None:
+          spec.structs[type.type] = type
         structs.append((type, st_nd))
       else:
         type = pythonize(type)

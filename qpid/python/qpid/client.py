@@ -110,7 +110,7 @@ class ClientDelegate(Delegate):
       #todo: just override the params, i.e. don't require them
       #      all to be included in tune_params
       msg.tune_ok(**self.client.tune_params)
-    else:  
+    else:
       msg.tune_ok(*msg.frame.args)
     self.client.started.set()
 
@@ -142,6 +142,10 @@ class ClientDelegate(Delegate):
 
   def execution_complete(self, ch, msg):
     ch.completion.complete(msg.cumulative_execution_mark)
+
+  def execution_result(self, ch, msg):
+    future = ch.futures[msg.command_id]
+    future.put_response(ch, msg.data)
 
   def close(self, reason):
     self.client.closed = True

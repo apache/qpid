@@ -29,7 +29,7 @@ class Message:
     if self.method.is_l4_command():
       self.command_id = self.channel.incoming_completion.sequence.next()
       #print "allocated: ", self.command_id, "to ", self.method.klass.name, "_", self.method.name
-      
+
   def __len__(self):
     return len(self.frame.args)
 
