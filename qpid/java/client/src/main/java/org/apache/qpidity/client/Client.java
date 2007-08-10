@@ -1,7 +1,6 @@
-package org.apache.qpidity.impl;
+package org.apache.qpidity.client;
 
 import java.net.URL;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -14,9 +13,6 @@ import org.apache.qpidity.ConnectionDelegate;
 import org.apache.qpidity.MinaHandler;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.SessionDelegate;
-import org.apache.qpidity.client.DtxSession;
-import org.apache.qpidity.client.ExceptionListener;
-import org.apache.qpidity.client.Session;
 
 
 public class Client implements org.apache.qpidity.client.Connection

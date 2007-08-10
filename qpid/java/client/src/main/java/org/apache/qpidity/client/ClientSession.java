@@ -1,4 +1,4 @@
-package org.apache.qpidity.impl;
+package org.apache.qpidity.client;
 
 import java.util.HashMap;
 import java.util.List;
@@ -9,8 +9,6 @@ import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Range;
 import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.client.ExceptionListener;
-import org.apache.qpidity.client.MessagePartListener;
 
 /**
  * Implements a Qpid Sesion. 

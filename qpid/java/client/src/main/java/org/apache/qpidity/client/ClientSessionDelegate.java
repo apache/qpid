@@ -1,4 +1,4 @@
-package org.apache.qpidity.impl;
+package org.apache.qpidity.client;
 
 import java.nio.ByteBuffer;
 
@@ -12,7 +12,6 @@ import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.Session;
 import org.apache.qpidity.SessionDelegate;
 import org.apache.qpidity.Struct;
-import org.apache.qpidity.client.MessagePartListener;
 
 
 public class ClientSessionDelegate extends SessionDelegate
