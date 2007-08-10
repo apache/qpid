@@ -64,23 +64,35 @@ class Channel : public CompletionHandler
 {
     class ConsumerImpl : public Consumer
     {
-        Channel* parent;
-        DeliveryToken::shared_ptr token;
-        const string tag;
-        Queue::shared_ptr queue;
-        ConnectionToken* const connection;
+        sys::Mutex lock;
+        Channel* const parent;
+        const DeliveryToken::shared_ptr token;
+        const string name;
+        const Queue::shared_ptr queue;
         const bool ackExpected;
+        const bool nolocal;
         bool blocked;
+        bool windowing;
+        uint32_t msgCredit;
+        uint32_t byteCredit;
 
       public:
         ConsumerImpl(Channel* parent, DeliveryToken::shared_ptr token, 
-                     const string& tag, Queue::shared_ptr queue,
-                     ConnectionToken* const connection, bool ack);
+                     const string& name, Queue::shared_ptr queue, bool ack, bool nolocal);
         ~ConsumerImpl();
         bool deliver(Message::shared_ptr& msg);            
-        void redeliver(Message::shared_ptr& msg, uint64_t deliveryTag);
+        void redeliver(Message::shared_ptr& msg, DeliveryId deliveryTag);
         void cancel();
         void requestDispatch();
+
+        void setWindowMode();
+        void setCreditMode();
+        void addByteCredit(uint32_t value);
+        void addMessageCredit(uint32_t value);
+        void flush();
+        void stop();
+        bool checkCredit(Message::shared_ptr& msg);
+        void acknowledged(const DeliveryRecord&);    
     };
 
     typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
@@ -88,7 +100,6 @@ class Channel : public CompletionHandler
     framing::ChannelId id;
     Connection& connection;
     DeliveryAdapter& out;
-    uint64_t currentDeliveryTag;
     Queue::shared_ptr defaultQueue;
     ConsumerImplMap consumers;
     uint32_t prefetchSize;    
@@ -110,6 +121,9 @@ class Channel : public CompletionHandler
     void record(const DeliveryRecord& delivery);
     bool checkPrefetch(Message::shared_ptr& msg);
     void checkDtxTimeout();
+    ConsumerImpl& find(const std::string& destination);
+    void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
+    void acknowledged(const DeliveryRecord&);
         
   public:
     Channel(Connection& parent, DeliveryAdapter& out, framing::ChannelId id, MessageStore* const store = 0);    
@@ -129,10 +143,17 @@ class Channel : public CompletionHandler
     /**
      *@param tagInOut - if empty it is updated with the generated token.
      */
-    void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, bool acks,
-                 bool exclusive, ConnectionToken* const connection = 0,
-                 const framing::FieldTable* = 0);
+    void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, 
+                 bool nolocal, bool acks, bool exclusive, const framing::FieldTable* = 0);
     void cancel(const string& tag);
+
+    void setWindowMode(const std::string& destination);
+    void setCreditMode(const std::string& destination);
+    void addByteCredit(const std::string& destination, uint32_t value);
+    void addMessageCredit(const std::string& destination, uint32_t value);
+    void flush(const std::string& destination);
+    void stop(const std::string& destination);
+
     bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
     void close();
     void startTx();
@@ -143,11 +164,11 @@ class Channel : public CompletionHandler
     void endDtx(const std::string& xid, bool fail);
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
-    void ack(uint64_t deliveryTag, bool multiple);
-    void ack(uint64_t deliveryTag, uint64_t endTag);
+    void ackCumulative(DeliveryId deliveryTag);
+    void ackRange(DeliveryId deliveryTag, DeliveryId endTag);
     void recover(bool requeue);
     void flow(bool active);
-    void deliver(Message::shared_ptr& msg, const string& consumerTag, uint64_t deliveryTag);            
+    void deliver(Message::shared_ptr& msg, const string& consumerTag, DeliveryId deliveryTag);            
     void handlePublish(Message* msg);
     void handleHeader(boost::shared_ptr<framing::AMQHeaderBody>);
     void handleContent(boost::shared_ptr<framing::AMQContentBody>);

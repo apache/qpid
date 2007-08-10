@@ -21,37 +21,125 @@
 #include "AccumulatedAck.h"
 
 #include <assert.h>
+#include <iostream>
 
-using std::less_equal;
-using std::bind2nd;
+using std::list;
+using std::max;
+using std::min;
 using namespace qpid::broker;
 
-void AccumulatedAck::update(uint64_t firstTag, uint64_t lastTag){
-    assert(firstTag<=lastTag);
-    if (firstTag <= range + 1) {
-        if (lastTag > range) range = lastTag;
+void AccumulatedAck::update(DeliveryId first, DeliveryId last){
+    assert(first <= last);
+    if (last < mark) return;
+
+
+    Range r(first, last);
+    bool handled = false;
+    list<Range>::iterator merged = ranges.end();
+    if (r.mergeable(mark)) {
+        mark = r.end;
+        merged = ranges.begin();
+        handled = true;
     } else {
-    	for (uint64_t tag = firstTag; tag<=lastTag; tag++)
-            individual.push_back(tag);
+        for (list<Range>::iterator i = ranges.begin(); i != ranges.end() && !handled; i++) {
+            if (i->merge(r)) {
+                merged = i;
+                handled = true;
+            } else if (r.start < i->start) {
+                ranges.insert(i, r);
+                handled = true;
+            }
+        }
+    }
+    if (!handled) {
+        ranges.push_back(r);
+    } else {
+        while (!ranges.empty() && ranges.front().end <= mark) { 
+            ranges.pop_front(); 
+        }
+        //new range is incorporated, but may be possible to consolidate
+        if (merged == ranges.begin()) {
+            //consolidate mark
+            while (merged != ranges.end() && merged->mergeable(mark)) {
+                mark = merged->end;
+                merged = ranges.erase(merged);
+            }
+        }
+        if (merged != ranges.end()) {
+            //consolidate ranges
+            list<Range>::iterator i = merged;
+            list<Range>::iterator j = i++;
+            while (i != ranges.end() && j->merge(*i)) {
+                j = i++;
+            }
+        }
     }
 }
 
-void AccumulatedAck::consolidate(){
-    individual.sort();
-    //remove any individual tags that are covered by range
-    individual.remove_if(bind2nd(less_equal<uint64_t>(), range));
-    //update range if possible (using <= allows for duplicates from overlapping ranges)
-    while (individual.front() <= range + 1) {
-        range = individual.front();
-        individual.pop_front();
-    }
-}
+void AccumulatedAck::consolidate(){}
 
 void AccumulatedAck::clear(){
-    range = 0;
-    individual.clear();
+    mark = 0;//not sure that this is valid when wraparound is a possibility
+    ranges.clear();
 }
 
-bool AccumulatedAck::covers(uint64_t tag) const{
-    return tag <= range || find(individual.begin(), individual.end(), tag) != individual.end();
+bool AccumulatedAck::covers(DeliveryId tag) const{
+    if (tag <= mark) return true;
+    for (list<Range>::const_iterator i = ranges.begin(); i != ranges.end(); i++) {
+        if (i->contains(tag)) return true;
+    }
+    return false;
 }
+
+bool Range::contains(DeliveryId i) const 
+{ 
+    return i >= start && i <= end; 
+}
+
+bool Range::intersect(const Range& r) const 
+{ 
+    return r.contains(start) || r.contains(end) || contains(r.start) || contains(r.end); 
+}
+
+bool Range::merge(const Range& r) 
+{ 
+    if (intersect(r) || mergeable(r.end) || r.mergeable(end)) {
+        start = min(start, r.start); 
+        end = max(end, r.end); 
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool Range::mergeable(const DeliveryId& s) const
+{ 
+    if (contains(s) || start - s == 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+Range::Range(DeliveryId s, DeliveryId e) : start(s), end(e) {}
+
+
+namespace qpid{
+namespace broker{
+    std::ostream& operator<<(std::ostream& out, const Range& r)
+    {
+        out << "[" << r.start.getValue() << "-" << r.end.getValue() << "]";
+        return out;
+    }
+
+    std::ostream& operator<<(std::ostream& out, const AccumulatedAck& a)
+    { 
+        out << "{mark: " << a.mark.getValue() << ", ranges: (";
+        for (list<Range>::const_iterator i = a.ranges.begin(); i != a.ranges.end(); i++) {        
+            if (i != a.ranges.begin()) out << ", ";
+            out << *i;
+        }
+        out << ")]";
+        return out;
+    }
+}}

@@ -73,17 +73,16 @@ class BasicMessage : public Message {
 
     static DeliveryToken::shared_ptr createGetToken(boost::shared_ptr<Queue> queue);
     static DeliveryToken::shared_ptr createConsumeToken(const string& consumer);
-    void deliver(framing::ChannelAdapter& channel, uint64_t deliveryTag, DeliveryToken::shared_ptr token, uint32_t framesize);
+    void deliver(framing::ChannelAdapter& channel, DeliveryId deliveryTag, DeliveryToken::shared_ptr token, uint32_t framesize);
 
     void deliver(framing::ChannelAdapter&, 
                  const string& consumerTag, 
-                 uint64_t deliveryTag, 
+                 DeliveryId deliveryTag, 
                  uint32_t framesize);
     
     void sendGetOk(framing::ChannelAdapter& channel, 
                    uint32_t messageCount,
-                   uint64_t responseTo, 
-                   uint64_t deliveryTag, 
+                   DeliveryId deliveryTag, 
                    uint32_t framesize);
 
     framing::BasicHeaderProperties* getHeaderProperties();
@@ -132,6 +131,11 @@ class BasicMessage : public Message {
      * it uses).
      */
     void setContent(std::auto_ptr<Content>& content);
+
+    /**
+     * Returns the byte credits required to transfer this message.
+     */
+    uint32_t getRequiredCredit() const;
 };
 
 }

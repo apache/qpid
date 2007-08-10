@@ -6900,6 +6900,128 @@
         </doc>
       </field>
     </method>
+    <!-- - Method: message.flow-mode - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="flow-mode" index="120" label="set the flow control mode">
+      <doc>
+        Sets the mode of flow control used for a given destination.
+
+        With credit based flow control, the sender of messages continually maintains its current
+        credit balance with the recipient. The credit balance consists of two values, a message
+        count, and a byte count. Whenever message data is sent, both counts must be decremented.
+        If either value reaches zero, the flow of message data must stop. Additional credit is
+        received via the message.flow method.
+
+        The sender MUST NOT send partial framesets. This means that if there is not enough byte
+        credit available to send a complete message, the sender must either wait or use chunked
+        transfer to send the first part of the message data in a complete frameset.
+
+        Window based flow control is identical to credit based flow control, however message
+        acknowledgment implicitly grants a single unit of message credit, and the size of the
+        message in byte credits for each acknowledged message.
+      </doc>
+
+      <rule name="byte-accounting">
+        <doc>
+          The byte count is decremented by the payload size of each transmitted frame with
+          segment type header or body appearing within a message.transfer command. Note that
+          the payload size is the frame size less the frame header size (frame-size - 12).
+        </doc>
+      </rule>
+
+      <rule name="mode-switching">
+        <doc>
+          Mode switching may only occur if both outstanding credit balances are zero. There are
+          three ways for a recipient of messages to be sure that the sender 's credit balance is
+          zero:
+
+            1) The recipient may send a message.stop command to the sender. When the recipient
+               receives confirmation of completion for the message.stop command, it knows that the
+               sender's credit is zero.
+
+            2) The recipient may perform the same steps described in (1) with the message.flush
+               command substituted for the message.stop command.
+
+            3) Immediately after receiving a message.consume, the credit for that destination
+               defaults to zero.
+        </doc>
+      </rule>
+
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MUST" />
+
+      <field name="destination" domain="destination" />
+      <field name="mode" domain="octet">
+        <doc>
+          One of:
+            - credit (0): choose credit based flow control
+            - window (1): choose window based flow control
+        </doc>
+      </field>
+    </method>
+
+    <!-- - Method: message.flow  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="flow" index="130" label="control message flow">
+      <doc>
+        This method controls the flow of message data to a given destination. It is used by the
+        recipient of messages to dynamically match the incoming rate of message flow to its
+        processing or forwarding capacity. Upon receipt of this method, the sender must add "value"
+        number of the specified unit to the available credit balance for the specified destination.
+        A value of (0xFFFFFFFF) indicates an infinite amount of credit. This disables any limit for
+        the given unit until the credit balance is zeroed with message.stop or message.flush.
+      </doc>
+
+      <!-- throws no-such-destination -->
+
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MUST" />
+
+      <field name="destination" domain="destination"/>
+      <field name="unit" domain="octet">
+        <doc>
+          Specifies the unit of credit balance.
+
+          One of:
+            - message (0)
+            - byte    (1)
+        </doc>
+      </field>
+      <field name="value" domain="long">
+        <doc>
+          A value of (0xFFFFFFFF) indicates an infinite amount of credit.
+        </doc>
+      </field>
+    </method>
+
+    <!-- - Method: message.flush - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="flush" index="140">
+      <doc>
+        Forces the sender to exhaust his credit supply. The sender's credit will always be zero when
+        this method completes. The message does not complete until all the message transfers occur.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+
+      <field name="destination" domain="destination" />
+    </method>
+
+    <!-- - Method: message.stop  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="stop" index="150">
+      <doc>
+        On receipt of this method, a producer of messages MUST set his credit to zero for the given
+        destination. This obeys the generic semantics of command completion, i.e. when confirmation
+        is issued credit MUST be zero and no further messages will be sent until such a time as
+        further credit is received.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MUST" />
+
+      <field name="destination" domain="destination" />
+    </method>
 
   </class>
 
