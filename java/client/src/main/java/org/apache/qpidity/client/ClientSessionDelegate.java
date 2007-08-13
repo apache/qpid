@@ -2,6 +2,7 @@ package org.apache.qpidity.client;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.Frame;
 import org.apache.qpidity.MessageAcquired;
 import org.apache.qpidity.MessageReject;
@@ -10,6 +11,7 @@ import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Range;
 import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.Session;
+import org.apache.qpidity.SessionClosed;
 import org.apache.qpidity.SessionDelegate;
 import org.apache.qpidity.Struct;
 
@@ -19,6 +21,14 @@ public class ClientSessionDelegate extends SessionDelegate
     private MessageTransfer _currentTransfer;
     private MessagePartListener _currentMessageListener;
     
+    @Override public void sessionClosed(Session ssn,SessionClosed sessionClosed)
+    {
+        ((ClientSession)ssn).notifyException(new QpidException(sessionClosed.getReplyText(),ErrorCode.get(sessionClosed.getReplyCode()),null));
+    }
+    
+    //  --------------------------------------------
+    //   Message methods
+    // --------------------------------------------
     @Override public void data(Session ssn, Frame frame)
     {
         for (ByteBuffer b : frame)
@@ -52,10 +62,6 @@ public class ClientSessionDelegate extends SessionDelegate
         }
     }
     
-    //  --------------------------------------------
-    //   Message methods
-    // --------------------------------------------
-    
     
     @Override public void messageReject(Session session, MessageReject struct) 
     {
@@ -68,7 +74,7 @@ public class ClientSessionDelegate extends SessionDelegate
             }
         }
         ((ClientSession)session).setRejectedMessages(struct.getTransfers());
-        ((ClientSession)session).notifyException(new QpidException("Message Rejected",0,null));
+        ((ClientSession)session).notifyException(new QpidException("Message Rejected",ErrorCode.MESSAGE_REJECTED,null));
     }
     
     @Override public void messageAcquired(Session session, MessageAcquired struct) 

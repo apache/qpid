@@ -64,7 +64,7 @@ public class SecurityHelper
         }
         catch (Exception e)
         {
-            throw new QpidException("Unable to create callback handler: " + e,0, e.getCause());
+            throw new QpidException("Unable to create callback handler: " + e,ErrorCode.UNDEFINED, e.getCause());
         }
     }
 

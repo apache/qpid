@@ -20,15 +20,15 @@
  */
 package org.apache.qpidity.jms.message;
 
-import org.apache.qpidity.ReplyTo;
-import org.apache.qpidity.QpidException;
-
-import javax.jms.Message;
-import java.util.Map;
-import java.util.Enumeration;
-import java.util.Vector;
-import java.util.HashMap;
 import java.nio.ByteBuffer;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
+
+import org.apache.qpidity.ErrorCode;
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.ReplyTo;
 
 
 public class QpidMessage
@@ -170,7 +170,7 @@ public class QpidMessage
         {
             throw new QpidException(
                     "Problem when setting message delivery mode, " + deliveryMode + " is not a valid mode",
-                    "wrong delivery mode", null);
+                    ErrorCode.UNDEFINED, null);
         }
         _qpidityMessage.getDeliveryProperties().setDeliveryMode(deliveryMode);
     }
