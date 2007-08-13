@@ -18,6 +18,7 @@
  */
 package org.apache.qpidity.client;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -72,7 +73,47 @@ public interface Session
     //------------------------------------------------------
     /**
      * Transfer the given message to a specified exchange.
+     * 
+     * <p>This is a convinience method for providing a complete message
+     * using a single method which internaly is mapped to messageTransfer(), headers() followed
+     * by data() and an endData(). 
+     * <b><i>This method should only be used by small messages</b></i></p>
      *
+     * @param destination The exchange the message is being sent.
+     * @param msg         The Message to be sent
+     * @param confirmMode <ul> </li>off (0): confirmation is not required, once a message has been transferred in pre-acquire
+     *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
+     *                    transferred
+     *                    <p/>
+     *                    <li> on  (1): an acquired message (whether acquisition was implicit as in pre-acquire mode or
+     *                    explicit as in no-acquire mode) is not considered transferred until the original
+     *                    transfer is complete (signaled via execution.complete)
+     *                    </ul>
+     * @param acquireMode <ul> 
+     *                    <li> no-acquire  (0): the message must be explicitly acquired                    
+     *                    <li> pre-acquire (1): the message is acquired when the transfer starts
+     *                    </ul>                         
+     */
+    public void messageTransfer(String destination, Message msg, short confirmMode, short acquireMode)throws IOException;
+    
+    /**
+     * <p>This is a convinience method for streaming a message using pull semantics
+     * using a single method as opposed to doing a push using messageTransfer(), headers() followed
+     * by a series of data() and an endData().</p> 
+     * <p>Internally data will be pulled from Message object(which wrap's a data stream) using it's read()
+     * and pushed using messageTransfer(), headers() followed by a series of data() and an endData().
+     * <br><b><i>This method should only be used by large messages</b></i><br>
+     * There are two convinience Message classes provided to facilitate this.
+     * <ul>
+     * <li> <code>FileMessage</code>
+     * <li> <code>StreamingMessage</code>
+     * </ul>
+     * You could also implement a the <code>Message</code> interface to and wrap any
+     * data stream you want.
+     * </p>
+     * 
+     * @param destination The exchange the message is being sent.
+     * @param msg         The Message to be sent  
      * @param confirmMode <ul> </li>off (0): confirmation is not required, once a message has been transferred in pre-acquire
      *                    mode (or once acquire has been sent in no-acquire mode) the message is considered
      *                    transferred
@@ -85,10 +126,8 @@ public interface Session
      *                    <p/>
      *                    <li> pre-acquire (1): the message is acquired when the transfer starts
      *                    </ul>
-     * @param exchange    The exchange the message is being sent.
-     * @param msg         The Message to be sent
      */
-    public void messageTransfer(String destination, Message msg, short confirmMode, short acquireMode);
+    public void messageStream(String destination, Message msg, short confirmMode, short acquireMode)throws IOException;
 
     /**
      * Declare the beginning of a message transfer operation. This operation must
