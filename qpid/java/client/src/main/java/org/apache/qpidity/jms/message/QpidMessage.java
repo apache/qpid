@@ -27,6 +27,7 @@ import javax.jms.Message;
 import java.util.Map;
 import java.util.Enumeration;
 import java.util.Vector;
+import java.util.HashMap;
 import java.nio.ByteBuffer;
 
 
@@ -51,13 +52,31 @@ public class QpidMessage
     //--- This is required as AMQP delivery modes are different from the JMS ones
     public static final short DELIVERY_MODE_PERSISTENT = 2;
     public static final short DELIVERY_MODE_NON_PERSISTENT = 1;
-    //--- This is the default message type
-    public static final String MESSAGE_TYPE = "JMS Message";
+
+
+    //-- Constructors
 
     /**
-     * The message properties
+     * Constructor used when JMS messages are created by SessionImpl.
      */
+    protected QpidMessage()
+    {
+      // TODO we need an implementation class: _qpidityMessage
+        _messageProperties = new HashMap<String, Object>();
+    }
 
+    /**
+     * Constructor used when a Qpid message is received
+     *
+     * @param message The received message
+     */
+     protected QpidMessage(org.apache.qpidity.api.Message message)
+    {
+       _qpidityMessage = message;
+        _messageProperties = (Map<String, Object>) message.getMessageProperties().getApplicationHeaders();
+    }
+
+    //---- getters and setters.
     /**
      * Get the message ID.
      *
@@ -178,7 +197,6 @@ public class QpidMessage
 
     /**
      * Get this message type.
-     * The default value is {@link QpidMessage#MESSAGE_TYPE}
      *
      * @return This message type.
      */

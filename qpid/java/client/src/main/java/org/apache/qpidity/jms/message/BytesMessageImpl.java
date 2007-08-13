@@ -51,7 +51,27 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
      */
     protected DataOutputStream _dataOut = new DataOutputStream(_storedData);
 
+    //--- Constructor
+    /**
+     * Constructor used by SessionImpl.
+     */
+    public BytesMessageImpl()
+    {
+        super();
+        setMessageType(String.valueOf(MessageFactory.JAVAX_JMS_BYTESMESSAGE));
+    }
 
+    /**
+     * Constructor used by MessageFactory
+     *
+     * @param message The new qpid message.
+     */
+    protected BytesMessageImpl(org.apache.qpidity.api.Message message)
+    {
+        super(message);
+    }
+
+    //--- BytesMessage API
     /**
      * Gets the number of bytes of the message body when the message
      * is in read-only mode.

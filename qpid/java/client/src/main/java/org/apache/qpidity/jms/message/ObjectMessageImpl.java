@@ -43,6 +43,26 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
      */
     private Serializable _object = null;
 
+    //--- Constructor
+    /**
+     * Constructor used by SessionImpl.
+     */
+    public ObjectMessageImpl()
+    {
+        super();
+        setMessageType(String.valueOf(MessageFactory.JAVAX_JMS_OBJECTMESSAGE));
+    }
+
+    /**
+     * Constructor used by MessageFactory
+     *
+     * @param message The new qpid message.
+     */
+    protected ObjectMessageImpl(org.apache.qpidity.api.Message message)
+    {
+        super(message);
+    }
+
     //--- Interface ObjctMessage
     /**
      * Sets the serializable object containing this message's data.
@@ -140,15 +160,13 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
         catch (IOException ioe)
         {
             throw new QpidException(
-                    "Unexpected error during rebuild of message in afterReceive() - " +
-                            "The Object stored in the message was not a Serializable object.",
+                    "Unexpected error during rebuild of message in afterReceive() - " + "The Object stored in the message was not a Serializable object.",
                     null, ioe);
         }
         catch (ClassNotFoundException clnfe)
         {
             throw new QpidException(
-                    "Unexpected error during rebuild of message in afterReceive() - " +
-                            "Could not find the required class in classpath.",
+                    "Unexpected error during rebuild of message in afterReceive() - " + "Could not find the required class in classpath.",
                     null, clnfe);
         }
     }

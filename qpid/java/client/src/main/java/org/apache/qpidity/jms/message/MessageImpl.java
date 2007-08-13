@@ -18,6 +18,7 @@
 package org.apache.qpidity.jms.message;
 
 import org.apache.qpidity.jms.ExceptionHelper;
+import org.apache.qpidity.jms.MessageConsumerImpl;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
@@ -51,6 +52,31 @@ public class MessageImpl extends QpidMessage implements Message
      * Indicate whether the message properties are in writeable status.
      */
     protected boolean _proertiesReadOnly = false;
+
+    /**
+     * The message consumer through which this message was received.
+     */
+    private MessageConsumerImpl _messageConsumer;
+
+    //--- Constructor
+    /**
+     * Constructor used by SessionImpl.
+     */
+    public MessageImpl()
+    {
+        super();
+        setMessageType(String.valueOf(MessageFactory.JAVAX_JMS_MESSAGE));
+    }
+
+    /**
+     * Constructor used by MessageFactory
+     *
+     * @param message The new qpid message.
+     */
+    protected MessageImpl(org.apache.qpidity.api.Message message)
+    {
+        super(message);
+    }
 
     //---- javax.jms.Message interface
     /**
@@ -799,9 +825,18 @@ public class MessageImpl extends QpidMessage implements Message
         super.setProperty(name, value);
     }
 
+    /**
+     * Acknowledgment of a message automatically acknowledges all
+     * messages previously received by the session. Clients may
+     * individually acknowledge messages or they may choose to acknowledge
+     * messages in application defined groups (which is done by acknowledging
+     * the last received message in the group).
+     *
+     * @throws JMSException If this method is called on a closed session.
+     */
     public void acknowledge() throws JMSException
     {
-        // TODO
+        _messageConsumer.getSession().acknowledge();
     }
 
     /**
@@ -862,5 +897,16 @@ public class MessageImpl extends QpidMessage implements Message
         {
             throw new MessageNotWriteableException("Cannot update message");
         }
+    }
+
+    /**
+     * Set the MessageConsumerImpl through which this message was received.
+     * <p> This method is called after a message is received.
+     *
+     * @param messageConsumer the MessageConsumerImpl reference through which this message was received.
+     */
+    public void setMessageConsumer(MessageConsumerImpl messageConsumer)
+    {
+        _messageConsumer = messageConsumer;
     }
 }
