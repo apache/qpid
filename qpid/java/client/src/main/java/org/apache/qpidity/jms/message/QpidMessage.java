@@ -24,6 +24,10 @@ import org.apache.qpidity.ReplyTo;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.Message;
+import java.util.Map;
+import java.util.Enumeration;
+import java.util.Vector;
+import java.nio.ByteBuffer;
 
 
 public class QpidMessage
@@ -32,6 +36,17 @@ public class QpidMessage
      * The underlying qpidity message
      */
     private org.apache.qpidity.api.Message _qpidityMessage;
+
+    /**
+     * This message specific properties.
+     */
+    private Map<String, Object> _messageProperties;
+
+    /**
+     * This message data
+     */
+    private ByteBuffer _messageData;
+
 
     //--- This is required as AMQP delivery modes are different from the JMS ones
     public static final short DELIVERY_MODE_PERSISTENT = 2;
@@ -42,7 +57,7 @@ public class QpidMessage
     /**
      * The message properties
      */
-    
+
     /**
      * Get the message ID.
      *
@@ -222,7 +237,75 @@ public class QpidMessage
         _qpidityMessage.getDeliveryProperties().setPriority(priority);
     }
 
+    /**
+     * Clear this messasge specific properties.
+     */
+    protected void clearMessageProperties()
+    {
+        _messageProperties.clear();
+    }
 
+    /**
+     * Access to a message specific property.
+     *
+     * @param name The property to access.
+     * @return The value associated with this property, mull if the value is null or the property does not exist.
+     */
+    protected Object getProperty(String name)
+    {
+        return _messageProperties.get(name);
+    }
+
+    /**
+     * Set a property for this message
+     *
+     * @param name  The name of the property to set.
+     * @param value The value of the rpoperty.
+     */
+    protected void setProperty(String name, Object value)
+    {
+        _messageProperties.put(name, value);
+    }
+
+    /**
+     * Get an Enumeration of all the property names
+     *
+     * @return An Enumeration of all the property names.
+     */
+    protected Enumeration<String> getAllPropertyNames()
+    {
+        Vector<String> vec = new Vector<String>(_messageProperties.keySet());
+        return vec.elements();
+    }
+
+    /**
+     * Set this message body
+     *
+     * @param messageBody The buffer containing this message data
+     */
+    protected void setMessageData(ByteBuffer messageBody)
+    {
+        _messageData = messageBody;
+    }
+
+    /**
+     * Access this messaage data.
+     *
+     * @return This message data.
+     */
+    protected ByteBuffer getMessageData()
+    {
+        return _messageData;
+    }
+
+
+    /**
+     * Clear this message data
+     */
+    protected void clearMessageData()
+    {
+        _messageData = ByteBuffer.allocate(1024);        
+    }
 
     public Message getJMSMessage()
     {
