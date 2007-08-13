@@ -20,10 +20,7 @@ package org.apache.qpidity.jms.message;
 import org.apache.qpidity.jms.ExceptionHelper;
 import org.apache.qpidity.QpidException;
 
-import javax.jms.Message;
-import javax.jms.JMSException;
-import javax.jms.Destination;
-import javax.jms.DeliveryMode;
+import javax.jms.*;
 import java.util.Enumeration;
 
 /**
@@ -33,7 +30,6 @@ public class MessageImpl extends QpidMessage implements Message
 {
     /**
      * The ReplyTo destination for this message
-     * TODO set it when the message is received
      */
     private Destination _replyTo;
 
@@ -42,14 +38,19 @@ public class MessageImpl extends QpidMessage implements Message
      * <p>When a message is sent this value is ignored. After completion
      * of the send method it holds the destination specified by the send.
      * <p>When a message is received, its destination value must be
-     * equivalent to the value assigned when it was sent.  --> TODO
+     * equivalent to the value assigned when it was sent.
      */
     private Destination _destination;
 
     /**
      * Indicates whether the message properties are in writeable status.
      */
-    private boolean _readOnly = false;
+    protected boolean _readOnly = false;
+
+    /**
+     * Indicate whether the message properties are in writeable status.
+     */
+    protected boolean _proertiesReadOnly = false;
 
     //---- javax.jms.Message interface
     /**
@@ -455,142 +456,411 @@ public class MessageImpl extends QpidMessage implements Message
         super.setMessagePriority((short) priority);
     }
 
-
+    /**
+     * Clear the message's properties.
+     * <p/>
+     * The message header fields and body are not cleared.
+     *
+     * @throws JMSException if clearing  JMS message properties fails due to some internal error.
+     */
     public void clearProperties() throws JMSException
     {
-        // TODO
-
+        // The properties can now be written
+        // Properties are read only when the message is received.
+        _proertiesReadOnly = false;
+        super.clearMessageProperties();
     }
 
-    public boolean propertyExists(String string) throws JMSException
+    /**
+     * Indicates whether a property value exists.
+     *
+     * @param name The name of the property to test the existence
+     * @return True if the property exists, false otherwise.
+     * @throws JMSException if checking if the property exists fails due to some internal error.
+     */
+    public boolean propertyExists(String name) throws JMSException
     {
-        // TODO
-        return false;
+        // Access the property; if the result is null,
+        // then the property value does not exist
+        return (super.getProperty(name) != null);
     }
 
-    public boolean getBooleanProperty(String string) throws JMSException
+    /**
+     * Access a boolean property value with the given name.
+     *
+     * @param name The name of the boolean property.
+     * @return The boolean property value with the given name.
+     * @throws JMSException           if getting the boolean property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public boolean getBooleanProperty(String name) throws JMSException
     {
-        // TODO
-        return false;
+        Object booleanProperty = getObjectProperty(name);
+        return booleanProperty != null && MessageHelper.convertToBoolean(booleanProperty);
     }
 
-    public byte getByteProperty(String string) throws JMSException
+    /**
+     * Access a byte property value with the given name.
+     *
+     * @param name The name of the byte property.
+     * @return The byte property value with the given name.
+     * @throws JMSException           if getting the byte property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public byte getByteProperty(String name) throws JMSException
     {
-        // TODO
-        return 0;
+        Object byteProperty = getObjectProperty(name);
+        if (byteProperty == null)
+        {
+            throw new NumberFormatException("Proerty " + name + " is null");
+        }
+        else
+        {
+            return MessageHelper.convertToByte(byteProperty);
+        }
     }
 
-    public short getShortProperty(String string) throws JMSException
+    /**
+     * Access a short property value with the given name.
+     *
+     * @param name The name of the short property.
+     * @return The short property value with the given name.
+     * @throws JMSException           if getting the short property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public short getShortProperty(String name) throws JMSException
     {
-        // TODO
-        return 0;
+        Object shortProperty = getObjectProperty(name);
+        if (shortProperty == null)
+        {
+            throw new NumberFormatException("Proerty " + name + " is null");
+        }
+        else
+        {
+            return MessageHelper.convertToShort(shortProperty);
+        }
     }
 
-    public int getIntProperty(String string) throws JMSException
+    /**
+     * Access a int property value with the given name.
+     *
+     * @param name The name of the int property.
+     * @return The int property value with the given name.
+     * @throws JMSException           if getting the int property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public int getIntProperty(String name) throws JMSException
     {
-        // TODO
-        return 0;
+        Object intProperty = getObjectProperty(name);
+        if (intProperty == null)
+        {
+            throw new NumberFormatException("Proerty " + name + " is null");
+        }
+        else
+        {
+            return MessageHelper.convertToInt(intProperty);
+        }
     }
 
-    public long getLongProperty(String string) throws JMSException
+    /**
+     * Access a long property value with the given name.
+     *
+     * @param name The name of the long property.
+     * @return The long property value with the given name.
+     * @throws JMSException           if getting the long property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public long getLongProperty(String name) throws JMSException
     {
-        // TODO
-        return 0;
+        Object longProperty = getObjectProperty(name);
+        if (longProperty == null)
+        {
+            throw new NumberFormatException("Proerty " + name + " is null");
+        }
+        else
+        {
+            return MessageHelper.convertToLong(longProperty);
+        }
     }
 
-    public float getFloatProperty(String string) throws JMSException
+    /**
+     * Access a long property value with the given name.
+     *
+     * @param name The name of the long property.
+     * @return The long property value with the given name.
+     * @throws JMSException           if getting the long property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public float getFloatProperty(String name) throws JMSException
     {
-        // TODO
-        return 0;
+        Object floatProperty = getObjectProperty(name);
+        if (floatProperty == null)
+        {
+            throw new NumberFormatException("Proerty " + name + " is null");
+        }
+        else
+        {
+            return MessageHelper.convertToFloat(floatProperty);
+        }
     }
 
-    public double getDoubleProperty(String string) throws JMSException
+    /**
+     * Access a double property value with the given name.
+     *
+     * @param name The name of the double property.
+     * @return The double property value with the given name.
+     * @throws JMSException           if getting the double property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public double getDoubleProperty(String name) throws JMSException
     {
-        // TODO
-        return 0;
+        Object doubleProperty = getObjectProperty(name);
+        if (doubleProperty == null)
+        {
+            throw new NumberFormatException("Proerty " + name + " is null");
+        }
+        else
+        {
+            return MessageHelper.convertToDouble(doubleProperty);
+        }
     }
 
-    public String getStringProperty(String string) throws JMSException
+    /**
+     * Access a String property value with the given name.
+     *
+     * @param name The name of the String property.
+     * @return The String property value with the given name.
+     * @throws JMSException           if getting the String property fails due to some internal error.
+     * @throws MessageFormatException If this type conversion is invalid.
+     */
+    public String getStringProperty(String name) throws JMSException
     {
-        // TODO
-        return null;
+        Object stringProperty = getObjectProperty(name);
+        String result = null;
+        if (stringProperty != null)
+        {
+            result = MessageHelper.convertToString(stringProperty);
+        }
+        return result;
     }
 
-    public Object getObjectProperty(String string) throws JMSException
+    /**
+     * Return the object property value with the given name.
+     *
+     * @param name the name of the Java object property
+     * @return the Java object property value with the given name, in
+     *         objectified format (ie. if it set as an int, then a Integer is
+     *         returned). If there is no property by this name, a null value
+     *         is returned.
+     * @throws JMSException If getting the object property fails due to some internal error.
+     */
+    public Object getObjectProperty(String name) throws JMSException
     {
-        // TODO
-        return null;
+        return super.getProperty(name);
     }
 
+    /**
+     * Get an Enumeration of all the property names.
+     *
+     * @return An enumeration of all the names of property values.
+     * @throws JMSException If getting the property names fails due to some internal JMS error.
+     */
     public Enumeration getPropertyNames() throws JMSException
     {
-        // TODO
-        return null;
+        return super.getAllPropertyNames();
     }
 
-    public void setBooleanProperty(String string, boolean b) throws JMSException
+    /**
+     * Set a boolean property value with the given name.
+     *
+     * @param name  The name of the boolean property
+     * @param value The boolean property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setBooleanProperty(String name, boolean value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setByteProperty(String string, byte b) throws JMSException
+    /**
+     * Set a byte property value with the given name.
+     *
+     * @param name  The name of the byte property
+     * @param value The byte property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setByteProperty(String name, byte value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setShortProperty(String string, short i) throws JMSException
+    /**
+     * Set a short property value with the given name.
+     *
+     * @param name  The name of the short property
+     * @param value The short property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setShortProperty(String name, short value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setIntProperty(String string, int i) throws JMSException
+    /**
+     * Set an int property value with the given name.
+     *
+     * @param name  The name of the int property
+     * @param value The int property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setIntProperty(String name, int value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setLongProperty(String string, long l) throws JMSException
+    /**
+     * Set a long property value with the given name.
+     *
+     * @param name  The name of the long property
+     * @param value The long property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setLongProperty(String name, long value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setFloatProperty(String string, float v) throws JMSException
+    /**
+     * Set a float property value with the given name.
+     *
+     * @param name  The name of the float property
+     * @param value The float property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setFloatProperty(String name, float value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setDoubleProperty(String string, double v) throws JMSException
+    /**
+     * Set a double property value with the given name.
+     *
+     * @param name  The name of the double property
+     * @param value The double property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setDoubleProperty(String name, double value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setStringProperty(String string, String string1) throws JMSException
+    /**
+     * Set a string property value with the given name.
+     *
+     * @param name  The name of the string property
+     * @param value The string property value to set.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setStringProperty(String name, String value) throws JMSException
     {
-        // TODO
-
+        setObjectProperty(name, value);
     }
 
-    public void setObjectProperty(String string, Object object) throws JMSException
+    /**
+     * Set a Java object property value with the given name.
+     * <p> The JMS spec says:
+     * <p> The setObjectProperty method accepts values of class Boolean, Byte, Short, Integer,
+     * Long, Float, Double, and String. An attempt to use any other class must throw a JMSException.
+     *
+     * @param name  the name of the Java object property.
+     * @param value the Java object property value to set in the Message.
+     * @throws JMSException                 If setting the property fails due to some internal JMS error.
+     * @throws MessageFormatException       If the object is invalid
+     * @throws MessageNotWriteableException If the message properties are read-only.
+     */
+    public void setObjectProperty(String name, Object value) throws JMSException
     {
-        // TODO
-
+        if (_proertiesReadOnly)
+        {
+            throw new MessageNotWriteableException("Error the message properties are read only");
+        }
+        if (!(value instanceof String || value instanceof Byte || value instanceof Short || value instanceof Integer || value instanceof Long || value instanceof Float || value instanceof Double || value instanceof Boolean || value == null))
+        {
+            throw new MessageFormatException("Format of object " + value + " is not supported");
+        }
+        super.setProperty(name, value);
     }
 
     public void acknowledge() throws JMSException
     {
         // TODO
+    }
+
+    /**
+     * Clear out the message body. Clearing a message's body does not clear
+     * its header values or property entries.
+     * <P>If this message body was read-only, calling this method leaves
+     * the message body is in the same state as an empty body in a newly
+     * created message.
+     *
+     * @throws JMSException If clearing this message body fails to due to some error.
+     */
+    public void clearBody() throws JMSException
+    {
+        super.clearMessageData();
+        _readOnly = false;
+    }
+
+    //--- Additional public methods 
+    /**
+     * This method is invoked before a message dispatch operation.
+     *
+     * @throws QpidException If the destination is not set
+     */
+    public void beforeMessageDispatch() throws QpidException
+    {
+        if (_destination == null)
+        {
+            throw new QpidException("Invalid destination null", null, null);
+        }
+    }
+
+    /**
+     * This method is invoked after this message is received.
+     *
+     * @throws QpidException
+     */
+    public void afterMessageReceive() throws QpidException
+    {
+        // recreate a destination object for the encoded destination
+        // _destination = // todo
+        // recreate a destination object for the encoded ReplyTo destination (if it exists)
+        //          _replyTo = // todo
+
+        _proertiesReadOnly = true;
+        _readOnly = true;
 
     }
 
-    public void clearBody() throws JMSException
+    /**
+     * Test whether this message is readonly by throwing a MessageNotWriteableException if this
+     * message is readonly
+     *
+     * @throws MessageNotWriteableException If this message is readonly
+     */
+    protected void isWriteable() throws MessageNotWriteableException
     {
-        // TODO
-
+        if (_readOnly)
+        {
+            throw new MessageNotWriteableException("Cannot update message");
+        }
     }
 }
