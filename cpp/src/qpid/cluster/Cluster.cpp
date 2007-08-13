@@ -115,13 +115,12 @@ Cluster::MemberList Cluster::getMembers() const {
 
 void Cluster::deliver(
     cpg_handle_t /*handle*/,
-    cpg_name* group,
+    cpg_name* /*group*/,
     uint32_t nodeid,
     uint32_t pid,
     void* msg,
     int msg_len)
 {
-    assert(name == *group);
     Id from(nodeid, pid);
     Buffer buf(static_cast<char*>(msg), msg_len);
     AMQFrame frame;
@@ -164,12 +163,11 @@ void Cluster::handleClusterFrame(Id from, AMQFrame& frame) {
 
 void Cluster::configChange(
     cpg_handle_t /*handle*/,
-    cpg_name *group,
+    cpg_name */*group*/,
     cpg_address */*current*/, int /*nCurrent*/,
     cpg_address *left, int nLeft,
     cpg_address *joined, int nJoined)
 {
-    assert(name == *group);
     bool newMembers=false;
     MemberList updated;
     {
