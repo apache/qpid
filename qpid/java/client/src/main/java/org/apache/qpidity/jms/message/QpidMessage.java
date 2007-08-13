@@ -316,19 +316,12 @@ public class QpidMessage
         return _messageData;
     }
 
-
     /**
      * Clear this message data
      */
     protected void clearMessageData()
     {
         _messageData = ByteBuffer.allocate(1024);        
-    }
-
-    public Message getJMSMessage()
-    {
-        // todo
-        return null;
     }
 
 }

@@ -354,7 +354,8 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 // if this consumer is stopped then this will be call when starting
                 getSession().getQpidSession()
                         .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
-                received = 0; //getSession().getQpidSession().messageFlush(getMessageActorID());
+                getSession().getQpidSession().messageFlush(getMessageActorID());
+               // received = getSession().getQpidSession().
             }
             if ( received == 0 && timeout < 0)
             {
@@ -381,7 +382,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 }
                 if (_incomingMessage != null)
                 {
-                    result = _incomingMessage.getJMSMessage();
+                    result = (Message) _incomingMessage;
                     // tell the session that a message is inprocess
                     getSession().preProcessMessage(_incomingMessage);
                     // tell the session to acknowledge this message (if required)
@@ -443,7 +444,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             boolean messageOk = true;
             if (_messageSelector != null)
             {
-                messageOk = _filter.matches(message.getJMSMessage());
+                messageOk = _filter.matches((Message) message);
             }
             if (!messageOk && _preAcquire)
             {
@@ -533,7 +534,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                     **/
                     try
                     {
-                        _messageListener.onMessage(message.getJMSMessage());
+                        _messageListener.onMessage((Message) message);
                     }
                     catch (RuntimeException re)
                     {
