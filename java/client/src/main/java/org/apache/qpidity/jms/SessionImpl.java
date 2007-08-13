@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpidity.jms.message.*;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.RangeSet;
-import org.apache.qpidity.Range;
+import org.apache.qpid.client.message.*;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
