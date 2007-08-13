@@ -10,6 +10,7 @@ import org.apache.qpidity.Channel;
 import org.apache.qpidity.Connection;
 import org.apache.qpidity.ConnectionClose;
 import org.apache.qpidity.ConnectionDelegate;
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.MinaHandler;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.SessionDelegate;
@@ -39,9 +40,13 @@ public class Client implements org.apache.qpidity.client.Connection
                 return new ClientSessionDelegate();
             }
             
-            @Override public void connectionClose(Channel context, ConnectionClose struct) 
+            @Override public void connectionClose(Channel context, ConnectionClose connectionClose) 
             {
-                _exceptionListner.onException(new QpidException("Server closed the connection: Reason " + struct.getReplyText(),struct.getReplyCode(),null));
+                _exceptionListner.onException(
+                        new QpidException("Server closed the connection: Reason " + 
+                                           connectionClose.getReplyText(),
+                                           ErrorCode.get(connectionClose.getReplyCode()),
+                                           null));
             }
         };
         

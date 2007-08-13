@@ -17,17 +17,12 @@
  */
 package org.apache.qpidity;
 
-/**
- * Created by Arnaud Simon
- * Date: 20-Jul-2007
- * Time: 10:56:55
- */
 public class QpidException extends Exception
 {
     /**
      * AMQP error code
      */
-    private int _errorCode;
+    private ErrorCode _errorCode;
 
     /**
      * Constructor for a Qpid Exception.
@@ -38,24 +33,24 @@ public class QpidException extends Exception
      * @param cause      The linked Execption.    * 
      * 
      */
-    public QpidException(String message, int errorCode, Throwable cause)
+    public QpidException(String message, ErrorCode errorCode, Throwable cause)
     {
         super(message, cause);
         _errorCode = errorCode;
     }
     
-    //hack to get rid of a compile error from a  generated class
+    /*hack to get rid of a compile error from a  generated class
     public QpidException(String message, String errorCode, Throwable cause)
     {
         
-    }
+    }*/
 
     /**
      * Get this execption error code.
      *
      * @return This exception error code.
      */
-    public int getErrorCode()
+    public ErrorCode getErrorCode()
     {
         return _errorCode;
     }
