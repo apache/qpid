@@ -298,7 +298,6 @@ void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t 
 	queue = queue_created.first;
 	assert(queue);
 	if (queue_created.second) { // This is a new queue
-	    parent->getChannel(channel)->setDefaultQueue(queue);
 
             //apply settings & create persistent record if required
             queue_created.first->create(arguments);
@@ -315,6 +314,7 @@ void SessionHandlerImpl::QueueHandlerImpl::declare(u_int16_t channel, u_int16_t 
     if (exclusive && !queue->isExclusiveOwner(parent)) {
 	throw ChannelException(405, "Cannot grant exclusive access to queue");
     }
+    parent->getChannel(channel)->setDefaultQueue(queue);
     if (!nowait) {
         string queueName = queue->getName();
         parent->client->getQueue().declareOk(channel, queueName, queue->getMessageCount(), queue->getConsumerCount());

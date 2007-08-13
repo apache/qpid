@@ -80,6 +80,7 @@ namespace client {
 	ResponseHandler responses;
         volatile bool closed;
         qpid::framing::ProtocolVersion version;
+        bool tcpNoDelay;
 
         void channelException(Channel* channel, qpid::framing::AMQMethodBody* body, QpidError& e);
         void error(int code, const std::string& msg, int classid = 0, int methodid = 0);
@@ -108,6 +109,8 @@ namespace client {
 	Connection( bool debug = false, u_int32_t max_frame_size = 65536, 
 			qpid::framing::ProtocolVersion* _version = &(qpid::framing::highestProtocolVersion));
 	~Connection();
+
+        void setTcpNoDelay(bool on);
 
         /**
          * Opens a connection to a broker.

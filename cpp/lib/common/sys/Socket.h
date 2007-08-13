@@ -47,6 +47,7 @@ class Socket
     
     /** Set timeout for read and write */
     void setTimeout(Time interval);
+    void setTcpNoDelay(bool on);
 
     void connect(const std::string& host, int port);
 

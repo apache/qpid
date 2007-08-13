@@ -87,4 +87,8 @@ ssize_t Socket::recv(void* data, size_t size)
     return received;
 }
 
+void Socket::setTcpNoDelay(bool on)
+{
+    CHECK_APR_SUCCESS(apr_socket_opt_set(socket, APR_TCP_NODELAY, on ? 1 : 0));
+}
 

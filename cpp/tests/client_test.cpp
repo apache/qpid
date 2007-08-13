@@ -67,6 +67,7 @@ int main(int argc, char**)
 
  	
 	Connection con(argc > 1);
+        con.setTcpNoDelay(true);
 	string host("localhost");	
 	con.open(host, 5672, "guest", "guest", "/test");
 	std::cout << "Opened connection." << std::endl;

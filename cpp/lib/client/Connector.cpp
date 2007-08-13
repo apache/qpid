@@ -44,8 +44,11 @@ Connector::Connector(const qpid::framing::ProtocolVersion& pVersion, bool _debug
 
 Connector::~Connector(){ }
 
-void Connector::connect(const std::string& host, int port){
+void Connector::connect(const std::string& host, int port, bool tcpNoDelay){
     socket = Socket::createTcp();
+    if (tcpNoDelay) {
+        socket.setTcpNoDelay(true);
+    }
     socket.connect(host, port);
     closed = false;
     receiver = Thread(this);

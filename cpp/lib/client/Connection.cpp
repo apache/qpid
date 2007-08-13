@@ -35,13 +35,18 @@ Connection::Connection(  bool _debug, u_int32_t _max_frame_size, qpid::framing::
     channelIdCounter(0),
     max_frame_size(_max_frame_size), 
     closed(true),
-    version(_version->getMajor(),_version->getMinor())
+    version(_version->getMajor(),_version->getMinor()),
+    tcpNoDelay(false)
 {
     connector = new Connector(version, debug, _max_frame_size);
 }
 
 Connection::~Connection(){
     delete connector;
+}
+
+void Connection::setTcpNoDelay(bool on) {
+    tcpNoDelay = on;
 }
 
 void Connection::open(const std::string& _host, int _port, const std::string& uid, const std::string& pwd, const std::string& virtualhost){
@@ -51,7 +56,7 @@ void Connection::open(const std::string& _host, int _port, const std::string& ui
     connector->setTimeoutHandler(this);
     connector->setShutdownHandler(this);
     out = connector->getOutputHandler();
-    connector->connect(host, port);
+    connector->connect(host, port, tcpNoDelay);
     
     ProtocolInitiation* header = new ProtocolInitiation(version);
     responses.expect();

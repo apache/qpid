@@ -116,3 +116,5 @@ int Socket::fd()
 {
     return socket;
 }
+
+void Socket::setTcpNoDelay(bool) {} //not yet implemented

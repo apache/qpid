@@ -78,7 +78,7 @@ namespace client {
     public:
 	Connector(const qpid::framing::ProtocolVersion& pVersion, bool debug = false, u_int32_t buffer_size = 1024);
 	virtual ~Connector();
-	virtual void connect(const std::string& host, int port);
+	virtual void connect(const std::string& host, int port, bool tcpNoDelay=false);
 	virtual void init(qpid::framing::ProtocolInitiation* header);
 	virtual void close();
 	virtual void setInputHandler(qpid::framing::InputHandler* handler);
