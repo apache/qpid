@@ -41,8 +41,25 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
      */
     private String _messageText;
 
-    //-- constructor
-    // todo
+    //--- Constructor
+    /**
+     * Constructor used by SessionImpl.
+     */
+    public TextMessageImpl()
+    {
+        super();
+        setMessageType(String.valueOf(MessageFactory.JAVAX_JMS_STREAMMESSAGE));
+    }
+
+    /**
+     * Constructor used by MessageFactory
+     *
+     * @param message The new qpid message.
+     */
+    protected TextMessageImpl(org.apache.qpidity.api.Message message)
+    {
+        super(message);
+    }
 
     //--- interface TextMessage
 
