@@ -3,6 +3,7 @@ package org.apache.qpidity.client;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -21,11 +22,9 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
     private ExceptionListener _exceptionListner;
     private RangeSet _acquiredMessages;
     private RangeSet _rejectedMessages;
-    private Map<String,List<RangeSet>> _unackedMessages = new HashMap<String,List<RangeSet>>();
     
     @Override public void sessionClose()
     {
-        // release all unacked messages and then issues a close
         super.sessionClose();
     }
     

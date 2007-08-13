@@ -94,7 +94,7 @@ public class SelectorParser {
             return this.JmsSelector();
         }
         catch (Throwable e) {
-	        throw new QpidException(sql,"filter error",e);
+	        throw new QpidException(sql,null,e);
         }
 
     }

@@ -18,6 +18,7 @@
 package org.apache.qpidity.filter;
 
 import org.slf4j.LoggerFactory;
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.Message;
@@ -56,7 +57,7 @@ public class PropertyExpression implements Expression
             }
             catch (Exception e)
             {
-                throw new QpidException("cannot evaluate property ", 0, e);
+                throw new QpidException("cannot evaluate property ", ErrorCode.UNDEFINED, e);
             }
         }
         return result;
