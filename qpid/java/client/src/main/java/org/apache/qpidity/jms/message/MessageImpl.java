@@ -864,7 +864,7 @@ public class MessageImpl extends QpidMessage implements Message
     {
         if (_destination == null)
         {
-            throw new QpidException("Invalid destination null", null, null);
+            throw new QpidException("Invalid destination null",null, null);
         }
     }
 
