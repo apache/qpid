@@ -975,7 +975,7 @@ public class SessionImpl implements Session
      *
      * @throws JMSException If this method is called on a closed session.
      */
-    protected void acknowledge() throws JMSException
+    public void acknowledge() throws JMSException
     {
         checkNotClosed();
         if (getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)

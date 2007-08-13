@@ -43,7 +43,7 @@ import java.io.EOFException;
  * |byte[]  |                                                        X
  * |----------------------------------------------------------------------
  */
-public class StreamMessaeImpl extends BytesMessageImpl implements StreamMessage
+public class StreamMessageImpl extends BytesMessageImpl implements StreamMessage
 {
     /**
      * Those statics represent incoming field types. The type of a field is
@@ -66,6 +66,27 @@ public class StreamMessaeImpl extends BytesMessageImpl implements StreamMessage
      */
     private int _sizeOfByteArray = 0;
 
+    //--- Constructor
+    /**
+     * Constructor used by SessionImpl.
+     */
+    public StreamMessageImpl()
+    {
+        super();
+        setMessageType(String.valueOf(MessageFactory.JAVAX_JMS_STREAMMESSAGE));
+    }
+
+    /**
+     * Constructor used by MessageFactory
+     *
+     * @param message The new qpid message.
+     */
+    protected StreamMessageImpl(org.apache.qpidity.api.Message message)
+    {
+        super(message);
+    }
+
+    //--- Interface StreamMessage
     /**
      * Reads a boolean.
      * <p/>
