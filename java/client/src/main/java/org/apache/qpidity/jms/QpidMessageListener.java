@@ -18,6 +18,7 @@
 package org.apache.qpidity.jms;
 
 import org.apache.qpidity.jms.message.QpidMessage;
+import org.apache.qpidity.jms.message.MessageFactory;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.client.MessageListener;
 import org.slf4j.Logger;
@@ -62,7 +63,7 @@ public class QpidMessageListener implements MessageListener
         try
         {
             //convert this message into a JMS one
-            QpidMessage jmsMessage = null; // todo
+            QpidMessage jmsMessage = MessageFactory.getQpidMessage(message);
             // if consumer is asynchronous then send this message to its session.
             if( _consumer.getMessageListener() != null )
             {
