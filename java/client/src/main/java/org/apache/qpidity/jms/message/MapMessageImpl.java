@@ -40,6 +40,27 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
      */
     private Map<String, Object> _map = new HashMap<String, Object>();
 
+    //--- Constructor
+    /**
+     * Constructor used by SessionImpl.
+     */
+    public MapMessageImpl()
+    {
+        super();
+        setMessageType(String.valueOf(MessageFactory.JAVAX_JMS_MAPMESSAGE));
+    }
+
+    /**
+     * Constructor used by MessageFactory
+     *
+     * @param message The new qpid message.
+     */
+    protected MapMessageImpl(org.apache.qpidity.api.Message message)
+    {
+        super(message);
+    }
+
+    //-- Map Message API
     /**
      * Indicates whether an key exists in this MapMessage.
      *

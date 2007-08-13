@@ -157,7 +157,7 @@ public abstract class MessageActor
      *
      * @return This Actor's Session.
      */
-    protected SessionImpl getSession()
+    public SessionImpl getSession()
     {
         return _session;
     }
