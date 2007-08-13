@@ -1,5 +1,7 @@
 package org.apache.qpidity.client;
 
+import java.io.EOFException;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,15 +47,37 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
         super.messageSubscribe(queue, destination, confirmMode, acquireMode, filter, options);
     }
 
-    public void messageTransfer(String exchange, Message msg, short confirmMode, short acquireMode)
+    public void messageTransfer(String destination, Message msg, short confirmMode, short acquireMode) throws IOException
     {
-        // need to break it down into small pieces
-        super.messageTransfer(exchange, confirmMode, acquireMode);
+        // The javadoc clearly says that this method is suitable for small messages
+        // therefore reading the content in one shot.
+        super.messageTransfer(destination, confirmMode, acquireMode);
         super.headers(msg.getDeliveryProperties(),msg.getMessageProperties());
-        // super.data(bytes); *
-        // super.endData()
+        super.data(msg.readData());
+        super.endData();        
     }
     
+    public void messageStream(String destination, Message msg, short confirmMode, short acquireMode) throws IOException
+    {
+        super.messageTransfer(destination, confirmMode, acquireMode);
+        super.headers(msg.getDeliveryProperties(),msg.getMessageProperties());
+        boolean b = true;
+        int count = 0;
+        while(b)
+        {   
+            try
+            {
+                System.out.println("count : " + count++);
+                super.data(msg.readData());
+            }
+            catch(EOFException e)
+            {
+                b = false;
+            }
+        }   
+        
+        super.endData();
+    }
     
     public RangeSet getAccquiredMessages()
     {
