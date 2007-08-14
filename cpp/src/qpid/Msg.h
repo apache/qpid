@@ -45,7 +45,7 @@ struct Msg {
     operator std::string() const { return str(); }
 };
 
-inline template <class T> const Msg& operator<<(const Msg& m, const T& t) {
+template <class T> const Msg& operator<<(const Msg& m, const T& t) {
     const_cast<std::ostringstream&>(m.os)<<t; return m;
 }
 
