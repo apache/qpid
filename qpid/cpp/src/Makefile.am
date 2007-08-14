@@ -405,6 +405,7 @@ nobase_include_HEADERS = \
   qpid/sys/Time.h \
   qpid/sys/TimeoutHandler.h \
   qpid/Exception.h \
+  qpid/Msg.h \
   qpid/ExceptionHolder.h \
   qpid/QpidError.h \
   qpid/SharedObject.h \
