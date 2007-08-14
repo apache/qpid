@@ -50,14 +50,10 @@ void ConnectionAdapter::handleMethodInContext(
 )
 {
     try{
-        handler->client.setResponseTo(context.getRequestId());
         method->invoke(*this, context);
-        handler->client.setResponseTo(0);
     }catch(ConnectionException& e){
-        handler->client.setResponseTo(0);
         handler->client.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());
     }catch(std::exception& e){
-        handler->client.setResponseTo(0);
         handler->client.close(541/*internal error*/, e.what(), method->amqpClassId(), method->amqpMethodId());
     }
 }

@@ -27,9 +27,7 @@
 
 #include "qpid/shared_ptr.h"
 #include "BodyHandler.h"
-#include "Requester.h"
-#include "Responder.h"
-#include "Correlator.h"
+#include "ProtocolVersion.h"
 #include "amqp_types.h"
 #include "FrameHandler.h"
 
@@ -37,6 +35,7 @@ namespace qpid {
 namespace framing {
 
 class MethodContext;
+class OutputHandler;
 
 /**
  * Base class for client and broker channels.
@@ -71,19 +70,12 @@ class ChannelAdapter : protected BodyHandler {
     /**
      * Send a frame.
      *@param body Body of the frame.
-     *@param action optional action to execute when we receive a
-     *response to this frame.  Ignored if body is not a Request.
      *@return If body is a request, the ID assigned else 0.
      */
-    virtual RequestId send(shared_ptr<AMQBody> body,
-                           Correlator::Action action=Correlator::Action());
+    virtual RequestId send(shared_ptr<AMQBody> body);
 
     virtual bool isOpen() const = 0;
     
-    RequestId getFirstAckRequest() { return requester.getFirstAckRequest(); }
-    RequestId getLastAckRequest() { return requester.getLastAckRequest(); }
-    RequestId getNextSendRequestId() { return requester.getNextId(); }
-
   protected:
     void assertMethodOk(AMQMethodBody& method) const;
     void assertChannelOpen() const;
@@ -98,14 +90,9 @@ class ChannelAdapter : protected BodyHandler {
     friend class ChannelAdapterHandler;
     
     void handleMethod(shared_ptr<AMQMethodBody>);
-    void handleRequest(shared_ptr<AMQRequestBody>);
-    void handleResponse(shared_ptr<AMQResponseBody>);
 
     ChannelId id;
     ProtocolVersion version;
-    Requester requester;
-    Responder responder;
-    Correlator correlator;
     FrameHandler::Chains handlers;
 };
 

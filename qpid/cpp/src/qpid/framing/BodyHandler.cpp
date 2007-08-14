@@ -20,8 +20,6 @@
  */
 #include "qpid/QpidError.h"
 #include "BodyHandler.h"
-#include "AMQRequestBody.h"
-#include "AMQResponseBody.h"
 #include "AMQMethodBody.h"
 #include "AMQHeaderBody.h"
 #include "AMQContentBody.h"
@@ -35,12 +33,6 @@ BodyHandler::~BodyHandler() {}
 void BodyHandler::handleBody(shared_ptr<AMQBody> body) {
     switch(body->type())
     {
-      case REQUEST_BODY:
-        handleRequest(shared_polymorphic_cast<AMQRequestBody>(body));
-        break; 
-      case RESPONSE_BODY:
-        handleResponse(shared_polymorphic_cast<AMQResponseBody>(body));
-        break;
       case METHOD_BODY:
 	handleMethod(shared_polymorphic_cast<AMQMethodBody>(body));
 	break;
