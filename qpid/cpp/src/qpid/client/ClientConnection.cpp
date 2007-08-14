@@ -31,7 +31,6 @@
 #include "qpid/QpidError.h"
 #include <iostream>
 #include <sstream>
-#include "MethodBodyInstances.h"
 #include <functional>
 
 using namespace qpid::framing;
