@@ -296,7 +296,7 @@ public class DistributedCircuitImpl implements Circuit, TimingControllerAware
      * Checks the test circuit. The effect of this is to gather the circuits state, for both ends of the circuit,
      * into a report, against which assertions may be checked.
      *
-     * @todo Replace the asynch receiver report thread with a choice of direct os asynch executor, so that asynch
+     * @todo Replace the asynch receiver report thread with a choice of direct or asynch executor, so that asynch
      *       or synch logging of test timings is optional. Also need to provide an onMessage method that is capable
      *       of receiving timing reports that receivers will generate during an ongoing test, on the test sample
      *       size boundaries. The message timing logging code should be factored out as a common method that can

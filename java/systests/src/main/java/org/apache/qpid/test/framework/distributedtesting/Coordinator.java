@@ -35,7 +35,6 @@ import org.apache.qpid.test.framework.listeners.XMLTestListener;
 import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
 
-import uk.co.thebadgerset.junit.extensions.AsymptoticTestDecorator;
 import uk.co.thebadgerset.junit.extensions.TKTestResult;
 import uk.co.thebadgerset.junit.extensions.TKTestRunner;
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
