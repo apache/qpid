@@ -400,18 +400,5 @@ void BrokerAdapter::ChannelHandlerImpl::ok()
     //no specific action required, generic response handling should be sufficient
 }
 
-void BrokerAdapter::setResponseTo(RequestId r)
-{
-    basicHandler.client.setResponseTo(r);
-    channelHandler.client.setResponseTo(r);
-    exchangeHandler.client.setResponseTo(r);
-    bindingHandler.client.setResponseTo(r);
-    messageHandler.client.setResponseTo(r);
-    queueHandler.client.setResponseTo(r);
-    txHandler.client.setResponseTo(r);
-    dtxHandler.setResponseTo(r);
-}
-
-
 }} // namespace qpid::broker
 

@@ -36,8 +36,6 @@ class DtxHandlerImpl
 public:
     DtxHandlerImpl(CoreRefs& parent);
 
-    void setResponseTo(framing::RequestId r);
-
     // DtxCoordinationHandler:
 
     void commit(u_int16_t ticket, const std::string& xid, bool onePhase);
