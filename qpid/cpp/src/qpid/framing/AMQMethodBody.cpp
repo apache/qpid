@@ -31,7 +31,7 @@ void AMQMethodBody::encodeId(Buffer& buffer) const{
     buffer.putShort(amqpMethodId());
 }
 
-void AMQMethodBody::invoke(AMQP_ServerOperations&, const MethodContext&){
+void AMQMethodBody::invoke(AMQP_ServerOperations&){
     assert(0);
     THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
 }

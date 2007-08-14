@@ -34,7 +34,6 @@
 namespace qpid {
 namespace framing {
 
-class MethodContext;
 class OutputHandler;
 
 /**
@@ -67,12 +66,7 @@ class ChannelAdapter : protected BodyHandler {
     ChannelId getId() const { return id; }
     ProtocolVersion getVersion() const { return version; }
 
-    /**
-     * Send a frame.
-     *@param body Body of the frame.
-     *@return If body is a request, the ID assigned else 0.
-     */
-    virtual RequestId send(shared_ptr<AMQBody> body);
+    virtual void send(shared_ptr<AMQBody> body);
 
     virtual bool isOpen() const = 0;
     
@@ -81,16 +75,12 @@ class ChannelAdapter : protected BodyHandler {
     void assertChannelOpen() const;
     void assertChannelNotOpen() const;
 
-    virtual void handleMethodInContext(
-        shared_ptr<AMQMethodBody> method,
-        const MethodContext& context) = 0;
+    virtual void handleMethod(shared_ptr<AMQMethodBody>) = 0;
 
   private:
     class ChannelAdapterHandler;
     friend class ChannelAdapterHandler;
     
-    void handleMethod(shared_ptr<AMQMethodBody>);
-
     ChannelId id;
     ProtocolVersion version;
     FrameHandler::Chains handlers;

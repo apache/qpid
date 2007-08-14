@@ -188,6 +188,7 @@ class Generator
     @outdir=outdir
     @prefix=''                  # For indentation or comments.
     @indentstr='    '           # One indent level.
+    @outdent=2
     raise "Invalid output directory: #{outdir}" unless @outdir=="-" or File.directory?(@outdir) 
   end
 
@@ -229,6 +230,14 @@ class Generator
   # Generate indented code
   def indent(n=1,&block) prefix(@indentstr * n,&block); end
 
+  # Generate outdented code
+  def outdent(&block)
+    save=@prefix
+    @prefix=@prefix[0...-2]
+    yield
+    @prefix=save
+  end
+  
   attr_accessor :out
 end
 

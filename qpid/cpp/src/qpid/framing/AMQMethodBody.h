@@ -26,7 +26,6 @@
 #include "AMQBody.h"
 #include "Buffer.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
-#include "MethodContext.h"
 
 namespace qpid {
 namespace framing {
@@ -52,7 +51,7 @@ class AMQMethodBody : public AMQBody
     virtual MethodId amqpMethodId() const = 0;
     virtual ClassId  amqpClassId() const = 0;
     
-    virtual void invoke(AMQP_ServerOperations&, const MethodContext&);
+    virtual void invoke(AMQP_ServerOperations&);
     virtual bool invoke(Invocable* target);
 
     template <class T> bool isA() {

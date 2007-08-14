@@ -57,7 +57,7 @@ using namespace broker;
     void handle(AMQFrame& frame) {
         AMQMethodBody* body=dynamic_cast<AMQMethodBody*>(frame.body.get());
         assert(body);
-        body->invoke(adapter, MethodContext()); // TODO aconway 2007-07-24: Remove MethodContext
+        body->invoke(adapter);
     }
 
     // Dummy methods.
@@ -65,9 +65,9 @@ using namespace broker;
     virtual void handleContent(boost::shared_ptr<AMQContentBody>){}
     virtual void handleHeartbeat(boost::shared_ptr<AMQHeartbeatBody>){}
     virtual bool isOpen() const{ return true; }
-    virtual void handleMethodInContext(shared_ptr<AMQMethodBody>, const MethodContext&){}
+    virtual void handleMethod(shared_ptr<AMQMethodBody>){}
     // No-op send.
-    virtual RequestId send(shared_ptr<AMQBody>) { return 0; }
+        virtual void send(shared_ptr<AMQBody>) {}
 
     //delivery adapter methods, also no-ops:
     virtual DeliveryId deliver(Message::shared_ptr&, DeliveryToken::shared_ptr) { return 0; }

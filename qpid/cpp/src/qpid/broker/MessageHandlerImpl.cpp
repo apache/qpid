@@ -54,7 +54,7 @@ MessageHandlerImpl::open(const string& /*reference*/)
 }
 
 void
-MessageHandlerImpl::append(const framing::MethodContext& /*context*/)
+MessageHandlerImpl::append(const framing::AMQMethodBody& )
 {
     throw ConnectionException(540, "References no longer supported");
 }
@@ -157,14 +157,13 @@ MessageHandlerImpl::reject(uint16_t /*code*/, const string& /*text*/ )
 }
 
 void
-MessageHandlerImpl::transfer(const framing::MethodContext& context)
+MessageHandlerImpl::transfer(const framing::AMQMethodBody& context)
 {
     MessageTransferBody::shared_ptr transfer(
-        boost::shared_polymorphic_downcast<MessageTransferBody>(
-            context.methodBody));
+        make_shared_ptr(new MessageTransferBody(static_cast<const MessageTransferBody&>(context))));
     
     if (transfer->getBody().isInline()) {
-        MessageMessage::shared_ptr message(new MessageMessage(&connection, 0, transfer));
+        MessageMessage::shared_ptr message(new MessageMessage(&connection, transfer));
         channel.handleInlineTransfer(message);
     } else { 
         throw ConnectionException(540, "References no longer supported");

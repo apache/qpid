@@ -35,7 +35,6 @@
 namespace qpid {
 
 namespace framing {
-class MethodContext;
 class ChannelAdapter;
 class AMQHeaderBody;
 }

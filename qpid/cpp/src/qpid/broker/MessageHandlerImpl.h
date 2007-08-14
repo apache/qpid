@@ -40,7 +40,7 @@ class MessageHandlerImpl :
   public:
     MessageHandlerImpl(CoreRefs& parent);
 
-    void append(const framing::MethodContext& context);
+    void append(const framing::AMQMethodBody& context);
 
     void cancel(const std::string& destination );
 
@@ -82,7 +82,7 @@ class MessageHandlerImpl :
     void resume(const std::string& reference,
                  const std::string& identifier );
 
-    void transfer(const framing::MethodContext& context);
+    void transfer(const framing::AMQMethodBody& context);
 
     void flow(const std::string& destination, u_int8_t unit, u_int32_t value);
     
