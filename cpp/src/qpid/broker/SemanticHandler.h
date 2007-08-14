@@ -48,18 +48,16 @@ class SemanticHandler : private framing::ChannelAdapter,
     framing::Window outgoing;
     sys::Mutex outLock;
 
-    void handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
-                               const qpid::framing::MethodContext& context);
+    void handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method);
 
     //ChannelAdapter virtual methods:
-    void handleMethodInContext(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
-                               const qpid::framing::MethodContext& context);
+    void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method);
     bool isOpen() const;
     void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>);
     void handleContent(boost::shared_ptr<qpid::framing::AMQContentBody>);
     void handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody>);
 
-    framing::RequestId send(shared_ptr<framing::AMQBody> body);
+    void send(shared_ptr<framing::AMQBody> body);
 
 
     //delivery adapter methods:

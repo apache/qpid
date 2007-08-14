@@ -35,7 +35,6 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	public AmqpOrdinalVersionMap indexMap;
 	public AmqpFlagMap clientMethodFlagMap; // Method called on client (<chassis name="server"> in XML)
 	public AmqpFlagMap serverMethodFlagMap; // Method called on server (<chassis name="client"> in XML)
-        public AmqpFlagMap isResponseFlagMap;
         public boolean content;
 
 	public AmqpMethod(String name, LanguageConverter converter)
@@ -47,14 +46,8 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		indexMap = new AmqpOrdinalVersionMap();
 		clientMethodFlagMap = new AmqpFlagMap();
 		serverMethodFlagMap = new AmqpFlagMap();
-		isResponseFlagMap = new AmqpFlagMap();
 	}
 
-        public boolean isResponse(AmqpVersion version) {
-            if (!CppGenerator.USE_RELIABLE_FRAMING) return false;
-	    return (version == null) ? isResponseFlagMap.isSet() : isResponseFlagMap.isSet(version);
-	}
-    
         /** Check if this method is named as a response by any other method in the class. */
         public void checkForResponse(Element methodElement, AmqpVersion version) {
 	    Element clazz = (Element)methodElement.getParentNode();
@@ -66,7 +59,6 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 		for (int j =0; j<responses.getLength(); ++j) {
 		    Element response = (Element)responses.item(j);
 		    if (methodName.equals(response.getAttribute("name"))) {
-			isResponseFlagMap.setFlagForVersion(true, version);
 		    }
 		}
 	    }
@@ -139,7 +131,6 @@ public class AmqpMethod implements Printable, NodeAware, VersionConsistencyCheck
 	{
 		clientMethodFlagMap.removeVersion(version);
 		serverMethodFlagMap.removeVersion(version);
-		isResponseFlagMap.removeVersion(version);
 		indexMap.removeVersion(version);
 		fieldMap.removeVersion(version);
 		versionSet.remove(version);

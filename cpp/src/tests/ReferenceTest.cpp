@@ -70,11 +70,11 @@ class ReferenceTest : public CppUnit::TestCase
         MessageTransferBody::shared_ptr t1(new MessageTransferBody(v));
         // TODO aconway 2007-04-03: hack around lack of generated setters. Clean this up.
         const_cast<framing::Content&>(t1->getBody()) = framing::Content(REFERENCE,"bar");
-        MessageMessage::shared_ptr m1(new MessageMessage(0, 1, t1, r1));
+        MessageMessage::shared_ptr m1(new MessageMessage(0, t1, r1));
 
         MessageTransferBody::shared_ptr  t2(new MessageTransferBody(v));
         const_cast<framing::Content&>(t2->getBody()) = framing::Content(REFERENCE,"bar");
-        MessageMessage::shared_ptr m2(new MessageMessage(0, 2, t2, r1));
+        MessageMessage::shared_ptr m2(new MessageMessage(0, t2, r1));
         
         MessageAppendBody::shared_ptr a1(new MessageAppendBody(v));
         MessageAppendBody::shared_ptr a2(new MessageAppendBody(v));

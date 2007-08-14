@@ -19,7 +19,6 @@
  *
  */
 
-#include "qpid/framing/MethodContext.h"
 #include "qpid/framing/ChannelAdapter.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/AMQFrame.h"
@@ -58,12 +57,7 @@ struct MockChannel : public qpid::framing::ChannelAdapter
         boost::shared_ptr<qpid::framing::AMQContentBody> b) { send(b); }
     void handleHeartbeat(
         boost::shared_ptr<qpid::framing::AMQHeartbeatBody> b) { send(b); }
-    void handleMethodInContext(
-        boost::shared_ptr<qpid::framing::AMQMethodBody> method,
-        const qpid::framing::MethodContext& context)
-    {
-        context.channel->send(method);
-    };
+    void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method) { send(method); };
 
 };
 

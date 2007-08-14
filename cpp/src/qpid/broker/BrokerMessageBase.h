@@ -33,7 +33,6 @@
 namespace qpid {
 	
 namespace framing {
-class MethodContext;
 class ChannelAdapter;
 class BasicHeaderProperties;
 class FieldTable;
