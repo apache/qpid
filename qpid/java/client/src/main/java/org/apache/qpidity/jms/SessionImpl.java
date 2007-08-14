@@ -130,7 +130,7 @@ public class SessionImpl implements Session
      * @throws QpidException In case of internal error.
      */
     protected SessionImpl(ConnectionImpl connection, boolean transacted, int acknowledgeMode, boolean isXA)
-          throws QpidException
+            throws QpidException
     {
         _connection = connection;
         _transacted = transacted;
@@ -164,7 +164,7 @@ public class SessionImpl implements Session
     public BytesMessage createBytesMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSBytesMessage();
+        return new BytesMessageImpl();
     }
 
     /**
@@ -177,7 +177,7 @@ public class SessionImpl implements Session
     public MapMessage createMapMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSMapMessage();
+        return new MapMessageImpl();
     }
 
     /**
@@ -190,7 +190,7 @@ public class SessionImpl implements Session
      */
     public Message createMessage() throws JMSException
     {
-        return createBytesMessage();
+        return new MessageImpl();
     }
 
     /**
@@ -203,7 +203,7 @@ public class SessionImpl implements Session
     public ObjectMessage createObjectMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSObjectMessage();
+        return new ObjectMessageImpl();
     }
 
     /**
@@ -232,7 +232,7 @@ public class SessionImpl implements Session
     public StreamMessage createStreamMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSStreamMessage();
+        return new StreamMessageImpl();
     }
 
     /**
@@ -244,7 +244,7 @@ public class SessionImpl implements Session
     public TextMessage createTextMessage() throws JMSException
     {
         checkNotClosed();
-        return new JMSTextMessage();
+        return new TextMessageImpl();
     }
 
     /**
@@ -303,6 +303,10 @@ public class SessionImpl implements Session
         //make sure the Session is a transacted one
         if (!_transacted)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Cannot commit non-transacted session, throwing IllegalStateException");
+            }
             throw new IllegalStateException("Cannot commit non-transacted session", "Session is not transacted");
         }
         // commit the underlying Qpid Session
@@ -322,6 +326,10 @@ public class SessionImpl implements Session
         //make sure the Session is a transacted one
         if (!_transacted)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Cannot rollback non-transacted session, throwing IllegalStateException");
+            }
             throw new IllegalStateException("Cannot rollback non-transacted session", "Session is not transacted");
         }
         // rollback the underlying Qpid Session
@@ -413,6 +421,10 @@ public class SessionImpl implements Session
         // Ensure that the session is not transacted.
         if (getTransacted())
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Trying to recover a transacted Session, throwing IllegalStateException");
+            }
             throw new IllegalStateException("Session is transacted");
         }
         // release all unack messages
@@ -438,7 +450,12 @@ public class SessionImpl implements Session
     public MessageListener getMessageListener() throws JMSException
     {
         checkNotClosed();
-        throw new java.lang.UnsupportedOperationException();
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(
+                    "Getting session's distinguished message listener, not supported," + " throwing UnsupportedOperationException");
+        }
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -452,7 +469,12 @@ public class SessionImpl implements Session
     public void setMessageListener(MessageListener messageListener) throws JMSException
     {
         checkNotClosed();
-        throw new java.lang.UnsupportedOperationException();
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug(
+                    "Setting the session's distinguished message listener, not supported," + " throwing UnsupportedOperationException");
+        }
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -462,7 +484,11 @@ public class SessionImpl implements Session
      */
     public void run()
     {
-        throw new java.lang.UnsupportedOperationException();
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Running this session, not supported," + " throwing UnsupportedOperationException");
+        }
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -535,17 +561,19 @@ public class SessionImpl implements Session
     {
         checkNotClosed();
         checkDestination(destination);
-        MessageConsumerImpl consumer = null;
+        MessageConsumerImpl consumer;
         try
         {
             consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null);
         }
         catch (Exception e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Problem when creating consumer.", e);
+            }
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
-        
         // register this actor with the session
         _messageActors.put(consumer.getMessageActorID(), consumer);
         return consumer;
@@ -570,15 +598,18 @@ public class SessionImpl implements Session
     public Queue createQueue(String queueName) throws JMSException
     {
         checkNotClosed();
-        Queue result = null;
+        Queue result;
         try
         {
             result = new QueueImpl(this, queueName);
         }
         catch (QpidException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Problem when creating Queue.", e);
+            }
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         return result;
     }
@@ -609,6 +640,10 @@ public class SessionImpl implements Session
         }
         catch (QpidException e)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Problem when creating Topic.", e);
+            }
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         return result;
@@ -660,6 +695,10 @@ public class SessionImpl implements Session
         }
         catch (Exception e)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Problem when creating Durable Subscriber.", e);
+            }
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         _messageActors.put(subscriber.getMessageActorID(), subscriber);
@@ -700,6 +739,10 @@ public class SessionImpl implements Session
         }
         catch (Exception e)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Problem when creating Durable Browser.", e);
+            }
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         // register this actor with the session
@@ -722,6 +765,10 @@ public class SessionImpl implements Session
         }
         catch (QpidException e)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Problem when creating Durable Temporary Queue.", e);
+            }
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         return result;
@@ -742,6 +789,10 @@ public class SessionImpl implements Session
         }
         catch (QpidException e)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Problem when creating Durable Temporary Topic.", e);
+            }
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         return result;
@@ -958,7 +1009,7 @@ public class SessionImpl implements Session
             // acknowledge this message
             RangeSet ranges = new RangeSet();
             // TODO: messageID is a string but range need a long???
-           // ranges.add(message.getMessageID());
+            // ranges.add(message.getMessageID());
             getQpidSession().messageAcknowledge(ranges);
         }
         //tobedone: Implement DUPS OK heuristic
