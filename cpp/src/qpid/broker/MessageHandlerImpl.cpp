@@ -162,10 +162,9 @@ MessageHandlerImpl::transfer(const framing::MethodContext& context)
     MessageTransferBody::shared_ptr transfer(
         boost::shared_polymorphic_downcast<MessageTransferBody>(
             context.methodBody));
-    RequestId requestId = context.getRequestId();
     
     if (transfer->getBody().isInline()) {
-        MessageMessage::shared_ptr message(new MessageMessage(&connection, requestId, transfer));
+        MessageMessage::shared_ptr message(new MessageMessage(&connection, 0, transfer));
         channel.handleInlineTransfer(message);
     } else { 
         throw ConnectionException(540, "References no longer supported");

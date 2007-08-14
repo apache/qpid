@@ -24,14 +24,9 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include "Requester.h"
-#include "Responder.h"
-
 namespace qpid {
 namespace framing {
-
-class AMQRequestBody;
-class AMQResponseBody;
+class AMQBody;
 class AMQMethodBody;
 class AMQHeaderBody;
 class AMQContentBody;
@@ -47,8 +42,6 @@ class BodyHandler {
     virtual void handleBody(boost::shared_ptr<AMQBody> body);
 
   protected:
-    virtual void handleRequest(boost::shared_ptr<AMQRequestBody>) = 0;
-    virtual void handleResponse(boost::shared_ptr<AMQResponseBody>) = 0;
     virtual void handleMethod(boost::shared_ptr<AMQMethodBody>) = 0;
     virtual void handleHeader(boost::shared_ptr<AMQHeaderBody>) = 0;
     virtual void handleContent(boost::shared_ptr<AMQContentBody>) = 0;

@@ -44,53 +44,13 @@ void ChannelAdapter::init(ChannelId i, OutputHandler& out, ProtocolVersion v)
     handlers.out= make_shared_ptr(new OutputHandlerFrameHandler(out));
 }
 
-RequestId ChannelAdapter::send(
-    shared_ptr<AMQBody> body, Correlator::Action action)
+RequestId ChannelAdapter::send(shared_ptr<AMQBody> body)
 {
     RequestId requestId = 0;
     assertChannelOpen();
-    switch (body->type()) {
-      case REQUEST_BODY: {
-          AMQRequestBody::shared_ptr request =
-              boost::shared_polymorphic_downcast<AMQRequestBody>(body);
-          requester.sending(request->getData());
-          requestId = request->getData().requestId;
-          if (!action.empty())
-              correlator.request(requestId, action);
-          break;
-      }
-      case RESPONSE_BODY: {
-          AMQResponseBody::shared_ptr response =
-              boost::shared_polymorphic_downcast<AMQResponseBody>(body);
-          responder.sending(response->getData());
-          break;
-      }
-        // No action required for other body types.
-    }
     AMQFrame frame(getVersion(), getId(), body);
     handlers.out->handle(frame);
     return requestId;
-}
-
-void ChannelAdapter::handleRequest(AMQRequestBody::shared_ptr request) {
-    assertMethodOk(*request);
-    AMQRequestBody::Data& requestData = request->getData();
-    responder.received(requestData);
-    handleMethodInContext(request, MethodContext(this, request));
-}
-
-void ChannelAdapter::handleResponse(AMQResponseBody::shared_ptr response) {
-    assertMethodOk(*response);
-    AMQResponseBody::Data& responseData = response->getData();
-
-    // FIXME aconway 2007-04-05: processed should be last
-    // but causes problems with InProcessBroker tests because
-    // we execute client code in handleMethod.
-    // Need to introduce a queue & 2 threads for inprocess.
-    requester.processed(responseData);
-    // FIXME aconway 2007-04-04: exception handling.
-    correlator.response(response);
-    handleMethod(response);
 }
 
 void ChannelAdapter::handleMethod(AMQMethodBody::shared_ptr method) {

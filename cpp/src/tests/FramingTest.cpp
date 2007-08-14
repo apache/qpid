@@ -27,16 +27,11 @@
 #include <typeinfo>
 #include "qpid/QpidError.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
-#include "qpid/framing/AMQRequestBody.h"
-#include "qpid/framing/AMQResponseBody.h"
-#include "qpid/framing/Requester.h"
-#include "qpid/framing/Responder.h"
 #include "InProcessBroker.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Connector.h"
 #include "qpid/client/ClientExchange.h"
 #include "qpid/client/ClientQueue.h"
-#include "qpid/framing/Correlator.h"
 #include "qpid/framing/BasicGetOkBody.h"
 #include <memory>
 #include <boost/lexical_cast.hpp>
@@ -64,11 +59,6 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testBasicConsumeBody);
     CPPUNIT_TEST(testConnectionRedirectBodyFrame);
     CPPUNIT_TEST(testBasicConsumeOkBodyFrame);
-    CPPUNIT_TEST(testRequestBodyFrame);
-    CPPUNIT_TEST(testResponseBodyFrame);
-    CPPUNIT_TEST(testRequester);
-    CPPUNIT_TEST(testResponder);
-    CPPUNIT_TEST(testCorrelator);
     CPPUNIT_TEST(testInlineContent);
     CPPUNIT_TEST(testContentReference);
     CPPUNIT_TEST(testContentValidation);
@@ -168,32 +158,6 @@ class FramingTest : public CppUnit::TestCase
         }
     }
 
-    void testRequestBodyFrame() {
-        std::string testing("testing");
-        AMQBody::shared_ptr request(new ChannelOpenBody(version, testing));
-        AMQFrame in(version, 999, request);
-        in.encode(buffer);
-        buffer.flip();
-        AMQFrame out;
-        out.decode(buffer);
-        ChannelOpenBody* decoded =
-            dynamic_cast<ChannelOpenBody*>(out.getBody().get());
-        CPPUNIT_ASSERT(decoded);
-        CPPUNIT_ASSERT_EQUAL(testing, decoded->getOutOfBand());
-    }
-    
-    void testResponseBodyFrame() {
-        AMQBody::shared_ptr response(new ChannelOpenOkBody(version));
-        AMQFrame in(version, 999, response);
-        in.encode(buffer);
-        buffer.flip();
-        AMQFrame out;
-        out.decode(buffer);
-        ChannelOpenOkBody* decoded =
-            dynamic_cast<ChannelOpenOkBody*>(out.getBody().get());
-        CPPUNIT_ASSERT(decoded);
-    }
-
     void testInlineContent() {        
         Content content(INLINE, "MyData");
         CPPUNIT_ASSERT(content.isInline());
@@ -245,140 +209,6 @@ class FramingTest : public CppUnit::TestCase
             CPPUNIT_ASSERT_EQUAL(string("Invalid discriminator: 2"), e.msg);
         }
         
-    }
-
-    void testRequester() {
-        Requester r;
-        AMQRequestBody::Data q;
-        AMQResponseBody::Data p;
-
-        r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(RequestId(1), q.requestId);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(0), q.responseMark);
-
-        r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(RequestId(2), q.requestId);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(0), q.responseMark);
-
-        // Now process a response
-        p.responseId = 1;
-        p.requestId = 2;
-        r.processed(AMQResponseBody::Data(1, 2));
-
-        r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(RequestId(3), q.requestId);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(1), q.responseMark);
-        
-        try {
-            r.processed(p);     // Already processed this response.
-            CPPUNIT_FAIL("Expected exception");
-        } catch (...) {}
-
-        try {
-            p.requestId = 50;
-            r.processed(p);     // No such request
-            CPPUNIT_FAIL("Expected exception");
-        } catch (...) {}
-
-        r.sending(q);           // reqId=4
-        r.sending(q);           // reqId=5
-        r.sending(q);           // reqId=6
-        p.responseId++;
-        p.requestId = 4;
-        p.batchOffset = 2;
-        r.processed(p);
-        r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(RequestId(7), q.requestId);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(2), q.responseMark);
-
-        p.responseId++;
-        p.requestId = 1;        // Out of order
-        p.batchOffset = 0;
-        r.processed(p);
-        r.sending(q);
-        CPPUNIT_ASSERT_EQUAL(RequestId(8), q.requestId);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(3), q.responseMark);
-    }
-
-    void testResponder() {
-        Responder r;
-        AMQRequestBody::Data q;
-        AMQResponseBody::Data p;
-        
-        q.requestId = 1;
-        q.responseMark = 0;
-        r.received(q);
-        p.requestId = q.requestId;
-        r.sending(p);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(1), p.responseId);
-        CPPUNIT_ASSERT_EQUAL(RequestId(1), p.requestId);
-        CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(0), r.getResponseMark());
-
-        q.requestId++;
-        q.responseMark = 1;
-        r.received(q);
-        r.sending(p);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(2), p.responseId);
-        CPPUNIT_ASSERT_EQUAL(0U,   p.batchOffset);
-        CPPUNIT_ASSERT_EQUAL(ResponseId(1), r.getResponseMark());
-
-        try {
-            // Response mark higher any request ID sent.
-            q.responseMark = 3;
-            r.received(q);
-        } catch(...) {}
-
-        try {
-            // Response mark lower than previous response mark.
-            q.responseMark = 0;
-            r.received(q);
-        } catch(...) {}
-
-        // TODO aconway 2007-01-14: Test for batching when supported.
-        
-    }
-
-
-    std::vector<Correlator::ResponsePtr> correlations;
-
-    void correlatorCallback(Correlator::ResponsePtr r) {
-        correlations.push_back(r);
-    }
-
-    struct DummyResponse : public AMQResponseBody {
-        DummyResponse(ResponseId id=0, RequestId req=0, BatchOffset off=0)
-            : AMQResponseBody(version, id, req, off) {}
-        uint32_t size() const { return 0; }
-        void print(std::ostream&) const {}
-        MethodId amqpMethodId() const { return 0; }
-        ClassId  amqpClassId() const { return 0; }
-        void encodeContent(Buffer& ) const {}
-        void decodeContent(Buffer& ) {}
-    };
-
-    void testCorrelator() {
-        CPPUNIT_ASSERT(correlations.empty());
-        Correlator c;
-        Correlator::Action action = boost::bind(&FramingTest::correlatorCallback, this, _1);
-        c.request(5, action);
-        Correlator::ResponsePtr r1(new DummyResponse(3, 5, 0));
-        CPPUNIT_ASSERT(c.response(r1));
-        CPPUNIT_ASSERT_EQUAL(size_t(1), correlations.size());
-        CPPUNIT_ASSERT(correlations.front() == r1);
-        correlations.clear();
-
-        c.request(6, action);
-        c.request(7, action);
-        c.request(8, action);
-        Correlator::ResponsePtr r2(new DummyResponse(4, 6, 3));
-        CPPUNIT_ASSERT(c.response(r2));
-        CPPUNIT_ASSERT_EQUAL(size_t(3), correlations.size());
-        CPPUNIT_ASSERT(r2 == correlations[0]);
-        CPPUNIT_ASSERT(r2 == correlations[1]);
-        CPPUNIT_ASSERT(r2 == correlations[2]);
-        Correlator::ResponsePtr r3(new DummyResponse(5, 99, 0));
-        CPPUNIT_ASSERT(!c.response(r3));
     }
 
     // expect may contain null chars so use string(ptr,size) constructor

@@ -135,15 +135,12 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(platform_src) \
   qpid/framing/AMQBody.cpp \
-  qpid/framing/AMQRequestBody.cpp \
-  qpid/framing/AMQResponseBody.cpp \
   qpid/framing/AMQContentBody.cpp \
   qpid/framing/AMQFrame.cpp \
   qpid/framing/AMQHeaderBody.cpp \
   qpid/framing/AMQHeartbeatBody.cpp \
   qpid/framing/AMQMethodBody.cpp \
   qpid/framing/FrameHandler.h \
-  qpid/framing/MethodContext.cpp \
   qpid/framing/BasicHeaderProperties.cpp \
   qpid/framing/BodyHandler.cpp \
   qpid/framing/ChannelAdapter.cpp \
@@ -154,11 +151,8 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
   qpid/framing/ProtocolVersionException.cpp \
-  qpid/framing/Requester.cpp \
-  qpid/framing/Responder.cpp \
   qpid/framing/SequenceNumber.cpp \
   qpid/framing/SequenceNumberSet.cpp \
-  qpid/framing/Correlator.cpp \
   qpid/framing/Value.cpp \
   qpid/framing/Proxy.cpp \
   qpid/framing/Uuid.cpp \
@@ -366,13 +360,10 @@ nobase_include_HEADERS = \
   qpid/framing/AMQHeaderBody.h \
   qpid/framing/AMQHeartbeatBody.h \
   qpid/framing/AMQMethodBody.h \
-  qpid/framing/AMQRequestBody.h \
-  qpid/framing/AMQResponseBody.h \
   qpid/framing/BasicHeaderProperties.h \
   qpid/framing/BodyHandler.h \
   qpid/framing/Buffer.h \
   qpid/framing/ChannelAdapter.h \
-  qpid/framing/Correlator.h \
   qpid/framing/FieldTable.h \
   qpid/framing/FramingContent.h \
   qpid/framing/HeaderProperties.h \
@@ -385,8 +376,6 @@ nobase_include_HEADERS = \
   qpid/framing/ProtocolVersion.h \
   qpid/framing/ProtocolVersionException.h \
   qpid/framing/Proxy.h \
-  qpid/framing/Requester.h \
-  qpid/framing/Responder.h \
   qpid/framing/SerializeHandler.h \
   qpid/framing/SequenceNumber.h \
   qpid/framing/SequenceNumberSet.h \
