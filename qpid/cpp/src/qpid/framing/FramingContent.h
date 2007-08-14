@@ -26,6 +26,8 @@
 namespace qpid {
 namespace framing {
 
+class Buffer;
+
 enum discriminator_types { INLINE = 0, REFERENCE = 1 };
 
 /**

@@ -67,7 +67,7 @@ using namespace broker;
     virtual bool isOpen() const{ return true; }
     virtual void handleMethodInContext(shared_ptr<AMQMethodBody>, const MethodContext&){}
     // No-op send.
-    virtual RequestId send(shared_ptr<AMQBody>, Correlator::Action) { return 0; }
+    virtual RequestId send(shared_ptr<AMQBody>) { return 0; }
 
     //delivery adapter methods, also no-ops:
     virtual DeliveryId deliver(Message::shared_ptr&, DeliveryToken::shared_ptr) { return 0; }

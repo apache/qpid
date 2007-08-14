@@ -59,12 +59,6 @@ struct MethodContext
      * It's also provides the request ID  when constructing a response.
      */
     BodyPtr methodBody;
-
-    /**
-     * Return methodBody's request ID.
-     * It is an error to call this if methodBody is not a request.
-     */
-    RequestId getRequestId() const;
 };
 
 

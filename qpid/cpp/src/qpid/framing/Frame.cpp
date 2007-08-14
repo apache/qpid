@@ -22,8 +22,6 @@
 
 #include "Frame.h"
 #include "qpid/QpidError.h"
-#include "AMQRequestBody.h"
-#include "AMQResponseBody.h"
 
 
 namespace qpid {
