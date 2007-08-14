@@ -45,13 +45,16 @@ struct Msg {
     operator std::string() const { return str(); }
 };
 
-template <class T> const Msg& operator<<(const Msg& m, const T& t) { const_cast<std::ostringstream&>(m.os)<<t; return m; }
-std::ostream& operator<<(std::ostream& o, const Msg& m) { return o<<m.str(); }
+inline template <class T> const Msg& operator<<(const Msg& m, const T& t) {
+    const_cast<std::ostringstream&>(m.os)<<t; return m;
+}
+
+inline std::ostream& operator<<(std::ostream& o, const Msg& m) {
+    return o<<m.str();
+}
 
 /** Construct a message using operator << and append (file:line) */
 #define QPID_MSG(message) Msg() << message << " (" << __FILE__ << ":" << __LINE__ << ")"
-using namespace std;
-
 
 } // namespace qpid
 
