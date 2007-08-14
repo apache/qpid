@@ -22,8 +22,8 @@
  *
  */
 
-#include "framing/amqp_types.h"
-
+#include "qpid/framing/amqp_types.h"
+#include "qpid/Msg.h"
 #include <exception>
 #include <string>
 #include <memory>
