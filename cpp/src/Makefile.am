@@ -251,8 +251,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/MessageListener.cpp		\
-  qpid/client/ResponseHandler.cpp		\
-  qpid/client/ReturnedMessageHandler.cpp	\
   qpid/client/Correlator.cpp			\
   qpid/client/CompletionTracker.cpp		\
   qpid/client/ChannelHandler.cpp		\
@@ -345,11 +343,7 @@ nobase_include_HEADERS = \
   qpid/client/Connection.h \
   qpid/client/ConnectionImpl.h \
   qpid/client/Connector.h \
-  qpid/client/MessageChannel.h \
   qpid/client/MessageListener.h \
-  qpid/client/MethodBodyInstances.h \
-  qpid/client/ResponseHandler.h \
-  qpid/client/ReturnedMessageHandler.h \
   qpid/client/BlockingQueue.h \
   qpid/client/Correlator.h \
   qpid/client/CompletionTracker.h \
