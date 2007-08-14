@@ -59,7 +59,7 @@ class SemanticHandler : private framing::ChannelAdapter,
     void handleContent(boost::shared_ptr<qpid::framing::AMQContentBody>);
     void handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody>);
 
-    framing::RequestId send(shared_ptr<framing::AMQBody> body, framing::Correlator::Action action=framing::Correlator::Action());
+    framing::RequestId send(shared_ptr<framing::AMQBody> body);
 
 
     //delivery adapter methods:

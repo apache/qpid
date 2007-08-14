@@ -23,8 +23,7 @@
 
 #include "AMQFrame.h"
 #include "qpid/QpidError.h"
-#include "AMQRequestBody.h"
-#include "AMQResponseBody.h"
+#include "AMQMethodBody.h"
 
 
 namespace qpid {
@@ -90,12 +89,6 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t size)
     {
       case METHOD_BODY:
         body = AMQMethodBody::create(versionMap, version, buffer);
-        break;
-      case REQUEST_BODY:
-        body = AMQRequestBody::create(versionMap, version, buffer);
-        break;
-      case RESPONSE_BODY:
-        body = AMQResponseBody::create(versionMap, version, buffer);
         break;
       case HEADER_BODY: 
 	body = AMQBody::shared_ptr(new AMQHeaderBody()); 

@@ -171,16 +171,16 @@ void SemanticHandler::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_
     msg->deliver(*this, tag, token, connection.getFrameMax());
 }
 
-RequestId SemanticHandler::send(shared_ptr<AMQBody> body, Correlator::Action action)
+RequestId SemanticHandler::send(shared_ptr<AMQBody> body)
 {
     Mutex::ScopedLock l(outLock);
     uint8_t type(body->type());
-    if (type == REQUEST_BODY || type == RESPONSE_BODY || type == METHOD_BODY) {
+    if (type == METHOD_BODY) {
         //temporary hack until channel management is moved to its own handler:
         if (dynamic_pointer_cast<AMQMethodBody>(body)->amqpClassId() != ChannelOpenBody::CLASS_ID) {
             ++outgoing.hwm;
             //std::cout << "[" << this << "] allocated: " << outgoing.hwm.getValue() << " to " << *body  << std::endl;
         }
     }
-    return ChannelAdapter::send(body, action);
+    return ChannelAdapter::send(body);
 }
