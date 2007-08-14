@@ -172,6 +172,9 @@ class CppGen < Generator
   def variantl(types) "boost::variant<#{types.join(", \n")}>"; end
   def blank_variant(types) variant(["boost::blank"]+types); end
   def tuple(types) "boost::tuple<#{types.join(', ')}>"; end
-  
+
+  def public() outdent { genl "public:" } end
+  def private() outdent { genl "private:" } end
+  def protected() outdent { genl "protected:" } end
 end
 

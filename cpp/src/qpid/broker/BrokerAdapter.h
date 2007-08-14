@@ -85,7 +85,6 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     }
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
-    void setResponseTo(framing::RequestId r);
 
   private:
 

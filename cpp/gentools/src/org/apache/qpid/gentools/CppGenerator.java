@@ -29,8 +29,6 @@ import java.util.TreeMap;
 
 public class CppGenerator extends Generator
 {
-    protected static final boolean USE_RELIABLE_FRAMING = false;
-
     protected static final String versionNamespaceStartToken = "${version_namespace_start}";
     protected static final String versionNamespaceEndToken = "${version_namespace_end}";
         
@@ -379,9 +377,7 @@ public class CppGenerator extends Generator
     }
 
     private String baseClass(AmqpMethod method, AmqpVersion version) {
-        if (!USE_RELIABLE_FRAMING) return "AMQMethodBody";
-	String base = method.isResponse(version) ? "AMQResponseBody":"AMQRequestBody";
-	return base;
+        return "AMQMethodBody";
     }
     
     @Override
@@ -769,7 +765,7 @@ public class CppGenerator extends Generator
         for (String thisMethodName : thisClass.methodMap.keySet())
             {
                 AmqpMethod method = thisClass.methodMap.get(thisMethodName);
-                String returnType = (abstractMethodFlag || method.isResponse(null))? "void" : "RequestId";
+                String returnType = "void";
                 boolean clientChassisFlag = method.clientMethodFlagMap.isSet();
                 boolean serverChassisFlag = method.serverMethodFlagMap.isSet();
                 if ((serverFlag && serverChassisFlag) || (!serverFlag && clientChassisFlag))
@@ -784,7 +780,7 @@ public class CppGenerator extends Generator
                                 sb.append(indent + "virtual "+returnType+" "+ methodName + "(");
 
                                 if (abstractMethodFlag && isSpecialCase(thisClass.name, method.name)) {
-                                    sb.append("const MethodContext& context");
+                                    sb.append("const AMQMethodBody& context");
                                 } else {
                                     sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), false, true, true));
                                 }
@@ -906,7 +902,6 @@ public class CppGenerator extends Generator
                 sb.append(indent + "{" + cr);
                 sb.append(indent + "private:" + cr);
                 sb.append(indent + tab + "ChannelAdapter& channel;" + cr);
-                sb.append(indent + tab + "RequestId responseTo;" + cr);
                 sb.append(cr);
                 sb.append(indent + "public:" + cr);
                 sb.append(indent + tab + "// Constructors and destructors" + cr);
@@ -917,7 +912,6 @@ public class CppGenerator extends Generator
                 sb.append(cr);
                 sb.append(indent + tab + "static "+className+"& get(" + proxyOuterClassName(serverFlag)+"& proxy) { return proxy.get"+className+"();}\n\n");
                 sb.append(indent + tab + "// set for response correlation" + cr);
-                sb.append(indent + tab + "void setResponseTo(RequestId r) { responseTo = r; }" + cr);                
                 sb.append(cr);
                 sb.append(indent + tab + "// Protocol methods" + cr);
                 sb.append(cr);
@@ -1021,16 +1015,10 @@ public class CppGenerator extends Generator
                                 AmqpVersionSet versionSet = overloadededParameterMap.get(thisFieldMap);
                                 if (!first)
                                     sb.append(cr);
-                                String returnType =  method.isResponse(null) ? "void" : "RequestId";
+                                String returnType =  "void";
                                 sb.append(indent + returnType + " " + outerclassName + "::" + thisClass.name + "::" +
                                           methodName + "(");
                                 sb.append(generateMethodParameterList(thisFieldMap, indentSize + (5*tabSize), false, true, true));
-                                if (method.isResponse(null)) {
-                                    /*
-                                    if (!thisFieldMap.isEmpty()) sb.append(", ");
-                                    sb.append("RequestId responseTo");
-                                    */
-                                }
                                 sb.append(")");
                                 if (versionSet.size() != globalVersionSet.size())
                                     sb.append(" // AMQP Version(s) " + versionSet);
@@ -1094,9 +1082,8 @@ public class CppGenerator extends Generator
         String tab = Utils.createSpaces(tabSize);
         String namespace = version != null ? version.namespace() + "::" : "";
         StringBuffer sb = new StringBuffer();
-        sb.append(indent+tab+(method.isResponse(version) ? "" : "return ")+"channel.send(make_shared_ptr(new ");
+        sb.append(indent+tab+"channel.send(make_shared_ptr(new ");
         sb.append(namespace + methodBodyClassName + "( channel.getVersion()");
-        if (method.isResponse(version)) sb.append(", responseTo");
         sb.append(generateMethodParameterList(fieldMap, indentSize + (5*tabSize), true, false, true));
         sb.append(")));\n");
         return sb.toString();           
@@ -1454,18 +1441,11 @@ public class CppGenerator extends Generator
         String indent = Utils.createSpaces(indentSize);
         String tab = Utils.createSpaces(tabSize);
         StringBuffer sb = new StringBuffer();
-        if (method.fieldMap.size() > 0 || method.isResponse(version))
+        if (method.fieldMap.size() > 0)
             {
                 sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion version," + cr);
-		if (method.isResponse(version)) {
-		    sb.append(indent+tab+"RequestId toRequest");
-		    if (method.fieldMap.size() >0) 
-			sb.append(",\n");
-		}
 		sb.append(generateFieldList(method.fieldMap, version, true, false, 8));
                 sb.append(indent + tab + ") : " + baseClass(method, version) + "(version");
-		if (method.isResponse(version))
-		    sb.append(", 0, toRequest");
 		sb.append(")");
 		if (method.fieldMap.size() > 0) 
 		    sb.append(", \n" + generateFieldList(method.fieldMap, version, false, true, 8));
@@ -1491,15 +1471,14 @@ public class CppGenerator extends Generator
                         if (bItr.next()) // This is a server operation
                             {
                                 boolean fieldMapNotEmptyFlag = method.fieldMap.size() > 0;
-                                sb.append(indent + "void invoke(AMQP_ServerOperations& target, const MethodContext&" 
-                                          + (special ? " context)" : " )") + cr);
+                                sb.append(indent + "void invoke(AMQP_ServerOperations& target)\n");
                                 sb.append(indent + "{" + cr);
                                 sb.append(indent + tab + "target.get" + thisClass.name + "Handler()->" +
                                           parseForReservedWords(Utils.firstLower(method.name),
                                                                 thisClass.name + Utils.firstUpper(method.name) + "Body.invoke()") + "(");
                                 if (special) 
                                     {
-                                        sb.append("context");                    
+                                        sb.append("*this");                    
                                     }
                                 else if (fieldMapNotEmptyFlag)
                                     {

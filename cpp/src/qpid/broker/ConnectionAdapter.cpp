@@ -21,14 +21,12 @@
 
 #include "ConnectionAdapter.h"
 #include "Connection.h"
-#include "qpid/framing/MethodContext.h"
 
 using namespace qpid;
 using namespace qpid::broker;
 using qpid::framing::ReplyCode;
 using qpid::framing::ClassId;
 using qpid::framing::MethodId;
-using qpid::framing::MethodContext;
 using qpid::framing::FieldTable;
 
 void ConnectionAdapter::init(const framing::ProtocolInitiation& header) {
@@ -44,13 +42,11 @@ void ConnectionAdapter::close(ReplyCode code, const string& text, ClassId classI
     handler->client.close(code, text, classId, methodId);
 }
 
-void ConnectionAdapter::handleMethodInContext(
-    boost::shared_ptr<qpid::framing::AMQMethodBody> method,
-    const MethodContext& context
-)
+void ConnectionAdapter::handleMethod(
+    boost::shared_ptr<qpid::framing::AMQMethodBody> method)
 {
     try{
-        method->invoke(*this, context);
+        method->invoke(*this);
     }catch(ConnectionException& e){
         handler->client.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());
     }catch(std::exception& e){

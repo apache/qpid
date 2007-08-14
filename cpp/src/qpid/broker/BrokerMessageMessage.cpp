@@ -48,27 +48,24 @@ struct MessageDeliveryToken : public DeliveryToken
 };
 	
 MessageMessage::MessageMessage(
-    ConnectionToken* publisher, RequestId requestId_, TransferPtr transfer_
+    ConnectionToken* publisher, TransferPtr transfer_
 ) : Message(publisher, transfer_->getDestination(),
             transfer_->getRoutingKey(),
             transfer_->getRejectUnroutable(),
             transfer_->getImmediate(),
             transfer_),
-    requestId(requestId_),
     transfer(transfer_)
 {
     assert(transfer->getBody().isInline());
 }
 
 MessageMessage::MessageMessage(
-    ConnectionToken* publisher, RequestId requestId_, TransferPtr transfer_,
-    ReferencePtr reference_
+    ConnectionToken* publisher, TransferPtr transfer_, ReferencePtr reference_
 ) : Message(publisher, transfer_->getDestination(),
             transfer_->getRoutingKey(),
             transfer_->getRejectUnroutable(),
             transfer_->getImmediate(),
             transfer_),
-    requestId(requestId_),
     transfer(transfer_),
     reference(reference_)
 {
@@ -178,7 +175,7 @@ void MessageMessage::transferMessage(
         ReferencePtr newRef(new Reference(refname));
         Reference::AppendPtr newAppend(new MessageAppendBody(channel.getVersion(), refname, content));
         newRef->append(newAppend);
-        MessageMessage newMsg(const_cast<ConnectionToken*>(getPublisher()), 0, newTransfer, newRef);
+        MessageMessage newMsg(const_cast<ConnectionToken*>(getPublisher()), newTransfer, newRef);
         newMsg.transferMessage(channel, consumerTag, framesize);
         return;
     }

@@ -47,8 +47,7 @@ public:
     void handle(framing::AMQFrame& frame);
 
     //ChannelAdapter virtual methods:
-    void handleMethodInContext(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
-                               const qpid::framing::MethodContext& context);
+    void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method);
     bool isOpen() const { return true; } //channel 0 is always open
     //never needed:
     void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>) {}

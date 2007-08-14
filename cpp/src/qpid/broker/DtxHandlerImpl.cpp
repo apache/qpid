@@ -25,7 +25,6 @@ using namespace qpid::broker;
 using qpid::framing::AMQP_ClientProxy;
 using qpid::framing::Buffer;
 using qpid::framing::FieldTable;
-using qpid::framing::MethodContext;
 using std::string;
 
 DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : 
@@ -194,9 +193,4 @@ void DtxHandlerImpl::setTimeout(u_int16_t /*ticket*/,
     broker.getDtxManager().setTimeout(xid, timeout);
 }
 
-void DtxHandlerImpl::setResponseTo(framing::RequestId r)
-{
-    dClient.setResponseTo(r);
-    cClient.setResponseTo(r);
-}
 

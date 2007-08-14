@@ -60,13 +60,12 @@ void SemanticHandler::handle(framing::AMQFrame& frame)
 }
 
 //ChannelAdapter virtual methods:
-void SemanticHandler::handleMethodInContext(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
-                                            const qpid::framing::MethodContext& context)
+void SemanticHandler::handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method)
 {
     try {
         if (!method->invoke(this)) {
             //else do the usual:
-            handleL4(method, context);
+            handleL4(method);
             //(if the frameset is complete) we can move the execution-mark
             //forward 
             
@@ -113,8 +112,7 @@ void SemanticHandler::flush()
     }
 }
 
-void SemanticHandler::handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method, 
-                                            const qpid::framing::MethodContext& context)
+void SemanticHandler::handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method)
 {
     try{
         if(getId() != 0 && !method->isA<ChannelOpenBody>() && !isOpen()) {
@@ -124,7 +122,7 @@ void SemanticHandler::handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> m
                 throw ConnectionException(504, out.str());
             }
         } else {
-            method->invoke(*adapter, context);
+            method->invoke(*adapter);
         }
     }catch(const ChannelException& e){
         adapter->getProxy().getChannel().close(
@@ -171,7 +169,7 @@ void SemanticHandler::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_
     msg->deliver(*this, tag, token, connection.getFrameMax());
 }
 
-RequestId SemanticHandler::send(shared_ptr<AMQBody> body)
+void SemanticHandler::send(shared_ptr<AMQBody> body)
 {
     Mutex::ScopedLock l(outLock);
     uint8_t type(body->type());
@@ -182,5 +180,5 @@ RequestId SemanticHandler::send(shared_ptr<AMQBody> body)
             //std::cout << "[" << this << "] allocated: " << outgoing.hwm.getValue() << " to " << *body  << std::endl;
         }
     }
-    return ChannelAdapter::send(body);
+    ChannelAdapter::send(body);
 }

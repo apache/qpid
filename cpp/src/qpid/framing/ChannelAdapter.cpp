@@ -18,6 +18,7 @@
 #include <boost/format.hpp>
 
 #include "ChannelAdapter.h"
+#include "OutputHandler.h"
 #include "AMQFrame.h"
 #include "FrameHandler.h"
 #include "qpid/Exception.h"
@@ -44,18 +45,11 @@ void ChannelAdapter::init(ChannelId i, OutputHandler& out, ProtocolVersion v)
     handlers.out= make_shared_ptr(new OutputHandlerFrameHandler(out));
 }
 
-RequestId ChannelAdapter::send(shared_ptr<AMQBody> body)
+void ChannelAdapter::send(shared_ptr<AMQBody> body)
 {
-    RequestId requestId = 0;
     assertChannelOpen();
     AMQFrame frame(getVersion(), getId(), body);
     handlers.out->handle(frame);
-    return requestId;
-}
-
-void ChannelAdapter::handleMethod(AMQMethodBody::shared_ptr method) {
-    assertMethodOk(*method);
-    handleMethodInContext(method, MethodContext(this, method));
 }
 
 void ChannelAdapter::assertMethodOk(AMQMethodBody& method) const {

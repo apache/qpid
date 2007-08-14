@@ -43,13 +43,12 @@ class MessageMessage: public Message{
     typedef boost::shared_ptr<framing::MessageTransferBody> TransferPtr;
     typedef boost::shared_ptr<Reference> ReferencePtr;
     
-    MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer);
-    MessageMessage(ConnectionToken* publisher, framing::RequestId, TransferPtr transfer, ReferencePtr reference);
+    MessageMessage(ConnectionToken* publisher, TransferPtr transfer);
+    MessageMessage(ConnectionToken* publisher, TransferPtr transfer, ReferencePtr reference);
     MessageMessage();
             
     // Default destructor okay
 
-    framing::RequestId getRequestId() const {return requestId; }
     TransferPtr getTransfer() const { return transfer; }
     ReferencePtr getReference() const ;
     
@@ -86,7 +85,6 @@ class MessageMessage: public Message{
         const std::string& destination, 
         const framing::Content& body) const;
   
-    framing::RequestId requestId;
     const TransferPtr transfer;
     const boost::shared_ptr<Reference> reference;
 };
