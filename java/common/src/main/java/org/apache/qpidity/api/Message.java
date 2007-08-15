@@ -42,10 +42,23 @@ public interface Message
 	 * <li> To Disk
 	 * <li> To Socket (Stream)
 	 * </ul>
-	 * @param src
+	 * @param src - the data to append
 	 */
 	public void appendData(byte[] src) throws IOException;
 
+    /**
+     * This will abstract the underlying message data.
+     * The Message implementation may not hold all message
+     * data in memory (especially in the case of large messages)
+     * 
+     * The appendData function might write data to 
+     * <ul>
+     * <li> Memory (Ex: ByteBuffer)
+     * <li> To Disk
+     * <li> To Socket (Stream)
+     * </ul>
+     * @param src - the data to append
+     */    
     public void appendData(ByteBuffer src) throws IOException;
     
 	/**
@@ -59,10 +72,50 @@ public interface Message
 	 * <li> From Disk
 	 * <li> From Socket as and when it gets streamed
 	 * </ul>
-	 * @param target
+	 * @param target  The target byte[] which the data gets copied to  
 	 */
     public void readData(byte[] target) throws IOException;   
-
+   
+    /**
+     * * This will abstract the underlying message data.
+     * The Message implementation may not hold all message
+     * data in memory (especially in the case of large messages)
+     * 
+     * The read function might copy data from
+     * <ul>
+     * <li> From memory (Ex: ByteBuffer)
+     * <li> From Disk
+     * <li> From Socket as and when it gets streamed
+     * </ul>
+     * 
+     * @return A ByteBuffer containing data
+     * @throws IOException
+     */
     public ByteBuffer readData() throws IOException; 
+    
+    /**
+     * This should clear the body of the message.
+     */
+    public void clearData();
+    
+    /**
+     * The provides access to the command Id assigned to the
+     * message transfer.
+     * This id is useful when you do
+     * <ul>
+     * <li>For message acquiring - If the transfer happend in no-acquire mode
+     *     you could use this id to accquire it.
+     * <li>For releasing a message. You can use this id to release an acquired
+     *     message
+     * <li>For Acknowledging a message - You need to pass this ID, in order to 
+     *     acknowledge the message
+     * <li>For Rejecting a message - You need to pass this ID, in order to reject
+     *     the message.            
+     * </ul>
+     * 
+     * @return the message transfer id.
+     */
+    public long getMessageTransferId();
+    
 }
 

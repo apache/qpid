@@ -23,20 +23,39 @@ public class ByteBufferMessage implements Message
 {
     private Queue<ByteBuffer> _data = new LinkedList<ByteBuffer>();
     private ByteBuffer _readBuffer;
-    private int dataSize; 
+    private int _dataSize; 
     private DeliveryProperties _currentDeliveryProps;
     private MessageProperties _currentMessageProps;
+    private long _transferId;
     
+    public ByteBufferMessage(long transferId)
+    {
+        _transferId = transferId;
+    }    
     
+    public long getMessageTransferId()
+    {
+        return _transferId;
+    }
+    
+    public void clearData()
+    {
+        _data = new LinkedList<ByteBuffer>();
+        _readBuffer = null;
+    }
+        
     public void appendData(byte[] src) throws IOException
     {
         appendData(ByteBuffer.wrap(src));
     }
 
+    /**
+     * write the data from the current position up to the buffer limit
+     */
     public void appendData(ByteBuffer src) throws IOException
     {
         _data.offer(src);
-        dataSize += src.remaining();
+        _dataSize += src.remaining();        
     }
     
     public DeliveryProperties getDeliveryProperties()
@@ -88,7 +107,7 @@ public class ByteBufferMessage implements Message
         }
         else
         {
-            _readBuffer = ByteBuffer.allocate(dataSize);
+            _readBuffer = ByteBuffer.allocate(_dataSize);
             for(ByteBuffer buf:_data)
             {
                 _readBuffer.put(buf);
@@ -104,7 +123,7 @@ public class ByteBufferMessage implements Message
             buildReadBuffer();
         }
         ByteBuffer temp = _readBuffer.duplicate();
-        byte[] b = new byte[temp.limit()];
+        byte[] b = new byte[temp.remaining()];
         temp.get(b);
         return new String(b);
     }

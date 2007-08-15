@@ -29,6 +29,10 @@ public abstract class ReadOnlyMessage implements Message
     public MessageProperties getMessageProperties()
     {
         return _messageProperties;
-    } 
-
+    }
+    
+    public void clearData()
+    {
+        throw new UnsupportedOperationException("This Message is read only after the initial source, cannot clear data");
+    }
 }
