@@ -25,6 +25,7 @@
 #include "qpid/log/Options.h"
 #include "qpid/Url.h"
 #include "qpid/log/Logger.h"
+#include "qpid/client/Connection.h"
 
 #include <iostream>
 #include <exception>
@@ -63,6 +64,12 @@ struct TestOptions : public qpid::Options
         trace = log.trace;
         qpid::log::Logger::instance().configure(log, argv[0]);
     }
+
+    /** Open a connection usin option values */
+    void open(qpid::client::Connection& connection) {
+        connection.open(host, port, username, password, virtualhost);
+    }
+
     
     std::string host;
     uint16_t port;
