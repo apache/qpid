@@ -52,6 +52,7 @@ public class ClientSessionDelegate extends SessionDelegate
     {
         _currentTransfer = currentTransfer;
         _currentMessageListener = ((ClientSession)session).getMessageListerners().get(currentTransfer.getDestination());
+        _currentMessageListener.messageTransfer(currentTransfer.getId());
         
         //a better way is to tell the broker to stop the transfer
         if (_currentMessageListener == null && _currentTransfer.getAcquireMode() == 1)
