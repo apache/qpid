@@ -43,7 +43,7 @@ public class QueueImpl extends DestinationImpl implements Queue
     {
         super(session, name);
         _exchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
-        _exchangeClass = ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
+        _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
         _queueName = name;
         // check that this queue exist on the server
         // As pasive is set the server will not create the queue.

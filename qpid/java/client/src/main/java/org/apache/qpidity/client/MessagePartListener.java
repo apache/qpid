@@ -54,7 +54,7 @@ public interface MessagePartListener
      *
      * @param data Data to be added or streamed.
      */
-    public void addData(ByteBuffer src);
+    public void data(ByteBuffer src);
 
     /**
      * Indicates that the message has been fully received. 
