@@ -55,8 +55,9 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
      * Constructor used by MessageFactory
      *
      * @param message The new qpid message.
+     * @throws QpidException In case of IO problem when reading the received message.
      */
-    protected TextMessageImpl(org.apache.qpidity.api.Message message)
+    protected TextMessageImpl(org.apache.qpidity.api.Message message) throws QpidException
     {
         super(message);
     }

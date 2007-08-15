@@ -27,7 +27,12 @@ public class ByteBufferMessage implements Message
     private DeliveryProperties _currentDeliveryProps;
     private MessageProperties _currentMessageProps;
     private long _transferId;
-    
+
+    public ByteBufferMessage()
+    {
+       
+    }
+
     public ByteBufferMessage(long transferId)
     {
         _transferId = transferId;
