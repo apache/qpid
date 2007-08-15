@@ -35,6 +35,13 @@ import org.apache.qpidity.Struct;
 public interface MessagePartListener
 {    
     /**
+     * Indicates the Message transfer has started.
+     * 
+     * @param transferId
+     */
+    public void messageTransfer(long transferId);
+    
+    /**
      * Add the following headers ( {@link org.apache.qpidity.DeliveryProperties}
      * or {@link org.apache.qpidity.ApplicationProperties} ) to the message being received.
      *
