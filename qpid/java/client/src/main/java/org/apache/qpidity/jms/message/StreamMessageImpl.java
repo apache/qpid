@@ -17,6 +17,8 @@
  */
 package org.apache.qpidity.jms.message;
 
+import org.apache.qpidity.QpidException;
+
 import javax.jms.*;
 import java.io.IOException;
 import java.io.EOFException;
@@ -80,8 +82,9 @@ public class StreamMessageImpl extends BytesMessageImpl implements StreamMessage
      * Constructor used by MessageFactory
      *
      * @param message The new qpid message.
+     * @throws QpidException In case of problem when receiving the message body.
      */
-    protected StreamMessageImpl(org.apache.qpidity.api.Message message)
+    protected StreamMessageImpl(org.apache.qpidity.api.Message message) throws QpidException
     {
         super(message);
     }
