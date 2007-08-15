@@ -63,6 +63,7 @@ class QueueTest : public CppUnit::TestCase
     CPPUNIT_TEST(testRegistry);
     CPPUNIT_TEST(testDequeue);
     CPPUNIT_TEST(testBound);
+    CPPUNIT_TEST(testAsyncMessage);
     CPPUNIT_TEST_SUITE_END();
 
 
@@ -70,6 +71,30 @@ class QueueTest : public CppUnit::TestCase
     Message::shared_ptr message(std::string exchange, std::string routingKey) {
         return Message::shared_ptr(
             new BasicMessage(0, exchange, routingKey, false, false));
+    }
+    
+    
+    void testAsyncMessage(){
+    
+        Queue::shared_ptr queue(new Queue("my_test_queue", true));
+        Message::shared_ptr received;
+	
+        TestConsumer c1; 
+        queue->consume(&c1);
+
+       
+        //Test basic delivery:
+        Message::shared_ptr msg1 = message("e", "A");
+        queue->process(msg1);
+	sleep(2);
+
+        CPPUNIT_ASSERT(!c1.received);
+ 	msg1->enqueueComplete();
+
+        received = queue->dequeue();
+        CPPUNIT_ASSERT_EQUAL(msg1.get(), received.get());
+ 	
+   
     }
     
     void testConsumers(){
