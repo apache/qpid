@@ -28,6 +28,11 @@ import javax.jms.XASession;
  */
 public class XAConnectionImpl extends ConnectionImpl implements XAConnection
 {
+    public XAConnectionImpl(String host, int port, String virtualHost, String username, String password) throws QpidException
+    {
+        super(host, port, virtualHost, username, password);
+    }
+
     /**
      * Creates an XASession.
      *

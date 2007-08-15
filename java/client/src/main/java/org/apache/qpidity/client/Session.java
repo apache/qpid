@@ -336,6 +336,9 @@ public interface Session
      */
     public void messageReject(RangeSet ranges, int code, String text);
     
+    /** 
+     * @return the rejected message ranges
+     */
     public RangeSet getRejectedMessages();
 
     /**
@@ -350,7 +353,9 @@ public interface Session
      */
     public void messageAcquire(RangeSet ranges, short mode);
 
-    
+    /** 
+     * @return returns the message ranges marked by the broker as acquired.
+     */
     public RangeSet getAccquiredMessages();
     
     /**

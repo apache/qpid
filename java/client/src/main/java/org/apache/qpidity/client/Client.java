@@ -14,6 +14,8 @@ import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.MinaHandler;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.SessionDelegate;
+import org.apache.qpidity.client.impl.ClientSession;
+import org.apache.qpidity.client.impl.ClientSessionDelegate;
 
 
 public class Client implements org.apache.qpidity.client.Connection
@@ -23,6 +25,10 @@ public class Client implements org.apache.qpidity.client.Connection
     private ExceptionListener _exceptionListner;
     private final Lock _lock = new ReentrantLock();
     
+    /**
+     * 
+     * @return returns a new connection to the broker.
+     */
     public static org.apache.qpidity.client.Connection createConnection()
     {
         return new Client();

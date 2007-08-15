@@ -1,4 +1,4 @@
-package org.apache.qpidity.client;
+package org.apache.qpidity.client.impl;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -12,6 +12,9 @@ import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Range;
 import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.api.Message;
+import org.apache.qpidity.client.ExceptionListener;
+import org.apache.qpidity.client.MessagePartListener;
+import org.apache.qpidity.client.Session;
 
 /**
  * Implements a Qpid Sesion. 

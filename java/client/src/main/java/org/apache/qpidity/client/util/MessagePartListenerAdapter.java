@@ -32,7 +32,7 @@ public class MessagePartListenerAdapter implements MessagePartListener
         _currentMsg = new ByteBufferMessage(transferId);
     }
     
-    public void addData(ByteBuffer src)
+    public void data(ByteBuffer src)
     {
         try
         {
