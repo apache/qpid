@@ -30,6 +30,11 @@ import java.util.Enumeration;
 public class MessageImpl extends QpidMessage implements Message
 {
     /**
+     * name used to store JMSType.
+     */
+    private static final String JMS_MESSAGE_TYPE = "JMSType";
+
+    /**
      * The ReplyTo destination for this message
      */
     private Destination _replyTo;
@@ -72,8 +77,9 @@ public class MessageImpl extends QpidMessage implements Message
      * Constructor used by MessageFactory
      *
      * @param message The new qpid message.
+     * @throws QpidException In case of IO problem when reading the received message.
      */
-    protected MessageImpl(org.apache.qpidity.api.Message message)
+    protected MessageImpl(org.apache.qpidity.api.Message message) throws QpidException
     {
         super(message);
     }
@@ -411,7 +417,7 @@ public class MessageImpl extends QpidMessage implements Message
      */
     public String getJMSType() throws JMSException
     {
-        return super.getMessageType();
+        return getStringProperty(JMS_MESSAGE_TYPE);
     }
 
     /**
@@ -422,7 +428,14 @@ public class MessageImpl extends QpidMessage implements Message
      */
     public void setJMSType(String type) throws JMSException
     {
-        super.setMessageType(type);
+        if (type == null)
+        {
+            throw new JMSException("Invalid message type null");
+        }
+        else
+        {
+            super.setProperty(JMS_MESSAGE_TYPE, type);
+        }
     }
 
     /**
@@ -843,7 +856,7 @@ public class MessageImpl extends QpidMessage implements Message
      * Clear out the message body. Clearing a message's body does not clear
      * its header values or property entries.
      * <P>If this message body was read-only, calling this method leaves
-     * the message body is in the same state as an empty body in a newly
+     * the message body in the same state as an empty body in a newly
      * created message.
      *
      * @throws JMSException If clearing this message body fails to due to some error.
@@ -864,14 +877,15 @@ public class MessageImpl extends QpidMessage implements Message
     {
         if (_destination == null)
         {
-            throw new QpidException("Invalid destination null",null, null);
+            throw new QpidException("Invalid destination null", null, null);
         }
+        super.beforeMessageDispatch();
     }
 
     /**
      * This method is invoked after this message is received.
      *
-     * @throws QpidException
+     * @throws QpidException If there is an internal error when procesing this message. 
      */
     public void afterMessageReceive() throws QpidException
     {
@@ -882,7 +896,6 @@ public class MessageImpl extends QpidMessage implements Message
 
         _proertiesReadOnly = true;
         _readOnly = true;
-
     }
 
     /**

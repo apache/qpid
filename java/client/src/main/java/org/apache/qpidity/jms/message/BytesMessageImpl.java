@@ -65,8 +65,9 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
      * Constructor used by MessageFactory
      *
      * @param message The new qpid message.
+     * @throws QpidException In case of problem when receiving the message body.
      */
-    protected BytesMessageImpl(org.apache.qpidity.api.Message message)
+    protected BytesMessageImpl(org.apache.qpidity.api.Message message) throws QpidException
     {
         super(message);
     }

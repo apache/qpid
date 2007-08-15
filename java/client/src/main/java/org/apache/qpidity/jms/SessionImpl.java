@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.qpidity.jms.message.*;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.RangeSet;
-import org.apache.qpid.client.message.*;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -435,7 +434,6 @@ public class SessionImpl implements Session
             // TODO: messageID is a string but range need a long???
             // ranges.add(message.getMessageID());
             getQpidSession().messageRelease(ranges);
-            // TODO We can be a little bit cleverer and build a set of ranges
         }
     }
 
@@ -1040,7 +1038,6 @@ public class SessionImpl implements Session
                     // TODO: messageID is a string but range need a long???
                     // ranges.add(message.getMessageID()); 
                     getQpidSession().messageAcknowledge(ranges);
-                    // TODO We can be a little bit cleverer and build a set of ranges
                 }
                 //empty the list of unack messages
                 _unacknowledgedMessages.clear();

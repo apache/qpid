@@ -57,8 +57,9 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
      * Constructor used by MessageFactory
      *
      * @param message The new qpid message.
+     * @throws QpidException In case of IO problem when reading the received message.
      */
-    protected ObjectMessageImpl(org.apache.qpidity.api.Message message)
+    protected ObjectMessageImpl(org.apache.qpidity.api.Message message) throws QpidException
     {
         super(message);
     }
