@@ -189,7 +189,8 @@ Message::shared_ptr Queue::dequeue(){
     Message::shared_ptr msg;
     if(!messages.empty()){
         msg = messages.front();
-        pop();
+	if (msg->isEnqueueComplete())
+           pop();
     }
     return msg;
 }
