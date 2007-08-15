@@ -13,7 +13,7 @@ class SessionGen < CppGen
   end
   
   def declare_method (m)
-    gen "Response #{m.amqp_parent.name.lcaps}#{m.cppname.caps}(" 
+    gen "Response #{m.amqp_parent.name.lcaps}#{m.name.caps}(" 
     if (m.content())
       params=m.signature + ["const MethodContent& content"]
     else
@@ -28,7 +28,7 @@ class SessionGen < CppGen
   end
 
   def define_method (m)
-    gen "Response Session::#{m.amqp_parent.name.lcaps}#{m.cppname.caps}(" 
+    gen "Response Session::#{m.amqp_parent.name.lcaps}#{m.name.caps}(" 
     if (m.content())
       params=m.signature + ["const MethodContent& content"]
     else
@@ -89,8 +89,8 @@ public:
     ~#{@classname}();
 
     ReceivedContent::shared_ptr get() { return impl->get(); }
-    void close() { impl->close(); parent->released(impl); }  
-
+    void setSynchronous(bool sync) { impl->setSync(sync); } 
+    void close();
 EOS
   indent { @amqp.amqp_classes.each { |c| declare_class(c) if !excludes.include?(c.name) } }
   gen <<EOS
@@ -117,7 +117,19 @@ namespace client {
 #{@classname}::~#{@classname}()
 {
     impl->stop();
-    parent->released(impl);
+    if (parent) { 
+        parent->released(impl);
+        parent.reset();
+    }
+}
+
+void #{@classname}::close()
+{
+    impl->close(); 
+    if (parent) { 
+        parent->released(impl);
+        parent.reset();
+    }
 }
 
 EOS

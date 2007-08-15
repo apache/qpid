@@ -21,13 +21,14 @@
  * under the License.
  *
  */
+#include <memory>
 #include <boost/scoped_ptr.hpp>
 #include "qpid/framing/amqp_framing.h"
 #include "ClientExchange.h"
 #include "ClientMessage.h"
 #include "ClientQueue.h"
 #include "ConnectionImpl.h"
-#include "SessionCore.h"
+#include "Session.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
@@ -58,9 +59,6 @@ class ReturnedMessageHandler;
 class Channel : private sys::Runnable
 {
   private:
-    struct UnknownMethod {};
-    typedef shared_ptr<framing::AMQMethodBody> MethodPtr;
-
     struct Consumer{
         MessageListener* listener;
         AckMode ackMode;
@@ -81,40 +79,14 @@ class Channel : private sys::Runnable
 
     ConsumerMap consumers;
     ConnectionImpl::shared_ptr connection;
-    SessionCore::shared_ptr session;
+    std::auto_ptr<Session> session;
+    SessionCore::shared_ptr sessionCore;
     framing::ChannelId channelId;
     BlockingQueue<ReceivedContent::shared_ptr> gets;
 
     void stop();
 
     void setQos();
-    
-    framing::AMQMethodBody::shared_ptr sendAndReceive(
-        framing::AMQMethodBody::shared_ptr,
-        framing::ClassId = 0, framing::MethodId = 0);
-
-    framing::AMQMethodBody::shared_ptr sendAndReceiveSync(
-        bool sync,
-        framing::AMQMethodBody::shared_ptr,
-        framing::ClassId, framing::MethodId);
-
-    void sendSync(bool sync, framing::AMQMethodBody::shared_ptr body);
-
-
-    template <class BodyType>
-    boost::shared_ptr<BodyType> sendAndReceive(framing::AMQMethodBody::shared_ptr body) {
-        return boost::shared_polymorphic_downcast<BodyType>(
-            sendAndReceive(body, BodyType::CLASS_ID, BodyType::METHOD_ID));
-    }
-
-    template <class BodyType>
-    boost::shared_ptr<BodyType> sendAndReceiveSync(
-        bool sync, framing::AMQMethodBody::shared_ptr body) {
-        return boost::shared_polymorphic_downcast<BodyType>(
-            sendAndReceiveSync(
-                sync, body, BodyType::CLASS_ID, BodyType::METHOD_ID));
-    }
-
     void open(ConnectionImpl::shared_ptr, SessionCore::shared_ptr);
     void closeInternal();
     void join();
