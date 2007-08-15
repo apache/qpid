@@ -39,7 +39,7 @@ public:
     template <class T> T& as() 
     {
         framing::AMQMethodBody::shared_ptr response(future->getResponse());
-        return boost::shared_polymorphic_cast<T>(*response);
+        return dynamic_cast<T&>(*response);
     }
     template <class T> bool isA() 
     {
@@ -50,12 +50,6 @@ public:
     void sync()
     {
         return future->waitForCompletion();
-    }
-
-    //TODO: only exposed for old channel class, may want to hide this eventually
-    framing::AMQMethodBody::shared_ptr getPtr()
-    {
-        return future->getResponse();
     }
 };
 

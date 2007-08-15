@@ -47,10 +47,9 @@ void ConnectionImpl::allocated(SessionCore::shared_ptr session)
 void ConnectionImpl::released(SessionCore::shared_ptr session)
 {
     SessionMap::iterator i = sessions.find(session->getId());
-    if (i == sessions.end()) {
-        throw Exception("Id not in use.");
+    if (i != sessions.end()) {
+        sessions.erase(i);
     }
-    sessions.erase(i);
 }
 
 void ConnectionImpl::handle(framing::AMQFrame& frame)
