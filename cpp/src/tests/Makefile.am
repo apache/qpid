@@ -60,6 +60,13 @@ Visitor_LDADD=-lboost_unit_test_framework
 
 include cluster.mk
 
+#
+# Other test programs
+#
+check_PROGRAMS+=perftest
+perftest_SOURCES=perftest.cpp test_tools.h
+perftest_LDADD=$(lib_client) 
+
 # NB: CppUnit test libraries below will be migrated to boost test programs.
 #
 
