@@ -44,5 +44,16 @@ public class StreamingMessage extends ReadOnlyMessage implements Message
         
         return _readBuf.duplicate();
     }
-
+    
+    /**
+     * This message is used by an application user to
+     * provide data to the client library using pull style
+     * semantics. Since the message is not transfered yet, it
+     * does not have a transfer id. Hence this method is not
+     * applicable to this implementation.    
+     */
+    public long getMessageTransferId()
+    {
+        throw new UnsupportedOperationException();
+    }
 }
