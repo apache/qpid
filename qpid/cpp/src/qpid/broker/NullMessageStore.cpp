@@ -97,14 +97,21 @@ void NullMessageStore::loadContent(PersistableMessage&, string&, uint64_t, uint3
     QPID_LOG(info, "Can't load content. Persistence not enabled.");
 }
 
-void NullMessageStore::enqueue(TransactionContext*, PersistableMessage&, const PersistableQueue& queue)
+void NullMessageStore::enqueue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& queue)
 {
+    msg.enqueueComplete(); 
     QPID_LOG(info, "Can't enqueue message onto '" << queue.getName() << "'. Persistence not enabled.");
 }
 
-void NullMessageStore::dequeue(TransactionContext*, PersistableMessage&, const PersistableQueue& queue)
+void NullMessageStore::dequeue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& queue)
 {
+    msg.dequeueComplete();
     QPID_LOG(info, "Can't dequeue message from '" << queue.getName() << "'. Persistence not enabled.");
+}
+
+u_int32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& )
+{
+    return 0;
 }
 
 std::auto_ptr<TransactionContext> NullMessageStore::begin()

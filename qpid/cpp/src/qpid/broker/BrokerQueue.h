@@ -87,6 +87,12 @@ namespace qpid {
 	     */
             void dispatch();
  
+        protected:
+	   /**
+	   * Call back from store
+	   */
+  	   virtual void notifyDurableIOComplete();
+
         public:
             
             typedef boost::shared_ptr<Queue> shared_ptr;
@@ -143,11 +149,11 @@ namespace qpid {
 
             bool canAutoDelete() const;
 
-            void enqueue(TransactionContext* ctxt, Message::shared_ptr& msg);
+            bool enqueue(TransactionContext* ctxt, Message::shared_ptr& msg);
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
-            void dequeue(TransactionContext* ctxt, Message::shared_ptr& msg);
+            bool dequeue(TransactionContext* ctxt, Message::shared_ptr& msg);
             /**
              * dequeues from memory only
              */

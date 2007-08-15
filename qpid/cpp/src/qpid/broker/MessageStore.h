@@ -104,7 +104,10 @@ public:
     /**
      * Enqueues a message, storing the message if it has not
      * been previously stored and recording that the given
-     * message is on the given queue.
+     * message is on the given queue. 
+     *
+     * Note: that this is async so the return of the function does
+     * not mean the opperation is complete.
      * 
      * @param msg the message to enqueue
      * @param queue the name of the queue onto which it is to be enqueued
@@ -113,18 +116,34 @@ public:
      * place or null for 'local' transactions
      */
     virtual void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue) = 0;
+    
     /**
      * Dequeues a message, recording that the given message is
      * no longer on the given queue and deleting the message
      * if it is no longer on any other queue.
+     *
+     * Note: that this is async so the return of the function does
+     * not mean the opperation is complete.
      * 
      * @param msg the message to dequeue
-     * @param queue the name of th queue from which it is to be dequeued
+     * @param queue the name of the queue from which it is to be dequeued
      * @param xid (a pointer to) an identifier of the
      * distributed transaction in which the operation takes
      * place or null for 'local' transactions
      */
     virtual void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue) = 0;
+
+
+   /**
+     * Returns the number of outstanding AIO's for a given queue
+     * 
+     * If 0, than all the enqueue / dequeues have been stored 
+     * to disk
+     *
+     * @param queue the name of the queue to check for outstanding AIO
+     */
+    virtual u_int32_t outstandingQueueAIO(const PersistableQueue& queue) = 0;
+
     
     virtual ~MessageStore(){}
 };

@@ -36,6 +36,23 @@ namespace broker {
  */
     class PersistableMessage : public Persistable
 {
+
+
+    /**
+    * Needs to be set false on Message construction, then
+    * set once the broker has taken responsibility for the
+    * message. For transient, once enqueued, for durable, once
+    * stored.
+    */
+    bool enqueueCompleted;
+    /**
+    * Needs to be set false on Message construction, then
+    * set once the dequeueis complete, it gets set
+    * For transient, once dequeued, for durable, once
+    * dequeue record has been stored.
+    */
+    bool dequeueCompleted;
+
 public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;
 
@@ -45,6 +62,15 @@ public:
     virtual uint32_t encodedHeaderSize() const = 0;
 
     virtual ~PersistableMessage() {};
+    PersistableMessage():
+    enqueueCompleted(false),
+    dequeueCompleted(false){};
+    
+    inline bool isEnqueueComplete() {return enqueueCompleted;};
+    inline void enqueueComplete() {enqueueCompleted = true;};
+    inline bool isDequeueComplete() {return dequeueCompleted;};
+    inline void dequeueComplete() {dequeueCompleted = true;};
+    
 };
 
 }}

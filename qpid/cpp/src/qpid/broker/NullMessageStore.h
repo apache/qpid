@@ -62,6 +62,7 @@ public:
     virtual void loadContent(PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length);
     virtual void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
     virtual void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
+    virtual u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
     ~NullMessageStore(){}
 };
 
