@@ -25,10 +25,12 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
+import java.io.IOException;
 
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.ReplyTo;
+import org.apache.qpidity.client.util.ByteBufferMessage;
 
 
 public class QpidMessage
@@ -55,25 +57,36 @@ public class QpidMessage
 
 
     //-- Constructors
-
     /**
      * Constructor used when JMS messages are created by SessionImpl.
      */
     protected QpidMessage()
     {
-      // TODO we need an implementation class: _qpidityMessage
+        // We us a byteBufferMessage as default
+        _qpidityMessage = new ByteBufferMessage();
         _messageProperties = new HashMap<String, Object>();
+        // This is a newly created messsage so the data is empty
+        _messageData = ByteBuffer.allocate(1024);
     }
 
     /**
      * Constructor used when a Qpid message is received
      *
-     * @param message The received message
+     * @param message The received message.
+     * @throws QpidException In case of problem when receiving the message body.
      */
-     protected QpidMessage(org.apache.qpidity.api.Message message)
+    protected QpidMessage(org.apache.qpidity.api.Message message) throws QpidException
     {
-       _qpidityMessage = message;
-        _messageProperties = (Map<String, Object>) message.getMessageProperties().getApplicationHeaders();
+        try
+        {
+            _qpidityMessage = message;
+            _messageProperties = (Map<String, Object>) message.getMessageProperties().getApplicationHeaders();
+            _messageData = _qpidityMessage.readData();
+        }
+        catch (IOException ioe)
+        {
+            throw new QpidException("IO problem when creating message", ErrorCode.UNDEFINED, ioe);
+        }
     }
 
     //---- getters and setters.
@@ -145,6 +158,16 @@ public class QpidMessage
     protected ReplyTo getReplyTo()
     {
         return _qpidityMessage.getMessageProperties().getReplyTo();
+    }
+
+    /**
+     * Set the ReplyTo for this message.
+     *
+     * @param replyTo The ReplyTo for this message.
+     */
+    protected void setReplyTo(ReplyTo replyTo)
+    {
+        _qpidityMessage.getMessageProperties().setReplyTo(replyTo);
     }
 
     /**
@@ -321,9 +344,30 @@ public class QpidMessage
      */
     protected void clearMessageData()
     {
-        _messageData = ByteBuffer.allocate(1024);        
+        _messageData = ByteBuffer.allocate(1024);
     }
 
+    /**
+     * This method is invoked before a message dispatch operation.
+     *
+     * @throws QpidException If the destination is not set
+     */
+    public void beforeMessageDispatch() throws QpidException
+    {
+        try
+        {
+            // set the message data
+            _qpidityMessage.clearData();
+            // we need to do a flip
+            _messageData.flip();
+            _qpidityMessage.appendData(_messageData);
+            _qpidityMessage.getMessageProperties().setApplicationHeaders(_messageProperties);
+        }
+        catch (IOException e)
+        {
+            throw new QpidException("IO exception when sending message", ErrorCode.UNDEFINED, e);
+        }
+    }
 }
 
 

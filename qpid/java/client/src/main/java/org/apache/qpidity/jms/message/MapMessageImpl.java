@@ -54,8 +54,9 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
      * Constructor used by MessageFactory
      *
      * @param message The new qpid message.
+     * @throws QpidException In case of IO problem when reading the received message.
      */
-    protected MapMessageImpl(org.apache.qpidity.api.Message message)
+    protected MapMessageImpl(org.apache.qpidity.api.Message message) throws QpidException
     {
         super(message);
     }

@@ -17,7 +17,13 @@
  */
 package org.apache.qpidity.jms;
 
+import org.apache.qpidity.jms.message.QpidMessage;
+import org.apache.qpidity.jms.message.MessageHelper;
+import org.apache.qpidity.jms.message.MessageImpl;
+import org.apache.qpidity.QpidException;
+
 import javax.jms.*;
+import java.util.UUID;
 
 /**
  * Implements  MessageProducer
@@ -304,13 +310,63 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
         {
             throw new IllegalArgumentException("Time to live must be non-negative - supplied value was " + timeToLive);
         }
+        // Only get current time if required
+        long currentTime = Long.MIN_VALUE;
+        if (!((timeToLive == 0) && _disableTimestamps))
+        {
+            currentTime = System.currentTimeMillis();
+        }
+        // the messae UID
+        String uid = (_disableMessageId) ? "MSG_ID_DISABLED" : UUID.randomUUID().toString();
+        MessageImpl qpidMessage = null;
         // check that the message is not a foreign one
-        // todo
-        // set the properties
-
-        // todo
-
-        // dispatch it
+        try
+        {
+            qpidMessage = (MessageImpl) message;
+        }
+        catch (ClassCastException cce)
+        {
+            // this is a foreign message
+            qpidMessage = MessageHelper.transformMessage(message);
+            // set message's properties in case they are queried after send.
+            message.setJMSDestination(destination);
+            message.setJMSDeliveryMode(deliveryMode);
+            message.setJMSPriority(priority);
+            message.setJMSMessageID(uid);
+            if (timeToLive != 0)
+            {
+                message.setJMSExpiration(timeToLive + currentTime);
+                _logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
+            }
+            else
+            {
+                message.setJMSExpiration(timeToLive);
+            }
+            message.setJMSTimestamp(currentTime);
+        }
+        // set the message properties
+        qpidMessage.setJMSDestination(destination);
+        qpidMessage.setJMSMessageID(uid);
+        qpidMessage.setJMSDeliveryMode(deliveryMode);
+        qpidMessage.setJMSPriority(priority);
+        if (timeToLive != 0)
+        {
+            qpidMessage.setJMSExpiration(timeToLive + currentTime);
+        }
+        else
+        {
+            qpidMessage.setJMSExpiration(timeToLive);
+        }
+        qpidMessage.setJMSTimestamp(currentTime);
+        // call beforeMessageDispatch
+        try
+        {
+            qpidMessage.beforeMessageDispatch();
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
         // todo getSession().getQpidSession().messageTransfer(((DestinationImpl) destination).getExchangeName(), message, Option);
     }
 }
