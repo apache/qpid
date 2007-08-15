@@ -188,6 +188,23 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+               <groupId>org.apache.maven.plugins</groupId>
+               <artifactId>maven-javadoc-plugin</artifactId>
+               <configuration>
+                  <excludePackageNames>org.apache.qpid.*:org.apache.qpidity.jms:org.apache.qpidity.jms.*:org.apache.qpidity.client.impl</excludePackageNames>
+                  <groups>
+                    <group>
+                      <title>API</title>
+                      <packages>org.apache.qpidity.client</packages>
+                    </group>
+                    <group>
+                      <title>Utility Package</title>
+                       <packages>org.apache.qpidity.client.util</packages>
+                    </group>
+                  </groups>
+               </configuration>
+            </plugin>
             
         </plugins>
 

@@ -1,4 +1,4 @@
-package org.apache.qpidity.client;
+package org.apache.qpidity.client.impl;
 
 import java.nio.ByteBuffer;
 
@@ -14,6 +14,7 @@ import org.apache.qpidity.Session;
 import org.apache.qpidity.SessionClosed;
 import org.apache.qpidity.SessionDelegate;
 import org.apache.qpidity.Struct;
+import org.apache.qpidity.client.MessagePartListener;
 
 
 public class ClientSessionDelegate extends SessionDelegate
@@ -33,7 +34,7 @@ public class ClientSessionDelegate extends SessionDelegate
     {
         for (ByteBuffer b : frame)
         {    
-            _currentMessageListener.addData(b);
+            _currentMessageListener.data(b);
         }
         if (frame.isLastSegment() && frame.isLastFrame())
         {

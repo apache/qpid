@@ -17,19 +17,38 @@
  */
 package org.apache.qpidity.jms;
 
+import java.util.Vector;
+
+import javax.jms.Connection;
+import javax.jms.ConnectionConsumer;
+import javax.jms.ConnectionMetaData;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.IllegalStateException;
+import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueSession;
+import javax.jms.ServerSessionPool;
+import javax.jms.Session;
+import javax.jms.Topic;
+import javax.jms.TopicConnection;
+import javax.jms.TopicSession;
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.Referenceable;
+import javax.naming.StringRefAddr;
+
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpidity.QpidException;
-
-import javax.jms.*;
-import javax.jms.IllegalStateException;
-import java.util.Vector;
 
 
 /**
  * Implements javax.jms.Connection, javax.jms.QueueConnection adn javax.jms.TopicConnection
  */
-public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
+public class ConnectionImpl implements Connection, QueueConnection, TopicConnection, Referenceable
 {
     /**
      * This class's logger
@@ -95,8 +114,10 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     /**
      * TODO define the parameters
      */
-    public ConnectionImpl()
+    public ConnectionImpl(String host,int port,String virtualHost,String username,String password) throws QpidException
     {
+        _qpidConnection = Client.createConnection();
+        _qpidConnection.connect(host, port, virtualHost, username, password);
     }
 
     //---- Interface javax.jms.Connection ---//
@@ -477,5 +498,11 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     protected org.apache.qpidity.client.Connection getQpidConnection()
     {
         return _qpidConnection;
+    }
+    
+    public Reference getReference() throws NamingException
+    {
+        return new Reference( ConnectionImpl.class.getName(),
+                new StringRefAddr(ConnectionImpl.class.getName(),""));
     }
 }
