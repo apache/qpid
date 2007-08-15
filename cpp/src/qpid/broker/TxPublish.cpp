@@ -51,7 +51,14 @@ TxPublish::Prepare::Prepare(TransactionContext* _ctxt, Message::shared_ptr& _msg
     : ctxt(_ctxt), msg(_msg){}
 
 void TxPublish::Prepare::operator()(Queue::shared_ptr& queue){
-    queue->enqueue(ctxt, msg);
+    if (!queue->enqueue(ctxt, msg)){
+        /**
+	* if not store then mark message for ack and deleivery once
+	* commit happens, as async IO will never set it when no store
+	* exists
+	*/
+	msg->enqueueComplete();
+    }
 }
 
 TxPublish::Commit::Commit(Message::shared_ptr& _msg) : msg(_msg){}

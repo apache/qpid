@@ -35,8 +35,20 @@ namespace broker {
 class PersistableQueue : public Persistable
 {
 public:
+
     virtual const std::string& getName() const = 0;
     virtual ~PersistableQueue() {};
+    
+protected:
+    /**
+    * call back for the store to signal AIO writes have
+    * completed (enqueue/dequeue etc)
+    *
+    * Note: DO NOT do work on this callback, if you block
+    * this callback you will block the store.
+    */
+    virtual void notifyDurableIOComplete()  = 0;
+    
 };
 
 }}

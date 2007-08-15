@@ -95,6 +95,11 @@ void MessageStoreModule::dequeue(TransactionContext* ctxt, PersistableMessage& m
     store->dequeue(ctxt, msg, queue);
 }
 
+u_int32_t MessageStoreModule::outstandingQueueAIO(const PersistableQueue& queue)
+{
+    return store->outstandingQueueAIO(queue);
+}
+
 std::auto_ptr<TransactionContext> MessageStoreModule::begin()
 {
     return store->begin();

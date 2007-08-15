@@ -56,6 +56,14 @@ Queue::Queue(const string& _name, bool _autodelete,
 
 Queue::~Queue(){}
 
+void Queue::notifyDurableIOComplete()
+{
+    // signal SemanticHander to ack completed dequeues
+    // then dispatch to ack...
+    serializer.execute(dispatchCallback);
+}
+
+
 void Queue::deliver(Message::shared_ptr& msg){
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
@@ -63,10 +71,19 @@ void Queue::deliver(Message::shared_ptr& msg){
             alternateExchange->route(deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
         }
     } else {
-        enqueue(0, msg);
-        process(msg);
+
+
+	// if no store then mark as enqueued
+        if (!enqueue(0, msg)){
+            push(msg);
+	    msg->enqueueComplete();
+	}else {
+            push(msg);
+	}
+        serializer.execute(dispatchCallback);
     }
 }
+
 
 void Queue::recover(Message::shared_ptr& msg){
     push(msg);
@@ -127,6 +144,7 @@ bool Queue::dispatch(Message::shared_ptr& msg){
 
 void Queue::dispatch(){
 
+
      Message::shared_ptr msg;
      while(true){
         {
@@ -134,7 +152,7 @@ void Queue::dispatch(){
 	    if (messages.empty()) break; 
 	    msg = messages.front();
 	}
-        if( dispatch(msg) ){
+        if( msg->isEnqueueComplete() && dispatch(msg) ){
             pop();
         }else break;
 	
@@ -215,19 +233,26 @@ bool Queue::canAutoDelete() const{
     return autodelete && consumers.size() == 0;
 }
 
-void Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg)
+// return true if store exists, 
+bool Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg)
 {
     if (msg->isPersistent() && store) {
         store->enqueue(ctxt, *msg.get(), *this);
+	return true;
     }
+    return false;
 }
 
-void Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg)
+// return true if store exists, 
+bool Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg)
 {
     if (msg->isPersistent() && store) {
         store->dequeue(ctxt, *msg.get(), *this);
+	return true;
     }
+    return false;
 }
+
 
 namespace 
 {
