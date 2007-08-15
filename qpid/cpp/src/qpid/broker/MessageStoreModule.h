@@ -59,8 +59,10 @@ public:
     void destroy(PersistableMessage& msg);
     void appendContent(PersistableMessage& msg, const std::string& data);
     void loadContent(PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length);
+
     void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
     void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
+    u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
 
     ~MessageStoreModule(){}
 };
