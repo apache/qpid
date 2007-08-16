@@ -20,12 +20,15 @@
  */
 package org.apache.qpid.test.framework.clocksynch;
 
+import org.apache.log4j.Logger;
+
 import uk.co.thebadgerset.junit.extensions.util.CommandLineParser;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 /**
  * UDPClockSynchronizer is a {@link ClockSynchronizer} that sends pings as UDP datagrams, and uses the following simple
@@ -43,7 +46,7 @@ import java.nio.ByteBuffer;
  * <li>The Slave repeats steps 2 through 4, 15 more times.</li>
  * <li>The results of the packet receipts are accumulated and sorted in lowest-latency to highest-latency order. The
  *     median latency is determined by picking the mid-point sample from this ordered list.</li>
- * <li>All samples above approximately 1 standard-deviation from the median are discarded and the remaining samples
+ * <li>All samples outside 1 standard-deviation from the median are discarded and the remaining samples
  *     are averaged using an arithmetic mean.</li>
  * </ol>
  *
@@ -59,6 +62,12 @@ import java.nio.ByteBuffer;
  */
 public class UDPClockSynchronizer implements ClockSynchronizer
 {
+    /** Used for debugging. */
+    // private static final Logger log = Logger.getLogger(UDPClockSynchronizer.class);
+
+    /** Defines the timeout to use when waiting for responses to time requests. */
+    private static final int TIMEOUT = 50;
+
     /** The clock delta. */
     private long delta = 0L;
 
@@ -70,6 +79,9 @@ public class UDPClockSynchronizer implements ClockSynchronizer
 
     /** Holds the socket to communicate with the reference service over. */
     private DatagramSocket socket;
+
+    /** Used to control the shutdown in the main test loop. */
+    private static boolean doSynch = true;
 
     /**
      * Creates a clock synchronizer against the specified address for the reference.
@@ -90,18 +102,25 @@ public class UDPClockSynchronizer implements ClockSynchronizer
 
     /**
      * The slave side should call this to compute a clock delta with the reference.
+     *
+     * @throws ClockSynchFailureException If synchronization cannot be achieved, due to unavailability of the reference
+     *                                    time service.
      */
-    public void synch()
+    public void synch() throws ClockSynchFailureException
     {
         try
         {
             socket = new DatagramSocket();
+            socket.setSoTimeout(TIMEOUT);
 
             // Synchronize on a single ping, to get the clock into the right ball-park.
             synch(1);
 
-            // Synchronize on 15 pings for greater accuracy.
+            // Synchronize on 15 pings.
             synch(15);
+
+            // And again, for greater accuracy, on 31.
+            synch(31);
 
             socket.close();
         }
@@ -115,9 +134,14 @@ public class UDPClockSynchronizer implements ClockSynchronizer
      * Updates the synchronization delta by performing the specified number of reference clock requests.
      *
      * @param n The number of reference clock request cycles to perform.
+     *
+     * @throws ClockSynchFailureException If synchronization cannot be achieved, due to unavailability of the reference
+     *                                    time service.
      */
-    protected void synch(int n)
+    protected void synch(int n) throws ClockSynchFailureException
     {
+        // log.debug("protected void synch(int n = " + n + "): called");
+
         // Create an array of deltas by performing n reference pings.
         long[] delta = new long[n];
 
@@ -130,15 +154,22 @@ public class UDPClockSynchronizer implements ClockSynchronizer
         long median = median(delta);
         long sd = standardDeviation(delta);
 
+        // log.debug("median = " + median);
+        // log.debug("sd = " + sd);
+
         long[] tempDeltas = new long[n];
         int count = 0;
 
         for (int i = 0; i < n; i++)
         {
-            if (delta[i] <= (median + sd))
+            if ((delta[i] <= (median + sd)) && (delta[i] >= (median - sd)))
             {
                 tempDeltas[count] = delta[i];
                 count++;
+            }
+            else
+            {
+                // log.debug("Rejected: " + delta[i]);
             }
         }
 
@@ -150,6 +181,8 @@ public class UDPClockSynchronizer implements ClockSynchronizer
         // Estimate the error as the standard deviation of the remaining deltas.
         this.epsilon = standardDeviation(delta);
 
+        // log.debug("this.delta = " + this.delta);
+        // log.debug("this.epsilon = " + this.epsilon);
     }
 
     /**
@@ -157,31 +190,74 @@ public class UDPClockSynchronizer implements ClockSynchronizer
      * This is computed as the half-latency of the requst cycle, plus the reference clock, minus the local clock.
      *
      * @return The estimated clock delta.
+     *
+     * @throws ClockSynchFailureException If the reference service is not responding.
      */
-    protected long ping()
+    protected long ping() throws ClockSynchFailureException
     {
+        // log.debug("protected long ping(): called");
+
         try
         {
             byte[] buf = new byte[256];
-            DatagramPacket packet = new DatagramPacket(buf, buf.length, referenceAddress, UDPClockReference.REFERENCE_PORT);
 
-            // Start timing the request latency.
-            long start = nanoTime();
+            boolean timedOut = false;
+            long start = 0L;
+            long refTime = 0L;
+            long localTime = 0L;
+            long latency = 0L;
+            int failCount = 0;
 
-            // Get the reference time.
-            socket.send(packet);
-            packet = new DatagramPacket(buf, buf.length);
-            socket.receive(packet);
+            // Keep trying the ping until it gets a response, or 10 tries in a row all time out.
+            do
+            {
+                // Start timing the request latency.
+                start = nanoTime();
 
-            ByteBuffer bbuf = ByteBuffer.wrap(packet.getData());
-            long refTime = bbuf.getLong();
+                // Get the reference time.
+                DatagramPacket packet =
+                    new DatagramPacket(buf, buf.length, referenceAddress, UDPClockReference.REFERENCE_PORT);
+                socket.send(packet);
+                packet = new DatagramPacket(buf, buf.length);
 
-            // Stop timing the request latency.
-            long localTime = nanoTime();
-            long end = localTime - start;
+                timedOut = false;
+
+                try
+                {
+                    socket.receive(packet);
+                }
+                catch (SocketTimeoutException e)
+                {
+                    timedOut = true;
+                    failCount++;
+
+                    continue;
+                }
+
+                ByteBuffer bbuf = ByteBuffer.wrap(packet.getData());
+                refTime = bbuf.getLong();
+
+                // Stop timing the request latency.
+                localTime = nanoTime();
+                latency = localTime - start;
+
+                // log.debug("refTime = " + refTime);
+                // log.debug("localTime = " + localTime);
+                // log.debug("start = " + start);
+                // log.debug("latency = " + latency);
+                // log.debug("delta = " + ((latency / 2) + (refTime - localTime)));
+
+            }
+            while (timedOut && (failCount < 10));
+
+            // Fail completely if the fail count is too high.
+            if (failCount >= 10)
+            {
+                throw new ClockSynchFailureException("Clock reference not responding.", null);
+            }
 
             // Estimate delta as (ref clock + half-latency) - local clock.
-            return ((end - start) / 2) + refTime - localTime;
+            return (latency / 2) + (refTime - localTime);
         }
         catch (IOException e)
         {
@@ -228,18 +304,31 @@ public class UDPClockSynchronizer implements ClockSynchronizer
      */
     public static long median(long[] values)
     {
-        // Check if the median is computed from a pair of middle value.
-        if ((values.length % 2) == 0)
-        {
-            int middle = values.length / 2;
+        // log.debug("public static long median(long[] values = " + Arrays.toString(values) + "): called");
 
-            return (values[middle] + values[middle - 1]) / 2;
+        long median;
+
+        // Order the list of values.
+        long[] orderedValues = new long[values.length];
+        System.arraycopy(values, 0, orderedValues, 0, values.length);
+        Arrays.sort(orderedValues);
+
+        // Check if the median is computed from a pair of middle value.
+        if ((orderedValues.length % 2) == 0)
+        {
+            int middle = orderedValues.length / 2;
+
+            median = (orderedValues[middle] + orderedValues[middle - 1]) / 2;
         }
         // The median is computed from a single middle value.
         else
         {
-            return values[values.length / 2];
+            median = orderedValues[orderedValues.length / 2];
         }
+
+        // log.debug("median = " + median);
+
+        return median;
     }
 
     /**
@@ -251,6 +340,8 @@ public class UDPClockSynchronizer implements ClockSynchronizer
      */
     public static long mean(long[] values)
     {
+        // log.debug("public static long mean(long[] values = " + Arrays.toString(values) + "): called");
+
         long total = 0L;
 
         for (long value : values)
@@ -258,7 +349,11 @@ public class UDPClockSynchronizer implements ClockSynchronizer
             total += value;
         }
 
-        return total / values.length;
+        long mean = total / values.length;
+
+        // log.debug("mean = " + mean);
+
+        return mean;
     }
 
     /**
@@ -270,16 +365,23 @@ public class UDPClockSynchronizer implements ClockSynchronizer
      */
     public static long variance(long[] values)
     {
+        // log.debug("public static long variance(long[] values = " + Arrays.toString(values) + "): called");
+
         long mean = mean(values);
 
         long totalVariance = 0;
 
         for (long value : values)
         {
-            totalVariance += (value - mean) ^ 2;
+            long diff = (value - mean);
+            totalVariance += diff * diff;
         }
 
-        return totalVariance / values.length;
+        long variance = totalVariance / values.length;
+
+        // log.debug("variance = " + variance);
+
+        return variance;
     }
 
     /**
@@ -291,7 +393,13 @@ public class UDPClockSynchronizer implements ClockSynchronizer
      */
     public static long standardDeviation(long[] values)
     {
-        return Double.valueOf(Math.sqrt(variance(values))).longValue();
+        // log.debug("public static long standardDeviation(long[] values = " + Arrays.toString(values) + "): called");
+
+        long sd = Double.valueOf(Math.sqrt(variance(values))).longValue();
+
+        // log.debug("sd = " + sd);
+
+        return sd;
     }
 
     /**
@@ -314,11 +422,43 @@ public class UDPClockSynchronizer implements ClockSynchronizer
         // Create a clock synchronizer.
         UDPClockSynchronizer clockSyncher = new UDPClockSynchronizer(address);
 
-        // Perform a clock clockSyncher.
-        clockSyncher.synch();
+        // Set up a shutdown hook for it.
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable()
+                {
+                    public void run()
+                    {
+                        doSynch = false;
+                    }
+                }));
 
-        // Print out the clock delta and estimate of the error.
-        System.out.println("Delta = " + clockSyncher.getDelta());
-        System.out.println("Epsilon = " + clockSyncher.getEpsilon());
+        // Repeat the clock synching until the user kills the progam.
+        while (doSynch)
+        {
+            // Perform a clock clockSynch.
+            try
+            {
+                clockSyncher.synch();
+
+                // Print out the clock delta and estimate of the error.
+                System.out.println("Delta = " + clockSyncher.getDelta());
+                System.out.println("Epsilon = " + clockSyncher.getEpsilon());
+
+                try
+                {
+                    Thread.sleep(250);
+                }
+                catch (InterruptedException e)
+                {
+                    // Restore the interrupted status and terminate the loop.
+                    Thread.currentThread().interrupt();
+                    doSynch = false;
+                }
+            }
+            // Terminate if the reference time service is unavailable.
+            catch (ClockSynchFailureException e)
+            {
+                doSynch = false;
+            }
+        }
     }
 }

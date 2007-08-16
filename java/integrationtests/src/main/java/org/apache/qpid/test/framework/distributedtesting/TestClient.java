@@ -29,8 +29,13 @@ import org.apache.qpid.interop.clienttestcases.TestCase3BasicPubSub;
 import org.apache.qpid.sustained.SustainedClientTestCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.clocksynch.ClockSynchThread;
+import org.apache.qpid.test.framework.clocksynch.ClockSynchronizer;
+import org.apache.qpid.test.framework.clocksynch.UDPClockSynchronizer;
 import org.apache.qpid.test.framework.distributedcircuit.TestClientCircuitEnd;
 
+import uk.co.thebadgerset.junit.extensions.SleepThrottle;
+import uk.co.thebadgerset.junit.extensions.Throttle;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
@@ -41,7 +46,7 @@ import java.util.*;
 /**
  * Implements a test client as described in the interop testing spec
  * (http://cwiki.apache.org/confluence/display/qpid/Interop+Testing+Specification). A test client is an agent that
- * reacts to control message sequences send by the test {@link org.apache.qpid.test.framework.distributedtesting.Coordinator}.
+ * reacts to control message sequences send by the test {@link Coordinator}.
  *
  * <p/><table><caption>Messages Handled by SustainedTestClient</caption>
  * <tr><th> Message               <th> Action
@@ -51,6 +56,7 @@ import java.util.*;
  * <tr><td> Start                 <td> Send test messages defined by test parameters. Send report on messages sent.
  * <tr><td> Status Request        <td> Send report on messages received.
  * <tr><td> Terminate             <td> Terminate the test client.
+ * <tr><td> ClockSynch            <td> Synch clock against the supplied UDP address.
  * </table>
  *
  * <p><table id="crc"><caption>CRC Card</caption>
@@ -103,6 +109,9 @@ public class TestClient implements MessageListener
 
     /** This flag indicates that the test client should attempt to join the currently running test case on start up. */
     protected boolean join;
+
+    /** Holds the clock synchronizer for the test node. */
+    ClockSynchThread clockSynchThread;
 
     /**
      * Creates a new interop test client, listenting to the specified broker and virtual host, with the specified client
@@ -404,11 +413,30 @@ public class TestClient implements MessageListener
             }
             else if ("TERMINATE".equals(controlType))
             {
-                log.info("Received termination instruction from coordinator.");
+                console.info("Received termination instruction from coordinator.");
 
                 // Is a cleaner shutdown needed?
                 connection.close();
                 System.exit(0);
+            }
+            else if ("CLOCK_SYNCH".equals(controlType))
+            {
+                log.debug("Received clock synch command.");
+                String address = message.getStringProperty("ADDRESS");
+
+                log.debug("address = " + address);
+
+                // Re-create (if necessary) and start the clock synch thread to synch the clock every ten seconds.
+                if (clockSynchThread != null)
+                {
+                    clockSynchThread.terminate();
+                }
+
+                SleepThrottle throttle = new SleepThrottle();
+                throttle.setRate(0.1f);
+
+                clockSynchThread = new ClockSynchThread(new UDPClockSynchronizer(address), throttle);
+                clockSynchThread.start();
             }
             else
             {

@@ -19,5 +19,5 @@
 #
 for x in `seq 1 $1`;
 do
-    java -cp qpid-integrationtests-1.0-incubating-M2-SNAPSHOT-all-test-deps.jar -Dlog4j.configuration=file:/home/rupert/qpid/trunk/qpid/java/etc/mylog4j.xml org.apache.qpid.test.framework.distributedtesting.TestClient -n $x &
+    java -cp qpid-integrationtests-1.0-incubating-M2-SNAPSHOT-all-test-deps.jar -Dlog4j.configuration=file:/home/rupert/qpid/trunk/qpid/java/etc/mylog4j.xml org.apache.qpid.test.framework.distributedtesting.TestClient -n java$x &
 done

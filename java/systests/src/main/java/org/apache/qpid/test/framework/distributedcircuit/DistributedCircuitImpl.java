@@ -63,15 +63,12 @@ import java.util.List;
  *       to register results and timings for the test. This must work in such a way that a new test cycle can be started
  *       without waiting for the results of the old one to come in.
  *
- * @todo Test circuits to be created per test thread, not per test method call. Per-thread setup and tear down to be
- *       reposible for circuit creation and clean up. Many individual test method calls to run over the same circuit.
- *       Important, otherwise test results will be skewed by circuit creation overheads.
- *
+ * @todo Add in setting of timing controller, from timing aware test cases.
  */
 public class DistributedCircuitImpl implements Circuit, TimingControllerAware
 {
     /** Used for debugging purposes. */
-    private static Logger log = Logger.getLogger(DistributedCircuitImpl.class);
+    private static final Logger log = Logger.getLogger(DistributedCircuitImpl.class);
 
     /** Holds the conversation factory over which to coordinate the test. */
     protected ConversationFactory conversationFactory;
@@ -305,7 +302,8 @@ public class DistributedCircuitImpl implements Circuit, TimingControllerAware
      *       differ though, as the final report is used to apply assertions, and the ongoing report is just for
      *       periodic timing results... In which case, maybe there needs to be a way for the onMessage method
      *       to process just some of the incoming messages, and forward the rest on to the conversion helper, as
-     *       a sort of pre-conversation helper filter?
+     *       a sort of pre-conversation helper filter? Make conversation expose its onMessage method (it should
+     *       already) and allow another delivery thread to filter the incoming messages to the conversation.
      */
     public void check()
     {
@@ -365,7 +363,7 @@ public class DistributedCircuitImpl implements Circuit, TimingControllerAware
                                 // Apply receiver assertions to pass/fail the tests.
 
                                 // Log the test timings on the asynchronous test timing controller.
-                                try
+                                /*try
                                 {
                                     timingController.completeTest(true, messageCount, testTime);
                                 }
@@ -374,7 +372,7 @@ public class DistributedCircuitImpl implements Circuit, TimingControllerAware
                                 catch (InterruptedException e)
                                 {
                                     e.printStackTrace();
-                                }
+                                }*/
                             }
 
                             log.debug("All receiver test reports received.");

@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.test.framework.clocksynch;
 
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
+
+import uk.co.thebadgerset.junit.extensions.ShutdownHookable;
 
 /**
  * UDPClockReference supplies a refernce clock signal (generated from System.nanoTime()).
@@ -36,8 +40,11 @@ import java.nio.ByteBuffer;
  *
  * @todo Errors rethrown as runtimes, or silently terminate the service. Could add better error handling if needed.
  */
-public class UDPClockReference implements Runnable
+public class UDPClockReference implements Runnable, ShutdownHookable
 {
+    /** Used for debugging. */
+    // private static final Logger log = Logger.getLogger(UDPClockReference.class);
+
     /** Defines the timeout to use when polling the socket for time requests. */
     private static final int TIMEOUT = 200;
 

@@ -57,7 +57,7 @@ public class MessageMonitor implements MessageListener
      */
     public void onMessage(Message message)
     {
-        log.debug("public void onMessage(Message message): called");
+        // log.debug("public void onMessage(Message message): called");
 
         numMessages.getAndIncrement();
     }

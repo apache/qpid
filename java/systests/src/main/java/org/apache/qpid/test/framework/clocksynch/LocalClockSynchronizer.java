@@ -21,49 +21,53 @@
 package org.apache.qpid.test.framework.clocksynch;
 
 /**
- * ClockSynchronizer provides an interface through which two nodes may synchronize their clocks. It is expected that one
- * node will act as the reference clock, to which no delta need be applied, and the other node will act as the slave,
- * and which must apply a delta to its local clock to get a clock synchronized with the reference.
- *
- * <p/>The slave side will initiate the computation of a clock delta by calling the {@link #synch} method. This method
- * will not return until the delta has been computed, at which point there is a method to return its value, as well as
- * an estimate of the likely error (usually one standard deviation), in the synchronization. For convenience there is a
- * {@link #nanoTime} method to return the value of System.nanoTime() with the delta added in.
+ * LocalClockSynchronizer is a fake {@link ClockSynchronizer} that simply calls System.nanoTime(). It exists so that
+ * the same tests can be run distributed or locally, taking timings against the ClockSynchronizer interface without
+ * being aware of how they are being run.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Trigger a clock synchronziation.
- * <tr><td> Compute a clock delta to apply to the local clock.
- * <tr><td> Estimate the error in the synchronzation.
+ * <tr><td> Supply the local clock with no delta.
  * </table>
  */
-public interface ClockSynchronizer
+public class LocalClockSynchronizer implements ClockSynchronizer
 {
     /**
      * The slave side should call this to copute a clock delta with the reference.
      *
-     * @throws ClockSynchFailureException If synchronization cannot be achieved.
+     * @throws org.apache.qpid.test.framework.clocksynch.ClockSynchFailureException
+     *          If synchronization cannot be achieved.
      */
-    public void synch() throws ClockSynchFailureException;
+    public void synch() throws ClockSynchFailureException
+    { }
 
     /**
      * Gets the clock delta in nano seconds.
      *
      * @return The clock delta in nano seconds.
      */
-    public long getDelta();
+    public long getDelta()
+    {
+        return 0L;
+    }
 
     /**
      * Gets an estimate of the clock error in nan seconds.
      *
      * @return An estimate of the clock error in nan seconds.
      */
-    public long getEpsilon();
+    public long getEpsilon()
+    {
+        return 0L;
+    }
 
     /**
      * Gets the local clock time with any computed delta added in.
      *
      * @return The local clock time with any computed delta added in.
      */
-    public long nanoTime();
+    public long nanoTime()
+    {
+        return System.nanoTime();
+    }
 }

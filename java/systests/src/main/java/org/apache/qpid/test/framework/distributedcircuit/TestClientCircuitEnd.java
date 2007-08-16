@@ -54,7 +54,7 @@ import javax.jms.*;
 public class TestClientCircuitEnd implements CircuitEnd, TestClientControlledTest
 {
     /** Used for debugging. */
-    Logger log = Logger.getLogger(TestClientCircuitEnd.class);
+    private static final Logger log = Logger.getLogger(TestClientCircuitEnd.class);
 
     /** Holds the test parameters. */
     ParsedProperties testProps;

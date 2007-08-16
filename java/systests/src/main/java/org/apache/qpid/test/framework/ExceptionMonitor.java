@@ -54,7 +54,7 @@ public class ExceptionMonitor implements ExceptionListener
      */
     public void onException(JMSException e)
     {
-        log.debug("public void onException(JMSException e): called");
+        log.debug("public void onException(JMSException e): called", e);
 
         exceptions.add(e);
     }

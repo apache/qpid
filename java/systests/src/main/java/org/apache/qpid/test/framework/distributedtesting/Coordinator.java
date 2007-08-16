@@ -31,6 +31,7 @@ import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.clocksynch.UDPClockReference;
 import org.apache.qpid.test.framework.listeners.XMLTestListener;
 import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
@@ -47,6 +48,7 @@ import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 import javax.jms.*;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -219,6 +221,10 @@ public class Coordinator extends TKTestRunner
                                 { "-csv", "Output test results in CSV format.", null, "false" },
                                 { "-xml", "Output test results in XML format.", null, "false" },
                                 {
+                                    "-trefaddr", "To specify an alternative to hostname for time singal reference.",
+                                    "address", "false"
+                                },
+                                {
                                     "c", "The number of tests to run concurrently.", "num", "false",
                                     MathUtils.SEQUENCE_REGEXP
                                 },
@@ -303,7 +309,7 @@ public class Coordinator extends TKTestRunner
             if (testCaseClasses.isEmpty())
             {
                 throw new RuntimeException(
-                    "No test cases implementing DistributedTestCase were specified on the command line.");
+                    "No test cases implementing FrameworkBaseCase were specified on the command line.");
             }
 
             // Extract the names of all the test classes, to pass to the start method.
@@ -382,6 +388,21 @@ public class Coordinator extends TKTestRunner
             log.debug("Got enlisted test client: " + client);
             console.info("Test node " + client.clientName + " available.");
         }
+
+        // Start the clock reference service running.
+        UDPClockReference clockReference = new UDPClockReference();
+        Thread clockRefThread = new Thread(clockReference);
+        registerShutdownHook(clockReference);
+        clockRefThread.start();
+
+        // Broadcast to all clients to synchronize their clocks against the coordinators clock reference.
+        Message clockSynchRequest = session.createMessage();
+        clockSynchRequest.setStringProperty("CONTROL_TYPE", "CLOCK_SYNCH");
+
+        String localAddress = InetAddress.getByName(InetAddress.getLocalHost().getHostName()).getHostAddress();
+        clockSynchRequest.setStringProperty("ADDRESS", localAddress);
+
+        conversation.send(controlTopic, clockSynchRequest);
 
         // Run the test in the suite using JUnit.
         TestResult result = null;

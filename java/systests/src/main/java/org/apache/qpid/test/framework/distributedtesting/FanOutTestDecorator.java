@@ -83,36 +83,8 @@ public class FanOutTestDecorator extends DistributedTestDecorator implements Mes
         allClients = availableClients;
         conversationFactory = controlConversation;
         connection = controlConnection;
-    }
 
-    /**
-     * Broadcasts a test invitation and accepts enlists from participating clients. The wrapped test cases are run
-     * with one test client in the sender role, and the remaining test clients in the receiving role.
-     *
-     * <p/>Any JMSExceptions during the invite/enlist conversation will be allowed to fall through as runtime
-     * exceptions, resulting in the non-completion of the test run.
-     *
-     * @param testResult The the results object to monitor the test results with.
-     *
-     * @todo Better error recovery for failure of the invite/enlist conversation could be added.
-     */
-    public void run(TestResult testResult)
-    {
-        log.debug("public void run(TestResult testResult): called");
-
-        Collection<Test> tests = testSuite.getAllUnderlyingTests();
-
-        // Listen for late joiners on the control topic.
-        try
-        {
-            conversationFactory.getSession().createConsumer(controlTopic).setMessageListener(this);
-        }
-        catch (JMSException e)
-        {
-            throw new RuntimeException("Unable to set up the message listener on the control topic.", e);
-        }
-
-        // Run all of the test cases in the test suite.
+        // Sign available clients up to the test.
         for (Test test : getAllUnderlyingTests())
         {
             FrameworkBaseCase coordTest = (FrameworkBaseCase) test;
@@ -148,6 +120,77 @@ public class FanOutTestDecorator extends DistributedTestDecorator implements Mes
 
             // Execute the test case.
             coordTest.setCircuitFactory(circuitFactory);
+        }
+    }
+
+    /**
+     * Broadcasts a test invitation and accepts enlists from participating clients. The wrapped test cases are run
+     * with one test client in the sender role, and the remaining test clients in the receiving role.
+     *
+     * <p/>Any JMSExceptions during the invite/enlist conversation will be allowed to fall through as runtime
+     * exceptions, resulting in the non-completion of the test run.
+     *
+     * @param testResult The the results object to monitor the test results with.
+     *
+     * @todo Better error recovery for failure of the invite/enlist conversation could be added.
+     */
+    public void run(TestResult testResult)
+    {
+        log.debug("public void run(TestResult testResult): called");
+
+        // Listen for late joiners on the control topic.
+        try
+        {
+            conversationFactory.getSession().createConsumer(controlTopic).setMessageListener(this);
+        }
+        catch (JMSException e)
+        {
+            throw new RuntimeException("Unable to set up the message listener on the control topic.", e);
+        }
+
+        // Run all of the test cases in the test suite.
+        /*for (Test test : getAllUnderlyingTests())
+        {
+            FrameworkBaseCase coordTest = (FrameworkBaseCase) test;
+
+            // Get all of the clients able to participate in the test.
+            Set<TestClientDetails> enlists = signupClients(coordTest);
+
+            // Check that there were some clients available.
+            if (enlists.size() == 0)
+            {
+                throw new RuntimeException("No clients to test with");
+            }
+
+            // Create a distributed test circuit factory for the test.
+            CircuitFactory circuitFactory = getTestSequencer();
+
+            // Set up the first client in the sender role, and the remainder in the receivers role.
+            Iterator<TestClientDetails> clients = enlists.iterator();
+            circuitFactory.setSender(clients.next());
+
+            while (clients.hasNext())
+            {
+                // Set the sending and receiving client details on the test case.
+                circuitFactory.setReceiver(clients.next());
+            }
+
+            // Pass down the connection to hold the coordinating conversation over.
+            circuitFactory.setConversationFactory(conversationFactory);
+
+            // If the current test case is a drop-in test, set it up as the currently running test for late joiners to
+            // add in to. Otherwise the current test field is set to null, to indicate that late joiners are not allowed.
+            currentTest = (coordTest instanceof DropInTest) ? coordTest : null;
+
+            // Execute the test case.
+            coordTest.setCircuitFactory(circuitFactory);
+        }*/
+
+        // Run all of the test cases in the test suite.
+        for (Test test : getAllUnderlyingTests())
+        {
+            FrameworkBaseCase coordTest = (FrameworkBaseCase) test;
+
             coordTest.run(testResult);
 
             currentTest = null;
