@@ -25,11 +25,11 @@
 #include "ClientMessage.h"
 #include "qpid/QpidError.h"
 #include "Connection.h"
-#include "ConnectionHandler.h"
 #include "FutureResponse.h"
 #include "MessageListener.h"
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
+#include "qpid/framing/all_method_bodies.h"
 
 // FIXME aconway 2007-01-26: Evaluate all throws, ensure consistent
 // handling of errors that should close the connection or the channel.
@@ -37,7 +37,6 @@
 //
 using namespace std;
 using namespace boost;
-using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
@@ -49,12 +48,10 @@ const std::string empty;
 class ScopedSync
 {
     Session& session;
-public:
+  public:
     ScopedSync(Session& s, bool enabled = true) : session(s) { session.setSynchronous(enabled); }
     ~ScopedSync() { session.setSynchronous(false); }
 };
-
-}}
 
 Channel::Channel(bool _transactional, u_int16_t _prefetch) :
     prefetch(_prefetch), transactional(_transactional), running(false)
@@ -250,3 +247,6 @@ void Channel::run() {
         }
     } catch (const QueueClosed&) {}
 }
+
+}}
+

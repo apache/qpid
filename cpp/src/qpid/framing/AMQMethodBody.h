@@ -21,65 +21,48 @@
  * under the License.
  *
  */
-#include <iostream>
 #include "amqp_types.h"
 #include "AMQBody.h"
-#include "Buffer.h"
-#include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/ProtocolVersion.h"
+#include "qpid/shared_ptr.h"
+
+#include <ostream>
+
+#include <assert.h>
 
 namespace qpid {
 namespace framing {
 
-class AMQP_MethodVersionMap;
+class Buffer;
+class AMQP_ServerOperations;
+class Invocable;
+class MethodBodyConstVisitor;
 
-class AMQMethodBody : public AMQBody
-{
+class AMQMethodBody : public AMQBody {
   public:
-    typedef boost::shared_ptr<AMQMethodBody> shared_ptr;
+    AMQMethodBody() {}
+    AMQMethodBody(uint8_t, uint8_t) {}
+    
+    virtual ~AMQMethodBody();
 
-    static shared_ptr create(
-        AMQP_MethodVersionMap& map, ProtocolVersion version, Buffer& buf);
-
-    ProtocolVersion version;    
-    uint8_t type() const { return METHOD_BODY; }
-    AMQMethodBody(uint8_t major, uint8_t minor) : version(major, minor) {}
-    AMQMethodBody(ProtocolVersion ver) : version(ver) {}
-    virtual ~AMQMethodBody() {}
-    void decode(Buffer&, uint32_t);
-    virtual void encode(Buffer& buffer) const;
-
+    virtual void accept(MethodBodyConstVisitor&) const = 0;
+    
     virtual MethodId amqpMethodId() const = 0;
     virtual ClassId  amqpClassId() const = 0;
     
-    virtual void invoke(AMQP_ServerOperations&);
-    virtual bool invoke(Invocable* target);
+    virtual void invoke(AMQP_ServerOperations&) { assert(0); }
+    virtual bool invoke(Invocable*) { return false; }
 
-    template <class T> bool isA() {
+    template <class T> bool isA() const {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;
     }
 
-    /** Return request ID or response correlationID */
-    virtual RequestId getRequestId() const { return 0; }
+    virtual uint32_t size() const = 0;
+    virtual uint8_t type() const { return METHOD_BODY; }
 
-    virtual bool isRequest() const { return false; }
-    virtual bool isResponse() const { return false; }
-
-    static uint32_t baseSize() { return 4; }
-  protected:
-
-    struct ClassMethodId {
-        uint16_t classId;
-        uint16_t methodId;
-        void decode(Buffer& b);
-    };
-    
-    void encodeId(Buffer& buffer) const;
-    virtual void encodeContent(Buffer& buffer) const = 0;
-    virtual void decodeContent(Buffer& buffer) = 0;
-
-    virtual void printPrefix(std::ostream&) const {}
-
-  friend class MethodHolder;
+    AMQMethodBody* getMethod() { return this; }
+    const AMQMethodBody* getMethod() const { return this; }
+    void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
 };
 
 

@@ -50,7 +50,7 @@ void MessageBuilder::initialise(Message::shared_ptr& msg){
     message = msg;
 }
 
-void MessageBuilder::setHeader(AMQHeaderBody::shared_ptr& header){
+void MessageBuilder::setHeader(AMQHeaderBody* header){
     if(!message.get()){
         THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Invalid message sequence: got header before publish.");
     }
@@ -65,7 +65,7 @@ void MessageBuilder::setHeader(AMQHeaderBody::shared_ptr& header){
     route();
 }
 
-void MessageBuilder::addContent(AMQContentBody::shared_ptr& content){
+void MessageBuilder::addContent(AMQContentBody* content){
     if(!message.get()){
         THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Invalid message sequence: got content before publish.");
     }

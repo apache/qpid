@@ -170,9 +170,9 @@ class Channel : public CompletionHandler
     void flow(bool active);
     void deliver(Message::shared_ptr& msg, const string& consumerTag, DeliveryId deliveryTag);            
     void handlePublish(Message* msg);
-    void handleHeader(boost::shared_ptr<framing::AMQHeaderBody>);
-    void handleContent(boost::shared_ptr<framing::AMQContentBody>);
-    void handleHeartbeat(boost::shared_ptr<framing::AMQHeartbeatBody>);
+    void handleHeader(framing::AMQHeaderBody*);
+    void handleContent(framing::AMQContentBody*);
+    void handleHeartbeat(framing::AMQHeartbeatBody*);
     
     void handleInlineTransfer(Message::shared_ptr msg);
 };

@@ -1,3 +1,4 @@
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -42,8 +43,7 @@ void ConnectionAdapter::close(ReplyCode code, const string& text, ClassId classI
     handler->client.close(code, text, classId, methodId);
 }
 
-void ConnectionAdapter::handleMethod(
-    boost::shared_ptr<qpid::framing::AMQMethodBody> method)
+void ConnectionAdapter::handleMethod(framing::AMQMethodBody* method)
 {
     try{
         method->invoke(*this);

@@ -43,7 +43,6 @@ check_PROGRAMS+=Shlib
 Shlib_SOURCES=Shlib.cpp
 Shlib_LDADD=-lboost_unit_test_framework $(lib_common)
 
-
 # TODO aconway 2007-08-07: Why aren't these tests run automatically?
 
 check_PROGRAMS+=ConcurrentQueue
@@ -53,10 +52,6 @@ ConcurrentQueue_LDADD=-lboost_test_exec_monitor $(lib_common)
 check_PROGRAMS+=Serializer
 Serializer_SOURCES=Serializer.cpp
 Serializer_LDADD=-lboost_unit_test_framework $(lib_common)
-
-check_PROGRAMS+=Visitor
-Visitor_SOURCES=Visitor.cpp
-Visitor_LDADD=-lboost_unit_test_framework
 
 include cluster.mk
 

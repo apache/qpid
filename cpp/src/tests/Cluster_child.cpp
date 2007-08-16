@@ -40,7 +40,7 @@ void clusterTwo() {
     BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *frame.getBody());
     BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
 
-    AMQFrame send(VER, 1, new SessionPongBody(VER));
+    AMQFrame send(VER, 1, SessionPongBody(VER));
     cluster.handle(send);
     BOOST_REQUIRE(cluster.received.waitPop(frame));
     BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *frame.getBody());

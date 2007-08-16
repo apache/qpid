@@ -21,7 +21,7 @@
 #include "amqp_types.h"
 #include "AMQBody.h"
 #include "Buffer.h"
-#include "HeaderProperties.h"
+#include "BasicHeaderProperties.h"
 
 #ifndef _AMQHeaderBody_
 #define _AMQHeaderBody_
@@ -31,19 +31,15 @@ namespace framing {
 
 class AMQHeaderBody :  public AMQBody
 {
-    HeaderProperties* properties;
+    BasicHeaderProperties properties;
     uint16_t weight;
     uint64_t contentSize;
-
-    void createProperties(int classId);
-public:
-    typedef boost::shared_ptr<AMQHeaderBody> shared_ptr;
-
+  public:
     AMQHeaderBody(int classId);
     AMQHeaderBody();
     inline uint8_t type() const { return HEADER_BODY; }
-    HeaderProperties* getProperties(){ return properties; }
-    const HeaderProperties* getProperties() const { return properties; }
+    BasicHeaderProperties* getProperties(){ return &properties; }
+    const BasicHeaderProperties* getProperties() const { return &properties; }
     inline uint64_t getContentSize() const { return contentSize; }
     inline void setContentSize(uint64_t _size) { contentSize = _size; }
     virtual ~AMQHeaderBody();
@@ -51,6 +47,8 @@ public:
     virtual void encode(Buffer& buffer) const;
     virtual void decode(Buffer& buffer, uint32_t size);
     virtual void print(std::ostream& out) const;
+
+    void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
 };
 
 }

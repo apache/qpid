@@ -42,6 +42,8 @@ shared_ptr<T> make_shared_ptr(T* ptr, D deleter) {
     return shared_ptr<T>(ptr, deleter);
 }
 
+inline void nullDeleter(void const *) {} 
+
 } // namespace qpid
 
 

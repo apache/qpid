@@ -22,21 +22,22 @@
 #define _InMemoryContent_
 
 #include "Content.h"
+#include "qpid/framing/AMQContentBody.h"
 #include <vector>
 
 
 namespace qpid {
     namespace broker {
         class InMemoryContent : public Content{
-            typedef std::vector<qpid::framing::AMQContentBody::shared_ptr> content_list;
+            typedef std::vector<framing::AMQContentBody> content_list;
             typedef content_list::iterator content_iterator;
 
             content_list content;
         public:
-            void add(qpid::framing::AMQContentBody::shared_ptr data);
+            void add(framing::AMQContentBody* data);
             uint32_t size();
             void send(framing::ChannelAdapter&, uint32_t framesize);
-            void encode(qpid::framing::Buffer& buffer);
+            void encode(framing::Buffer& buffer);
         };
     }
 }

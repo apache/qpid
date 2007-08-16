@@ -54,7 +54,7 @@ class InProcessBroker : public client::Connector {
 
         template <class MethodType>
         MethodType* asMethod() {
-            return dynamic_cast<MethodType*>(frame.getBody().get());
+            return dynamic_cast<MethodType*>(frame.getBody());
         }
         framing::AMQFrame frame;
         Sender sender;

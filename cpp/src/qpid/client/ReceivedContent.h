@@ -20,8 +20,8 @@
  */
 #include <string>
 #include <vector>
-#include <boost/shared_ptr.hpp>
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "ClientMessage.h"
 
@@ -38,37 +38,29 @@ namespace client {
 class ReceivedContent
 {
     const framing::SequenceNumber id;
-    std::vector<framing::AMQBody::shared_ptr> parts;
+    std::vector<framing::AMQFrame> parts;
 
 public:
     typedef boost::shared_ptr<ReceivedContent> shared_ptr;
 
     ReceivedContent(const framing::SequenceNumber& id);
-    void append(framing::AMQBody::shared_ptr part);
+    void append(framing::AMQBody* part);
     bool isComplete() const;
 
     uint64_t getContentSize() const;
     std::string getContent() const;
 
-    framing::AMQMethodBody::shared_ptr getMethod() const;
-    framing::AMQHeaderBody::shared_ptr getHeaders() const;
+    const framing::AMQMethodBody* getMethod() const;
+    const framing::AMQHeaderBody* getHeaders() const;
      
     template <class T> bool isA() const {
-        framing::AMQMethodBody::shared_ptr method = getMethod();
-        if (!method) {
-            return false;
-        } else {
-            return method->isA<T>();
-        }
+        const framing::AMQMethodBody* method=getMethod();
+        return method && method->isA<T>();
     }
 
-    template <class T> boost::shared_ptr<T> as() const {
-        framing::AMQMethodBody::shared_ptr method = getMethod();
-        if (method && method->isA<T>()) {
-            return boost::dynamic_pointer_cast<T>(method);
-        } else {
-            return boost::shared_ptr<T>();
-        }
+    template <class T> const T* as() const {
+        const framing::AMQMethodBody* method=getMethod();
+        return (method && method->isA<T>()) ? dynamic_cast<const T*>(method) : 0;
     }    
 
     const framing::SequenceNumber& getId() const { return id; }

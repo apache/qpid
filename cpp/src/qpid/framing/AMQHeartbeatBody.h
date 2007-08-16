@@ -31,14 +31,13 @@ namespace framing {
 class AMQHeartbeatBody :  public AMQBody
 {
 public:
-    typedef boost::shared_ptr<AMQHeartbeatBody> shared_ptr;
-
     virtual ~AMQHeartbeatBody();
     inline uint32_t size() const { return 0; }
     inline uint8_t type() const { return HEARTBEAT_BODY; }
     inline void encode(Buffer& ) const {}
     inline void decode(Buffer& , uint32_t /*size*/) {}
     virtual void print(std::ostream& out) const;
+    void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
 };
 
 }

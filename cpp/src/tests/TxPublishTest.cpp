@@ -72,7 +72,8 @@ public:
         msg(new BasicMessage(0, "exchange", "routing_key", false, false)),
         op(msg)
     {
-        msg->setHeader(AMQHeaderBody::shared_ptr(new AMQHeaderBody(BASIC)));
+        AMQHeaderBody body(BASIC);
+        msg->setHeader(&body);
         msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
         op.deliverTo(queue1);
         op.deliverTo(queue2);

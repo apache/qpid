@@ -51,13 +51,10 @@ struct MockChannel : public qpid::framing::ChannelAdapter
 
     bool isOpen() const { return true; }
 
-    void handleHeader(
-        boost::shared_ptr<qpid::framing::AMQHeaderBody> b) { send(b); }
-    void handleContent(
-        boost::shared_ptr<qpid::framing::AMQContentBody> b) { send(b); }
-    void handleHeartbeat(
-        boost::shared_ptr<qpid::framing::AMQHeartbeatBody> b) { send(b); }
-    void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method) { send(method); };
+    void handleHeader(qpid::framing::AMQHeaderBody* b) { send(*b); }
+    void handleContent(qpid::framing::AMQContentBody* b) { send(*b); }
+    void handleHeartbeat(qpid::framing::AMQHeartbeatBody* b) { send(*b); }
+    void handleMethod(qpid::framing::AMQMethodBody* b) { send(*b); };
 
 };
 

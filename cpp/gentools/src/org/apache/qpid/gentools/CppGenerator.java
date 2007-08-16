@@ -1164,7 +1164,7 @@ public class CppGenerator extends Generator
             {
                 String[] fieldDomainPair = ordinalFieldMap.get(thisOrdinal);
                 sb.append(indent + "" + setRef(fieldDomainPair[FIELD_CODE_TYPE]) + " get" +
-                          Utils.firstUpper(fieldDomainPair[FIELD_NAME]) + "() { return " +
+                          Utils.firstUpper(fieldDomainPair[FIELD_NAME]) + "() const { return " +
                           fieldDomainPair[FIELD_NAME] + "; }" + cr);
             }
         return sb.toString();
@@ -1443,12 +1443,13 @@ public class CppGenerator extends Generator
         StringBuffer sb = new StringBuffer();
         if (method.fieldMap.size() > 0)
             {
-                sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion version," + cr);
+                sb.append(indent + thisClass.name + Utils.firstUpper(method.name) + "Body(ProtocolVersion," + cr);
 		sb.append(generateFieldList(method.fieldMap, version, true, false, 8));
-                sb.append(indent + tab + ") : " + baseClass(method, version) + "(version");
-		sb.append(")");
-		if (method.fieldMap.size() > 0) 
-		    sb.append(", \n" + generateFieldList(method.fieldMap, version, false, true, 8));
+                sb.append(indent + tab + ")"); 
+		if (method.fieldMap.size() > 0) {
+		    sb.append(" : ");
+		    sb.append(generateFieldList(method.fieldMap, version, false, true, 8));
+		}
                 sb.append(indent + "{ }\n");
             }
         return sb.toString();         

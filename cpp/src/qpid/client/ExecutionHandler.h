@@ -56,10 +56,10 @@ public:
     void setMaxFrameSize(uint64_t size) { maxFrameSize = size; }
 
     void handle(framing::AMQFrame& frame);
-    void send(framing::AMQBody::shared_ptr command, 
+    void send(const framing::AMQBody& command, 
               CompletionTracker::Listener f = CompletionTracker::Listener(), 
               Correlator::Listener g = Correlator::Listener());
-    void sendContent(framing::AMQBody::shared_ptr command, 
+    void sendContent(const framing::AMQBody& command, 
                      const framing::BasicHeaderProperties& headers, const std::string& data, 
                      CompletionTracker::Listener f = CompletionTracker::Listener(), 
                      Correlator::Listener g = Correlator::Listener());

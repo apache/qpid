@@ -25,7 +25,7 @@ using qpid::client::Correlator;
 using namespace qpid::framing;
 using namespace boost;
 
-void Correlator::receive(AMQMethodBody::shared_ptr response)
+void Correlator::receive(AMQMethodBody* response)
 {
     if (listeners.empty()) {
         throw ConnectionException(503, "Unexpected method!");//TODO: include the method & class name
