@@ -568,7 +568,7 @@ public interface Session
      * @param type              Each exchange belongs to one of a set of exchange types implemented by the server. The
      *                          exchange types define the functionality of the exchange - i.e. how messages are routed
      *                          through it. It is not valid or meaningful to attempt to change the type of an existing
-     *                          exchange. Default exchange types are: direct, topic, headers and fanout.
+     *                          exchange. Default exchange types are: direct, topic, headers and fanout.    
      * @param alternateExchange In the event that a message cannot be routed, this is the name of the exchange to which
      *                          the message will be sent.
      * @param options           Set of options (valid options are: {@link Option#AUTO_DELETE}, {@link Option#DURABLE},

@@ -32,6 +32,17 @@ public class QueueImpl extends DestinationImpl implements Queue
 {
 
     //--- Constructor
+
+    /**
+     * Create a new QueueImpl.
+     *
+     * @param session The session used to create this QueueImpl.
+     */
+    protected QueueImpl(SessionImpl session)
+    {
+        super(session);
+    }
+
     /**
      * Create a new QueueImpl with a given name.
      *
@@ -41,25 +52,28 @@ public class QueueImpl extends DestinationImpl implements Queue
      */
     protected QueueImpl(SessionImpl session, String name) throws QpidException
     {
-        super(session, name);
-        _exchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
-        _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+        super(session);
         _queueName = name;
-        // check that this queue exist on the server
-        // As pasive is set the server will not create the queue.
-        session.getQpidSession().queueDeclare(name, null, null, Option.PASSIVE);
+        _destinationName = name;
+        _exchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+        _exchangeType = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+        _isAutoDelete = false;
+        _isDurable = true;
+        _isExclusive = false;
+        registerQueue(false);
     }
 
     /**
      * Create a destiantion from a binding URL
      *
-     * @param session  The session used to create this queue.
+     * @param session The session used to create this queue.
      * @param binding The URL
      * @throws QpidException If the URL is not valid
      */
     protected QueueImpl(SessionImpl session, BindingURL binding) throws QpidException
     {
-        super(session, binding);        
+        super(session, binding);
+        registerQueue(false);
     }
 
     //---- Interface javax.jms.Queue
@@ -70,6 +84,35 @@ public class QueueImpl extends DestinationImpl implements Queue
      */
     public String getQueueName() throws JMSException
     {
-        return super.getName();
+        return _queueName;
     }
+
+    //---Private methods
+    /**
+     * Check that this queue exists and declare it if required.
+     *
+     * @param declare Specify whether the queue should be declared
+     * @throws QpidException If this queue does not exists on the broker.
+     */
+    protected void registerQueue(boolean declare) throws QpidException
+    {
+        // test if this exchange exist on the broker
+        //todo we can also specify if the excahnge is autodlete and durable
+        _session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
+        // wait for the broker response
+        _session.getQpidSession().sync();
+        // If this exchange does not exist then we will get an Expection 404 does notexist
+        //todo check for an execption
+        // now check if the queue exists
+        _session.getQpidSession().queueDeclare(_queueName, null, null, _isDurable ? Option.DURABLE : Option.NO_OPTION,
+                                               _isAutoDelete ? Option.AUTO_DELETE : Option.NO_OPTION,
+                                               _isExclusive ? Option.EXCLUSIVE : Option.NO_OPTION,
+                                               declare ? Option.PASSIVE : Option.NO_OPTION);
+        // wait for the broker response
+        _session.getQpidSession().sync();
+        // If this queue does not exist then we will get an Expection 404 does notexist
+        _session.getQpidSession().queueBind(_queueName, _exchangeName, _destinationName, null);
+        // we don't have to sync as we don't expect an error
+    }
+
 }

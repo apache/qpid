@@ -41,6 +41,11 @@ public class XASessionImpl extends SessionImpl implements XASession
      */
     private DtxSession _qpidDtxSession;
 
+    /**
+     * The standard session
+     */
+    private Session _jmsSession;
+
     //-- Constructors
     /**
      * Create a JMS XASession
@@ -62,13 +67,16 @@ public class XASessionImpl extends SessionImpl implements XASession
     /**
      * Gets the session associated with this XASession.
      *
-     * @return the session object
+     * @return The session object.
      * @throws JMSException if an internal error occurs.
-     * @since 1.1
      */
     public Session getSession() throws JMSException
     {
-        return this;
+       if( _jmsSession == null )
+       {
+           _jmsSession = getConnection().createSession(true, getAcknowledgeMode());
+       }
+        return _jmsSession;
     }
 
     /**

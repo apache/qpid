@@ -19,53 +19,53 @@ package org.apache.qpidity.jms;
 
 import org.apache.qpidity.QpidException;
 
-import javax.jms.XAConnection;
+import javax.jms.XATopicConnection;
 import javax.jms.JMSException;
-import javax.jms.XASession;
+import javax.jms.XATopicSession;
 
 /**
- * This class implements the javax.jms.XAConnection interface
+ * implements javax.jms.XATopicConnection
  */
-public class XAConnectionImpl extends ConnectionImpl implements XAConnection
+public class XATopicConnectionImpl extends XAConnectionImpl implements XATopicConnection
 {
     //-- constructor
     /**
-     * Create a XAConnection.
+     * Create a XATopicConnection.
      *
      * @param host        The broker host name.
      * @param port        The port on which the broker is listening for connection.
      * @param virtualHost The virtual host on which the broker is deployed.
      * @param username    The user name used of user identification.
      * @param password    The password name used of user identification.
-     * @throws QpidException If creating a connection fails due to some internal error.
-     */    
-    protected XAConnectionImpl(String host, int port, String virtualHost, String username, String password) throws QpidException
+     * @throws QpidException If creating a XATopicConnection fails due to some internal error.
+     */
+    public XATopicConnectionImpl(String host, int port, String virtualHost, String username, String password)
+            throws QpidException
     {
         super(host, port, virtualHost, username, password);
     }
 
-    //-- interface XAConnection
     /**
-     * Creates an XASession.
+     * Creates an XATopicSession.
      *
-     * @return A newly created XASession.
-     * @throws JMSException If the XAConnectiono fails to create an XASession due to
+     * @return A newly created XATopicSession.
+     * @throws JMSException If the XAConnectiono fails to create an XATopicSession due to
      *                      some internal error.
      */
-    public synchronized XASession createXASession() throws JMSException
+    public synchronized XATopicSession createXATopicSession() throws JMSException
     {
         checkNotClosed();
-        XASessionImpl xasession;
+        XATopicSessionImpl xaTopicSession;
         try
         {
-            xasession = new XASessionImpl(this);
+            xaTopicSession = new XATopicSessionImpl(this);
         }
         catch (QpidException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         // add this session with the list of session that are handled by this connection
-        _sessions.add(xasession);
-        return xasession;
+        _sessions.add(xaTopicSession);
+        return xaTopicSession;
     }
 }
