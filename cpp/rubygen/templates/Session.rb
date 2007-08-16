@@ -104,7 +104,7 @@ EOS
   cpp_file("qpid/client/#{@classname}.cpp") { 
     gen <<EOS
 #include "#{@classname}.h"
-#include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/all_method_bodies.h"
 
 using std::string;
 using namespace qpid::framing;
