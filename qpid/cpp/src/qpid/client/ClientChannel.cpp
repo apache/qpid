@@ -137,21 +137,6 @@ void Channel::rollback(){
     session->txRollback();
 }
 
-void Channel::close()
-{
-    session->close();
-    {
-        Mutex::ScopedLock l(lock);
-        if (connection);
-        {
-            session.reset();
-            sessionCore.reset();
-            connection.reset();
-        }
-    }
-    stop();
-}
-
 void Channel::consume(
     Queue& queue, const std::string& tag, MessageListener* listener, 
     AckMode ackMode, bool noLocal, bool synch, const FieldTable* fields) {
@@ -209,6 +194,20 @@ void Channel::publish(const Message& msg, const Exchange& exchange,
     string key = routingKey;
 
     session->basicPublish(0, e, key, mandatory, immediate, msg);
+}
+
+void Channel::close()
+{
+    session->close();
+    {
+        Mutex::ScopedLock l(lock);
+        if (connection);
+        {
+            sessionCore.reset();
+            connection.reset();
+        }
+    }
+    stop();
 }
 
 void Channel::start(){
