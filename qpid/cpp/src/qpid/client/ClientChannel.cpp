@@ -216,7 +216,6 @@ void Channel::start(){
 }
 
 void Channel::stop() {
-    //session->stop();
     gets.close();
     join();
 }
