@@ -25,6 +25,8 @@
 #include "StateManager.h"
 #include "ChainableFrameHandler.h"
 #include "qpid/framing/InputHandler.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/AMQMethodBody.h"
 
 namespace qpid {
 namespace client {
@@ -53,10 +55,10 @@ class ConnectionHandler : private StateManager,
     enum STATES {NOT_STARTED, NEGOTIATING, OPENING, OPEN, CLOSING, CLOSED, FAILED};
     std::set<int> ESTABLISHED;
     
-    void handle(framing::AMQMethodBody::shared_ptr method);
-    void send(framing::AMQBody::shared_ptr body);
+    void handle(framing::AMQMethodBody* method);
+    void send(const framing::AMQBody& body);
     void error(uint16_t code, const std::string& message, uint16_t classId = 0, uint16_t methodId = 0);
-    void error(uint16_t code, const std::string& message, framing::AMQBody::shared_ptr body);
+    void error(uint16_t code, const std::string& message, framing::AMQBody* body);
     void fail(const std::string& message);
 
 public:

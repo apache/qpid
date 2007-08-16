@@ -28,13 +28,11 @@
 namespace qpid {
 namespace framing {
 
-class AMQContentBody : public AMQBody
+class AMQContentBody :  public AMQBody
 {
     string data;
 
 public:
-    typedef boost::shared_ptr<AMQContentBody> shared_ptr;
-
     AMQContentBody();
     AMQContentBody(const string& data);
     inline virtual ~AMQContentBody(){}
@@ -44,6 +42,7 @@ public:
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer, uint32_t size);
     void print(std::ostream& out) const;
+    void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
 };
 
 }

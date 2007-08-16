@@ -46,8 +46,10 @@ rgen_tdir=$(rgen_dir)/templates
 rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate
 
 rgen_templates=$(rgen_tdir)/MethodHolder.rb	\
+	$(rgen_tdir)/MethodBodyConstVisitor.rb  \
 	$(rgen_tdir)/frame_body_lists.rb	\
 	$(rgen_tdir)/Session.rb			\
+	$(rgen_tdir)/all_method_bodies.rb 	\
 	$(rgen_tdir)/Proxy.rb
 
 rgen_generator=$(rgen_dir)/generate		\
@@ -135,11 +137,11 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(platform_src) \
   qpid/framing/AMQBody.cpp \
+  qpid/framing/AMQMethodBody.cpp \
   qpid/framing/AMQContentBody.cpp \
   qpid/framing/AMQFrame.cpp \
   qpid/framing/AMQHeaderBody.cpp \
   qpid/framing/AMQHeartbeatBody.cpp \
-  qpid/framing/AMQMethodBody.cpp \
   qpid/framing/FrameHandler.h \
   qpid/framing/BasicHeaderProperties.cpp \
   qpid/framing/BodyHandler.cpp \
@@ -162,10 +164,12 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Blob.h \
   qpid/framing/AMQP_ClientProxy.cpp \
   qpid/framing/AMQP_ServerProxy.cpp \
+  qpid/framing/variant.h \
   gen/qpid/framing/AMQP_HighestVersion.h \
-  gen/qpid/framing/AMQP_MethodVersionMap.cpp \
+  qpid/framing/Blob.cpp \
   qpid/framing/MethodHolder.h qpid/framing/MethodHolder.cpp \
   qpid/framing/MethodHolder_construct.cpp \
+  qpid/framing/MethodHolderMaxSize.h \
   qpid/Exception.cpp \
   qpid/Plugin.h \
   qpid/Plugin.cpp \

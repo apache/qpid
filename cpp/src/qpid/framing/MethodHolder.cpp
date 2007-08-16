@@ -23,8 +23,8 @@
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/Buffer.h"
 
-// Note: MethodHolder::construct is in a separate generated file
-// MethodHolder_construct.cpp
+// Note: MethodHolder::construct is and operator= are code-generated
+// in file MethodHolder_construct.cpp.
 
 using namespace boost;
 
@@ -35,16 +35,18 @@ void MethodHolder::encode(Buffer& b) const {
     const AMQMethodBody* body = get();
     b.putShort(body->amqpClassId());
     b.putShort(body->amqpMethodId());
-    body->encodeContent(b);
+    body->encode(b);
 }
 
 void MethodHolder::decode(Buffer& b) {
-    construct(std::make_pair(b.getShort(), b.getShort()));
-    get()->decodeContent(b);
+    ClassId c=b.getShort();
+    MethodId m=b.getShort();
+    construct(c,m);
+    get()->decode(b);
 }
 
 uint32_t  MethodHolder::size() const {
-    return sizeof(Id)+get()->size();
+    return sizeof(ClassId)+sizeof(MethodId)+get()->size();
 }
 
 std::ostream& operator<<(std::ostream& out, const MethodHolder& h) {

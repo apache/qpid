@@ -115,11 +115,7 @@ class AmqpClass < AmqpElement
   # chassis should be "client" or "server"
   def amqp_methods_on(chassis)
     @cache_amqp_methods_on ||= { }
-
-    els = elements.collect("method/chassis[@name='#{chassis}']/..") { |m|
-      AmqpMethod.new(m,self)
-    }.sort_by_name
-    @cache_amqp_methods_on[chassis] ||= els
+    @cache_amqp_methods_on[chassis] ||= elements.collect("method/chassis[@name='#{chassis}']/..") { |m| AmqpMethod.new(m,self) }.sort_by_name
 end
 end
 
@@ -153,7 +149,8 @@ class AmqpRoot < AmqpElement
   end
 
   def amqp_classes()
-    @cache_amqp_classes ||= elements.collect("class") { |c| AmqpClass.new(c,self) }.sort_by_name
+    @cache_amqp_classes ||= elements.collect("class") { |c|
+      AmqpClass.new(c,self) }.sort_by_name
   end
   
   # Return all methods on all classes.

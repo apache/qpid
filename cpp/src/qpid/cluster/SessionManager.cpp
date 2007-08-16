@@ -36,7 +36,7 @@ using namespace sys;
 using namespace broker;
 
 /** Handler to send frames direct to local broker (bypass correlation etc.) */
-    struct BrokerHandler : public FrameHandler, private ChannelAdapter, private DeliveryAdapter {
+struct BrokerHandler : public FrameHandler, private ChannelAdapter, private DeliveryAdapter {
     Connection connection;
     Channel channel;
     BrokerAdapter adapter;
@@ -61,13 +61,13 @@ using namespace broker;
     }
 
     // Dummy methods.
-    virtual void handleHeader(boost::shared_ptr<AMQHeaderBody>){}
-    virtual void handleContent(boost::shared_ptr<AMQContentBody>){}
-    virtual void handleHeartbeat(boost::shared_ptr<AMQHeartbeatBody>){}
+    virtual void handleHeader(AMQHeaderBody*){}
+    virtual void handleContent(AMQContentBody*){}
+    virtual void handleHeartbeat(AMQHeartbeatBody*){}
     virtual bool isOpen() const{ return true; }
-    virtual void handleMethod(shared_ptr<AMQMethodBody>){}
+    virtual void handleMethod(AMQMethodBody*){}
     // No-op send.
-        virtual void send(shared_ptr<AMQBody>) {}
+    virtual void send(const AMQBody&) {}
 
     //delivery adapter methods, also no-ops:
     virtual DeliveryId deliver(Message::shared_ptr&, DeliveryToken::shared_ptr) { return 0; }

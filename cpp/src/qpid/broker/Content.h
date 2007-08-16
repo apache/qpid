@@ -42,7 +42,7 @@ class Content{
     virtual ~Content(){}
     
     /** Add a block of data to the content */
-    virtual void add(framing::AMQContentBody::shared_ptr data) = 0;
+    virtual void add(framing::AMQContentBody* data) = 0;
 
     /** Total size of content in bytes */
     virtual uint32_t size() = 0;

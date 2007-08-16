@@ -134,7 +134,9 @@ Socket::recv(void* data, size_t size) const
 
 int Socket::listen(int port, int backlog) const
 {
-	const int& socket = impl->fd;
+    const int& socket = impl->fd;
+    int yes=1;
+    QPID_POSIX_CHECK(setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
     struct sockaddr_in name;
     name.sin_family = AF_INET;
     name.sin_port = htons(port);

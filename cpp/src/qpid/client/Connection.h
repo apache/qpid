@@ -27,6 +27,7 @@
 #include "ClientChannel.h"
 #include "ConnectionImpl.h"
 #include "Session.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
 
 
 namespace qpid {

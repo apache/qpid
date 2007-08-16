@@ -29,10 +29,6 @@
 
 namespace qpid {
 
-namespace framing {
-class MessageTransferBody;
-}
-	
 namespace broker {
 class ConnectionToken;
 class Reference;
@@ -40,16 +36,15 @@ class Reference;
 class MessageMessage: public Message{
   public:
     typedef boost::shared_ptr<MessageMessage> shared_ptr;
-    typedef boost::shared_ptr<framing::MessageTransferBody> TransferPtr;
     typedef boost::shared_ptr<Reference> ReferencePtr;
     
-    MessageMessage(ConnectionToken* publisher, TransferPtr transfer);
-    MessageMessage(ConnectionToken* publisher, TransferPtr transfer, ReferencePtr reference);
+    MessageMessage(ConnectionToken* publisher, const framing::MessageTransferBody* transfer);
+    MessageMessage(ConnectionToken* publisher, const framing::MessageTransferBody* transfer, ReferencePtr reference);
     MessageMessage();
             
     // Default destructor okay
 
-    TransferPtr getTransfer() const { return transfer; }
+    framing::MessageTransferBody* getTransfer() const { return const_cast<framing::MessageTransferBody*>(&transfer); }
     ReferencePtr getReference() const ;
     
     void deliver(framing::ChannelAdapter& channel, DeliveryId deliveryTag, DeliveryToken::shared_ptr token, uint32_t framesize);
@@ -80,12 +75,12 @@ class MessageMessage: public Message{
         const std::string& consumerTag, 
         uint32_t framesize);
     
-    framing::MessageTransferBody* copyTransfer(
+    framing::MessageTransferBody copyTransfer(
         const framing::ProtocolVersion& version,
         const std::string& destination, 
         const framing::Content& body) const;
   
-    const TransferPtr transfer;
+    framing::MessageTransferBody transfer;
     const boost::shared_ptr<Reference> reference;
 };
 

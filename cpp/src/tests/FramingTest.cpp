@@ -18,24 +18,27 @@
  * under the License.
  *
  */
-#include "qpid/framing/ConnectionRedirectBody.h"
-#include "qpid/framing/ProtocolVersion.h"
-#include "qpid/framing/amqp_framing.h"
-#include <iostream>
-#include "qpid_test_plugin.h"
-#include <sstream>
-#include <typeinfo>
-#include "qpid/QpidError.h"
-#include "qpid/framing/AMQP_HighestVersion.h"
 #include "InProcessBroker.h"
-#include "qpid/client/Connection.h"
-#include "qpid/client/Connector.h"
+#include "qpid/QpidError.h"
 #include "qpid/client/ClientExchange.h"
 #include "qpid/client/ClientQueue.h"
+#include "qpid/client/Connection.h"
+#include "qpid/client/Connector.h"
+#include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/BasicGetOkBody.h"
-#include <memory>
-#include <boost/lexical_cast.hpp>
+#include "qpid/framing/ConnectionRedirectBody.h"
+#include "qpid/framing/ProtocolVersion.h"
+#include "qpid/framing/all_method_bodies.h"
+#include "qpid/framing/amqp_framing.h"
+#include "qpid_test_plugin.h"
+
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+#include <iostream>
+
+#include <memory>
+#include <sstream>
+#include <typeinfo>
 
 using namespace qpid;
 using namespace qpid::framing;
@@ -62,13 +65,11 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST(testInlineContent);
     CPPUNIT_TEST(testContentReference);
     CPPUNIT_TEST(testContentValidation);
-    CPPUNIT_TEST(testRequestResponseRoundtrip);
     CPPUNIT_TEST_SUITE_END();
 
   private:
     Buffer buffer;
     ProtocolVersion version;
-    AMQP_MethodVersionMap versionMap;
     
   public:
 
@@ -77,10 +78,10 @@ class FramingTest : public CppUnit::TestCase
     void testBasicQosBody() 
     {
         BasicQosBody in(version, 0xCAFEBABE, 0xABBA, true);
-        in.encodeContent(buffer);
+        in.encode(buffer);
         buffer.flip(); 
         BasicQosBody out(version);
-        out.decodeContent(buffer);
+        out.decode(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
     
@@ -88,10 +89,10 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string s = "security credential";
         ConnectionSecureBody in(version, s);
-        in.encodeContent(buffer);
+        in.encode(buffer);
         buffer.flip(); 
         ConnectionSecureBody out(version);
-        out.decodeContent(buffer);
+        out.decode(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
@@ -100,10 +101,10 @@ class FramingTest : public CppUnit::TestCase
         std::string a = "hostA";
         std::string b = "hostB";
         ConnectionRedirectBody in(version, a, b);
-        in.encodeContent(buffer);
+        in.encode(buffer);
         buffer.flip(); 
         ConnectionRedirectBody out(version);
-        out.decodeContent(buffer);
+        out.decode(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
@@ -111,10 +112,10 @@ class FramingTest : public CppUnit::TestCase
     {
         std::string s = "text";
         AccessRequestBody in(version, s, true, false, true, false, true);
-        in.encodeContent(buffer);
+        in.encode(buffer);
         buffer.flip(); 
         AccessRequestBody out(version);
-        out.decodeContent(buffer);
+        out.decode(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
@@ -124,10 +125,10 @@ class FramingTest : public CppUnit::TestCase
         std::string t = "tag";
         BasicConsumeBody in(version, 0, q, t, false, true, false, false,
                             FieldTable());
-        in.encodeContent(buffer);
+        in.encode(buffer);
         buffer.flip(); 
         BasicConsumeBody out(version);
-        out.decodeContent(buffer);
+        out.decode(buffer);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
     
@@ -137,7 +138,7 @@ class FramingTest : public CppUnit::TestCase
         std::string a = "hostA";
         std::string b = "hostB";
         AMQFrame in(version, 999,
-                    new ConnectionRedirectBody(version, a, b));
+                    ConnectionRedirectBody(version, a, b));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;
@@ -148,7 +149,7 @@ class FramingTest : public CppUnit::TestCase
     void testBasicConsumeOkBodyFrame()
     {
         std::string s = "hostA";
-        AMQFrame in(version, 999, new BasicConsumeOkBody(version, s));
+        AMQFrame in(version, 999, BasicConsumeOkBody(version, s));
         in.encode(buffer);
         buffer.flip(); 
         AMQFrame out;
@@ -211,46 +212,6 @@ class FramingTest : public CppUnit::TestCase
         
     }
 
-    // expect may contain null chars so use string(ptr,size) constructor
-    // Use sizeof(expect)-1 to strip the trailing null.
-#define ASSERT_FRAME(expect, frame) \
-    CPPUNIT_ASSERT_EQUAL(string(expect, sizeof(expect)-1), boost::lexical_cast<string>(frame))
-
-    void testRequestResponseRoundtrip() {
-        boost::shared_ptr<broker::InProcessBroker> ibroker(new broker::InProcessBroker(version));
-        client::Connection clientConnection(boost::static_pointer_cast<client::Connector>(ibroker));
-        clientConnection.open("");
-        client::Channel c;
-        clientConnection.openChannel(c);
-
-        client::Exchange exchange(
-            "MyExchange", client::Exchange::TOPIC_EXCHANGE);
-        client::Queue queue("MyQueue", true);
-        c.declareExchange(exchange);
-        c.declareQueue(queue);
-        c.bind(exchange, queue, "MyTopic", framing::FieldTable());
-        c.close();
-        clientConnection.close();
-        broker::InProcessBroker::Conversation::const_iterator i = ibroker->conversation.begin();
-        ASSERT_FRAME("BROKER: Frame[channel=0; ConnectionStart: versionMajor=0; versionMinor=10; serverProperties={}; mechanisms=PLAIN; locales=en_US]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=0; ConnectionStartOk: clientProperties={}; mechanism=PLAIN; response=\000guest\000guest; locale=en_US]", *i++);
-        ASSERT_FRAME("BROKER: Frame[channel=0; ConnectionTune: channelMax=32767; frameMax=65536; heartbeat=0]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=0; ConnectionTuneOk: channelMax=32767; frameMax=65536; heartbeat=0]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=0; ConnectionOpen: virtualHost=/; capabilities=; insist=1]", *i++);
-        ASSERT_FRAME("BROKER: Frame[channel=0; ConnectionOpenOk: knownHosts=]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=1; ChannelOpen: outOfBand=]", *i++);
-        ASSERT_FRAME("BROKER: Frame[channel=1; ChannelOpenOk: ]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=1; ExchangeDeclare: ticket=0; exchange=MyExchange; type=topic; alternateExchange=; passive=0; durable=0; autoDelete=0; arguments={}]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=1; ExecutionFlush: ]", *i++);
-        ASSERT_FRAME("BROKER: Frame[channel=1; ExecutionComplete: cumulativeExecutionMark=1; rangedExecutionSet={}]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=1; QueueDeclare: ticket=0; queue=MyQueue; alternateExchange=; passive=0; durable=0; exclusive=1; autoDelete=1; nowait=0; arguments={}]", *i++);
-        ASSERT_FRAME("BROKER: Frame[channel=1; QueueDeclareOk: queue=MyQueue; messageCount=0; consumerCount=0]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=1; ExecutionFlush: ]", *i++);
-        ASSERT_FRAME("BROKER: Frame[channel=1; ExecutionComplete: cumulativeExecutionMark=2; rangedExecutionSet={}]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=1; QueueBind: ticket=0; queue=MyQueue; exchange=MyExchange; routingKey=MyTopic; arguments={}]", *i++);
-        ASSERT_FRAME("CLIENT: Frame[channel=1; ExecutionFlush: ]", *i++);
-        ASSERT_FRAME("BROKER: Frame[channel=1; ExecutionComplete: cumulativeExecutionMark=3; rangedExecutionSet={}]", *i++);
-    }
  };
 
 

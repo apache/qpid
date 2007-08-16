@@ -95,7 +95,7 @@ void Cluster::handle(AMQFrame& frame) {
 
 void Cluster::notify() {
     AMQFrame frame(ProtocolVersion(), 0,
-                   new ClusterNotifyBody(ProtocolVersion(), url));
+                   ClusterNotifyBody(ProtocolVersion(), url));
     handle(frame);
 }
 

@@ -57,7 +57,7 @@ class BasicHeaderProperties : public HeaderProperties
     virtual void encode(Buffer& buffer) const;
     virtual void decode(Buffer& buffer, uint32_t size);
 
-    virtual uint8_t classId() { return BASIC; }
+    virtual uint8_t classId() const { return BASIC; }
 
     string getContentType() const { return contentType; }
     string getContentEncoding() const { return contentEncoding; }

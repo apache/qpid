@@ -28,6 +28,7 @@
 #include "BrokerAdapter.h"
 
 #include <boost/format.hpp>
+#include <boost/cast.hpp>
 
 namespace qpid {
 namespace broker {
@@ -159,9 +160,7 @@ MessageHandlerImpl::reject(uint16_t /*code*/, const string& /*text*/ )
 void
 MessageHandlerImpl::transfer(const framing::AMQMethodBody& context)
 {
-    MessageTransferBody::shared_ptr transfer(
-        make_shared_ptr(new MessageTransferBody(static_cast<const MessageTransferBody&>(context))));
-    
+    const MessageTransferBody* transfer = boost::polymorphic_downcast<const MessageTransferBody*>(&context);
     if (transfer->getBody().isInline()) {
         MessageMessage::shared_ptr message(new MessageMessage(&connection, transfer));
         channel.handleInlineTransfer(message);

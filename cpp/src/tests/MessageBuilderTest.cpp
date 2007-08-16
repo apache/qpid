@@ -119,12 +119,12 @@ class MessageBuilderTest : public CppUnit::TestCase
         Message::shared_ptr message(
             new BasicMessage(
                 0, "test", "my_routing_key", false, false));
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        header->setContentSize(0);
+        AMQHeaderBody header(BASIC);
+        header.setContentSize(0);
         
         builder.initialise(message);
         CPPUNIT_ASSERT(!handler.msg);
-        builder.setHeader(header);
+        builder.setHeader(&header);
         CPPUNIT_ASSERT(handler.msg);
         CPPUNIT_ASSERT_EQUAL(message, handler.msg);
     }
@@ -137,15 +137,15 @@ class MessageBuilderTest : public CppUnit::TestCase
 
         Message::shared_ptr message(
             new BasicMessage(0, "test", "my_routing_key", false, false));
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        header->setContentSize(7);
-        AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
+        AMQHeaderBody header(BASIC);
+        header.setContentSize(7);
+        AMQContentBody part1(data1);
         
         builder.initialise(message);
         CPPUNIT_ASSERT(!handler.msg);
-        builder.setHeader(header);
+        builder.setHeader(&header);
         CPPUNIT_ASSERT(!handler.msg);
-        builder.addContent(part1);
+        builder.addContent(&part1);
         CPPUNIT_ASSERT(handler.msg);
         CPPUNIT_ASSERT_EQUAL(message, handler.msg);
     }
@@ -159,18 +159,18 @@ class MessageBuilderTest : public CppUnit::TestCase
 
         Message::shared_ptr message(
             new BasicMessage(0, "test", "my_routing_key", false, false));
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        header->setContentSize(14);
-        AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
-        AMQContentBody::shared_ptr part2(new AMQContentBody(data2));        
+        AMQHeaderBody header(BASIC);
+        header.setContentSize(14);
+        AMQContentBody part1(data1);
+        AMQContentBody part2(data2);        
         
         builder.initialise(message);
         CPPUNIT_ASSERT(!handler.msg);
-        builder.setHeader(header);
+        builder.setHeader(&header);
         CPPUNIT_ASSERT(!handler.msg);
-        builder.addContent(part1);
+        builder.addContent(&part1);
         CPPUNIT_ASSERT(!handler.msg);
-        builder.addContent(part2);
+        builder.addContent(&part2);
         CPPUNIT_ASSERT(handler.msg);
         CPPUNIT_ASSERT_EQUAL(message, handler.msg);
     }
@@ -189,19 +189,19 @@ class MessageBuilderTest : public CppUnit::TestCase
             
             Message::shared_ptr message(
                 new BasicMessage(0, "test", "my_routing_key", false, false));
-            AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-            header->setContentSize(14);
-            BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header->getProperties());
+            AMQHeaderBody header(BASIC);
+            header.setContentSize(14);
+            BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(header.getProperties());
             properties->setMessageId("MyMessage");
             properties->getHeaders().setString("abc", "xyz");
             
-            AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
-            AMQContentBody::shared_ptr part2(new AMQContentBody(data2));        
+            AMQContentBody part1(data1);
+            AMQContentBody part2(data2);        
             
             builder.initialise(message);
-            builder.setHeader(header);
-            builder.addContent(part1);
-            builder.addContent(part2);
+            builder.setHeader(&header);
+            builder.addContent(&part1);
+            builder.addContent(&part2);
             CPPUNIT_ASSERT(handler.msg);
             CPPUNIT_ASSERT_EQUAL(message, handler.msg);
             

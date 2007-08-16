@@ -55,8 +55,6 @@ class TestHandler : public Handler<T&>, public ConcurrentQueue<T>
 
 typedef TestHandler<AMQFrame> TestFrameHandler;
 
-void nullDeleter(void*) {}
-
 struct TestCluster : public Cluster
 {
     TestCluster(string name, string url)

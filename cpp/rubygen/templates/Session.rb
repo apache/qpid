@@ -37,7 +37,7 @@ class SessionGen < CppGen
     indent { gen params.join(",\n") }
     gen "){\n\n"
     indent (2) { 
-      gen "return impl->send(AMQMethodBody::shared_ptr(new #{m.body_name}(" 
+      gen "return impl->send(#{m.body_name}(" 
       params = ["version"] + m.param_names
       gen params.join(", ")
       other_params=[]
@@ -49,7 +49,7 @@ class SessionGen < CppGen
       else 
         other_params << "true"
       end
-      gen ")), #{other_params.join(", ")});\n"
+      gen "), #{other_params.join(", ")});\n"
     }
     gen "}\n\n"
   end

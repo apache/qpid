@@ -38,6 +38,9 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FramingContent.h"
 #include "qpid/framing/SequenceNumberSet.h"
+#include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/MethodBodyConstVisitor.h"
+
 
 namespace qpid
 {
@@ -45,7 +48,7 @@ namespace framing
 {
 ${version_namespace_start}
  
-class ${CLASS}${METHOD}Body : public ${mb_base_class}
+class ${CLASS}${METHOD}Body : public AMQMethodBody
 {
 
         // Method field declarations
@@ -57,13 +60,11 @@ public:
     static const ClassId CLASS_ID= ${CLASS_ID_INIT};
     static const MethodId METHOD_ID = ${METHOD_ID_INIT};
 
-    typedef boost::shared_ptr<${CLASS}${METHOD}Body> shared_ptr;
-
-	// Constructors and destructors
+    // Constructors and destructors
 
 ${mb_constructor_with_initializers}
 
-    ${CLASS}${METHOD}Body(ProtocolVersion version=ProtocolVersion()	): ${mb_base_class}(version) {}
+    ${CLASS}${METHOD}Body(ProtocolVersion=ProtocolVersion()) {}
     virtual ~${CLASS}${METHOD}Body() {}
     
     // Attribute get methods
@@ -71,10 +72,11 @@ ${mb_constructor_with_initializers}
 %{FLIST} ${mb_field_get_method}
 
     // Helper methods
-    
-    inline void print(std::ostream& out) const
+    using  AMQMethodBody::accept;
+    void accept(MethodBodyConstVisitor& v) const { v.visit(*this); }
+
+    void print(std::ostream& out) const
     {
-            printPrefix(out);
             out << "${CLASS}${METHOD}: ";
 %{FLIST} ${mb_field_print}
     }
@@ -84,17 +86,17 @@ ${mb_constructor_with_initializers}
 
     u_int32_t size() const
     {
-        u_int32_t sz = baseSize();
+        u_int32_t sz = 0;
 %{FLIST} ${mb_body_size}
         return sz;
     }
 
-    void encodeContent(Buffer& ${mb_buffer_param}) const
+    void encode(Buffer& ${mb_buffer_param}) const
     {
 %{FLIST} ${mb_encode}
     }
 
-    inline void decodeContent(Buffer& ${mb_buffer_param})
+    inline void decode(Buffer& ${mb_buffer_param}, uint32_t=0)
     {
 %{FLIST} ${mb_decode}
     }       

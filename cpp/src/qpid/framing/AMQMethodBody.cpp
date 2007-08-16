@@ -18,51 +18,11 @@
  * under the License.
  *
  */
-#include "AMQFrame.h"
 #include "AMQMethodBody.h"
-#include "qpid/QpidError.h"
-#include "qpid/framing/AMQP_MethodVersionMap.h"
 
 namespace qpid {
 namespace framing {
 
-void AMQMethodBody::encodeId(Buffer& buffer) const{
-    buffer.putShort(amqpClassId());
-    buffer.putShort(amqpMethodId());
-}
-
-void AMQMethodBody::invoke(AMQP_ServerOperations&){
-    assert(0);
-    THROW_QPID_ERROR(PROTOCOL_ERROR, "Method not supported by AMQP Server.");
-}
-
-bool AMQMethodBody::invoke(Invocable*) {
-    return false;
-}
-
-AMQMethodBody::shared_ptr AMQMethodBody::create(
-    AMQP_MethodVersionMap& versionMap, ProtocolVersion version,
-    Buffer& buffer)
-{
-    ClassMethodId id;
-    id.decode(buffer);
-    return AMQMethodBody::shared_ptr(
-        versionMap.createMethodBody(
-            id.classId, id.methodId, version.getMajor(), version.getMinor()));
-}
-
-void AMQMethodBody::ClassMethodId::decode(Buffer& buffer) {
-    classId = buffer.getShort();
-    methodId = buffer.getShort();
-}
-
-void AMQMethodBody::decode(Buffer& buffer, uint32_t /*size*/) {
-    decodeContent(buffer);
-}
-
-void AMQMethodBody::encode(Buffer& buffer) const {
-    encodeId(buffer);
-    encodeContent(buffer);
-}
+AMQMethodBody::~AMQMethodBody() {}
 
 }} // namespace qpid::framing
