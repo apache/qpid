@@ -63,6 +63,7 @@ end
 class AmqpField
   def cppname() @cache_cppname ||= name.lcaps.cppsafe; end
   def cpptype() @cache_cpptype ||= amqp_root.param_type(field_type); end
+  def cppret_type() @cache_cpptype ||= amqp_root.return_type(field_type); end
   def type_name () @type_name ||= cpptype+" "+cppname; end
 end
 
@@ -159,8 +160,12 @@ class CppGen < Generator
   def struct_class(type, name, bases, &block)
     genl
     gen "#{type} #{name}"
-    gen ": #{bases.join(', ')}" unless bases.empty?
-    scope(" {","};") { yield }
+    if (!bases.empty?)
+      genl ":"
+      indent { gen "#{bases.join(",\n")}" }
+    end
+    genl
+    scope("{","};") { yield }
   end
 
   def struct(name, *bases, &block) struct_class("struct", name, bases, &block); end

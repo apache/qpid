@@ -25,25 +25,28 @@
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
 
+#include <boost/cast.hpp>
+
 using namespace qpid::framing;
 using namespace boost;
 
 BodyHandler::~BodyHandler() {}
 
-void BodyHandler::handleBody(shared_ptr<AMQBody> body) {
+// TODO aconway 2007-08-13: Replace with visitor.
+void BodyHandler::handleBody(AMQBody* body) {
     switch(body->type())
     {
       case METHOD_BODY:
-	handleMethod(shared_polymorphic_cast<AMQMethodBody>(body));
+	handleMethod(polymorphic_downcast<AMQMethodBody*>(body));
 	break;
       case HEADER_BODY:
-	handleHeader(shared_polymorphic_cast<AMQHeaderBody>(body));
+	handleHeader(polymorphic_downcast<AMQHeaderBody*>(body));
 	break;
       case CONTENT_BODY:
-	handleContent(shared_polymorphic_cast<AMQContentBody>(body));
+	handleContent(polymorphic_downcast<AMQContentBody*>(body));
 	break;
       case HEARTBEAT_BODY:
-	handleHeartbeat(shared_polymorphic_cast<AMQHeartbeatBody>(body));
+	handleHeartbeat(polymorphic_downcast<AMQHeartbeatBody*>(body));
 	break;
       default:
         QPID_ERROR(PROTOCOL_ERROR, "Unknown frame type "+body->type());

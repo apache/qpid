@@ -44,8 +44,6 @@ namespace framing {
 using std::string;
 typedef uint8_t FrameType;
 typedef uint16_t ChannelId;
-typedef uint64_t RequestId;
-typedef uint64_t ResponseId;
 typedef uint32_t BatchOffset;
 typedef uint16_t ClassId;
 typedef uint16_t MethodId;

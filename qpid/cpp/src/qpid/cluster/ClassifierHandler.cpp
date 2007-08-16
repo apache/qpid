@@ -36,7 +36,7 @@ typedef uint32_t FullMethodId;  // Combind class & method ID.
 
 FullMethodId fullId(ClassId c, MethodId m) { return c<<16+m; }
 
-FullMethodId fullId(const shared_ptr<AMQMethodBody>& body) {
+FullMethodId fullId(const AMQMethodBody*& body) {
     return fullId(body->amqpClassId(), body->amqpMethodId());
 }
 
@@ -59,8 +59,8 @@ void  ClassifierHandler::handle(AMQFrame& frame) {
     // TODO aconway 2007-07-03: Flatten the frame hierarchy so we
     // can do a single lookup to dispatch a frame.
     Chain chosen;
-    shared_ptr<AMQMethodBody> method =
-        dynamic_pointer_cast<AMQMethodBody>(frame.getBody());
+    AMQMethodBody* method = dynamic_cast<AMQMethodBody*>(frame.getBody());
+
     // FIXME aconway 2007-07-05: Need to stop bypassed frames
     // from overtaking mcast frames.
     //

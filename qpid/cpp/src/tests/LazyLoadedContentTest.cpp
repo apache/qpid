@@ -97,7 +97,8 @@ public:
         CPPUNIT_ASSERT_EQUAL(outCount, channel.out.frames.size());
 
         for (unsigned int i = 0; i < outCount; i++) {
-            AMQContentBody::shared_ptr chunk(dynamic_pointer_cast<AMQContentBody, AMQBody>(channel.out.frames[i].getBody()));
+            AMQContentBody* chunk(dynamic_cast<AMQContentBody*>(
+                                      channel.out.frames[i].getBody()));
             CPPUNIT_ASSERT(chunk);
             CPPUNIT_ASSERT_EQUAL(out[i], chunk->getData());
             CPPUNIT_ASSERT_EQUAL(

@@ -26,16 +26,16 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 
-AMQMethodBody::shared_ptr FutureResponse::getResponse()
+AMQMethodBody* FutureResponse::getResponse()
 {
     waitForCompletion();
-    return response;
+    return response.get();
 }
 
-void FutureResponse::received(AMQMethodBody::shared_ptr r)
+void FutureResponse::received(AMQMethodBody* r)
 {
     Monitor::ScopedLock l(lock);
-    response = r;
+    response = *r;
     complete = true;
     lock.notifyAll();
 }

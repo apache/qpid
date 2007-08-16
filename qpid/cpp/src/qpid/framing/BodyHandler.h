@@ -32,6 +32,8 @@ class AMQHeaderBody;
 class AMQContentBody;
 class AMQHeartbeatBody;
 
+// TODO aconway 2007-08-10: rework using Visitor pattern?
+
 /**
  * Interface to handle incoming frame bodies.
  * Derived classes provide logic for each frame type.
@@ -39,13 +41,13 @@ class AMQHeartbeatBody;
 class BodyHandler {
   public:
     virtual ~BodyHandler();
-    virtual void handleBody(boost::shared_ptr<AMQBody> body);
+    virtual void handleBody(AMQBody* body);
 
   protected:
-    virtual void handleMethod(boost::shared_ptr<AMQMethodBody>) = 0;
-    virtual void handleHeader(boost::shared_ptr<AMQHeaderBody>) = 0;
-    virtual void handleContent(boost::shared_ptr<AMQContentBody>) = 0;
-    virtual void handleHeartbeat(boost::shared_ptr<AMQHeartbeatBody>) = 0;
+    virtual void handleMethod(AMQMethodBody*) = 0;
+    virtual void handleHeader(AMQHeaderBody*) = 0;
+    virtual void handleContent(AMQContentBody*) = 0;
+    virtual void handleHeartbeat(AMQHeartbeatBody*) = 0;
 };
 
 }}

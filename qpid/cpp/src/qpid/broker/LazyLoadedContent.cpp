@@ -33,7 +33,7 @@ LazyLoadedContent::~LazyLoadedContent()
 LazyLoadedContent::LazyLoadedContent(MessageStore* const _store, Message* const _msg, uint64_t _expectedSize) : 
     store(_store), msg(_msg), expectedSize(_expectedSize) {}
 
-void LazyLoadedContent::add(AMQContentBody::shared_ptr data)
+void LazyLoadedContent::add(AMQContentBody* data)
 {
     store->appendContent(*msg, data->getData());
 }
@@ -52,12 +52,12 @@ void LazyLoadedContent::send(ChannelAdapter& channel, uint32_t framesize)
             string data;
             store->loadContent(*msg, data, offset,
                                remaining > framesize ? framesize : remaining);
-            channel.send(make_shared_ptr(new AMQContentBody(data)));
+            channel.send(AMQContentBody(data));
         }
     } else {
         string data;
         store->loadContent(*msg, data, 0, expectedSize);  
-        channel.send(make_shared_ptr(new AMQContentBody(data)));
+        channel.send(AMQContentBody(data));
     }
 }
 

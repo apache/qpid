@@ -23,6 +23,7 @@
 #define _FutureResponse_
 
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/MethodHolder.h"
 #include "FutureCompletion.h"
 
 namespace qpid {
@@ -30,11 +31,10 @@ namespace client {
 
 class FutureResponse : public FutureCompletion 
 {
-    framing::AMQMethodBody::shared_ptr response;
-
+    framing::MethodHolder response;
 public:
-    framing::AMQMethodBody::shared_ptr getResponse();
-    void received(framing::AMQMethodBody::shared_ptr response);
+    framing::AMQMethodBody* getResponse();
+    void received(framing::AMQMethodBody* response);
 };
 
 }}

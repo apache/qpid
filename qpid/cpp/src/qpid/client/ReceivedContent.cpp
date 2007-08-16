@@ -20,6 +20,7 @@
  */
 
 #include "ReceivedContent.h"
+#include "qpid/framing/all_method_bodies.h"
 
 using qpid::client::ReceivedContent;
 using namespace qpid::framing;
@@ -27,9 +28,9 @@ using namespace boost;
 
 ReceivedContent::ReceivedContent(const SequenceNumber& _id) : id(_id) {}
 
-void ReceivedContent::append(AMQBody::shared_ptr part)
+void ReceivedContent::append(AMQBody* part)
 {
-    parts.push_back(part);
+    parts.push_back(AMQFrame(ProtocolVersion(), 0, part));
 }
 
 bool ReceivedContent::isComplete() const
@@ -37,7 +38,7 @@ bool ReceivedContent::isComplete() const
     if (parts.empty()) {
          return false;
     } else if (isA<BasicDeliverBody>() || isA<BasicGetOkBody>()) {
-        AMQHeaderBody::shared_ptr headers(getHeaders());
+        const AMQHeaderBody* headers(getHeaders());
         return headers && headers->getContentSize() == getContentSize();
     } else if (isA<MessageTransferBody>()) {
         //no longer support references, headers and data are still method fields
@@ -48,14 +49,14 @@ bool ReceivedContent::isComplete() const
 }
 
 
-AMQMethodBody::shared_ptr ReceivedContent::getMethod() const
+const AMQMethodBody* ReceivedContent::getMethod() const
 {
-    return parts.empty() ? AMQMethodBody::shared_ptr() : dynamic_pointer_cast<AMQMethodBody>(parts[0]);
+    return parts.empty() ? 0 : dynamic_cast<const AMQMethodBody*>(parts[0].getBody());
 }
 
-AMQHeaderBody::shared_ptr ReceivedContent::getHeaders() const
+const AMQHeaderBody* ReceivedContent::getHeaders() const
 {
-    return parts.size() < 2 ? AMQHeaderBody::shared_ptr() : dynamic_pointer_cast<AMQHeaderBody>(parts[1]);
+    return parts.size() < 2 ? 0 : dynamic_cast<const AMQHeaderBody*>(parts[1].getBody());
 }
 
 uint64_t ReceivedContent::getContentSize() const
@@ -63,7 +64,7 @@ uint64_t ReceivedContent::getContentSize() const
     if (isA<BasicDeliverBody>() || isA<BasicGetOkBody>()) {
         uint64_t size(0);
         for (uint i = 2; i < parts.size(); i++) {
-            size += parts[i]->size();
+            size += parts[i].getBody()->size();
         }
         return size;
     } else if (isA<MessageTransferBody>()) {
@@ -78,7 +79,7 @@ std::string ReceivedContent::getContent() const
     if (isA<BasicDeliverBody>() || isA<BasicGetOkBody>()) {
         string data;
         for (uint i = 2; i < parts.size(); i++) {
-            data += dynamic_pointer_cast<AMQContentBody>(parts[i])->getData();
+            data += static_cast<const AMQContentBody*>(parts[i].getBody())->getData();
         }
         return data;
     } else if (isA<MessageTransferBody>()) {
@@ -93,7 +94,7 @@ void ReceivedContent::populate(Message& msg)
     if (!isComplete()) throw Exception("Incomplete message");
 
     if (isA<BasicDeliverBody>() || isA<BasicGetOkBody>()) {
-        BasicHeaderProperties* properties = dynamic_cast<BasicHeaderProperties*>(getHeaders()->getProperties());
+        const BasicHeaderProperties* properties = dynamic_cast<const BasicHeaderProperties*>(getHeaders()->getProperties());
         BasicHeaderProperties::copy<Message, BasicHeaderProperties>(msg, *properties);
         msg.setData(getContent());
     } else if (isA<MessageTransferBody>()) {

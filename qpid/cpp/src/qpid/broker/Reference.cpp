@@ -40,9 +40,9 @@ Reference::shared_ptr  ReferenceRegistry::get(const Reference::Id& id) {
     return i->second;
 }
 
-void Reference::append(AppendPtr ptr) {
-	 appends.push_back(ptr);
-	 size += ptr->getBytes().length();
+void Reference::append(const framing::MessageAppendBody& app) {
+    appends.push_back(app);
+    size += app.getBytes().length();
 }
 
 void Reference::close() {

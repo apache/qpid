@@ -25,11 +25,11 @@
  *
  */
 
-#include "qpid/shared_ptr.h"
 #include "BodyHandler.h"
 #include "ProtocolVersion.h"
 #include "amqp_types.h"
 #include "FrameHandler.h"
+#include "OutputHandler.h"
 
 namespace qpid {
 namespace framing {
@@ -66,7 +66,7 @@ class ChannelAdapter : protected BodyHandler {
     ChannelId getId() const { return id; }
     ProtocolVersion getVersion() const { return version; }
 
-    virtual void send(shared_ptr<AMQBody> body);
+    virtual void send(const AMQBody& body);
 
     virtual bool isOpen() const = 0;
     
@@ -75,7 +75,7 @@ class ChannelAdapter : protected BodyHandler {
     void assertChannelOpen() const;
     void assertChannelNotOpen() const;
 
-    virtual void handleMethod(shared_ptr<AMQMethodBody>) = 0;
+    virtual void handleMethod(AMQMethodBody*) = 0;
 
   private:
     class ChannelAdapterHandler;

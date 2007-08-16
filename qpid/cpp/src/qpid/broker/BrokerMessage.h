@@ -27,6 +27,7 @@
 
 #include "BrokerMessageBase.h"
 #include "qpid/framing/BasicHeaderProperties.h"
+#include "qpid/framing/AMQHeaderBody.h"
 #include "ConnectionToken.h"
 #include "Content.h"
 #include "qpid/sys/Mutex.h"
@@ -51,7 +52,8 @@ using framing::string;
  * request.
  */
 class BasicMessage : public Message {
-    boost::shared_ptr<framing::AMQHeaderBody> header;
+    framing::AMQHeaderBody header;
+    bool isHeaderSet;
     std::auto_ptr<Content> content;
     mutable sys::Mutex contentLock;
     uint64_t size;
@@ -66,8 +68,8 @@ class BasicMessage : public Message {
                  bool mandatory, bool immediate);
     BasicMessage();
     ~BasicMessage();
-    void setHeader(boost::shared_ptr<framing::AMQHeaderBody> header);
-    void addContent(framing::AMQContentBody::shared_ptr data);
+    void setHeader(framing::AMQHeaderBody* header);
+    void addContent(framing::AMQContentBody* data);
     bool isComplete();
 
     static DeliveryToken::shared_ptr createGetToken(boost::shared_ptr<Queue> queue);

@@ -23,6 +23,9 @@
 #include "FrameHandler.h"
 #include "qpid/Exception.h"
 
+#include "AMQMethodBody.h"
+#include "qpid/framing/ConnectionOpenBody.h"
+
 using boost::format;
 
 namespace qpid {
@@ -45,7 +48,7 @@ void ChannelAdapter::init(ChannelId i, OutputHandler& out, ProtocolVersion v)
     handlers.out= make_shared_ptr(new OutputHandlerFrameHandler(out));
 }
 
-void ChannelAdapter::send(shared_ptr<AMQBody> body)
+void ChannelAdapter::send(const AMQBody& body)
 {
     assertChannelOpen();
     AMQFrame frame(getVersion(), getId(), body);

@@ -40,22 +40,41 @@ EOS
   def gen_construct
     cpp_file(@filename+"_construct") {
       include @filename
+      include "qpid/framing/MethodBodyConstVisitor.h"
       @amqp.amqp_methods.each { |m| include "qpid/framing/#{m.body_name}" }
       genl
-      namespace(@namespace) { 
-        scope("void #{@classname}::construct(const Id& newId) {") {
-          scope("switch (newId.first) {") {
+      include "qpid/Exception.h"
+      genl
+      namespace(@namespace) {
+        # construct function
+        scope("void #{@classname}::construct(ClassId c, MethodId m) {") {
+          scope("switch (c) {") {
             @amqp.amqp_classes.each { |c|
-              scope("case #{c.index}: switch(newId.second) {") {
+              scope("case #{c.index}: switch(m) {") {
                 c.amqp_methods.each { |m|
                   genl "case #{m.index}: blob.construct(in_place<#{m.body_name}>()); break;"
-                }}
+                }
+                genl "default: throw Exception(QPID_MSG(\"Invalid method id \" << m << \" for class #{c.name} \"));"
+              }
               genl "break;"
-            }}
-          genl "id=newId;";
-        }}}
+            }
+            genl "default: throw Exception(QPID_MSG(\"Invalid class id \" << c));"
+          }
+        }
+        # CopyVisitor
+        struct("#{@classname}::CopyVisitor", "public MethodBodyConstVisitor") {           genl "MethodHolder& holder;"
+          genl "CopyVisitor(MethodHolder& h) : holder(h) {}"
+          @amqp.amqp_methods.each { |m|
+            genl "void visit(const #{m.body_name}& x) { holder.blob=x; }"
+          }
+        }
+        genl
+        # operator=
+        scope("#{@classname}& MethodHolder::operator=(const AMQMethodBody& m) {") {
+          genl "CopyVisitor cv(*this); m.accept(cv); return *this;"
+        }
+      }}
   end
-
 
   def generate
     gen_max_size

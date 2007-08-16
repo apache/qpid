@@ -38,12 +38,12 @@ public:
 
     template <class T> T& as() 
     {
-        framing::AMQMethodBody::shared_ptr response(future->getResponse());
+        framing::AMQMethodBody* response(future->getResponse());
         return dynamic_cast<T&>(*response);
     }
     template <class T> bool isA() 
     {
-        framing::AMQMethodBody::shared_ptr response(future->getResponse());
+        framing::AMQMethodBody* response(future->getResponse());
         return response && response->isA<T>();
     }
     

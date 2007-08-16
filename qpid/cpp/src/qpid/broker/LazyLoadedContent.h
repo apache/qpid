@@ -36,7 +36,7 @@ namespace qpid {
                 MessageStore* const store, Message* const msg,
                 uint64_t expectedSize);
             ~LazyLoadedContent();
-            void add(qpid::framing::AMQContentBody::shared_ptr data);
+            void add(qpid::framing::AMQContentBody* data);
             uint32_t size();
             void send(
                 framing::ChannelAdapter&,

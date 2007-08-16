@@ -33,6 +33,8 @@
 namespace boost {
 
 /**
+ * 0-arg typed_in_place_factory constructor and in_place() override.
+ * 
  * Boost doesn't provide the 0 arg version since it assumes
  * in_place_factory will be used when there is no default ctor.
  */
@@ -48,20 +50,29 @@ typed_in_place_factory0<T> in_place() { return typed_in_place_factory0<T>(); }
 
 } // namespace boost
 
+
 namespace qpid {
 namespace framing {
 
 using boost::in_place;
 
-template <class T>
-void destroyT(void* ptr) { static_cast<T*>(ptr)->~T(); }
-inline void nullDestroy(void*) {}
+template <class T> struct BlobHelper {
+    static void destroy(void* ptr) { static_cast<T*>(ptr)->~T(); }
+    static void copy(void* dest, const void* src) {
+        new (dest) T(*static_cast<const T*>(src));
+    }
+};
+
+template <> struct BlobHelper<void> {
+    static void destroy(void*);
+    static void copy(void* to, const void* from);
+};
 
 /**
  * A "blob" is a chunk of memory which can contain a single object at
  * a time arbitrary type, provided sizeof(T)<=blob.size(). Blob
  * ensures proper construction and destruction of its contents,
- * nothing else.
+ * and proper copying between Blobs, but nothing else.
  * 
  * In particular the user must ensure the blob is big enough for its
  * contents and must know the type of object in the blob to cast get().
@@ -75,7 +86,13 @@ class Blob
 {
     boost::aligned_storage<Size> store;
     void (*destroy)(void*);
+    void (*copy)(void*, const void*);
 
+    template <class T> void setType() {
+        destroy=&BlobHelper<T>::destroy;
+        copy=&BlobHelper<T>::copy;
+    }
+    
     template<class TypedInPlaceFactory>
     void construct (const TypedInPlaceFactory& factory,
                     const boost::typed_in_place_factory_base* )
@@ -84,16 +101,28 @@ class Blob
         assert(sizeof(T) <= Size);
         clear();                // Destroy old object.
         factory.apply(store.address());
-        destroy=&destroyT<T>;
+        setType<T>();
     }
 
   public:
     /** Construct an empty blob. */
-    Blob() : destroy(&nullDestroy) {}
+    Blob() { setType<void>(); }
+
+    /** Copy a blob. */
+    Blob(const Blob& b) { *this = b; }
+
+    /** Assign a blob */
+    Blob& operator=(const Blob& b) {
+        setType<void>();        // Exception safety.
+        b.copy(this->get(), b.get());
+        copy = b.copy;
+        destroy = b.destroy;
+        return *this;
+    }
 
     /** @see construct() */
     template<class Expr>
-    Blob( const Expr & expr ) : destroy(nullDestroy) { construct(expr,&expr); }
+    Blob( const Expr & expr ) { setType<void>(); construct(expr,&expr); }
 
     ~Blob() { clear(); }
 
@@ -106,7 +135,7 @@ class Blob
 
     /** Copy construct an instance of T into the Blob. */
     template<class T>
-    Blob& operator=(const T& x) { construct(in_place<T>(x)); }
+    Blob& operator=(const T& x) { construct(in_place<T>(x)); return *this; }
     
     /** Get pointer to blob contents. Caller must know how to cast it. */
     void* get() { return store.address(); }
@@ -116,16 +145,14 @@ class Blob
     
     /** Destroy the object in the blob making it empty. */
     void clear() {
-        void (*saveDestroy)(void*) = destroy; // Exception safety
-        destroy = &nullDestroy;
-        saveDestroy(store.address());
+        void (*oldDestroy)(void*) = destroy; 
+        setType<void>();
+        oldDestroy(store.address());
     }
-
-    /** True if there is no object allocated in the blob */
-    bool empty() { return destroy==nullDestroy; }
 
     static size_t size() { return Size; }
 };
+
 
 }} // namespace qpid::framing
 
