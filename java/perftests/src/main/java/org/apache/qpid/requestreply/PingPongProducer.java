@@ -435,10 +435,10 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     protected MessageConsumer _consumer;
 
     /**
-     * Holds the number of consumers that will be attached to each topic. Each pings will result in a reply from each of the
-     * attached clients
+     * Holds the number of consumers that will be attached to each destination in the test. Each pings will result in
+     * a message being received by each of these clients in a pub/sub tests, and by only one at a time in a p2p test.
      */
-    static int _consumersPerTopic = 1;
+    static int _consumersPerDestination = 1;
 
     /** The prompt to display when asking the user to kill the broker for failover testing. */
     private static final String KILL_BROKER_PROMPT = "Kill broker now, then press Return.";
@@ -1427,18 +1427,27 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     }
 
     /**
-     * This value will be changed by PingClient to represent the number of clients connected to each topic.
+     * Gets the number of consumers that are listening to each destination in the test.
      *
      * @return int The number of consumers subscribing to each topic.
      */
-    public int getConsumersPerTopic()
+    public int getConsumersPerDestination()
     {
-        return _consumersPerTopic;
+        return _consumersPerDestination;
     }
 
+    /**
+     * Calculates how many pings are expected to be received for the given number sent.
+     *
+     * @param numpings The number of pings that will be sent.
+     *
+     * @return The number that should be received, for the test to pass.
+     */
     public int getExpectedNumPings(int numpings)
     {
-        return numpings * getConsumersPerTopic();
+        log.debug("Each ping will be received by " + (_isPubSub ? getConsumersPerDestination() : 1) + " consumers.");
+
+        return numpings * (_isPubSub ? getConsumersPerDestination() : 1);
     }
 
     /**
