@@ -18,10 +18,12 @@
 package org.apache.qpidity.jms;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.Option;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 import org.apache.qpidity.url.BindingURL;
 
 import javax.jms.Topic;
+import java.util.UUID;
 
 /**
  * Implementation of the javax.jms.Topic interface.
@@ -38,9 +40,15 @@ public class TopicImpl extends DestinationImpl implements Topic
      */
     public TopicImpl(SessionImpl session, String name) throws QpidException
     {
-        super(session, name);
+        super(session);
+        _queueName = "Topic-" + UUID.randomUUID();
+        _destinationName = name;
         _exchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
-        _exchangeClass = ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
+        _exchangeType = ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
+        _isAutoDelete = true;
+        _isDurable = false;
+        _isExclusive = true;
+        checkTopicExists();
     }
 
     /**
@@ -53,6 +61,7 @@ public class TopicImpl extends DestinationImpl implements Topic
     protected TopicImpl(SessionImpl session, BindingURL binding) throws QpidException
     {
         super(session, binding);
+        checkTopicExists();
     }
 
     //--- javax.jsm.Topic Interface
@@ -63,7 +72,20 @@ public class TopicImpl extends DestinationImpl implements Topic
      */
     public String getTopicName()
     {
-        return super.getName();
+        return _destinationName;
     }
+    /**
+      * Check that this topic exchange
+      *
+      * @throws QpidException If this queue does not exists on the broker.
+      */
+     protected void checkTopicExists() throws QpidException
+     {
+         // test if this exchange exist on the broker
+         _session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
+         // wait for the broker response
+         _session.getQpidSession().sync();
+         // todo get the exception
+     }
 
 }

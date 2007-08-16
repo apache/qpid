@@ -19,53 +19,54 @@ package org.apache.qpidity.jms;
 
 import org.apache.qpidity.QpidException;
 
-import javax.jms.XAConnection;
+import javax.jms.XAQueueConnection;
 import javax.jms.JMSException;
-import javax.jms.XASession;
+import javax.jms.XAQueueSession;
 
 /**
- * This class implements the javax.jms.XAConnection interface
+ * Implements  XAQueueConnection
  */
-public class XAConnectionImpl extends ConnectionImpl implements XAConnection
+public class XAQueueConnectionImpl extends XAConnectionImpl implements XAQueueConnection
 {
     //-- constructor
     /**
-     * Create a XAConnection.
+     * Create a XAQueueConnection.
      *
      * @param host        The broker host name.
      * @param port        The port on which the broker is listening for connection.
      * @param virtualHost The virtual host on which the broker is deployed.
      * @param username    The user name used of user identification.
      * @param password    The password name used of user identification.
-     * @throws QpidException If creating a connection fails due to some internal error.
-     */    
-    protected XAConnectionImpl(String host, int port, String virtualHost, String username, String password) throws QpidException
+     * @throws QpidException If creating a XAQueueConnection fails due to some internal error.
+     */
+    public XAQueueConnectionImpl(String host, int port, String virtualHost, String username, String password)
+            throws QpidException
     {
         super(host, port, virtualHost, username, password);
     }
 
-    //-- interface XAConnection
+    //-- Interface  XAQueueConnection
     /**
-     * Creates an XASession.
+     * Creates an XAQueueSession.
      *
      * @return A newly created XASession.
-     * @throws JMSException If the XAConnectiono fails to create an XASession due to
+     * @throws JMSException If the XAQueueConnectionImpl fails to create an XASession due to
      *                      some internal error.
      */
-    public synchronized XASession createXASession() throws JMSException
+    public synchronized XAQueueSession createXAQueueSession() throws JMSException
     {
         checkNotClosed();
-        XASessionImpl xasession;
+        XAQueueSessionImpl xaQueueSession;
         try
         {
-            xasession = new XASessionImpl(this);
+            xaQueueSession = new XAQueueSessionImpl(this);
         }
         catch (QpidException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
         // add this session with the list of session that are handled by this connection
-        _sessions.add(xasession);
-        return xasession;
+        _sessions.add(xaQueueSession);
+        return xaQueueSession;
     }
 }
