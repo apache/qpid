@@ -87,6 +87,7 @@ void Queue::deliver(Message::shared_ptr& msg){
 
 void Queue::recover(Message::shared_ptr& msg){
     push(msg);
+    msg->enqueueComplete(); // mark the message as enqueued
     if (store && msg->expectedContentSize() != msg->encodedContentSize()) {
         //content has not been loaded, need to ensure that lazy loading mode is set:
         //TODO: find a nicer way to do this
@@ -189,10 +190,13 @@ Message::shared_ptr Queue::dequeue(){
     Message::shared_ptr msg;
     if(!messages.empty()){
         msg = messages.front();
-	if (msg->isEnqueueComplete())
+	if (msg->isEnqueueComplete()){
            pop();
+	   return msg;
+	}
     }
-    return msg;
+    Message::shared_ptr msg_empty;
+    return msg_empty;
 }
 
 uint32_t Queue::purge(){
