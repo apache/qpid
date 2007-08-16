@@ -31,6 +31,7 @@
 #include "MockChannel.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/framing/ProtocolInitiation.h"
+#include "qpid/framing/ConnectionStartBody.h"
 #include <vector>
 
 using namespace boost;
@@ -233,18 +234,18 @@ class BrokerChannelTest : public CppUnit::TestCase
         Queue::shared_ptr queue(new Queue("my_queue"));
         exchange->bind(queue, "", 0);
 
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
+        AMQHeaderBody header(BASIC);
         uint64_t contentSize(0);
         for (int i = 0; i < 3; i++) {
             contentSize += data[i].size();
         }
-        header->setContentSize(contentSize);
+        header.setContentSize(contentSize);
         channel.handlePublish(msg);
-        channel.handleHeader(header);
+        channel.handleHeader(&header);
 
         for (int i = 0; i < 3; i++) {
-            AMQContentBody::shared_ptr body(new AMQContentBody(data[i]));
-            channel.handleContent(body);
+            AMQContentBody body(data[i]);
+            channel.handleContent(&body);
         }
         Message::shared_ptr msg2 = queue->dequeue();
         CPPUNIT_ASSERT_EQUAL(msg, msg2.get());
@@ -312,8 +313,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         //there will always be a connection-start frame
         CPPUNIT_ASSERT_EQUAL((size_t) 1, handler.frames.size());
         CPPUNIT_ASSERT_EQUAL(ChannelId(0), handler.frames[0].getChannel());
-        CPPUNIT_ASSERT(dynamic_cast<ConnectionStartBody*>(
-                           handler.frames[0].getBody().get()));
+        CPPUNIT_ASSERT(dynamic_cast<ConnectionStartBody*>(handler.frames[0].getBody()));
         
         const string data("abcdefghijklmn");
 
@@ -340,17 +340,17 @@ class BrokerChannelTest : public CppUnit::TestCase
     {
         BasicMessage* msg = new BasicMessage(
             0, exchange, routingKey, false, false);
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        header->setContentSize(contentSize);        
-        msg->setHeader(header);
+        AMQHeaderBody header(BASIC);
+        header.setContentSize(contentSize);        
+        msg->setHeader(&header);
         msg->getHeaderProperties()->setMessageId(messageId);
         return msg;
     }
 
     void addContent(Message::shared_ptr msg, const string& data)
     {
-        AMQContentBody::shared_ptr body(new AMQContentBody(data));
-        msg->addContent(body);
+        AMQContentBody body(data);
+        msg->addContent(&body);
     }
 };
 

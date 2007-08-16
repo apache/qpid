@@ -26,16 +26,16 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using boost::static_pointer_cast;
 
-void InMemoryContent::add(AMQContentBody::shared_ptr data)
+void InMemoryContent::add(AMQContentBody* data)
 {
-    content.push_back(data);
+    content.push_back(*data);
 }
 
 uint32_t InMemoryContent::size()
 {
     int sum(0);
     for (content_iterator i = content.begin(); i != content.end(); i++) {
-        sum += (*i)->size();
+        sum += i->size();
     }
     return sum;
 }
@@ -43,22 +43,20 @@ uint32_t InMemoryContent::size()
 void InMemoryContent::send(ChannelAdapter& channel, uint32_t framesize)
 {
     for (content_iterator i = content.begin(); i != content.end(); i++) {
-        if ((*i)->size() > framesize) {
+        if (i->size() > framesize) {
             uint32_t offset = 0;
-            for (int chunk = (*i)->size() / framesize; chunk > 0; chunk--) {
-                string data = (*i)->getData().substr(offset, framesize);
-                channel.send(make_shared_ptr(new AMQContentBody(data))); 
+            for (int chunk = i->size() / framesize; chunk > 0; chunk--) {
+                string data = i->getData().substr(offset, framesize);
+                channel.send(AMQContentBody(data)); 
                 offset += framesize;
             }
-            uint32_t remainder = (*i)->size() % framesize;
+            uint32_t remainder = i->size() % framesize;
             if (remainder) {
-                string data = (*i)->getData().substr(offset, remainder);
-                channel.send(make_shared_ptr(new AMQContentBody(data))); 
+                string data = i->getData().substr(offset, remainder);
+                channel.send(AMQContentBody(data)); 
             }
         } else {
-            AMQBody::shared_ptr contentBody =
-                static_pointer_cast<AMQBody, AMQContentBody>(*i);
-            channel.send(contentBody);
+            channel.send(*i);
         }
     }
 }
@@ -66,7 +64,7 @@ void InMemoryContent::send(ChannelAdapter& channel, uint32_t framesize)
 void InMemoryContent::encode(Buffer& buffer)
 {
     for (content_iterator i = content.begin(); i != content.end(); i++) {
-        (*i)->encode(buffer);
+        i->encode(buffer);
     }        
 }
 

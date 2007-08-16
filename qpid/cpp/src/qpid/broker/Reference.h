@@ -19,6 +19,8 @@
  *
  */
 
+#include "qpid/framing/MessageAppendBody.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -56,8 +58,7 @@ class Reference
     typedef boost::shared_ptr<Reference> shared_ptr;
     typedef boost::shared_ptr<MessageMessage> MessagePtr;
     typedef std::vector<MessagePtr> Messages;
-    typedef boost::shared_ptr<framing::MessageAppendBody> AppendPtr;
-    typedef std::vector<AppendPtr> Appends;
+    typedef std::vector<framing::MessageAppendBody> Appends;
 
     Reference(const Id& id_=Id(), ReferenceRegistry* reg=0)
         : id(id_), size(0), registry(reg) {}
@@ -69,7 +70,7 @@ class Reference
     void addMessage(MessagePtr message) { messages.push_back(message); }
 
     /** Append more data to the reference */
-    void append(AppendPtr ptr);
+    void append(const framing::MessageAppendBody&);
 
     /** Close the reference, complete each associated message */
     void close();

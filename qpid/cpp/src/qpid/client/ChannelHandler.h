@@ -34,13 +34,7 @@ class ChannelHandler : private StateManager, public ChainableFrameHandler
     framing::ProtocolVersion version;
     uint16_t id;
 
-    void handleMethod(framing::AMQMethodBody::shared_ptr method);
-
-    template <class T> bool isA(framing::AMQBody::shared_ptr body) {
-        return body->type() == framing::METHOD_BODY && 
-            boost::shared_polymorphic_cast<framing::AMQMethodBody>(body)->isA<T>();
-    }
-
+    void handleMethod(framing::AMQMethodBody* method);
 
     void close(uint16_t code, const std::string& message, uint16_t classId, uint16_t methodId);
 

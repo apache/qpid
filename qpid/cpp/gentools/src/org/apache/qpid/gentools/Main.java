@@ -234,9 +234,7 @@ public class Main
             new File(tmplDir + Utils.fileSeparator + "AMQP_ServerOperations.h.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_ClientOperations.h.tmpl"),
             new File(tmplDir + Utils.fileSeparator + "AMQP_Constants.h.tmpl"),
-            new File(tmplDir + Utils.fileSeparator + "AMQP_MethodVersionMap.h.tmpl"),
-            new File(tmplDir + Utils.fileSeparator + "AMQP_MethodVersionMap.cpp.tmpl"),
-           new File(tmplDir + Utils.fileSeparator + "AMQP_HighestVersion.h.tmpl")
+	    new File(tmplDir + Utils.fileSeparator + "AMQP_HighestVersion.h.tmpl")
         };
         methodTemplateFiles = new File[]
         {

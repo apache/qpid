@@ -39,8 +39,8 @@ namespace qpid {
                            MessageStore* const store = 0,
                            uint64_t stagingThreshold = 0);
             void initialise(Message::shared_ptr& msg);
-            void setHeader(framing::AMQHeaderBody::shared_ptr& header);
-            void addContent(framing::AMQContentBody::shared_ptr& content);
+            void setHeader(framing::AMQHeaderBody* header);
+            void addContent(framing::AMQContentBody* content);
             Message::shared_ptr getMessage() { return message; }
         private:
             Message::shared_ptr message;

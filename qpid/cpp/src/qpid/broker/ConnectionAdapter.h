@@ -47,12 +47,12 @@ public:
     void handle(framing::AMQFrame& frame);
 
     //ChannelAdapter virtual methods:
-    void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method);
+    void handleMethod(framing::AMQMethodBody* method);
     bool isOpen() const { return true; } //channel 0 is always open
     //never needed:
-    void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>) {}
-    void handleContent(boost::shared_ptr<qpid::framing::AMQContentBody>) {}
-    void handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody>) {}
+    void handleHeader(framing::AMQHeaderBody*) {}
+    void handleContent(framing::AMQContentBody*) {}
+    void handleHeartbeat(framing::AMQHeartbeatBody*) {}
 
     //AMQP_ServerOperations:
     ConnectionHandler* getConnectionHandler();

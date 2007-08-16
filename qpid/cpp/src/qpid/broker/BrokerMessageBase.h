@@ -54,22 +54,18 @@ class MessageStore;
 class Message : public PersistableMessage{
   public:
     typedef boost::shared_ptr<Message> shared_ptr;
-    typedef boost::shared_ptr<framing::AMQMethodBody> AMQMethodBodyPtr;
-
 
     Message(const ConnectionToken* publisher_,
             const std::string& _exchange,
             const std::string& _routingKey, 
-            bool _mandatory, bool _immediate,
-            AMQMethodBodyPtr respondTo_) :
+            bool _mandatory, bool _immediate) :
         publisher(publisher_),
         exchange(_exchange),
         routingKey(_routingKey),
         mandatory(_mandatory),
         immediate(_immediate),
         persistenceId(0),
-        redelivered(false),
-        respondTo(respondTo_)
+        redelivered(false)
     {}
             
     Message() :
@@ -145,8 +141,8 @@ class Message : public PersistableMessage{
      * it uses).
      */
     virtual void setContent(std::auto_ptr<Content>& /*content*/) {};
-    virtual void setHeader(boost::shared_ptr<framing::AMQHeaderBody>) {};
-    virtual void addContent(boost::shared_ptr<framing::AMQContentBody>) {};
+    virtual void setHeader(framing::AMQHeaderBody*) {};
+    virtual void addContent(framing::AMQContentBody*) {};
     /**
      * Releases the in-memory content data held by this
      * message. Must pass in a store from which the data can
@@ -164,7 +160,6 @@ class Message : public PersistableMessage{
     const bool immediate;
     mutable uint64_t persistenceId;
     bool redelivered;
-    AMQMethodBodyPtr respondTo;
 };
 
 }}

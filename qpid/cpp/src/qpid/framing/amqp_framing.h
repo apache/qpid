@@ -26,7 +26,6 @@
 #include "AMQHeaderBody.h"
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
-#include "qpid/framing/AMQP_MethodVersionMap.h"
 #include "InputHandler.h"
 #include "OutputHandler.h"
 #include "InitiationHandler.h"

@@ -22,54 +22,34 @@
 #include "qpid/QpidError.h"
 #include "BasicHeaderProperties.h"
 
-qpid::framing::AMQHeaderBody::AMQHeaderBody(int classId) : weight(0), contentSize(0){
-    createProperties(classId);
-}
+qpid::framing::AMQHeaderBody::AMQHeaderBody(int) : weight(0), contentSize(0) {}
 
-qpid::framing::AMQHeaderBody::AMQHeaderBody() : properties(0), weight(0), contentSize(0){
-}
+qpid::framing::AMQHeaderBody::AMQHeaderBody() : weight(0), contentSize(0){}
 
-qpid::framing::AMQHeaderBody::~AMQHeaderBody(){ 
-    delete properties;
-}
+qpid::framing::AMQHeaderBody::~AMQHeaderBody(){}
 
 uint32_t qpid::framing::AMQHeaderBody::size() const{
-    return 12 + properties->size();
+    return 12 + properties.size();
 }
 
 void qpid::framing::AMQHeaderBody::encode(Buffer& buffer) const {
-    buffer.putShort(properties->classId());
+    buffer.putShort(properties.classId());
     buffer.putShort(weight);
     buffer.putLongLong(contentSize);
-    properties->encode(buffer);
+    properties.encode(buffer);
 }
 
 void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, uint32_t bufSize){
-    uint16_t classId = buffer.getShort();
+    buffer.getShort();          // Ignore classId
     weight = buffer.getShort();
     contentSize = buffer.getLongLong();
-    createProperties(classId);
-    properties->decode(buffer, bufSize - 12);
-}
-
-void qpid::framing::AMQHeaderBody::createProperties(int classId){
-    switch(classId){
-    case BASIC:
-	properties = new qpid::framing::BasicHeaderProperties();
-	break;
-    default:
-	THROW_QPID_ERROR(FRAMING_ERROR, "Unknown header class");
-    }
+    properties.decode(buffer, bufSize - 12);
 }
 
 void qpid::framing::AMQHeaderBody::print(std::ostream& out) const
 {
     out << "header (" << size() << " bytes)"  << " content_size=" << getContentSize();
-    const BasicHeaderProperties* props =
-        dynamic_cast<const BasicHeaderProperties*>(getProperties());
-    if (props) {
-        out << ", message_id=" << props->getMessageId(); 
-        out << ", delivery_mode=" << (int) props->getDeliveryMode(); 
-        out << ", headers=" << const_cast<BasicHeaderProperties*>(props)->getHeaders();
-    }
+    out << ", message_id=" << properties.getMessageId(); 
+    out << ", delivery_mode=" << (int) properties.getDeliveryMode(); 
+    out << ", headers=" << properties.getHeaders();
 }

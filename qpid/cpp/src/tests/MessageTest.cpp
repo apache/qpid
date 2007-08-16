@@ -47,13 +47,13 @@ class MessageTest : public CppUnit::TestCase
 
         BasicMessage::shared_ptr msg(
             new BasicMessage(0, exchange, routingKey, false, false));
-        AMQHeaderBody::shared_ptr header(new AMQHeaderBody(BASIC));
-        header->setContentSize(14);        
-        AMQContentBody::shared_ptr part1(new AMQContentBody(data1));
-        AMQContentBody::shared_ptr part2(new AMQContentBody(data2));        
-        msg->setHeader(header);
-        msg->addContent(part1);
-        msg->addContent(part2);
+        AMQHeaderBody header(BASIC);
+        header.setContentSize(14);        
+        AMQContentBody part1(data1);
+        AMQContentBody part2(data2);        
+        msg->setHeader(&header);
+        msg->addContent(&part1);
+        msg->addContent(&part2);
 
         msg->getHeaderProperties()->setMessageId(messageId);
         msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
@@ -75,7 +75,8 @@ class MessageTest : public CppUnit::TestCase
         MockChannel channel(1);
         msg->deliver(channel, "ignore", 0, 100); 
         CPPUNIT_ASSERT_EQUAL((size_t) 3, channel.out.frames.size());
-        AMQContentBody::shared_ptr contentBody(dynamic_pointer_cast<AMQContentBody, AMQBody>(channel.out.frames[2].getBody()));
+        AMQContentBody* contentBody(
+            dynamic_cast<AMQContentBody*>(channel.out.frames[2].getBody()));
         CPPUNIT_ASSERT(contentBody);
         CPPUNIT_ASSERT_EQUAL(data1 + data2, contentBody->getData());
     }

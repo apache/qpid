@@ -22,6 +22,8 @@
 #include "SemanticHandler.h"
 #include "BrokerAdapter.h"
 #include "qpid/framing/ChannelAdapter.h"
+#include "qpid/framing/ExecutionCompleteBody.h"
+#include "qpid/framing/ChannelCloseOkBody.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -60,7 +62,7 @@ void SemanticHandler::handle(framing::AMQFrame& frame)
 }
 
 //ChannelAdapter virtual methods:
-void SemanticHandler::handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method)
+void SemanticHandler::handleMethod(framing::AMQMethodBody* method)
 {
     try {
         if (!method->invoke(this)) {
@@ -108,11 +110,11 @@ void SemanticHandler::flush()
     incoming.lwm = incoming.hwm;
     if (isOpen()) {
         Mutex::ScopedLock l(outLock);
-        ChannelAdapter::send(make_shared_ptr(new ExecutionCompleteBody(getVersion(), incoming.hwm.getValue(), SequenceNumberSet())));
+        ChannelAdapter::send(ExecutionCompleteBody(getVersion(), incoming.hwm.getValue(), SequenceNumberSet()));
     }
 }
 
-void SemanticHandler::handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method)
+void SemanticHandler::handleL4(framing::AMQMethodBody* method)
 {
     try{
         if(getId() != 0 && !method->isA<ChannelOpenBody>() && !isOpen()) {
@@ -139,17 +141,17 @@ bool SemanticHandler::isOpen() const
     return channel.isOpen(); 
 }
 
-void SemanticHandler::handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody> body) 
+void SemanticHandler::handleHeader(qpid::framing::AMQHeaderBody* body) 
 {
     channel.handleHeader(body);
 }
 
-void SemanticHandler::handleContent(boost::shared_ptr<qpid::framing::AMQContentBody> body) 
+void SemanticHandler::handleContent(qpid::framing::AMQContentBody* body) 
 {
     channel.handleContent(body);
 }
 
-void SemanticHandler::handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody> body) 
+void SemanticHandler::handleHeartbeat(qpid::framing::AMQHeartbeatBody* body) 
 {
     channel.handleHeartbeat(body);
 }
@@ -169,16 +171,12 @@ void SemanticHandler::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_
     msg->deliver(*this, tag, token, connection.getFrameMax());
 }
 
-void SemanticHandler::send(shared_ptr<AMQBody> body)
+void SemanticHandler::send(const AMQBody& body)
 {
     Mutex::ScopedLock l(outLock);
-    uint8_t type(body->type());
-    if (type == METHOD_BODY) {
+    if (body.getMethod() && body.getMethod()->amqpClassId() != ChannelOpenBody::CLASS_ID) {
         //temporary hack until channel management is moved to its own handler:
-        if (dynamic_pointer_cast<AMQMethodBody>(body)->amqpClassId() != ChannelOpenBody::CLASS_ID) {
-            ++outgoing.hwm;
-            //std::cout << "[" << this << "] allocated: " << outgoing.hwm.getValue() << " to " << *body  << std::endl;
-        }
+        ++outgoing.hwm;
     }
     ChannelAdapter::send(body);
 }

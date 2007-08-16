@@ -31,6 +31,14 @@
 #include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
+
+namespace framing {
+class AMQMethodBody;
+class AMQHeaderBody;
+class AMQContentBody;
+class AMQHeaderBody;
+}
+
 namespace broker {
 
 class BrokerAdapter;
@@ -48,16 +56,16 @@ class SemanticHandler : private framing::ChannelAdapter,
     framing::Window outgoing;
     sys::Mutex outLock;
 
-    void handleL4(boost::shared_ptr<qpid::framing::AMQMethodBody> method);
+    void handleL4(framing::AMQMethodBody* method);
 
     //ChannelAdapter virtual methods:
-    void handleMethod(boost::shared_ptr<qpid::framing::AMQMethodBody> method);
+    void handleMethod(framing::AMQMethodBody* method);
     bool isOpen() const;
-    void handleHeader(boost::shared_ptr<qpid::framing::AMQHeaderBody>);
-    void handleContent(boost::shared_ptr<qpid::framing::AMQContentBody>);
-    void handleHeartbeat(boost::shared_ptr<qpid::framing::AMQHeartbeatBody>);
+    void handleHeader(framing::AMQHeaderBody*);
+    void handleContent(framing::AMQContentBody*);
+    void handleHeartbeat(framing::AMQHeartbeatBody*);
 
-    void send(shared_ptr<framing::AMQBody> body);
+    void send(const framing::AMQBody& body);
 
 
     //delivery adapter methods:

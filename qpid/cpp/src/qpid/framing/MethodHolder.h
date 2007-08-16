@@ -22,9 +22,14 @@
  *
  */
 
+#include "qpid/framing/AMQBody.h"
+#include "qpid/framing/amqp_types.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Blob.h"
 #include "qpid/framing/MethodHolderMaxSize.h" // Generated file.
+
+#include <boost/type_traits/is_base_and_derived.hpp>
+#include <boost/utility/enable_if.hpp>
 
 #include <utility>
 
@@ -32,54 +37,59 @@ namespace qpid {
 namespace framing {
 
 class AMQMethodBody;
+class AMQBody;
 class Buffer;
+
+class MethodHolder;
+std::ostream& operator<<(std::ostream& out, const MethodHolder& h);
 
 /**
  * Holder for arbitrary method body.
  */
+// TODO aconway 2007-08-14: Fix up naming, this class should really be
+// called AMQMethodBody and use a different name for the root of
+// the concrete method body tree, which should not inherit AMQBody.
+// 
 class MethodHolder
 {
+    template <class T> struct EnableIfMethod:
+        public boost::enable_if<boost::is_base_and_derived<AMQMethodBody,T>,T>
+    {};
+
+    template <class T> EnableIfMethod<T>& assertMethod(T& t) { return t; }
+        
   public:
-    typedef std::pair<ClassId, MethodId> Id; 
-
-    template <class T>static Id idOf() {
-        return std::make_pair(T::CLASS_ID, T::METHOD_ID); }
-
     MethodHolder() {}
-    MethodHolder(const Id& id) { construct(id); }
-    MethodHolder(ClassId& c, MethodId& m) { construct(std::make_pair(c,m)); }
+    MethodHolder(ClassId& c, MethodId& m) { construct(c,m); }
 
-    template <class M>
-    MethodHolder(const M& m) : blob(m), id(idOf<M>()) {}
+    /** Construct with a copy of a method body. */
+    MethodHolder(const AMQMethodBody& m) { *this = m; }
 
-    template <class M>
-    MethodHolder& operator=(const M& m) { blob=m; id=idOf<M>(); return *this; }
+    /** Copy method body into holder. */
+    MethodHolder& operator=(const AMQMethodBody&);
 
-    /** Construct the method body corresponding to Id */
-    void construct(const Id&);
+    /** Construct the method body corresponding to class/method id */
+    void construct(ClassId c, MethodId m);
 
+    uint8_t type() const { return 1; }
     void encode(Buffer&) const;
     void decode(Buffer&);
     uint32_t size() const;
             
     AMQMethodBody* get() {
-        return static_cast<AMQMethodBody*>(blob.get());
+        return reinterpret_cast<AMQMethodBody*>(blob.get());
     }
     const AMQMethodBody* get() const {
-        return static_cast<const AMQMethodBody*>(blob.get());
+        return reinterpret_cast<const AMQMethodBody*>(blob.get());
     }
-
-    AMQMethodBody* operator* () { return get(); }
-    const AMQMethodBody* operator*() const { return get(); }
-    AMQMethodBody* operator-> () { return get(); }
-    const AMQMethodBody* operator->() const { return get(); }
 
   private:
     Blob<MAX_METHODBODY_SIZE> blob;
-    Id id;
+    class CopyVisitor;
+  friend struct CopyVisitor;
 };
 
-std::ostream& operator<<(std::ostream& out, const MethodHolder& h);
+
 
 }} // namespace qpid::framing
 

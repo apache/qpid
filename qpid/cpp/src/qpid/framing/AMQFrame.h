@@ -21,55 +21,76 @@
  * under the License.
  *
  */
-#include <boost/cast.hpp>
-
-#include "amqp_types.h"
-#include "AMQBody.h"
 #include "AMQDataBlock.h"
-#include "AMQMethodBody.h"
 #include "AMQHeaderBody.h"
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
-#include "qpid/framing/AMQP_MethodVersionMap.h"
-#include "qpid/framing/AMQP_HighestVersion.h"
-#include "qpid/framing/Buffer.h"
-#include "qpid/shared_ptr.h"
+#include "MethodHolder.h"
+#include "ProtocolVersion.h"
+
+#include <boost/cast.hpp>
+#include <boost/variant.hpp>
 
 namespace qpid {
 namespace framing {
-
 	
 class AMQFrame : public AMQDataBlock
 {
   public:
-    AMQFrame(ProtocolVersion _version = highestProtocolVersion);
-    AMQFrame(ProtocolVersion _version, uint16_t channel, AMQBody* body);
-    AMQFrame(ProtocolVersion _version, uint16_t channel, const AMQBody::shared_ptr& body);    
-    virtual ~AMQFrame();
-    virtual void encode(Buffer& buffer); 
-    virtual bool decode(Buffer& buffer); 
-    virtual uint32_t size() const;
-    uint16_t getChannel() const { return channel; }
+    AMQFrame(ProtocolVersion=ProtocolVersion()) {}
 
-    shared_ptr<AMQBody> getBody() { return body; }
-    void setBody(const shared_ptr<AMQBody>& b) { body = b; }
+    /** Construct a frame with a copy of b */
+    AMQFrame(ProtocolVersion, ChannelId c, const AMQBody* b) : channel(c) {
+        setBody(*b);
+    }
+    
+    AMQFrame(ProtocolVersion, ChannelId c, const AMQBody& b) : channel(c) {
+        setBody(b);
+    }
+    
+    ChannelId getChannel() const { return channel; }
+    void setChannel(ChannelId c) { channel = c; }
 
-    /** Convenience template to cast the body to an expected type */
-    template <class T> boost::shared_ptr<T> castBody() {
-        assert(dynamic_cast<T*>(getBody().get()));
-        boost::static_pointer_cast<T>(getBody());
+    AMQBody* getBody();
+    const AMQBody* getBody() const;
+
+    /** Copy a body instance to the frame */
+    void setBody(const AMQBody& b) { CopyVisitor cv(*this); b.accept(cv); }
+
+    /** Convenience template to cast the body to an expected type. */
+    template <class T> T* castBody() {
+        boost::polymorphic_downcast<T*>(getBody());
     }
 
-    uint32_t decodeHead(Buffer& buffer); 
-    void decodeBody(Buffer& buffer, uint32_t size); 
+    bool empty() { return boost::get<boost::blank>(&body); }
 
-    uint16_t channel;
-    uint8_t type;
-    AMQBody::shared_ptr body;
-    ProtocolVersion version;
+    void encode(Buffer& buffer); 
+    bool decode(Buffer& buffer); 
+    uint32_t size() const;
 
   private:
-    static AMQP_MethodVersionMap versionMap;
+    struct CopyVisitor : public AMQBodyConstVisitor {
+        AMQFrame& frame;
+        CopyVisitor(AMQFrame& f) : frame(f) {}
+        void visit(const AMQHeaderBody& x) { frame.body=x; }
+        void visit(const AMQContentBody& x) { frame.body=x; }
+        void visit(const AMQHeartbeatBody& x) { frame.body=x; }
+        void visit(const AMQMethodBody& x) { frame.body=MethodHolder(x); }
+    };
+  friend struct CopyVisitor;
+
+    typedef boost::variant<boost::blank,
+                           AMQHeaderBody,
+                           AMQContentBody,
+                           AMQHeartbeatBody,
+                           MethodHolder> Variant;
+
+    void visit(AMQHeaderBody& x) { body=x; }
+
+    void decodeBody(Buffer& buffer, uint32_t size, uint8_t type);
+
+    uint16_t channel;
+    Variant body;
 };
 
 std::ostream& operator<<(std::ostream&, const AMQFrame&);

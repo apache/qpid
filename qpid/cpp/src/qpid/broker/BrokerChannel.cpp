@@ -307,19 +307,19 @@ void Channel::handlePublish(Message* _message)
     messageBuilder.initialise(message);
 }
 
-void Channel::handleHeader(AMQHeaderBody::shared_ptr header)
+void Channel::handleHeader(AMQHeaderBody* header)
 {
     messageBuilder.setHeader(header);
     //at this point, decide based on the size of the message whether we want
     //to stage it by saving content directly to disk as it arrives
 }
 
-void Channel::handleContent(AMQContentBody::shared_ptr content)
+void Channel::handleContent(AMQContentBody* content)
 {
     messageBuilder.addContent(content);
 }
 
-void Channel::handleHeartbeat(boost::shared_ptr<AMQHeartbeatBody>) {
+void Channel::handleHeartbeat(AMQHeartbeatBody*) {
     // TODO aconway 2007-01-17: Implement heartbeating.
 }
 

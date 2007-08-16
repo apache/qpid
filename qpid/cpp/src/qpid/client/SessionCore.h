@@ -47,8 +47,8 @@ public:
     typedef boost::shared_ptr<SessionCore> shared_ptr;
 
     SessionCore(uint16_t id, boost::shared_ptr<framing::FrameHandler> out, uint64_t maxFrameSize);
-    Response send(framing::AMQMethodBody::shared_ptr method, bool expectResponse = false);
-    Response send(framing::AMQMethodBody::shared_ptr method, const framing::MethodContent& content, bool expectResponse = false);
+    Response send(const framing::AMQMethodBody& method, bool expectResponse = false);
+    Response send(const framing::AMQMethodBody& method, const framing::MethodContent& content, bool expectResponse = false);
     ReceivedContent::shared_ptr get();
     uint16_t getId() const { return id; } 
     void setSync(bool);

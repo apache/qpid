@@ -44,7 +44,7 @@ void SessionCore::flush()
     l3.sendFlush();
 }
 
-Response SessionCore::send(AMQMethodBody::shared_ptr method, bool expectResponse)
+Response SessionCore::send(const AMQMethodBody& method, bool expectResponse)
 {
     boost::shared_ptr<FutureResponse> f(futures.createResponse());
     if (expectResponse) {
@@ -59,7 +59,7 @@ Response SessionCore::send(AMQMethodBody::shared_ptr method, bool expectResponse
     return Response(f);
 }
 
-Response SessionCore::send(AMQMethodBody::shared_ptr method, const MethodContent& content, bool expectResponse)
+Response SessionCore::send(const AMQMethodBody& method, const MethodContent& content, bool expectResponse)
 {
     //TODO: lots of duplication between these two send methods; refactor
     boost::shared_ptr<FutureResponse> f(futures.createResponse());

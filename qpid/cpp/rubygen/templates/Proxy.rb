@@ -38,7 +38,7 @@ EOS
       genl "void #{@classname}::#{cname}::#{m.cppname}(#{m.signature.join(", ")})"
       scope { 
         params=(["channel.getVersion()"]+m.param_names).join(", ")
-        genl "channel.send(make_shared_ptr(new #{m.body_name}(#{params})));"
+        genl "channel.send(#{m.body_name}(#{params}));"
       }}
   end
 
