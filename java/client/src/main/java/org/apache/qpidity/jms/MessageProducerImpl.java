@@ -17,13 +17,13 @@
  */
 package org.apache.qpidity.jms;
 
-import org.apache.qpidity.jms.message.QpidMessage;
 import org.apache.qpidity.jms.message.MessageHelper;
 import org.apache.qpidity.jms.message.MessageImpl;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
 import java.util.UUID;
+import java.io.IOException;
 
 /**
  * Implements  MessageProducer
@@ -318,7 +318,7 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
         }
         // the messae UID
         String uid = (_disableMessageId) ? "MSG_ID_DISABLED" : UUID.randomUUID().toString();
-        MessageImpl qpidMessage = null;
+        MessageImpl qpidMessage;
         // check that the message is not a foreign one
         try
         {
@@ -358,6 +358,8 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
             qpidMessage.setJMSExpiration(timeToLive);
         }
         qpidMessage.setJMSTimestamp(currentTime);
+        qpidMessage.setRoutingKey(((DestinationImpl) destination).getDestinationName());
+        qpidMessage.setExchangeName(((DestinationImpl) destination).getExchangeName());
         // call beforeMessageDispatch
         try
         {
@@ -367,6 +369,16 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
-        // todo getSession().getQpidSession().messageTransfer(((DestinationImpl) destination).getExchangeName(), message, Option);
+        try
+        {
+            getSession().getQpidSession().messageTransfer(qpidMessage.getExchangeName(),
+                                                          qpidMessage.getQpidityMessage(),
+                                                          org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                                          org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+        }
+        catch (IOException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
     }
 }

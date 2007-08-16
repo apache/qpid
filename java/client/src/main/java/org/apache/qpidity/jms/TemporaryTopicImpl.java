@@ -21,6 +21,7 @@ import org.apache.qpidity.QpidException;
 
 import javax.jms.TemporaryTopic;
 import javax.jms.JMSException;
+import java.util.UUID;
 
 
 /**
@@ -43,7 +44,7 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic, Tem
     protected TemporaryTopicImpl(SessionImpl session) throws QpidException
     {
         // temporary destinations do not have names.
-        super(session, "NAME_NOT_SET");
+        super(session, "TemporayTopic-" + UUID.randomUUID());
     }
 
     //-- TemporaryDestination Interface

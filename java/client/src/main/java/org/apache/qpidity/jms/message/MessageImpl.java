@@ -885,7 +885,7 @@ public class MessageImpl extends QpidMessage implements Message
     /**
      * This method is invoked after this message is received.
      *
-     * @throws QpidException If there is an internal error when procesing this message. 
+     * @throws QpidException If there is an internal error when procesing this message.
      */
     public void afterMessageReceive() throws QpidException
     {
@@ -922,4 +922,5 @@ public class MessageImpl extends QpidMessage implements Message
     {
         _messageConsumer = messageConsumer;
     }
+
 }
