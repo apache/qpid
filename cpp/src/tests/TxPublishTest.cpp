@@ -44,7 +44,8 @@ class TxPublishTest : public CppUnit::TestCase
         
         void enqueue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& queue)
         {
-            enqueued.push_back(msg_queue_pair(queue.getName(), &msg));
+            msg.enqueueComplete(); 
+ 	    enqueued.push_back(msg_queue_pair(queue.getName(), &msg));
         }
         
         //dont care about any of the other methods:
@@ -61,7 +62,7 @@ class TxPublishTest : public CppUnit::TestCase
     TestMessageStore store;
     Queue::shared_ptr queue1;
     Queue::shared_ptr queue2;
-    Message::shared_ptr const msg;
+    Message::shared_ptr msg;
     TxPublish op;
     
 public:
@@ -88,14 +89,21 @@ public:
         CPPUNIT_ASSERT_EQUAL((PersistableMessage*) msg.get(), store.enqueued[0].second);
         CPPUNIT_ASSERT_EQUAL(string("queue2"), store.enqueued[1].first);
         CPPUNIT_ASSERT_EQUAL((PersistableMessage*) msg.get(), store.enqueued[1].second);
+	CPPUNIT_ASSERT_EQUAL( true, ((PersistableMessage*) msg.get())->isEnqueueComplete());
+	
+
     }
 
     void testCommit()
     {
         //ensure messages are delivered to queue
+        op.prepare(0);
         op.commit();
         CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue1->getMessageCount());
-        CPPUNIT_ASSERT_EQUAL(msg, queue1->dequeue());
+	Message::shared_ptr msg_dequeue = queue1->dequeue();
+
+ 	CPPUNIT_ASSERT_EQUAL( true, ((PersistableMessage*) msg_dequeue.get())->isEnqueueComplete());
+        CPPUNIT_ASSERT_EQUAL(msg, msg_dequeue);
 
         CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue2->getMessageCount());
         CPPUNIT_ASSERT_EQUAL(msg, queue2->dequeue());            
