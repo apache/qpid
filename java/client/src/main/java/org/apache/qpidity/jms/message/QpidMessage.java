@@ -348,6 +348,35 @@ public class QpidMessage
     }
 
     /**
+     * Set this message AMQP routingkey
+     *
+     * @param routingKey This message AMQP routingkey
+     */
+    public void setRoutingKey(String routingKey)
+    {
+        _qpidityMessage.getDeliveryProperties().setRoutingKey(routingKey);
+    }
+
+    /**
+     * Set this message AMQP exchange name.
+     *
+     * @param exchangeName This message AMQP exchange name.
+     */
+    public void setExchangeName(String exchangeName)
+    {
+        _qpidityMessage.getDeliveryProperties().setExchange(exchangeName);
+    }
+
+    /**
+     * Get this message excahgne name
+     * @return this message excahgne name
+     */
+    public String getExchangeName()
+    {
+        return _qpidityMessage.getDeliveryProperties().getExchange();
+    }
+
+    /**
      * This method is invoked before a message dispatch operation.
      *
      * @throws QpidException If the destination is not set
@@ -367,6 +396,16 @@ public class QpidMessage
         {
             throw new QpidException("IO exception when sending message", ErrorCode.UNDEFINED, e);
         }
+    }
+
+    /**
+     * Get the underlying qpidity message
+     *
+     * @return The underlying qpidity message.
+     */
+    public org.apache.qpidity.api.Message getQpidityMessage()
+    {
+        return _qpidityMessage;
     }
 }
 

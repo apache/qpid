@@ -46,9 +46,9 @@ import org.slf4j.LoggerFactory;
 
 
 /**
- * Implements javax.jms.Connection, javax.jms.QueueConnection adn javax.jms.TopicConnection
+ * Implements javax.jms.Connection, javax.jms.QueueConnection and javax.jms.TopicConnection
  */
-public class ConnectionImpl implements Connection, QueueConnection, TopicConnection, Referenceable
+public class ConnectionImpl implements Connection, Referenceable
 {
     /**
      * This class's logger
@@ -112,9 +112,17 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     //------ Constructors ---//
     /**
-     * TODO define the parameters
+     * Create a connection.
+     *
+     * @param host        The broker host name.
+     * @param port        The port on which the broker is listening for connection.
+     * @param virtualHost The virtual host on which the broker is deployed.
+     * @param username    The user name used of user identification.
+     * @param password    The password name used of user identification.
+     * @throws QpidException If creating a connection fails due to some internal error.
      */
-    public ConnectionImpl(String host,int port,String virtualHost,String username,String password) throws QpidException
+    protected ConnectionImpl(String host, int port, String virtualHost, String username, String password)
+            throws QpidException
     {
         _qpidConnection = Client.createConnection();
         _qpidConnection.connect(host, port, virtualHost, username, password);
@@ -428,8 +436,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
      * @param acknowledgeMode Legal values are <code>Session.AUTO_ACKNOWLEDGE</code>, <code>Session.CLIENT_ACKNOWLEDGE</code>, and
      *                        <code>Session.DUPS_OK_ACKNOWLEDGE</code>.
      * @return a newly created topic session
-     * @throws JMSException If creating the session fails due to some internal error.
-     * @throws QpidException 
+     * @throws JMSException  If creating the session fails due to some internal error.
+     * @throws QpidException
      */
     public synchronized TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
@@ -499,10 +507,9 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     {
         return _qpidConnection;
     }
-    
+
     public Reference getReference() throws NamingException
     {
-        return new Reference( ConnectionImpl.class.getName(),
-                new StringRefAddr(ConnectionImpl.class.getName(),""));
+        return new Reference(ConnectionImpl.class.getName(), new StringRefAddr(ConnectionImpl.class.getName(), ""));
     }
 }

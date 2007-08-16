@@ -18,7 +18,6 @@
 package org.apache.qpidity.jms;
 
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Option;
 import org.apache.qpidity.url.BindingURL;
 
 import javax.jms.Destination;
@@ -31,7 +30,7 @@ public class DestinationImpl implements Destination
     /**
      * The destination's name
      */
-    protected String _name = null;
+    protected String _destinationName = null;
 
     /**
      * The session used to create this destination
@@ -43,29 +42,42 @@ public class DestinationImpl implements Destination
      */
     protected String _exchangeName;
 
-     /**
+    /**
      * The excahnge class
      */
-    protected String _exchangeClass;
+    protected String _exchangeType;
 
-     /**
-     * The queu name
+    /**
+     * The queue name
      */
     protected String _queueName;
 
+    /**
+     * Indicate whether this destination is exclusive
+     */
+    protected boolean _isExclusive;
+
+    /**
+     * Indicates whether this destination is auto delete.
+     */
+    protected boolean _isAutoDelete;
+
+    /**
+     * Indicates whether this destination is durable
+     */
+    protected boolean _isDurable;
+
     //--- Constructor
     /**
-     * Create a new DestinationImpl with a given name.
+     * Create a new DestinationImpl.
      *
-     * @param name    The name of this destination.
-     * @param session The session used to create this destination.
-     * @throws QpidException If the destiantion name is not valid
+     * @param session The session used to create this DestinationImpl.
      */
-    protected DestinationImpl(SessionImpl session, String name) throws QpidException
+    protected DestinationImpl(SessionImpl session)
     {
-        _session = session;
-        _name = name;
+       _session = session;
     }
+
 
     /**
      * Create a destiantion from a binding URL
@@ -78,41 +90,15 @@ public class DestinationImpl implements Destination
     {
         _session = session;
         _exchangeName = binding.getExchangeName();
-        _exchangeClass = binding.getExchangeClass();
-        _name = binding.getDestinationName();
-        //       _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
-        boolean isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
-        boolean isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
+        _exchangeType = binding.getExchangeClass();
+        _destinationName = binding.getDestinationName();
+        _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
+        _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
+        _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
         _queueName = binding.getQueueName();
-        // create this exchange
-        _session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeClass, null, null,
-                                                  isDurable ? Option.DURABLE : Option.NO_OPTION,
-                                                  isAutoDelete ? Option.AUTO_DELETE : Option.NO_OPTION);
     }
 
     //---- Getters and Setters
-
-    /**
-     * Gets the name of this destination.
-     *
-     * @return The destination name.
-     */
-    public String getName()
-    {
-        return _name;
-    }
-
-    /**
-     * set the destination name
-     * <p> This name is not verified until producing or consuming messages for that destination.
-     *
-     * @param name The destination name.
-     */
-    public void setName(String name)
-    {
-        _name = name;
-    }
-
     /**
      * Overrides Object.toString();
      *
@@ -120,23 +106,87 @@ public class DestinationImpl implements Destination
      */
     public String toString()
     {
-        return _name;
+        return _destinationName;
     }
 
-    // getter methods 
-    public String getQpidQueueName()
+    /**
+     * Get the destination name.
+     *
+     * @return The destination name
+     */
+    public String getDestinationName()
     {
-        return _queueName;
+        return _destinationName;
     }
 
+    /**
+     * Get the session of this destination
+     *
+     * @return The session of this destination
+     */
+    public SessionImpl getSession()
+    {
+        return _session;
+    }
+
+    /**
+     * The exchange name
+     *
+     * @return The exchange name
+     */
     public String getExchangeName()
     {
         return _exchangeName;
     }
 
-    public String getExchangeClass()
+    /**
+     * The exchange type.
+     *
+     * @return The exchange type.
+     */
+    public String getExchangeType()
     {
-        return _exchangeClass;
+        return _exchangeType;
+    }
+
+    /**
+     * The queue name.
+     *
+     * @return The queue name.
+     */
+    public String getQpidQueueName()
+    {
+        return _queueName;
+    }
+
+    /**
+     * Indicates whether this destination is exclusive.
+     *
+     * @return true if this destination is exclusive.
+     */
+    public boolean isExclusive()
+    {
+        return _isExclusive;
+    }
+
+    /**
+     * Indicates whether this destination is AutoDelete.
+     *
+     * @return true if this destination is AutoDelete.
+     */
+    public boolean isAutoDelete()
+    {
+        return _isAutoDelete;
+    }
+
+    /**
+     * Indicates whether this destination is Durable.
+     *
+     * @return true if this destination is Durable.
+     */
+    public boolean isDurable()
+    {
+        return _isDurable;
     }
 }
 
