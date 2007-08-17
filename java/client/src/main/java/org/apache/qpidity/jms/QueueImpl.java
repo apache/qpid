@@ -30,19 +30,7 @@ import javax.jms.JMSException;
  */
 public class QueueImpl extends DestinationImpl implements Queue
 {
-
-    //--- Constructor
-
-    /**
-     * Create a new QueueImpl.
-     *
-     * @param session The session used to create this QueueImpl.
-     */
-    protected QueueImpl(SessionImpl session)
-    {
-        super(session);
-    }
-
+    //--- Constructor    
     /**
      * Create a new QueueImpl with a given name.
      *
@@ -52,7 +40,7 @@ public class QueueImpl extends DestinationImpl implements Queue
      */
     protected QueueImpl(SessionImpl session, String name) throws QpidException
     {
-        super(session);
+        super(name);
         _queueName = name;
         _destinationName = name;
         _exchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
@@ -60,7 +48,7 @@ public class QueueImpl extends DestinationImpl implements Queue
         _isAutoDelete = false;
         _isDurable = true;
         _isExclusive = false;
-        registerQueue(false);
+        registerQueue(session, false);
     }
 
     /**
@@ -72,8 +60,37 @@ public class QueueImpl extends DestinationImpl implements Queue
      */
     protected QueueImpl(SessionImpl session, BindingURL binding) throws QpidException
     {
-        super(session, binding);
-        registerQueue(false);
+        super(binding);
+        registerQueue(session, false);
+    }
+
+    /**
+     * Create a destiantion from a binding URL
+     *
+     * @param binding The URL
+     * @throws QpidException If the URL is not valid
+     */
+    public QueueImpl(BindingURL binding) throws QpidException
+    {
+        super(binding);
+    }
+
+    /**
+     * Create a new QueueImpl with a given name.
+     *
+     * @param name The name of this queue.
+     * @throws QpidException If the queue name is not valid
+     */
+    public QueueImpl(String name) throws QpidException
+    {
+        super(name);
+        _queueName = name;
+        _destinationName = name;
+        _exchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+        _exchangeType = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+        _isAutoDelete = false;
+        _isDurable = true;
+        _isExclusive = false;
     }
 
     //---- Interface javax.jms.Queue
@@ -91,27 +108,28 @@ public class QueueImpl extends DestinationImpl implements Queue
     /**
      * Check that this queue exists and declare it if required.
      *
+     * @param session The session used to create this destination
      * @param declare Specify whether the queue should be declared
      * @throws QpidException If this queue does not exists on the broker.
      */
-    protected void registerQueue(boolean declare) throws QpidException
+    protected void registerQueue(SessionImpl session, boolean declare) throws QpidException
     {
         // test if this exchange exist on the broker
         //todo we can also specify if the excahnge is autodlete and durable
-        _session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
+        session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
         // wait for the broker response
-        _session.getQpidSession().sync();
+        session.getQpidSession().sync();
         // If this exchange does not exist then we will get an Expection 404 does notexist
         //todo check for an execption
         // now check if the queue exists
-        _session.getQpidSession().queueDeclare(_queueName, null, null, _isDurable ? Option.DURABLE : Option.NO_OPTION,
-                                               _isAutoDelete ? Option.AUTO_DELETE : Option.NO_OPTION,
-                                               _isExclusive ? Option.EXCLUSIVE : Option.NO_OPTION,
-                                               declare ? Option.PASSIVE : Option.NO_OPTION);
+        session.getQpidSession().queueDeclare(_queueName, null, null, _isDurable ? Option.DURABLE : Option.NO_OPTION,
+                                              _isAutoDelete ? Option.AUTO_DELETE : Option.NO_OPTION,
+                                              _isExclusive ? Option.EXCLUSIVE : Option.NO_OPTION,
+                                              declare ? Option.PASSIVE : Option.NO_OPTION);
         // wait for the broker response
-        _session.getQpidSession().sync();
+        session.getQpidSession().sync();
         // If this queue does not exist then we will get an Expection 404 does notexist
-        _session.getQpidSession().queueBind(_queueName, _exchangeName, _destinationName, null);
+        session.getQpidSession().queueBind(_queueName, _exchangeName, _destinationName, null);
         // we don't have to sync as we don't expect an error
     }
 
