@@ -18,11 +18,8 @@
  */
 package org.apache.qpidity.client;
 
-
-import java.net.URL;
-import java.util.UUID;
-
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.url.QpidURL;
 
 /**
  * This represents a physical connection to a broker.
@@ -46,7 +43,7 @@ public interface Connection
      * @param url The URL of the broker.
      * @throws QpidException If the communication layer fails to connect with the broker.
      */
-    public void connect(URL url) throws QpidException;
+    public void connect(QpidURL url) throws QpidException;
     
     /**
      * Close this connection.

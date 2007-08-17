@@ -14,6 +14,7 @@ import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.MinaHandler;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.SessionDelegate;
+import org.apache.qpidity.url.QpidURL;
 import org.apache.qpidity.client.impl.ClientSession;
 import org.apache.qpidity.client.impl.ClientSessionDelegate;
 
@@ -83,7 +84,7 @@ public class Client implements org.apache.qpidity.client.Connection
      * Until the dust settles with the URL disucssion
      * I am not going to implement this.
      */
-    public void connect(URL url) throws QpidException
+    public void connect(QpidURL url) throws QpidException
     {
         throw new UnsupportedOperationException(); 
     }

@@ -38,9 +38,9 @@ public class TopicImpl extends DestinationImpl implements Topic
      * @param session The session used to create this queue.
      * @throws QpidException If the topic name is not valid
      */
-    public TopicImpl(SessionImpl session, String name) throws QpidException
+    protected TopicImpl(SessionImpl session, String name) throws QpidException
     {
-        super(session);
+        super(name);
         _queueName = "Topic-" + UUID.randomUUID();
         _destinationName = name;
         _exchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
@@ -48,7 +48,25 @@ public class TopicImpl extends DestinationImpl implements Topic
         _isAutoDelete = true;
         _isDurable = false;
         _isExclusive = true;
-        checkTopicExists();
+        checkTopicExists(session);
+    }
+
+    /**
+     * Create a new TopicImpl with a given name.
+     *
+     * @param name The name of this topic
+     * @throws QpidException If the topic name is not valid
+     */
+    public TopicImpl(String name) throws QpidException
+    {
+        super(name);
+        _queueName = "Topic-" + UUID.randomUUID();
+        _destinationName = name;
+        _exchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
+        _exchangeType = ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
+        _isAutoDelete = true;
+        _isDurable = false;
+        _isExclusive = true;
     }
 
     /**
@@ -60,8 +78,20 @@ public class TopicImpl extends DestinationImpl implements Topic
      */
     protected TopicImpl(SessionImpl session, BindingURL binding) throws QpidException
     {
-        super(session, binding);
-        checkTopicExists();
+        super(binding);
+        checkTopicExists(session);
+    }
+
+
+    /**
+     * Create a TopicImpl from a binding URL
+     *
+     * @param binding The URL
+     * @throws QpidException If the URL is not valid
+     */
+    public TopicImpl(BindingURL binding) throws QpidException
+    {
+        super(binding);
     }
 
     //--- javax.jsm.Topic Interface
@@ -74,18 +104,20 @@ public class TopicImpl extends DestinationImpl implements Topic
     {
         return _destinationName;
     }
+
     /**
-      * Check that this topic exchange
-      *
-      * @throws QpidException If this queue does not exists on the broker.
-      */
-     protected void checkTopicExists() throws QpidException
-     {
-         // test if this exchange exist on the broker
-         _session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
-         // wait for the broker response
-         _session.getQpidSession().sync();
-         // todo get the exception
-     }
+     * Check that this exchange exists
+     *
+     * @param session The session used to create this Topic.
+     * @throws QpidException If this exchange does not exists on the broker.
+     */
+    private void checkTopicExists(SessionImpl session) throws QpidException
+    {
+        // test if this exchange exist on the broker
+        session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
+        // wait for the broker response
+        session.getQpidSession().sync();
+        // todo get the exception
+    }
 
 }

@@ -27,19 +27,14 @@ import javax.jms.ExceptionListener;
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
 import javax.jms.Queue;
-import javax.jms.QueueConnection;
 import javax.jms.QueueSession;
 import javax.jms.ServerSessionPool;
 import javax.jms.Session;
 import javax.jms.Topic;
-import javax.jms.TopicConnection;
 import javax.jms.TopicSession;
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.Referenceable;
-import javax.naming.StringRefAddr;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.url.QpidURL;
 import org.apache.qpidity.client.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +43,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Implements javax.jms.Connection, javax.jms.QueueConnection and javax.jms.TopicConnection
  */
-public class ConnectionImpl implements Connection, Referenceable
+public class ConnectionImpl implements Connection
 {
     /**
      * This class's logger
@@ -64,16 +59,6 @@ public class ConnectionImpl implements Connection, Referenceable
      * This is the clientID
      */
     private String _clientID;
-
-    /**
-     * The user name to use for authentication
-     */
-    private String _username;
-
-    /**
-     * The password to use for authentication
-     */
-    private String _password;
 
     /**
      * The Exception listenr get informed when a serious problem is detected
@@ -128,8 +113,19 @@ public class ConnectionImpl implements Connection, Referenceable
         _qpidConnection.connect(host, port, virtualHost, username, password);
     }
 
-    //---- Interface javax.jms.Connection ---//
+    /**
+     * Create a connection from a QpidURL
+     *
+     * @param qpidURL The url used to create this connection
+     * @throws QpidException If creating a connection fails due to some internal error.
+     */
+    protected ConnectionImpl(QpidURL qpidURL) throws QpidException
+    {
+        _qpidConnection = Client.createConnection();
+        _qpidConnection.connect(qpidURL);
+    }
 
+    //---- Interface javax.jms.Connection ---//
     /**
      * Creates a Session
      *
@@ -142,7 +138,7 @@ public class ConnectionImpl implements Connection, Referenceable
     public synchronized Session createSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
-        SessionImpl session = null;
+        SessionImpl session;
         try
         {
             session = new SessionImpl(this, transacted, acknowledgeMode, false);
@@ -174,12 +170,11 @@ public class ConnectionImpl implements Connection, Referenceable
 
     /**
      * Sets the client identifier for this connection.
-     * <p/>
      * <P>The preferred way to assign a JMS client's client identifier is for
      * it to be configured in a client-specific <CODE>ConnectionFactory</CODE>
      * object and transparently assigned to the <CODE>Connection</CODE> object
      * it creates.
-     * <p> In AMQP it is not possible to change the client ID. If one is not specified
+     * <p> In Qpid it is not possible to change the client ID. If one is not specified
      * upon connection construction, an id is generated automatically. Therefore
      * we can always throw an exception.
      * TODO: Make sure that the client identifier can be set on the <CODE>ConnectionFactory</CODE>
@@ -396,7 +391,7 @@ public class ConnectionImpl implements Connection, Referenceable
     public synchronized QueueSession createQueueSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
-        QueueSessionImpl queueSession = null;
+        QueueSessionImpl queueSession;
         try
         {
             queueSession = new QueueSessionImpl(this, transacted, acknowledgeMode);
@@ -437,12 +432,11 @@ public class ConnectionImpl implements Connection, Referenceable
      *                        <code>Session.DUPS_OK_ACKNOWLEDGE</code>.
      * @return a newly created topic session
      * @throws JMSException  If creating the session fails due to some internal error.
-     * @throws QpidException
      */
     public synchronized TopicSession createTopicSession(boolean transacted, int acknowledgeMode) throws JMSException
     {
         checkNotClosed();
-        TopicSessionImpl session = null;
+        TopicSessionImpl session;
         try
         {
             session = new TopicSessionImpl(this, transacted, acknowledgeMode);
@@ -476,7 +470,6 @@ public class ConnectionImpl implements Connection, Referenceable
     }
 
     //-------------- protected and private methods
-
     /**
      * Validate that the Connection is not closed.
      * <p/>
@@ -506,10 +499,5 @@ public class ConnectionImpl implements Connection, Referenceable
     protected org.apache.qpidity.client.Connection getQpidConnection()
     {
         return _qpidConnection;
-    }
-
-    public Reference getReference() throws NamingException
-    {
-        return new Reference(ConnectionImpl.class.getName(), new StringRefAddr(ConnectionImpl.class.getName(), ""));
     }
 }
