@@ -99,30 +99,33 @@ class Blob
     {
         typedef typename TypedInPlaceFactory::value_type T;
         assert(sizeof(T) <= Size);
-        clear();                // Destroy old object.
         factory.apply(store.address());
         setType<T>();
     }
 
+    void assign(const Blob& b) {
+        b.copy(this->get(), b.get());
+        copy = b.copy;
+        destroy = b.destroy;
+    }
+    
   public:
     /** Construct an empty blob. */
     Blob() { setType<void>(); }
 
     /** Copy a blob. */
-    Blob(const Blob& b) { *this = b; }
+    Blob(const Blob& b) { assign(b); }
 
     /** Assign a blob */
     Blob& operator=(const Blob& b) {
-        setType<void>();        // Exception safety.
-        b.copy(this->get(), b.get());
-        copy = b.copy;
-        destroy = b.destroy;
+        clear();
+        assign(b);
         return *this;
     }
 
     /** @see construct() */
     template<class Expr>
-    Blob( const Expr & expr ) { setType<void>(); construct(expr,&expr); }
+    Blob( const Expr & expr ) { construct(expr,&expr); }
 
     ~Blob() { clear(); }
 
@@ -131,11 +134,11 @@ class Blob
      * will construct an object using the constructor T(x,y,z)
      */
     template<class Expr> void
-    construct(const Expr& expr) { construct(expr,&expr); }
+    construct(const Expr& expr) { clear(); construct(expr,&expr); }
 
     /** Copy construct an instance of T into the Blob. */
     template<class T>
-    Blob& operator=(const T& x) { construct(in_place<T>(x)); return *this; }
+    Blob& operator=(const T& x) { clear(); construct(in_place<T>(x)); return *this; }
     
     /** Get pointer to blob contents. Caller must know how to cast it. */
     void* get() { return store.address(); }
