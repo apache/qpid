@@ -471,7 +471,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public PingPongProducer(Properties overrides) throws Exception
     {
-        log.debug("public PingPongProducer(Properties overrides = " + overrides + "): called");
+        // log.debug("public PingPongProducer(Properties overrides = " + overrides + "): called");
 
         // Create a set of parsed properties from the defaults overriden by the passed in values.
         ParsedProperties properties = new ParsedProperties(defaults);
@@ -531,7 +531,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public void establishConnection(boolean producer, boolean consumer) throws Exception
     {
-        log.debug("public void establishConnection(): called");
+        // log.debug("public void establishConnection(): called");
 
         // Generate a unique identifying name for this client, based on it ip address and the current time.
         InetAddress address = InetAddress.getLocalHost();
@@ -578,13 +578,13 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     protected void createConnection(String clientID) throws AMQException, URLSyntaxException
     {
-        log.debug("protected void createConnection(String clientID = " + clientID + "): called");
+        // log.debug("protected void createConnection(String clientID = " + clientID + "): called");
 
-        log.debug("Creating a connection for the message producer.");
+        // log.debug("Creating a connection for the message producer.");
 
         _connection = new AMQConnection(_brokerDetails, _username, _password, clientID, _virtualpath);
 
-        log.debug("Creating " + _noOfConsumers + " connections for the consumers.");
+        // log.debug("Creating " + _noOfConsumers + " connections for the consumers.");
 
         _consumerConnection = new Connection[_noOfConsumers];
 
@@ -659,12 +659,12 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public List<Destination> getReplyDestinations()
     {
-        log.debug("public List<Destination> getReplyDestinations(): called");
+        // log.debug("public List<Destination> getReplyDestinations(): called");
 
         List<Destination> replyDestinations = new ArrayList<Destination>();
         replyDestinations.add(_replyDestination);
 
-        log.debug("replyDestinations = " + replyDestinations);
+        // log.debug("replyDestinations = " + replyDestinations);
 
         return replyDestinations;
     }
@@ -677,12 +677,12 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public void createProducer() throws JMSException
     {
-        log.debug("public void createProducer(): called");
+        // log.debug("public void createProducer(): called");
 
         _producer = (MessageProducer) _producerSession.createProducer(null);
         _producer.setDeliveryMode(_persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
 
-        log.debug("Created producer for " + (_persistent ? "persistent" : "non-persistent") + " messages.");
+        // log.debug("Created producer for " + (_persistent ? "persistent" : "non-persistent") + " messages.");
     }
 
     /**
@@ -700,14 +700,14 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     public void createPingDestinations(int noOfDestinations, String selector, String rootName, boolean unique,
         boolean durable) throws JMSException, AMQException
     {
-        log.debug("public void createPingDestinations(int noOfDestinations = " + noOfDestinations + ", String selector = "
+        /*log.debug("public void createPingDestinations(int noOfDestinations = " + noOfDestinations + ", String selector = "
             + selector + ", String rootName = " + rootName + ", boolean unique = " + unique + ", boolean durable = "
-            + durable + "): called");
+            + durable + "): called");*/
 
         _pingDestinations = new ArrayList<Destination>();
 
         // Create the desired number of ping destinations and consumers for them.
-        log.debug("Creating " + noOfDestinations + " destinations to ping.");
+        // log.debug("Creating " + noOfDestinations + " destinations to ping.");
 
         for (int i = 0; i < noOfDestinations; i++)
         {
@@ -718,12 +718,12 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
             // Generate an id, unique within this pinger or to the whole JVM depending on the unique flag.
             if (unique)
             {
-                log.debug("Creating unique destinations.");
+                // log.debug("Creating unique destinations.");
                 id = "_" + _queueJVMSequenceID.incrementAndGet() + "_" + _connection.getClientID();
             }
             else
             {
-                log.debug("Creating shared destinations.");
+                // log.debug("Creating shared destinations.");
                 id = "_" + _queueSharedID.incrementAndGet();
             }
 
@@ -733,14 +733,14 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                 if (!durable)
                 {
                     destination = new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, rootName + id);
-                    log.debug("Created non-durable topic " + destination);
+                    // log.debug("Created non-durable topic " + destination);
                 }
                 else
                 {
                     destination =
                         AMQTopic.createDurableTopic(new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, rootName + id),
                             _clientID, (AMQConnection) _connection);
-                    log.debug("Created durable topic " + destination);
+                    // log.debug("Created durable topic " + destination);
                 }
             }
             // Otherwise this is a p2p pinger, in which case create queues.
@@ -754,7 +754,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                 ((AMQSession) _producerSession).bindQueue(destinationName, destinationName, null,
                     ExchangeDefaults.DIRECT_EXCHANGE_NAME);
 
-                log.debug("Created queue " + destination);
+                // log.debug("Created queue " + destination);
             }
 
             // Keep the destination.
@@ -772,12 +772,12 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public void createReplyConsumers(Collection<Destination> destinations, String selector) throws JMSException
     {
-        log.debug("public void createReplyConsumers(Collection<Destination> destinations = " + destinations
-            + ", String selector = " + selector + "): called");
+        /*log.debug("public void createReplyConsumers(Collection<Destination> destinations = " + destinations
+            + ", String selector = " + selector + "): called");*/
 
-        log.debug("There are " + destinations.size() + " destinations.");
-        log.debug("Creating " + _noOfConsumers + " consumers on each destination.");
-        log.debug("Total number of consumers is: " + (destinations.size() * _noOfConsumers));
+        // log.debug("There are " + destinations.size() + " destinations.");
+        // log.debug("Creating " + _noOfConsumers + " consumers on each destination.");
+        // log.debug("Total number of consumers is: " + (destinations.size() * _noOfConsumers));
 
         for (Destination destination : destinations)
         {
@@ -800,7 +800,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                         }
                     });
 
-                log.debug("Set consumer " + i + " to listen to replies sent to destination: " + destination);
+                // log.debug("Set consumer " + i + " to listen to replies sent to destination: " + destination);
             }
         }
     }
@@ -814,7 +814,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public void onMessageWithConsumerNo(Message message, int consumerNo)
     {
-        log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo = " + consumerNo + "): called");
+        // log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo = " + consumerNo + "): called");
 
         NDC.push("cons" + consumerNo);
 
@@ -822,13 +822,13 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         {
             // Extract the messages correlation id.
             String correlationID = message.getJMSCorrelationID();
-            log.debug("correlationID = " + correlationID);
+            // log.debug("correlationID = " + correlationID);
 
             int num = message.getIntProperty("MSG_NUM");
             // log.info("Message " + num + " received.");
 
             boolean isRedelivered = message.getJMSRedelivered();
-            log.debug("isRedelivered = " + isRedelivered);
+            // log.debug("isRedelivered = " + isRedelivered);
 
             if (!isRedelivered)
             {
@@ -842,7 +842,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                     // Restart the timeout timer on every message.
                     perCorrelationId.timeOutStart = System.nanoTime();
 
-                    log.debug("Reply was expected, decrementing the latch for the id, " + correlationID);
+                    // log.debug("Reply was expected, decrementing the latch for the id, " + correlationID);
 
                     // Decrement the countdown latch. Before this point, it is possible that two threads might enter this
                     // method simultanesouly with the same correlation id. Decrementing the latch in a synchronized block
@@ -867,7 +867,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                             if ((_maxPendingSize > 0) && (unreceivedSize < _maxPendingSize))
                             // && (_sendPauseBarrier.getNumberWaiting() == 1))
                             {
-                                log.debug("unreceived size estimate under limit = " + unreceivedSize);
+                                // log.debug("unreceived size estimate under limit = " + unreceivedSize);
 
                                 // Wait on the send pause barrier for the limit to be re-established.
                                 /*try
@@ -888,19 +888,19 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
                         NDC.push("/rem" + remainingCount);
 
-                        log.debug("remainingCount = " + remainingCount);
-                        log.debug("trueCount = " + trueCount);
+                        // log.debug("remainingCount = " + remainingCount);
+                        // log.debug("trueCount = " + trueCount);
 
                         // Commit on transaction batch size boundaries. At this point in time the waiting producer remains
                         // blocked, even on the last message.
                         // Commit count is divided by noOfConsumers in p2p mode, so that each consumer only commits on
                         // each batch boundary. For pub/sub each consumer gets every message so no division is done.
                         long commitCount = _isPubSub ? remainingCount : (remainingCount / _noOfConsumers);
-                        log.debug("commitCount = " + commitCount);
+                        // log.debug("commitCount = " + commitCount);
 
                         if ((commitCount % _txBatchSize) == 0)
                         {
-                            log.debug("Trying commit for consumer " + consumerNo + ".");
+                            // log.debug("Trying commit for consumer " + consumerNo + ".");
                             commitTx(_consumerSession[consumerNo]);
                         }
 
@@ -946,7 +946,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         }
         finally
         {
-            log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo): ending");
+            // log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo): ending");
             NDC.clear();
         }
     }
@@ -970,8 +970,8 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     public int pingAndWaitForReply(Message message, int numPings, long timeout, String messageCorrelationId)
         throws JMSException, InterruptedException
     {
-        log.debug("public int pingAndWaitForReply(Message message, int numPings = " + numPings + ", long timeout = "
-            + timeout + ", String messageCorrelationId = " + messageCorrelationId + "): called");
+        /*log.debug("public int pingAndWaitForReply(Message message, int numPings = " + numPings + ", long timeout = "
+            + timeout + ", String messageCorrelationId = " + messageCorrelationId + "): called");*/
 
         // Generate a unique correlation id to put on the messages before sending them, if one was not specified.
         if (messageCorrelationId == null)
@@ -1014,16 +1014,16 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
                 allMessagesReceived = numReplies == getExpectedNumPings(numPings);
 
-                log.debug("numReplies = " + numReplies);
-                log.debug("allMessagesReceived = " + allMessagesReceived);
+                // log.debug("numReplies = " + numReplies);
+                // log.debug("allMessagesReceived = " + allMessagesReceived);
 
                 // Recheck the timeout condition.
                 long now = System.nanoTime();
                 long lastMessageReceievedAt = perCorrelationId.timeOutStart;
                 timedOut = (now - lastMessageReceievedAt) > (timeout * 1000000);
 
-                log.debug("now = " + now);
-                log.debug("lastMessageReceievedAt = " + lastMessageReceievedAt);
+                // log.debug("now = " + now);
+                // log.debug("lastMessageReceievedAt = " + lastMessageReceievedAt);
             }
             while (!timedOut && !allMessagesReceived);
 
@@ -1038,7 +1038,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
             // commitTx(_consumerSession);
 
-            log.debug("public int pingAndWaitForReply(Message message, int numPings, long timeout): ending");
+            // log.debug("public int pingAndWaitForReply(Message message, int numPings, long timeout): ending");
 
             return numReplies;
         }
@@ -1062,8 +1062,8 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public void pingNoWaitForReply(Message message, int numPings, String messageCorrelationId) throws JMSException
     {
-        log.debug("public void pingNoWaitForReply(Message message, int numPings = " + numPings
-            + ", String messageCorrelationId = " + messageCorrelationId + "): called");
+        /*log.debug("public void pingNoWaitForReply(Message message, int numPings = " + numPings
+            + ", String messageCorrelationId = " + messageCorrelationId + "): called");*/
 
         if (message == null)
         {
@@ -1147,7 +1147,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
                 if (unreceivedSize > _maxPendingSize)
                 {
-                    log.debug("unreceived size estimate over limit = " + unreceivedSize);
+                    // log.debug("unreceived size estimate over limit = " + unreceivedSize);
 
                     // Wait on the send pause barrier for the limit to be re-established.
                     try
@@ -1204,7 +1204,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         // Commit on every transaction batch size boundary. Here i + 1 is the count of actual messages sent.
         if (((i + 1) % _txBatchSize) == 0)
         {
-            log.debug("Trying commit on producer session.");
+            // log.debug("Trying commit on producer session.");
             committed = commitTx(_producerSession);
         }
 
@@ -1230,12 +1230,12 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         catch (JMSException e)
         {
             _publish = false;
-            log.debug("There was a JMSException: " + e.getMessage(), e);
+            // log.debug("There was a JMSException: " + e.getMessage(), e);
         }
         catch (InterruptedException e)
         {
             _publish = false;
-            log.debug("There was an interruption: " + e.getMessage(), e);
+            // log.debug("There was an interruption: " + e.getMessage(), e);
         }
     }
 
@@ -1342,7 +1342,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public void onException(JMSException e)
     {
-        log.debug("public void onException(JMSException e = " + e + "): called", e);
+        // log.debug("public void onException(JMSException e = " + e + "): called", e);
         _publish = false;
     }
 
@@ -1370,14 +1370,14 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public void close() throws JMSException
     {
-        log.debug("public void close(): called");
+        // log.debug("public void close(): called");
 
         try
         {
             if (_connection != null)
             {
                 _connection.close();
-                log.debug("Close connection.");
+                // log.debug("Close connection.");
             }
 
             for (int i = 0; i < _noOfConsumers; i++)
@@ -1385,7 +1385,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                 if (_consumerConnection[i] != null)
                 {
                     _consumerConnection[i].close();
-                    log.debug("Closed consumer connection.");
+                    // log.debug("Closed consumer connection.");
                 }
             }
         }
@@ -1425,7 +1425,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     protected boolean commitTx(Session session) throws JMSException
     {
-        log.debug("protected void commitTx(Session session): called");
+        // log.debug("protected void commitTx(Session session): called");
 
         boolean committed = false;
 
@@ -1444,7 +1444,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
         if (session.getTransacted())
         {
-            log.debug("Session is transacted.");
+            // log.debug("Session is transacted.");
 
             try
             {
@@ -1462,7 +1462,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                 long start = System.nanoTime();
                 session.commit();
                 committed = true;
-                log.debug("Time taken to commit :" + ((System.nanoTime() - start) / 1000000f) + " ms");
+                // log.debug("Time taken to commit :" + ((System.nanoTime() - start) / 1000000f) + " ms");
 
                 if (_failAfterCommit)
                 {
@@ -1475,26 +1475,26 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                     waitForUser(KILL_BROKER_PROMPT);
                 }
 
-                log.debug("Session Commited.");
+                // log.debug("Session Commited.");
             }
             catch (JMSException e)
             {
-                log.debug("JMSException on commit:" + e.getMessage(), e);
+                // log.debug("JMSException on commit:" + e.getMessage(), e);
 
                 // Warn that the bounce back client is not available.
                 if (e.getLinkedException() instanceof AMQNoConsumersException)
                 {
-                    log.debug("No consumers on queue.");
+                    // log.debug("No consumers on queue.");
                 }
 
                 try
                 {
                     session.rollback();
-                    log.debug("Message rolled back.");
+                    // log.debug("Message rolled back.");
                 }
                 catch (JMSException jmse)
                 {
-                    log.debug("JMSE on rollback:" + jmse.getMessage(), jmse);
+                    // log.debug("JMSE on rollback:" + jmse.getMessage(), jmse);
 
                     // Both commit and rollback failed. Throw the rollback exception.
                     throw jmse;
@@ -1545,9 +1545,9 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public int getExpectedNumPings(int numpings)
     {
-        log.debug("public int getExpectedNumPings(int numpings = " + numpings + "): called");
+        // log.debug("public int getExpectedNumPings(int numpings = " + numpings + "): called");
 
-        log.debug("Each ping will be received by " + (_isPubSub ? getConsumersPerDestination() : 1) + " consumers.");
+        // log.debug("Each ping will be received by " + (_isPubSub ? getConsumersPerDestination() : 1) + " consumers.");
 
         return numpings * (_isPubSub ? getConsumersPerDestination() : 1);
     }
