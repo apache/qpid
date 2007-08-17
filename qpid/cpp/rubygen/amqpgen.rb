@@ -174,6 +174,13 @@ class AmqpRoot < AmqpElement
   
 end
 
+# Collect information about generated files.
+class GenFiles
+  @@files =[]
+  def GenFiles.add(f) @@files << f; puts f; end
+  def GenFiles.get() @@files; end
+end
+
 # Base class for code generators.
 # Supports setting a per-line prefix, useful for e.g. indenting code.
 # 
@@ -191,7 +198,7 @@ class Generator
 
   # Create a new file, set @out. 
   def file(file)
-    puts file                   
+    GenFiles.add file
     if (@outdir != "-")         
       path=Pathname.new "#{@outdir}/#{file}"
       path.parent.mkpath
