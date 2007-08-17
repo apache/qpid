@@ -64,6 +64,7 @@ class QueueTest : public CppUnit::TestCase
     CPPUNIT_TEST(testDequeue);
     CPPUNIT_TEST(testBound);
     CPPUNIT_TEST(testAsyncMessage);
+    CPPUNIT_TEST(testAsyncMessageCount);
     CPPUNIT_TEST_SUITE_END();
 
 
@@ -95,6 +96,21 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(msg1.get(), received.get());
  	
    
+    }
+    
+    
+    void testAsyncMessageCount(){
+        Queue::shared_ptr queue(new Queue("my_test_queue", true));
+        Message::shared_ptr msg1 = message("e", "A");
+	
+        queue->process(msg1);
+	sleep(2);
+	uint32_t compval=0;
+        CPPUNIT_ASSERT_EQUAL(compval, queue->getMessageCount());
+ 	msg1->enqueueComplete();
+	compval=1;
+        CPPUNIT_ASSERT_EQUAL(compval, queue->getMessageCount());
+    
     }
     
     void testConsumers(){
