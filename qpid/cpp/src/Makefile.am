@@ -52,7 +52,7 @@ generate_MethodHolderMaxSize_h_SOURCES=generate_MethodHolderMaxSize_h.cpp
 qpid/framing/MethodHolderMaxSize.h: generate_MethodHolderMaxSize_h
 	./generate_MethodHolderMaxSize_h
 BUILT_SOURCES=qpid/framing/MethodHolderMaxSize.h
-CLEANFILES=qpid/framing/MethodHolderMaxSize.h
+DISTCLEANFILES=qpid/framing/MethodHolderMaxSize.h
 
 
 ## Compiler flags
