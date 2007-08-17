@@ -17,6 +17,9 @@
  */
 package org.apache.qpidity;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Implements the interface BrokerDetails
  */
@@ -31,11 +34,17 @@ public class BrokerDetailsImpl implements BrokerDetails
     private String _host;
     private int _port;
     private String _virtualHost;
-    private String _userName;
-    private String _password;
+    private String _userName = DEFAULT_USERNAME;
+    private String _password = DEFAULT_PASSWORD;
     private String _protocol;
+    private Map<String,String> _props = new HashMap<String,String>();;
+    
     //--- Constructors
 
+    public BrokerDetailsImpl()
+    {        
+    }
+    
     /**
      * Create a new broker details given all the reuqired information
      *
@@ -47,7 +56,7 @@ public class BrokerDetailsImpl implements BrokerDetails
      * @param password    The user password.
      */
     public BrokerDetailsImpl(String protocol, String host, int port, String virtualHost, String userName,
-                             String password)
+                             String password,Map<String,String> props)
     {
         _protocol = protocol;
         _host = host;
@@ -55,6 +64,7 @@ public class BrokerDetailsImpl implements BrokerDetails
         _virtualHost = virtualHost;
         _userName = userName;
         _password = password;
+        _props = props;
     }
 
     /**
@@ -177,7 +187,7 @@ public class BrokerDetailsImpl implements BrokerDetails
      *
      * @param userName The user name
      */
-    public void getUserName(String userName)
+    public void setUserName(String userName)
     {
         _userName = userName;
     }
@@ -200,5 +210,51 @@ public class BrokerDetailsImpl implements BrokerDetails
     public void setProtocol(String protocol)
     {
         _protocol = protocol;
+    }
+    
+    /**
+     * Ex: keystore path
+     * 
+     * @return the Properties associated with this connection.
+     */
+    public Map<String,String> getProperties()
+    {
+        return _props;
+    }
+    
+    /**
+     * Sets the properties associated with this connection
+     * 
+     * @param props
+     */
+    public void setProperties(Map<String,String> props)
+    {
+        _props = props;
+    }
+    
+    public void setProperty(String key,String value)
+    {
+        _props.put(key, value);
+    }
+    
+    public String toString()
+    {
+        StringBuilder b = new StringBuilder();
+        b.append("[username=" + _userName);
+        b.append(",password=" + _password);
+        b.append(",transport="+ _protocol);
+        b.append(",host=" + _host);
+        b.append(",port=" + _port + "]");
+        b.append(" - Properties[");
+        if (_props != null)
+        {
+            for (String k:_props.keySet())
+            {
+                b.append(k + "=" + _props.get(k) + ",");
+            }
+        }
+        b.append("]");
+        
+        return b.toString();
     }
 }
