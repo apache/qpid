@@ -1178,6 +1178,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         {
             int num = numSent.incrementAndGet();
             message.setIntProperty("MSG_NUM", num);
+            setTimestamp(message);
             _producer.send(message);
             // log.info("Message " + num + " sent.");
         }
@@ -1185,6 +1186,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         {
             int num = numSent.incrementAndGet();
             message.setIntProperty("MSG_NUM", num);
+            setTimestamp(message);
             _producer.send(destination, message);
             // log.info("Message " + num + " sent.");
         }
@@ -1222,7 +1224,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         {
             // Generate a sample message and time stamp it.
             Message msg = getTestMessage(_replyDestination, _messageSize, _persistent);
-            setTimestamp(msg);
+            // setTimestamp(msg);
 
             // Send the message and wait for a reply.
             pingAndWaitForReply(msg, TX_BATCH_SIZE_DEFAULT, TIMEOUT_DEFAULT, null);
@@ -1273,7 +1275,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
         // Timestamp the message in nanoseconds.
 
-        setTimestamp(msg);
+        // setTimestamp(msg);
 
         return msg;
     }

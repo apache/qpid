@@ -323,7 +323,7 @@
                              Non-tx, and 1 msg per tx.
                              Persistent and non-persistent.
                              No rate limiting.
-                             Message sizes from 128 bytes to 1 Meg.
+                             Message size 256 bytes.
                         -->
                         <TQB-Qpid-01-1C> -n TQB-Qpid-01       -d1M  -s[1000]   -c[1]                  -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=false pubsub=false transacted=true  commitBatchSize=1   batchSize=1000   messageSize=256     destinationCount=1  rate=0     maxPending=80000000 uniqueDests=false numConsumers=1 </TQB-Qpid-01-1C>
                         <TQB-Qpid-01-2C> -n TQB-Qpid-01       -d1M  -s[1000]   -c[1]                  -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=false pubsub=false transacted=true  commitBatchSize=1   batchSize=1000   messageSize=256     destinationCount=1  rate=0     maxPending=80000000 uniqueDests=false numConsumers=2 </TQB-Qpid-01-2C>
@@ -353,6 +353,15 @@
                         <PQB-Qpid-02-16C>-n PQB-Qpid-02       -d1M  -s[1000]   -c[1]                  -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true  pubsub=false transacted=false commitBatchSize=1   batchSize=1000   messageSize=256     destinationCount=1  rate=0     maxPending=80000000 uniqueDests=false numConsumers=16</PQB-Qpid-02-16C>
                         <PQB-Qpid-02-32C>-n PQB-Qpid-02       -d1M  -s[1000]   -c[1]                  -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=true  pubsub=false transacted=false commitBatchSize=1   batchSize=1000   messageSize=256     destinationCount=1  rate=0     maxPending=80000000 uniqueDests=false numConsumers=32</PQB-Qpid-02-32C>
 
+                        <TQB-Qpid-01-1CL>-n TQB-Qpid-01       -d1M  -s[1000]   -c[1]                  -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=false pubsub=false transacted=true  commitBatchSize=1   batchSize=1000   messageSize=256     destinationCount=1  rate=0     maxPending=80000000 uniqueDests=false numConsumers=1 </TQB-Qpid-01-1CL>
+
+                        <!--
+                             Bench mark 2. P2P messaging 1:1, scaled up from 1 to 32 times. Queues not shared, just one to one throughput.
+                             Non-tx, and 1 msg per tx.
+                             Persistent and non-persistent.
+                             No rate limiting.
+                             Message size from 128 bytes to 1 Meg.
+                        -->
                         <TQB-Qpid-01-512b>-n TQB-Qpid-01-512b -d1M  -s[1000]   -c[1,32],samples=6,exp -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=false pubsub=false transacted=true  commitBatchSize=1   batchSize=1000   messageSize=512     destinationCount=1  rate=0     maxPending=80000000 uniqueDests=true </TQB-Qpid-01-512b>
                         <TQB-Qpid-01-1K>-n TQB-Qpid-01-1K     -d1M  -s[1000]   -c[1,32],samples=6,exp -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=false pubsub=false transacted=true  commitBatchSize=1   batchSize=1000   messageSize=1024    destinationCount=1  rate=0     maxPending=80000000 uniqueDests=true </TQB-Qpid-01-1K>
                         <TQB-Qpid-01-5K>-n TQB-Qpid-01-5K     -d1M  -s[1000]   -c[1,32],samples=6,exp -o $QPID_WORK/results -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf persistent=false pubsub=false transacted=true  commitBatchSize=1   batchSize=1000   messageSize=5120    destinationCount=1  rate=0     maxPending=80000000 uniqueDests=true </TQB-Qpid-01-5K>
