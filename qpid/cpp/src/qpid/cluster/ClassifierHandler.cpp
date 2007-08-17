@@ -36,7 +36,7 @@ typedef uint32_t FullMethodId;  // Combind class & method ID.
 
 FullMethodId fullId(ClassId c, MethodId m) { return c<<16+m; }
 
-FullMethodId fullId(const AMQMethodBody*& body) {
+FullMethodId fullId(const AMQMethodBody* body) {
     return fullId(body->amqpClassId(), body->amqpMethodId());
 }
 
