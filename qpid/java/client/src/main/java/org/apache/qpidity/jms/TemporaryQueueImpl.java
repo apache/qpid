@@ -33,6 +33,11 @@ public class TemporaryQueueImpl extends QueueImpl implements TemporaryQueue, Tem
      */
     private boolean _isDeleted;
 
+    /**
+     * The session used to create this destination
+     */
+    private SessionImpl _session;
+
     //--- constructor
     /**
      * Create a new TemporaryQueueImpl.
@@ -42,16 +47,15 @@ public class TemporaryQueueImpl extends QueueImpl implements TemporaryQueue, Tem
      */
     protected TemporaryQueueImpl(SessionImpl session) throws QpidException
     {
+        super("TempQueue-" + UUID.randomUUID());
         // temporary destinations do not have names
-        super(session);
-        _queueName = "TempQueue-" + UUID.randomUUID();
-        _destinationName = _queueName;
         _isAutoDelete = false;
         _isDurable = false;
         _isExclusive = false;
         _isDeleted = false;
+        _session = session;
         // we must create this queue
-        registerQueue(true);
+        registerQueue(session, true);
     }
 
     //-- TemporaryDestination Interface

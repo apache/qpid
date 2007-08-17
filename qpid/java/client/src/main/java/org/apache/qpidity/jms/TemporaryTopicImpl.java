@@ -34,8 +34,13 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic, Tem
      */
     private boolean _isDeleted = false;
 
+    /**
+     * The session used to create this destination
+     */
+    private SessionImpl _session;
+
     //--- constructor
-     /**
+    /**
      * Create a new TemporaryTopicImpl with a given name.
      *
      * @param session The session used to create this TemporaryTopicImpl.
@@ -45,6 +50,7 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic, Tem
     {
         // temporary destinations do not have names.
         super(session, "TemporayTopic-" + UUID.randomUUID());
+        _session = session;
     }
 
     //-- TemporaryDestination Interface
@@ -56,7 +62,10 @@ public class TemporaryTopicImpl extends TopicImpl implements TemporaryTopic, Tem
     //-- TemporaryTopic Interface
     public void delete() throws JMSException
     {
-        // todo: delete this destinaiton
+        if (!_isDeleted)
+        {
+            _session.getQpidSession().queueDelete(_queueName);
+        }
         _isDeleted = true;
     }
 }
