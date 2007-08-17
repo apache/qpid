@@ -825,7 +825,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
             log.debug("correlationID = " + correlationID);
 
             int num = message.getIntProperty("MSG_NUM");
-            log.info("Message " + num + " received.");
+            // log.info("Message " + num + " received.");
 
             boolean isRedelivered = message.getJMSRedelivered();
             log.debug("isRedelivered = " + isRedelivered);
@@ -1179,14 +1179,14 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
             int num = numSent.incrementAndGet();
             message.setIntProperty("MSG_NUM", num);
             _producer.send(message);
-            log.info("Message " + num + " sent.");
+            // log.info("Message " + num + " sent.");
         }
         else
         {
             int num = numSent.incrementAndGet();
             message.setIntProperty("MSG_NUM", num);
             _producer.send(destination, message);
-            log.info("Message " + num + " sent.");
+            // log.info("Message " + num + " sent.");
         }
 
         // Increase the unreceived size, this may actually happen aftern the message is recevied.
