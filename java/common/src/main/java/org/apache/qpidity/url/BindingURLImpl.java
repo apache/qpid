@@ -25,9 +25,9 @@ import java.util.HashMap;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class AMQBindingURL implements BindingURL
+public class BindingURLImpl implements BindingURL
 {
-    private static final Logger _logger = LoggerFactory.getLogger(AMQBindingURL.class);
+    private static final Logger _logger = LoggerFactory.getLogger(BindingURLImpl.class);
 
     String _url;
     String _exchangeClass;
@@ -36,7 +36,7 @@ public class AMQBindingURL implements BindingURL
     String _queueName;
     private HashMap<String, String> _options;
 
-    public AMQBindingURL(String url) throws URLSyntaxException
+    public BindingURLImpl(String url) throws URLSyntaxException
     {
         // format:
         // <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
