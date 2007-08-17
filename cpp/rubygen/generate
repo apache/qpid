@@ -4,10 +4,11 @@ require 'amqpgen'
 #
 # Run a set of code generation templates.
 #
-
 if ARGV.size < 3
   puts <<EOS
 Usage: #{ARGV[0]} OUTDIR  SPEC.xml [ ... ] TEMPLATE.rb [ ... ]
+or:    #{ARGV[0]} OUTDIR  SPEC.xml [ ... ] all [ makefragment.mk ]
+
 Parse all SPEC.xml files to create an AMQP model, run each TEMPLATE
 putting the resulting files under OUTDIR. Prints a list of files
 generated to standard output.
@@ -16,8 +17,43 @@ If OUTDIR is '-'  then just prints file list without generating files.
 EOS
   exit 1
 end
+
 Outdir=ARGV[0]
-specs=ARGV.grep(/\.xml$/)
-templates=ARGV.grep(/\.rb$/)
-Amqp=AmqpRoot.new(*specs)
+Specs=ARGV.grep(/\.xml$/)
+Amqp=AmqpRoot.new(*Specs)
+
+# Run selected templates
+if ARGV.grep("^all$")
+  templates=Dir["#{File.dirname __FILE__}/templates/*.rb"]
+else
+  templates=ARGV.grep(/\.rb$/)
+end
 templates.each { |t| require t }
+
+# Generate makefile
+makefile=ARGV.grep(/.mk$/)[0]
+if makefile
+  dir=Dir.getwd
+  Dir.chdir File.dirname(__FILE__)
+  generator_files=Dir["**/*.rb"] << File.basename(__FILE__)
+  Dir.chdir dir
+  rgen_generator=generator_files.map{ |f| "$(rgen_dir)/#{f}" }
+
+  File.open(makefile, 'w') { |out|
+    out << <<EOS
+# Generated makefile fragment.
+# Including makefile defines $(rgen_dir) $(rgen_cmd) and $(specs).
+
+rgen_generator=#{rgen_generator.join(" \\\n	")}
+
+rgen_srcs=#{GenFiles.get.join(" \\\n	")}
+
+$(rgen_srcs) $(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)
+	$(rgen_cmd)
+
+# Empty rule in case a generator file is renamed/removed.
+$(rgen_generator): 
+EOS
+  }
+end
+
