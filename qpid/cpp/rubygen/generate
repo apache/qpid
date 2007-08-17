@@ -48,11 +48,13 @@ rgen_generator=#{rgen_generator.join(" \\\n	")}
 
 rgen_srcs=#{GenFiles.get.join(" \\\n	")}
 
+if GENERATE
 $(rgen_srcs) $(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)
 	$(rgen_cmd)
 
 # Empty rule in case a generator file is renamed/removed.
-$(rgen_generator): 
+$(rgen_generator):
+endif  
 EOS
   }
 end
