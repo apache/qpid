@@ -103,9 +103,9 @@ void Queue::process(Message::shared_ptr& msg){
 }
 
 void Queue::requeue(Message::shared_ptr& msg){
- 
     {
     	Mutex::ScopedLock locker(messageLock);
+   	msg->enqueueComplete(); // mark the message as enqueued
     	messages.push_front(msg);
     }
     serializer.execute(dispatchCallback);
