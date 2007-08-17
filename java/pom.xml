@@ -154,7 +154,7 @@ under the License.
         <module>cluster</module>
         <module>systests</module>
         <module>perftests</module>
-        <module>integrationtests</module>
+       <!-- <module>integrationtests</module> -->
         <module>management/eclipse-plugin</module>
         <module>client/example</module>
         <module>client-java14</module>
