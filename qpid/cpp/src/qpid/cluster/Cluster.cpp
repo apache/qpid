@@ -146,7 +146,7 @@ bool Cluster::wait(boost::function<bool(const Cluster&)> predicate,
 void Cluster::handleClusterFrame(Id from, AMQFrame& frame) {
     // TODO aconway 2007-06-20: use visitor pattern here.
     ClusterNotifyBody* notifyIn=
-        dynamic_cast<ClusterNotifyBody*>(frame.getBody().get());
+        dynamic_cast<ClusterNotifyBody*>(frame.getBody());
     assert(notifyIn);
     MemberList list;
     {
