@@ -7,6 +7,7 @@ set -e
 test -z "$JAVA" && JAVA=java ; 
 test -z "$JAVAC" && JAVAC=javac ;
 
+srcdir=`dirname $0`
 checkspecs() {
     for s in $specs; do test -f $s || return 1; done
     return 0
@@ -41,7 +42,7 @@ make_assign() {
 	    `find ../gentools \( -name '*.java' -o -name '*.tmpl' \) -print`
     fi
 ) > generate.mk-t
-mv generate.mk-t generate.mk
+mv generate.mk-t $srcdir/generate.mk
 
 
 
