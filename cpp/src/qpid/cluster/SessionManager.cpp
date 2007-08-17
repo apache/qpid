@@ -55,7 +55,7 @@ struct BrokerHandler : public FrameHandler, private ChannelAdapter, private Deli
         adapter(channel, connection, broker, *this) {}
 
     void handle(AMQFrame& frame) {
-        AMQMethodBody* body=dynamic_cast<AMQMethodBody*>(frame.body.get());
+        AMQMethodBody* body=dynamic_cast<AMQMethodBody*>(frame.getBody());
         assert(body);
         body->invoke(adapter);
     }

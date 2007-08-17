@@ -21,6 +21,7 @@
 
 #include "qpid/framing/SessionPingBody.h"
 #include "qpid/framing/SessionPongBody.h"
+#include "qpid/framing/all_method_bodies.h"
 #include "qpid/cluster/ClassifierHandler.h"
 
 #define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
