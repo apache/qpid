@@ -132,6 +132,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class PingPongProducer implements Runnable /*, MessageListener*/, ExceptionListener
 {
+    /** Used for debugging. */
     private static final Logger log = Logger.getLogger(PingPongProducer.class);
 
     /** Holds the name of the property to get the test message size from. */
@@ -450,12 +451,6 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
     /** Holds the message consumer to receive the ping replies through. */
     protected MessageConsumer[] _consumer;
-
-    /**
-     * Holds the number of consumers that will be attached to each destination in the test. Each pings will result in
-     * a message being received by each of these clients in a pub/sub tests, and by only one at a time in a p2p test.
-     */
-    static int _consumersPerDestination = 1;
 
     /** The prompt to display when asking the user to kill the broker for failover testing. */
     private static final String KILL_BROKER_PROMPT = "Kill broker now, then press Return.";
@@ -1488,7 +1483,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public int getConsumersPerDestination()
     {
-        return _consumersPerDestination;
+        return _noOfConsumers;
     }
 
     /**
