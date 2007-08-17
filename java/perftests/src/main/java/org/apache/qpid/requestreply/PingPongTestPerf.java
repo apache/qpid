@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.requestreply;
 
-import javax.jms.*;
-
 import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -31,6 +29,8 @@ import org.apache.log4j.Logger;
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
+
+import javax.jms.*;
 
 /**
  * PingPongTestPerf is a full round trip ping test, that has been written with the intention of being scaled up to run
@@ -196,7 +196,7 @@ public class PingPongTestPerf extends AsymptoticTestCase
                 // Establish a ping-pong client on the ping queue to send the pings and receive replies with.
                 perThreadSetup._testPingProducer = new PingPongProducer(testParameters);
                 perThreadSetup._testPingProducer.establishConnection(true, true);
-                perThreadSetup._testPingProducer.getConnection().start();
+                perThreadSetup._testPingProducer.start();
             }
 
             // Attach the per-thread set to the thread.

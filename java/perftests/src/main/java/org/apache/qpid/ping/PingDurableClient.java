@@ -28,10 +28,7 @@ import org.apache.qpid.util.CommandLineParser;
 import uk.co.thebadgerset.junit.extensions.util.MathUtils;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
+import javax.jms.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -220,7 +217,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
 
         // Establish the connection and the message producer.
         establishConnection(true, false);
-        getConnection().start();
+        _connection.start();
 
         Message message = getTestMessage(getReplyDestinations().get(0), _messageSize, _persistent);
 
@@ -330,8 +327,8 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         _queueSharedID = new AtomicInteger();
 
         establishConnection(false, true);
-        _consumer.setMessageListener(null);
-        _connection.start();
+        _consumer[0].setMessageListener(null);
+        _consumerConnection[0].start();
 
         // Try to receive all of the pings that were successfully sent.
         int messagesReceived = 0;
@@ -340,7 +337,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         while (!endCondition)
         {
             // Message received = _consumer.receiveNoWait();
-            Message received = _consumer.receive(TIME_OUT);
+            Message received = _consumer[0].receive(TIME_OUT);
             log.debug("received = " + received);
 
             if (received != null)
@@ -367,7 +364,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         {
             try
             {
-                _consumerSession.commit();
+                _consumerSession[0].commit();
                 System.out.println("Committed for all messages received.");
             }
             catch (JMSException e)
@@ -376,7 +373,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
                 System.out.println("Error during commit.");
                 try
                 {
-                    _consumerSession.rollback();
+                    _consumerSession[0].rollback();
                     System.out.println("Rolled back on all messages received.");
                 }
                 catch (JMSException e2)

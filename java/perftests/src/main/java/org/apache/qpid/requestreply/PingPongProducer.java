@@ -84,7 +84,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * <tr><td> username         <td> guest    <td> The username to access the broker with.
  * <tr><td> password         <td> guest    <td> The password to access the broker with.
  * <tr><td> selector         <td> null     <td> Not used. Defines a message selector to filter pings with.
- * <tr><td> destinationCount <td> 1        <td> The number of receivers listening to the pings.
+ * <tr><td> destinationCount <td> 1        <td> The number of destinations to send pings to.
+ * <tr><td> numConsumers     <td> 1        <td> The number of consumers on each destination.
  * <tr><td> timeout          <td> 30000    <td> In milliseconds. The timeout to stop waiting for replies.
  * <tr><td> commitBatchSize  <td> 1        <td> The number of messages per transaction in transactional mode.
  * <tr><td> uniqueDests      <td> true     <td> Whether each receivers only listens to one ping destination or all.
@@ -129,7 +130,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *       Instead make mina use a bounded blocking buffer, or other form of back pressure, to stop data being written
  *       faster than it can be sent.
  */
-public class PingPongProducer implements Runnable, MessageListener, ExceptionListener
+public class PingPongProducer implements Runnable /*, MessageListener*/, ExceptionListener
 {
     private static final Logger log = Logger.getLogger(PingPongProducer.class);
 
@@ -241,6 +242,12 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Defines the default number of destinations to ping. */
     public static final int DESTINATION_COUNT_DEFAULT = 1;
 
+    /** Holds the name of the property to get the number of consumers per destination from. */
+    public static final String NUM_CONSUMERS_PROPNAME = "numConsumers";
+
+    /** Defines the default number consumers per destination. */
+    public static final int NUM_CONSUMERS_DEFAULT = 1;
+
     /** Holds the name of the property to get the waiting timeout for response messages. */
     public static final String TIMEOUT_PROPNAME = "timeout";
 
@@ -309,6 +316,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         defaults.setPropertyIfNull(FAIL_ONCE_PROPNAME, FAIL_ONCE_DEFAULT);
         defaults.setPropertyIfNull(TX_BATCH_SIZE_PROPNAME, TX_BATCH_SIZE_DEFAULT);
         defaults.setPropertyIfNull(DESTINATION_COUNT_PROPNAME, DESTINATION_COUNT_DEFAULT);
+        defaults.setPropertyIfNull(NUM_CONSUMERS_PROPNAME, NUM_CONSUMERS_DEFAULT);
         defaults.setPropertyIfNull(RATE_PROPNAME, RATE_DEFAULT);
         defaults.setPropertyIfNull(TIMEOUT_PROPNAME, TIMEOUT_DEFAULT);
         defaults.setPropertyIfNull(MAX_PENDING_PROPNAME, MAX_PENDING_DEFAULT);
@@ -361,7 +369,13 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the number of sends that should be performed in every transaction when using transactions. */
     protected int _txBatchSize;
 
+    /** Holds the number of destinations to ping. */
     protected int _noOfDestinations;
+
+    /** Holds the number of consumers per destination. */
+    protected int _noOfConsumers;
+
+    /** Holds the maximum send rate in herz. */
     protected int _rate;
 
     /**
@@ -395,8 +409,11 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     /** Holds the connection to the broker. */
     protected Connection _connection;
 
+    /** Holds the consumer connections. */
+    protected Connection[] _consumerConnection;
+
     /** Holds the controlSession on which ping replies are received. */
-    protected Session _consumerSession;
+    protected Session[] _consumerSession;
 
     /** Holds the producer controlSession, needed to create ping messages. */
     protected Session _producerSession;
@@ -432,7 +449,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     protected MessageProducer _producer;
 
     /** Holds the message consumer to receive the ping replies through. */
-    protected MessageConsumer _consumer;
+    protected MessageConsumer[] _consumer;
 
     /**
      * Holds the number of consumers that will be attached to each destination in the test. Each pings will result in
@@ -479,6 +496,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         _failOnce = properties.getPropertyAsBoolean(FAIL_ONCE_PROPNAME);
         _txBatchSize = properties.getPropertyAsInteger(TX_BATCH_SIZE_PROPNAME);
         _noOfDestinations = properties.getPropertyAsInteger(DESTINATION_COUNT_PROPNAME);
+        _noOfConsumers = properties.getPropertyAsInteger(NUM_CONSUMERS_PROPNAME);
         _rate = properties.getPropertyAsInteger(RATE_PROPNAME);
         _isPubSub = properties.getPropertyAsBoolean(PUBSUB_PROPNAME);
         _isUnique = properties.getPropertyAsBoolean(UNIQUE_DESTS_PROPNAME);
@@ -524,11 +542,17 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         createConnection(_clientID);
 
         // Create transactional or non-transactional sessions, based on the command line arguments.
-        _producerSession = (Session) getConnection().createSession(_transacted, _ackMode);
-        _consumerSession = (Session) getConnection().createSession(_transacted, _ackMode);
+        _producerSession = (Session) _connection.createSession(_transacted, _ackMode);
+
+        _consumerSession = new Session[_noOfConsumers];
+
+        for (int i = 0; i < _noOfConsumers; i++)
+        {
+            _consumerSession[i] = (Session) _consumerConnection[i].createSession(_transacted, _ackMode);
+        }
 
         // Create the destinations to send pings to and receive replies from.
-        _replyDestination = _consumerSession.createTemporaryQueue();
+        _replyDestination = _consumerSession[0].createTemporaryQueue();
         createPingDestinations(_noOfDestinations, _selector, _destinationName, _isUnique, _isDurable);
 
         // Create the message producer only if instructed to.
@@ -556,6 +580,13 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     protected void createConnection(String clientID) throws AMQException, URLSyntaxException
     {
         _connection = new AMQConnection(_brokerDetails, _username, _password, clientID, _virtualpath);
+
+        _consumerConnection = new Connection[_noOfConsumers];
+
+        for (int i = 0; i < _noOfConsumers; i++)
+        {
+            _consumerConnection[i] = new AMQConnection(_brokerDetails, _username, _password, clientID, _virtualpath);
+        }
     }
 
     /**
@@ -576,13 +607,13 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
             pingProducer.establishConnection(true, true);
 
             // Start the ping producers dispatch thread running.
-            pingProducer.getConnection().start();
+            pingProducer._connection.start();
 
             // Create a shutdown hook to terminate the ping-pong producer.
             Runtime.getRuntime().addShutdownHook(pingProducer.getShutdownHook());
 
             // Ensure that the ping pong producer is registered to listen for exceptions on the connection too.
-            pingProducer.getConnection().setExceptionListener(pingProducer);
+            pingProducer._connection.setExceptionListener(pingProducer);
 
             // Create the ping loop thread and run it until it is terminated by the shutdown hook or exception.
             Thread pingThread = new Thread(pingProducer);
@@ -743,13 +774,27 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
         for (Destination destination : destinations)
         {
-            // Create a consumer for the destination and set this pinger to listen to its messages.
-            _consumer =
-                _consumerSession.createConsumer(destination, PREFETCH_DEFAULT, NO_LOCAL_DEFAULT, EXCLUSIVE_DEFAULT,
-                    selector);
-            _consumer.setMessageListener(this);
+            _consumer = new MessageConsumer[_noOfConsumers];
 
-            log.debug("Set this to listen to replies sent to destination: " + destination);
+            for (int i = 0; i < _noOfConsumers; i++)
+            {
+                // Create a consumer for the destination and set this pinger to listen to its messages.
+                _consumer[i] =
+                    _consumerSession[i].createConsumer(destination, PREFETCH_DEFAULT, NO_LOCAL_DEFAULT, EXCLUSIVE_DEFAULT,
+                        selector);
+
+                final int consumerNo = i;
+
+                _consumer[i].setMessageListener(new MessageListener()
+                    {
+                        public void onMessage(Message message)
+                        {
+                            onMessageWithConsumerNo(message, consumerNo);
+                        }
+                    });
+
+                log.debug("Set this to listen to replies sent to destination: " + destination);
+            }
         }
     }
 
@@ -760,7 +805,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
      *
      * @param message The received message.
      */
-    public void onMessage(Message message)
+    public void onMessageWithConsumerNo(Message message, int consumerNo)
     {
         // log.debug("public void onMessage(Message message): called");
 
@@ -831,7 +876,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                     // blocked, even on the last message.
                     if ((remainingCount % _txBatchSize) == 0)
                     {
-                        commitTx(_consumerSession);
+                        commitTx(_consumerSession[consumerNo]);
                     }
 
                     // Forward the message and remaining count to any interested chained message listener.
@@ -956,7 +1001,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                 log.info("Got all replies on id, " + messageCorrelationId);
             }
 
-            commitTx(_consumerSession);
+            // commitTx(_consumerSession);
 
             log.debug("public int pingAndWaitForReply(Message message, int numPings, long timeout): ending");
 
@@ -1226,6 +1271,16 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
         _publish = false;
     }
 
+    public void start() throws JMSException
+    {
+        _connection.start();
+
+        for (int i = 0; i < _noOfConsumers; i++)
+        {
+            _consumerConnection[i].start();
+        }
+    }
+
     /** Implements a ping loop that repeatedly pings until the publish flag becomes false. */
     public void run()
     {
@@ -1266,16 +1321,6 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
     }
 
     /**
-     * Gets the underlying connection that this ping client is running on.
-     *
-     * @return The underlying connection that this ping client is running on.
-     */
-    public Connection getConnection()
-    {
-        return _connection;
-    }
-
-    /**
      * Closes the pingers connection.
      *
      * @throws JMSException All JMSException are allowed to fall through.
@@ -1291,12 +1336,22 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
                 _connection.close();
                 log.debug("Close connection.");
             }
+
+            for (int i = 0; i < _noOfConsumers; i++)
+            {
+                if (_consumerConnection[i] != null)
+                {
+                    _consumerConnection[i].close();
+                    log.debug("Closed consumer connection.");
+                }
+            }
         }
         finally
         {
             _connection = null;
             _producerSession = null;
             _consumerSession = null;
+            _consumerConnection = null;
             _producer = null;
             _consumer = null;
             _pingDestinations = null;
@@ -1452,7 +1507,7 @@ public class PingPongProducer implements Runnable, MessageListener, ExceptionLis
 
     /**
      * Defines a chained message listener interface that can be attached to this pinger. Whenever this pinger's {@link
-     * PingPongProducer#onMessage} method is called, the chained listener set through the {@link
+     * PingPongProducer#onMessageWithConsumerNo} method is called, the chained listener set through the {@link
      * PingPongProducer#setChainedMessageListener} method is passed the message, and the remaining expected count of
      * messages with that correlation id.
      *

@@ -142,7 +142,7 @@ public class PingTestPerf extends AsymptoticTestCase implements TestThreadAware
                 perThreadSetup._pingClient.establishConnection(true, true);
             }
             // Start the client connection
-            perThreadSetup._pingClient.getConnection().start();
+            perThreadSetup._pingClient.start();
 
             // Attach the per-thread set to the thread.
             threadSetup.set(perThreadSetup);
