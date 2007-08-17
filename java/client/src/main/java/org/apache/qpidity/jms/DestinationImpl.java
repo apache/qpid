@@ -19,23 +19,25 @@ package org.apache.qpidity.jms;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.url.BindingURL;
+import org.apache.qpidity.url.BindingURLImpl;
+import org.apache.qpidity.url.URLSyntaxException;
+import org.apache.qpid.url.URLHelper;
 
 import javax.jms.Destination;
+import javax.naming.Reference;
+import javax.naming.NamingException;
+import javax.naming.StringRefAddr;
+import javax.naming.Referenceable;
 
 /**
  * Implementation of the JMS Destination interface
  */
-public class DestinationImpl implements Destination
+public class DestinationImpl implements Destination, Referenceable
 {
     /**
      * The destination's name
      */
     protected String _destinationName = null;
-
-    /**
-     * The session used to create this destination
-     */
-    protected SessionImpl _session;
 
     /**
      * The excahnge name
@@ -67,28 +69,26 @@ public class DestinationImpl implements Destination
      */
     protected boolean _isDurable;
 
-    //--- Constructor
     /**
-     * Create a new DestinationImpl.
-     *
-     * @param session The session used to create this DestinationImpl.
+     * The biding URL used to create this destiantion
      */
-    protected DestinationImpl(SessionImpl session)
-    {
-       _session = session;
-    }
+    protected BindingURL _url;
 
+    //--- Constructor
+
+    protected DestinationImpl(String name) throws QpidException
+    {
+       _queueName = name;
+    }
 
     /**
      * Create a destiantion from a binding URL
      *
-     * @param session The session used to create this queue.
      * @param binding The URL
      * @throws QpidException If the URL is not valid
      */
-    protected DestinationImpl(SessionImpl session, BindingURL binding) throws QpidException
+    public DestinationImpl(BindingURL binding) throws QpidException
     {
-        _session = session;
         _exchangeName = binding.getExchangeName();
         _exchangeType = binding.getExchangeClass();
         _destinationName = binding.getDestinationName();
@@ -96,6 +96,7 @@ public class DestinationImpl implements Destination
         _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
         _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
         _queueName = binding.getQueueName();
+        _url = binding;
     }
 
     //---- Getters and Setters
@@ -119,15 +120,6 @@ public class DestinationImpl implements Destination
         return _destinationName;
     }
 
-    /**
-     * Get the session of this destination
-     *
-     * @return The session of this destination
-     */
-    public SessionImpl getSession()
-    {
-        return _session;
-    }
 
     /**
      * The exchange name
@@ -187,6 +179,72 @@ public class DestinationImpl implements Destination
     public boolean isDurable()
     {
         return _isDurable;
+    }
+
+    //----- Interface Referenceable
+    public Reference getReference() throws NamingException
+    {
+        return new Reference(this.getClass().getName(), new StringRefAddr(this.getClass().getName(), toURL()),
+                             ConnectionFactoryImpl.class.getName(), // factory
+                             null);          // factory location
+    }
+
+    //--- non public method s
+
+    /**
+     * Get the URL used to create this destiantion
+     *
+     * @return The URL used to create this destiantion
+     */
+    public String toURL()
+    {
+        if (_url == null)
+        {
+            StringBuffer sb = new StringBuffer();
+            sb.append(_exchangeType);
+            sb.append("://");
+            sb.append(_exchangeName);
+            sb.append('/');
+            if (_destinationName != null)
+            {
+                sb.append(_destinationName);
+            }
+            sb.append('/');
+            if (_queueName != null)
+            {
+                sb.append(_queueName);
+            }
+            sb.append('?');
+            if (_isDurable)
+            {
+                sb.append(org.apache.qpid.url.BindingURL.OPTION_DURABLE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+            if (_isExclusive)
+            {
+                sb.append(org.apache.qpid.url.BindingURL.OPTION_EXCLUSIVE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+            if (_isAutoDelete)
+            {
+                sb.append(org.apache.qpid.url.BindingURL.OPTION_AUTODELETE);
+                sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+            //removeKey the last char '?' if there is no options , ',' if there are.
+            sb.deleteCharAt(sb.length() - 1);
+            try
+            {
+                _url = new BindingURLImpl(sb.toString());
+            }
+            catch (URLSyntaxException e)
+            {
+                // this should not happen.
+            }
+        }
+        return _url.getURL();
     }
 }
 

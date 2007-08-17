@@ -1,18 +1,35 @@
 package org.apache.qpidity.jms;
 
 import javax.jms.*;
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.Referenceable;
-import javax.naming.StringRefAddr;
+import javax.naming.*;
+import javax.naming.spi.ObjectFactory;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.url.QpidURLImpl;
+import org.apache.qpidity.url.QpidURL;
+import org.apache.qpidity.url.BindingURLImpl;
+import org.apache.qpidity.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Hashtable;
+
+/**
+ * Implements all the JMS connection factories.
+ * <p> In all the implementations in our code base
+ * when we create a Reference we pass in <code>ConnectionFactoryImpl</code> as the
+ * factory for creating the objects. This is the factory (or
+ * {@link ObjectFactory}) that is used to turn the description in to a real object.
+ * <p>In our construction of the Reference the last param. is null,
+ * we could put a url to a jar that contains our {@link ObjectFactory} so that
+ * any of our objects stored in JNDI can be recreated without even having
+ * the classes locally. As it is the <code>ConnectionFactoryImpl</code> must be on the
+ * classpath when you do a lookup in a JNDI context.. else you'll get a
+ * ClassNotFoundEx.
+ */
 public class ConnectionFactoryImpl implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory,
                                               XATopicConnectionFactory, XAQueueConnectionFactory, XAConnectionFactory,
-                                              Referenceable
+                                              ObjectFactory, Referenceable
 {
     /**
      * this ConnectionFactoryImpl's logger
@@ -42,16 +59,21 @@ public class ConnectionFactoryImpl implements ConnectionFactory, QueueConnection
     /**
      * The URL used to build this factory, (not yet supported)
      */
-    private String _url;
+    private QpidURL _qpidURL;
 
     // Undefined at the moment
-    public ConnectionFactoryImpl(String url)
+    public ConnectionFactoryImpl(QpidURL url)
     {
-        _url = url;
+        _qpidURL = url;
+    }
+
+    public ConnectionFactoryImpl(String url) throws URLSyntaxException
+    {
+        // todo
     }
 
     /**
-     * Create a connection.
+     * Create a connection Factory
      *
      * @param host            The broker host name.
      * @param port            The port on which the broker is listening for connection.
@@ -409,10 +431,74 @@ public class ConnectionFactoryImpl implements ConnectionFactory, QueueConnection
     // Support for JNDI
     // ----------------------------------------
 
+    /**
+     * Creates an object using the location or reference information
+     * specified.
+     *
+     * @param obj         The possibly null object containing location or reference
+     *                    information that can be used in creating an object.
+     * @param name        The name of this object relative to <code>nameCtx</code>,
+     *                    or null if no name is specified.
+     * @param nameCtx     The context relative to which the <code>name</code>
+     *                    parameter is specified, or null if <code>name</code> is
+     *                    relative to the default initial context.
+     * @param environment The possibly null environment that is used in
+     *                    creating the object.
+     * @return The object created; null if an object cannot be created.
+     * @throws Exception if this object factory encountered an exception
+     *                   while attempting to create an object, and no other object factories are
+     *                   to be tried.
+     */
+    public Object getObjectInstance(Object obj, Name name, Context nameCtx, Hashtable environment) throws Exception
+    {
+        if (obj instanceof Reference)
+        {
+            Reference ref = (Reference) obj;
+
+            if (ref.getClassName().equals(QueueImpl.class.getName()))
+            {
+                RefAddr addr = ref.get(QueueImpl.class.getName());
+
+                if (addr != null)
+                {
+                    return new QueueImpl(new BindingURLImpl((String) addr.getContent()));
+                }
+            }
+
+            if (ref.getClassName().equals(TopicImpl.class.getName()))
+            {
+                RefAddr addr = ref.get(TopicImpl.class.getName());
+
+                if (addr != null)
+                {
+                    return new TopicImpl(new BindingURLImpl((String) addr.getContent()));
+                }
+            }
+
+            if (ref.getClassName().equals(ConnectionFactoryImpl.class.getName()))
+            {
+                RefAddr addr = ref.get(ConnectionFactoryImpl.class.getName());
+                if (addr != null)
+                {
+                    return new ConnectionFactoryImpl(new QpidURLImpl((String) addr.getContent()));
+                }
+            }
+
+        }
+        return null;
+    }
+
+    //-- interface Reference
+    /**
+     * Retrieves the Reference of this object.
+     *
+     * @return The non-null Reference of this object.
+     * @throws NamingException If a naming exception was encountered while retrieving the reference.
+     */
     public Reference getReference() throws NamingException
     {
         return new Reference(ConnectionFactoryImpl.class.getName(),
-                             new StringRefAddr(ConnectionFactoryImpl.class.getName(), _url));
+                             new StringRefAddr(ConnectionFactoryImpl.class.getName(), _qpidURL.getURL()),
+                             ConnectionFactoryImpl.class.getName(), null);
     }
-
 }
