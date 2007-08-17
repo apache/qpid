@@ -474,6 +474,16 @@ public class ConnectionFactoryImpl implements ConnectionFactory, QueueConnection
                     return new TopicImpl(new BindingURLImpl((String) addr.getContent()));
                 }
             }
+            
+            if (ref.getClassName().equals(DestinationImpl.class.getName()))
+            {
+                RefAddr addr = ref.get(DestinationImpl.class.getName());
+
+                if (addr != null)
+                {
+                    return new DestinationImpl(new BindingURLImpl((String) addr.getContent()));
+                }
+            }
 
             if (ref.getClassName().equals(ConnectionFactoryImpl.class.getName()))
             {

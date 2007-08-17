@@ -17,6 +17,8 @@
  */
 package org.apache.qpidity;
 
+import java.util.Map;
+
 /**
  * This interface represents a broker and provides the basic information
  * required for opening a connection with a broker.
@@ -28,6 +30,11 @@ public interface BrokerDetails
      */
     public static final String PROTOCOL_TCP = "tcp";
     public static final String PROTOCOL_TLS = "tls";
+    
+    public static final String VIRTUAL_HOST = "virtualhost";
+    public static final String CLIENT_ID = "client_id";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
 
     /**
      * Get the broker host name.
@@ -97,7 +104,7 @@ public interface BrokerDetails
      *
      * @param userName The user name
      */
-    public void getUserName(String userName);
+    public void setUserName(String userName);
 
     /**
      * Set the user password
@@ -112,4 +119,20 @@ public interface BrokerDetails
      * @param protocol the protocol used to connect to the broker.
      */
     public void setProtocol(String protocol);
+    
+    /**
+     * Ex: keystore path
+     * 
+     * @return the Properties associated with this connection.
+     */
+    public Map<String,String> getProperties();
+    
+    /**
+     * Sets the properties associated with this connection
+     * 
+     * @param props
+     */
+    public void setProperties(Map<String,String> props);
+    
+    public void setProperty(String key,String value);
 }
