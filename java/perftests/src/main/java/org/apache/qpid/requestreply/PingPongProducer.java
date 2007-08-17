@@ -925,7 +925,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
             }
             else
             {
-                log.debug("Got redelivered message, ignoring.");
+                log.warn("Got redelivered message, ignoring.");
             }
 
             // Print out ping times for every message in verbose mode only.
