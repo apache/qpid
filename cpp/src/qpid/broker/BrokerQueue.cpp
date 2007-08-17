@@ -223,9 +223,16 @@ void Queue::push(Message::shared_ptr& msg){
     }
 }
 
+/** function only provided for unit tests, or code not in critical message path */
 uint32_t Queue::getMessageCount() const{
     Mutex::ScopedLock locker(messageLock);
-    return messages.size();
+  
+    uint32_t count =0;
+    for ( Messages::const_iterator i = messages.begin(); i != messages.end(); ++i ) {
+        if ( (*i)->isEnqueueComplete() ) count ++;
+    }
+    
+    return count;
 }
 
 uint32_t Queue::getConsumerCount() const{
