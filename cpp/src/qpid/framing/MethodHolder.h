@@ -75,13 +75,13 @@ class MethodHolder
     void encode(Buffer&) const;
     void decode(Buffer&);
     uint32_t size() const;
-            
-    AMQMethodBody* get() {
-        return reinterpret_cast<AMQMethodBody*>(blob.get());
-    }
-    const AMQMethodBody* get() const {
-        return reinterpret_cast<const AMQMethodBody*>(blob.get());
-    }
+
+    /** Return method pointer or 0 if empty. */
+    AMQMethodBody* get();
+    const AMQMethodBody* get() const;
+
+    /** True if no method has been set */
+    bool empty() const { return blob.empty(); }
 
   private:
     Blob<MAX_METHODBODY_SIZE> blob;
