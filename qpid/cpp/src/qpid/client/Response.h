@@ -39,7 +39,8 @@ public:
     template <class T> T& as() 
     {
         framing::AMQMethodBody* response(future->getResponse());
-        return dynamic_cast<T&>(*response);
+        assert(response);
+        return *boost::polymorphic_downcast<T*>(response);
     }
     template <class T> bool isA() 
     {

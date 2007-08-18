@@ -97,6 +97,7 @@ class Blob
     void construct (const TypedInPlaceFactory& factory,
                     const boost::typed_in_place_factory_base* )
     {
+        assert(empty());
         typedef typename TypedInPlaceFactory::value_type T;
         assert(sizeof(T) <= Size);
         factory.apply(store.address());
@@ -104,6 +105,7 @@ class Blob
     }
 
     void assign(const Blob& b) {
+        assert(empty());
         b.copy(this->get(), b.get());
         copy = b.copy;
         destroy = b.destroy;
@@ -114,7 +116,13 @@ class Blob
     Blob() { setType<void>(); }
 
     /** Copy a blob. */
-    Blob(const Blob& b) { assign(b); }
+    Blob(const Blob& b) { setType<void>(); assign(b); }
+
+    /** @see construct() */
+    template<class Expr>
+    Blob( const Expr & expr ) { setType<void>(); construct(expr,&expr); }
+
+    ~Blob() { clear(); }
 
     /** Assign a blob */
     Blob& operator=(const Blob& b) {
@@ -122,12 +130,6 @@ class Blob
         assign(b);
         return *this;
     }
-
-    /** @see construct() */
-    template<class Expr>
-    Blob( const Expr & expr ) { construct(expr,&expr); }
-
-    ~Blob() { clear(); }
 
     /** Construcct an object in the blob. Destroyes the previous object.
      *@param expr an expresion of the form: in_place<T>(x,y,z)
@@ -144,7 +146,7 @@ class Blob
     void* get() { return store.address(); }
 
     /** Get const pointer to blob contents */
-    const void* get() const { return store.address(); }
+    const void* get() const { return empty() ? 0 : store.address(); }
     
     /** Destroy the object in the blob making it empty. */
     void clear() {
@@ -153,6 +155,8 @@ class Blob
         oldDestroy(store.address());
     }
 
+    bool empty() const { return destroy == BlobHelper<void>::destroy; }
+    
     static size_t size() { return Size; }
 };
 

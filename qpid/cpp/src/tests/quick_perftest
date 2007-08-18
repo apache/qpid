@@ -1,0 +1,2 @@
+#!/bin/sh
+exec `dirname $0`/test_env ./perftest --listen --publish --count 1000
