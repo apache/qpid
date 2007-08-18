@@ -31,6 +31,14 @@ using namespace boost;
 namespace qpid {
 namespace framing {
 
+AMQMethodBody* MethodHolder::get() {
+    return static_cast<AMQMethodBody*>(blob.get());
+}
+
+const AMQMethodBody* MethodHolder::get() const {
+    return const_cast<MethodHolder*>(this)->get();
+}
+
 void MethodHolder::encode(Buffer& b) const {
     const AMQMethodBody* body = get();
     b.putShort(body->amqpClassId());
