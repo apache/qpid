@@ -5,6 +5,7 @@ import javax.naming.*;
 import javax.naming.spi.ObjectFactory;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpidity.BrokerDetails;
 import org.apache.qpidity.url.QpidURLImpl;
 import org.apache.qpidity.url.QpidURL;
 import org.apache.qpidity.url.BindingURLImpl;
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Hashtable;
+import java.net.MalformedURLException;
 
 /**
  * Implements all the JMS connection factories.
@@ -67,9 +69,15 @@ public class ConnectionFactoryImpl implements ConnectionFactory, QueueConnection
         _qpidURL = url;
     }
 
-    public ConnectionFactoryImpl(String url) throws URLSyntaxException
+    public ConnectionFactoryImpl(String url) throws MalformedURLException
     {
-        // todo
+        _qpidURL = new QpidURLImpl(url);
+        BrokerDetails bd = _qpidURL.getAllBrokerDetails().get(0);
+        _host = bd.getHost();
+        _port = bd.getPort();
+        _defaultUsername = bd.getUserName();
+        _defaultPassword = bd.getPassword();
+        _virtualHost = bd.getVirtualHost();
     }
 
     /**
@@ -474,7 +482,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, QueueConnection
                     return new TopicImpl(new BindingURLImpl((String) addr.getContent()));
                 }
             }
-            
+
             if (ref.getClassName().equals(DestinationImpl.class.getName()))
             {
                 RefAddr addr = ref.get(DestinationImpl.class.getName());
