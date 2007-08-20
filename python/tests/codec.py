@@ -23,6 +23,7 @@ from qpid.codec import Codec
 from qpid.spec import load
 from cStringIO import StringIO
 from qpid.reference import ReferenceId
+from qpid.testlib import testrunner
 
 __doc__ = """
 
@@ -53,7 +54,7 @@ __doc__ = """
 
 """
 
-SPEC = load("../specs/amqp.0-10-preview.xml")
+SPEC = load(testrunner.get_spec_file("amqp.0-10-preview.xml"))
 
 # --------------------------------------
 # --------------------------------------
