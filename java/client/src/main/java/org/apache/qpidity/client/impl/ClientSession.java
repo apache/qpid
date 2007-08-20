@@ -25,7 +25,14 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
     private ExceptionListener _exceptionListner;
     private RangeSet _acquiredMessages;
     private RangeSet _rejectedMessages;
-    
+
+
+    public int messagesReceived()
+    {
+        // TODO
+        return 1;
+    }
+
     @Override public void sessionClose()
     {
         super.sessionClose();
