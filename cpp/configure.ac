@@ -117,7 +117,7 @@ AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 
 AC_CHECK_PROG([RUBY], [ruby], [ruby])
 AC_CHECK_PROG([JAVA], [java], [java])
-AC_CHECK_PROG([JAVAC], [javac], [javc])
+AC_CHECK_PROG([JAVAC], [javac], [javac])
 test -n "$RUBY" -a -n "$JAVA" -a -n "$JAVAC" && generate=yes
 
 specdir=`pwd`/$srcdir/../specs  
