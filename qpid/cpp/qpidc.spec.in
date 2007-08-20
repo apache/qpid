@@ -179,7 +179,7 @@ fi
 - Add --disable-static.
 
 * Thu Jan 25 2007 Alan Conway <aconway@redhat.com> - 0.1-3
-- Applied Jim Meyerings fixes from http://mail-archives.apache.org/mod_mbox/incubator-qpid-dev/200701.mbox/%3c87hcugzmyp.fsf@rho.meyering.net%3e
+- Applied Jim Meyerings fixes from http://mail-archives.apache.org/mod_mbox/incubator-qpid-dev/200701.mbox/<87hcugzmyp.fsf@rho.meyering.net>
 
 * Mon Dec 22 2006 Alan Conway <aconway@redhat.com> - 0.1-1
 - Fixed all rpmlint complaints (with help from David Lutterkort)
