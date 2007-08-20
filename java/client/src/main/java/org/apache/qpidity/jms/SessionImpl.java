@@ -156,7 +156,7 @@ public class SessionImpl implements Session
         {
             _qpidSession.txSelect();
         }
-
+        testQpidException();
         // init the message dispatcher.
         initMessageDispatcherThread();
     }
@@ -319,6 +319,14 @@ public class SessionImpl implements Session
         }
         // commit the underlying Qpid Session
         _qpidSession.txCommit();
+        try
+        {
+            testQpidException();
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
     }
 
     /**
@@ -342,6 +350,14 @@ public class SessionImpl implements Session
         }
         // rollback the underlying Qpid Session
         _qpidSession.txRollback();
+        try
+        {
+            testQpidException();
+        }
+        catch (QpidException e)
+        {
+            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
     }
 
     /**
@@ -401,6 +417,14 @@ public class SessionImpl implements Session
             }
             // close the underlaying QpidSession
             _qpidSession.sessionClose();
+            try
+            {
+                testQpidException();
+            }
+            catch (QpidException e)
+            {
+                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            }
         }
     }
 
@@ -1081,6 +1105,21 @@ public class SessionImpl implements Session
     protected ConnectionImpl getConnection()
     {
         return _connection;
+    }
+
+    /**
+     * sync and return the potential exception
+     *
+     * @throws QpidException If an exception has been thrown by the broker.
+     */
+    protected void testQpidException() throws QpidException
+    {
+        _qpidSession.sync();
+        QpidException qe = getCurrentException();
+        if (qe != null)
+        {
+            throw qe;
+        }
     }
 
     //------ Private Methods
