@@ -360,7 +360,7 @@ public class PingDurableClient extends PingPongProducer implements ExceptionList
         }
 
         // Ensure messages received are committed.
-        if (_transacted)
+        if (_consTransacted)
         {
             try
             {

@@ -98,6 +98,10 @@ import java.util.concurrent.atomic.AtomicLong;
  *                                               3 - DUPS_OK_ACKNOWLEDGE
  *                                               257 - NO_ACKNOWLEDGE
  *                                               258 - PRE_ACKNOWLEDGE
+ * <tr><td> consTransacted   <td> transacted <td> Whether or not consumers use transactions. Defaults to the same value
+ *                                                as the 'transacted' option if not seperately defined.
+ * <tr><td> consAckMode      <td> ackMode  <td> The message acknowledgement mode for consumers. Defaults to the same
+ *                                              value as 'ackMode' if not seperately defined.
  * <tr><td> maxPending       <td> 0        <td> The maximum size in bytes, of messages sent but not yet received.
  *                                              Limits the volume of messages currently buffered on the client
  *                                              or broker. Can help scale test clients by limiting amount of buffered
@@ -159,6 +163,8 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
     /** Holds the transactional mode to use for the test. */
     public static final boolean TRANSACTED_DEFAULT = false;
+
+    public static final String CONSUMER_TRANSACTED_PROPNAME = "consTransacted";
 
     /** Holds the name of the property to get the test broker url from. */
     public static final String BROKER_PROPNAME = "broker";
@@ -277,6 +283,8 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     /** Defines the default message acknowledgement mode. */
     public static final int ACK_MODE_DEFAULT = Session.AUTO_ACKNOWLEDGE;
 
+    public static final String CONSUMER_ACK_MODE_PROPNAME = "consAckMode";
+
     public static final String MAX_PENDING_PROPNAME = "maxPending";
     public static final int MAX_PENDING_DEFAULT = 0;
 
@@ -304,8 +312,10 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         defaults.setPropertyIfNull(PING_QUEUE_NAME_PROPNAME, PING_QUEUE_NAME_DEFAULT);
         defaults.setPropertyIfNull(SELECTOR_PROPNAME, SELECTOR_DEFAULT);
         defaults.setPropertyIfNull(TRANSACTED_PROPNAME, TRANSACTED_DEFAULT);
+        defaults.setPropertyIfNull(CONSUMER_TRANSACTED_PROPNAME, defaults.getProperty(TRANSACTED_PROPNAME));
         defaults.setPropertyIfNull(PERSISTENT_MODE_PROPNAME, PERSISTENT_MODE_DEFAULT);
         defaults.setPropertyIfNull(ACK_MODE_PROPNAME, ACK_MODE_DEFAULT);
+        defaults.setPropertyIfNull(CONSUMER_ACK_MODE_PROPNAME, defaults.getProperty(ACK_MODE_PROPNAME));
         defaults.setPropertyIfNull(MESSAGE_SIZE_PROPNAME, MESSAGE_SIZE_DEAFULT);
         defaults.setPropertyIfNull(VERBOSE_PROPNAME, VERBOSE_DEFAULT);
         defaults.setPropertyIfNull(PUBSUB_PROPNAME, PUBSUB_DEFAULT);
@@ -331,12 +341,15 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     protected String _destinationName;
     protected String _selector;
     protected boolean _transacted;
+    protected boolean _consTransacted;
 
     /** Determines whether this producer sends persistent messages. */
     protected boolean _persistent;
 
     /** Holds the acknowledgement mode used for sending and receiving messages. */
-    private int _ackMode;
+    protected int _ackMode;
+
+    protected int _consAckMode;
 
     /** Determines what size of messages this producer sends. */
     protected int _messageSize;
@@ -485,6 +498,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         _destinationName = properties.getProperty(PING_QUEUE_NAME_PROPNAME);
         _selector = properties.getProperty(SELECTOR_PROPNAME);
         _transacted = properties.getPropertyAsBoolean(TRANSACTED_PROPNAME);
+        _consTransacted = properties.getPropertyAsBoolean(CONSUMER_TRANSACTED_PROPNAME);
         _persistent = properties.getPropertyAsBoolean(PERSISTENT_MODE_PROPNAME);
         _messageSize = properties.getPropertyAsInteger(MESSAGE_SIZE_PROPNAME);
         _verbose = properties.getPropertyAsBoolean(VERBOSE_PROPNAME);
@@ -501,6 +515,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         _isUnique = properties.getPropertyAsBoolean(UNIQUE_DESTS_PROPNAME);
         _isDurable = properties.getPropertyAsBoolean(DURABLE_DESTS_PROPNAME);
         _ackMode = properties.getPropertyAsInteger(ACK_MODE_PROPNAME);
+        _consAckMode = properties.getPropertyAsInteger(CONSUMER_ACK_MODE_PROPNAME);
         _maxPendingSize = properties.getPropertyAsInteger(MAX_PENDING_PROPNAME);
 
         // Check that one or more destinations were specified.
@@ -547,7 +562,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
         for (int i = 0; i < _noOfConsumers; i++)
         {
-            _consumerSession[i] = (Session) _consumerConnection[i].createSession(_transacted, _ackMode);
+            _consumerSession[i] = (Session) _consumerConnection[i].createSession(_consTransacted, _consAckMode);
         }
 
         // Create the destinations to send pings to and receive replies from.
@@ -815,11 +830,14 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     public void onMessageWithConsumerNo(Message message, int consumerNo)
     {
         // log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo = " + consumerNo + "): called");
-
-        NDC.push("cons" + consumerNo);
-
         try
         {
+            long now = System.nanoTime();
+            long timestamp = getTimestamp(message);
+            long pingTime = now - timestamp;
+
+            // NDC.push("cons" + consumerNo);
+
             // Extract the messages correlation id.
             String correlationID = message.getJMSCorrelationID();
             // log.debug("correlationID = " + correlationID);
@@ -886,7 +904,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                             }
                         }
 
-                        NDC.push("/rem" + remainingCount);
+                        // NDC.push("/rem" + remainingCount);
 
                         // log.debug("remainingCount = " + remainingCount);
                         // log.debug("trueCount = " + trueCount);
@@ -907,7 +925,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                         // Forward the message and remaining count to any interested chained message listener.
                         if (_chainedMessageListener != null)
                         {
-                            _chainedMessageListener.onMessage(message, (int) remainingCount);
+                            _chainedMessageListener.onMessage(message, (int) remainingCount, pingTime);
                         }
 
                         // Check if this is the last message, in which case release any waiting producers. This is done
@@ -947,7 +965,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         finally
         {
             // log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo): ending");
-            NDC.clear();
+            // NDC.clear();
         }
     }
 
@@ -981,7 +999,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
         try
         {
-            NDC.push("prod");
+            // NDC.push("prod");
 
             // Create a count down latch to count the number of replies with. This is created before the messages are
             // sent so that the replies cannot be received before the count down is created.
@@ -1046,7 +1064,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         // so will be a memory leak if this is not done.
         finally
         {
-            NDC.pop();
+            // NDC.pop();
             perCorrelationIds.remove(messageCorrelationId);
         }
     }
@@ -1566,7 +1584,17 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      */
     public static interface ChainedMessageListener
     {
-        public void onMessage(Message message, int remainingCount) throws JMSException;
+        /**
+         * Notifies interested listeners about message arrival and important test stats, the number of messages
+         * remaining in the test, and the messages send timestamp.
+         *
+         * @param message        The newly arrived message.
+         * @param remainingCount The number of messages left to complete the test.
+         * @param latency        The nanosecond latency of the message.
+         *
+         * @throws JMSException Any JMS exceptions is allowed to fall through.
+         */
+        public void onMessage(Message message, int remainingCount, long latency) throws JMSException;
     }
 
     /**

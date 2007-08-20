@@ -20,15 +20,6 @@
  */
 package org.apache.qpid.ping;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.ObjectMessage;
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -42,6 +33,15 @@ import org.apache.qpid.requestreply.PingPongProducer;
 import uk.co.thebadgerset.junit.extensions.TimingController;
 import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.ObjectMessage;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * PingLatencyTestPerf is a performance test that outputs multiple timings from its test method, using the timing
@@ -261,7 +261,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
          *
          * @throws javax.jms.JMSException Any underlying JMSException is allowed to fall through.
          */
-        public void onMessage(Message message, int remainingCount) throws JMSException
+        public void onMessage(Message message, int remainingCount, long latency) throws JMSException
         {
             _logger.debug("public void onMessage(Message message, int remainingCount = " + remainingCount + "): called");
 
@@ -280,26 +280,6 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
                     TimingController tc = perCorrelationId._tc;
                     int expected = perCorrelationId._expectedCount;
 
-                    // Extract the send time from the message and work out from the current time, what the ping latency was.
-                    // The ping producer time stamps messages in nanoseconds.
-                    long startTime;
-
-                    if (_strictAMQP)
-                    {
-                        Long value =
-                            ((AMQMessage) message).getTimestampProperty(new AMQShortString(
-                                    PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME));
-
-                        startTime = ((value == null) ? 0L : value);
-                    }
-                    else
-                    {
-                        startTime = message.getLongProperty(PingPongProducer.MESSAGE_TIMESTAMP_PROPNAME);
-                    }
-
-                    long now = System.nanoTime();
-                    long pingTime = now - startTime;
-
                     // Calculate how many messages were actually received in the last batch. This will be the batch size
                     // except where the number expected is not a multiple of the batch size and this is the first remaining
                     // count to cross a batch size boundary, in which case it will be the number expected modulo the batch
@@ -309,8 +289,7 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
                     // Register a test result for the correlation id.
                     try
                     {
-
-                        tc.completeTest(true, receivedInBatch, pingTime);
+                        tc.completeTest(true, receivedInBatch, latency);
                     }
                     catch (InterruptedException e)
                     {

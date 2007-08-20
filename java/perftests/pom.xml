@@ -174,7 +174,7 @@
                         <!-- Single pings. These can be scaled up by overriding the parameters when calling the test script. -->
                         <Ping-Once>-n Ping-Once -s[1] -r 1 -t testPingOk -o . org.apache.qpid.ping.PingTestPerf</Ping-Once>
                         <Ping-Once-Async>-n Ping-Once-Async -s[1] -r 1 -t testAsyncPingOk -o . org.apache.qpid.ping.PingAsyncTestPerf</Ping-Once-Async>
-                        <Ping-Latency>-n Ping-Latency -s[1000] -d10S -t testPingLatency -o . org.apache.qpid.ping.PingLatencyTestPerf rate=100</Ping-Latency>
+                        <Ping-Latency>-n Ping-Latency -s[1000] -d10S -t testPingLatency -o . org.apache.qpid.ping.PingLatencyTestPerf rate=100 batchSize=100</Ping-Latency>
 
                         <!-- More example Tests. These are examples to exercise all the features of the test harness. Can scale up with option overrides. -->
                         <Ping-Tx>-n Ping-Tx -s[100] -o . -t testAsyncPingOk org.apache.qpid.ping.PingAsyncTestPerf transacted=true</Ping-Tx>

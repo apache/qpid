@@ -20,15 +20,6 @@
  */
 package org.apache.qpid.ping;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.ObjectMessage;
-
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
@@ -39,6 +30,15 @@ import org.apache.qpid.requestreply.PingPongProducer;
 import uk.co.thebadgerset.junit.extensions.TimingController;
 import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.ObjectMessage;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * PingAsyncTestPerf is a performance test that outputs multiple timings from its test method, using the timing controller
@@ -239,7 +239,7 @@ public class PingAsyncTestPerf extends PingTestPerf implements TimingControllerA
          *
          * @throws JMSException Any underlying JMSException is allowed to fall through.
          */
-        public void onMessage(Message message, int remainingCount) throws JMSException
+        public void onMessage(Message message, int remainingCount, long latency) throws JMSException
         {
             // Check if a batch boundary has been crossed.
             if ((remainingCount % _batchSize) == 0)
