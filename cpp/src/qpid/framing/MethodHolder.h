@@ -84,7 +84,7 @@ class MethodHolder
     bool empty() const { return blob.empty(); }
 
   private:
-    Blob<MAX_METHODBODY_SIZE> blob;
+    Blob<MAX_METHODBODY_SIZE, AMQMethodBody> blob;
     class CopyVisitor;
   friend struct CopyVisitor;
 };

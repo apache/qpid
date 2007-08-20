@@ -19,6 +19,11 @@ CLEANFILES=
 #
 # Unit test programs.
 # 
+TESTS+=Blob
+check_PROGRAMS+=Blob
+Blob_SOURCES=Blob.cpp ../qpid/framing/Blob.cpp
+Blob_LDADD=-lboost_unit_test_framework
+
 TESTS+=logging
 check_PROGRAMS+=logging
 logging_SOURCES=logging.cpp test_tools.h
@@ -120,13 +125,14 @@ check_PROGRAMS += $(testprogs) interop_runner
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
-system_tests = client_test exception_test quick_topictest
+system_tests = client_test exception_test quick_perftest quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 
 
 EXTRA_DIST +=								\
   test_env run_test vg_check						\
   run-unit-tests start_broker python_tests stop_broker 			\
   quick_topictest							\
+  quick_perftest							\
   topictest								\
   .valgrind.supp-default						\
   .valgrindrc-default							\
@@ -171,11 +177,6 @@ all-am: .valgrind.supp .valgrindrc
 	cp $^ $@
 .valgrind.supp: .valgrind.supp-default
 	cp $^ $@
-
-# Tell GNU make not to build targets in this directory in parallel.
-# This is necessary because with two or more identical and simultaneous
-# ltmain invocations, one may corrupt the temporaries of the other.
-.NOTPARALLEL:
 
 CLEANFILES+=valgrind.out *.log *.vglog .valgrindrc .valgrind.supp dummy_test $(unit_wrappers)
 MAINTAINERCLEANFILES=gen.mk

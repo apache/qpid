@@ -21,6 +21,7 @@
  *
  */
 
+#include <boost/static_assert.hpp>
 #include <boost/aligned_storage.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/utility/typed_in_place_factory.hpp>
@@ -80,47 +81,62 @@ template <> struct BlobHelper<void> {
  * Objects can be allocated directly in place using
  * construct(in_place<T>(...))  or copied using operator=.
  * Constructing a new object in the blob destroys the old one.
+ *
+ * If BaseType is specified then only object that can be
+ * safely static_cast to BaseType may be stored in the Blob.
  */
-template <size_t Size>
+template <size_t Size, class BaseType=void>
 class Blob
 {
     boost::aligned_storage<Size> store;
+    BaseType* basePtr;
+    
     void (*destroy)(void*);
     void (*copy)(void*, const void*);
 
-    template <class T> void setType() {
+    template <class T>void setType() {
+        BOOST_STATIC_ASSERT(sizeof(T) <= Size);
         destroy=&BlobHelper<T>::destroy;
         copy=&BlobHelper<T>::copy;
+        // Base pointer may be offeset from store.address()
+        basePtr = reinterpret_cast<T*>(store.address());
     }
-    
+        
+    void initialize() {
+        destroy=&BlobHelper<void>::destroy;
+        copy=&BlobHelper<void>::copy;
+        basePtr=0;
+    }
+
     template<class TypedInPlaceFactory>
     void construct (const TypedInPlaceFactory& factory,
                     const boost::typed_in_place_factory_base* )
     {
-        assert(empty());
         typedef typename TypedInPlaceFactory::value_type T;
-        assert(sizeof(T) <= Size);
+        assert(empty());
         factory.apply(store.address());
         setType<T>();
     }
 
     void assign(const Blob& b) {
         assert(empty());
-        b.copy(this->get(), b.get());
+        b.copy(this->store.address(), b.store.address());
         copy = b.copy;
         destroy = b.destroy;
+        basePtr = reinterpret_cast<BaseType*>(
+            ((char*)this)+ ((char*)(b.basePtr) - (char*)(&b)));
     }
-    
+
   public:
     /** Construct an empty blob. */
-    Blob() { setType<void>(); }
+    Blob() { initialize(); }
 
     /** Copy a blob. */
-    Blob(const Blob& b) { setType<void>(); assign(b); }
+    Blob(const Blob& b) { initialize(); assign(b); }
 
     /** @see construct() */
     template<class Expr>
-    Blob( const Expr & expr ) { setType<void>(); construct(expr,&expr); }
+    Blob( const Expr & expr ) { initialize(); construct(expr,&expr); }
 
     ~Blob() { clear(); }
 
@@ -139,30 +155,28 @@ class Blob
     construct(const Expr& expr) { clear(); construct(expr,&expr); }
 
     /** Copy construct an instance of T into the Blob. */
-    template<class T>
+    template <class T>
     Blob& operator=(const T& x) { clear(); construct(in_place<T>(x)); return *this; }
-    
-    /** Get pointer to blob contents. Caller must know how to cast it. */
-    void* get() { return store.address(); }
 
-    /** Get const pointer to blob contents */
-    const void* get() const { return empty() ? 0 : store.address(); }
-    
+    /** Get pointer to blob contents, returns 0 if empty. */
+    BaseType* get() { return  basePtr; }
+
+    /** Get pointer to blob contents, returns 0 if empty. */
+    const BaseType* get() const { return basePtr; }
+
     /** Destroy the object in the blob making it empty. */
     void clear() {
         void (*oldDestroy)(void*) = destroy; 
-        setType<void>();
+        initialize();
         oldDestroy(store.address());
     }
 
-    bool empty() const { return destroy == BlobHelper<void>::destroy; }
+    bool empty() const { return destroy==BlobHelper<void>::destroy; }
     
     static size_t size() { return Size; }
 };
 
-
 }} // namespace qpid::framing
-
 
 
 #endif  /*!QPID_FRAMING_BLOB_H*/

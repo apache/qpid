@@ -25,6 +25,7 @@ namespace qpid {
 namespace framing {
 
 void BlobHelper<void>::destroy(void*) {}
+
 void BlobHelper<void>::copy(void*, const void*) {}
 
 }} // namespace qpid::framing
