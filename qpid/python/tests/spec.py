@@ -1,11 +1,11 @@
 from unittest import TestCase
 from qpid.spec import load
-
+from qpid.testlib import testrunner
 
 class SpecTest(TestCase):
 
   def check_load(self, *urls):
-    spec = load(*urls)
+    spec = load(*map(testrunner.get_spec_file, urls))
     qdecl = spec.method("queue_declare")
     assert qdecl != None
     assert not qdecl.content
@@ -44,13 +44,13 @@ class SpecTest(TestCase):
       assert args.type == "table"
 
   def test_load_0_8(self):
-    self.check_load("../specs/amqp.0-8.xml")
+    self.check_load("amqp.0-8.xml")
 
   def test_load_0_9(self):
-    self.check_load("../specs/amqp.0-9.xml")
+    self.check_load("amqp.0-9.xml")
 
   def test_load_0_9_errata(self):
-    self.check_load("../specs/amqp.0-9.xml", "../specs/amqp-errata.0-9.xml")
+    self.check_load("amqp.0-9.xml", "amqp-errata.0-9.xml")
 
   def test_load_0_10(self):
-    self.check_load("../specs/amqp.0-10-preview.xml")
+    self.check_load("amqp.0-10-preview.xml")
