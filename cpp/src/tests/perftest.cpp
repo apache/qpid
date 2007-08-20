@@ -64,6 +64,8 @@ struct PublishThread : public Runnable { Thread thread; void run(); };
 int main(int argc, char** argv) {
     try {
         opts.parse(argc, argv);
+        if (!opts.listen && !opts.publish)
+            opts.listen = opts.publish = true;
         ListenThread listen;
         PublishThread publish;
         if (opts.listen)
