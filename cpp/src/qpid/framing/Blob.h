@@ -143,7 +143,7 @@ class Blob
     Blob& operator=(const T& x) { clear(); construct(in_place<T>(x)); return *this; }
     
     /** Get pointer to blob contents. Caller must know how to cast it. */
-    void* get() { return store.address(); }
+    void* get() { return empty() ? 0 : store.address(); }
 
     /** Get const pointer to blob contents */
     const void* get() const { return empty() ? 0 : store.address(); }
