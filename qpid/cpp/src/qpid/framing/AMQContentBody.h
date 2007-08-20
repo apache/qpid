@@ -37,7 +37,7 @@ public:
     AMQContentBody(const string& data);
     inline virtual ~AMQContentBody(){}
     inline uint8_t type() const { return CONTENT_BODY; };
-    inline string& getData(){ return data; }
+    inline const string& getData() const { return data; }
     uint32_t size() const;
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer, uint32_t size);
