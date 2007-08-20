@@ -45,6 +45,9 @@ def default(value, default):
     else: return value
 
 class TestRunner:
+
+    SPEC_FOLDER = "../specs"
+
     """Runs unit tests.
 
     Parses command line arguments, provides utility functions for tests,
@@ -67,6 +70,8 @@ Options:
   -d/--debug               : enable debug logging.
   -i/--ignore <test>       : ignore the named test.
   -I/--ignore-file         : file containing patterns to ignore.
+  -S/--skip-self-test      : skips the client self tests in the 'tests folder'
+  -F/--spec-folder         : folder that contains the specs to be loaded
   """
         sys.exit(1)
 
@@ -98,8 +103,13 @@ Options:
         self.ignore = []
         self.specfile = "0-8"
         self.errata = []
+        self.skip_self_test = False
+
         try:
-            opts, self.tests = getopt(args, "s:e:b:h?dvi:I:", ["help", "spec", "errata=", "server", "verbose", "ignore", "ignore-file"])
+            opts, self.tests = getopt(args, "s:e:b:h?dvSi:I:F:",
+                                      ["help", "spec", "errata=", "server",
+                                       "verbose", "skip-self-test", "ignore",
+                                       "ignore-file", "spec-folder"])
         except GetoptError, e:
             self._die(str(e))
         for opt, value in opts:
@@ -111,18 +121,23 @@ Options:
             if opt in ("-d", "--debug"): logging.basicConfig(level=logging.DEBUG)
             if opt in ("-i", "--ignore"): self.ignore.append(value)
             if opt in ("-I", "--ignore-file"): self.ignoreFile(value)
+            if opt in ("-S", "--skip-self-test"): self.skip_self_test = True
+            if opt in ("-F", "--spec-folder"): TestRunner.SPEC_FOLDER = value
 	# Abbreviations for default settings.
         if (self.specfile == "0-8"):
-       	    self.specfile = "../specs/amqp.0-8.xml"
-        if (self.specfile == "0-9"):
-            self.specfile = "../specs/amqp.0-9.xml"
-            self.errata.append("../specs/amqp-errata.0-9.xml")
+       	    self.specfile = self.get_spec_file("amqp.0-8.xml")
+        elif (self.specfile == "0-9"):
+            self.specfile = self.get_spec_file("amqp.0-9.xml")
+            self.errata.append(self.get_spec_file("amqp-errata.0-9.xml"))
+
 	if (self.specfile == None):
 	    self._die("No XML specification provided")
         print "Using specification from:", self.specfile
         self.spec = qpid.spec.load(self.specfile, *self.errata)
+
         if len(self.tests) == 0:
-            self.tests=findmodules("tests")
+            if not self.skip_self_test:
+                self.tests=findmodules("tests")
             if self.use08spec():
                 self.tests+=findmodules("tests_0-8")
             elif self.spec.major == 0 and self.spec.minor == 10:
@@ -166,6 +181,8 @@ Options:
         client.start({"LOGIN": user, "PASSWORD": password}, tune_params=tune_params)
         return client
 
+    def get_spec_file(self, fname):
+        return TestRunner.SPEC_FOLDER + os.sep + fname
 
 # Global instance for tests to call connect.
 testrunner = TestRunner()
