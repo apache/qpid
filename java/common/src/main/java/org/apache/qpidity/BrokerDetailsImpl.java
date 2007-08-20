@@ -32,19 +32,20 @@ public class BrokerDetailsImpl implements BrokerDetails
 
     //---- The brker details
     private String _host;
-    private int _port;
+    private int _port = 0;
     private String _virtualHost;
     private String _userName = DEFAULT_USERNAME;
     private String _password = DEFAULT_PASSWORD;
     private String _protocol;
-    private Map<String,String> _props = new HashMap<String,String>();;
-    
+    private Map<String, String> _props = new HashMap<String, String>();
+    ;
+
     //--- Constructors
 
     public BrokerDetailsImpl()
-    {        
+    {
     }
-    
+
     /**
      * Create a new broker details given all the reuqired information
      *
@@ -56,7 +57,7 @@ public class BrokerDetailsImpl implements BrokerDetails
      * @param password    The user password.
      */
     public BrokerDetailsImpl(String protocol, String host, int port, String virtualHost, String userName,
-                             String password,Map<String,String> props)
+                             String password, Map<String, String> props)
     {
         _protocol = protocol;
         _host = host;
@@ -72,20 +73,12 @@ public class BrokerDetailsImpl implements BrokerDetails
      * default values are used for the other details.
      *
      * @param protocol The protocol used for this broker connection
-     * @param host The host name.
+     * @param host     The host name.
      */
     public BrokerDetailsImpl(String protocol, String host)
     {
         _protocol = protocol;
         _host = host;
-        if (protocol.equals(BrokerDetails.PROTOCOL_TCP))
-        {
-            _port = 1234;
-        }
-        else if (protocol.equals(BrokerDetails.PROTOCOL_TLS))
-        {
-            _port = 5555;
-        }
         _virtualHost = DEFAULT_VIRTUALHOST;
         _userName = DEFAULT_USERNAME;
         _password = DEFAULT_PASSWORD;
@@ -119,6 +112,17 @@ public class BrokerDetailsImpl implements BrokerDetails
      */
     public int getPort()
     {
+        if (_port == 0)
+        {
+            if (getProtocol().equals(BrokerDetails.PROTOCOL_TCP))
+            {
+                _port = 1234;
+            }
+            else if (getProtocol().equals(BrokerDetails.PROTOCOL_TLS))
+            {
+                _port = 5555;
+            }
+        }
         return _port;
     }
 
@@ -211,50 +215,50 @@ public class BrokerDetailsImpl implements BrokerDetails
     {
         _protocol = protocol;
     }
-    
+
     /**
      * Ex: keystore path
-     * 
+     *
      * @return the Properties associated with this connection.
      */
-    public Map<String,String> getProperties()
+    public Map<String, String> getProperties()
     {
         return _props;
     }
-    
+
     /**
      * Sets the properties associated with this connection
-     * 
+     *
      * @param props
      */
-    public void setProperties(Map<String,String> props)
+    public void setProperties(Map<String, String> props)
     {
         _props = props;
     }
-    
-    public void setProperty(String key,String value)
+
+    public void setProperty(String key, String value)
     {
         _props.put(key, value);
     }
-    
+
     public String toString()
     {
         StringBuilder b = new StringBuilder();
         b.append("[username=" + _userName);
         b.append(",password=" + _password);
-        b.append(",transport="+ _protocol);
+        b.append(",transport=" + _protocol);
         b.append(",host=" + _host);
-        b.append(",port=" + _port + "]");
+        b.append(",port=" + getPort() + "]");
         b.append(" - Properties[");
         if (_props != null)
         {
-            for (String k:_props.keySet())
+            for (String k : _props.keySet())
             {
                 b.append(k + "=" + _props.get(k) + ",");
             }
         }
         b.append("]");
-        
+
         return b.toString();
     }
 }
