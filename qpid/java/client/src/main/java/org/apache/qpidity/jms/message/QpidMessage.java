@@ -369,6 +369,7 @@ public class QpidMessage
 
     /**
      * Get this message excahgne name
+     *
      * @return this message excahgne name
      */
     public String getExchangeName()
@@ -406,6 +407,16 @@ public class QpidMessage
     public org.apache.qpidity.api.Message getQpidityMessage()
     {
         return _qpidityMessage;
+    }
+
+    /**
+     * Get this message transfer ID.
+     *
+     * @return This message transfer ID.
+     */
+    public long getMessageTransferId()
+    {
+        return _qpidityMessage.getMessageTransferId();
     }
 }
 

@@ -326,8 +326,7 @@ public interface Session
     /**
      * Forces the broker to exhaust its credit supply.
      * <p> The broker's credit will always be zero when
-     * this method completes. This method does not complete until all the message transfers occur.
-     * <p> This method returns the number of flushed messages.
+     * this method completes.
      *
      * @param destination The destination to call flush on.
      */
@@ -423,6 +422,16 @@ public interface Session
      * @param ranges Ranges of messages to be released.
      */
     public void messageRelease(RangeSet ranges);
+
+
+    /**
+     * Returns the number of message received for this session since
+     * {@link Session#messageFlow} has bee invoked.
+     *
+     * @return The number of message received for this session since
+     *         {@link Session#messageFlow} has bee invoked.
+     */
+    public int messagesReceived();
 
     // -----------------------------------------------
     //            Local transaction methods
@@ -568,7 +577,7 @@ public interface Session
      * @param type              Each exchange belongs to one of a set of exchange types implemented by the server. The
      *                          exchange types define the functionality of the exchange - i.e. how messages are routed
      *                          through it. It is not valid or meaningful to attempt to change the type of an existing
-     *                          exchange. Default exchange types are: direct, topic, headers and fanout.    
+     *                          exchange. Default exchange types are: direct, topic, headers and fanout.
      * @param alternateExchange In the event that a message cannot be routed, this is the name of the exchange to which
      *                          the message will be sent.
      * @param options           Set of options (valid options are: {@link Option#AUTO_DELETE}, {@link Option#DURABLE},
