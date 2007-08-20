@@ -32,11 +32,11 @@ namespace qpid {
 namespace framing {
 
 AMQMethodBody* MethodHolder::get() {
-    return static_cast<AMQMethodBody*>(blob.get());
+    return blob.get();
 }
 
 const AMQMethodBody* MethodHolder::get() const {
-    return const_cast<MethodHolder*>(this)->get();
+    return blob.get();
 }
 
 void MethodHolder::encode(Buffer& b) const {
