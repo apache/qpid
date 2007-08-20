@@ -130,7 +130,7 @@ public interface BrokerDetails
     /**
      * Sets the properties associated with this connection
      * 
-     * @param props
+     * @param props the new p[roperties. 
      */
     public void setProperties(Map<String,String> props);
     

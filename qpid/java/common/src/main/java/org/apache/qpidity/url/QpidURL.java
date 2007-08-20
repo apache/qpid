@@ -24,7 +24,7 @@ import java.util.List;
 /**
  * The format of the Qpid URL is based on the AMQP one.
  * The grammar is as follows:
- * <p> qpid_url          = "qpid:" prot_addr_list ["/" future-parameters]
+ * <p> qpid_url          = "qpid:" [user_props] prot_addr_list ["/" future-parameters]
  * <p> prot_addr_list 	 = [prot_addr ","]* prot_addr
  * <p> prot_addr         = tcp_prot_addr | tls_prot_addr | future_prot_addr
  * <p> tcp_prot_addr     = tcp_id tcp_addr
