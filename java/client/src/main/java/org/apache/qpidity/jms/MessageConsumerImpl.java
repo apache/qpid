@@ -401,6 +401,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // We now release any message received for this consumer
             _isReceiving = false;
             _isNoWaitIsReceiving = false;
+            getSession().testQpidException();            
         }
         return result;
     }
@@ -583,8 +584,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             RangeSet ranges = new RangeSet();
             ranges.add(message.getMessageTransferId());
             getSession().getQpidSession().messageRelease(ranges);
-            getSession().getQpidSession().sync();
-            testQpidException();
+            getSession().testQpidException();            
         }
     }
 
@@ -611,7 +611,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             {
                 result = true;
             }
-            testQpidException();
+            getSession().testQpidException();
         }
         return result;
     }
@@ -629,17 +629,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             RangeSet ranges = new RangeSet();
             ranges.add(message.getMessageTransferId());
             getSession().getQpidSession().messageAcknowledge(ranges);
-            getSession().getQpidSession().sync();
-            testQpidException();
-        }
-    }
-
-    private void testQpidException() throws QpidException
-    {
-        QpidException qe = getSession().getCurrentException();
-        if (qe != null)
-        {
-            throw qe;
+            getSession().testQpidException();
         }
     }
 }
