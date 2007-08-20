@@ -25,6 +25,8 @@ import org.apache.qpidity.RangeSet;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
+import javax.jms.MessageListener;
+import javax.jms.Session;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.HashMap;
@@ -108,6 +110,11 @@ public class SessionImpl implements Session
     private org.apache.qpidity.client.Session _qpidSession;
 
     /**
+     * The latest qpid Exception that has been reaised.
+     */
+    private QpidException _currentException;
+
+    /**
      * Indicates whether this session is recovering
      */
     private boolean _inRecovery = false;
@@ -142,6 +149,8 @@ public class SessionImpl implements Session
 
         // create the qpid session with an expiry  <= 0 so that the session does not expire
         _qpidSession = _connection.getQpidConnection().createSession(0);
+        // set the exception listnere for this session
+        _qpidSession.setExceptionListener(new QpidSessionExceptionListener());
         // set transacted if required
         if (_transacted && !isXA)
         {
@@ -431,8 +440,7 @@ public class SessionImpl implements Session
         {
             // release this message
             RangeSet ranges = new RangeSet();
-            // TODO: messageID is a string but range need a long???
-            // ranges.add(message.getMessageID());
+            ranges.add(message.getMessageTransferId());
             getQpidSession().messageRelease(ranges);
         }
     }
@@ -817,6 +825,17 @@ public class SessionImpl implements Session
         checkNotClosed();
     }
 
+    /**
+     * Get the latest thrown exception.
+     *
+     * @return The latest thrown exception.
+     */
+    public synchronized QpidException getCurrentException()
+    {
+        QpidException result = _currentException;
+        _currentException = null;
+        return result;
+    }
     //----- Protected methods
 
     /**
@@ -1006,8 +1025,7 @@ public class SessionImpl implements Session
         {
             // acknowledge this message
             RangeSet ranges = new RangeSet();
-            // TODO: messageID is a string but range need a long???
-            // ranges.add(message.getMessageID());
+            ranges.add(message.getMessageTransferId());
             getQpidSession().messageAcknowledge(ranges);
         }
         //tobedone: Implement DUPS OK heuristic
@@ -1035,8 +1053,7 @@ public class SessionImpl implements Session
                 {
                     // acknowledge this message
                     RangeSet ranges = new RangeSet();
-                    // TODO: messageID is a string but range need a long???
-                    // ranges.add(message.getMessageID()); 
+                    ranges.add(message.getMessageTransferId());
                     getQpidSession().messageAcknowledge(ranges);
                 }
                 //empty the list of unack messages
@@ -1092,6 +1109,22 @@ public class SessionImpl implements Session
     }
 
     //------ Inner classes
+
+    /**
+     * Lstener for qpid protocol exceptions
+     */
+    private class QpidSessionExceptionListener implements org.apache.qpidity.client.ExceptionListener
+    {
+        public void onException(QpidException exception)
+        {
+            synchronized (this)
+            {
+                //todo check the error code for finding out if we need to notify the
+                // JMS connection exception listener
+                _currentException = exception;
+            }
+        }
+    }
 
     /**
      * Convenient class for storing incoming messages associated with a consumer ID.
