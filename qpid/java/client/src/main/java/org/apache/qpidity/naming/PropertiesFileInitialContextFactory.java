@@ -43,7 +43,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
 
+/**
+ * This is an implementation of InitialContextFactory that uses a default jndi.properties file.
+ * 
+ */
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
     protected final Logger _logger = LoggerFactory.getLogger(PropertiesFileInitialContextFactory.class);
@@ -181,7 +186,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
             return new ConnectionFactoryImpl(url);
         }
-        catch (URLSyntaxException urlse)
+        catch (MalformedURLException urlse)
         {
             _logger.warn("Unable to createFactories:" + urlse);
         }
