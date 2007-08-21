@@ -252,7 +252,7 @@ class Generator
     @prefix=''                  # For indentation or comments.
     @indentstr='    '           # One indent level.
     @outdent=2
-    raise "Invalid output directory: #{outdir}" unless @outdir=="-" or File.directory?(@outdir) 
+    Pathname.new(@outdir).mkpath unless @outdir=="-" or File.directory?(@outdir) 
   end
 
   # Create a new file, set @out. 
