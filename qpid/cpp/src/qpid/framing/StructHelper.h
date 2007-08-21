@@ -18,13 +18,39 @@
  * under the License.
  *
  */
-package org.apache.qpid.gentools;
+#ifndef _StructHelper_
+#define _StructHelper_
 
-@SuppressWarnings("serial")
-public class AmqpTypeMappingException extends Exception
+#include "qpid/Exception.h"
+
+namespace qpid {
+namespace framing {
+
+class StructHelper
 {
-	public AmqpTypeMappingException(String msg)
-	{
-		super(msg);
-	}
-}
+public:
+
+    template <class T> void encode(const T t, std::string& data) {
+        uint32_t size = t.size() + 2/*type*/;
+        Buffer buffer(size);
+        buffer.putShort(T::TYPE);
+        t.encode(buffer);
+        buffer.flip();
+        buffer.getRawData(data, size);        
+    }
+
+    template <class T> void decode(T t, std::string& data) {
+        Buffer buffer(data.length());
+        buffer.putRawData(data);        
+        buffer.flip();
+        uint16_t type = buffer.getShort();
+        if (type == T::TYPE) {
+            t.decode(buffer);
+        } else {
+            throw Exception("Type code does not match");
+        }
+    }
+};
+
+}}
+#endif  

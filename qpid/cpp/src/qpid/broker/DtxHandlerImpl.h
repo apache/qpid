@@ -31,34 +31,34 @@ class DtxHandlerImpl
       public framing::AMQP_ServerOperations::DtxCoordinationHandler,
       public framing::AMQP_ServerOperations::DtxDemarcationHandler
 {    
-    framing::AMQP_ClientProxy::DtxDemarcation dClient;
-    framing::AMQP_ClientProxy::DtxCoordination cClient;
 public:
     DtxHandlerImpl(CoreRefs& parent);
 
     // DtxCoordinationHandler:
 
-    void commit(u_int16_t ticket, const std::string& xid, bool onePhase);
+    framing::DtxCoordinationCommitResult commit(u_int16_t ticket, const std::string& xid, bool onePhase);
 
     void forget(u_int16_t ticket, const std::string& xid);
 
-    void getTimeout(const std::string& xid);
+    framing::DtxCoordinationGetTimeoutResult getTimeout(const std::string& xid);
 
-    void prepare(u_int16_t ticket, const std::string& xid);
+    framing::DtxCoordinationPrepareResult prepare(u_int16_t ticket, const std::string& xid);
 
-    void recover(u_int16_t ticket, bool startscan, bool endscan);
+    framing::DtxCoordinationRecoverResult recover(u_int16_t ticket, bool startscan, bool endscan);
 
-    void rollback(u_int16_t ticket, const std::string& xid);
+    framing::DtxCoordinationRollbackResult rollback(u_int16_t ticket, const std::string& xid);
 
     void setTimeout(u_int16_t ticket, const std::string& xid, u_int32_t timeout);
 
     // DtxDemarcationHandler:
-
-    void end(u_int16_t ticket, const std::string& xid, bool fail, bool suspend);
-
+    
+    framing::DtxDemarcationEndResult end(u_int16_t ticket, const std::string& xid, bool fail, bool suspend);
+    
     void select();
+    
+    framing::DtxDemarcationStartResult start(u_int16_t ticket, const std::string& xid, bool join, bool resume);
 
-    void start(u_int16_t ticket, const std::string& xid, bool join, bool resume);
+
 };
 
 

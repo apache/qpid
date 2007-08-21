@@ -54,7 +54,7 @@ all of the above plus:
  * libtool    <http://www.gnu.org/software/libtool/>   (1.5.22)
  * doxygen    <ftp://ftp.stack.nl/pub/users/dimitri/>  (1.5.1)
  * graphviz   <http://www.graphviz.org/>               (2.12)
- * JDK 5.0    <http://java.sun.com/j2se/1.5.0/>        (1.5.0.11)
+ * ruby 1.8   <http://www.ruby-lang.org>               (1.8.4)
 
 === Installing as root ===
 

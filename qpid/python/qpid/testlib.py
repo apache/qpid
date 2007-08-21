@@ -228,7 +228,7 @@ class TestBase(unittest.TestCase):
     def queue_declare(self, channel=None, *args, **keys):
         channel = channel or self.channel
         reply = channel.queue_declare(*args, **keys)
-        self.queues.append((channel, reply.queue))
+        self.queues.append((channel, keys["queue"]))
         return reply
 
     def exchange_declare(self, channel=None, ticket=0, exchange='',
@@ -254,7 +254,7 @@ class TestBase(unittest.TestCase):
             if not "uniqueTag" in dir(self): self.uniqueTag = 1
             else: self.uniqueTag += 1
             consumer_tag = "tag" + str(self.uniqueTag)
-            self.channel.message_consume(queue=queueName, destination=consumer_tag, no_ack=True)
+            self.channel.message_subscribe(queue=queueName, destination=consumer_tag)
             return self.client.queue(consumer_tag)
 
     def assertEmpty(self, queue):

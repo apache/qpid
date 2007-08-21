@@ -60,8 +60,7 @@ class AmqpField < AmqpElement
 
   # Get AMQP type for a domain name.
   def domain_type(name)
-    domain=elements["/amqp/domain[@name='#{name}']"]
-    (domain and domain.attributes["type"] or name)
+    @cache_domain_type ||= domain_type_impl(name)
   end
 
   # Get the AMQP type of this field.
@@ -69,6 +68,22 @@ class AmqpField < AmqpElement
     d=attributes["domain"]
     dt=domain_type d if d
     (dt or attributes["type"])
+  end
+
+  # determine whether this type is defined as a struct in the spec
+  def defined_as_struct()
+    @cache_defined_as_struct ||= defined_as_struct_impl()
+  end
+
+private
+  def domain_type_impl(name)
+    domain=elements["/amqp/domain[@name='#{name}']"]
+    (domain and domain.attributes["type"] or name)
+  end
+
+  def defined_as_struct_impl()
+    domain_name = attributes["domain"]
+    elements["/amqp/domain[@name='#{domain_name}']/struct"]
   end
 end
 
@@ -98,6 +113,18 @@ class AmqpMethod < AmqpElement
     }
   end
 
+  def has_result?() 
+    @cache_has_result ||= elements["result/struct"] 
+  end
+
+  def result_struct() 
+    @cache_result_struct ||= has_result? ? AmqpStruct.new(elements["result/struct"], self) : nil
+  end
+
+  def is_server_method?()
+    @cache_is_server_method ||= elements["chassis[@name='server']"]
+  end
+
   def request?() responds_to().empty?; end
   def response?() not request?; end
 end
@@ -116,7 +143,25 @@ class AmqpClass < AmqpElement
   def amqp_methods_on(chassis)
     @cache_amqp_methods_on ||= { }
     @cache_amqp_methods_on[chassis] ||= elements.collect("method/chassis[@name='#{chassis}']/..") { |m| AmqpMethod.new(m,self) }.sort_by_name
+  end
 end
+
+
+# AMQP struct element.
+class AmqpStruct < AmqpElement
+  def initialize(xml,amqp) super; end
+
+  def type() attributes["type"];  end
+
+  def size() attributes["size"];  end
+
+  def result?() parent.name == "result"; end
+
+  def domain?() parent.name == "domain"; end
+
+  def fields()
+    @cache_fields ||= elements.collect("field") { |f| AmqpField.new(f,self); }
+  end
 end
 
 # AMQP root element.
@@ -152,9 +197,23 @@ class AmqpRoot < AmqpElement
     @cache_amqp_classes ||= elements.collect("class") { |c|
       AmqpClass.new(c,self) }.sort_by_name
   end
+
+  def amqp_structs()
+    @cache_amqp_structs ||= amqp_result_structs + amqp_domain_structs
+  end
+
+  def amqp_domain_structs()
+    @cache_amqp_domain_structs ||= elements.collect("domain/struct") { |s| AmqpStruct.new(s, self) }
+  end
+
+  def amqp_result_structs()
+    @cache_amqp_result_structs ||=  amqp_methods.collect { |m| m.result_struct }.compact
+  end
   
   # Return all methods on all classes.
-  def amqp_methods() amqp_classes.collect { |c| c.amqp_methods }.flatten;  end
+  def amqp_methods() 
+    @cache_amqp_methods ||= amqp_classes.collect { |c| c.amqp_methods }.flatten;  
+  end
   
   # Return all methods on chassis for all classes.
   def amqp_methods_on(chassis)

@@ -26,7 +26,7 @@
 #include "qpid/QpidError.h"
 #include "ClientChannel.h"
 #include "ConnectionImpl.h"
-#include "Session.h"
+#include "qpid/client/Session.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 
 
