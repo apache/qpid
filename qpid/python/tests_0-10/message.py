@@ -34,8 +34,8 @@ class MessageTests(TestBase):
         channel.queue_declare(queue="test-queue-1a", exclusive=True)
         channel.queue_declare(queue="test-queue-1b", exclusive=True)
         #establish two consumers one of which excludes delivery of locally sent messages
-        channel.message_consume(destination="local_included", queue="test-queue-1a")
-        channel.message_consume(destination="local_excluded", queue="test-queue-1b", no_local=True)
+        channel.message_subscribe(destination="local_included", queue="test-queue-1a")
+        channel.message_subscribe(destination="local_excluded", queue="test-queue-1b", no_local=True)
 
         #send a message
         channel.message_transfer(routing_key="test-queue-1a", body="consume_no_local")
@@ -61,9 +61,9 @@ class MessageTests(TestBase):
         channel.queue_declare(queue="test-queue-2", exclusive=True)
 
         #check that an exclusive consumer prevents other consumer being created:
-        channel.message_consume(destination="first", queue="test-queue-2", exclusive=True)
+        channel.message_subscribe(destination="first", queue="test-queue-2", exclusive=True)
         try:
-            channel.message_consume(destination="second", queue="test-queue-2")
+            channel.message_subscribe(destination="second", queue="test-queue-2")
             self.fail("Expected consume request to fail due to previous exclusive consumer")
         except Closed, e:
             self.assertChannelException(403, e.args[0])
@@ -73,9 +73,9 @@ class MessageTests(TestBase):
         channel.channel_open()
 
         #check that an exclusive consumer cannot be created if a consumer already exists:
-        channel.message_consume(destination="first", queue="test-queue-2")
+        channel.message_subscribe(destination="first", queue="test-queue-2")
         try:
-            channel.message_consume(destination="second", queue="test-queue-2", exclusive=True)
+            channel.message_subscribe(destination="second", queue="test-queue-2", exclusive=True)
             self.fail("Expected exclusive consume request to fail due to previous consumer")
         except Closed, e:
             self.assertChannelException(403, e.args[0])
@@ -87,7 +87,7 @@ class MessageTests(TestBase):
         channel = self.channel
         try:
             #queue specified but doesn't exist:
-            channel.message_consume(queue="invalid-queue")
+            channel.message_subscribe(queue="invalid-queue")
             self.fail("Expected failure when consuming from non-existent queue")
         except Closed, e:
             self.assertChannelException(404, e.args[0])
@@ -96,7 +96,7 @@ class MessageTests(TestBase):
         channel.channel_open()
         try:
             #queue not specified and none previously declared for channel:
-            channel.message_consume(queue="")
+            channel.message_subscribe(queue="")
             self.fail("Expected failure when consuming from unspecified queue")
         except Closed, e:
             self.assertConnectionException(530, e.args[0])
@@ -110,9 +110,9 @@ class MessageTests(TestBase):
         channel.queue_declare(queue="test-queue-3", exclusive=True)
 
         #check that attempts to use duplicate tags are detected and prevented:
-        channel.message_consume(destination="first", queue="test-queue-3")
+        channel.message_subscribe(destination="first", queue="test-queue-3")
         try:
-            channel.message_consume(destination="first", queue="test-queue-3")
+            channel.message_subscribe(destination="first", queue="test-queue-3")
             self.fail("Expected consume request to fail due to non-unique tag")
         except Closed, e:
             self.assertConnectionException(530, e.args[0])
@@ -124,7 +124,7 @@ class MessageTests(TestBase):
         channel = self.channel
         #setup, declare a queue:
         channel.queue_declare(queue="test-queue-4", exclusive=True)
-        channel.message_consume(destination="my-consumer", queue="test-queue-4")
+        channel.message_subscribe(destination="my-consumer", queue="test-queue-4")
         channel.message_transfer(routing_key="test-queue-4", body="One")
 
         #cancel should stop messages being delivered
@@ -150,7 +150,7 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue="test-ack-queue", exclusive=True)
         
-        channel.message_consume(queue="test-ack-queue", destination="consumer_tag", no_ack=False)
+        channel.message_subscribe(queue="test-ack-queue", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
         channel.message_transfer(routing_key="test-ack-queue", body="One")
@@ -194,7 +194,7 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue="test-requeue", exclusive=True)
         
-        channel.message_consume(queue="test-requeue", destination="consumer_tag", no_ack=False)
+        channel.message_subscribe(queue="test-requeue", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
         channel.message_transfer(routing_key="test-requeue", body="One")
@@ -225,7 +225,7 @@ class MessageTests(TestBase):
         #requeue unacked messages (Three and Five)
         channel.message_recover(requeue=True)
 
-        channel.message_consume(queue="test-requeue", destination="consumer_tag")
+        channel.message_subscribe(queue="test-requeue", destination="consumer_tag")
         queue2 = self.client.queue("consumer_tag")
         
         msg3b = queue2.get(timeout=1)
@@ -256,7 +256,7 @@ class MessageTests(TestBase):
         #setup: declare queue and subscribe
         channel = self.channel
         channel.queue_declare(queue="test-prefetch-count", exclusive=True)
-        subscription = channel.message_consume(queue="test-prefetch-count", destination="consumer_tag", no_ack=False)
+        subscription = channel.message_subscribe(queue="test-prefetch-count", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
         #set prefetch to 5:
@@ -298,7 +298,7 @@ class MessageTests(TestBase):
         #setup: declare queue and subscribe
         channel = self.channel
         channel.queue_declare(queue="test-prefetch-size", exclusive=True)
-        subscription = channel.message_consume(queue="test-prefetch-size", destination="consumer_tag", no_ack=False)
+        subscription = channel.message_subscribe(queue="test-prefetch-size", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
         #set prefetch to 50 bytes (each message is 9 or 10 bytes):
@@ -362,13 +362,13 @@ class MessageTests(TestBase):
         self.assertEqual(reply.method.klass.name, "message")
         self.assertEqual(reply.method.name, "empty")
 
-        #repeat for no_ack=False
+        #repeat for confirm_mode=1
         for i in range(11, 21):
             channel.message_transfer(routing_key="test-get", body="Message %d" % i)
 
         for i in range(11, 21):
             tag = "queue %d" % i
-            reply = channel.message_get(no_ack=False, queue="test-get", destination=tag)
+            reply = channel.message_get(confirm_mode=1, queue="test-get", destination=tag)
             self.assertEqual(reply.method.klass.name, "message")
             self.assertEqual(reply.method.name, "ok")
             msg = self.client.queue(tag).get(timeout=1)
@@ -389,7 +389,7 @@ class MessageTests(TestBase):
         #get the unacked messages again (14, 16, 18, 20)
         for i in [14, 16, 18, 20]:
             tag = "queue %d" % i
-            reply = channel.message_get(no_ack=False, queue="test-get", destination=tag)
+            reply = channel.message_get(confirm_mode=1, queue="test-get", destination=tag)
             self.assertEqual(reply.method.klass.name, "message")
             self.assertEqual(reply.method.name, "ok")
             msg = self.client.queue(tag).get(timeout=1)
@@ -412,7 +412,7 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         channel.queue_declare(queue="ref_queue", exclusive=True)
-        channel.message_consume(queue="ref_queue", destination="c1")
+        channel.message_subscribe(queue="ref_queue", destination="c1")
         queue = self.client.queue("c1")
 
         refId = "myref"
@@ -454,7 +454,7 @@ class MessageTests(TestBase):
         other = self.connect(tune_params={"channel_max":10, "frame_max":5120, "heartbeat":0})
         ch2 = other.channel(1)
         ch2.channel_open()
-        ch2.message_consume(queue="ref_queue", destination="c1")
+        ch2.message_subscribe(queue="ref_queue", destination="c1")
         queue = other.queue("c1")
         
         msg = queue.get(timeout=1)
@@ -469,7 +469,7 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         channel.queue_declare(queue="ref_queue", exclusive=True)
-        channel.message_consume(queue="ref_queue", destination="c1")
+        channel.message_subscribe(queue="ref_queue", destination="c1")
         queue = self.client.queue("c1")
 
         refId = "myref"
@@ -502,8 +502,8 @@ class MessageTests(TestBase):
         #declare and consume from two queues
         channel.queue_declare(queue="q-one", exclusive=True)
         channel.queue_declare(queue="q-two", exclusive=True)
-        channel.message_consume(queue="q-one", destination="q-one")
-        channel.message_consume(queue="q-two", destination="q-two")
+        channel.message_subscribe(queue="q-one", destination="q-one")
+        channel.message_subscribe(queue="q-two", destination="q-two")
         queue1 = self.client.queue("q-one")
         queue2 = self.client.queue("q-two")
 
@@ -590,7 +590,7 @@ class MessageTests(TestBase):
     def test_empty_reference(self):
         channel = self.channel
         channel.queue_declare(queue="ref_queue", exclusive=True)
-        channel.message_consume(queue="ref_queue", destination="c1")
+        channel.message_subscribe(queue="ref_queue", destination="c1")
         queue = self.client.queue("c1")
 
         refId = "myref"
@@ -611,14 +611,14 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue = "q", exclusive=True)
 
-        channel.message_consume(queue = "q", destination = "consumer")
+        channel.message_subscribe(queue = "q", destination = "consumer")
         channel.message_transfer(routing_key = "q", body="blah, blah")
         msg = self.client.queue("consumer").get(timeout = 1)
         self.assertEquals(msg.body, "blah, blah")
         channel.message_cancel(destination = "consumer")
         msg.reject()
 
-        channel.message_consume(queue = "q", destination = "checker")
+        channel.message_subscribe(queue = "q", destination = "checker")
         msg = self.client.queue("checker").get(timeout = 1)
         self.assertEquals(msg.body, "blah, blah")
 
@@ -634,7 +634,7 @@ class MessageTests(TestBase):
 
         channel = self.client.channel(2)
         channel.channel_open()
-        channel.message_consume(queue = "q", destination = "consumer")
+        channel.message_subscribe(queue = "q", destination = "consumer")
         offset = channel.message_resume(reference="my-ref", identifier="my-checkpoint").value
         self.assertTrue(offset<=16)
         channel.message_append(reference="my-ref", bytes="qrstuvwxyz")
@@ -654,7 +654,7 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue = "q", exclusive=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_consume(queue = "q", destination = "c")
+        channel.message_subscribe(queue = "q", destination = "c")
         channel.message_flow_mode(mode = 0, destination = "c")
         #set credit to zero (can remove this once move to proper default for subscribe method)
         channel.message_stop(destination = "c")
@@ -686,7 +686,7 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue = "q", exclusive=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_consume(queue = "q", destination = "c")
+        channel.message_subscribe(queue = "q", destination = "c")
         channel.message_flow_mode(mode = 0, destination = "c")
         #set credit to zero (can remove this once move to proper default for subscribe method)
         channel.message_stop(destination = "c")
@@ -720,7 +720,7 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue = "q", exclusive=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_consume(queue = "q", destination = "c")
+        channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1)
         channel.message_flow_mode(mode = 1, destination = "c")
         #set credit to zero (can remove this once move to proper default for subscribe method)
         channel.message_stop(destination = "c")
@@ -754,7 +754,7 @@ class MessageTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue = "q", exclusive=True)
         #create consumer (for now that defaults to infinite credit)
-        channel.message_consume(queue = "q", destination = "c")
+        channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1)
         channel.message_flow_mode(mode = 1, destination = "c")
         #set credit to zero (can remove this once move to proper default for subscribe method)
         channel.message_stop(destination = "c")

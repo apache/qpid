@@ -20,6 +20,7 @@
  */
 #include "qpid/log/Statement.h"
 #include <iostream>
+#include <sstream>
 #include "ClientChannel.h"
 #include "qpid/sys/Monitor.h"
 #include "ClientMessage.h"
@@ -54,7 +55,8 @@ class ScopedSync
 };
 
 Channel::Channel(bool _transactional, u_int16_t _prefetch) :
-    prefetch(_prefetch), transactional(_transactional), running(false)
+    prefetch(_prefetch), transactional(_transactional), running(false), 
+    uniqueId(true)/*could eventually be the session id*/, nameCounter(0)
 {
 }
 
@@ -103,20 +105,22 @@ void Channel::deleteExchange(Exchange& exchange, bool synch){
 }
 
 void Channel::declareQueue(Queue& queue, bool synch){
+    if (queue.getName().empty()) {
+        stringstream uniqueName;
+        uniqueName << uniqueId << "-queue-" << ++nameCounter;
+        queue.setName(uniqueName.str());
+    }
+
     FieldTable args;
     ScopedSync s(*session, synch);
-    Response r = session->queueDeclare(0, queue.getName(), empty, false/*passive*/, queue.isDurable(),
-                                       queue.isExclusive(), queue.isAutoDelete(), !synch, args);
+    session->queueDeclare(0, queue.getName(), empty, false/*passive*/, queue.isDurable(),
+                          queue.isExclusive(), queue.isAutoDelete(), args);
     
-    if(synch) {
-        if(queue.getName().length() == 0)
-            queue.setName(r.as<QueueDeclareOkBody>().getQueue());
-    }
 }
 
 void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch){
     ScopedSync s(*session, synch);
-    session->queueDelete(0, queue.getName(), ifunused, ifempty, !synch);
+    session->queueDelete(0, queue.getName(), ifunused, ifempty);
 }
 
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){
@@ -168,7 +172,7 @@ void Channel::cancel(const std::string& tag, bool synch) {
         consumers.erase(i);
     }
     ScopedSync s(*session, synch);
-    session->basicCancel(tag, !synch);
+    session->basicCancel(tag);
 }
 
 bool Channel::get(Message& msg, const Queue& queue, AckMode ackMode) {

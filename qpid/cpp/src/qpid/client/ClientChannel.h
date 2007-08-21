@@ -24,11 +24,12 @@
 #include <memory>
 #include <boost/scoped_ptr.hpp>
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/Uuid.h"
 #include "ClientExchange.h"
 #include "ClientMessage.h"
 #include "ClientQueue.h"
 #include "ConnectionImpl.h"
-#include "Session.h"
+#include "qpid/client/Session.h"
 #include "qpid/Exception.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Runnable.h"
@@ -83,6 +84,8 @@ class Channel : private sys::Runnable
     SessionCore::shared_ptr sessionCore;
     framing::ChannelId channelId;
     BlockingQueue<ReceivedContent::shared_ptr> gets;
+    framing::Uuid uniqueId;
+    uint32_t nameCounter;
 
     void stop();
 

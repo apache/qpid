@@ -45,8 +45,11 @@ class ExecutionHandler :
     framing::ProtocolVersion version;
     uint64_t maxFrameSize;
 
-    void complete(uint32_t mark, framing::SequenceNumberSet range);    
+    void complete(uint32_t mark, const framing::SequenceNumberSet& range);    
     void flush();
+    void noop();
+    void result(uint32_t command, const std::string& data);
+    void sync();
 
 public:
     BlockingQueue<ReceivedContent::shared_ptr> received; 

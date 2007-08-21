@@ -68,7 +68,7 @@ class ExampleTest (TestBase):
         # has fields corresponding to the reply method fields, plus a content
         # field that is filled if the reply includes content. In this case the
         # interesting field is the consumer_tag.
-        channel.message_consume(queue="test-queue", destination="consumer_tag")
+        channel.message_subscribe(queue="test-queue", destination="consumer_tag")
 
         # We can use the Client.queue(...) method to access the queue
         # corresponding to our consumer_tag.

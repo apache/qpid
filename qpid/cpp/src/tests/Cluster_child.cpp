@@ -32,7 +32,7 @@ using namespace qpid::log;
 
 static const ProtocolVersion VER;
 
-/** Chlid part of Cluster::clusterTwo test */
+/** Child part of Cluster::clusterTwo test */
 void clusterTwo() {
     TestCluster cluster("clusterTwo", "amqp:child:2");
     AMQFrame frame;

@@ -145,8 +145,10 @@ namespace qpid {
             inline const string& getName() const { return name; }
             inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
             inline bool hasExclusiveConsumer() const { return exclusive; }
+            inline bool hasExclusiveOwner() const { return owner != 0; }
             inline bool isDurable() const { return store != 0; }
-
+            inline const framing::FieldTable& getSettings() const { return settings; }
+            inline bool isAutoDelete() const { return autodelete; }
             bool canAutoDelete() const;
 
             bool enqueue(TransactionContext* ctxt, Message::shared_ptr& msg);

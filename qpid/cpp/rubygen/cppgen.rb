@@ -62,9 +62,11 @@ end
 # Additional methods for AmqpField.
 class AmqpField
   def cppname() @cache_cppname ||= name.lcaps.cppsafe; end
-  def cpptype() @cache_cpptype ||= amqp_root.param_type(field_type); end
+  def cpptype() @cache_cpptype ||= defined_as_struct ? "const " + field_type.caps + "&" : amqp_root.param_type(field_type); end
+  def cpp_member_type() @cache_cpp_member_type ||= defined_as_struct ? field_type.caps : amqp_root.member_type(field_type); end
   def cppret_type() @cache_cpptype ||= amqp_root.return_type(field_type); end
   def type_name () @type_name ||= cpptype+" "+cppname; end
+  def bit?() field_type == "bit" end
 end
 
 # Additional methods for AmqpMethod
@@ -79,6 +81,32 @@ end
 class AmqpClass
   def cppname() name.caps; end
   def body_name() cppname+"Body"
+  end
+end
+
+class AmqpStruct
+  def cppname() 
+    @cache_cppname ||= cppname_impl()
+  end 
+
+private
+
+  def cppname_impl() 
+    #The name of the struct comes from the context it appears in:
+    #structs defined in a domain get their name from the domain
+    #element, structs defined in a result element get their name by
+    #appending 'Result' to the enclosing method name.
+    if (domain?)
+      parent.attributes["name"].caps
+    else
+      if (result?)
+        method = parent.parent
+        method.parent.attributes["name"].caps +  method.attributes["name"].caps + "Result"
+      else
+        raise "Bad struct context: expected struct to be child of <domain> or <result>"
+      end
+    end
+
   end
 end
 
@@ -97,6 +125,7 @@ class AmqpRoot
     "table"=>["FieldTable", "const FieldTable&", "const FieldTable&"],
     "content"=>["Content", "const Content&", "const Content&"],
     "rfc1982-long-set"=>["SequenceNumberSet", "const SequenceNumberSet&", "const SequenceNumberSet&"],
+    "long-struct"=>["string", "const string&"],
     "uuid"=>["string", "const string&"] # FIXME should be: ["Uuid", "const Uuid&", "const Uuid&"]
   }
 

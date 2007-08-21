@@ -30,22 +30,25 @@ class QueryTests(TestBase):
         """
         channel = self.channel
         #check returned type for the standard exchanges
-        self.assertEqual("direct", channel.exchange_query(name="amq.direct").type)
-        self.assertEqual("topic", channel.exchange_query(name="amq.topic").type)
-        self.assertEqual("fanout", channel.exchange_query(name="amq.fanout").type)
-        self.assertEqual("headers", channel.exchange_query(name="amq.match").type)
-        self.assertEqual("direct", channel.exchange_query(name="").type)        
+        self.assert_type("direct", channel.exchange_query(name="amq.direct"))
+        self.assert_type("topic", channel.exchange_query(name="amq.topic"))
+        self.assert_type("fanout", channel.exchange_query(name="amq.fanout"))
+        self.assert_type("headers", channel.exchange_query(name="amq.match"))
+        self.assert_type("direct", channel.exchange_query(name=""))        
         #declare an exchange
         channel.exchange_declare(exchange="my-test-exchange", type= "direct", durable=False)
         #check that the result of a query is as expected
         response = channel.exchange_query(name="my-test-exchange")
-        self.assertEqual("direct", response.type)
+        self.assert_type("direct", response)
         self.assertEqual(False, response.durable)
         self.assertEqual(False, response.not_found)
         #delete the exchange
         channel.exchange_delete(exchange="my-test-exchange")
         #check that the query now reports not-found
         self.assertEqual(True, channel.exchange_query(name="my-test-exchange").not_found)
+
+    def assert_type(self, expected_type, response):
+        self.assertEqual(expected_type, response.__getattr__("type"))
 
     def test_binding_query_direct(self):
         """

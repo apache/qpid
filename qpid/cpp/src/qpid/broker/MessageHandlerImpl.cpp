@@ -87,19 +87,21 @@ MessageHandlerImpl::offset(uint64_t /*value*/ )
 }
 
 void
-MessageHandlerImpl::consume(uint16_t /*ticket*/,
+MessageHandlerImpl::subscribe(uint16_t /*ticket*/,
                             const string& queueName,
                             const string& destination,
                             bool noLocal,
-                            bool noAck,
+                            u_int8_t confirmMode,
+                            u_int8_t /*acquireMode*/,//TODO: implement acquire modes
                             bool exclusive,
                             const framing::FieldTable& filter )
 {
     Queue::shared_ptr queue = getQueue(queueName);
     if(!destination.empty() && channel.exists(destination))
         throw ConnectionException(530, "Consumer tags must be unique");
+
     string tag = destination;
-    channel.consume(MessageMessage::getToken(destination), tag, queue, noLocal, !noAck, exclusive, &filter);
+    channel.consume(MessageMessage::getToken(destination), tag, queue, noLocal, confirmMode == 1, exclusive, &filter);
     // Dispatch messages as there is now a consumer.
     queue->requestDispatch();
 }
@@ -153,8 +155,9 @@ MessageHandlerImpl::recover(bool requeue)
 }
 
 void
-MessageHandlerImpl::reject(uint16_t /*code*/, const string& /*text*/ )
+MessageHandlerImpl::reject(const SequenceNumberSet& /*transfers*/, uint16_t /*code*/, const string& /*text*/ )
 {
+    //TODO: implement
 }
 
 void
@@ -210,5 +213,14 @@ void MessageHandlerImpl::stop(const std::string& destination)
     channel.stop(destination);        
 }
 
+void MessageHandlerImpl::acquire(const SequenceNumberSet& /*transfers*/, u_int8_t /*mode*/)
+{
+    throw ConnectionException(540, "Not yet implemented");
+}
+
+void MessageHandlerImpl::release(const SequenceNumberSet& /*transfers*/)
+{
+    throw ConnectionException(540, "Not yet implemented");
+}
 
 }} // namespace qpid::broker
