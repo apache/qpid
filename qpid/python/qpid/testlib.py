@@ -24,6 +24,7 @@
 import sys, re, unittest, os, random, logging
 import qpid.client, qpid.spec
 import Queue
+from fnmatch import fnmatch
 from getopt import getopt, GetoptError
 from qpid.content import Content
 from qpid.message import Message
@@ -148,8 +149,10 @@ Options:
     def testSuite(self):
         class IgnoringTestSuite(unittest.TestSuite):
             def addTest(self, test):
-                if isinstance(test, unittest.TestCase) and test.id() in testrunner.ignore:
-                    return
+                if isinstance(test, unittest.TestCase):
+                    for pattern in testrunner.ignore:
+                        if fnmatch(test.id(), pattern):
+                            return
                 unittest.TestSuite.addTest(self, test)
 
         # Use our IgnoringTestSuite in the test loader.
