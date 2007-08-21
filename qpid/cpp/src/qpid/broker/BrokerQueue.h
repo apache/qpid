@@ -60,6 +60,12 @@ namespace qpid {
             typedef std::vector<Consumer*> Consumers;
             typedef std::deque<Message::shared_ptr> Messages;
             
+            struct DispatchFunctor {
+                Queue& queue;
+                DispatchFunctor(Queue& q) : queue(q) {}
+                void operator()() { queue.dispatch(); }
+            };
+                
             const string name;
             const bool autodelete;
             MessageStore* const store;
@@ -75,8 +81,8 @@ namespace qpid {
             std::auto_ptr<QueuePolicy> policy;            
             QueueBindings bindings;
             boost::shared_ptr<Exchange> alternateExchange;
-            qpid::sys::Serializer serializer;
-            qpid::sys::Serializer::Task dispatchCallback;
+            qpid::sys::Serializer<DispatchFunctor> serializer;
+            DispatchFunctor dispatchCallback;
 
             void pop();
             void push(Message::shared_ptr& msg);
