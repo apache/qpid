@@ -98,9 +98,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *                                               3 - DUPS_OK_ACKNOWLEDGE
  *                                               257 - NO_ACKNOWLEDGE
  *                                               258 - PRE_ACKNOWLEDGE
- * <tr><td> consTransacted   <td> transacted <td> Whether or not consumers use transactions. Defaults to the same value
- *                                                as the 'transacted' option if not seperately defined.
- * <tr><td> consAckMode      <td> ackMode  <td> The message acknowledgement mode for consumers. Defaults to the same
+ * <tr><td> consTransacted   <td> false    <td> Whether or not consumers use transactions. Defaults to the same value
+ *                                              as the 'transacted' option if not seperately defined.
+ * <tr><td> consAckMode      <td> AUTO_ACK <td> The message acknowledgement mode for consumers. Defaults to the same
  *                                              value as 'ackMode' if not seperately defined.
  * <tr><td> maxPending       <td> 0        <td> The maximum size in bytes, of messages sent but not yet received.
  *                                              Limits the volume of messages currently buffered on the client
@@ -165,6 +165,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     public static final boolean TRANSACTED_DEFAULT = false;
 
     public static final String CONSUMER_TRANSACTED_PROPNAME = "consTransacted";
+    public static final boolean CONSUMER_TRANSACTED_DEFAULT = false;
 
     /** Holds the name of the property to get the test broker url from. */
     public static final String BROKER_PROPNAME = "broker";
@@ -284,6 +285,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     public static final int ACK_MODE_DEFAULT = Session.AUTO_ACKNOWLEDGE;
 
     public static final String CONSUMER_ACK_MODE_PROPNAME = "consAckMode";
+    public static final int CONSUMER_ACK_MODE_DEFAULT = Session.AUTO_ACKNOWLEDGE;
 
     public static final String MAX_PENDING_PROPNAME = "maxPending";
     public static final int MAX_PENDING_DEFAULT = 0;
@@ -312,10 +314,10 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         defaults.setPropertyIfNull(PING_QUEUE_NAME_PROPNAME, PING_QUEUE_NAME_DEFAULT);
         defaults.setPropertyIfNull(SELECTOR_PROPNAME, SELECTOR_DEFAULT);
         defaults.setPropertyIfNull(TRANSACTED_PROPNAME, TRANSACTED_DEFAULT);
-        defaults.setPropertyIfNull(CONSUMER_TRANSACTED_PROPNAME, defaults.getProperty(TRANSACTED_PROPNAME));
+        defaults.setPropertyIfNull(CONSUMER_TRANSACTED_PROPNAME, CONSUMER_TRANSACTED_DEFAULT);
         defaults.setPropertyIfNull(PERSISTENT_MODE_PROPNAME, PERSISTENT_MODE_DEFAULT);
         defaults.setPropertyIfNull(ACK_MODE_PROPNAME, ACK_MODE_DEFAULT);
-        defaults.setPropertyIfNull(CONSUMER_ACK_MODE_PROPNAME, defaults.getProperty(ACK_MODE_PROPNAME));
+        defaults.setPropertyIfNull(CONSUMER_ACK_MODE_PROPNAME, CONSUMER_ACK_MODE_DEFAULT);
         defaults.setPropertyIfNull(MESSAGE_SIZE_PROPNAME, MESSAGE_SIZE_DEAFULT);
         defaults.setPropertyIfNull(VERBOSE_PROPNAME, VERBOSE_DEFAULT);
         defaults.setPropertyIfNull(PUBSUB_PROPNAME, PUBSUB_DEFAULT);
