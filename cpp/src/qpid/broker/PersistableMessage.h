@@ -45,6 +45,16 @@ namespace broker {
     * stored.
     */
     bool enqueueCompleted;
+ 
+    /**
+    * Counts the number of times the message has been processed
+    * async - thus when it == 0 the broker knows it has ownership
+    * -> an async store can increment this counter if it writes a
+    * copy to each queue, and case use this counter to know when all
+    * the write are complete
+    */
+    int asyncCounter;
+
     /**
     * Needs to be set false on Message construction, then
     * set once the dequeueis complete, it gets set
@@ -64,10 +74,19 @@ public:
     virtual ~PersistableMessage() {};
     PersistableMessage():
     enqueueCompleted(false),
+    asyncCounter(0),
     dequeueCompleted(false){};
     
     inline bool isEnqueueComplete() {return enqueueCompleted;};
-    inline void enqueueComplete() {enqueueCompleted = true;};
+    inline void enqueueComplete() {
+        if (asyncCounter<=1) {
+     	    asyncCounter =0;
+	    enqueueCompleted = true; 
+        }else{
+	    asyncCounter--;
+	}
+     };
+    inline void enqueueAsync() {asyncCounter++;};
     inline bool isDequeueComplete() {return dequeueCompleted;};
     inline void dequeueComplete() {dequeueCompleted = true;};
     
