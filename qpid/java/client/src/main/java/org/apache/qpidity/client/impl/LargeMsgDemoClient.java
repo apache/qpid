@@ -9,9 +9,9 @@ import org.apache.qpidity.api.Message;
 import org.apache.qpidity.client.Client;
 import org.apache.qpidity.client.Connection;
 import org.apache.qpidity.client.ExceptionListener;
-import org.apache.qpidity.client.MessageListener;
 import org.apache.qpidity.client.Session;
 import org.apache.qpidity.client.util.FileMessage;
+import org.apache.qpidity.client.util.MessageListener;
 import org.apache.qpidity.client.util.MessagePartListenerAdapter;
 
 public class LargeMsgDemoClient
