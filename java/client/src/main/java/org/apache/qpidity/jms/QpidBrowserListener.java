@@ -20,7 +20,7 @@ package org.apache.qpidity.jms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.client.MessageListener;
+import org.apache.qpidity.client.util.MessageListener;
 
 /**
  * This listener idspatches messaes to its browser.

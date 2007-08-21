@@ -3,8 +3,6 @@ package org.apache.qpidity.client.impl;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.qpidity.Option;
@@ -14,7 +12,6 @@ import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.client.ExceptionListener;
 import org.apache.qpidity.client.MessagePartListener;
-import org.apache.qpidity.client.Session;
 
 /**
  * Implements a Qpid Sesion. 
