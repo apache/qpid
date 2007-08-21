@@ -62,6 +62,9 @@ public class QpidMessageListener implements MessageListener
     {
         try
         {
+            // to be used with flush
+            _consumer.notifyMessageReceived();
+            
             //convert this message into a JMS one
             QpidMessage jmsMessage = MessageFactory.getQpidMessage(message);
             // if consumer is asynchronous then send this message to its session.
