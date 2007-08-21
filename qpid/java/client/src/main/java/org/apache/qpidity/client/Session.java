@@ -233,7 +233,7 @@ public interface Session
      * published them.
      * <li>{@link Option#EXCLUSIVE}: <p> Request exclusive subscription access, meaning only this
      * ubscription can access the queue.
-     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an “empty” option.
+     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an ï¿½emptyï¿½ option.
      * </ul>
      *
      * @param queue       The queue this receiver is receiving messages from.
@@ -423,16 +423,6 @@ public interface Session
      */
     public void messageRelease(RangeSet ranges);
 
-
-    /**
-     * Returns the number of message received for this session since
-     * {@link Session#messageFlow} has bee invoked.
-     *
-     * @return The number of message received for this session since
-     *         {@link Session#messageFlow} has bee invoked.
-     */
-    public int messagesReceived();
-
     // -----------------------------------------------
     //            Local transaction methods
     //  ----------------------------------------------
@@ -478,7 +468,7 @@ public interface Session
      * declaring connection closes.
      * <li> {@link Option#PASSIVE}: <p> If set, the server will not create the queue.
      * This field allows the client to assert the presence of a queue without modifying the server state.
-     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an “empty” option.
+     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an ï¿½emptyï¿½ option.
      * </ul>
      * <p>In the absence of a particular option, the defaul value is false for each option
      *
@@ -540,7 +530,7 @@ public interface Session
      * <li> {@link Option#IF_EMPTY}: <p>  If set, the server will only delete the queue if it has no messages.
      * <li> {@link Option#IF_UNUSED}: <p> If set, the server will only delete the queue if it has no consumers.
      * If the queue has consumers the server does does not delete it but raises a channel exception instead.
-     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an “empty” option.
+     * <li>{@link Option#NO_OPTION}: <p> Has no effect as it represents an ï¿½emptyï¿½ option.
      * </ul>
      * </p>
      * <p/>
@@ -569,7 +559,7 @@ public interface Session
      * exchanges) are purged if/when a server restarts.
      * <li> {@link Option#PASSIVE}: <p> If set, the server will not create the exchange.
      * The client can use this to check whether an exchange exists without modifying the server state.
-     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an “empty” option.
+     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an ï¿½emptyï¿½ option.
      * </ul>
      * <p>In the absence of a particular option, the defaul value is false for each option</p>
      *
@@ -596,7 +586,7 @@ public interface Session
      * <li> {@link Option#IF_UNUSED}: <p> If set, the server will only delete the exchange if it has no queue bindings. If the
      * exchange has queue bindings the server does not delete it but raises a channel exception
      * instead.
-     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an “empty” option.
+     * <li> {@link Option#NO_OPTION}: <p> Has no effect as it represents an ï¿½emptyï¿½ option.
      * </ul>
      * <p>In the absence of a particular option, the defaul value is false for each option
      *

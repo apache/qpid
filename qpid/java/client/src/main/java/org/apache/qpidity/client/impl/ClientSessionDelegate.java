@@ -9,7 +9,6 @@ import org.apache.qpidity.MessageReject;
 import org.apache.qpidity.MessageTransfer;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.Range;
-import org.apache.qpidity.RangeSet;
 import org.apache.qpidity.Session;
 import org.apache.qpidity.SessionClosed;
 import org.apache.qpidity.SessionDelegate;
@@ -54,16 +53,7 @@ public class ClientSessionDelegate extends SessionDelegate
         _currentTransfer = currentTransfer;
         _currentMessageListener = ((ClientSession)session).getMessageListerners().get(currentTransfer.getDestination());
         _currentMessageListener.messageTransfer(currentTransfer.getId());
-        
-        //a better way is to tell the broker to stop the transfer
-        if (_currentMessageListener == null && _currentTransfer.getAcquireMode() == 1)
-        {
-            RangeSet transfers = new RangeSet();
-            transfers.add(_currentTransfer.getId());            
-            session.messageRelease(transfers);
-        }
     }
-    
     
     @Override public void messageReject(Session session, MessageReject struct) 
     {

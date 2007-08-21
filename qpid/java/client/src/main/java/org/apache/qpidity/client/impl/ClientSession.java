@@ -22,19 +22,7 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
     private ExceptionListener _exceptionListner;
     private RangeSet _acquiredMessages;
     private RangeSet _rejectedMessages;
-
-
-    public int messagesReceived()
-    {
-        // TODO
-        return 1;
-    }
-
-    @Override public void sessionClose()
-    {
-        super.sessionClose();
-    }
-    
+        
     public void messageAcknowledge(RangeSet ranges)
     {
         for (Range range : ranges)
@@ -97,6 +85,10 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
     
     public void setMessageListener(String destination, MessagePartListener listener)
     {
+        if (listener == null)
+        {
+            throw new IllegalArgumentException("Cannot set message listener to null");
+        }
         _messageListeners.put(destination, listener);       
     }
     
@@ -104,8 +96,6 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
     {
         _exceptionListner = exceptionListner;        
     }   
-    
-    // ugly but nessacery
     
     void setAccquiredMessages(RangeSet acquiredMessages)
     {
