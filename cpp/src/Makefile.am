@@ -223,7 +223,6 @@ libqpidclient_la_SOURCES =			\
 
 
 nobase_include_HEADERS = \
-  $(rgen_h) \
   $(platform_hdr) \
   qpid/broker/AccumulatedAck.h \
   qpid/broker/BrokerChannel.h \
