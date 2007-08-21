@@ -75,6 +75,7 @@ class BrokerChannelTest : public CppUnit::TestCase
     CPPUNIT_TEST(testStaging);
     CPPUNIT_TEST(testQueuePolicy);
     CPPUNIT_TEST(testFlow);
+    CPPUNIT_TEST(testAsyncMesgToMoreThanOneQueue);
     CPPUNIT_TEST_SUITE_END();
 
     shared_ptr<Broker> broker;
@@ -306,6 +307,38 @@ class BrokerChannelTest : public CppUnit::TestCase
         }
         store.check();
     }
+
+
+    //NOTE: message or queue test,
+    //but as it can usefully use the same utility classes as this
+    //class it is defined here for simpllicity
+    void testAsyncMesgToMoreThanOneQueue()
+    {
+        MockMessageStore store;
+        {//must ensure that store is last thing deleted
+        const string data1("abcd");
+        Message::shared_ptr msg1(createMessage("e", "A", "MsgA", data1.size()));
+        addContent(msg1, data1);
+ 
+        Queue::shared_ptr queue1(new Queue("my_queue1", false, &store, 0));
+        Queue::shared_ptr queue2(new Queue("my_queue2", false, &store, 0));
+        Queue::shared_ptr queue3(new Queue("my_queue3", false, &store, 0));
+        queue1->deliver(msg1);
+        queue2->deliver(msg1);
+        queue3->deliver(msg1);
+	sleep(2);
+        
+        Message::shared_ptr next = queue1->dequeue();
+        CPPUNIT_ASSERT_EQUAL(msg1, next);
+        next = queue2->dequeue();
+        CPPUNIT_ASSERT_EQUAL(msg1, next);
+        next = queue3->dequeue();
+        CPPUNIT_ASSERT_EQUAL(msg1, next);
+
+        }
+    }
+
+
 
     void testFlow(){
         Channel channel(connection, recorder, 7);
