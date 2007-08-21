@@ -121,7 +121,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
                      const qpid::framing::FieldTable& arguments); 
         void delete_(uint16_t ticket,
                      const std::string& exchange, bool ifUnused); 
-        void query(u_int16_t ticket, const string& name);
+        framing::ExchangeQueryResult query(u_int16_t ticket, const string& name);
       private:
         void checkType(Exchange::shared_ptr exchange, const std::string& type);
         void checkAlternate(Exchange::shared_ptr exchange, Exchange::shared_ptr alternate);
@@ -134,11 +134,11 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     public:
         BindingHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
 
-        void query(u_int16_t ticket,
-                   const std::string& exchange,
-                   const std::string& queue,
-                   const std::string& routingKey,
-                   const framing::FieldTable& arguments);
+        framing::BindingQueryResult query(u_int16_t ticket,
+                                          const std::string& exchange,
+                                          const std::string& queue,
+                                          const std::string& routingKey,
+                                          const framing::FieldTable& arguments);
     };
 
     class QueueHandlerImpl :
@@ -151,7 +151,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
         void declare(uint16_t ticket, const std::string& queue,
                      const std::string& alternateExchange, 
                      bool passive, bool durable, bool exclusive, 
-                     bool autoDelete, bool nowait,
+                     bool autoDelete,
                      const qpid::framing::FieldTable& arguments); 
         void bind(uint16_t ticket, const std::string& queue, 
                   const std::string& exchange, const std::string& routingKey,
@@ -161,11 +161,10 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
                     const std::string& exchange,
                     const std::string& routingKey,
                     const qpid::framing::FieldTable& arguments );
-        void purge(uint16_t ticket, const std::string& queue, 
-                   bool nowait); 
+        framing::QueueQueryResult query(const string& queue);
+        void purge(uint16_t ticket, const std::string& queue); 
         void delete_(uint16_t ticket, const std::string& queue,
-                     bool ifUnused, bool ifEmpty, 
-                     bool nowait);
+                     bool ifUnused, bool ifEmpty);
     };
 
     class BasicHandlerImpl :
@@ -179,18 +178,15 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 
         void qos(uint32_t prefetchSize,
                  uint16_t prefetchCount, bool global); 
-        void consume(
-            uint16_t ticket, const std::string& queue,
-            const std::string& consumerTag, bool noLocal, bool noAck,
-            bool exclusive, bool nowait,
-            const qpid::framing::FieldTable& fields); 
-        void cancel(const std::string& consumerTag,
-                    bool nowait); 
+        void consume(uint16_t ticket, const std::string& queue,
+                     const std::string& consumerTag, 
+                     bool noLocal, bool noAck, bool exclusive, bool nowait,
+                     const qpid::framing::FieldTable& fields); 
+        void cancel(const std::string& consumerTag); 
         void publish(uint16_t ticket,
                      const std::string& exchange, const std::string& routingKey, 
                      bool rejectUnroutable, bool immediate); 
-        void get(uint16_t ticket, const std::string& queue,
-                 bool noAck); 
+        void get(uint16_t ticket, const std::string& queue, bool noAck); 
         void ack(uint64_t deliveryTag, bool multiple); 
         void reject(uint64_t deliveryTag, bool requeue); 
         void recover(bool requeue); 

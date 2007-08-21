@@ -32,5 +32,6 @@
 #include "amqp_types.h"
 #include "FramingContent.h"
 #include "FieldTable.h"
+#include "SequenceNumberSet.h"
 
 #endif  /*!_framing_amqp_types_decl_h*/

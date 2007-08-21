@@ -38,18 +38,18 @@ class QueueTests(TestBase):
         channel.message_transfer(destination="test-exchange", routing_key="key", body="three")
 
         #check that the queue now reports 3 messages:
-        reply = channel.queue_declare(queue="test-queue")
+        channel.queue_declare(queue="test-queue")
+        reply = channel.queue_query(queue="test-queue")
         self.assertEqual(3, reply.message_count)
 
         #now do the purge, then test that three messages are purged and the count drops to 0
-        reply = channel.queue_purge(queue="test-queue");
-        self.assertEqual(3, reply.message_count)        
-        reply = channel.queue_declare(queue="test-queue")
-        self.assertEqual(0, reply.message_count)
+        channel.queue_purge(queue="test-queue");
+        reply = channel.queue_query(queue="test-queue")
+        self.assertEqual(0, reply.message_count)        
 
         #send a further message and consume it, ensuring that the other messages are really gone
         channel.message_transfer(destination="test-exchange", routing_key="key", body="four")
-        channel.message_consume(queue="test-queue", destination="tag", no_ack=True)
+        channel.message_subscribe(queue="test-queue", destination="tag")
         queue = self.client.queue("tag")
         msg = queue.get(timeout=1)
         self.assertEqual("four", msg.body)
@@ -169,8 +169,8 @@ class QueueTests(TestBase):
         channel.queue_declare(queue="queue-1", exclusive="True")
         channel.queue_declare(queue="queue-2", exclusive="True")
 
-        channel.message_consume(queue="queue-1", destination="queue-1", no_ack=True)
-        channel.message_consume(queue="queue-2", destination="queue-2", no_ack=True)
+        channel.message_subscribe(queue="queue-1", destination="queue-1")
+        channel.message_subscribe(queue="queue-2", destination="queue-2")
 
         queue1 = self.client.queue("queue-1")
         queue2 = self.client.queue("queue-2")
@@ -213,8 +213,7 @@ class QueueTests(TestBase):
         channel.message_transfer(routing_key="delete-me", body="a")
         channel.message_transfer(routing_key="delete-me", body="b")
         channel.message_transfer(routing_key="delete-me", body="c")        
-        reply = channel.queue_delete(queue="delete-me")
-        self.assertEqual(3, reply.message_count)
+        channel.queue_delete(queue="delete-me")
         #check that it has gone be declaring passively
         try:
             channel.queue_declare(queue="delete-me", passive="True")
@@ -256,7 +255,7 @@ class QueueTests(TestBase):
         channel.channel_open()
 
         #empty queue:
-        channel.message_consume(destination="consumer_tag", queue="delete-me-2", no_ack=True)
+        channel.message_subscribe(destination="consumer_tag", queue="delete-me-2")
         queue = self.client.queue("consumer_tag")
         msg = queue.get(timeout=1)
         self.assertEqual("message", msg.body)
@@ -281,7 +280,7 @@ class QueueTests(TestBase):
         #create a queue and register a consumer:
         channel.queue_declare(queue="delete-me-3")
         channel.queue_declare(queue="delete-me-3", passive="True")
-        channel.message_consume(destination="consumer_tag", queue="delete-me-3", no_ack=True)
+        channel.message_subscribe(destination="consumer_tag", queue="delete-me-3")
 
         #need new channel now:    
         channel2 = self.client.channel(2)
@@ -316,8 +315,8 @@ class QueueTests(TestBase):
         channel.queue_declare(queue="auto-delete-me", auto_delete=True)
 
         #consume from both channels
-        reply = channel.basic_consume(queue="auto-delete-me", no_ack=True)
-        channel2.basic_consume(queue="auto-delete-me", no_ack=True)
+        reply = channel.basic_consume(queue="auto-delete-me")
+        channel2.basic_consume(queue="auto-delete-me")
 
         #implicit cancel
         channel2.channel_close()
