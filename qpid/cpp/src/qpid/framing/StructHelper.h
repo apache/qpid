@@ -22,6 +22,7 @@
 #define _StructHelper_
 
 #include "qpid/Exception.h"
+#include "Buffer.h"
 
 namespace qpid {
 namespace framing {
