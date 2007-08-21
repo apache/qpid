@@ -74,6 +74,19 @@ def dromedary(s):
 def scream(*args):
   return "_".join([a.replace("-", "_").upper() for a in args])
 
+const = Output(out_dir, out_pkg, "Constant")
+const.line("public interface Constant")
+const.line("{")
+for d in spec.query["amqp/constant"]:
+	name = d["@name"]
+	val = d["@value"]
+	datatype = d["@datatype"]	
+	if datatype == None:
+		const.line("public static final int %s = %s;" % (scream(name), val))   	
+const.line("}")
+const.write()
+
+
 DOMAINS = {}
 STRUCTS = {}
 EXCLUDE = {"access-ticket": True}
@@ -321,6 +334,9 @@ for name, base, typecode, m in v.structs:
 opts.line("    %s," % "NO_OPTION")
 opts.line("}")
 opts.write()
+
+
+
 
 for s in structs:
   impl = Output(out_dir, out_pkg, s.name)
