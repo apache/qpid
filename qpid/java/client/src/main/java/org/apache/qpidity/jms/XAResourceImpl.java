@@ -17,14 +17,13 @@
  */
 package org.apache.qpidity.jms;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.qpidity.Option;
-import org.apache.qpidity.QpidException;
-
+import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
-import javax.transaction.xa.XAException;
+
+import org.apache.qpidity.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is an implementation of javax.jms.XAResource.
@@ -72,7 +71,7 @@ public class XAResourceImpl implements XAResource
         {
             _logger.debug("commit ", xid);
         }
-        _xaSession.getQpidSession().dtxCoordinationCommit(xid, b ? Option.ONE_PHASE : Option.NO_OPTION);
+        _xaSession.getQpidSession().dtxCoordinationCommit(new String(xid.getGlobalTransactionId()), b ? Option.ONE_PHASE : Option.NO_OPTION);
     }
 
     /**
@@ -99,14 +98,14 @@ public class XAResourceImpl implements XAResource
         }
         xid = null;
         _xaSession.getQpidSession()
-                .dtxDemarcationEnd(xid, flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
+                .dtxDemarcationEnd(new String(xid.getGlobalTransactionId()), flag == XAResource.TMFAIL ? Option.FAIL : Option.NO_OPTION,
                                    flag == XAResource.TMSUSPEND ? Option.SUSPEND : Option.NO_OPTION);
     }
 
     /**
      * Tells the resource manager to forget about a heuristically completed transaction branch.
      *
-     * @param xid A global transaction identifier
+     * @param new String(xid.getGlobalTransactionId() A global transaction identifier
      * @throws XAException An error has occurred. Possible exception values are XAER_RMERR, XAER_RMFAIL,
      *                     XAER_NOTA, XAER_INVAL, or XAER_PROTO.
      */
@@ -116,7 +115,7 @@ public class XAResourceImpl implements XAResource
         {
             _logger.debug("forget ", xid);
         }
-        _xaSession.getQpidSession().dtxCoordinationForget(xid);
+        _xaSession.getQpidSession().dtxCoordinationForget(new String(xid.getGlobalTransactionId()));
     }
 
     /**
@@ -133,7 +132,8 @@ public class XAResourceImpl implements XAResource
         int result = 0;
         if (_xid != null)
         {
-            result = (int) _xaSession.getQpidSession().dtxCoordinationGetTimeout(_xid);
+            result = 0; 
+            _xaSession.getQpidSession().dtxCoordinationGetTimeout(new String(_xid.getGlobalTransactionId()));
         }
         return result;
     }
@@ -169,8 +169,9 @@ public class XAResourceImpl implements XAResource
             _logger.debug("prepare ", xid);
         }
         int result;
-        result = _xaSession.getQpidSession()
-        .dtxCoordinationPrepare(xid);
+        result = 0;
+        _xaSession.getQpidSession()
+        .dtxCoordinationPrepare(new String(xid.getGlobalTransactionId()));
         
         if (result == XAException.XA_RDONLY)
         {
@@ -198,8 +199,10 @@ public class XAResourceImpl implements XAResource
     public Xid[] recover(int flag) throws XAException
     {
 //      the flag is ignored 
-        return _xaSession.getQpidSession()
+        
+        _xaSession.getQpidSession()
                 .dtxCoordinationRecover();
+        return null;
     }
 
     /**
@@ -212,7 +215,7 @@ public class XAResourceImpl implements XAResource
     {
 //      the flag is ignored
         _xaSession.getQpidSession()
-                .dtxCoordinationRollback(xid);
+                .dtxCoordinationRollback(new String(xid.getGlobalTransactionId()));
     }
 
     /**
@@ -231,7 +234,7 @@ public class XAResourceImpl implements XAResource
         if (_xid != null)
         {
             _xaSession.getQpidSession()
-            .dtxCoordinationSetTimeout(_xid, timeout);
+            .dtxCoordinationSetTimeout(new String(_xid.getGlobalTransactionId()), timeout);
             result = true;
         }
         return result;
@@ -259,7 +262,7 @@ public class XAResourceImpl implements XAResource
         }
         _xid = xid;
         _xaSession.getQpidSession()
-        .dtxDemarcationStart(xid, flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
+        .dtxDemarcationStart(new String(xid.getGlobalTransactionId()), flag == XAResource.TMJOIN ? Option.JOIN : Option.NO_OPTION,
                              flag == XAResource.TMRESUME ? Option.RESUME : Option.NO_OPTION);
     }
 }

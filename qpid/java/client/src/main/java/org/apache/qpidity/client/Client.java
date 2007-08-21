@@ -1,11 +1,11 @@
 package org.apache.qpidity.client;
 
-import java.net.URL;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.qpidity.BrokerDetails;
 import org.apache.qpidity.Channel;
 import org.apache.qpidity.Connection;
 import org.apache.qpidity.ConnectionClose;
@@ -14,9 +14,9 @@ import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.MinaHandler;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.SessionDelegate;
-import org.apache.qpidity.url.QpidURL;
 import org.apache.qpidity.client.impl.ClientSession;
 import org.apache.qpidity.client.impl.ClientSessionDelegate;
+import org.apache.qpidity.url.QpidURL;
 
 
 public class Client implements org.apache.qpidity.client.Connection
@@ -86,7 +86,13 @@ public class Client implements org.apache.qpidity.client.Connection
      */
     public void connect(QpidURL url) throws QpidException
     {
-        throw new UnsupportedOperationException(); 
+        // temp impl to tests
+        BrokerDetails details = url.getAllBrokerDetails().get(0);
+        connect(details.getHost(),
+                details.getPort(),
+                details.getVirtualHost(),
+                details.getUserName(),
+                details.getPassword());
     }
     
     public void close() throws QpidException

@@ -18,8 +18,14 @@
  */
 package org.apache.qpidity.client;
 
-import javax.transaction.xa.Xid;
-
+import org.apache.qpidity.DtxCoordinationCommitResult;
+import org.apache.qpidity.DtxCoordinationGetTimeoutResult;
+import org.apache.qpidity.DtxCoordinationPrepareResult;
+import org.apache.qpidity.DtxCoordinationRecoverResult;
+import org.apache.qpidity.DtxCoordinationRollbackResult;
+import org.apache.qpidity.DtxDemarcationEndResult;
+import org.apache.qpidity.DtxDemarcationStartResult;
+import org.apache.qpidity.Future;
 import org.apache.qpidity.Option;
 
 /**
@@ -40,7 +46,7 @@ public interface DtxSession extends Session
      * @param xid     Specifies the xid of the transaction branch to be started.
      * @param options Possible options are: {@link Option#JOIN} and {@link Option#RESUME}.
      */
-    public void dtxDemarcationStart(Xid xid, Option... options);
+    public Future<DtxDemarcationStartResult> dtxDemarcationStart(String xid, Option... options);
 
     /**
      * This method is called when the work done on behalf a transaction branch finishes or needs to
@@ -57,7 +63,7 @@ public interface DtxSession extends Session
      * @param xid     Specifies the xid of the transaction branch to be ended.
      * @param options Available options are: {@link Option#FAIL} and {@link Option#SUSPEND}.
      */
-    public void dtxDemarcationEnd(Xid xid, Option... options);
+    public Future<DtxDemarcationEndResult> dtxDemarcationEnd(String xid, Option... options);
 
     /**
      * Commit the work done on behalf a transaction branch. This method commits the work associated
@@ -70,14 +76,14 @@ public interface DtxSession extends Session
      * @param xid     Specifies the xid of the transaction branch to be committed.
      * @param options Available option is: {@link Option#ONE_PHASE}
      */
-    public void dtxCoordinationCommit(Xid xid, Option... options);
+    public Future<DtxCoordinationCommitResult> dtxCoordinationCommit(String xid, Option... options);
 
     /**
      * This method is called to forget about a heuristically completed transaction branch.
      *
      * @param xid Specifies the xid of the transaction branch to be forgotten.
      */
-    public void dtxCoordinationForget(Xid xid);
+    public void dtxCoordinationForget(String xid);
 
     /**
      * This method obtains the current transaction timeout value in seconds. If set-timeout was not
@@ -87,7 +93,7 @@ public interface DtxSession extends Session
      * @param xid Specifies the xid of the transaction branch for getting the timeout.
      * @return The current transaction timeout value in seconds.
      */
-    public long dtxCoordinationGetTimeout(Xid xid);
+    public Future<DtxCoordinationGetTimeoutResult> dtxCoordinationGetTimeout(String xid);
 
     /**
      * This method prepares for commitment any message produced or consumed on behalf of xid.
@@ -103,7 +109,7 @@ public interface DtxSession extends Session
      *         <p/>
      *         xa-rbtimeout: The work represented by this transaction branch took too long.
      */
-    public short dtxCoordinationPrepare(Xid xid);
+    public Future<DtxCoordinationPrepareResult> dtxCoordinationPrepare(String xid);
 
     /**
      * This method is called to obtain a list of transaction branches that are in a prepared or
@@ -111,7 +117,7 @@ public interface DtxSession extends Session
      *
      * @return a array of xids to be recovered.
      */
-    public Xid[] dtxCoordinationRecover();
+    public Future<DtxCoordinationRecoverResult> dtxCoordinationRecover();
 
     /**
      * This method rolls back the work associated with xid. Any produced messages are discarded and
@@ -119,7 +125,7 @@ public interface DtxSession extends Session
      *
      * @param xid Specifies the xid of the transaction branch that can be rolled back.
      */
-    public void dtxCoordinationRollback(Xid xid);
+    public Future<DtxCoordinationRollbackResult> dtxCoordinationRollback(String xid);
 
     /**
      * Sets the specified transaction branch timeout value in seconds.
@@ -127,5 +133,5 @@ public interface DtxSession extends Session
      * @param xid     Specifies the xid of the transaction branch for setting the timeout.
      * @param timeout The transaction timeout value in seconds.
      */
-    public void dtxCoordinationSetTimeout(Xid xid, long timeout);
+    public void dtxCoordinationSetTimeout(String xid, long timeout);
 }
