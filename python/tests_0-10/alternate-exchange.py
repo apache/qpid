@@ -39,13 +39,13 @@ class AlternateExchangeTests(TestBase):
         #declare, bind (to the alternate exchange) and consume from a queue for 'returned' messages
         channel.queue_declare(queue="returns", exclusive=True)
         channel.queue_bind(queue="returns", exchange="secondary")
-        channel.message_consume(destination="a", queue="returns")
+        channel.message_subscribe(destination="a", queue="returns")
         returned = self.client.queue("a")
 
         #declare, bind (to the primary exchange) and consume from a queue for 'processed' messages
         channel.queue_declare(queue="processed", exclusive=True)
         channel.queue_bind(queue="processed", exchange="primary", routing_key="my-key")
-        channel.message_consume(destination="b", queue="processed")
+        channel.message_subscribe(destination="b", queue="processed")
         processed = self.client.queue("b")
 
         #publish to the primary exchange
@@ -73,7 +73,7 @@ class AlternateExchangeTests(TestBase):
         channel.exchange_declare(exchange="dlq", type="fanout")
         channel.queue_declare(queue="deleted", exclusive=True)
         channel.queue_bind(exchange="dlq", queue="deleted")
-        channel.message_consume(destination="dlq", queue="deleted")
+        channel.message_subscribe(destination="dlq", queue="deleted")
         dlq = self.client.queue("dlq")
 
         #create a queue using the dlq as its alternate exchange:
@@ -103,7 +103,7 @@ class AlternateExchangeTests(TestBase):
         channel.exchange_declare(exchange="dlq", type="fanout")
         channel.queue_declare(queue="immediate", exclusive=True)
         channel.queue_bind(exchange="dlq", queue="immediate")
-        channel.message_consume(destination="dlq", queue="immediate")
+        channel.message_subscribe(destination="dlq", queue="immediate")
         dlq = self.client.queue("dlq")
 
         #create a queue using the dlq as its alternate exchange:

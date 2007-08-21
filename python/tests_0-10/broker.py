@@ -35,7 +35,7 @@ class BrokerTests(TestBase):
 
         # No ack consumer
         ctag = "tag1"
-        ch.message_consume(queue = "myqueue", destination = ctag, no_ack = True)
+        ch.message_subscribe(queue = "myqueue", destination = ctag, confirm_mode = 0)
         body = "test no-ack"
         ch.message_transfer(routing_key = "myqueue", body = body)
         msg = self.client.queue(ctag).get(timeout = 5)
@@ -44,7 +44,7 @@ class BrokerTests(TestBase):
         # Acknowledging consumer
         self.queue_declare(ch, queue = "otherqueue")
         ctag = "tag2"
-        ch.message_consume(queue = "otherqueue", destination = ctag, no_ack = False)
+        ch.message_subscribe(queue = "otherqueue", destination = ctag, confirm_mode = 1)
         body = "test ack"
         ch.message_transfer(routing_key = "otherqueue", body = body)
         msg = self.client.queue(ctag).get(timeout = 5)
@@ -60,7 +60,7 @@ class BrokerTests(TestBase):
         self.queue_declare(channel, queue="test-queue") 
         channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
         consumer_tag = "tag1"
-        channel.message_consume(queue="test-queue", destination=consumer_tag, no_ack=True)
+        channel.message_subscribe(queue="test-queue", destination=consumer_tag, confirm_mode = 0)
         queue = self.client.queue(consumer_tag)
 
         body = "Immediate Delivery"
@@ -84,7 +84,7 @@ class BrokerTests(TestBase):
         channel.message_transfer(destination="test-exchange", routing_key="key", body=body)
 
         consumer_tag = "tag1"
-        channel.message_consume(queue="test-queue", destination=consumer_tag, no_ack=True)
+        channel.message_subscribe(queue="test-queue", destination=consumer_tag, confirm_mode = 0)
         queue = self.client.queue(consumer_tag)
         msg = queue.get(timeout=5)
         self.assert_(msg.body == body)
@@ -111,7 +111,7 @@ class BrokerTests(TestBase):
     def test_channel_flow(self):
         channel = self.channel
         channel.queue_declare(queue="flow_test_queue", exclusive=True)
-        channel.message_consume(destination="my-tag", queue="flow_test_queue")
+        channel.message_subscribe(destination="my-tag", queue="flow_test_queue")
         incoming = self.client.queue("my-tag")
         
         channel.channel_flow(active=False)        

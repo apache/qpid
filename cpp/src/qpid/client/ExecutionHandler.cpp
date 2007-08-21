@@ -78,7 +78,7 @@ void ExecutionHandler::handle(AMQFrame& frame)
     }
 }
 
-void ExecutionHandler::complete(uint32_t cumulative, SequenceNumberSet range)
+void ExecutionHandler::complete(uint32_t cumulative, const SequenceNumberSet& range)
 {
     SequenceNumber mark(cumulative);
     if (outgoing.lwm < mark) {
@@ -99,6 +99,26 @@ void ExecutionHandler::flush()
 {
     //send completion
     incoming.lwm = incoming.hwm;
+}
+
+void ExecutionHandler::noop()
+{
+    //do nothing
+}
+
+void ExecutionHandler::result(uint32_t /*command*/, const std::string& /*data*/)
+{
+    //TODO: need to signal the result to the appropriate listener
+}
+
+void ExecutionHandler::sync()
+{
+    //TODO: implement (the application is in charge of completion of
+    //some commands, so need to track completion for them).
+
+    //This shouldn't ever need to be called by the server (in my
+    //opinion) as the server never needs to synchronise with the
+    //clients execution
 }
 
 void ExecutionHandler::sendFlush()

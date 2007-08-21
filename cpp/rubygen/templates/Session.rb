@@ -67,9 +67,9 @@ class SessionGen < CppGen
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/MethodContent.h"
-#include "ConnectionImpl.h"
-#include "Response.h"
-#include "SessionCore.h"
+#include "qpid/client/ConnectionImpl.h"
+#include "qpid/client/Response.h"
+#include "qpid/client/SessionCore.h"
 
 namespace qpid {
 namespace client {

@@ -49,14 +49,6 @@ class MessageHandlerImpl :
 
     void close(const std::string& reference );
 
-    void consume(uint16_t ticket,
-                  const std::string& queue,
-                  const std::string& destination,
-                  bool noLocal,
-                  bool noAck,
-                  bool exclusive,
-                  const framing::FieldTable& filter );
-
     void empty();
 
     void get(uint16_t ticket,
@@ -76,8 +68,9 @@ class MessageHandlerImpl :
 
     void recover(bool requeue );
 
-    void reject(uint16_t code,
-                 const std::string& text );
+    void reject(const framing::SequenceNumberSet& transfers,
+                uint16_t code,
+                const std::string& text );
 
     void resume(const std::string& reference,
                  const std::string& identifier );
@@ -91,6 +84,19 @@ class MessageHandlerImpl :
     void flush(const std::string& destination);
 
     void stop(const std::string& destination);
+
+    void acquire(const framing::SequenceNumberSet& transfers, u_int8_t mode);
+
+    void release(const framing::SequenceNumberSet& transfers);
+
+    void subscribe(u_int16_t ticket,
+                   const string& queue,
+                   const string& destination,
+                   bool noLocal,
+                   u_int8_t confirmMode,
+                   u_int8_t acquireMode,
+                   bool exclusive,
+                   const framing::FieldTable& filter);
 
   private:
     ReferenceRegistry references;

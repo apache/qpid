@@ -38,6 +38,10 @@ if makefile
   generator_files=Dir["**/*.rb"] << File.basename(__FILE__)
   Dir.chdir dir
   rgen_generator=generator_files.map{ |f| "$(rgen_dir)/#{f}" }
+  rgen_srcs=GenFiles.get.map{ |f| "#{Outdir}/#{f}" }
+  rgen_client_cpp = rgen_srcs.select { |f| f =~ /qpid\/client\/.+\.cpp$/ }
+  rgen_common_cpp = rgen_srcs.select { |f| f =~ /qpid\/framing\/.+\.cpp$/ }
+  rgen_h = rgen_srcs.select { |f| f =~ /.+\.h$/ }
 
   File.open(makefile, 'w') { |out|
     out << <<EOS
@@ -46,7 +50,13 @@ if makefile
 
 rgen_generator=#{rgen_generator.join(" \\\n	")}
 
-rgen_srcs=#{GenFiles.get.join(" \\\n	")}
+rgen_client_cpp=#{rgen_client_cpp.join(" \\\n	")}
+
+rgen_common_cpp=#{rgen_common_cpp.join(" \\\n	")}
+
+rgen_h=#{rgen_h.join(" \\\n	")}
+
+rgen_srcs=rgen_h rgen_client_cpp rgen_common_cpp
 
 if GENERATE
 $(rgen_srcs) $(srcdir)/#{File.basename makefile}: $(rgen_generator) $(specs)

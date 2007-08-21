@@ -130,13 +130,14 @@
 
 -->
 
+<!--
+
+<!DOCTYPE amqp SYSTEM "amqp.dtd">
+
+-->
+
 <amqp xmlns="http://www.amqp.org/schema/amqp.xsd"
     major="0" minor="10" port="5672" comment="AMQ Protocol (Working version)">
-
-  <!-- Need these for the transition from 0-9 to 0-10, while still on 0-9 framing: -->  
-  <constant name = "frame-request"    value = "9" />
-  <constant name = "frame-response"   value = "10" />
-
 
   <!--
     ======================================================
@@ -147,9 +148,6 @@
   <constant name="frame-method" value="1" />
   <constant name="frame-header" value="2" />
   <constant name="frame-body" value="3" />
-  <constant name="frame-oob-method" value="4" />
-  <constant name="frame-oob-header" value="5" />
-  <constant name="frame-oob-body" value="6" />
   <constant name="frame-trace" value="7" />
   <constant name="frame-heartbeat" value="8" />
 
@@ -773,7 +771,11 @@
       <!-- TODO: Description required for docs -->
     </doc>
   </domain>
+
   <domain name="method-id" type="short">
+    <doc>
+      <!-- TODO: Description required for docs -->
+    </doc>
   </domain>
 
   <domain name="consumer-tag" type="shortstr" label="consumer tag">
@@ -991,6 +993,214 @@
     </doc>
   </domain>
 
+  <domain name="reply-to">
+    <struct size="short" pack="short">
+      <field name="exchange-name" domain="exchange-name" />
+      <field name="routing-key" domain="shortstr" />
+    </struct>
+  </domain>
+
+  <domain name="confirm-mode" type="octet" label="indicates a confirmation mode">
+    <doc>
+      Controls whether message transfer needs to be confirmed.
+
+      One of:
+        - off (0): confirmation is not required, once a message has been transferred in pre-acquire
+                   mode (or once acquire has been sent in no-acquire mode) the message is considered
+                   transferred
+
+        - on  (1): an acquired message (whether acquisition was implicit as in pre-acquire mode or
+                   explicit as in no-acquire mode) is not considered transferred until the original
+                   transfer is complete (signaled via execution.complete)
+    </doc>
+  </domain>
+
+  <domain name="acquire-mode" type="octet" label="indicates the transfer mode">
+    <doc>
+      Indicates whether a transferred message can be considered as automatically acquired or whether
+      an explicit request is necessary in order to acquire it.
+
+      One of:
+        - no-acquire  (0): the message must be explicitly acquired
+
+        - pre-acquire (1): the message is acquired when the transfer starts
+    </doc>
+  </domain>
+
+  <!-- message header domains -->
+
+  <domain name="delivery-properties">
+    <struct size="long" pack="short" type="0">
+      <field name="discard-unroutable" domain="bit" label="controls discard of unroutable messages">
+        <doc>
+          If set on a message that is not routable the broker can discard it. If not set unroutable
+          should be handled by reject when confirmation is on or by routing to the
+          alternate-exchange if defined when confirmation is off.
+        </doc>
+      </field>
+
+      <field name="redelivered" domain="redelivered" label="redelivery flag">
+        <doc>
+          This boolean flag indicates that the message has been previously delivered to this or
+          another client.
+        </doc>
+      </field>
+
+      <field name="priority" domain="octet" label="message priority, 0 to 9">
+        <doc>
+          Message priority, which can be between 0 and 9. Messages with higher priorities may be
+          delivered before those with lower priorities.
+        </doc>
+      </field>
+
+      <field name="delivery-mode" domain="octet" label="message persistence">
+        <doc>
+          The delivery mode may be non-persistent (1) or persistent (2). A persistent message is one
+          which must be stored on a persistent medium (usually hard drive) at every stage of
+          delivery so that it will not be lost in event of failure (other than the medium itself).
+          This is normally accomplished with some additional overhead. A persistent message may be
+          delivered more than once if there is uncertainty about the state of its delivery after a
+          failure and recovery.
+
+          Conversely, a non-persistent message may be lost in event of a failure, but the nature of
+          the communication is such that an occasional message loss is tolerable. This is the lowest
+          overhead mode. Non-persistent messages are delivered at most once only.
+        </doc>
+      </field>
+
+      <field name="ttl" domain="duration" label="time to live">
+        <doc>
+          If this is set to a non zero value then a message expiration time will be computed based
+          on the current time plus this value. Messages that live longer than their expiration time
+          will be discarded (or dead lettered).
+        </doc>
+        <rule name="ttl-decrement">
+          <doc>
+            If a message is transferred between brokers before delivery to a final consumer the ttl
+            should be decremented before peer to peer transfer and both timestamp and expiration
+            should be cleared.
+          </doc>
+        </rule>
+      </field>
+
+      <field name="timestamp" domain="timestamp" label="message timestamp">
+        <doc>
+          The timestamp is set by the broker on arrival of the message.
+        </doc>
+      </field>
+
+      <field name="expiration" domain="timestamp" label="message expiration time">
+        <doc>
+          The expiration header assigned by the broker. After receiving the message the broker sets
+          expiration to the sum of the ttl specified in the publish method and the current time.
+          (ttl=expiration - timestamp)
+        </doc>
+      </field>
+
+      <field name="exchange" domain="exchange-name" label="originating exchange">
+        <doc>
+          The exchange name is a client-selected string that identifies the exchange for transfer
+          methods. Exchange names may consist of any mixture of digits, letters, and underscores.
+          Exchange names are scoped by the virtual host.
+        </doc>
+      </field>
+
+      <field name="routing-key" domain="shortstr" label="message routing key">
+        <doc>
+          The value of the key determines to which queue the exchange will send the message. The way
+          in which keys are used to make this routing decision depends on the type of exchange to
+          which the message is sent. For example, a direct exchange will route a message to a queue
+          if that queue is bound to the exchange with an identical key to that of the message.
+        </doc>
+      </field>
+    </struct>
+  </domain>
+
+  <domain name="message-properties">
+    <struct size="long" pack="short" type="1">
+      <field name="content-length" domain="longlong" label="length of content in bytes">
+        <doc>
+          The length of the message content in bytes.
+        </doc>
+      </field>
+
+      <field name="message-id" domain="shortstr" label="application message identifier">
+        <doc>
+          This is a unique identifier for the message that is guaranteed to be unique across
+          multiple instances, sessions and in time. This allows duplicate messages to be detected.
+          This may be a UUID. Note that this is usually set by the server when it first receives a
+          message.
+
+          If a client wishes to identify a message, it should use the correlation-id instead.
+        </doc>
+      </field>
+
+      <field name="correlation-id" domain="shortstr" label="application correlation identifier">
+        <doc>
+          This is a client-specific id that may be used to mark or identify messages between
+          clients. The server ignores this field.
+        </doc>
+      </field>
+
+      <field name="reply-to" domain="reply-to" label="destination to reply to">
+        <doc>
+          The destination of any message that is sent in reply to this message.
+        </doc>
+      </field>
+
+      <field name="content-type" domain="shortstr" label="MIME content type">
+        <doc>
+          The RFC-2046 MIME type for the message content (such as "text/plain"). This is set by the
+          originating client.
+        </doc>
+      </field>
+
+      <field name="content-encoding" domain="shortstr" label="MIME content encoding">
+        <doc>
+          The encoding for character-based message content. This is set by the originating client.
+          Examples include UTF-8 and ISO-8859-16.
+        </doc>
+      </field>
+
+      <field name="type" domain="shortstr" label="message type name">
+        <doc>
+          The JMS message type.
+        </doc>
+      </field>
+
+      <field name="user-id" domain="shortstr" label="creating user id">
+        <doc>
+          The identity of the user responsible for producing the message.
+        </doc>
+      </field>
+
+      <field name="app-id" domain="shortstr" label="creating application id">
+        <doc>
+          The identity of the client application responsible for producing the message.
+        </doc>
+      </field>
+
+      <field name="transaction-id" domain="shortstr" label="distributed transaction id">
+        <doc>
+          An identifier that links this message to a distributed transaction.
+        </doc>
+      </field>
+
+      <field name="security-token" domain="security-token" label="security token">
+        <doc>
+          A security token used for authentication, replay prevention, and encrypted message bodies.
+        </doc>
+      </field>
+
+      <field name="application-headers" domain="table" label="application specific headers table">
+        <doc>
+          This is a collection of user-defined headers or properties which may be set by the
+          producing client and retrieved by the consuming client. Similar to JMS Properties.
+        </doc>
+      </field>
+    </struct>
+  </domain>
+
   <!-- Domians for DTX -->
 
   <domain name="xid" type="longstr" label="Dtx branch identifier">
@@ -1048,6 +1258,35 @@
 
   <domain name="session-id" type="uuid" label="session identifier" />
 
+  <!-- Domains for the execution class -->
+
+  <domain name="correlation" type="rfc1982-long-set">
+    <doc>
+      Identifies a set of commands inside the window of open conversations.
+    </doc>
+  </domain>
+  <domain name="command-id" type="long"/>
+  <domain name="long-struct" type="long-struct">
+    <doc>
+      Any typed struct whose size width is long.
+    </doc>
+  </domain>
+
+  <domain name="execution-header">
+    <doc>
+      The execution header appears on commands after the class and method id, but prior to method
+      arguments.
+    </doc>
+    <struct size="octet" pack="octet">
+      <field name="sync" domain="bit" label="request notification of completion for a specific command">
+        <doc>
+          Indicates that the peer sending the request wants to be notified when this command is
+          completed.
+        </doc>
+      </field>
+    </struct>
+  </domain>
+
   <!-- Elementary domains -->
   <domain name="bit" type="bit" label="single bit" />
   <domain name="octet" type="octet" label="single octet" />
@@ -1077,13 +1316,9 @@
     </doc>
   </domain>
 
-  <!-- == Class: connextion ==================================================================== -->
+  <!-- == Class: connection ==================================================================== -->
 
-  <!-- TODO 0.81 - the 'handler' attribute of methods needs to be reviewed, and if no current
-    implementations use it, removed. /PH 2006/07/20
-  -->
-
-  <class name="connection" handler="connection" index="10" label="work with socket connections">
+  <class name="connection" index="10" label="work with socket connections">
     <doc>
       The connection class provides methods for a client to establish a network connection to a
       server, and for both peers to operate the connection thereafter.
@@ -1107,7 +1342,7 @@
     <chassis name="server" implement="MUST" />
     <chassis name="client" implement="MUST" />
 
-    <!-- - Method: connextion.start  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.start  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="start" synchronous="1" index="10" label="start connection negotiation">
       <doc>
@@ -1213,7 +1448,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.start-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.start-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="start-ok" synchronous="1" index="11"
       label="select security mechanism and locale">
@@ -1281,7 +1516,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.secure - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.secure - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="secure" synchronous="1" index="20" label="security mechanism challenge">
       <doc>
@@ -1301,7 +1536,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.secure-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.secure-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="secure-ok" synchronous="1" index="21" label="security mechanism response">
       <doc>
@@ -1320,7 +1555,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.tune - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.tune - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="tune" synchronous="1" index="30" label="propose connection tuning parameters">
       <doc>
@@ -1382,7 +1617,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.tune-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.tune-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="tune-ok" synchronous="1" index="31"
       label="negotiate connection tuning parameters">
@@ -1443,7 +1678,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.open - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.open - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="open" synchronous="1" index="40" label="open connection to virtual host">
       <doc>
@@ -1508,7 +1743,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.open-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.open-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="open-ok" synchronous="1" index="41" label="signal that connection is ready">
       <doc>
@@ -1520,7 +1755,7 @@
       <field name="known-hosts" domain="known-hosts" />
     </method>
 
-    <!-- - Method: connextion.redirect - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.redirect - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="redirect" synchronous="1" index="42" label="redirects client to other server">
       <doc>
@@ -1591,7 +1826,7 @@
       </field>
     </method>
 
-    <!-- - Method: connextion.close-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: connection.close-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="close-ok" synchronous="1" index="51" label="confirm a connection close">
       <doc>
@@ -1614,7 +1849,7 @@
 
   <!-- == Class: session ======================================================================= -->
 
-  <class name="session" handler="session" index="20" label="session control methods">
+  <class name="session" index="20" label="session control methods">
     <doc>
       The session class provides methods for a client to establish a session with a server and for
       both peers to operate the session thereafter.
@@ -1891,29 +2126,6 @@
       </field>
     </method>
 
-    <!-- - Method: session.ping  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="ping" index="60" label="[WORK IN PROGRESS] initiates a pong">
-      <doc>
-        [WORK IN PROGRESS] Request that the recipient issue a pong request.
-      </doc>
-
-      <chassis name="server" implement="MUST" />
-      <chassis name="client" implement="MUST" />
-    </method>
-
-    <!-- - Method: session.pong  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="pong" index="70" label="[WORK IN PROGRESS] issued after receiving a ping">
-      <doc>
-        [WORK IN PROGRESS] Issued after a ping request is received. Note that this is a request
-        issued after receiving a ping, not a response to receiving a ping.
-      </doc>
-
-      <chassis name="server" implement="MUST" />
-      <chassis name="client" implement="MUST" />
-    </method>
-
     <!-- - Method: session.suspend - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="suspend" index="90" label="suspend the session">
@@ -1921,7 +2133,7 @@
         Indicates the sending peer wishes to detach from this session, but not necessarily to
         destroy it.
       </doc>
-      
+
       <!-- TODO: Ratify the inclusion of the chassis element in the XML. -->
       <chassis name="server" implement="MAY" />
 
@@ -2014,6 +2226,18 @@
       <chassis name="client" implement="MUST" />
     </method>
 
+    <!-- ping and pong are still used by cluster test -->
+    <method name = "ping" index = "140" label = "ping">
+      <chassis name = "server" implement = "MUST" />
+      <chassis name = "client" implement = "MUST" />
+    </method>
+
+    <method name = "pong" index = "150" label = "pong">
+      <chassis name = "server" implement = "MUST" />
+      <chassis name = "client" implement = "MUST" />
+    </method>
+
+
   </class>
 
   <!-- == Class: access ======================================================================== -->
@@ -2021,7 +2245,7 @@
   <!-- TODO 0.82 - this class must be implemented by two teams before we can consider it matured.
   -->
 
-  <class name="access" handler="connection" index="30" label="work with access tickets">
+  <class name="access" index="30" label="work with access tickets">
     <doc>
       The protocol control access to server resources using access tickets. A client must explicitly
       request access tickets before doing work. An access ticket grants a client the right to use a
@@ -2144,7 +2368,7 @@
 
   <!-- == Class: exchange ====================================================================== -->
 
-  <class name="exchange" handler="channel" index="40" label="work with exchanges">
+  <class name="exchange" index="40" label="work with exchanges">
     <doc>
       Exchanges match and distribute messages across queues. Exchanges can be configured in the
       server or created at runtime.
@@ -2442,13 +2666,10 @@
 
     <method name="query" synchronous="1" index="30" label="request information about an exchange">
       <doc>
-        This method is used to request information on a particular exchange. That information is
-        conveyed by an query-ok method.
+        This method is used to request information on a particular exchange.
       </doc>
 
       <chassis name="server" implement="MUST" />
-
-      <response name="query-ok" />
 
       <field name="ticket" domain="access-ticket">
         <rule name="validity" on-failure="access-refused">
@@ -2465,50 +2686,48 @@
            the default exchange is implied.
         </doc>
       </field>
-    </method>
 
-    <!-- - Method: exchange.query-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="31">
+          <doc>
+            This is sent in response to a query request and conveys information on a particular
+            exchange.
+          </doc>
 
-    <method name="query-ok" synchronous="1" index="31" label="return exchange information">
-      <doc>
-        This method is used in response to a query request and conveys information on a particular
-        exchange.
-      </doc>
+          <field name="type" domain="shortstr" label="indicate the exchange type">
+            <doc>
+               The type of the exchange. Will be empty if the exchange is not found.
+            </doc>
+          </field>
 
-      <chassis name="client" implement="MUST" />
+          <field name="durable" domain="bit" label="indicate the durability">
+            <doc>
+               The durability of the exchange, i.e. if set the exchange is durable. Will not be set if
+               the exchange is not found.
+            </doc>
+          </field>
 
-      <field name="type" domain="shortstr" label="indicate the exchange type">
-        <doc>
-           The type of the exchange. Will be empty if the exchange is not found.
-        </doc>
-      </field>
+          <field name="not-found" domain="bit" label="indicate an unknown exchange">
+            <doc>
+               If set, the exchange for which information was requested is not known.
+            </doc>
+          </field>
 
-      <field name="durable" domain="bit" label="indicate the durability">
-        <doc>
-           The durability of the exchange, i.e. if set the exchange is durable. Will not be set if
-           the exchange is not found.
-        </doc>
-      </field>
-
-      <field name="not-found" domain="bit" label="indicate an unknown exchange">
-        <doc>
-           If set, the exchange for which information was requested is not known.
-        </doc>
-      </field>
-
-      <field name="arguments" domain="table" label="other unspecified exchange properties">
-        <doc>
-          A set of properties of the exchange whose syntax and semantics depends on the server
-          implementation. Will be empty if the exchange is not found.
-        </doc>
-      </field>
+          <field name="arguments" domain="table" label="other unspecified exchange properties">
+            <doc>
+              A set of properties of the exchange whose syntax and semantics depends on the server
+              implementation. Will be empty if the exchange is not found.
+            </doc>
+          </field>
+        </struct>
+      </result>
     </method>
 
   </class>
 
   <!-- == Class: queue ========================================================================= -->
 
-  <class name="queue" handler="channel" index="50" label="work with queues">
+  <class name="queue" index="50" label="work with queues">
     <doc>
       Queues store and forward messages. Queues can be configured in the server or created at
       runtime. Queues must be attached to at least one exchange in order to receive messages from
@@ -2516,10 +2735,11 @@
     </doc>
 
     <doc type="grammar">
-      queue = C:DECLARE S:DECLARE-OK
+      queue = C:DECLARE
             / C:BIND
-            / C:PURGE S:PURGE-OK
-            / C:DELETE S:DELETE-OK
+            / C:PURGE
+            / C:DELETE
+            / C:QUERY
             / C:UNBIND
     </doc>
 
@@ -2573,8 +2793,6 @@
 
       <chassis name="server" implement="MUST" />
 
-      <response name="declare-ok" />
-
       <field name="ticket" domain="access-ticket">
         <doc>
           When a client defines a new queue, this belongs to the access realm of the ticket used.
@@ -2594,17 +2812,6 @@
       </field>
 
       <field name="queue" domain="queue-name">
-        <rule name="default-name">
-          <doc>
-            The queue name MAY be empty, in which case the server MUST create a new queue with a
-            unique generated name and return this to the client in the Declare-Ok method.
-          </doc>
-          <doc type="scenario">
-            Client attempts to create several queues with an empty name. The client then verifies
-            that the server-assigned names are unique and different.
-          </doc>
-        </rule>
-
         <rule name="reserved-prefix" on-failure="not-allowed">
           <doc>
             Queue names starting with "amq." are reserved for pre-declared and standardised server
@@ -2662,9 +2869,9 @@
             if not. If the queue does not exist, the server treats this as a failure.
           </doc>
           <doc type="scenario">
-            Client declares an existing queue with the passive option and expects the server to
-            respond with a declare-ok. Client then attempts to declare a non-existent queue with the
-            passive option, and the server must close the channel with the correct reply-code.
+            Client declares an existing queue with the passive option and expects the command to
+            succeed. Client then attempts to declare a non-existent queue with the passive option,
+            and the server must close the channel with the correct reply-code.
           </doc>
         </rule>
       </field>
@@ -2765,50 +2972,10 @@
         </rule>
       </field>
 
-      <field name="nowait" domain="bit" label="do not send a reply method">
-        <doc>
-          If set, the server will not respond to the method. The client should not wait for a reply
-          method. If the server could not complete the method it will raise a channel or connection
-          exception.
-        </doc>
-      </field>
-
       <field name="arguments" domain="table" label="arguments for declaration">
         <doc>
           A set of arguments for the declaration. The syntax and semantics of these arguments
           depends on the server implementation. This field is ignored if passive is 1.
-        </doc>
-      </field>
-    </method>
-
-    <!-- - Method: queue.declare-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="declare-ok" synchronous="1" index="11" label="confirms a queue definition">
-      <doc>
-        This method confirms a Declare method and confirms the name of the queue, essential for
-        automatically-named queues.
-      </doc>
-
-      <chassis name="client" implement="MUST" />
-
-      <field name="queue" domain="queue-name">
-        <doc>
-          Reports the name of the queue. If the server generated a queue name, this field contains
-          that name.
-        </doc>
-        <assert check="notnull" />
-      </field>
-
-      <field name="message-count" domain="long" label="number of messages in queue">
-        <doc>
-          Reports the number of messages in the queue, which will be zero for newly-created queues.
-        </doc>
-      </field>
-
-      <field name="consumer-count" domain="long" label="number of consumers">
-        <doc>
-          Reports the number of active consumers for the queue. Note that consumers can suspend
-          activity (Session.Flow) in which case they do not appear in this count.
         </doc>
       </field>
     </method>
@@ -3085,8 +3252,6 @@
 
       <chassis name="server" implement="MUST" />
 
-      <response name="purge-ok" />
-
       <field name="ticket" domain="access-ticket">
         <rule name="validity" on-failure="access-refused">
           <doc>
@@ -3117,30 +3282,6 @@
           </doc>
         </rule>
       </field>
-
-      <field name="nowait" domain="bit" label="do not send a reply method">
-        <doc>
-          If set, the server will not respond to the method. The client should not wait for a reply
-          method. If the server could not complete the method it will raise a channel or connection
-          exception.
-        </doc>
-      </field>
-    </method>
-
-    <!-- - Method: queue.purge-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="purge-ok" synchronous="1" index="31" label="confirms a queue purge">
-      <doc>
-        This method confirms the purge of a queue.
-      </doc>
-
-      <chassis name="client" implement="MUST" />
-
-      <field name="message-count" domain="long" label="number of messages purged">
-        <doc>
-          Reports the number of messages purged.
-        </doc>
-      </field>
     </method>
 
     <!-- - Method: queue.delete  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -3161,8 +3302,6 @@
       </rule>
 
       <chassis name="server" implement="MUST" />
-
-      <response name="delete-ok" />
 
       <field name="ticket" domain="access-ticket">
         <rule name="validity" on-failure="access-refused">
@@ -3218,37 +3357,67 @@
           </doc>
         </rule>
       </field>
-
-      <field name="nowait" domain="bit" label="do not send a reply method">
-        <doc>
-          If set, the server will not respond to the method. The client should not wait for a reply
-          method. If the server could not complete the method it will raise a channel or connection
-          exception.
-        </doc>
-      </field>
     </method>
 
-    <!-- - Method: queue.delete-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: queue.query - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
-    <method name="delete-ok" synchronous="1" index="41" label="confirm deletion of a queue">
+    <method name="query" synchronous="1" index="60" label="request information about a queue">
       <doc>
-        This method confirms the deletion of a queue.
+        This method requests information about a queue.
       </doc>
 
-      <chassis name="client" implement="MUST" />
+      <chassis name="server" implement="MUST" />
 
-      <field name="message-count" domain="long" label="number of messages purged">
-        <doc>
-          Reports the number of messages purged.
-        </doc>
+
+      <field name="queue" domain="queue-name" label="the queried queue">
+        <assert check="notnull" />
       </field>
+
+      <result>
+        <struct size="long" type="61">
+          <doc>
+            This is sent in response to queue.query, and conveys the requested information about a
+            queue.
+          </doc>
+
+          <field name="queue" domain="queue-name">
+            <doc>
+              Reports the name of the queue.
+            </doc>
+            <assert check="notnull" />
+          </field>
+
+          <field name="alternate-exchange" domain="exchange-name" />
+
+          <field name="durable" domain="bit" />
+
+          <field name="exclusive" domain="bit" />
+
+          <field name="auto-delete" domain="bit" />
+
+          <field name="arguments" domain="table" />
+
+          <field name="message-count" domain="long" label="number of messages in queue">
+            <doc>
+              Reports the number of messages in the queue.
+            </doc>
+          </field>
+
+          <field name="consumer-count" domain="long" label="number of consumers">
+            <doc>
+              Reports the number of active consumers for the queue. Note that consumers can suspend
+              activity (Session.Flow) in which case they do not appear in this count.
+            </doc>
+          </field>
+        </struct>
+      </result>
     </method>
 
   </class>
 
   <!-- == Class: basic ========================================================================= -->
 
-  <class name="basic" handler="channel" index="60" label="[DEPRECATED] work with basic content">
+  <class name="basic" index="60" label="[DEPRECATED] work with basic content">
     <doc>
       [DEPRECATED: replaced by message class.] The Basic class provides methods that support an
       industry-standard messaging model.
@@ -3257,7 +3426,7 @@
     <doc type="grammar">
       basic = C:QOS
             / C:CONSUME S:CONSUME-OK
-            / C:CANCEL S:CANCEL-OK
+            / C:CANCEL 
             / C:PUBLISH content
             / S:RETURN content
             / S:DELIVER content
@@ -3601,7 +3770,7 @@
         [DEPRECATED: Basic replaced by message class.] This method cancels a consumer. This does not
         affect already delivered messages, but it does mean the server will not send any more
         messages for that consumer. The client may receive an arbitrary number of messages in
-        between sending the cancel method and receiving the cancel-ok reply.
+        between sending the cancel method and receiving notification of the completion of the cancel command.
       </doc>
 
       <rule name="non-existent">
@@ -3612,30 +3781,6 @@
       </rule>
 
       <chassis name="server" implement="MUST" />
-
-      <response name="cancel-ok" />
-
-      <field name="consumer-tag" domain="consumer-tag" />
-
-      <field name="nowait" domain="bit" label="do not send a reply method">
-        <doc>
-          If set, the server will not respond to the method. The client should not wait for a reply
-          method. If the server could not complete the method it will raise a channel or connection
-          exception.
-        </doc>
-      </field>
-    </method>
-
-    <!-- - Method: basic.cancel-ok - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="cancel-ok" synchronous="1" index="31"
-      label="[DEPRECATED] confirm a cancelled consumer">
-      <doc>
-        [DEPRECATED: Basic replaced by message class.] This method confirms that the cancellation
-        was completed.
-      </doc>
-
-      <chassis name="client" implement="MUST" />
 
       <field name="consumer-tag" domain="consumer-tag" />
     </method>
@@ -3703,7 +3848,19 @@
           queue then the broker responds with a basic.reject.
         </doc>
       </field>
-      <field name="immediate" domain="bit" label="request immediate delivery">
+
+      <field name="immediate" domain="bit" label="Request immediate delivery">
+        <doc>
+            If this flag is set, and the resulting message is delivered to a queue with no
+            consumers, the message will not be queued but will instead be routed to the
+            alternate-exchange for that queue. If no such exchange is defined the message will be
+            silently dropped.
+        </doc>
+        <rule name="implementation">
+          <doc>
+            The server SHOULD implement the immediate flag.
+          </doc>
+        </rule>
       </field>
     </method>
 
@@ -3966,7 +4123,7 @@
 
   <!-- == Class: file ========================================================================== -->
 
-  <class name="file" handler="channel" index="70" label="work with file content">
+  <class name="file" index="70" label="work with file content">
     <doc>
       The file class provides methods that support reliable file transfer. File messages have a
       specific set of properties that are required for interoperability with file transfer
@@ -3979,7 +4136,7 @@
     <doc type="grammar">
       file  = C:QOS S:QOS-OK
             / C:CONSUME S:CONSUME-OK
-            / C:CANCEL S:CANCEL-OK
+            / C:CANCEL
             / C:OPEN S:OPEN-OK C:STAGE content
             / S:OPEN C:OPEN-OK S:STAGE content
             / C:PUBLISH
@@ -4211,28 +4368,6 @@
       </doc>
 
       <chassis name="server" implement="MUST" />
-
-      <response name="cancel-ok" />
-
-      <field name="consumer-tag" domain="consumer-tag" />
-
-      <field name="nowait" domain="bit" label="do not send a reply method">
-        <doc>
-          If set, the server will not respond to the method. The client should not wait for a reply
-          method. If the server could not complete the method it will raise a channel or connection
-          exception.
-        </doc>
-      </field>
-    </method>
-
-    <!-- - Method: file.cancel-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="cancel-ok" synchronous="1" index="31" label="confirm a cancelled consumer">
-      <doc>
-        This method confirms that the cancellation was completed.
-      </doc>
-
-      <chassis name="client" implement="MUST" />
 
       <field name="consumer-tag" domain="consumer-tag" />
     </method>
@@ -4576,7 +4711,7 @@
 
   <!-- == Class: stream ======================================================================== -->
 
-  <class name="stream" handler="channel" index="80" label="work with streaming content">
+  <class name="stream" index="80" label="work with streaming content">
     <doc>
       The stream class provides methods that support multimedia streaming. The stream class uses the
       following semantics: one message is one packet of data; delivery is unacknowledged and
@@ -4587,7 +4722,7 @@
     <doc type="grammar">
       stream  = C:QOS S:QOS-OK
               / C:CONSUME S:CONSUME-OK
-              / C:CANCEL S:CANCEL-OK
+              / C:CANCEL
               / C:PUBLISH content
               / S:RETURN
               / S:DELIVER content
@@ -4826,28 +4961,6 @@
 
       <chassis name="server" implement="MUST" />
 
-      <response name="cancel-ok" />
-
-      <field name="consumer-tag" domain="consumer-tag" />
-
-      <field name="nowait" domain="bit" label="do not send a reply method">
-        <doc>
-          If set, the server will not respond to the method. The client should not wait for a reply
-          method. If the server could not complete the method it will raise a channel or connection
-          exception.
-        </doc>
-      </field>
-    </method>
-
-    <!-- - Method: stream.cancel-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="cancel-ok" synchronous="1" index="31" label="confirm a cancelled consumer">
-      <doc>
-        This method confirms that the cancellation was completed.
-      </doc>
-
-      <chassis name="client" implement="MUST" />
-
       <field name="consumer-tag" domain="consumer-tag" />
     </method>
 
@@ -4994,11 +5107,12 @@
         <assert check="notnull" />
       </field>
     </method>
+
   </class>
 
   <!-- == Class: tx ============================================================================ -->
 
-  <class name="tx" handler="channel" index="90" label="work with standard transactions">
+  <class name="tx" index="90" label="work with standard transactions">
     <doc>
       Standard transactions provide so-called "1.5 phase commit". We can ensure that work is never
       lost, but there is a chance of confirmations being lost, so that messages may be resent.
@@ -5023,7 +5137,7 @@
     <chassis name="server" implement="SHOULD" />
     <chassis name="client" implement="MAY" />
 
-    <!-- - Method: stream.select - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: tx.select - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="select" synchronous="1" index="10" label="select standard transaction mode">
       <doc>
@@ -5033,7 +5147,7 @@
       <chassis name="server" implement="MUST" />
     </method>
 
-    <!-- - Method: stream.commit - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: tx.commit - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="commit" synchronous="1" index="20" label="commit the current transaction">
       <doc>
@@ -5043,7 +5157,7 @@
       <chassis name="server" implement="MUST" />
     </method>
 
-    <!-- - Method: stream.rollback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- - Method: tx.rollback - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="rollback" synchronous="1" index="30" label="abandon the current transaction">
       <doc>
@@ -5061,7 +5175,7 @@
     not yet been incorporated here.
   -->
 
-  <class name="dtx-demarcation" handler="channel" index="100" label="Demarcates dtx branches">
+  <class name="dtx-demarcation" index="100" label="Demarcates dtx branches">
     <doc>
       This class is part of the X-Open XA distributed transaction protocol support. It allows a
       session to be selected for use with distributed transactions and the transactional boundaries
@@ -5070,7 +5184,7 @@
 
     <doc type="grammar">
       dtx-demarcation = C:SELECT *demarcation
-      demarcation     = C:START S:START-OK C:END S:END-OK
+      demarcation     = C:START C:END
     </doc>
 
     <rule name="access-control">
@@ -5137,13 +5251,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="start-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5192,34 +5304,31 @@
 
         <assert check="notnull" />
       </field>
+
+      <result>
+        <struct size="long" type="21">
+          <doc>
+            This confirms to the client that the transaction branch is started or specify the error
+            condition.
+          </doc>
+
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
+
+              xa-ok: Normal execution.
+
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
+
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
+
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
-
-    <!-- - Method: dtx-demarcation.start-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="start-ok" synchronous="1" index="21" label="Confirm dtx start">
-      <doc>
-        This method confirms to the client that the transaction branch is started or specify the
-        error condition.
-      </doc>
-
-      <chassis name="client" implement="MAY" />
-
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
-
-          xa-ok: Normal execution.
-
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-
-        <assert check="notnull" />
-      </field>
-    </method>
-
 
     <!-- - Method: dtx-demarcation.end - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
@@ -5266,20 +5375,18 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="end-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
             realms touched by this transaction.
           </doc>
         </rule>
-        
+
         <assert check="notnull" />
       </field>
 
@@ -5308,8 +5415,8 @@
           <doc>
             An implementation MAY elect to roll a transaction back if this failure notification is
             recieved. Should an implementation elect to implement this behaviour, and this bit is
-            set, then then the transaction branch SHOULD be marked as rollback-only and the end-ok
-            response SHOULD have the xa-rbrollback response set.
+            set, then then the transaction branch SHOULD be marked as rollback-only and the end
+            result SHOULD have the xa-rbrollback status set.
           </doc>
         </rule>
 
@@ -5330,33 +5437,31 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-demarcation.end-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="31">
+          <doc>
+            This method confirms to the client that the transaction branch is ended or specify the
+            error condition.
+          </doc>
 
-    <method name="end-ok" synchronous="1" index="31" label="Confirm distributed dtx end">
-      <doc>
-        This method confirms to the client that the transaction branch is ended or specify the error
-        condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution.
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason. If an implementation chooses to implement rollback-on-failure behaviour, then
+                  this value should be selected if the dtx-demarcation.end.fail bit was set.
 
-          xa-ok: Normal execution.
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
 
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason. If an implementation chooses to implement rollback-on-failure behaviour, then
-              this value should be selected if the dtx-demarcation.end.fail bit was set.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-
-        <assert check="notnull" />
-      </field>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
   </class>
@@ -5364,7 +5469,7 @@
 
   <!-- == Class: dtx-coordination ============================================================== -->
 
-  <class name="dtx-coordination" handler="channel" index="105" label="Coordinate dtx outcomes">
+  <class name="dtx-coordination" index="105" label="Coordinate dtx outcomes">
     <doc>
       This class is part of the X-Open XA distributed transaction protocol support. It allows the
       transaction manager to coordinate transaction outcomes.
@@ -5376,16 +5481,16 @@
                           / outcome
                           / recovery
       command             = C:SET-TIMEOUT
-                          / C:GET-TIMEOUT S:GET-TIMEOUT-OK
+                          / C:GET-TIMEOUT
       outcome             = one-phase-commit
                           / one-phase-rollback
                           / two-phase-commit
                           / two-phase-rollback
-      one-phase-commit    = C:COMMIT S:COMMIT-OK
-      one-phase-rollback  = C:ROLLBACK S:ROLLBACK-OK
-      two-phase-commit    = C:PREPARE S:PREPARE-OK C:COMMIT S:COMMIT-OK
-      two-phase-rollback  = C:PREPARE S:PREPARE-OK C:ROLLBACK S:ROLLBACK-OK
-      recovery            = C:RECOVER S:RECOVER-OK *recovery-outcome
+      one-phase-commit    = C:COMMIT
+      one-phase-rollback  = C:ROLLBACK
+      two-phase-commit    = C:PREPARE C:COMMIT
+      two-phase-rollback  = C:PREPARE C:ROLLBACK
+      recovery            = C:RECOVER *recovery-outcome
       recovery-outcome    = one-phase-commit
                           / one-phase-rollback
                           / C:FORGET
@@ -5426,13 +5531,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="commit-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5484,43 +5587,41 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.commit-ok  - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="11">
+          <doc>
+            This confirms to the client that the transaction branch is committed or specify the
+            error condition.
+          </doc>
 
-    <method name="commit-ok" synchronous="1" index="11" label="Confirm dtx commit">
-      <doc>
-        This method confirms to the client that the transaction branch is committed or specify the
-        error condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
+                  branch may have been heuristically completed.
 
-          xa-ok: Normal execution
+              xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was committed.
 
-          xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
-              branch may have been heuristically completed.
+              xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was rolled back.
 
-          xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was committed.
+              xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
+                transaction branch was partially committed and partially rolled back.
 
-          xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was rolled back.
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
 
-          xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
-            transaction branch was partially committed and partially rolled back.
-
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-        <assert check="notnull" />
-      </field>
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.forget - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5550,7 +5651,7 @@
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5602,8 +5703,6 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="get-timeout-ok" />
-
       <field name="xid" domain="xid" label="Transaction xid">
         <doc>
           Specifies the xid of the transaction branch for getting the timeout.
@@ -5618,23 +5717,21 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.get-timeout-ok - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="31">
+          <doc>
+            Returns the value of the timeout last specified through set-timeout.
+          </doc>
 
-    <method name="get-timeout-ok" synchronous="1" index="31" label="Return dtx timeout">
-      <doc>
-        Returns the value of the timeout last specified through set-timeout.
-      </doc>
-
-      <chassis name="client" implement="MAY" />
-
-      <field name="timeout" domain="long" label="The current transaction timeout value">
-        <doc>
-          The current transaction timeout value in seconds.
-        </doc>
-        <assert check="notnull" />
-      </field>
+          <field name="timeout" domain="long" label="The current transaction timeout value">
+            <doc>
+              The current transaction timeout value in seconds.
+            </doc>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.prepare  - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5674,13 +5771,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="prepare-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5712,34 +5807,32 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.prepare-ok - - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="41">
+          <doc>
+            This method confirms to the client that the transaction branch is prepared or specify the
+            error condition.
+          </doc>
 
-    <method name="prepare-ok" synchronous="1" index="41" label="Confirm dtx prepare">
-      <doc>
-        This method confirms to the client that the transaction branch is prepared or specify the
-        error condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution.
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-rdonly: The transaction branch was read-only and has been committed.
 
-          xa-ok: Normal execution.
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
 
-          xa-rdonly: The transaction branch was read-only and has been committed.
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
 
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-
-        <assert check="notnull" />
-      </field>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.recover  - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5773,13 +5866,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="recover-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5811,33 +5902,31 @@
         </doc>
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.recover-ok - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="recover-ok" synchronous="1" index="51" label="List of recovered xids">
-      <doc>
-        Returns to the client a table with single item that is a sequence of transaction xids that
-        are in a prepared or heuristically completed state.
-      </doc>
-
-      <chassis name="client" implement="MAY" />
-
-      <field name="in-doubt" domain="table" label="Table of xids to be recovered">
-        <doc>
-          Table containing the sequence of xids to be recovered (xids that are in a prepared or
-          heuristically completed state).
-        </doc>
-
-        <rule name="xid-sequence">
+      <result>
+        <struct size="long" type="51">
           <doc>
-            The field table must contain a field called 'xids' of type sequence of longstrs
-            representing the xids that are in a prepared or heuristically completed state.
+            Returns to the client a table with single item that is a sequence of transaction xids that
+            are in a prepared or heuristically completed state.
           </doc>
-        </rule>
 
-        <assert check="notnull" />
-      </field>
+          <field name="in-doubt" domain="table" label="Table of xids to be recovered">
+            <doc>
+              Table containing the sequence of xids to be recovered (xids that are in a prepared or
+              heuristically completed state).
+            </doc>
+
+            <rule name="xid-sequence">
+              <doc>
+                The field table must contain a field called 'xids' of type sequence of longstrs
+                representing the xids that are in a prepared or heuristically completed state.
+              </doc>
+            </rule>
+
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.rollback - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5864,13 +5953,11 @@
 
       <chassis name="server" implement="MAY" />
 
-      <response name="rollback-ok" />
-
       <field name="ticket" domain="access-ticket" label="Access-ticket for specific realm">
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -5902,43 +5989,41 @@
 
         <assert check="notnull" />
       </field>
-    </method>
 
-    <!-- - Method: dtx-coordination.rollback-ok  - - - - - - - - - - - - - - - - - - - - - - - - -->
+      <result>
+        <struct size="long" type="61">
+          <doc>
+            This method confirms to the client that the transaction branch is rolled back or specify the
+            error condition.
+          </doc>
 
-    <method name="rollback-ok" synchronous="1" index="61" label="Confirm dtx rollback">
-      <doc>
-        This method confirms to the client that the transaction branch is rolled back or specify the
-        error condition.
-      </doc>
+          <field name="status" domain="short" label="Status code">
+            <doc>
+              The value of this field may be one of the following constants:
 
-      <chassis name="client" implement="MAY" />
+              xa-ok: Normal execution
 
-      <field name="status" domain="short" label="Status code">
-        <doc>
-          The value of this field may be one of the following constants:
+              xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
+                  branch may have been heuristically completed.
 
-          xa-ok: Normal execution
+              xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was committed.
 
-          xa-heurhaz: Due to some failure, the work done on behalf of the specified transaction
-              branch may have been heuristically completed.
+              xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was rolled back.
 
-          xa-heurcom: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was committed.
+              xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
+                  transaction branch was partially committed and partially rolled back.
 
-          xa-heurrb: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was rolled back.
+              xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
+                  reason.
 
-          xa-heurmix: Due to a heuristic decision, the work done on behalf of the specified
-              transaction branch was partially committed and partially rolled back.
-
-          xa-rbrollback: The broker marked the transaction branch rollback-only for an unspecified
-              reason.
-
-          xa-rbtimeout: The work represented by this transaction branch took too long.
-        </doc>
-        <assert check="notnull" />
-      </field>
+              xa-rbtimeout: The work represented by this transaction branch took too long.
+            </doc>
+            <assert check="notnull" />
+          </field>
+        </struct>
+      </result>
     </method>
 
     <!-- - Method: dtx-coordination.set-timeout  - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -5974,7 +6059,7 @@
         <doc>
           Access-ticket granted by the server for a specific realm.
         </doc>
-        
+
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "active" access rights to all the
@@ -6013,7 +6098,7 @@
 
   <!-- == Class: tunnel ========================================================================= -->
 
-  <class name="tunnel" handler="tunnel" index="110" label="methods for protocol tunnelling">
+  <class name="tunnel" index="110" label="methods for protocol tunnelling">
     <doc>
       The tunnel methods are used to send blocks of binary data - which can be serialised AMQP
       methods or other protocol frames - between AMQP peers.
@@ -6054,7 +6139,7 @@
 
   <!-- == Class: message ======================================================================= -->
 
-  <class name="message" index="120" handler="channel" label="message transfer">
+  <class name="message" index="120" label="message transfer">
     <doc>
       The message class provides methods that support an industry-standard messaging model.
     </doc>
@@ -6185,7 +6270,6 @@
     <chassis name="client" implement="MUST" />
 
     <!-- - Method: message.transfer  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
     <method name="transfer" index="10" label="transfer a message">
       <doc>
         This method transfers a message between two peers. When a client uses this method to publish
@@ -6212,10 +6296,6 @@
 
       <chassis name="server" implement="MUST" />
       <chassis name="client" implement="MUST" />
-
-      <!-- commented out to ease transition from 0-9 to 0-10
-      <response name="reject" />
-      -->
 
       <field name="ticket" domain="access-ticket" label="access ticket">
         <rule name="validity" on-failure="access-refused">
@@ -6432,24 +6512,167 @@
 
     </method>
 
-    <!-- - Method: message.consume - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+    <!-- 
+        the above is still the 0-9 definition and will shortly be
+        removed in favour of the following which is the real 0-10
+        defintion:
 
-    <method name="consume" index="20" label="start a queue consumer">
+    <method name="transfer" content="1" index="10" label="transfer a message">
       <doc>
-        This method asks the server to start a "consumer", which is a transient request for messages
-        from a specific queue. Consumers last as long as the session they were created on, or until
-        the client cancels them.
+        This method transfers a message between two peers. When a client uses this method to publish
+        a message to a broker, the destination identifies a specific exchange. The message will then
+        be routed to queues as defined by the exchange configuration and distributed to any active
+        subscriptions when the transaction, if any, is committed.
+
+        The client may initiate transfers from the broker by starting a subscription using the
+        subscribe method and passing in a destination, then the broker responds with transfer
+        methods to the specified destination as and when messages arrive in the subscribed queue.
       </doc>
 
-      <rule name="simultaneous-consumers">
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MUST" />
+
+      <field name="ticket" domain="access-ticket" label="access ticket">
+        <rule name="validity" on-failure="access-refused">
+          <doc>
+            The client MUST provide a valid access ticket giving "passive" access rights to the
+            realm for the exchange and "write" access rights to the realm for the queue to which the
+            message will be published.
+          </doc>
+        </rule>
+      </field>
+
+      <field name="destination" domain="destination" label="message destination">
         <doc>
-          The server SHOULD support at least 16 consumers per queue, and ideally, impose no limit
-          except as defined by available resources.
+          Specifies the destination to which the message is to be transferred. The destination can
+          be empty, meaning the default exchange or subscription. If the destination is specified,
+          and that exchange or subscription does not exist, the peer must raise a channel exception.
+        </doc>
+
+        <rule name="blank-destination">
+          <doc>
+            The server MUST accept a blank destination to mean the default exchange.
+          </doc>
+        </rule>
+
+        <rule name="internal-exchange">
+          <doc>
+            If the destination refers to an internal exchange, the server MUST raise a channel
+            exception with a reply code 403 (access refused).
+          </doc>
+        </rule>
+
+        <rule name="message-refusal">
+          <doc>
+            A destination MAY refuse message content in which case it MUST raise a channel exception
+            with reply code 540 (not implemented).
+          </doc>
+        </rule>
+      </field>
+
+      <field name="confirm-mode" domain="confirm-mode" />
+      <field name="acquire-mode" domain="acquire-mode" />
+    </method>
+     -->
+
+    <!-- - Method: message.reject  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="reject" index="160" label="reject a message">
+      <doc>
+        Indicates that the message transfers are un-processable in some way. A message may be
+        rejected for a number of reasons. A server may reject a message if it is unroutable. A
+        client may reject a message if it is invalid.
+      </doc>
+
+      <rule name="alternate-exchange">
+        <doc>
+          When a client rejects a message, the server MUST deliver that message to the
+          alternate-exchange on the queue from which it was delivered. If no alternate-exchange is
+          defined for that queue the broker MAY discard the message.
+        </doc>
+      </rule>
+
+      <rule name="acquisition">
+        <doc>
+          The recipient MUST have acquired a message in order to reject it. If the message is not
+          acquired any reject MUST be ignored.
+        </doc>
+      </rule>
+
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MAY" />
+
+      <field name="transfers" domain="correlation" />
+      <field name="code" domain="reject-code" />
+      <field name="text" domain="reject-text" />
+    </method>
+
+    <!-- - Method: message.acquire - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="acquire" index="170" label="acquire messages for consumption">
+      <doc>
+        Acquires previously transferred messages for consumption. The acquired ids (if any) are
+        sent via message.acquired.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+
+      <field name="transfers" domain="correlation" />
+      <!-- do we need this field? -->
+      <field name="mode" domain="octet">
+        <doc>
+          One of:
+            - any (0): acquire any available messages for consumption
+            - all (1): only acquire messages if all are available for consumption
+        </doc>
+      </field>
+    </method>
+
+    <!-- - Method: message.acquired  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="acquired" index="180" label="indicates acquired messages">
+      <doc>
+        Identifies a set of previously transferred messages now available for consumption.
+      </doc>
+
+      <chassis name="client" implement="MAY" />
+
+      <field name="transfers" domain="correlation" />
+    </method>
+
+    <!-- - Method: message.release - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="release" index="190" label="release a message">
+      <doc>
+        Release previously transferred messages that have been acquired for consumption (whether
+        implicitly or explicitly). Released messages will be available for acquisition by other
+        consumers. The order of released messages may be lost.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MAY" />
+
+      <field name="transfers" domain="correlation" />
+    </method>
+
+    <!-- - Method: message.subscribe - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="subscribe" index="20" label="start a queue subscription">
+      <doc>
+        This method asks the server to start a "subscription", which is a transient request for
+        messages from a specific queue. Subscriptions last as long as the session they were created
+        on, or until the client cancels them.
+      </doc>
+
+      <rule name="simultaneous-subscriptions">
+        <doc>
+          The server SHOULD support at least 16 subscriptions per queue, and ideally, impose no
+          limit except as defined by available resources.
         </doc>
         <doc type="scenario">
-          Create a queue and create consumers on that queue until the server closes the connection.
-          Verify that the number of consumers created was at least sixteen and report the total
-          number.
+          Create a queue and create subscriptions on that queue until the server closes the
+          connection. Verify that the number of subscriptions created was at least sixteen and
+          report the total number.
         </doc>
       </rule>
 
@@ -6459,54 +6682,44 @@
         <rule name="validity" on-failure="access-refused">
           <doc>
             The client MUST provide a valid access ticket giving "read" access rights to the realm
-            for the queue from which the message will be consumed.
+            for the subscribed queue.
           </doc>
           <doc type="scenario">
-            Attempt to create a consumer with an invalid (non-zero) access ticket.
+            Attempt to create a subscription with an invalid (non-zero) access ticket.
           </doc>
         </rule>
       </field>
 
       <field name="queue" domain="queue-name">
         <doc>
-          Specifies the name of the queue to consume from. If the queue name is null, refers to the
-          current queue for the session, which is the last declared queue.
+          Specifies the name of the subscribed queue.
         </doc>
-        <rule name="empty-queue-name" on-failure="not-allowed">
-          <doc>
-            If the queue name is empty the client MUST have previously declared a queue using this
-            session.
-          </doc>
-          <doc type="scenario">
-            Attempt to create a consumer with an empty queue name and no previously declared queue
-            on the session.
-          </doc>
-        </rule>
       </field>
 
       <field name="destination" domain="destination" label="incoming message destination">
         <doc>
-          Specifies the destination for the consumer. The destination is local to a connection, so
-          two clients can use the same destination.
+          Specifies the destination for the subscription. The destination is local to a connection,
+          so two clients can use the same destination.
         </doc>
 
-        <rule name="destination-non-existing-consumer" on-failure="not-allowed">
+        <rule name="destination-non-existing-subscription" on-failure="not-allowed">
           <doc>
-            The client MUST NOT specify a destination that refers to an existing consumer.
+            The client MUST NOT specify a destination that refers to an existing subscription.
           </doc>
           <doc type="scenario">
-            Attempt to create two consumers with the same non-empty destination.
+            Attempt to create two subscriptions with the same non-empty destination.
           </doc>
         </rule>
 
         <rule name="destination-session-bound" on-failure="not-allowed">
           <doc>
-            The destination is valid only within the session from which the consumer was created.
-            i.e. A client MUST NOT create a consumer in one session and then use it in another.
+            The destination is valid only within the session from which the subscription was
+            created. i.e. A client MUST NOT create a subscription in one session and then use it in
+            another.
           </doc>
           <doc type="scenario">
-            Attempt to create a consumer in one session, then use in another session, in which
-            consumers have also been created (to test that the server uses unique destinations).
+            Attempt to create a subscription in one session, then use in another session, in which
+            subscriptions have also been created (to test that the server uses unique destinations).
           </doc>
         </rule>
       </field>
@@ -6518,39 +6731,39 @@
         </doc>
       </field>
 
-      <!-- TODO: Is this still required? There was plenty of discussion about removing this... -->
-      <field name="no-ack" domain="no-ack"
-        label="server auto-acknowledges message without waiting for client">
+      <field name="confirm-mode" domain="confirm-mode">
         <doc>
-          If this field is set the server does not expect acknowledgements for messages. That is,
-          when a message is delivered to the client the server automatically and silently
-          acknowledges it on behalf of the client. This functionality increases performance but at
-          the cost of reliability. Messages can get lost if a client dies before it can deliver them
-          to the application.
+          The default confirm-mode for this subscription.
+        </doc>
+      </field>
+
+      <field name="acquire-mode" domain="acquire-mode">
+        <doc>
+          The default acquire-mode for this subscription.
         </doc>
       </field>
 
       <field name="exclusive" domain="bit" label="request exclusive access">
         <doc>
-          Request exclusive consumer access, meaning only this consumer can access the queue.
+          Request exclusive subscription access, meaning only this subscription can access the queue.
         </doc>
 
         <rule name="in-use" on-failure="access-refused">
           <doc>
-            The client MUST NOT gain exclusive access to a queue that already has active consumers.
+            The client MUST NOT gain exclusive access to a queue that already has active subscriptions.
           </doc>
           <doc type="scenario">
             Open two connections to a server, and in one connection create a shared (non-exclusive)
-            queue and then consume from the queue. In the second connection attempt to consume from
+            queue and then subscribe to the queue. In the second connection attempt to subscribe to
             the same queue using the exclusive option.
           </doc>
         </rule>
       </field>
 
-      <field name="filter" domain="table" label="arguments for consuming">
+      <field name="filter" domain="table" label="arguments for filtering">
         <doc>
-          A set of filters for the consume. The syntax and semantics of these filters depends on the
-          providers implementation.
+          A set of filters for the subscription. The syntax and semantics of these filters depends
+          on the providers implementation.
         </doc>
       </field>
     </method>
@@ -6562,7 +6775,7 @@
         This method cancels a consumer. This does not affect already delivered messages, but it does
         mean the server will not send any more messages for that consumer. The client may receive an
         arbitrary number of messages in between sending the cancel method and receiving the
-        cancel-ok reply.
+        notification of completion of the cancel command.
       </doc>
 
       <rule name="ignore">
@@ -6588,7 +6801,7 @@
 
       <chassis name="server" implement="MUST" />
 
-      <!-- commented out to aid transition to 0-10
+      <!-- 
       <response name="empty" />
       -->
 
@@ -6849,57 +7062,6 @@
       </field>
     </method>
 
-    <!-- - Method: message.empty - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="empty" index="510" label="empty queue">
-      <doc>
-        Signals that a queue does not contain any messages; usually sent in response to the get
-        method.
-      </doc>
-
-      <chassis name="server" implement="MUST" />
-      <chassis name="client" implement="MUST" />
-    </method>
-
-    <!-- - Method: message.reject  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="reject" index="520" label="reject a message">
-      <doc>
-        This response rejects a message. A message may be rejected for a number of reasons.
-      </doc>
-
-      <chassis name="server" implement="MUST" />
-      <chassis name="client" implement="MUST" />
-
-      <field name="code" domain="reject-code" label="reject code">
-        <doc>
-          Code indicating the reason for message rejection.
-        </doc>
-      </field>
-
-      <field name="text" domain="reject-text" label="reason for message rejection">
-        <doc>
-          A string containing additional details on the reason for message rejection.
-        </doc>
-      </field>
-    </method>
-
-    <!-- - Method: message.offset  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="offset" index="530" label="return an offset">
-      <doc>
-        Returns the data offset into a reference body; usually sent in response to resume method.
-      </doc>
-
-      <chassis name="server" implement="MUST" />
-      <chassis name="client" implement="MUST" />
-
-      <field name="value" domain="offset" label="offset into a reference body">
-        <doc>
-          Offset in bytes into message body data.
-        </doc>
-      </field>
-    </method>
     <!-- - Method: message.flow-mode - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
     <method name="flow-mode" index="120" label="set the flow control mode">
@@ -7023,11 +7185,40 @@
       <field name="destination" domain="destination" />
     </method>
 
+    <!-- - Method: message.empty - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="empty" index="510" label="empty queue">
+      <doc>
+        Signals that a queue does not contain any messages; usually sent in response to the get
+        method.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MUST" />
+    </method>
+
+    <!-- - Method: message.offset  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="offset" index="530" label="return an offset">
+      <doc>
+        Returns the data offset into a reference body; usually sent in response to resume method.
+      </doc>
+
+      <chassis name="server" implement="MUST" />
+      <chassis name="client" implement="MUST" />
+
+      <field name="value" domain="offset" label="offset into a reference body">
+        <doc>
+          Offset in bytes into message body data.
+        </doc>
+      </field>
+    </method>
+
   </class>
 
   <!-- == Class: binding ======================================================================= -->
 
-  <class name="binding" handler="binding" index="130"
+  <class name="binding" index="130"
     label="provides the ability to query bindings">
     <doc>
       This is a utility class for querying and exchange about its bindings to queues.
@@ -7041,13 +7232,10 @@
     <method name="query" synchronous="1" index="10"
       label="request information about bindings to an exchange">
       <doc>
-        This method is used to request information on the bindings to a particular exchange.  That
-        information is conveyed in a query-ok method.
+        This method is used to request information on the bindings to a particular exchange.
       </doc>
 
       <chassis name="server" implement="MUST" />
-
-      <response name="query-ok" />
 
       <field name="ticket" domain="access-ticket">
         <rule name="validity" on-failure="access-refused">
@@ -7084,57 +7272,55 @@
           will ignore the arguments on bindings when searching for a match
         </doc>
       </field>
+
+      <result>
+        <struct size="long" type="11">
+          <doc>
+            This method is used in response to a query and conveys information on the bindings to a
+            particular exchange.
+          </doc>
+
+          <field name="exchange-not-found" domain="bit" label="indicate an unknown exchange">
+            <doc>
+               If set, the exchange for which information was requested is not known.
+            </doc>
+          </field>
+
+          <field name="queue-not-found" domain="bit" label="indicate an unknown queue">
+            <doc>
+               If set, the queue specified is not known.
+            </doc>
+          </field>
+
+          <field name="queue-not-matched" domain="bit" label="indicate no matching queue">
+            <doc>
+              A bit which if set indicates that no binding was found from the specified exchange to the
+              specified queue.
+            </doc>
+          </field>
+
+          <field name="key-not-matched" domain="bit" label="indicate no matching routing key">
+            <doc>
+              A bit which if set indicates that no binding was found from the specified exchange with
+              the specified routing key.
+            </doc>
+          </field>
+
+          <field name="args-not-matched" domain="bit" label="indicate no matching args">
+            <doc>
+              A bit which if set indicates that no binding was found from the specified exchange with
+              the specified arguments.
+            </doc>
+          </field>
+        </struct>
+      </result>
     </method>
 
-    <!-- - Method: binding.query-ok  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
-
-    <method name="query-ok" synchronous="1" index="11"
-      label="returns information about bindings to exchange">
-      <doc>
-        This method is used in response to a query and conveys information on the bindings to a
-        particular exchange.
-      </doc>
-
-      <chassis name="client" implement="MUST" />
-
-      <field name="exchange-not-found" domain="bit" label="indicate an unknown exchange">
-        <doc>
-           If set, the exchange for which information was requested is not known.
-        </doc>
-      </field>
-
-      <field name="queue-not-found" domain="bit" label="indicate an unknown queue">
-        <doc>
-           If set, the queue specified is not known.
-        </doc>
-      </field>
-
-      <field name="queue-not-matched" domain="bit" label="indicate no matching queue">
-        <doc>
-          A bit which if set indicates that no binding was found from the specified exchange to the
-          specified queue.
-        </doc>
-      </field>
-
-      <field name="key-not-matched" domain="bit" label="indicate no matching routing key">
-        <doc>
-          A bit which if set indicates that no binding was found from the specified exchange with
-          the specified routing key.
-        </doc>
-      </field>
-
-      <field name="args-not-matched" domain="bit" label="indicate no matching args">
-        <doc>
-          A bit which if set indicates that no binding was found from the specified exchange with
-          the specified arguments.
-        </doc>
-      </field>
-     </method>
   </class>
 
   <!-- == Class: execution ===================================================================== -->
 
-  <class name="execution" handler="execution" index="140">
+  <class name="execution" index="140">
     <doc>
       This class allows for efficiently communicating information about completion of processing.
     </doc>
@@ -7193,7 +7379,49 @@
       </field>
     </method>
 
+    <!-- - Method: execution.noop  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="noop" index="30" label="a command that does nothing">
+      <doc>
+        This command may be used when it is desirable to send a command that has no effect. This
+        situation can occur after issuing a number of commands with sync=False. If, after issuing
+        the commands, a peer wishes to receive confirmation of completion, the peer can do so by
+        sending an execution.noop command with sync=True.
+      </doc>
+
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+    </method>
+
+    <!-- - Method: execution.result  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="result" index="40" label="carries execution results">
+      <doc>
+        This method carries data resulting from the execution of a command.
+      </doc>
+
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+
+      <field name="command-id" domain="command-id"/>
+      <field name="data" domain="long-struct"/>
+    </method>
+
+    <!-- - Method: execution.sync  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
+
+    <method name="sync" index="50" label="request notification of completion for issued commands">
+      <doc>
+        Requests notification (via execution.complete) when all commands issued prior to the sync
+        control are complete. If the recipient of this control has already notified the
+        sender that said commands are complete, it may safely ignore the control.
+      </doc>
+
+      <chassis name="server" implement="MUST"/>
+      <chassis name="client" implement="MUST"/>
+    </method>
+
   </class>
+
 
   <!-- This is no longer an official part of 0-10 and is included here only as a transitional aid -->
   <!-- ==  CHANNEL  ========================================================== -->

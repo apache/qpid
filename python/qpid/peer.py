@@ -208,6 +208,8 @@ class Channel:
     self.responses.close()
     self.completion.close()
     self.incoming_completion.reset()
+    for f in self.futures.values():
+      f.put_response(self, reason)
 
   def write(self, frame, content = None):
     if self.closed:
@@ -324,7 +326,10 @@ class Channel:
           raise ValueError(resp)
       elif frame.method.result:
         if self.synchronous:
-          return future.get_response(timeout=10)
+          fr = future.get_response(timeout=10)
+          if self.closed:
+            raise Closed(self.reason)
+          return fr
         else:
           return future
       elif self.synchronous and not frame.method.response \
@@ -373,7 +378,10 @@ class Future:
 
   def get_response(self, timeout=None):
     self.completed.wait(timeout)
-    return self.response
+    if self.completed.isSet():
+      return self.response
+    else:
+      return None
 
   def is_complete(self):
     return self.completed.isSet()

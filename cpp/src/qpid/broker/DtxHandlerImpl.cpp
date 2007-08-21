@@ -22,18 +22,8 @@
 #include "BrokerChannel.h"
 
 using namespace qpid::broker;
-using qpid::framing::AMQP_ClientProxy;
-using qpid::framing::Buffer;
-using qpid::framing::FieldTable;
+using namespace qpid::framing;
 using std::string;
-
-DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : 
-    CoreRefs(parent),
-    dClient(AMQP_ClientProxy::DtxDemarcation::get(proxy)),
-    cClient(AMQP_ClientProxy::DtxCoordination::get(proxy))
-
-{
-}
 
 const int XA_RBROLLBACK(1);
 const int XA_RBTIMEOUT(2);
@@ -44,6 +34,7 @@ const int XA_HEURMIX(6);
 const int XA_RDONLY(7);
 const int XA_OK(8);
 
+DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : CoreRefs(parent) {}
 
 // DtxDemarcationHandler:
 
@@ -53,10 +44,10 @@ void DtxHandlerImpl::select()
     channel.selectDtx();
 }
 
-void DtxHandlerImpl::end(u_int16_t /*ticket*/,
-                         const string& xid,
-                         bool fail,
-                         bool suspend)
+DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
+                                            const string& xid,
+                                            bool fail,
+                                            bool suspend)
 {
     try {
         if (fail) {
@@ -64,7 +55,7 @@ void DtxHandlerImpl::end(u_int16_t /*ticket*/,
             if (suspend) {
                 throw ConnectionException(503, "End and suspend cannot both be set.");
             } else {
-                dClient.endOk(XA_RBROLLBACK);
+                return DtxDemarcationEndResult(XA_RBROLLBACK);
             }
         } else {
             if (suspend) {
@@ -72,14 +63,14 @@ void DtxHandlerImpl::end(u_int16_t /*ticket*/,
             } else {
                 channel.endDtx(xid, false);
             }
-            dClient.endOk(XA_OK);
+            return DtxDemarcationEndResult(XA_OK);
         }
     } catch (const DtxTimeoutException& e) {
-        dClient.endOk(XA_RBTIMEOUT);        
+        return DtxDemarcationEndResult(XA_RBTIMEOUT);        
     }
 }
 
-void DtxHandlerImpl::start(u_int16_t /*ticket*/,
+DtxDemarcationStartResult DtxHandlerImpl::start(u_int16_t /*ticket*/,
                            const string& xid,
                            bool join,
                            bool resume)
@@ -93,52 +84,52 @@ void DtxHandlerImpl::start(u_int16_t /*ticket*/,
         } else {
             channel.startDtx(xid, broker.getDtxManager(), join);
         }
-        dClient.startOk(XA_OK);
+        return DtxDemarcationStartResult(XA_OK);
     } catch (const DtxTimeoutException& e) {
-        dClient.startOk(XA_RBTIMEOUT);        
+        return DtxDemarcationStartResult(XA_RBTIMEOUT);        
     }
 }
 
 // DtxCoordinationHandler:
 
-void DtxHandlerImpl::prepare(u_int16_t /*ticket*/,
+DtxCoordinationPrepareResult DtxHandlerImpl::prepare(u_int16_t /*ticket*/,
                              const string& xid)
 {
     try {
         bool ok = broker.getDtxManager().prepare(xid);
-        cClient.prepareOk(ok ? XA_OK : XA_RBROLLBACK);
+        return DtxCoordinationPrepareResult(ok ? XA_OK : XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
-        cClient.prepareOk(XA_RBTIMEOUT);        
+        return DtxCoordinationPrepareResult(XA_RBTIMEOUT);        
     }
 }
 
-void DtxHandlerImpl::commit(u_int16_t /*ticket*/,
+DtxCoordinationCommitResult DtxHandlerImpl::commit(u_int16_t /*ticket*/,
                             const string& xid,
                             bool onePhase)
 {
     try {
         bool ok = broker.getDtxManager().commit(xid, onePhase);
-        cClient.commitOk(ok ? XA_OK : XA_RBROLLBACK);
+        return DtxCoordinationCommitResult(ok ? XA_OK : XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
-        cClient.commitOk(XA_RBTIMEOUT);        
+        return DtxCoordinationCommitResult(XA_RBTIMEOUT);        
     }
 }
 
 
-void DtxHandlerImpl::rollback(u_int16_t /*ticket*/,
+DtxCoordinationRollbackResult DtxHandlerImpl::rollback(u_int16_t /*ticket*/,
                               const string& xid )
 {
     try {
         broker.getDtxManager().rollback(xid);
-        cClient.rollbackOk(XA_OK);
+        return DtxCoordinationRollbackResult(XA_OK);
     } catch (const DtxTimeoutException& e) {
-        cClient.rollbackOk(XA_RBTIMEOUT);        
+        return DtxCoordinationRollbackResult(XA_RBTIMEOUT);        
     }
 }
 
-void DtxHandlerImpl::recover(u_int16_t /*ticket*/,
-                             bool /*startscan*/,
-                             bool /*endscan*/ )
+DtxCoordinationRecoverResult DtxHandlerImpl::recover(u_int16_t /*ticket*/,
+                                                     bool /*startscan*/,
+                                                     bool /*endscan*/ )
 {
     //TODO: what do startscan and endscan actually mean?
 
@@ -169,7 +160,7 @@ void DtxHandlerImpl::recover(u_int16_t /*ticket*/,
 
     FieldTable response;
     response.setString("xids", data);
-    cClient.recoverOk(response);
+    return DtxCoordinationRecoverResult(response);
 }
 
 void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
@@ -179,10 +170,10 @@ void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
     throw ConnectionException(503, boost::format("Forget is invalid. Branch with xid %1% not heuristically completed!") % xid);
 }
 
-void DtxHandlerImpl::getTimeout(const string& xid)
+DtxCoordinationGetTimeoutResult DtxHandlerImpl::getTimeout(const string& xid)
 {
     uint32_t timeout = broker.getDtxManager().getTimeout(xid);
-    cClient.getTimeoutOk(timeout);    
+    return DtxCoordinationGetTimeoutResult(timeout);    
 }
 
 

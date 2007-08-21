@@ -374,7 +374,7 @@ void Channel::ack(DeliveryId first, DeliveryId last, bool cumulative)
         //just acked single element (move end past it)
         ++end;
     }
-    
+
     for_each(start, end, boost::bind(&Channel::acknowledged, this, _1));
     
     if (txBuffer.get()) {

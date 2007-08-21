@@ -79,8 +79,11 @@ public:
     void handle(framing::AMQFrame& frame);
 
     //execution class method handlers:
-    void complete(uint32_t cumulativeExecutionMark, framing::SequenceNumberSet range);    
+    void complete(uint32_t cumulativeExecutionMark, const framing::SequenceNumberSet& range);    
     void flush();
+    void noop();
+    void result(uint32_t command, const std::string& data);
+    void sync();
 };
 
 }}
