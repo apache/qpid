@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import org.apache.qpidity.DeliveryProperties;
 import org.apache.qpidity.MessageProperties;
 import org.apache.qpidity.Struct;
-import org.apache.qpidity.client.MessageListener;
 import org.apache.qpidity.client.MessagePartListener;
 
 /** 
