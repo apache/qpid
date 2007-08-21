@@ -50,7 +50,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     exclusive(0),
     persistenceId(0),
     serializer(false),
-    dispatchCallback(boost::bind(&Queue::dispatch, this))
+    dispatchCallback(*this)
 {
 }
 

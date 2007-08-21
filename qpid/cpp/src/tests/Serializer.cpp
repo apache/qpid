@@ -38,6 +38,7 @@ using namespace qpid::sys;
 using namespace qpid::framing;
 using namespace std;
 
+typedef Serializer<boost::function<void()> > BoostFunctionSerializer;
 
 /** Test for concurrent calls */
 struct Tester {
@@ -61,7 +62,7 @@ struct Tester {
     }
 };
 
-void execute(Serializer& s, Serializer::Task t) 
+void execute(BoostFunctionSerializer& s, boost::function<void()> t) 
 {
     s.execute(t);
 }
@@ -69,7 +70,7 @@ void execute(Serializer& s, Serializer::Task t)
 BOOST_AUTO_TEST_CASE(testSingleThread) {
     // Verify that we call in the same thread by default.
     Tester tester;
-    Serializer s;
+    BoostFunctionSerializer s;
     for (int i = 0; i < 100; ++i) 
         execute(s, boost::bind(&Tester::test, &tester));
     // All should be executed in this thread.
@@ -83,7 +84,7 @@ BOOST_AUTO_TEST_CASE(testSingleThread) {
 BOOST_AUTO_TEST_CASE(testSingleThreadNoImmediate) {
     // Verify that we call in different thread if immediate=false.
     Tester tester;
-    Serializer s(false);
+    BoostFunctionSerializer s(false);
     for (int i = 0; i < 100; ++i)
         execute(s, boost::bind(&Tester::test, &tester));
     {
@@ -99,13 +100,13 @@ BOOST_AUTO_TEST_CASE(testSingleThreadNoImmediate) {
 }
 
 struct Caller : public Runnable, public Tester {
-    Caller(Serializer& s) : serializer(s) {}
+    Caller(BoostFunctionSerializer& s) : serializer(s) {}
     void run() { execute(serializer, boost::bind(&Tester::test, this)); }
-    Serializer& serializer;
+    BoostFunctionSerializer& serializer;
 };
 
 BOOST_AUTO_TEST_CASE(testDispatchThread) {
-    Serializer s;
+    BoostFunctionSerializer s;
     Caller caller(s);
     Thread threads[100];
     // Concurrent calls.
@@ -121,7 +122,7 @@ BOOST_AUTO_TEST_CASE(testDispatchThread) {
 }
 
 
-std::auto_ptr<Serializer> serializer;
+std::auto_ptr<BoostFunctionSerializer> serializer;
     
 struct CallDispatch : public Runnable {
     void run() {
@@ -136,7 +137,7 @@ void notifyDispatch() {
 
 // Use externally created threads.
 BOOST_AUTO_TEST_CASE(testExternalDispatch) {
-    serializer.reset(new Serializer(false, &notifyDispatch));
+    serializer.reset(new BoostFunctionSerializer(false, &notifyDispatch));
     Tester tester;
     for (int i = 0; i < 100; ++i) 
         execute(*serializer, boost::bind(&Tester::test, &tester));
