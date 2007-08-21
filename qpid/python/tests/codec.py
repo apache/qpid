@@ -54,7 +54,13 @@ __doc__ = """
 
 """
 
-SPEC = load(testrunner.get_spec_file("amqp.0-10-preview.xml"))
+SPEC = None
+
+def spec():
+    global SPEC
+    if SPEC == None:
+        SPEC = load(testrunner.get_spec_file("amqp.0-10-preview.xml"))
+    return SPEC
 
 # --------------------------------------
 # --------------------------------------
@@ -70,7 +76,7 @@ class BaseDataTypes(unittest.TestCase):
         """
         standard setUp for unitetest (refer unittest documentation for details)
         """
-        self.codec = Codec(StringIO(), SPEC)
+        self.codec = Codec(StringIO(), spec())
 
     # ------------------
     def tearDown(self):
@@ -508,7 +514,7 @@ def test(type, value):
     else:
       values = [value]
     stream = StringIO()
-    codec = Codec(stream, SPEC)
+    codec = Codec(stream, spec())
     for v in values:
       codec.encode(type, v)
     codec.flush()
