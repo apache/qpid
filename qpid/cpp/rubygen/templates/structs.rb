@@ -129,45 +129,6 @@ class StructGen < CppGen
     inline ClassId amqpClassId() const { return CLASS_ID; }
     inline MethodId amqpMethodId() const { return METHOD_ID; }
 EOS
-    if (s.is_server_method?)
-      gen <<EOS
-    void invoke(AMQP_ServerOperations& target)
-    {
-        target.get#{s.amqp_parent.cppname}Handler()->#{s.cppname}
-            (            
-EOS
-      if (s.amqp_parent.name == "message" && (s.name == "transfer" || s.name == "append"))
-        indent(4) { genl "*this" }
-      else
-        indent(4) { genl s.param_names.join(",\n") }
-      end
-    
-      genl <<EOS
-            );
-    }
-
-    bool invoke(Invocable* target)
-    {
-        AMQP_ServerOperations::#{s.amqp_parent.cppname}Handler* ptr 
-            = dynamic_cast<AMQP_ServerOperations::#{s.amqp_parent.cppname}Handler*>(target);
-        if (ptr) {
-            ptr->#{s.cppname}(
-EOS
-      if (s.amqp_parent.name == "message" && (s.name == "transfer" || s.name == "append"))
-        indent(5) { genl "*this" }
-      else
-        indent(5) { genl s.param_names.join(",\n") }
-      end
-
-      gen <<EOS
-                    );
-            return true;
-        } else {
-            return false;
-        }
-    }
-EOS
-      end
   end
 
   def define_constructor(name, s)
