@@ -19,10 +19,25 @@
  *
  */
 #include "AMQMethodBody.h"
+#include "qpid/framing/InvocationVisitor.h"
 
 namespace qpid {
 namespace framing {
 
 AMQMethodBody::~AMQMethodBody() {}
+
+void AMQMethodBody::invoke(AMQP_ServerOperations& ops) 
+{ 
+    InvocationVisitor v(&ops);
+    accept(v);
+    assert(v.wasHandled()); 
+}
+
+bool AMQMethodBody::invoke(Invocable* invocable) 
+{ 
+    InvocationVisitor v(invocable);
+    accept(v);
+    return v.wasHandled(); 
+}
 
 }} // namespace qpid::framing
