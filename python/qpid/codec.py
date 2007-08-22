@@ -26,7 +26,7 @@ fields.
 The unit test for this module is located in tests/codec.py
 """
 
-import re, qpid
+import re, qpid, spec
 from cStringIO import StringIO
 from struct import *
 from reference import ReferenceId
@@ -113,13 +113,19 @@ class Codec:
     """
     calls the appropriate encode function e.g. encode_octet, encode_short etc.
     """
-    getattr(self, "encode_" + type)(value)
+    if isinstance(type, spec.Struct):
+      self.encode_struct(type, value)
+    else:
+      getattr(self, "encode_" + type)(value)
 
   def decode(self, type):
     """
     calls the appropriate decode function e.g. decode_octet, decode_short etc.
     """
-    return getattr(self, "decode_" + type)()
+    if isinstance(type, spec.Struct):
+      return self.decode_struct(type)
+    else:
+      return getattr(self, "decode_" + type)()
 
   def encode_bit(self, o):
     """
@@ -358,20 +364,30 @@ class Codec:
   def decode_uuid(self):
     return self.decode_longstr()
 
+  def encode_struct(self, type, s):
+    for f in type.fields:
+      if s == None:
+        val = f.default()
+      else:
+        val = s.get(f.name)
+      self.encode(f.type, val)
+    self.flush()
+
+  def decode_struct(self, type):
+    s = qpid.Struct(type)
+    for f in type.fields:
+      s.set(f.name, self.decode(f.type))
+    return s
+
   def encode_long_struct(self, s):
     enc = StringIO()
     codec = Codec(enc, self.spec)
     type = s.type
     codec.encode_short(type.type)
-    for f in type.fields:
-      codec.encode(f.type, getattr(s, f.name))
-    codec.flush()
+    codec.encode_struct(type, s)
     self.encode_longstr(enc.getvalue())
 
   def decode_long_struct(self):
     codec = Codec(StringIO(self.decode_longstr()), self.spec)
     type = self.spec.structs[codec.decode_short()]
-    s = qpid.Struct(type)
-    for f in type.fields:
-      setattr(s, f.name, codec.decode(f.type))
-    return s
+    return codec.decode_struct(type)
