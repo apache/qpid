@@ -20,8 +20,8 @@
 
 #include "Cluster.h"
 #include "test_tools.h"
-#include "qpid/framing/SessionPingBody.h"
-#include "qpid/framing/SessionPongBody.h"
+#include "qpid/framing/SessionOpenBody.h"
+#include "qpid/framing/SessionAttachedBody.h"
 
 using namespace std;
 using namespace qpid;
@@ -37,13 +37,13 @@ void clusterTwo() {
     TestCluster cluster("clusterTwo", "amqp:child:2");
     AMQFrame frame;
     BOOST_REQUIRE(cluster.received.waitPop(frame)); // Frame from parent.
-    BOOST_CHECK_TYPEID_EQUAL(SessionPingBody, *frame.getBody());
+    BOOST_CHECK_TYPEID_EQUAL(SessionOpenBody, *frame.getBody());
     BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
 
-    AMQFrame send(VER, 1, SessionPongBody(VER));
+    AMQFrame send(VER, 1, SessionAttachedBody(VER));
     cluster.handle(send);
     BOOST_REQUIRE(cluster.received.waitPop(frame));
-    BOOST_CHECK_TYPEID_EQUAL(SessionPongBody, *frame.getBody());
+    BOOST_CHECK_TYPEID_EQUAL(SessionAttachedBody, *frame.getBody());
 } 
 
 int test_main(int, char**) {
