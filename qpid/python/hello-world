@@ -11,5 +11,6 @@ ch.queue_declare(queue="test")
 ch.queue_bind(exchange="amq.direct", queue="test", routing_key="test")
 print ch.queue_query(queue="test")
 ch.message_subscribe(queue="test", destination="test")
-ch.message_transfer(destination="amq.direct",
-                    content=Content("hello world"))
+msg = Content("hello world")
+msg["content_type"] = "text/plain"
+ch.message_transfer(destination="amq.direct", content=msg)

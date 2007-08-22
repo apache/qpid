@@ -23,7 +23,7 @@ to read and write Frame objects. This could be used by a client,
 server, or even a proxy implementation.
 """
 
-import socket, codec,logging
+import socket, codec, logging, qpid
 from cStringIO import StringIO
 from spec import load
 from codec import EOF
@@ -238,6 +238,11 @@ class Response(Frame):
   def __str__(self):
     return "[%s] Response(%s,%s,%s) %s" % (self.channel, self.id, self.request_id, self.batch_offset, self.method)
 
+def uses_struct_encoding(spec):
+  return (spec.major == 0 and
+          spec.minor == 10 and
+          "transitional" not in spec.file)
+
 class Header(Frame):
 
   type = "frame_header"
@@ -258,6 +263,33 @@ class Header(Frame):
     del self.properties[name]
 
   def encode(self, c):
+    if uses_struct_encoding(c.spec):
+      self.encode_structs(c)
+    else:
+      self.encode_legacy(c)
+
+  def encode_structs(self, c):
+    # XXX
+    structs = [qpid.Struct(c.spec.domains.byname["delivery_properties"].type),
+               qpid.Struct(c.spec.domains.byname["message_properties"].type)]
+
+    # XXX
+    props = self.properties.copy()
+    for k in self.properties:
+      for s in structs:
+        if s.has(k):
+          s.set(k, props.pop(k))
+    if props:
+      raise TypeError("no such property: %s" % (", ".join(props)))
+
+    # message properties store the content-length now, and weight is
+    # deprecated
+    structs[1].content_length = self.size
+
+    for s in structs:
+      c.encode_long_struct(s)
+
+  def encode_legacy(self, c):
     c.encode_short(self.klass.id)
     c.encode_short(self.weight)
     c.encode_longlong(self.size)
@@ -287,6 +319,30 @@ class Header(Frame):
         c.encode(f.type, v)
 
   def decode(spec, c, size):
+    if uses_struct_encoding(spec):
+      return Header.decode_structs(spec, c, size)
+    else:
+      return Header.decode_legacy(spec, c, size)
+
+  @staticmethod
+  def decode_structs(spec, c, size):
+    structs = []
+    start = c.nread
+    while c.nread - start < size:
+      structs.append(c.decode_long_struct())
+
+    # XXX
+    props = {}
+    length = None
+    for s in structs:
+      for f in s.type.fields:
+        props[f.name] = s.get(f.name)
+        if f.name == "content_length":
+          length = s.get(f.name)
+    return Header(None, 0, length, props)
+
+  @staticmethod
+  def decode_legacy(spec, c, size):
     klass = spec.classes.byid[c.decode_short()]
     weight = c.decode_short()
     size = c.decode_longlong()
