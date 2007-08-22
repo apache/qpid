@@ -1863,10 +1863,6 @@
                     / C:RESUME S:ATTACHED
       use-session   = C:FLOW S:FLOW-OK
                     / S:FLOW C:FLOW-OK
-                    / S:PING
-                    / C:PONG
-                    / C:PING
-                    / S:PONG
       close-session = C:SUSPEND S:DETACHED
                     / C:CLOSE S:CLOSED
                     / S:CLOSED
@@ -2225,19 +2221,6 @@
       <chassis name="server" implement="MUST" />
       <chassis name="client" implement="MUST" />
     </method>
-
-    <!-- ping and pong are still used by cluster test -->
-    <method name = "ping" index = "140" label = "ping">
-      <chassis name = "server" implement = "MUST" />
-      <chassis name = "client" implement = "MUST" />
-    </method>
-
-    <method name = "pong" index = "150" label = "pong">
-      <chassis name = "server" implement = "MUST" />
-      <chassis name = "client" implement = "MUST" />
-    </method>
-
-
   </class>
 
   <!-- == Class: access ======================================================================== -->
