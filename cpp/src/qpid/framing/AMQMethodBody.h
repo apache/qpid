@@ -50,8 +50,8 @@ class AMQMethodBody : public AMQBody {
     virtual MethodId amqpMethodId() const = 0;
     virtual ClassId  amqpClassId() const = 0;
     
-    virtual void invoke(AMQP_ServerOperations&) { assert(0); }
-    virtual bool invoke(Invocable*) { return false; }
+    void invoke(AMQP_ServerOperations&);
+    bool invoke(Invocable*);
 
     template <class T> bool isA() const {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;

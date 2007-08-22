@@ -71,8 +71,8 @@ EOS
           }
           genl "public:"
           indent { 
-            genl "InvocationVisitor(AMQP_ServerOperations* _ops) : ops(_ops), invocable(0) {}" 
-            genl "InvocationVisitor(Invocable* _invocable) : ops(0), invocable(_invocable) {}" 
+            genl "InvocationVisitor(AMQP_ServerOperations* _ops) : ops(_ops), invocable(0), succeeded(false) {}" 
+            genl "InvocationVisitor(Invocable* _invocable) : ops(0), invocable(_invocable), succeeded(false) {}" 
             genl "const std::string& getResult() const { return result; }"
             genl "const bool hasResult() const { return !result.empty(); }"
             genl "bool wasHandled() const { return succeeded; }"
