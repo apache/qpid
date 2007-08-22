@@ -298,7 +298,10 @@ class Field(Metadata):
     self.docs = docs
 
   def default(self):
-    return Method.DEFAULTS[self.type]
+    if isinstance(self.type, Struct):
+      return None
+    else:
+      return Method.DEFAULTS[self.type]
 
 def get_result(nd, spec):
   result = nd["result"]

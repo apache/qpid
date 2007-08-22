@@ -21,7 +21,7 @@
 # Support library for qpid python tests.
 #
 
-import sys, re, unittest, os, random, logging
+import sys, re, unittest, os, random, logging, traceback
 import qpid.client, qpid.spec
 import Queue
 from fnmatch import fnmatch
@@ -217,7 +217,8 @@ class TestBase(unittest.TestCase):
             for ch, ex in self.exchanges:
                 ch.exchange_delete(exchange=ex)
         except:
-            print "Error on tearDown:", sys.exc_info()
+            print "Error on tearDown:"
+            print traceback.print_exc()
 
         if not self.client.closed:
             self.client.channel(0).connection_close(reply_code=200)
