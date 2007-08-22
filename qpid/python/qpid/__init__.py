@@ -31,13 +31,28 @@ class Struct:
       raise AttributeError(attr)
     return field
 
-  def __setattr__(self, attr, value):
+  def has(self, name):
+    return self.type.fields.byname.has_key(name)
+
+  def set(self, attr, value):
     self._check(attr)
     self._values[attr] = value
 
-  def __getattr__(self, attr):
+  def get(self, attr):
     field = self._check(attr)
     return self._values.get(attr, field.default())
+
+  def __setattr__(self, attr, value):
+    self.set(attr, value)
+
+  def __getattr__(self, attr):
+    return self.get(attr)
+
+  def __setitem__(self, attr, value):
+    self.set(attr, value)
+
+  def __getitem__(self, attr):
+    return self.get(attr)
 
   def __str__(self):
     return "%s %s" % (self.type.type, self._values)
