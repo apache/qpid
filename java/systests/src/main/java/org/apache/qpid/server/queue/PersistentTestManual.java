@@ -259,7 +259,7 @@ public class PersistentTestManual
     {
         PersistentTestManual test;
 
-        Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][]{}));
+        Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][]{}), null);
 
 
         test = new PersistentTestManual(options);
