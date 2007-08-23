@@ -46,12 +46,6 @@ Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_) :
     adapter(*this)
 {}
 
-
-Exchange::shared_ptr Connection::findExchange(const string& name){
-    return broker.getExchanges().get(name);
-}
-
-
 void Connection::received(framing::AMQFrame& frame){
     if (frame.getChannel() == 0) {
         adapter.handle(frame);
