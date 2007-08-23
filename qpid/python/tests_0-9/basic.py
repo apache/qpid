@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -46,7 +46,7 @@ class BasicTests(TestBase):
         msg = included.get(timeout=1)
         self.assertEqual("consume_no_local", msg.content.body)
         try:
-            excluded.get(timeout=1) 
+            excluded.get(timeout=1)
             self.fail("Received locally published message though no_local=true")
         except Empty: None
 
@@ -67,7 +67,7 @@ class BasicTests(TestBase):
         except Closed, e:
             self.assertChannelException(403, e.args[0])
 
-        #open new channel and cleanup last consumer:    
+        #open new channel and cleanup last consumer:
         channel = self.client.channel(2)
         channel.channel_open()
 
@@ -129,12 +129,12 @@ class BasicTests(TestBase):
         myqueue = self.client.queue("my-consumer")
         msg = myqueue.get(timeout=1)
         self.assertEqual("One", msg.content.body)
-	
+
         #cancel should stop messages being delivered
         channel.basic_cancel(consumer_tag="my-consumer")
         channel.basic_publish(routing_key="test-queue-4", content=Content("Two"))
         try:
-            msg = myqueue.get(timeout=1) 
+            msg = myqueue.get(timeout=1)
             self.fail("Got message after cancellation: " + msg)
         except Empty: None
 
@@ -149,7 +149,7 @@ class BasicTests(TestBase):
         """
         channel = self.channel
         channel.queue_declare(queue="test-ack-queue", exclusive=True)
-        
+
         reply = channel.basic_consume(queue="test-ack-queue", no_ack=False)
         queue = self.client.queue(reply.consumer_tag)
 
@@ -158,13 +158,13 @@ class BasicTests(TestBase):
         channel.basic_publish(routing_key="test-ack-queue", content=Content("Three"))
         channel.basic_publish(routing_key="test-ack-queue", content=Content("Four"))
         channel.basic_publish(routing_key="test-ack-queue", content=Content("Five"))
-                
+
         msg1 = queue.get(timeout=1)
         msg2 = queue.get(timeout=1)
         msg3 = queue.get(timeout=1)
         msg4 = queue.get(timeout=1)
         msg5 = queue.get(timeout=1)
-        
+
         self.assertEqual("One", msg1.content.body)
         self.assertEqual("Two", msg2.content.body)
         self.assertEqual("Three", msg3.content.body)
@@ -175,10 +175,10 @@ class BasicTests(TestBase):
         channel.basic_ack(delivery_tag=msg4.delivery_tag, multiple=False) #Four
 
         channel.basic_recover(requeue=False)
-        
+
         msg3b = queue.get(timeout=1)
         msg5b = queue.get(timeout=1)
-        
+
         self.assertEqual("Three", msg3b.content.body)
         self.assertEqual("Five", msg5b.content.body)
 
@@ -193,7 +193,7 @@ class BasicTests(TestBase):
         """
         channel = self.channel
         channel.queue_declare(queue="test-requeue", exclusive=True)
-        
+
         subscription = channel.basic_consume(queue="test-requeue", no_ack=False)
         queue = self.client.queue(subscription.consumer_tag)
 
@@ -202,13 +202,13 @@ class BasicTests(TestBase):
         channel.basic_publish(routing_key="test-requeue", content=Content("Three"))
         channel.basic_publish(routing_key="test-requeue", content=Content("Four"))
         channel.basic_publish(routing_key="test-requeue", content=Content("Five"))
-                
+
         msg1 = queue.get(timeout=1)
         msg2 = queue.get(timeout=1)
         msg3 = queue.get(timeout=1)
         msg4 = queue.get(timeout=1)
         msg5 = queue.get(timeout=1)
-        
+
         self.assertEqual("One", msg1.content.body)
         self.assertEqual("Two", msg2.content.body)
         self.assertEqual("Three", msg3.content.body)
@@ -224,10 +224,10 @@ class BasicTests(TestBase):
 
         subscription2 = channel.basic_consume(queue="test-requeue")
         queue2 = self.client.queue(subscription2.consumer_tag)
-        
+
         msg3b = queue2.get(timeout=1)
         msg5b = queue2.get(timeout=1)
-        
+
         self.assertEqual("Three", msg3b.content.body)
         self.assertEqual("Five", msg5b.content.body)
 
@@ -242,8 +242,8 @@ class BasicTests(TestBase):
             extra = queue.get(timeout=1)
             self.fail("Got unexpected message in original queue: " + extra.content.body)
         except Empty: None
-        
-        
+
+
     def test_qos_prefetch_count(self):
         """
         Test that the prefetch count specified is honoured
@@ -285,7 +285,7 @@ class BasicTests(TestBase):
         except Empty: None
 
 
-        
+
     def test_qos_prefetch_size(self):
         """
         Test that the prefetch size specified is honoured
@@ -340,7 +340,7 @@ class BasicTests(TestBase):
         """
         channel = self.channel
         channel.queue_declare(queue="test-get", exclusive=True)
-        
+
         #publish some messages (no_ack=True)
         for i in range(1, 11):
             channel.basic_publish(routing_key="test-get", content=Content("Message %d" % i))
@@ -376,7 +376,7 @@ class BasicTests(TestBase):
 
         #recover(requeue=True)
         channel.basic_recover(requeue=True)
-        
+
         #get the unacked messages again (14, 16, 18, 20)
         for i in [14, 16, 18, 20]:
             reply = channel.basic_get(no_ack=False)
