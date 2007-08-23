@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
+package org.apache.qpidity.codec;
 
 import java.nio.ByteBuffer;
 
@@ -31,7 +31,7 @@ import java.util.Map;
  * @author Rafael H. Schloming
  */
 
-class SizeEncoder extends AbstractEncoder
+public class SizeEncoder extends AbstractEncoder
 {
 
     private int size;

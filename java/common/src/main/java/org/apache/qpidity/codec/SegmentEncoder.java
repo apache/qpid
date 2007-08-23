@@ -18,11 +18,14 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
+package org.apache.qpidity.codec;
 
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import org.apache.qpidity.Frame;
+import org.apache.qpidity.Handler;
 
 import static java.lang.Math.*;
 
@@ -35,7 +38,7 @@ import static org.apache.qpidity.Frame.*;
  * @author Rafael H. Schloming
  */
 
-class SegmentEncoder extends AbstractEncoder
+public class SegmentEncoder extends AbstractEncoder
 {
 
     private final Handler<ByteBuffer> handler;
