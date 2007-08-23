@@ -95,13 +95,13 @@ public class PingClient extends PingPongProducer
         {
             log.debug("1 consumer per destination.");
 
-            return 1;
+            return _noOfConsumers;
         }
         else
         {
             log.debug(_pingClientCount + " consumers per destination.");
 
-            return _pingClientCount;
+            return _pingClientCount * _noOfConsumers;
         }
     }
 }
