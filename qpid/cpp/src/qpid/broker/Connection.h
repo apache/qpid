@@ -85,7 +85,6 @@ class Connection : public sys::ConnectionInputHandler,
     typedef std::map<framing::ChannelId, framing::FrameHandler::Chains> ChannelMap;
 
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
-    Exchange::shared_ptr findExchange(const string& name);
 
     framing::ProtocolVersion version;
     ChannelMap channels;
