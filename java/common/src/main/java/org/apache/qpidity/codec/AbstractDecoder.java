@@ -18,10 +18,13 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
+package org.apache.qpidity.codec;
 
 import java.util.Map;
 import java.util.UUID;
+
+import org.apache.qpidity.RangeSet;
+import org.apache.qpidity.Struct;
 
 import static org.apache.qpidity.Functions.*;
 

@@ -25,6 +25,9 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.ArrayList;
 
+import org.apache.qpidity.codec.SegmentEncoder;
+import org.apache.qpidity.codec.SizeEncoder;
+
 import static org.apache.qpidity.Frame.*;
 import static org.apache.qpidity.Functions.*;
 
@@ -49,14 +52,14 @@ public class Channel extends Invoker implements Handler<Frame>
     private Method method = null;
     private List<ByteBuffer> data = null;
     private int dataSize;
-    
+
     public Channel(Connection connection, int channel, SessionDelegate delegate)
     {
         this.connection = connection;
         this.channel = channel;
         this.delegate = new ChannelDelegate();
         this.sessionDelegate = delegate;
-        
+
         tracks = new TrackSwitch<Channel>();
         tracks.map(L1, new MethodHandler<Channel>
                    (getMajor(), getMinor(), connection.getConnectionDelegate()));
