@@ -92,10 +92,10 @@ public class PingPongBouncer implements MessageListener
     /** The producer for sending replies with. */
     private MessageProducer _replyProducer;
 
-    /** The consumer session. */
+    /** The consumer controlSession. */
     private Session _consumerSession;
 
-    /** The producer session. */
+    /** The producer controlSession. */
     private Session _producerSession;
 
     /** Holds the connection to the broker. */
@@ -149,7 +149,7 @@ public class PingPongBouncer implements MessageListener
         // Set up the failover notifier.
         getConnection().setConnectionListener(new FailoverNotifier());
 
-        // Create a session to listen for messages on and one to send replies on, transactional depending on the
+        // Create a controlSession to listen for messages on and one to send replies on, transactional depending on the
         // command line option.
         _consumerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
         _producerSession = (Session) getConnection().createSession(transacted, Session.AUTO_ACKNOWLEDGE);
@@ -323,8 +323,8 @@ public class PingPongBouncer implements MessageListener
     }
 
     /**
-     * Convenience method to commit the transaction on the specified session. If the session to commit on is not
-     * a transactional session, this method does nothing.
+     * Convenience method to commit the transaction on the specified controlSession. If the controlSession to commit on is not
+     * a transactional controlSession, this method does nothing.
      *
      * <p/>If the {@link #_failBeforeCommit} flag is set, this will prompt the user to kill the broker before the
      * commit is applied. If the {@link #_failAfterCommit} flag is set, this will prompt the user to kill the broker
