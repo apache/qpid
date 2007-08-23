@@ -18,39 +18,35 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
+package org.apache.qpidity.codec;
 
-import java.util.Map;
-import java.util.UUID;
+import java.nio.ByteBuffer;
+
 
 /**
- * Encoder
+ * BBEncoder
  *
  * @author Rafael H. Schloming
  */
 
-public interface Encoder
+public class BBEncoder extends AbstractEncoder
 {
 
-    void writeBit(boolean b);
-    void writeOctet(short b);
-    void writeShort(int s);
-    void writeLong(long i);
-    void writeLonglong(long l);
+    private final ByteBuffer out;
 
-    void writeTimestamp(long l);
+    public BBEncoder(byte major, byte minor, ByteBuffer out) {
+        super(major, minor);
+        this.out = out;
+    }
 
-    void writeShortstr(String s);
-    void writeLongstr(String s);
+    @Override protected void put(byte b)
+    {
+        out.put(b);
+    }
 
-    void writeTable(Map<String,?> table);
-    void writeRfc1982LongSet(RangeSet ranges);
-    void writeUuid(UUID uuid);
-
-    void writeContent(String c);
-
-    void flush();
-
-    void writeLongStruct(Struct s);
+    @Override protected void put(ByteBuffer src)
+    {
+        out.put(src);
+    }
 
 }

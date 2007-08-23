@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity;
 
+import org.apache.qpidity.codec.Encodable;
+
 
 /**
  * Struct
@@ -35,6 +37,6 @@ public abstract class Struct implements Delegator, Encodable
         return StructFactory.create(type);
     }
 
-    abstract int getEncodedType();
+    public abstract int getEncodedType();
 
 }

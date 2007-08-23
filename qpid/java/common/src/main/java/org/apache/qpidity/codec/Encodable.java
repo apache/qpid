@@ -18,35 +18,20 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
-
-import java.nio.ByteBuffer;
+package org.apache.qpidity.codec;
 
 
 /**
- * BBEncoder
+ * Encodable
  *
  * @author Rafael H. Schloming
  */
 
-class BBEncoder extends AbstractEncoder
+public interface Encodable
 {
 
-    private final ByteBuffer out;
+    void write(Encoder enc, byte major, byte minor);
 
-    public BBEncoder(byte major, byte minor, ByteBuffer out) {
-        super(major, minor);
-        this.out = out;
-    }
-
-    @Override protected void put(byte b)
-    {
-        out.put(b);
-    }
-
-    @Override protected void put(ByteBuffer src)
-    {
-        out.put(src);
-    }
+    void read(Decoder dec, byte major, byte minor);
 
 }

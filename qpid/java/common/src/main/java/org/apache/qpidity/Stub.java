@@ -5,6 +5,10 @@ import java.lang.annotation.*;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpidity.codec.BBEncoder;
+import org.apache.qpidity.codec.Encoder;
+import org.apache.qpidity.codec.SizeEncoder;
+
 import static org.apache.qpidity.Option.*;
 
 
