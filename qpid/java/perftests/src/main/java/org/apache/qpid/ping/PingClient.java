@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.ping;
 
-import java.util.List;
-import java.util.Properties;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.requestreply.PingPongProducer;
 
 import javax.jms.Destination;
 
-import org.apache.qpid.requestreply.PingPongProducer;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * PingClient is a {@link PingPongProducer} that does not need a {@link org.apache.qpid.requestreply.PingPongBouncer}
@@ -36,7 +38,7 @@ import org.apache.qpid.requestreply.PingPongProducer;
  * are created they will all be run in parallel and be active in sending and consuming pings at the same time.
  * If the unique destinations flag is not set and a pub/sub ping cycle is being run, this means that they will all hear
  * pings sent by each other. The expected number of pings received will therefore be multiplied up by the number of
- * active ping clients. The {@link #getConsumersPerTopic()} method is used to supply this multiplier under these
+ * active ping clients. The {@link #getConsumersPerDestination()} method is used to supply this multiplier under these
  * conditions.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
@@ -47,6 +49,9 @@ import org.apache.qpid.requestreply.PingPongProducer;
  */
 public class PingClient extends PingPongProducer
 {
+    /** Used for debugging. */
+    private final Logger log = Logger.getLogger(PingClient.class);
+
     /** Used to count the number of ping clients created. */
     private static int _pingClientCount;
 
@@ -82,15 +87,21 @@ public class PingClient extends PingPongProducer
      *
      * @return The scaling up of the number of expected pub/sub pings.
      */
-    public int getConsumersPerTopic()
+    public int getConsumersPerDestination()
     {
+        log.debug("public int getConsumersPerDestination(): called");
+
         if (_isUnique)
         {
-            return 1;
+            log.debug("1 consumer per destination.");
+
+            return _noOfConsumers;
         }
         else
         {
-            return _pingClientCount;
+            log.debug(_pingClientCount + " consumers per destination.");
+
+            return _pingClientCount * _noOfConsumers;
         }
     }
 }
