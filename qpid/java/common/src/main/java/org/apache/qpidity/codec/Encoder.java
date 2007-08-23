@@ -18,20 +18,43 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
+package org.apache.qpidity.codec;
+
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.qpidity.RangeSet;
+import org.apache.qpidity.Struct;
 
 
 /**
- * Encodable
+ * Encoder
  *
  * @author Rafael H. Schloming
  */
 
-public interface Encodable
+public interface Encoder
 {
 
-    void write(Encoder enc, byte major, byte minor);
+    void writeBit(boolean b);
+    void writeOctet(short b);
+    void writeShort(int s);
+    void writeLong(long i);
+    void writeLonglong(long l);
 
-    void read(Decoder dec, byte major, byte minor);
+    void writeTimestamp(long l);
+
+    void writeShortstr(String s);
+    void writeLongstr(String s);
+
+    void writeTable(Map<String,?> table);
+    void writeRfc1982LongSet(RangeSet ranges);
+    void writeUuid(UUID uuid);
+
+    void writeContent(String c);
+
+    void flush();
+
+    void writeLongStruct(Struct s);
 
 }

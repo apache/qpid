@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
  * @author Rafael H. Schloming
  */
 
-class Functions
+public class Functions
 {
 
     public static final short unsigned(byte b)

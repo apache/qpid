@@ -23,6 +23,10 @@ class Output:
     self.line("import java.util.Map;")
     self.line("import java.util.UUID;")
     self.line()
+    self.line("import org.apache.qpidity.codec.Decoder;")
+    self.line("import org.apache.qpidity.codec.Encodable;")
+    self.line("import org.apache.qpidity.codec.Encoder;")
+    self.line()
     self.line()
 
   def line(self, l = ""):
@@ -80,9 +84,9 @@ const.line("{")
 for d in spec.query["amqp/constant"]:
 	name = d["@name"]
 	val = d["@value"]
-	datatype = d["@datatype"]	
+	datatype = d["@datatype"]
 	if datatype == None:
-		const.line("public static final int %s = %s;" % (scream(name), val))   	
+		const.line("public static final int %s = %s;" % (scream(name), val))
 const.line("}")
 const.write()
 

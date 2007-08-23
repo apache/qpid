@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.qpidity.codec.FragmentDecoder;
+
 
 /**
  * HeaderHandler

@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpidity;
+package org.apache.qpidity.codec;
 
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
@@ -34,7 +34,7 @@ import static java.lang.Math.*;
  * @author Rafael H. Schloming
  */
 
-class FragmentDecoder extends AbstractDecoder
+public class FragmentDecoder extends AbstractDecoder
 {
 
     private final Iterator<ByteBuffer> fragments;

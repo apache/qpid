@@ -24,6 +24,9 @@ import java.nio.ByteBuffer;
 
 import java.util.Iterator;
 
+import org.apache.qpidity.codec.Decoder;
+import org.apache.qpidity.codec.FragmentDecoder;
+
 
 /**
  * MethodDecoder
