@@ -17,13 +17,10 @@
  */
 package org.apache.qpidity.jms;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
+import org.apache.qpidity.jms.message.QpidMessage;
+import org.apache.qpidity.jms.message.MessageFactory;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.client.util.MessageListener;
-import org.apache.qpidity.jms.message.MessageFactory;
-import org.apache.qpidity.jms.message.QpidMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,12 +29,8 @@ import org.slf4j.LoggerFactory;
  * This is for guarantying that asynch messages are sequentially processed within their session.
  * <p> when used synchonously, messages are dispatched to the receiver itself.
  */
-public class QpidMessageListener implements MessageListener, Runnable
+public class QpidMessageListener implements MessageListener
 {
-    
-    // temp solution
-    LinkedBlockingQueue<Message> _queue = new LinkedBlockingQueue<Message>();
-    
     /**
      * Used for debugging.
      */
@@ -57,41 +50,6 @@ public class QpidMessageListener implements MessageListener, Runnable
     public QpidMessageListener(MessageConsumerImpl consumer)
     {
         _consumer = consumer;
-        Thread t = new Thread(this);
-        t.start();
-    }
-    
-    public void run()
-    {
-        try
-        {
-            while(true)
-            {
-                System.out.println("trying to take a message message");
-                Message message = _queue.take();
-                    
-                // to be used with flush
-                System.out.println("processing the message");
-                _consumer.notifyMessageReceived();
-                            
-                //convert this message into a JMS one
-                QpidMessage jmsMessage = MessageFactory.getQpidMessage(message);
-                // if consumer is asynchronous then send this message to its session.
-                if( _consumer.getMessageListener() != null )
-                {
-                    _consumer.getSession().dispatchMessage(_consumer.getMessageActorID(), jmsMessage);
-                }
-                else
-                {
-                    // deliver this message to the consumer itself
-                    _consumer.onMessage(jmsMessage);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e.getMessage());
-        }
     }
 
     //---- org.apache.qpidity.MessagePartListener API
@@ -102,8 +60,27 @@ public class QpidMessageListener implements MessageListener, Runnable
      */
     public void onMessage(Message message)
     {
-        System.out.println("Received a message");
-        _queue.offer(message);
-        System.out.println("Added queue to the message");
+        try
+        {
+            // to be used with flush
+            _consumer.notifyMessageReceived();
+            
+            //convert this message into a JMS one
+            QpidMessage jmsMessage = MessageFactory.getQpidMessage(message);
+            // if consumer is asynchronous then send this message to its session.
+            if( _consumer.getMessageListener() != null )
+            {
+                _consumer.getSession().dispatchMessage(_consumer.getMessageActorID(), jmsMessage);
+            }
+            else
+            {
+                // deliver this message to the consumer itself
+                _consumer.onMessage(jmsMessage);
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e.getMessage());
+        }
     }
 }
