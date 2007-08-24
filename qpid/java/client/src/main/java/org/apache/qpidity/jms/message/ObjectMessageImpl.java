@@ -153,23 +153,29 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
     public void afterMessageReceive() throws QpidException
     {
         super.afterMessageReceive();
-        try
+        ByteBuffer messageData = getMessageData();
+        if (messageData != null)
         {
-            ByteArrayInputStream bais = new ByteArrayInputStream(getMessageData().array());
-            ObjectInputStream ois = new ObjectInputStream(bais);
-            _object = (Serializable) ois.readObject();
-        }
-        catch (IOException ioe)
-        {
-            throw new QpidException(
-                    "Unexpected error during rebuild of message in afterReceive() - " + "The Object stored in the message was not a Serializable object.",
-                    null, ioe);
-        }
-        catch (ClassNotFoundException clnfe)
-        {
-            throw new QpidException(
-                    "Unexpected error during rebuild of message in afterReceive() - " + "Could not find the required class in classpath.",
-                    null, clnfe);
+            try
+            {
+                ByteArrayInputStream bais = new ByteArrayInputStream(messageData.array(),
+                                                                     messageData.arrayOffset() + messageData.position(),
+                                                                     messageData.remaining());
+                ObjectInputStream ois = new ObjectInputStream(bais);
+                _object = (Serializable) ois.readObject();
+            }
+            catch (IOException ioe)
+            {
+                throw new QpidException(
+                        "Unexpected error during rebuild of message in afterReceive() - " + "The Object stored in the message was not a Serializable object.",
+                        null, ioe);
+            }
+            catch (ClassNotFoundException clnfe)
+            {
+                throw new QpidException(
+                        "Unexpected error during rebuild of message in afterReceive() - " + "Could not find the required class in classpath.",
+                        null, clnfe);
+            }
         }
     }
 }

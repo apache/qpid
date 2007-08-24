@@ -837,7 +837,8 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
             try
             {
                 _dataIn = new DataInputStream(
-                        new ByteArrayInputStream(messageData.array(), messageData.arrayOffset(), messageData.limit()));
+                        new ByteArrayInputStream(messageData.array(), messageData.arrayOffset() + messageData.position()
+                                , messageData.remaining()));
             }
             catch (Exception e)
             {
