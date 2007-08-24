@@ -42,7 +42,7 @@ class CommandDispatcher implements Handler<Event<Session,Method>>
         Session ssn = event.context;
         Method method = event.target;
         method.setId(ssn.nextCommandId());
-        System.out.println("delegating " + method + "[" + method.getId() + "] to " + delegate);
+        System.out.println("\n Delegating " + method.getClass().getName() + "[" + method.getId() + "] to " + delegate.getClass().getName() + "\n");
         method.delegate(ssn, delegate);
         if (!method.hasPayload())
         {

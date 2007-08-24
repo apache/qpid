@@ -368,7 +368,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 // if this consumer is stopped then this will be call when starting
                 requestOneMessage();
                 //When sync() returns we know whether we have received a message or not.
+                System.out.println("Internal receive  -- Called sync()");
                 getSession().getQpidSession().sync();
+                System.out.println("Internal receive  -- Returned from sync()");
             }
             if (_messageReceived.get() && timeout < 0)
             {
@@ -492,26 +494,32 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * @param message The message delivered to this consumer.
      */
     protected synchronized void onMessage(QpidMessage message)
-    {
+    {        
         try
         {
             // if there is a message selector then we need to evaluate it.
             boolean messageOk = true;
             if (_messageSelector != null)
             {
-                messageOk = _filter.matches((Message) message);
+                messageOk = _filter.matches((Message) message);                
             }
+            
+            System.out.println("Received a message- onMessage in message consumer Impl");
             if (!messageOk && _preAcquire)
             {
                 // this is the case for topics
                 // We need to ack this message
+                System.out.println("onMessage - trying to ack message");                
                 acknowledgeMessage(message);
+                System.out.println("onMessage - acked message");
             }
             // now we need to acquire this message if needed
             // this is the case of queue with a message selector set
             if (!_preAcquire && messageOk)
             {
+                System.out.println("onMessage - trying to acquire message");
                 messageOk = acquireMessage(message);
+                System.out.println("onMessage - acquired message");
             }
 
             // if this consumer is synchronous then set the current message and
@@ -520,15 +528,17 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Received a message- onMessage in message consumer Impl");
+                    _logger.debug("Received a message- onMessage in message consumer Impl");                    
                 }
                 synchronized (_incomingMessageLock)
                 {
+                    System.out.println("got incomming message lock");
                     if (messageOk)
                     {
                         // we have received a proper message that we can deliver
                         if (_isReceiving)
                         {
+                            System.out.println("Is receiving true, setting message and notifying");
                             _incomingMessage = message;
                             _incomingMessageLock.notify();
                         }

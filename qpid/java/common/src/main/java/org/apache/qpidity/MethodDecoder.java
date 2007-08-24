@@ -50,7 +50,7 @@ class MethodDecoder<C> implements Handler<Event<C,Segment>>
 
     public void handle(Event<C,Segment> event)
     {
-        System.out.println("got method segment:\n  " + event.target);
+        //System.out.println("got method segment:\n  " + event.target);
         Iterator<ByteBuffer> fragments = event.target.getFragments();
         Decoder dec = new FragmentDecoder(major, minor, fragments);
         int type = (int) dec.readLong();

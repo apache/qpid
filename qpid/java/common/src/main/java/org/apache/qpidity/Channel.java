@@ -140,7 +140,10 @@ public class Channel extends Invoker implements Handler<Frame>
             method = m;
         }
 
-        System.out.println("sent " + m);
+        if (m.getEncodedTrack() != Frame.L4)
+        {
+            System.out.println("sent control " + m.getClass().getName());
+        }
     }
 
     public void headers(Struct ... headers)
