@@ -395,7 +395,7 @@ public class QpidMessage
         try
         {
             // set the message data
-            _qpidityMessage.clearData();         
+            _qpidityMessage.clearData();
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("_messageData POS " + _messageData.position());
@@ -429,6 +429,17 @@ public class QpidMessage
     {
         return _qpidityMessage.getMessageTransferId();
     }
+
+    /**
+     * This method is invoked after this message is received.
+     *
+     * @throws QpidException If there is an internal error when procesing this message.
+     */
+    public void afterMessageReceive() throws QpidException
+    {
+        // do nothing for now 
+    }
+
 }
 
 
