@@ -20,16 +20,12 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.SimpleByteBufferAllocator;
-
 import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.BytesMessage;
 import javax.jms.TextMessage;
-import javax.jms.Queue;
 import javax.jms.DeliveryMode;
 import javax.jms.Destination;
 
@@ -40,15 +36,6 @@ public class TestMessageFactory
     public static TextMessage newTextMessage(Session session, int size) throws JMSException
     {
         return session.createTextMessage(createMessagePayload(size));
-    }
-
-    public static JMSTextMessage newJMSTextMessage(int size, String encoding) throws JMSException
-    {
-        ByteBuffer byteBuffer = (new SimpleByteBufferAllocator()).allocate(size, true);
-        JMSTextMessage message = new JMSTextMessage(byteBuffer, encoding);
-        message.clearBody();
-        message.setText(createMessagePayload(size));
-        return message;
     }
 
     public static BytesMessage newBytesMessage(Session session, int size) throws JMSException
@@ -78,7 +65,8 @@ public class TestMessageFactory
     }
 
     /**
-     * Creates an ObjectMessage with given size and sets the JMS properties (JMSReplyTo and DeliveryMode)
+     * Creates an ObjectMessage with given size and sets the JMS properties
+     * (JMSReplyTo and DeliveryMode)
      * @param session
      * @param replyDestination
      * @param size
