@@ -39,8 +39,8 @@ namespace {
 /** Throw an exception containing msg and strerror if throwIf is true.
  * Name is supposed to be reminiscent of perror().
  */
-void terror(bool throwIf, const string& msg, int errNo=errno) {
-    if (throwIf)
+void throwIf(bool condition, const string& msg, int errNo=errno) {
+    if (condition)
         throw Exception(msg + (errNo? ": "+strError(errNo) : string(".")));
 }
 
@@ -53,8 +53,8 @@ struct LockFile : public fdstream {
         errno = 0;
         int flags=create ? O_WRONLY|O_CREAT|O_NOFOLLOW : O_RDWR;
         fd = ::open(path.c_str(), flags, 0644);
-        terror(fd < 0,"Cannot open "+path);
-        terror(::lockf(fd, F_TLOCK, 0) < 0, "Cannot lock "+path);
+        throwIf(fd < 0,"Cannot open "+path);
+        throwIf(::lockf(fd, F_TLOCK, 0) < 0, "Cannot lock "+path);
         open(boost::iostreams::file_descriptor(fd));
     }
 
@@ -89,23 +89,25 @@ string Daemon::pidFile(uint16_t port) {
 
 void Daemon::fork()
 {
-    terror(pipe(pipeFds) < 0, "Can't create pipe");
-    terror((pid = ::fork()) < 0, "Daemon fork failed");
+    throwIf(pipe(pipeFds) < 0, "Can't create pipe");
+    throwIf((pid = ::fork()) < 0, "Daemon fork failed");
     if (pid == 0) {             // Child
         try {
+            QPID_LOG(debug, "Forked daemon child process");
+            
             // File descriptors
-            terror(::close(pipeFds[0])<0, "Cannot close read pipe");
-            terror(::close(0)<0, "Cannot close stdin");
-            terror(::close(1)<0, "Cannot close stdout");
-            terror(::close(2)<0, "Cannot close stderr");
+            throwIf(::close(pipeFds[0])<0, "Cannot close read pipe");
+            throwIf(::close(0)<0, "Cannot close stdin");
+            throwIf(::close(1)<0, "Cannot close stdout");
+            throwIf(::close(2)<0, "Cannot close stderr");
             int fd=::open("/dev/null",O_RDWR); // stdin
-            terror(fd != 0, "Cannot re-open stdin");
-            terror(::dup(fd)<0, "Cannot re-open stdout");
-            terror(::dup(fd)<0, "Cannot re-open stderror");
+            throwIf(fd != 0, "Cannot re-open stdin");
+            throwIf(::dup(fd)<0, "Cannot re-open stdout");
+            throwIf(::dup(fd)<0, "Cannot re-open stderror");
 
             // Misc
-            terror(setsid()<0, "Cannot set session ID");
-            terror(chdir(dir().c_str()) < 0, "Cannot change directory to "+dir());
+            throwIf(setsid()<0, "Cannot set session ID");
+            throwIf(chdir(dir().c_str()) < 0, "Cannot change directory to "+dir());
             umask(027);
 
             // Child behavior
@@ -138,17 +140,26 @@ uint16_t Daemon::wait(int timeout) {            // parent waits for child.
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(pipeFds[0], &fds);
-    terror(1 != select(FD_SETSIZE, &fds, 0, 0, &tv), "No response from daemon process");
-
+    int n=select(FD_SETSIZE, &fds, 0, 0, &tv);
+    throwIf(n==0, "Timed out waiting for daemon");
+    throwIf(n<0, "Error waiting for daemon");
     fdstream pipe(pipeFds[0]);
-    uint16_t value = 0;
-    pipe >> value >> skipws;
-    if (value == 0) {
-        string errmsg;
-        getline(pipe, errmsg);
-        throw Exception("Daemon startup failed"+ (errmsg.empty() ? string(".") : ": " + errmsg));
+    pipe.exceptions(ios::failbit|ios::badbit|ios::eofbit);
+    uint16_t port = 0;
+    try {
+        pipe >> port;
+        if (port == 0) {
+            string errmsg;
+            pipe >> skipws;
+            getline(pipe, errmsg);
+            throw Exception("Daemon startup failed"+
+                            (errmsg.empty() ? string(".") : ": " + errmsg));
+        }
     }
-    return value;
+    catch (const fdstream::failure& e) {
+        throw Exception(string("Failed to read daemon port: ")+e.what());
+    }
+    return port;
 }
 
 void Daemon::ready(uint16_t port) { // child
@@ -158,7 +169,9 @@ void Daemon::ready(uint16_t port) { // child
     if (lf.fail())
         throw Exception("Cannot write lock file "+lockFile);
     fdstream pipe(pipeFds[1]);
-    pipe << port << endl;;
+    QPID_LOG(debug, "Daemon ready on port: " << port);
+    pipe << port << endl;
+    throwIf(!pipe.good(), "Error writing to parent");
 }
 
 pid_t Daemon::getPid(uint16_t port) {
