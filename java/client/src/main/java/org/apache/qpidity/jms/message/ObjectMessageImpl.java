@@ -149,6 +149,7 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
      *
      * @throws QpidException
      */
+    @Override
     public void afterMessageReceive() throws QpidException
     {
         super.afterMessageReceive();

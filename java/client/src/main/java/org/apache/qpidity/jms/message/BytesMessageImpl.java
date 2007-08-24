@@ -827,13 +827,22 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
      *
      * @throws QpidException
      */
+    @Override
     public void afterMessageReceive() throws QpidException
     {
         super.afterMessageReceive();
         ByteBuffer messageData = getMessageData();
         if (messageData != null)
         {
-            _dataIn = new DataInputStream(new ByteArrayInputStream(messageData.array()));
+            try
+            {
+                _dataIn = new DataInputStream(
+                        new ByteArrayInputStream(messageData.array(), messageData.arrayOffset(), messageData.limit()));
+            }
+            catch (Exception e)
+            {
+                throw new QpidException("Cannot retrieve data from message ", null, e);
+            }
         }
     }
 
