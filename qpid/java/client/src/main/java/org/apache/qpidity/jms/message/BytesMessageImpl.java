@@ -70,6 +70,17 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
     protected BytesMessageImpl(org.apache.qpidity.api.Message message) throws QpidException
     {
         super(message);
+        try
+        {
+            ByteBuffer b = message.readData();
+            byte[] a = new byte[b.limit()];
+            b.get(a);
+            _dataIn = new DataInputStream(new ByteArrayInputStream(a));
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     //--- BytesMessage API

@@ -25,12 +25,11 @@ import org.apache.qpidity.RangeSet;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
-import javax.jms.MessageListener;
-import javax.jms.Session;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementation of the JMS Session interface
@@ -123,6 +122,12 @@ public class SessionImpl implements Session
      * This session connection
      */
     private ConnectionImpl _connection;
+    
+    /**
+     * This will be used as the message actor id
+     * This in turn will be set as the destination
+     */
+    protected AtomicInteger _consumerTag = new AtomicInteger();
 
     //--- Constructor
     /**
@@ -594,7 +599,7 @@ public class SessionImpl implements Session
         MessageConsumerImpl consumer;
         try
         {
-            consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null);
+            consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null,String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {
@@ -721,7 +726,7 @@ public class SessionImpl implements Session
         try
         {
             subscriber = new TopicSubscriberImpl(this, topic, messageSelector, noLocal,
-                                                 _connection.getClientID() + ":" + name);
+                                                 _connection.getClientID() + ":" + name,String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {
@@ -765,7 +770,7 @@ public class SessionImpl implements Session
         QueueBrowserImpl browser;
         try
         {
-            browser = new QueueBrowserImpl(this, queue, messageSelector);
+            browser = new QueueBrowserImpl(this, queue, messageSelector,String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {
@@ -1114,7 +1119,7 @@ public class SessionImpl implements Session
      */
     protected void testQpidException() throws QpidException
     {
-        _qpidSession.sync();
+        //_qpidSession.sync();
         QpidException qe = getCurrentException();
         if (qe != null)
         {

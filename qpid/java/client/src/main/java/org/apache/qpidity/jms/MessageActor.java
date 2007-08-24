@@ -63,15 +63,16 @@ public abstract class MessageActor
 
     //TODO define the parameters
 
-    protected MessageActor()
+    protected MessageActor(String messageActorID)
     {
-
+        _messageActorID = messageActorID;
     }
 
-    protected MessageActor(SessionImpl session, DestinationImpl destination)
+    protected MessageActor(SessionImpl session, DestinationImpl destination,String messageActorID)
     {
         _session = session;
         _destination = destination;
+        _messageActorID = messageActorID;
     }
 
     //--- public methods (part of the jms public API)

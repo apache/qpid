@@ -64,6 +64,7 @@ public class QpidMessage
     {
         // We us a byteBufferMessage as default
         _qpidityMessage = new ByteBufferMessage();
+        System.out.println("Creating a bytes message");
         _messageProperties = new HashMap<String, Object>();
         // This is a newly created messsage so the data is empty
         _messageData = ByteBuffer.allocate(1024);
@@ -325,8 +326,8 @@ public class QpidMessage
      * @param messageBody The buffer containing this message data
      */
     protected void setMessageData(ByteBuffer messageBody)
-    {
-        _messageData = messageBody;
+    {        
+        _messageData = messageBody.duplicate();
     }
 
     /**
@@ -389,7 +390,11 @@ public class QpidMessage
             // set the message data
             _qpidityMessage.clearData();
             // we need to do a flip
-            _messageData.flip();
+            //_messageData.flip();
+            
+            System.out.println("_messageData POS " + _messageData.position());
+            System.out.println("_messageData limit " + _messageData.limit());
+            
             _qpidityMessage.appendData(_messageData);
             _qpidityMessage.getMessageProperties().setApplicationHeaders(_messageProperties);
         }
