@@ -80,9 +80,9 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
      * @param messageSelector only messages with properties matching the message selector expression are delivered.
      * @throws Exception In case of internal problem when creating this browser.
      */
-    protected QueueBrowserImpl(SessionImpl session, Queue queue, String messageSelector) throws Exception
+    protected QueueBrowserImpl(SessionImpl session, Queue queue, String messageSelector,String consumerTag) throws Exception
     {
-        super(session, (DestinationImpl) queue);
+        super(session, (DestinationImpl) queue,consumerTag);
         // this is an array representing a batch of messages for this browser.
         _messages = new Message[_maxbatchlength];
         if (messageSelector != null)

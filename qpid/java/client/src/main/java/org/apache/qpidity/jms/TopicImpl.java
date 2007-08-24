@@ -42,6 +42,7 @@ public class TopicImpl extends DestinationImpl implements Topic
     {
         super(name);
         _queueName = "Topic-" + UUID.randomUUID();
+        _routingKey = name;
         _destinationName = name;
         _exchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
         _exchangeType = ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
@@ -61,6 +62,7 @@ public class TopicImpl extends DestinationImpl implements Topic
     {
         super(name);
         _queueName = "Topic-" + UUID.randomUUID();
+        _routingKey = name;
         _destinationName = name;
         _exchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
         _exchangeType = ExchangeDefaults.TOPIC_EXCHANGE_CLASS;
@@ -116,7 +118,11 @@ public class TopicImpl extends DestinationImpl implements Topic
         // test if this exchange exist on the broker
         session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
         // wait for the broker response
+        System.out.println("Checking for exchange");
+        
         session.getQpidSession().sync();
+        
+        System.out.println("Calling sync()");
         // todo get the exception
     }
 

@@ -144,7 +144,7 @@ public class TopicSessionImpl extends SessionImpl implements TopicSession
         TopicSubscriber topicSubscriber;
         try
         {
-            topicSubscriber = new TopicSubscriberImpl(this, topic, messageSelector, noLocal, null);
+            topicSubscriber = new TopicSubscriberImpl(this, topic, messageSelector, noLocal, null,String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {
