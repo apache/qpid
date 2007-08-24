@@ -128,7 +128,7 @@ public class QueueSessionImpl extends SessionImpl implements QueueSession
         QueueReceiver receiver;
         try
         {
-            receiver =  new QueueReceiverImpl(this, queue, messageSelector);
+            receiver =  new QueueReceiverImpl(this, queue, messageSelector,String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {

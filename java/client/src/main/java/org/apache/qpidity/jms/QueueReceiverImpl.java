@@ -35,9 +35,9 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
      * @param messageSelector the message selector for this QueueReceiverImpl.  
      * @throws Exception If the QueueReceiverImpl cannot be created due to some internal error.
      */
-    protected QueueReceiverImpl(SessionImpl session, Queue queue, String messageSelector) throws Exception
+    protected QueueReceiverImpl(SessionImpl session, Queue queue, String messageSelector,String consumerTag) throws Exception
     {
-        super(session, (DestinationImpl) queue, messageSelector, false, null);
+        super(session, (DestinationImpl) queue, messageSelector, false, null,consumerTag);
     }
 
     //--- Interface  QueueReceiver

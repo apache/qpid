@@ -108,7 +108,6 @@ public class Client implements org.apache.qpidity.client.Connection
         ClientSession ssn = new ClientSession();
         ssn.attach(ch);
         ssn.sessionOpen(expiryInSeconds);
-        
         return ssn;
     }
 

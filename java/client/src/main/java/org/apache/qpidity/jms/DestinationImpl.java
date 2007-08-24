@@ -68,6 +68,8 @@ public class DestinationImpl implements Destination, Referenceable
      * Indicates whether this destination is durable
      */
     protected boolean _isDurable;
+    
+    protected String _routingKey;
 
     /**
      * The biding URL used to create this destiantion
@@ -79,6 +81,7 @@ public class DestinationImpl implements Destination, Referenceable
     protected DestinationImpl(String name) throws QpidException
     {
        _queueName = name;
+       _routingKey = name;
     }
 
     /**
@@ -96,6 +99,7 @@ public class DestinationImpl implements Destination, Referenceable
         _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
         _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
         _queueName = binding.getQueueName();
+        _routingKey = binding.getQueueName();
         _url = binding;
     }
 
@@ -171,6 +175,11 @@ public class DestinationImpl implements Destination, Referenceable
         return _isAutoDelete;
     }
 
+    public String getRoutingKey()
+    {
+        return _routingKey;
+    }
+    
     /**
      * Indicates whether this destination is Durable.
      *

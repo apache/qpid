@@ -29,7 +29,7 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
         {
             for (long l = range.getLower(); l <= range.getUpper(); l++)
             {
-                System.out.println("Acknowleding message for : " + super.getCommand((int) l));
+                System.out.println("Acknowleding transfer id : " + l);
                 super.processed(l);
             }
         }

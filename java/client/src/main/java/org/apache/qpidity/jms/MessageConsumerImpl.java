@@ -112,9 +112,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * @throws Exception If the MessageProducerImpl cannot be created due to some internal error.
      */
     protected MessageConsumerImpl(SessionImpl session, DestinationImpl destination, String messageSelector,
-                                  boolean noLocal, String subscriptionName) throws Exception
+                                  boolean noLocal, String subscriptionName,String consumerTag) throws Exception
     {
-        super(session, destination);
+        super(session, destination,consumerTag);
         if (messageSelector != null)
         {
             _messageSelector = messageSelector;
@@ -167,7 +167,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             }
             // bind this queue with the topic exchange
             getSession().getQpidSession()
-                    .queueBind(queueName, ExchangeDefaults.TOPIC_EXCHANGE_NAME, destination.getQpidQueueName(), null);
+                    .queueBind(queueName, ExchangeDefaults.TOPIC_EXCHANGE_NAME, destination.getRoutingKey(), null);
             // subscribe to this topic 
             getSession().getQpidSession()
                     .messageSubscribe(queueName, getMessageActorID(),
@@ -183,6 +183,13 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         // set the flow mode
         getSession().getQpidSession()
                 .messageFlowMode(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_MODE_CREDIT);
+        
+        // this will prevent the broker from sending more than one message
+        // When a messageListener is set the flow will be adjusted.
+        // until then we assume it's for synchronous message consumption
+        getSession().getQpidSession()
+        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,1);
+        
         getSession().getQpidSession().sync();
         // check for an exception
         if (getSession().getCurrentException() != null)
@@ -347,12 +354,21 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     private Message internalReceive(long timeout) throws Exception
     {
         checkNotClosed();
+        Message result = null;
+        
         if (_messageListener != null)
         {
             throw new javax.jms.IllegalStateException("A listener has already been set.");
         }
-
-        Message result = null;
+        
+        if (_incomingMessage != null)
+        {
+            System.out.println("We already had a message in the queue");
+            result = (Message) _incomingMessage;
+            _incomingMessage = null;
+            return result;
+        }
+       
         synchronized (_incomingMessageLock)
         {
             // This indicate to the delivery thread to deliver the message to this consumer
@@ -366,11 +382,14 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                                      1);
                 getSession().getQpidSession().messageFlush(getMessageActorID());
                 _messageReceived.set(false);
-                
+                System.out.println("no message in the queue, issuing a flow(1) and waiting for message");
+                                
                 //When sync() returns we know whether we have received a message or not.
                 getSession().getQpidSession().sync();
+                
+                System.out.println("we got returned from sync()"); 
                 //received = getSession().getQpidSession().messagesReceived();
-            }
+            }            
             if (_messageReceived.get() && timeout < 0)
             {
                 // this is a nowait and we havent received a message then we must immediatly return
@@ -387,6 +406,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 {
                     try
                     {
+                        System.out.println("waiting for message");                        
                         _incomingMessageLock.wait(timeout);
                     }
                     catch (InterruptedException e)
@@ -479,18 +499,24 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // notify the waiting thread
             if (_messageListener == null)
             {
+                System.out.println("Received a message- onMessage in message consumer Impl");
+                
                 synchronized (_incomingMessageLock)
                 {
                     if (messageOk)
                     {
+                        System.out.println("Received a message- onMessage in message ok " + messageOk);
                         // we have received a proper message that we can deliver
                         if (_isReceiving)
                         {
+                            System.out.println("Received a message- onMessage in message _isReceiving");
+                            
                             _incomingMessage = message;
                             _incomingMessageLock.notify();
                         }
                         else
                         {
+                            System.out.println("Received a message- onMessage in message releasing");
                             // this message has been received after a received as returned
                             // we need to release it
                             releaseMessage(message);
