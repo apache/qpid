@@ -96,7 +96,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * Nether exceed MAX_MESSAGE_TRANSFERRED
      */
     private int _messageAsyncrhonouslyReceived = 0;
-    
+
     private AtomicBoolean _messageReceived = new AtomicBoolean();
 
     //----- Constructors
@@ -109,12 +109,13 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * @param noLocal          If true inhibits the delivery of messages published by its own connection.
      * @param subscriptionName Name of the subscription if this is to be created as a durable subscriber.
      *                         If this value is null, a non-durable subscription is created.
+     * @param consumerTag      This consumer ID. 
      * @throws Exception If the MessageProducerImpl cannot be created due to some internal error.
      */
     protected MessageConsumerImpl(SessionImpl session, DestinationImpl destination, String messageSelector,
-                                  boolean noLocal, String subscriptionName,String consumerTag) throws Exception
+                                  boolean noLocal, String subscriptionName, String consumerTag) throws Exception
     {
-        super(session, destination,consumerTag);
+        super(session, destination, consumerTag);
         if (messageSelector != null)
         {
             _messageSelector = messageSelector;
@@ -183,13 +184,13 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         // set the flow mode
         getSession().getQpidSession()
                 .messageFlowMode(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_MODE_CREDIT);
-        
+
         // this will prevent the broker from sending more than one message
         // When a messageListener is set the flow will be adjusted.
         // until then we assume it's for synchronous message consumption
         getSession().getQpidSession()
-        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,1);
-        
+                .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+
         getSession().getQpidSession().sync();
         // check for an exception
         if (getSession().getCurrentException() != null)
@@ -355,12 +356,12 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     {
         checkNotClosed();
         Message result = null;
-        
+
         if (_messageListener != null)
         {
             throw new javax.jms.IllegalStateException("A listener has already been set.");
         }
-        
+
         if (_incomingMessage != null)
         {
             System.out.println("We already had a message in the queue");
@@ -368,7 +369,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             _incomingMessage = null;
             return result;
         }
-       
+
         synchronized (_incomingMessageLock)
         {
             // This indicate to the delivery thread to deliver the message to this consumer
@@ -383,13 +384,13 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 getSession().getQpidSession().messageFlush(getMessageActorID());
                 _messageReceived.set(false);
                 System.out.println("no message in the queue, issuing a flow(1) and waiting for message");
-                                
+
                 //When sync() returns we know whether we have received a message or not.
                 getSession().getQpidSession().sync();
-                
-                System.out.println("we got returned from sync()"); 
+
+                System.out.println("we got returned from sync()");
                 //received = getSession().getQpidSession().messagesReceived();
-            }            
+            }
             if (_messageReceived.get() && timeout < 0)
             {
                 // this is a nowait and we havent received a message then we must immediatly return
@@ -406,7 +407,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 {
                     try
                     {
-                        System.out.println("waiting for message");                        
+                        System.out.println("waiting for message");
                         _incomingMessageLock.wait(timeout);
                     }
                     catch (InterruptedException e)
@@ -427,7 +428,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // We now release any message received for this consumer
             _isReceiving = false;
             _isNoWaitIsReceiving = false;
-            getSession().testQpidException();            
+            getSession().testQpidException();
         }
         return result;
     }
@@ -500,7 +501,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             if (_messageListener == null)
             {
                 System.out.println("Received a message- onMessage in message consumer Impl");
-                
+
                 synchronized (_incomingMessageLock)
                 {
                     if (messageOk)
@@ -510,7 +511,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                         if (_isReceiving)
                         {
                             System.out.println("Received a message- onMessage in message _isReceiving");
-                            
+
                             _incomingMessage = message;
                             _incomingMessageLock.notify();
                         }
@@ -534,11 +535,11 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                                                  org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
                             getSession().getQpidSession().messageFlush(getMessageActorID());
                             _messageReceived.set(false);
-                            
+
                             // When sync() returns we know whether we have received a message or not.
-                            getSession().getQpidSession().sync();                       
-                            
-                            if (_messageReceived.get()  && _isNoWaitIsReceiving)
+                            getSession().getQpidSession().sync();
+
+                            if (_messageReceived.get() && _isNoWaitIsReceiving)
                             {
                                 // Right a message nowait is waiting for a message
                                 // but no one can be delivered it then need to return
@@ -619,7 +620,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             RangeSet ranges = new RangeSet();
             ranges.add(message.getMessageTransferId());
             getSession().getQpidSession().messageRelease(ranges);
-            getSession().testQpidException();            
+            getSession().testQpidException();
         }
     }
 
@@ -667,7 +668,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             getSession().testQpidException();
         }
     }
-    
+
     public void notifyMessageReceived()
     {
         _messageReceived.set(true);
