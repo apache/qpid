@@ -114,12 +114,13 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
     public void afterMessageReceive() throws QpidException
     {
         super.afterMessageReceive();
-        ByteBuffer data = getMessageData();
-        if (data != null)
+        ByteBuffer messageData = getMessageData();
+        if (messageData != null)
         {
             try
             {
-                _messageText = new String(data.array(), CHARACTER_ENCODING);
+                _messageText = new String(messageData.array(), messageData.arrayOffset() + messageData.position(),
+                                          messageData.remaining(), CHARACTER_ENCODING);
             }
             catch (UnsupportedEncodingException e)
             {
