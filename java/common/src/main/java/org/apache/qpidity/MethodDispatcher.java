@@ -40,7 +40,7 @@ class MethodDispatcher<C> implements Handler<Event<C,Method>>
     public void handle(Event<C,Method> event)
     {
         Method method = event.target;
-        System.out.println("delegating " + method + " to " + delegate);
+        System.out.println("\nDelegating " + method.getClass().getName() + " to " + delegate.getClass().getName() + "\n");
         method.delegate(event.context, delegate);
     }
 

@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,35 +16,35 @@ public class ToyExchange
   final static String DIRECT = "amq.direct";
   final static String TOPIC = "amq.topic";
   
-  private Map<String,List<Queue<Message>>> directEx = new HashMap<String,List<Queue<Message>>>();
-  private Map<String,List<Queue<Message>>> topicEx = new HashMap<String,List<Queue<Message>>>(); 
-  private Map<String,Queue<Message>> queues = new HashMap<String,Queue<Message>>(); 
+  private Map<String,List<LinkedBlockingQueue<Message>>> directEx = new HashMap<String,List<LinkedBlockingQueue<Message>>>();
+  private Map<String,List<LinkedBlockingQueue<Message>>> topicEx = new HashMap<String,List<LinkedBlockingQueue<Message>>>(); 
+  private Map<String,LinkedBlockingQueue<Message>> queues = new HashMap<String,LinkedBlockingQueue<Message>>(); 
   
   public void createQueue(String name)
   {
-      queues.put(name, new LinkedList<Message>());
+      queues.put(name, new LinkedBlockingQueue<Message>());
   }
   
-  public Queue<Message> getQueue(String name)
+  public LinkedBlockingQueue<Message> getQueue(String name)
   {
       return queues.get(name);
   }
   
   public void bindQueue(String type,String binding,String queueName)
   {
-      Queue<Message> queue = queues.get(queueName);
+      LinkedBlockingQueue<Message> queue = queues.get(queueName);
       binding = normalizeKey(binding);
       if(DIRECT.equals(type))
       {
           
           if (directEx.containsKey(binding))
           {
-              List<Queue<Message>> list = directEx.get(binding);
+              List<LinkedBlockingQueue<Message>> list = directEx.get(binding);
               list.add(queue);
           }
           else
           {
-              List<Queue<Message>> list = new LinkedList<Queue<Message>>();
+              List<LinkedBlockingQueue<Message>> list = new LinkedList<LinkedBlockingQueue<Message>>();
               list.add(queue);
               directEx.put(binding,list);
           }
@@ -53,12 +53,12 @@ public class ToyExchange
       {
           if (topicEx.containsKey(binding))
           {
-              List<Queue<Message>> list = topicEx.get(binding);
+              List<LinkedBlockingQueue<Message>> list = topicEx.get(binding);
               list.add(queue);
           }
           else
           {
-              List<Queue<Message>> list = new LinkedList<Queue<Message>>();
+              List<LinkedBlockingQueue<Message>> list = new LinkedList<LinkedBlockingQueue<Message>>();
               list.add(queue);
               topicEx.put(binding,list);
           }
@@ -67,7 +67,7 @@ public class ToyExchange
   
   public boolean route(String dest,String routingKey,Message msg)
   {
-      List<Queue<Message>> queues;
+      List<LinkedBlockingQueue<Message>> queues;
       if(DIRECT.equals(dest))
       {
           queues = directEx.get(routingKey);          
@@ -101,9 +101,9 @@ public class ToyExchange
       }
   }
   
-  private List<Queue<Message>> matchWildCard(String routingKey)
+  private List<LinkedBlockingQueue<Message>> matchWildCard(String routingKey)
   {        
-      List<Queue<Message>> selected = new ArrayList<Queue<Message>>();
+      List<LinkedBlockingQueue<Message>> selected = new ArrayList<LinkedBlockingQueue<Message>>();
       
       for(String key: topicEx.keySet())
       {
@@ -111,7 +111,7 @@ public class ToyExchange
           Matcher m = p.matcher(routingKey);
           if (m.find())
           {
-              for(Queue<Message> queue : topicEx.get(key))
+              for(LinkedBlockingQueue<Message> queue : topicEx.get(key))
               {
                     selected.add(queue);
               }
@@ -121,9 +121,9 @@ public class ToyExchange
       return selected;      
   }
 
-  private void storeMessage(Message msg,List<Queue<Message>> selected)
+  private void storeMessage(Message msg,List<LinkedBlockingQueue<Message>> selected)
   {
-      for(Queue<Message> queue : selected)
+      for(LinkedBlockingQueue<Message> queue : selected)
       {
           queue.offer(msg);
       }
