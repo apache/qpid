@@ -39,9 +39,9 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
      * @throws Exception If the TopicSubscriberImpl cannot be created due to internal error.
      */
     protected TopicSubscriberImpl(SessionImpl session, Topic topic, String messageSelector, boolean noLocal,
-                                  String subscriptionName) throws Exception
+                                  String subscriptionName,String consumerTag) throws Exception
     {
-        super(session, (DestinationImpl) topic, messageSelector, noLocal, subscriptionName);
+        super(session, (DestinationImpl) topic, messageSelector, noLocal, subscriptionName,consumerTag);
     }
 
     //---  javax.jms.TopicSubscriber interface

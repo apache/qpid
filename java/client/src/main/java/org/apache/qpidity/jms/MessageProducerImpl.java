@@ -58,7 +58,7 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
     //-- constructors
     public MessageProducerImpl(SessionImpl session, DestinationImpl destination)
     {
-        super(session, destination);
+        super(session, destination,"");
     }
 
     //--- Interface javax.jms.MessageProducer

@@ -67,10 +67,12 @@ public class ClientSessionDelegate extends SessionDelegate
         }
         ((ClientSession)session).setRejectedMessages(struct.getTransfers());
         ((ClientSession)session).notifyException(new QpidException("Message Rejected",ErrorCode.MESSAGE_REJECTED,null));
+        session.processed(struct);
     }
     
     @Override public void messageAcquired(Session session, MessageAcquired struct) 
     {
         ((ClientSession)session).setAccquiredMessages(struct.getTransfers());
+        session.processed(struct);
     }
 }

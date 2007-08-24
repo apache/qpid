@@ -30,7 +30,8 @@ public class ByteBufferMessage implements Message
 
     public ByteBufferMessage()
     {
-       
+        _currentDeliveryProps = new DeliveryProperties();
+        _currentMessageProps = new MessageProperties();
     }
 
     public ByteBufferMessage(long transferId)
@@ -70,6 +71,7 @@ public class ByteBufferMessage implements Message
 
     public MessageProperties getMessageProperties()
     {
+        System.out.println("MessageProperties is null ? " + _currentMessageProps == null? "true":"false");
         return _currentMessageProps;
     }
     
