@@ -186,12 +186,12 @@ public class PingPongTestPerf extends AsymptoticTestCase
             synchronized (this)
             {
                 // Establish a bounce back client on the ping queue to bounce back the pings.
-                perThreadSetup._testPingBouncer =
+             /*   perThreadSetup._testPingBouncer =
                     new PingPongBouncer(fileProperties, factoryName, username, password, destinationName, persistent,
                         transacted, selector, verbose, pubsub);
 
                 // Start the connections for client and producer running.
-                perThreadSetup._testPingBouncer.getConnection().start();
+                perThreadSetup._testPingBouncer.getConnection().start();*/
 
                 // Establish a ping-pong client on the ping queue to send the pings and receive replies with.
                 perThreadSetup._testPingProducer = new PingPongProducer(testParameters);
@@ -246,6 +246,6 @@ public class PingPongTestPerf extends AsymptoticTestCase
         /**
          * Holds the test ping client.
          */
-        private PingPongBouncer _testPingBouncer;
+        //private PingPongBouncer _testPingBouncer;
     }
 }
