@@ -83,7 +83,7 @@ public class MessageImpl extends QpidMessage implements Message
     {
         super(message);
     }
-
+    
     //---- javax.jms.Message interface
     /**
      * Get the message ID.

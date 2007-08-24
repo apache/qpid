@@ -562,8 +562,8 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
     //-- Overwritten methods
     /**
      * This method is invoked before this message is dispatched.
-     * <p>This class uses it to convert its text payload into a ByteBuffer
      */
+    @Override
     public void beforeMessageDispatch() throws QpidException
     {
         try
