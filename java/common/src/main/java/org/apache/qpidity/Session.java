@@ -104,12 +104,19 @@ public class Session extends Invoker
     }
 
     void flushProcessed()
-    {
+    {           
+        for (Range r: processed)
+        {
+            System.out.println("Completed Range [" + r.getLower() + "," + r.getUpper() +"]" );     
+        }
+        System.out.println("Notifying peer with execution complete");        
         executionComplete(0, processed);
     }
 
     void syncPoint()
     {
+        System.out.println("===========Request received to sync==========================");
+        
         Range range = new Range(0, getCommandsIn() - 1);
         boolean flush;
         synchronized (processed)
@@ -147,9 +154,11 @@ public class Session extends Invoker
             for (long id = lower; id <= upper; id++)
             {
                 commands.remove(id);
-            }
+            }  
+             
             if (commands.isEmpty())
             {
+                System.out.println("\n All outstanding commands are completed !!!! \n");
                 commands.notifyAll();
             }
         }
@@ -167,7 +176,8 @@ public class Session extends Invoker
         {
             synchronized (commands)
             {
-                commands.put(commandsOut++, m);
+                System.out.println("sent command " + m.getClass().getName() + " command Id" + commandsOut);
+                commands.put(commandsOut++, m);                
             }
         }
         channel.method(m);
@@ -200,6 +210,7 @@ public class Session extends Invoker
 
     public void sync()
     {
+        System.out.println("calling sync()"); 
         synchronized (commands)
         {
             if (!commands.isEmpty())
@@ -210,7 +221,9 @@ public class Session extends Invoker
             while (!commands.isEmpty())
             {
                 try {
+                    System.out.println("\n============sync() waiting for commmands to be completed ==============\n"); 
                     commands.wait();
+                    System.out.println("\n============sync() got notified=========================================\n");
                 }
                 catch (InterruptedException e)
                 {

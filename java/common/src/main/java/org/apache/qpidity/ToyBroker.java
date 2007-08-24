@@ -28,6 +28,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 
 
 /**
@@ -44,7 +46,7 @@ class ToyBroker extends SessionDelegate
     private DeliveryProperties props = null;
     private Struct[] headers = null;
     private List<Frame> frames = null;
-    private Map<String,String> consumers = new HashMap<String,String>();
+    private Map<String,Consumer> consumers = new ConcurrentHashMap<String,Consumer>();
     
     public ToyBroker(ToyExchange exchange)
     {
@@ -71,14 +73,30 @@ class ToyBroker extends SessionDelegate
     
     @Override public void messageSubscribe(Session ssn, MessageSubscribe ms)
     {
-        consumers.put(ms.getDestination(),ms.getQueue());
-        System.out.println("\n==================> message subscribe : " + ms.getDestination() + "\n");
-    }    
+        Consumer c = new Consumer();
+        c._queueName = ms.getQueue();
+        consumers.put(ms.getDestination(),c);
+        System.out.println("\n==================> message subscribe : " + ms.getDestination() + " queue: " + ms.getQueue()  + "\n");              
+    }   
+    
+    @Override public void messageFlow(Session ssn,MessageFlow struct)
+    {
+        Consumer c = consumers.get(struct.getDestination());
+        c._credit = struct.getValue();
+        System.out.println("\n==================> message flow : " + struct.getDestination() + " credit: " + struct.getValue()  + "\n");
+    }
+    
+    @Override public void messageFlush(Session ssn,MessageFlush struct)
+    {
+        System.out.println("\n==================> message flush for consumer : " + struct.getDestination() + "\n");
+        checkAndSendMessagesToConsumer(ssn,struct.getDestination());
+    }
 
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
         this.xfr = xfr;
-        frames = new ArrayList();
+        frames = new ArrayList<Frame>();
+        System.out.println("received transfer " + xfr.getDestination());
     }
 
     public void headers(Session ssn, Struct ... headers)
@@ -95,6 +113,7 @@ class ToyBroker extends SessionDelegate
             if (hdr instanceof DeliveryProperties)
             {
                 props = (DeliveryProperties) hdr;
+                System.out.println("received headers routing_key " + props.getRoutingKey());
             }
         }
         
@@ -147,7 +166,7 @@ class ToyBroker extends SessionDelegate
         }
     }
     
-    private void transferMessage(Session ssn,String dest, Message m)
+    private void transferMessageToPeer(Session ssn,String dest, Message m)
     {
         System.out.println("\n==================> Transfering message to: " +dest + "\n");
         ssn.messageTransfer(dest, (short)0, (short)0);
@@ -162,15 +181,24 @@ class ToyBroker extends SessionDelegate
         ssn.endData();
     }
     
-    public void dispatchMessages(Session ssn)
+    private void dispatchMessages(Session ssn)
     {
         for (String dest: consumers.keySet())
         {
-            Message m = exchange.getQueue(consumers.get(dest)).poll();
-            if(m != null)
-            {
-                transferMessage(ssn,dest,m);
-            }
+            checkAndSendMessagesToConsumer(ssn,dest);
+        }
+    }
+    
+    private void checkAndSendMessagesToConsumer(Session ssn,String dest)    
+    {
+        Consumer c = consumers.get(dest);
+        LinkedBlockingQueue<Message> queue = exchange.getQueue(c._queueName);
+        Message m = queue.poll();
+        while (m != null && c._credit>0)
+        {
+            transferMessageToPeer(ssn,dest,m);
+            c._credit--;
+            m = queue.poll();
         }
     }
 
@@ -212,6 +240,15 @@ class ToyBroker extends SessionDelegate
             return sb.toString();
         }
 
+    }
+    
+    // ugly, but who cares :)
+    // assumes unit is always no of messages, not bytes
+    // assumes it's credit mode and not window
+    private class Consumer
+    {
+        long _credit;
+        String _queueName;
     }
 
     public static final void main(String[] args) throws IOException
