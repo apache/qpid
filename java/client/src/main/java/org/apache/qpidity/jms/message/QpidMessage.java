@@ -31,10 +31,17 @@ import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.ReplyTo;
 import org.apache.qpidity.client.util.ByteBufferMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class QpidMessage
 {
+    /**
+     * this QpidMessage's logger
+     */
+    private static final Logger _logger = LoggerFactory.getLogger(QpidMessage.class);
+
     /**
      * The underlying qpidity message
      */
@@ -326,8 +333,8 @@ public class QpidMessage
      * @param messageBody The buffer containing this message data
      */
     protected void setMessageData(ByteBuffer messageBody)
-    {        
-        _messageData = messageBody.duplicate();
+    {
+        _messageData = messageBody; // we shouldn't need that .duplicate();
     }
 
     /**
@@ -388,13 +395,12 @@ public class QpidMessage
         try
         {
             // set the message data
-            _qpidityMessage.clearData();
-            // we need to do a flip
-            //_messageData.flip();
-            
-            System.out.println("_messageData POS " + _messageData.position());
-            System.out.println("_messageData limit " + _messageData.limit());
-            
+            _qpidityMessage.clearData();         
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("_messageData POS " + _messageData.position());
+                _logger.debug("_messageData limit " + _messageData.limit());
+            }
             _qpidityMessage.appendData(_messageData);
             _qpidityMessage.getMessageProperties().setApplicationHeaders(_messageProperties);
         }
