@@ -34,10 +34,8 @@ vg_check()
     true
 }
 
-# libdlclose_noop prevents unloading symbols needed for valgrind output.
-preload=.libs/libdlclose_noop.so
 # Output to file, only display if there is an error.
 opts=--log-file-exactly=$vg_log
 
-LD_PRELOAD=$preload libtool --mode=execute $VALGRIND $opts  -- "$@" || fail=1
+libtool --mode=execute $VALGRIND $opts  -- "$@" || fail=1
 vg_check && test -z "$fail"
