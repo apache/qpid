@@ -887,6 +887,7 @@ public class MessageImpl extends QpidMessage implements Message
      *
      * @throws QpidException If there is an internal error when procesing this message.
      */
+    @Override
     public void afterMessageReceive() throws QpidException
     {
         // recreate a destination object for the encoded destination

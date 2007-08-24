@@ -110,6 +110,7 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
     /**
      * This method is invoked after this message has been received.
      */
+    @Override
     public void afterMessageReceive() throws QpidException
     {
         super.afterMessageReceive();

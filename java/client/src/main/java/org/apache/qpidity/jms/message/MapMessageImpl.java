@@ -585,6 +585,7 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
     /**
      * This method is invoked after this message has been received.
      */
+    @Override
     public void afterMessageReceive() throws QpidException
     {
         super.afterMessageReceive();

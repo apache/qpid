@@ -87,11 +87,6 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     private boolean _isReceiving = false;
 
     /**
-     * Indicates that a nowait is receiving a message.
-     */
-    private boolean _isNoWaitIsReceiving = false;
-
-    /**
      * Number of mesages received asynchronously
      * Nether exceed MAX_MESSAGE_TRANSFERRED
      */
@@ -109,7 +104,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
      * @param noLocal          If true inhibits the delivery of messages published by its own connection.
      * @param subscriptionName Name of the subscription if this is to be created as a durable subscriber.
      *                         If this value is null, a non-durable subscription is created.
-     * @param consumerTag      This consumer ID. 
+     * @param consumerTag      Thi actor ID
      * @throws Exception If the MessageProducerImpl cannot be created due to some internal error.
      */
     protected MessageConsumerImpl(SessionImpl session, DestinationImpl destination, String messageSelector,
@@ -362,34 +357,18 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             throw new javax.jms.IllegalStateException("A listener has already been set.");
         }
 
-        if (_incomingMessage != null)
-        {
-            System.out.println("We already had a message in the queue");
-            result = (Message) _incomingMessage;
-            _incomingMessage = null;
-            return result;
-        }
-
         synchronized (_incomingMessageLock)
         {
             // This indicate to the delivery thread to deliver the message to this consumer
             // as it can happens that a message is delivered after a receive operation as returned.
             _isReceiving = true;
+            boolean blockingReceived = timeout == 0;
             if (!_isStopped)
             {
                 // if this consumer is stopped then this will be call when starting
-                getSession().getQpidSession()
-                        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                     1);
-                getSession().getQpidSession().messageFlush(getMessageActorID());
-                _messageReceived.set(false);
-                System.out.println("no message in the queue, issuing a flow(1) and waiting for message");
-
+                requestOneMessage();
                 //When sync() returns we know whether we have received a message or not.
                 getSession().getQpidSession().sync();
-
-                System.out.println("we got returned from sync()");
-                //received = getSession().getQpidSession().messagesReceived();
             }
             if (_messageReceived.get() && timeout < 0)
             {
@@ -398,39 +377,78 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             }
             else
             {
-                // right we need to let onMessage know that a nowait is potentially waiting for a message
-                if (timeout < 0)
+                boolean messageReceived = false;
+                while (!messageReceived)
                 {
-                    _isNoWaitIsReceiving = true;
-                }
-                while (_incomingMessage == null && !_isClosed)
-                {
-                    try
+                    long timeBeforeWait = 0;
+                    while (_incomingMessage == null && !_isClosed)
                     {
-                        System.out.println("waiting for message");
-                        _incomingMessageLock.wait(timeout);
+                        if (!blockingReceived)
+                        {
+                            timeBeforeWait = System.currentTimeMillis();
+                        }
+                        try
+                        {
+                            _incomingMessageLock.wait(timeout);
+                        }
+                        catch (InterruptedException e)
+                        {
+                            // do nothing
+                        }
                     }
-                    catch (InterruptedException e)
+                    if (_incomingMessage != null)
                     {
-                        // do nothing
+                        result = (Message) _incomingMessage;
+                        // tell the session that a message is inprocess
+                        getSession().preProcessMessage(_incomingMessage);
+                        // tell the session to acknowledge this message (if required)
+                        getSession().acknowledgeMessage(_incomingMessage);
+                        _incomingMessage.afterMessageReceive();
+                        messageReceived = true;
                     }
-                }
-                if (_incomingMessage != null)
-                {
-                    result = (Message) _incomingMessage;
-                    // tell the session that a message is inprocess
-                    getSession().preProcessMessage(_incomingMessage);
-                    // tell the session to acknowledge this message (if required)
-                    getSession().acknowledgeMessage(_incomingMessage);
+                    else
+                    {
+                        //now setup the new timeout
+                        if (!blockingReceived)
+                        {
+                            timeout = timeout - (System.currentTimeMillis() - timeBeforeWait);
+                        }
+                        if (!_isClosed)
+                        {
+                            // we need to request a new message
+                            requestOneMessage();
+                            getSession().getQpidSession().sync();
+                            if (_messageReceived.get() && timeout < 0)
+                            {
+                                // we are waiting for too long and we haven't received a proper message
+                                result = null;
+                                messageReceived = true;
+                            }
+                        }
+                    }
                 }
                 _incomingMessage = null;
             }
             // We now release any message received for this consumer
             _isReceiving = false;
-            _isNoWaitIsReceiving = false;
             getSession().testQpidException();
         }
         return result;
+    }
+
+    /**
+     * Request a single message
+     */
+    private void requestOneMessage()
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Requesting a single message");
+        }
+        getSession().getQpidSession()
+                .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+        getSession().getQpidSession().messageFlush(getMessageActorID());
+        _messageReceived.set(false);
     }
 
     /**
@@ -500,24 +518,22 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // notify the waiting thread
             if (_messageListener == null)
             {
-                System.out.println("Received a message- onMessage in message consumer Impl");
-
+                if (_logger.isDebugEnabled())
+                {
+                    _logger.debug("Received a message- onMessage in message consumer Impl");
+                }
                 synchronized (_incomingMessageLock)
                 {
                     if (messageOk)
                     {
-                        System.out.println("Received a message- onMessage in message ok " + messageOk);
                         // we have received a proper message that we can deliver
                         if (_isReceiving)
                         {
-                            System.out.println("Received a message- onMessage in message _isReceiving");
-
                             _incomingMessage = message;
                             _incomingMessageLock.notify();
                         }
                         else
                         {
-                            System.out.println("Received a message- onMessage in message releasing");
                             // this message has been received after a received as returned
                             // we need to release it
                             releaseMessage(message);
@@ -530,21 +546,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                         // then we need to request a new one from the server
                         if (_isReceiving)
                         {
-                            getSession().getQpidSession()
-                                    .messageFlow(getMessageActorID(),
-                                                 org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
-                            getSession().getQpidSession().messageFlush(getMessageActorID());
-                            _messageReceived.set(false);
-
-                            // When sync() returns we know whether we have received a message or not.
-                            getSession().getQpidSession().sync();
-
-                            if (_messageReceived.get() && _isNoWaitIsReceiving)
-                            {
-                                // Right a message nowait is waiting for a message
-                                // but no one can be delivered it then need to return
-                                _incomingMessageLock.notify();
-                            }
+                            _incomingMessageLock.notify();
                         }
                     }
                 }
@@ -582,6 +584,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                     **/
                     try
                     {
+                        message.afterMessageReceive();
                         _messageListener.onMessage((Message) message);
                     }
                     catch (RuntimeException re)
