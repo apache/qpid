@@ -393,7 +393,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                         }
                         catch (InterruptedException e)
                         {
-                            // do nothing
+                            throw new RuntimeException(e);
                         }
                     }
                     if (_incomingMessage != null)
