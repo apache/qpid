@@ -46,7 +46,8 @@ public abstract class SessionDelegate extends Delegate<Session>
         {
             for (Range range : ranges)
             {
-                ssn.complete(range.getLower(), range.getUpper());
+                System.out.println("completed command range: " + range.getLower() + " to " + range.getUpper());
+                ssn.complete(range.getLower(), range.getUpper());                
             }
         }
         ssn.complete(excmp.getCumulativeExecutionMark());

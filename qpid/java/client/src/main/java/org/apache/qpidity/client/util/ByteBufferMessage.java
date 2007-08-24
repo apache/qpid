@@ -87,22 +87,12 @@ public class ByteBufferMessage implements Message
     
     public void readData(byte[] target) throws IOException
     {
-        if (_data.size() >0 && _readBuffer == null)
-        {
-            buildReadBuffer();
-        }
-        
-        _readBuffer.get(target);
+        getReadBuffer().get(target);
     }
     
     public ByteBuffer readData() throws IOException
-    {
-        if (_data.size() >0 && _readBuffer == null)
-        {
-            buildReadBuffer();
-        }
-        
-        return _readBuffer;
+    {   
+        return getReadBuffer();
     }
     
     private void buildReadBuffer()
@@ -122,16 +112,39 @@ public class ByteBufferMessage implements Message
         }
     }
     
+    private ByteBuffer getReadBuffer() throws IOException
+    {
+        if (_readBuffer != null )
+        {
+           return _readBuffer.slice();
+        }    
+        else
+        {
+            if (_data.size() >0)
+            {
+               buildReadBuffer();
+               return _readBuffer.slice();
+            }
+            else
+            {
+                throw new IOException("No Data to read");
+            }
+        }
+    }
+    
     //hack for testing
     @Override public String toString()
     {
-        if (_data.size() >0 && _readBuffer == null)
+        try
         {
-            buildReadBuffer();
+            ByteBuffer temp = getReadBuffer();
+            byte[] b = new byte[temp.remaining()];
+            temp.get(b);
+            return new String(b);
         }
-        ByteBuffer temp = _readBuffer.duplicate();
-        byte[] b = new byte[temp.remaining()];
-        temp.get(b);
-        return new String(b);
+        catch(IOException e)
+        {
+            return "No data";
+        }
     }
 }
