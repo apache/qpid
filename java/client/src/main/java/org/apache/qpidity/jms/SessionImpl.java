@@ -1301,7 +1301,8 @@ public class SessionImpl implements Session
                     {
                         try
                         {
-                            mc.onMessage(message.getMessage());
+                           // mc.onMessage(message.getMessage());
+                            mc.notifyMessageListener(message.getMessage());
                         }
                         catch (RuntimeException t)
                         {
