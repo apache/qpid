@@ -22,8 +22,8 @@ public class JMSTestCase
             msg.writeInt(123);
             prod.send(msg);
             
-            javax.jms.Message m = cons.receive();
-            System.out.println(m);
+            javax.jms.BytesMessage m = (javax.jms.BytesMessage)cons.receive();
+            System.out.println("Data : " + m.readInt());
             
         }
         catch(Exception e)
