@@ -335,15 +335,25 @@ void Channel::complete(Message::shared_ptr msg) {
     }
 }
 
+
+
 void Channel::route(Message::shared_ptr msg, Deliverable& strategy) {
-    Exchange::shared_ptr exchange = connection.broker.getExchanges().get(msg->getExchange());
-    assert(exchange.get());
-    exchange->route(strategy, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+
+    std::string routeToExchangeName = msg->getExchange();
+    // cache the exchange lookup
+    if (!cacheExchange.get() || cacheExchangeName != routeToExchangeName){
+       cacheExchangeName = routeToExchangeName;
+       cacheExchange = connection.broker.getExchanges().get(routeToExchangeName);
+    }
+
+    assert(cacheExchange.get());
+    cacheExchange->route(strategy, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+
     if (!strategy.delivered) {
         //TODO:if reject-unroutable, then reject
         //else route to alternate exchange
-        if (exchange->getAlternate()) {
-            exchange->getAlternate()->route(strategy, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+        if (cacheExchange->getAlternate()) {
+            cacheExchange->getAlternate()->route(strategy, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
         }
     }
 

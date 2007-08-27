@@ -74,6 +74,7 @@ class Channel : public CompletionHandler
         bool blocked;
         bool windowing;
         uint32_t msgCredit;
+	
         uint32_t byteCredit;
 
       public:
@@ -116,6 +117,10 @@ class Channel : public CompletionHandler
     MessageBuilder messageBuilder;//builder for in-progress message
     bool opened;
     bool flowActive;
+    
+    std::string cacheExchangeName;       // pair holds last exchange used for routing
+    Exchange::shared_ptr cacheExchange;
+    
     void route(Message::shared_ptr msg, Deliverable& strategy);
     void complete(Message::shared_ptr msg);// completion handler for MessageBuilder
     void record(const DeliveryRecord& delivery);
