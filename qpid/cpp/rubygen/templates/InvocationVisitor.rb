@@ -12,7 +12,7 @@ class InvocationVisitor < CppGen
   end
 
   def invocation_args(m)
-      if (m.amqp_parent.name == "message" && (m.name == "transfer" || m.name == "append"))
+      if (m.parent.name == "message" && (m.name == "transfer" || m.name == "append"))
         "body"
       else
         m.param_names.collect {|p| "body.get" + p.caps + "()" }.join(",\n")
@@ -32,17 +32,17 @@ class InvocationVisitor < CppGen
     gen <<EOS
 void InvocationVisitor::visit(const #{m.body_name}& #{body})
 {
-    AMQP_ServerOperations::#{m.amqp_parent.cppname}Handler* ptr(0); 
+    AMQP_ServerOperations::#{m.parent.cppname}Handler* ptr(0); 
     if (invocable) {
-        ptr = dynamic_cast<AMQP_ServerOperations::#{m.amqp_parent.cppname}Handler*>(invocable);
+        ptr = dynamic_cast<AMQP_ServerOperations::#{m.parent.cppname}Handler*>(invocable);
     } else {
-        ptr = ops->get#{m.amqp_parent.cppname}Handler();
+        ptr = ops->get#{m.parent.cppname}Handler();
     }
 
     if (ptr) {
 EOS
-    if (m.has_result?)      
-      indent(2) { genl "encode<#{m.result_struct.cppname.caps}>(ptr->#{m.cppname}(#{invocation_args(m)}), result);" }
+    if (m.result)      
+      indent(2) { genl "encode<#{m.result.struct.cpptype.name}>(ptr->#{m.cppname}(#{invocation_args(m)}), result);" }
     else
       indent(2) { genl "ptr->#{m.cppname}(#{invocation_args(m)});" }
     end
@@ -79,14 +79,14 @@ EOS
             genl "void clear();"
             genl "virtual ~InvocationVisitor() {}" 
           }
-          @amqp.amqp_methods.each { |m| genl "void visit(const #{m.body_name}&);" }
+          @amqp.methods_.each { |m| genl "void visit(const #{m.body_name}&);" }
         }
       }
     }
 
     cpp_file("#{@filename}") {
       include "InvocationVisitor.h"
-      @amqp.amqp_methods.each { |m| include m.body_name }
+      @amqp.methods_.each { |m| include m.body_name }
       namespace(@namespace) { 
         genl "void InvocationVisitor::clear() {"
         indent { 
@@ -95,7 +95,7 @@ EOS
         }
         genl "}"
         genl
-        @amqp.amqp_methods.each { |m| m.is_server_method? ? define_visit(m) : null_visit(m) }
+        @amqp.methods_.each { |m| m.on_server? ? define_visit(m) : null_visit(m) }
       }
     }
   end

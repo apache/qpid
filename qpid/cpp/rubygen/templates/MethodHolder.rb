@@ -14,7 +14,7 @@ class MethodHolderGen < CppGen
   def gen_max_size()
     # Generate program to generate MaxSize.h
     cpp_file("generate_#{@classname}MaxSize_h") {
-      @amqp.amqp_methods.each { |m| include "qpid/framing/#{m.body_name}" }
+      @amqp.methods_.each { |m| include "qpid/framing/#{m.body_name}" }
       genl
       include "<algorithm>"
       include "<fstream>"
@@ -24,7 +24,7 @@ class MethodHolderGen < CppGen
       genl
       scope("int main(int, char** argv) {") {
         genl "size_t maxSize=0;"
-        @amqp.amqp_methods.each { |m|
+        @amqp.methods_.each { |m|
           genl "maxSize=max(maxSize, sizeof(#{m.body_name}));" }
         gen <<EOS
 ofstream out("#{@filename}MaxSize.h");
@@ -41,7 +41,7 @@ EOS
     cpp_file(@filename+"_construct") {
       include @filename
       include "qpid/framing/MethodBodyConstVisitor.h"
-      @amqp.amqp_methods.each { |m| include "qpid/framing/#{m.body_name}" }
+      @amqp.methods_.each { |m| include "qpid/framing/#{m.body_name}" }
       genl
       include "qpid/Exception.h"
       genl
@@ -49,9 +49,9 @@ EOS
         # construct function
         scope("void #{@classname}::construct(ClassId c, MethodId m) {") {
           scope("switch (c) {") {
-            @amqp.amqp_classes.each { |c|
+            @amqp.classes.each { |c|
               scope("case #{c.index}: switch(m) {") {
-                c.amqp_methods.each { |m|
+                c.methods_.each { |m|
                   genl "case #{m.index}: blob.construct(in_place<#{m.body_name}>()); break;"
                 }
                 genl "default: throw Exception(QPID_MSG(\"Invalid method id \" << m << \" for class #{c.name} \"));"
@@ -64,7 +64,7 @@ EOS
         # CopyVisitor
         struct("#{@classname}::CopyVisitor", "public MethodBodyConstVisitor") {           genl "MethodHolder& holder;"
           genl "CopyVisitor(MethodHolder& h) : holder(h) {}"
-          @amqp.amqp_methods.each { |m|
+          @amqp.methods_.each { |m|
             genl "void visit(const #{m.body_name}& x) { holder.blob=x; }"
           }
         }

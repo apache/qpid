@@ -12,7 +12,7 @@ class AllMethodBodiesGen < CppGen
 
   def generate()
     h_file(@filename) {
-      @amqp.amqp_methods.each { |m| include "qpid/framing/"+m.body_name }
+      @amqp.methods_.each { |m| include "qpid/framing/"+m.body_name }
     }
   end
 end
