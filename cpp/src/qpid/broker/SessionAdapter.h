@@ -34,32 +34,35 @@ namespace broker {
  * Implements AMQP session class commands, forwards other traffic
  * to the next handler in the chain.
  */
-class SessionAdapter : public FrameVisitorHandler
-                       
+class SessionAdapter : public framing::FrameVisitorHandler
 {
   public:
-    SessionAdapter(FrameHandler& out, SuspendedSessions&);
+    SessionAdapter(framing::FrameHandler& out, SuspendedSessions&);
     ~SessionAdapter();
 
   protected:
-    void visit(const SessionAckBody&);
-    void visit(const SessionAttachedBody&);
-    void visit(const SessionCloseBody&);
-    void visit(const SessionClosedBody&);
-    void visit(const SessionDetachedBody&);
-    void visit(const SessionFlowBody&);
-    void visit(const SessionFlowOkBody&);
-    void visit(const SessionHighWaterMarkBody&);
-    void visit(const SessionOpenBody&);
-    void visit(const SessionResumeBody&);
-    void visit(const SessionSolicitAckBody&);
-    void visit(const SessionSuspendBody&);
+    void visit(const framing::SessionAckBody&);
+    void visit(const framing::SessionAttachedBody&);
+    void visit(const framing::SessionCloseBody&);
+    void visit(const framing::SessionClosedBody&);
+    void visit(const framing::SessionDetachedBody&);
+    void visit(const framing::SessionFlowBody&);
+    void visit(const framing::SessionFlowOkBody&);
+    void visit(const framing::SessionHighWaterMarkBody&);
+    void visit(const framing::SessionOpenBody&);
+    void visit(const framing::SessionResumeBody&);
+    void visit(const framing::SessionSolicitAckBody&);
+    void visit(const framing::SessionSuspendBody&);
 
+    using FrameDefaultVisitor::visit;
+    
   private:
     SessionState state;
     SuspendedSessions& suspended;
     Chain next;
-    FrameHandler& out;
+    framing::FrameHandler& out;
+};
+
 }} // namespace qpid::broker
 
 #endif  /*!QPID_BROKER_SESSIONADAPTER_H*/
