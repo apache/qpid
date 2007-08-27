@@ -23,12 +23,13 @@
 
 #include "qpid/framing/MethodBodyDefaultVisitor.h"
 #include "qpid/framing/AMQBody.h"
+#include "qpid/framing/AMQMethodBody.h"
+#include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
 namespace framing {
 
-class AMQMethodBody;
 class AMQHeaderBody;
 class AMQContentBody;
 class AMQHeartbeatBody;
@@ -44,23 +45,26 @@ class AMQHeartbeatBody;
  */
 struct FrameDefaultVisitor : public AMQBodyConstVisitor, public MethodBodyDefaultVisitor
 {
-    void visit(const AMQHeaderBody& x) { defaultVisit(); }
-    void visit(const AMQContentBody& x) { defaultVisit(); }
-    void visit(const AMQHeartbeatBody& x) { defaultVisit(); }
-    void visit(const AMQMethodBody& method) { method.accept(*this); }
+    void visit(const AMQHeaderBody&) { defaultVisit(); }
+    void visit(const AMQContentBody&) { defaultVisit(); }
+    void visit(const AMQHeartbeatBody&) { defaultVisit(); }
+    void visit(const AMQMethodBody& method) { method.accept(static_cast<MethodBodyDefaultVisitor&>(*this)); }
+
+    using AMQBodyConstVisitor::visit;
+    using MethodBodyDefaultVisitor::visit;
 };
 
 /**
  * A FrameHandler that is implemented as a visitor.
  */
 struct FrameVisitorHandler : public FrameHandler,
-                             protected FrameVisitorHandler
+                             protected FrameDefaultVisitor
 {
-    void handle(AMQFrame& f) { f.accept(*this); }
+    void handle(AMQFrame& f) { f.getBody()->accept(*this); }
 };
 
 
-
+}} // namespace qpid::framing
 
 
 #endif  /*!QPID_FRAMING_FRAMEVISITOR_H*/
