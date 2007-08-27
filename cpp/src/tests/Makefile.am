@@ -19,6 +19,11 @@ CLEANFILES=
 #
 # Unit test programs.
 # 
+TESTS+=Session
+check_PROGRAMS+=Session
+Session_SOURCES=Session.cpp
+Session_LDADD=-lboost_unit_test_framework $(lib_broker)
+
 TESTS+=Blob
 check_PROGRAMS+=Blob
 Blob_SOURCES=Blob.cpp ../qpid/framing/Blob.cpp
