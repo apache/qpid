@@ -26,7 +26,7 @@ virtual ~#{cname}() {}
 static #{cname}& get(#{@classname}& proxy) { return proxy.get#{cname}(); }
 
 EOS
-      c.amqp_methods_on(@chassis).each { |m|
+      c.methods_on(@chassis).each { |m|
         genl "virtual void #{m.cppname}(#{m.signature.join(",\n            ")});"
         genl
       }}
@@ -34,7 +34,7 @@ EOS
 
   def inner_class_defn(c)
     cname=c.cppname
-    c.amqp_methods_on(@chassis).each { |m| 
+    c.methods_on(@chassis).each { |m| 
       genl "void #{@classname}::#{cname}::#{m.cppname}(#{m.signature.join(", ")})"
       scope { 
         params=(["channel.getVersion()"]+m.param_names).join(", ")
@@ -51,14 +51,14 @@ EOS
           public
           genl "#{@classname}(ChannelAdapter& ch);"
           genl
-          @amqp.amqp_classes.each { |c|
+          @amqp.classes.each { |c|
             inner_class_decl(c)
             genl
             genl "#{c.cppname}& get#{c.cppname}() { return #{proxy_member(c)}; }"
             genl 
           }
           private
-          @amqp.amqp_classes.each{ |c| gen c.cppname+" "+proxy_member(c)+";\n" }
+          @amqp.classes.each{ |c| gen c.cppname+" "+proxy_member(c)+";\n" }
         }}}
 
   # .cpp file
@@ -67,14 +67,14 @@ EOS
       include "#{@classname}.h"
       include "qpid/framing/ChannelAdapter.h"
       include "qpid/framing/amqp_types_full.h"
-      Amqp.amqp_methods_on(@chassis).each { |m| include "qpid/framing/"+m.body_name }
+      Amqp.methods_on(@chassis).each { |m| include "qpid/framing/"+m.body_name }
       genl
       namespace("qpid::framing") { 
         genl "#{@classname}::#{@classname}(ChannelAdapter& ch) :"
         gen "    Proxy(ch)"
-        @amqp.amqp_classes.each { |c| gen ",\n    "+proxy_member(c)+"(channel)" }
+        @amqp.classes.each { |c| gen ",\n    "+proxy_member(c)+"(channel)" }
         genl "{}\n"
-        @amqp.amqp_classes.each { |c| inner_class_defn(c) }
+        @amqp.classes.each { |c| inner_class_defn(c) }
       }}
    end
 end

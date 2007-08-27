@@ -14,11 +14,11 @@ class MethodBodyConstVisitorGen < CppGen
   def generate()
     h_file("#{@filename}") {
       namespace(@namespace) { 
-        @amqp.amqp_methods.each { |m| genl "class #{m.body_name};" }
+        @amqp.methods_.each { |m| genl "class #{m.body_name};" }
         cpp_class("MethodBodyConstVisitor") {
           genl "public:"
           genl "virtual ~MethodBodyConstVisitor() {}"
-          @amqp.amqp_methods.each { |m| genl "virtual void visit(const #{m.body_name}&) = 0;" }
+          @amqp.methods_.each { |m| genl "virtual void visit(const #{m.body_name}&) = 0;" }
         }}}
   end
 end

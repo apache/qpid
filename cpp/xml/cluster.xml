@@ -29,7 +29,7 @@
 <method name = "notify" index="10">
   <doc>Notify the cluster of a members URL</doc>
   <!-- No chassis element, this is handled by separte cluster code for now.-->
-  <field name = "url" type = "longstr" />
+  <field name="url" domain="longstr" />
 </method>
 
 </class>
