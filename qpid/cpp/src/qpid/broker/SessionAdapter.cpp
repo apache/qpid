@@ -22,6 +22,10 @@
 
 namespace qpid {
 namespace broker {
+using namespace framing;
+
+SessionAdapter::~SessionAdapter() {
+}
 
 SessionAdapter::SessionAdapter() {
     // FIXME aconway 2007-08-27: Implement

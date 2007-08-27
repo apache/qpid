@@ -37,7 +37,7 @@ namespace broker {
 class SessionAdapter : public framing::FrameVisitorHandler
 {
   public:
-    SessionAdapter(framing::FrameHandler& out, SuspendedSessions&);
+    SessionAdapter();
     ~SessionAdapter();
 
   protected:
@@ -58,9 +58,7 @@ class SessionAdapter : public framing::FrameVisitorHandler
     
   private:
     SessionState state;
-    SuspendedSessions& suspended;
-    Chain next;
-    framing::FrameHandler& out;
+    SuspendedSessions* suspended;
 };
 
 }} // namespace qpid::broker
