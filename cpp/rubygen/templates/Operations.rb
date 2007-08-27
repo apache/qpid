@@ -3,6 +3,9 @@
 # 
 $: << '..'
 require 'cppgen'
+require 'fileutils'
+require 'etc'
+require 'pathname'
 
 class OperationsGen < CppGen
 
@@ -13,12 +16,8 @@ class OperationsGen < CppGen
   end
   
   def handler_method (m)
-    if (m.has_result?)
-      return_type = "#{m.amqp_parent.name.caps}#{m.cppname.caps}Result"
-    else
-      return_type = "void"
-    end
-    if (m.amqp_parent.name == "message" && (m.name == "transfer" || m.name == "append"))
+    return_type = m.result ? m.result.cpptype.ret : "void"
+    if (m.parent.name == "message" && (m.name == "transfer" || m.name == "append"))
       gen "\nvirtual #{return_type} #{m.cppname}(const framing::AMQMethodBody& context) = 0;\n"
     else
       gen "\nvirtual #{return_type} #{m.cppname}("
@@ -30,7 +29,7 @@ class OperationsGen < CppGen
   def handler_classname(c) c.name.caps+"Handler"; end
 
   def handler_class(c)
-    if (!c.amqp_methods_on(@chassis).empty?)
+    if (!c.methods_on(@chassis).empty?)
       handlerclass=handler_classname c
       gen <<EOS
 // ==================== class #{handlerclass} ====================
@@ -41,7 +40,7 @@ class #{handlerclass} : public virtual Invocable {
     virtual ~#{handlerclass}() {}
     // Protocol methods
 EOS
-      c.amqp_methods_on(@chassis).each { |m| handler_method(m) }
+      c.methods_on(@chassis).each { |m| handler_method(m) }
       gen <<EOS
 }; // class #{handlerclass}
 
@@ -51,14 +50,14 @@ EOS
   end
 
   def handler_get(c)
-    if (!c.amqp_methods_on(@chassis).empty?)
+    if (!c.methods_on(@chassis).empty?)
       handlerclass=handler_classname c
       gen "virtual #{handlerclass}* get#{handlerclass}() = 0;\n"
     end
   end
 
   def generate()
-    h_file("qpid/framing/#{@classname}.h") { 
+    h_file("qpid/framing/#{@classname}.h") {
       gen <<EOS
 #include <sstream> 
 #include "qpid/framing/ProtocolVersion.h"
@@ -88,13 +87,13 @@ class #{@classname} {
 
     // Inner classes
 EOS
-  indent { @amqp.amqp_classes.each { |c| handler_class(c) } }
+  indent { @amqp.classes.each { |c| handler_class(c) } }
   gen <<EOS
 
     // Method handler get methods
 
 EOS
-  indent { @amqp.amqp_classes.each { |c| handler_get(c) } }
+  indent { @amqp.classes.each { |c| handler_get(c) } }
   gen <<EOS
 }; /* class #{@classname} */
 }}

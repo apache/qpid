@@ -36,20 +36,20 @@ Copyright=<<EOS
 EOS
 
 CppKeywords = Set.new(["and", "and_eq", "asm", "auto", "bitand",
-               "bitor", "bool", "break", "case", "catch", "char",
-               "class", "compl", "const", "const_cast", "continue",
-               "default", "delete", "do", "DomainInfo", "double",
-               "dynamic_cast", "else", "enum", "explicit", "extern",
-               "false", "float", "for", "friend", "goto", "if",
-               "inline", "int", "long", "mutable", "namespace", "new",
-               "not", "not_eq", "operator", "or", "or_eq", "private",
-               "protected", "public", "register", "reinterpret_cast",
-               "return", "short", "signed", "sizeof", "static",
-               "static_cast", "struct", "switch", "template", "this",
-               "throw", "true", "try", "typedef", "typeid",
-               "typename", "union", "unsigned", "using", "virtual",
-               "void", "volatile", "wchar_t", "while", "xor",
-               "xor_eq"])
+                       "bitor", "bool", "break", "case", "catch", "char",
+                       "class", "compl", "const", "const_cast", "continue",
+                       "default", "delete", "do", "DomainInfo", "double",
+                       "dynamic_cast", "else", "enum", "explicit", "extern",
+                       "false", "float", "for", "friend", "goto", "if",
+                       "inline", "int", "long", "mutable", "namespace", "new",
+                       "not", "not_eq", "operator", "or", "or_eq", "private",
+                       "protected", "public", "register", "reinterpret_cast",
+                       "return", "short", "signed", "sizeof", "static",
+                       "static_cast", "struct", "switch", "template", "this",
+                       "throw", "true", "try", "typedef", "typeid",
+                       "typename", "union", "unsigned", "using", "virtual",
+                       "void", "volatile", "wchar_t", "while", "xor",
+                       "xor_eq"])
 # Names that need a trailing "_" to avoid clashes.
 CppMangle = CppKeywords+Set.new(["string"])
 
@@ -59,83 +59,89 @@ class String
   end
 end
 
-# Additional methods for AmqpField.
-class AmqpField
-  def cppname() @cache_cppname ||= name.lcaps.cppsafe; end
-  def cpptype() @cache_cpptype ||= defined_as_struct ? "const " + field_type.caps + "&" : amqp_root.param_type(field_type); end
-  def cpp_member_type() @cache_cpp_member_type ||= defined_as_struct ? field_type.caps : amqp_root.member_type(field_type); end
-  def cppret_type() @cache_cpptype ||= amqp_root.return_type(field_type); end
-  def type_name () @type_name ||= cpptype+" "+cppname; end
-  def bit?() field_type == "bit" end
+# Hold information about a C++ type.
+class CppType
+  def initialize(name) @name=@param=@ret=name; end
+  attr_reader :name, :param, :ret, :code
+  
+  def retref() @ret="#{name}&"; self; end
+  def retcref() @ret="const #{name}&"; self; end
+  def passcref() @param="const #{name}&"; self; end
+  def code(str) @code=str; self; end
+
+  def encode(value, buffer)
+    @code ? "#{buffer}.put#{@code}(#{value});" : "#{value}.encode(#{buffer});"
+  end
+
+  def decode(value,buffer)
+    if @code
+      if /&$/===param then
+        "#{buffer}.get#{@code}(#{value});"
+      else
+        "#{value} = #{buffer}.get#{@code}();"
+      end
+    else
+      "#{value}.decode(#{buffer});"
+    end
+  end
+
+  def to_s() name; end;
 end
 
-# Additional methods for AmqpMethod
+class AmqpField
+  def cppname() name.lcaps.cppsafe; end
+  def cpptype() domain.cpptype;  end
+  def bit?() domain.type_ == "bit"; end
+end
+
 class AmqpMethod
   def cppname() name.lcaps.cppsafe; end
-  def param_names() @param_names ||= fields.collect { |f| f.cppname }; end
-  def signature() @signature ||= fields.collect { |f| f.cpptype+" "+f.cppname }; end
-  def body_name() amqp_parent.name.caps+name.caps+"Body"; end
+  def param_names() fields.map { |f| f.cppname }; end
+  def signature() fields.map { |f| f.cpptype.param+" "+f.cppname }; end
+  def body_name() parent.name.caps+name.caps+"Body"; end
 end
 
-# Additional methods for AmqpClass
 class AmqpClass
   def cppname() name.caps; end
-  def body_name() cppname+"Body"
+end
+
+class AmqpDomain
+  @@typemap = {
+    "bit"=> CppType.new("bool").code("Octet"),
+    "octet"=>CppType.new("u_int8_t").code("Octet"), # FIXME aconway 2007-08-25: uint
+    "short"=>CppType.new("u_int16_t").code("Short"),
+    "long"=>CppType.new("u_int32_t").code("Long"),
+    "longlong"=>CppType.new("u_int64_t").code("LongLong"),
+    "timestamp"=>CppType.new("u_int64_t").code("LongLong"),
+    "longstr"=>CppType.new("string").passcref.retcref.code("LongString"),
+    "shortstr"=>CppType.new("string").passcref.retcref.code("ShortString"),
+    "table"=>CppType.new("FieldTable").passcref.retcref.code("FieldTable"),
+    "content"=>CppType.new("Content").passcref.retcref.code("Content"),
+    "rfc1982-long-set"=>CppType.new("SequenceNumberSet").passcref.retcref,
+    "long-struct"=>CppType.new("string").passcref.retcref.code("LongString"),
+    "uuid"=>CppType.new("string").passcref.retcref.code("ShortString") # FIXME aconway 2007-08-25: Remove, 
+#    "uuid"=>CppType.new("Uuid").passcref.retcref.code,
+  }
+
+  def cppname() name.caps; end
+
+  def cpptype()
+    d=unalias
+    @cpptype ||= @@typemap[d.type_] or
+      CppType.new(d.cppname).passcref.retcref or
+      raise "Invalid type #{self}"
+  end
+end
+
+class AmqpResult
+  def cpptype()
+    @cpptype=CppType.new(parent.parent.name.caps+parent.name.caps+"Result").passcref
   end
 end
 
 class AmqpStruct
-  def cppname() 
-    @cache_cppname ||= cppname_impl()
-  end 
-
-private
-
-  def cppname_impl() 
-    #The name of the struct comes from the context it appears in:
-    #structs defined in a domain get their name from the domain
-    #element, structs defined in a result element get their name by
-    #appending 'Result' to the enclosing method name.
-    if (domain?)
-      parent.attributes["name"].caps
-    else
-      if (result?)
-        method = parent.parent
-        method.parent.attributes["name"].caps +  method.attributes["name"].caps + "Result"
-      else
-        raise "Bad struct context: expected struct to be child of <domain> or <result>"
-      end
-    end
-
-  end
-end
-
-# Additional methos for AmqpRoot
-class AmqpRoot
-  # FIXME aconway 2007-06-20: fix u_int types, should be uint
-  CppTypeMap={
-    "bit"=> ["bool"],
-    "octet"=>["u_int8_t"],
-    "short"=>["u_int16_t"],
-    "long"=>["u_int32_t"],
-    "longlong"=>["u_int64_t"],
-    "timestamp"=>["u_int64_t"],
-    "longstr"=>["string", "const string&"],
-    "shortstr"=>["string", "const string&"],
-    "table"=>["FieldTable", "const FieldTable&", "const FieldTable&"],
-    "content"=>["Content", "const Content&", "const Content&"],
-    "rfc1982-long-set"=>["SequenceNumberSet", "const SequenceNumberSet&", "const SequenceNumberSet&"],
-    "long-struct"=>["string", "const string&"],
-    "uuid"=>["string", "const string&"] # FIXME should be: ["Uuid", "const Uuid&", "const Uuid&"]
-  }
-
-  def lookup(amqptype)
-    CppTypeMap[amqptype] or raise "No cpp type for #{amqptype}";
-  end
-  
-  def member_type(amqptype) lookup(amqptype)[0]; end
-  def param_type(amqptype) t=lookup(amqptype); t[1] or t[0]; end
-  def return_type(amqptype) t=lookup(amqptype); t[2] or t[0]; end
+  def cpptype() parent.cpptype; end
+  def cppname() cpptype.name;  end
 end
 
 class CppGen < Generator
@@ -197,10 +203,14 @@ class CppGen < Generator
     scope("{","};") { yield }
   end
 
-  def struct(name, *bases, &block) struct_class("struct", name, bases, &block); end
-  def cpp_class(name, *bases, &block) struct_class("class", name, bases, &block); end
+  def struct(name, *bases, &block)
+    struct_class("struct", name, bases, &block);
+  end
+  def cpp_class(name, *bases, &block)
+    struct_class("class", name, bases, &block);
+  end
 
-  def typedef(type, name) genl "typedef #{type} #{name};\n" end
+  def typedef(type, name) genl "typedef #{type} #{name};\n"; end
 
   def variant(types) "boost::variant<#{types.join(", ")}>"; end
   def variantl(types) "boost::variant<#{types.join(", \n")}>"; end

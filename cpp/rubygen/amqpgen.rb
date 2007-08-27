@@ -17,220 +17,216 @@ class String
 
   # Convert to lowerCaseCapitalizedForm
   def lcaps() gsub( /\W(\w)/ ) { |m| $1.upcase } end
+
+  def plural() self + (/[xs]$/ === self ? 'es' : 's'); end
 end
 
 # Sort an array by name.
-class Array
-  def sort_by_name()
-    sort() { |a,b| a.name <=> b.name }
-  end
+module Enumerable
+  def sort_by_name() sort { |a,b| a.name <=> b.name }; end
 end
 
-# Add collect to Elements
-class Elements
-  def collect(xpath, &block)
-    result=[]
-    each(xpath) { |el| result << yield(el) }
-    result
-  end
-end
-
-# An AmqpElement extends (delegates to) a REXML::Element
-# 
-# NB: AmqpElements cache various values, they assume that
-# the XML model does not change after the AmqpElement has
-# been created.
-# 
-class AmqpElement < DelegateClass(Element)
-  def initialize(xml, amqp) super(xml); @amqp_parent=amqp; end
-
-  attr_reader :amqp_parent
-
-  # Return the name attribute, not the element name.
-  def name() attributes["name"]; end
-
-  def amqp_root()
-    amqp_parent ? amqp_parent.amqp_root : self;
-  end
-end
-
-# AMQP field element
-class AmqpField < AmqpElement
-  def initialize(xml, amqp) super; end;
-
-  # Get AMQP type for a domain name.
-  def domain_type(name)
-    @cache_domain_type ||= domain_type_impl(name)
+# Add functions similar to attr_reader for AMQP attributes/children.
+# Symbols that are ruby Object function names (e.g. class) get
+# an "_" suffix.
+class Module
+  # Add trailing _ to avoid conflict with Object methods.
+  def mangle(sym)
+    (Object.method_defined? sym) ? (sym.to_s+"_").intern : sym
   end
 
-  # Get the AMQP type of this field.
-  def field_type()
-    d=attributes["domain"]
-    dt=domain_type d if d
-    (dt or attributes["type"])
-  end
-
-  # determine whether this type is defined as a struct in the spec
-  def defined_as_struct()
-    @cache_defined_as_struct ||= defined_as_struct_impl()
-  end
-
-private
-  def domain_type_impl(name)
-    domain=elements["/amqp/domain[@name='#{name}']"]
-    (domain and domain.attributes["type"] or name)
-  end
-
-  def defined_as_struct_impl()
-    domain_name = attributes["domain"]
-    elements["/amqp/domain[@name='#{domain_name}']/struct"]
-  end
-end
-
-# AMQP method element
-class AmqpMethod < AmqpElement
-  def initialize(xml, amqp) super; end
-
-  def content()
-    attributes["content"]
-  end
-
-  def index() attributes["index"];  end
-
-  def fields()
-    @cache_fields ||= elements.collect("field") { |f| AmqpField.new(f,self); }
-  end
-
-  # Responses to this method (0-9)
-  def responses()
-    @cache_responses ||= elements.collect("response") { |el| AmqpMethod.new(el,self) }
-  end
-
-  # Methods this method responds to (0-9)
-  def responds_to()
-    @cache_responds_to ||= elements.collect("../method/response[@name='#{attributes['name']}']") { |el|
-      AmqpMethod.new(el.parent, amqp_parent)
+  # Add attribute reader for XML attribute.
+  def amqp_attr_reader(*attrs)
+    attrs.each { |a|
+      define_method(mangle(a)) {
+        @amqp_attr_reader||={ }
+        @amqp_attr_reader[a] ||= xml.attributes[a.to_s]
+      }
     }
   end
 
-  def has_result?() 
-    @cache_has_result ||= elements["result/struct"] 
+  # Add 2 child readers:
+  # elname(name) == child('elname',name)
+  # elnames() == children('elname')
+  def amqp_child_reader(*element_names)
+    element_names.each { |e|
+      define_method(mangle(e)) { |name| child(e.to_s, name) }
+      define_method(mangle(e.to_s.plural)) { children(e.to_s) } }
   end
 
-  def result_struct() 
-    @cache_result_struct ||= has_result? ? AmqpStruct.new(elements["result/struct"], self) : nil
+  # When there can only be one child instance 
+  def amqp_single_child_reader(*element_names)
+    element_names.each { |e|
+      define_method(mangle(e)) { children(e.to_s)[0] } }
   end
-
-  def is_server_method?()
-    @cache_is_server_method ||= elements["chassis[@name='server']"]
-  end
-
-  def request?() responds_to().empty?; end
-  def response?() not request?; end
 end
 
-# AMQP class element.
+
+# An AmqpElement contains an XML element and provides a convenient
+# API to access AMQP data.
+# 
+# NB: AmqpElements cache values from XML, they assume that
+# the XML model does not change after the AmqpElement has
+# been created.
+class AmqpElement
+
+  def wrap(xml)
+    return nil if ["doc","assert","rule"].include? xml.name
+    eval("Amqp"+xml.name.caps).new(xml, self) or raise "nil wrapper"
+  end
+
+  public
+  
+  def initialize(xml, parent)
+    @xml, @parent=xml, parent
+    @children=xml.elements.map { |e| wrap e }.compact
+    @cache_child={}
+    @cache_children={}
+    @cache_children[nil]=@children
+  end
+
+  attr_reader :parent, :xml, :children
+  amqp_attr_reader :name, :label
+
+  # List of children of type elname, or all children if elname
+  # not specified.
+  def children(elname=nil)
+    @cache_children[elname] ||= @children.select { |c| elname==c.xml.name }
+  end
+
+  # Look up child of type elname with attribute name.
+  def child(elname, name)
+    @cache_child[[elname,name]] ||= children(elname).find { |c| c.name==name }
+  end
+
+  # The root <amqp> element.
+  def root() @root ||=parent ? parent.root : self; end
+
+  def to_s() "#<#{self.class}(#{name})>"; end
+  def inspect() to_s; end
+end
+
+AmqpResponse = AmqpElement
+
+class AmqpDomain < AmqpElement
+  def initialize(xml, parent) super; end
+  amqp_attr_reader :type
+  amqp_single_child_reader :struct
+
+  def unalias()
+    d=self
+    while (d.type_ != d.name and root.domain(d.type_))
+      d=root.domain(d.type_)
+    end
+    return d
+  end
+end
+
+class AmqpField < AmqpElement
+  def initialize(xml, amqp) super; end;
+  def domain() root.domain(xml.attributes["domain"]); end
+  amqp_single_child_reader :struct
+end
+
+class AmqpChassis < AmqpElement
+  def initialize(xml, parent) super; end
+  amqp_attr_reader :implement
+end
+
+class AmqpConstant < AmqpElement
+  def initialize(xml, parent) super; end
+  amqp_attr_reader :value, :datatype
+end
+
+class AmqpResult < AmqpElement
+  def initialize(xml, parent) super; end
+  amqp_single_child_reader :struct
+end
+
+class AmqpStruct < AmqpElement
+  def initialize(xml, parent) super; end
+  amqp_attr_reader :size, :type
+  amqp_child_reader :field
+  
+  def result?() parent.xml.name == "result"; end
+  def domain?() parent.xml.name == "domain"; end
+end
+
+class AmqpMethod < AmqpElement
+  def initialize(xml, parent) super; end
+
+  amqp_attr_reader :content, :index, :synchronous
+  amqp_child_reader :field, :chassis,:response
+  amqp_single_child_reader :result
+
+  def on_chassis?(chassis) child("chassis", chassis); end
+  def on_client?() on_chassis? "client"; end
+  def on_server?() on_chassis? "server"; end
+end
+
 class AmqpClass < AmqpElement
   def initialize(xml,amqp) super; end
-  def index() attributes["index"];  end
-  def amqp_methods()
-    @cache_amqp_methods ||= elements.collect("method") { |el|
-      AmqpMethod.new(el,self)
-    }.sort_by_name
-  end
+  amqp_attr_reader :index
+
+  amqp_child_reader :method
+
+  # FIXME aconway 2007-08-27: REMOVE
+  def methods_() children("method").sort_by_name;  end
 
   # chassis should be "client" or "server"
-  def amqp_methods_on(chassis)
-    @cache_amqp_methods_on ||= { }
-    @cache_amqp_methods_on[chassis] ||= elements.collect("method/chassis[@name='#{chassis}']/..") { |m| AmqpMethod.new(m,self) }.sort_by_name
+  def methods_on(chassis)
+    @methods_on ||= { }
+    @methods_on[chassis] ||= methods_.select { |m| m.on_chassis? chassis }
   end
 end
 
 
-# AMQP struct element.
-class AmqpStruct < AmqpElement
-  def initialize(xml,amqp) super; end
-
-  def type() attributes["type"];  end
-
-  def size() attributes["size"];  end
-
-  def result?() parent.name == "result"; end
-
-  def domain?() parent.name == "domain"; end
-
-  def fields()
-    @cache_fields ||= elements.collect("field") { |f| AmqpField.new(f,self); }
-  end
-end
 
 # AMQP root element.
 class AmqpRoot < AmqpElement
-
-    # FIXME aconway - something namespace-related in ruby 1.8.6
-    # breaks all the xpath expressions with [@attr] tests.
-    # Not clear if this is a ruby bug or error in my xpath,
-    # current workaround is to simply delete the namespace node.
-  def newDoc(xmlFile)
-    root=Document.new(File.new(xmlFile)).root
-    root.delete_namespace
-    throw "Internal error, FIXME comment in aqmpgen.rb." unless (root.namespaces.empty?)
-    root
-  end
+  def parse(filename) Document.new(File.new(filename)).root; end
 
   # Initialize with output directory and spec files from ARGV.
   def initialize(*specs)
-    specs.size or raise "No XML spec files."
-    specs.each { |f| File.exists?(f) or raise "Invalid XML file: #{f}"}
-    super newDoc(specs.shift), nil
-    specs.each { |s|            # Merge in additional specs
-      root=newDoc s
-      merge(self,root)
-    }
+    raise "No XML spec files." if specs.empty?
+    xml=parse(specs.shift)
+    specs.each { |s| xml_merge(xml, parse(s)) }
+    super(xml, nil)
   end
 
-  def version()
-    attributes["major"]+"-"+attributes["minor"]
-  end
+  amqp_attr_reader :major, :minor
+  amqp_child_reader :class, :domain
 
-  def amqp_classes()
-    @cache_amqp_classes ||= elements.collect("class") { |c|
-      AmqpClass.new(c,self) }.sort_by_name
-  end
-
-  def amqp_structs()
-    @cache_amqp_structs ||= amqp_result_structs + amqp_domain_structs
-  end
-
-  def amqp_domain_structs()
-    @cache_amqp_domain_structs ||= elements.collect("domain/struct") { |s| AmqpStruct.new(s, self) }
-  end
-
-  def amqp_result_structs()
-    @cache_amqp_result_structs ||=  amqp_methods.collect { |m| m.result_struct }.compact
-  end
+  # FIXME aconway 2007-08-27: REMOVE
+  def classes() children("class").sort_by_name; end
   
-  # Return all methods on all classes.
-  def amqp_methods() 
-    @cache_amqp_methods ||= amqp_classes.collect { |c| c.amqp_methods }.flatten;  
+  def version() major + "-" + minor; end
+
+  def domain_structs() domains.map{ |d| d.struct }.compact; end
+
+  def result_structs()
+    methods_.map { |m| m.result and m.result.struct }.compact
   end
+
+  def structs() result_structs+domain_structs;  end
   
+  def methods_() classes.map { |c| c.methods_ }.flatten; end
+
   # Return all methods on chassis for all classes.
-  def amqp_methods_on(chassis)
-    @cache_amqp_methods_on ||= { }
-    @cache_amqp_methods_on[chassis] ||= amqp_classes.collect { |c| c.amqp_methods_on(chassis) }.flatten
+  def methods_on(chassis)
+    @methods_on ||= { }
+    @methods_on[chassis] ||= classes.map { |c| c.methods_on(chassis) }.flatten
   end
 
+  private
+  
   # Merge contents of elements.
-  def merge(to,from)
+  def xml_merge(to,from)
     from.elements.each { |from_child|
       tag,name = from_child.name, from_child.attributes["name"]
       to_child=to.elements["./#{tag}[@name='#{name}']"]
-      to_child ? merge(to_child, from_child) : to.add(from_child.deep_clone) }
+      to_child ? xml_merge(to_child, from_child) : to.add(from_child.deep_clone) }
   end
-
-  private :merge
-  
 end
 
 # Collect information about generated files.
@@ -303,6 +299,4 @@ class Generator
   
   attr_accessor :out
 end
-
-
 

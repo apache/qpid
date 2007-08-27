@@ -13,7 +13,7 @@ class SessionGen < CppGen
   end
   
   def declare_method (m)
-    gen "Response #{m.amqp_parent.name.lcaps}#{m.name.caps}(" 
+    gen "Response #{m.parent.name.lcaps}#{m.name.caps}(" 
     if (m.content())
       params=m.signature + ["const MethodContent& content"]
     else
@@ -24,11 +24,11 @@ class SessionGen < CppGen
   end
 
   def declare_class(c)
-    c.amqp_methods_on(@chassis).each { |m| declare_method(m) }
+    c.methods_on(@chassis).each { |m| declare_method(m) }
   end
 
   def define_method (m)
-    gen "Response Session::#{m.amqp_parent.name.lcaps}#{m.name.caps}(" 
+    gen "Response Session::#{m.parent.name.lcaps}#{m.name.caps}(" 
     if (m.content())
       params=m.signature + ["const MethodContent& content"]
     else
@@ -55,7 +55,7 @@ class SessionGen < CppGen
   end
 
   def define_class(c)
-    c.amqp_methods_on(@chassis).each { |m| define_method(m) }
+    c.methods_on(@chassis).each { |m| define_method(m) }
   end
 
   def generate()
@@ -92,7 +92,7 @@ public:
     void setSynchronous(bool sync) { impl->setSync(sync); } 
     void close();
 EOS
-  indent { @amqp.amqp_classes.each { |c| declare_class(c) if !excludes.include?(c.name) } }
+  indent { @amqp.classes.each { |c| declare_class(c) if !excludes.include?(c.name) } }
   gen <<EOS
 }; /* class #{@classname} */
 }
@@ -134,7 +134,7 @@ void #{@classname}::close()
 
 EOS
 
-  @amqp.amqp_classes.each { |c| define_class(c) if !excludes.include?(c.name)  }
+  @amqp.classes.each { |c| define_class(c) if !excludes.include?(c.name)  }
   
   gen <<EOS
 }} // namespace qpid::client

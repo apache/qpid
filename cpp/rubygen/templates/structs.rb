@@ -18,10 +18,10 @@ class StructGen < CppGen
     "longstr"=>"LongString",
     "shortstr"=>"ShortString",
     "timestamp"=>"LongLong",
-    "uuid"=>"ShortString",#FIXME
     "table"=>"FieldTable",
     "content"=>"Content",
-    "long-struct"=>"LongString"
+    "long-struct"=>"LongString",
+    "uuid" => "ShortString"        # FIXME aconway 2007-08-27:
   }
   SizeMap={
     "octet"=>"1",
@@ -34,7 +34,7 @@ class StructGen < CppGen
   ValueTypes=["octet", "short", "long", "longlong", "timestamp"]
 
   def printable_form(f)
-    if (f.cpptype == "u_int8_t")
+    if (f.cpptype.name == "u_int8_t")
       return "(int) " + f.cppname
     else
       return f.cppname
@@ -42,53 +42,39 @@ class StructGen < CppGen
   end
 
   def generate_encode(f, combined)
-    if (f.field_type == "bit")
+    if (f.domain.type_ == "bit")
       genl "uint8_t #{f.cppname}_bits = #{f.cppname};"
       count = 0
       combined.each { |c| genl "#{f.cppname}_bits |= #{c.cppname} << #{count += 1};" }
       genl "buffer.putOctet(#{f.cppname}_bits);"
     else
-      encoded = EncodingMap[f.field_type]
-      if (encoded)
-        genl "buffer.put#{encoded}(#{f.cppname});"
-      else 
-        genl "#{f.cppname}.encode(buffer);"
-      end
+      genl f.domain.cpptype.encode(f.cppname,"buffer")
     end
   end
 
   def generate_decode(f, combined)
-    if (f.field_type == "bit")
+    if (f.domain.type_ == "bit")
       genl "uint8_t #{f.cppname}_bits = buffer.getOctet();"
       genl "#{f.cppname} = 1 & #{f.cppname}_bits;"
       count = 0
       combined.each { |c| genl "#{c.cppname} = (1 << #{count += 1}) & #{f.cppname}_bits;" }
     else
-      encoded = EncodingMap[f.field_type]
-      if (encoded)
-        if (ValueTypes.include?(f.field_type))
-          genl "#{f.cppname} = buffer.get#{encoded}();"
-        else
-          genl "buffer.get#{encoded}(#{f.cppname});"
-        end
-      else 
-        genl "#{f.cppname}.decode(buffer);"
-      end
+      genl f.domain.cpptype.decode(f.cppname,"buffer")
     end
   end
 
   def generate_size(f, combined)
-    if (f.field_type == "bit")
+    if (f.domain.type_ == "bit")
       names = ([f] + combined).collect {|g| g.cppname}
       genl "+ 1 //#{names.join(", ")}"
     else
-      size = SizeMap[f.field_type]
+      size = SizeMap[f.domain.type_]
       if (size)
         genl "+ #{size} //#{f.cppname}"
-      elsif (f.cpp_member_type == "SequenceNumberSet")
+      elsif (f.cpptype.name == "SequenceNumberSet")
         genl "+ #{f.cppname}.encodedSize()"
       else 
-        encoded = EncodingMap[f.field_type]        
+        encoded = EncodingMap[f.domain.type_]        
         gen "+ 4 " if encoded == "LongString"
         gen "+ 1 " if encoded == "ShortString"
         genl "+ #{f.cppname}.size()"
@@ -137,7 +123,7 @@ EOS
       if (s.kind_of? AmqpMethod)
         indent {gen "ProtocolVersion, "}
       end
-      indent { gen s.fields.collect { |f| "#{f.cpptype} _#{f.cppname}" }.join(",\n") }
+      indent { gen s.fields.collect { |f| "#{f.cpptype.param} _#{f.cppname}" }.join(",\n") }
       gen ")"
       genl ": " if s.fields.size > 0
       indent { gen s.fields.collect { |f| " #{f.cppname}(_#{f.cppname})" }.join(",\n") }
@@ -149,8 +135,8 @@ EOS
   end
 
   def define_accessors(f)
-    genl "void set#{f.name.caps}(#{f.cpptype} _#{f.cppname}) { #{f.cppname} = _#{f.cppname}; }"
-    genl "#{f.cpptype} get#{f.name.caps}() const { return #{f.cppname}; }"
+    genl "void set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) { #{f.cppname} = _#{f.cppname}; }"
+    genl "#{f.cpptype.ret} get#{f.name.caps}() const { return #{f.cppname}; }"
   end
 
   def define_struct(s)
@@ -171,7 +157,7 @@ EOS
       end
 
       #need to include any nested struct definitions
-      s.fields.select {|f| f.defined_as_struct }.map {|f| include f.name.caps}
+      s.fields.each { |f| include f.cpptype.name if f.domain.struct }
 
       gen <<EOS
 
@@ -183,23 +169,23 @@ namespace framing {
 
 class #{classname} #{inheritance} {
 EOS
-  indent { s.fields.each { |f| genl "#{f.cpp_member_type} #{f.cppname};" } }
+  indent { s.fields.each { |f| genl "#{f.cpptype.name} #{f.cppname};" } }
   genl "public:"
   if (s.kind_of? AmqpMethod)
-    indent { genl "static const ClassId CLASS_ID = #{s.amqp_parent.index};" }
+    indent { genl "static const ClassId CLASS_ID = #{s.parent.index};" }
     indent { genl "static const MethodId METHOD_ID = #{s.index};" }
   end
 
   if (s.kind_of? AmqpStruct)
-    if (s.type)
+    if (s.type_)
       if (s.result?)
         #as result structs have types that are only unique to the
         #class, they have a class dependent qualifier added to them
         #(this is inline with current python code but a formal
         #solution is expected from the WG
-        indent { genl "static const uint16_t TYPE = #{s.type} + #{s.amqp_parent.amqp_parent.index} * 256;" } 
+        indent { genl "static const uint16_t TYPE = #{s.type_} + #{s.parent.parent.parent.index} * 256;" }
       else
-        indent { genl "static const uint16_t TYPE = #{s.type};" } 
+        indent { genl "static const uint16_t TYPE = #{s.type_};" } 
       end
     end
   end
@@ -295,10 +281,10 @@ EOS
   end
 
   def generate()
-    @amqp.amqp_structs.each { |s| define_struct(s) }
-    @amqp.amqp_methods.each { |m| define_struct(m) }
+    @amqp.structs.each { |s| define_struct(s) }
+    @amqp.methods_.each { |m| define_struct(m) }
     #generate a single include file containing the list of structs for convenience
-    h_file("qpid/framing/amqp_structs.h") { @amqp.amqp_structs.each { |s| genl "#include \"#{s.cppname}.h\"" } }
+    h_file("qpid/framing/amqp_structs.h") { @amqp.structs.each { |s| genl "#include \"#{s.cppname}.h\"" } }
   end
 end
 
