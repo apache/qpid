@@ -192,6 +192,9 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
   qpid/broker/Reference.cpp \
+  qpid/broker/Session.h \
+  qpid/broker/SuspendedSessions.h \
+  qpid/broker/SuspendedSessions.cpp \
   qpid/broker/SemanticHandler.cpp \
   qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
@@ -327,6 +330,7 @@ nobase_include_HEADERS = \
   qpid/framing/Buffer.h \
   qpid/framing/ChannelAdapter.h \
   qpid/framing/FieldTable.h \
+  qpid/framing/FrameDefaultVisitor.h \
   qpid/framing/FramingContent.h \
   qpid/framing/HeaderProperties.h \
   qpid/framing/InitiationHandler.h \
