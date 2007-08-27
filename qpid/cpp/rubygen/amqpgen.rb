@@ -170,9 +170,6 @@ class AmqpClass < AmqpElement
 
   amqp_child_reader :method
 
-  # FIXME aconway 2007-08-27: REMOVE
-  def methods_() children("method").sort_by_name;  end
-
   # chassis should be "client" or "server"
   def methods_on(chassis)
     @methods_on ||= { }
@@ -197,9 +194,6 @@ class AmqpRoot < AmqpElement
   amqp_attr_reader :major, :minor
   amqp_child_reader :class, :domain
 
-  # FIXME aconway 2007-08-27: REMOVE
-  def classes() children("class").sort_by_name; end
-  
   def version() major + "-" + minor; end
 
   def domain_structs() domains.map{ |d| d.struct }.compact; end

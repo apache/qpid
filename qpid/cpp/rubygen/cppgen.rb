@@ -108,19 +108,20 @@ end
 class AmqpDomain
   @@typemap = {
     "bit"=> CppType.new("bool").code("Octet"),
-    "octet"=>CppType.new("u_int8_t").code("Octet"), # FIXME aconway 2007-08-25: uint
-    "short"=>CppType.new("u_int16_t").code("Short"),
-    "long"=>CppType.new("u_int32_t").code("Long"),
-    "longlong"=>CppType.new("u_int64_t").code("LongLong"),
-    "timestamp"=>CppType.new("u_int64_t").code("LongLong"),
+    "octet"=>CppType.new("uint8_t").code("Octet"), 
+    "short"=>CppType.new("uint16_t").code("Short"),
+    "long"=>CppType.new("uint32_t").code("Long"),
+    "longlong"=>CppType.new("uint64_t").code("LongLong"),
+    "timestamp"=>CppType.new("uint64_t").code("LongLong"),
     "longstr"=>CppType.new("string").passcref.retcref.code("LongString"),
     "shortstr"=>CppType.new("string").passcref.retcref.code("ShortString"),
     "table"=>CppType.new("FieldTable").passcref.retcref.code("FieldTable"),
     "content"=>CppType.new("Content").passcref.retcref.code("Content"),
     "rfc1982-long-set"=>CppType.new("SequenceNumberSet").passcref.retcref,
     "long-struct"=>CppType.new("string").passcref.retcref.code("LongString"),
-    "uuid"=>CppType.new("string").passcref.retcref.code("ShortString") # FIXME aconway 2007-08-25: Remove, 
-#    "uuid"=>CppType.new("Uuid").passcref.retcref.code,
+    # FIXME aconway 2007-08-25: Use Uuid class.
+    # "uuid"=>CppType.new("Uuid").passcref.retcref.code,
+    "uuid"=>CppType.new("string").passcref.retcref.code("ShortString") 
   }
 
   def cppname() name.caps; end
