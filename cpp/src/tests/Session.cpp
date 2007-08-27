@@ -29,24 +29,28 @@ using namespace qpid::sys;
 BOOST_AUTO_TEST_CASE(testSuspendedSessions) {
     SuspendedSessions suspended;
 
-    SessionState s(0);          // 0 timeout
-    BOOST_CHECK(s.isActive());
+    SessionState s;
+    BOOST_CHECK_EQUAL(s.getState(), SessionState::CLOSED);
+    s.open(0);
+    BOOST_CHECK_EQUAL(s.getState(), SessionState::ACTIVE);
+    BOOST_CHECK(!s.getId().empty());
     suspended.suspend(s);
-    BOOST_CHECK(!s.isActive());
+    BOOST_CHECK(s.getState() == SessionState::CLOSED);
     try {
         s = suspended.resume(s.getId());
         BOOST_FAIL("Expected session to be timed out.");
     } catch (...) {}
 
-    s = SessionState(1);        // New session, 1 sec timeout.
+    s.close();
+    s.open(1);        // New session, 1 sec timeout.
     try {
         suspended.resume(s.getId());
         BOOST_FAIL("Expeced exception: non-existent session.");
     } catch (...) {}
     suspended.suspend(s);
-    BOOST_CHECK(!s.isActive());
+    BOOST_CHECK(s.getState() == SessionState::SUSPENDED);
     s = suspended.resume(s.getId());
-    BOOST_CHECK(s.isActive());
+    BOOST_CHECK(s.getState() == SessionState::ACTIVE);
 
     suspended.suspend(s);       // Real timeout
     sleep(2);
