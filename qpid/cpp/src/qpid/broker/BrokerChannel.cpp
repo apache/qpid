@@ -346,7 +346,9 @@ void Channel::route(Message::shared_ptr msg, Deliverable& strategy) {
        cacheExchange = connection.broker.getExchanges().get(routeToExchangeName);
     }
 
-    assert(cacheExchange.get());
+    if (!cacheExchange.get() )
+           throw ChannelException(404, "Exchange not found '" + routeToExchangeName + "'");
+    
     cacheExchange->route(strategy, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
 
     if (!strategy.delivered) {
