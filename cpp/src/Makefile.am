@@ -195,6 +195,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionState.h \
   qpid/broker/SuspendedSessions.h \
   qpid/broker/SuspendedSessions.cpp \
+  qpid/broker/SessionAdapter.h \
+  qpid/broker/SessionAdapter.cpp \
   qpid/broker/SemanticHandler.cpp \
   qpid/broker/Timer.cpp \
   qpid/broker/TopicExchange.cpp \
