@@ -80,7 +80,6 @@ void BrokerAdapter::ChannelHandlerImpl::closeOk(){}
 void BrokerAdapter::ExchangeHandlerImpl::declare(uint16_t /*ticket*/, const string& exchange, const string& type, 
                                                  const string& alternateExchange, 
                                                  bool passive, bool durable, bool /*autoDelete*/, const FieldTable& args){
-
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = broker.getExchanges().get(alternateExchange);
@@ -198,6 +197,7 @@ QueueQueryResult BrokerAdapter::QueueHandlerImpl::query(const string& name)
 void BrokerAdapter::QueueHandlerImpl::declare(uint16_t /*ticket*/, const string& name, const string& alternateExchange,
                                               bool passive, bool durable, bool exclusive, 
                                               bool autoDelete, const qpid::framing::FieldTable& arguments){
+ 
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = broker.getExchanges().get(alternateExchange);
@@ -345,14 +345,11 @@ void BrokerAdapter::BasicHandlerImpl::publish(uint16_t /*ticket*/,
     bool rejectUnroutable, bool immediate)
 {
 
-    Exchange::shared_ptr exchange = exchangeName.empty() ? broker.getExchanges().getDefault() : broker.getExchanges().get(exchangeName);
-    if(exchange){
-        BasicMessage* msg = new BasicMessage(&connection, exchangeName, routingKey, rejectUnroutable, immediate);
-        channel.handlePublish(msg);
-    }else{
-        throw ChannelException(
-            404, "Exchange not found '" + exchangeName + "'");
-    }
+      // exeption moved to ChannelAdaptor -- TODO this code should be removed once basic is removed
+
+      BasicMessage* msg = new BasicMessage(&connection, exchangeName, routingKey, rejectUnroutable, immediate);
+      channel.handlePublish(msg);
+
 } 
         
 void BrokerAdapter::BasicHandlerImpl::get(uint16_t /*ticket*/, const string& queueName, bool noAck){
