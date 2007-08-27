@@ -23,12 +23,12 @@ Specs=ARGV.grep(/\.xml$/)
 Amqp=AmqpRoot.new(*Specs)
 
 # Run selected templates
-if ARGV.grep("^all$")
+if ARGV.any? { |arg| arg=="all" }
   templates=Dir["#{File.dirname __FILE__}/templates/*.rb"]
 else
   templates=ARGV.grep(/\.rb$/)
 end
-templates.each { |t| require t }
+templates.each { |t| load t }
 
 # Generate makefile
 makefile=ARGV.grep(/.mk$/)[0]

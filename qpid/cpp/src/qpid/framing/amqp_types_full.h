@@ -33,5 +33,6 @@
 #include "FramingContent.h"
 #include "FieldTable.h"
 #include "SequenceNumberSet.h"
+#include "Uuid.h"
 
 #endif  /*!_framing_amqp_types_decl_h*/
