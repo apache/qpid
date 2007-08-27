@@ -21,7 +21,7 @@ class StructGen < CppGen
     "table"=>"FieldTable",
     "content"=>"Content",
     "long-struct"=>"LongString",
-    "uuid" => "ShortString"        # FIXME aconway 2007-08-27:
+    "uuid" => "ShortString"        # FIXME aconway 2007-08-27: Remove.
   }
   SizeMap={
     "octet"=>"1",
