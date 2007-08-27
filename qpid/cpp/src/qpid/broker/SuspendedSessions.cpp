@@ -31,25 +31,27 @@ typedef Mutex::ScopedLock Lock;
 
 void SuspendedSessions::suspend(SessionState& s) {
     Lock l(lock);
-    assert(s.isActive());
-    AbsTime expires(now(), Duration(s.timeout*TIME_SEC));
-    suspended.insert(std::make_pair(expires, s));
-    s.active = false;
+    assert(s.state == SessionState::ACTIVE);
+    if (s.timeout == 0) 
+        s.state = SessionState::CLOSED;
+    else {
+        AbsTime expires(now(), Duration(s.timeout*TIME_SEC));
+        suspended.insert(std::make_pair(expires, s));
+        s.state = SessionState::SUSPENDED;
+    }
 }
 
 SessionState SuspendedSessions::resume(const Uuid& id)
 {
     Lock l(lock);
-    Map::iterator expired = suspended.lower_bound(now());
-    suspended.erase(suspended.begin(), expired);
-
-    Map::iterator resume = std::find_if(
-        suspended.begin(), suspended.end(),
-        bind(&SessionState::getId, bind(&Map::value_type::second, _1))==id);
-    
-    if (resume == suspended.end())
+    Map::iterator notExpired = suspended.lower_bound(now());
+    suspended.erase(suspended.begin(), notExpired);
+    Map::iterator i = suspended.begin();
+    while (i != suspended.end() && i->second.getId() != id)
+        ++i;
+    if (i == suspended.end())
         throw Exception(QPID_MSG("Session timed out or invalid ID: " << id));
-    return resume->second;
+    return i->second;
 }
 
 }} // namespace qpid::broker

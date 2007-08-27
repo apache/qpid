@@ -23,6 +23,7 @@
 
 #include "qpid/framing/MethodBodyDefaultVisitor.h"
 #include "qpid/framing/AMQBody.h"
+#include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
 namespace framing {
@@ -33,8 +34,8 @@ class AMQContentBody;
 class AMQHeartbeatBody;
 
 /**
- * Functor to handle a frame by visiting its content.
- * Combines AMQBodyConstVisitor and MethodBodyDefaultVisitor.
+ * Visitor for all concrete frame body types, combines
+ * AMQBodyConstVisitor and MethodBodyDefaultVisitor.
  * 
  * Derived classes may override visit methods to specify actions.
  * Derived classes must override defaultVisit(), which is called
@@ -47,6 +48,15 @@ struct FrameDefaultVisitor : public AMQBodyConstVisitor, public MethodBodyDefaul
     void visit(const AMQContentBody& x) { defaultVisit(); }
     void visit(const AMQHeartbeatBody& x) { defaultVisit(); }
     void visit(const AMQMethodBody& method) { method.accept(*this); }
+};
+
+/**
+ * A FrameHandler that is implemented as a visitor.
+ */
+struct FrameVisitorHandler : public FrameHandler,
+                             protected FrameVisitorHandler
+{
+    void handle(AMQFrame& f) { f.accept(*this); }
 };
 
 
