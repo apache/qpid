@@ -221,5 +221,11 @@ class CppGen < Generator
   def public() outdent { genl "public:" } end
   def private() outdent { genl "private:" } end
   def protected() outdent { genl "protected:" } end
+
+  # Returns [namespace, classname, filename]
+  def parse_classname(full_cname)
+    names=full_cname.split("::")
+    return names[0..-2].join('::'), names[-1], names.join("/") 
+  end
 end
 
