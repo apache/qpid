@@ -15,6 +15,9 @@ class String
   # Convert to underbar_separated_form.
   def bars() tr('- .','_'); end
 
+  # Convert to ALL_UPPERCASE_FORM
+  def shout() bars.upcase!;  end
+
   # Convert to lowerCaseCapitalizedForm
   def lcaps() gsub( /\W(\w)/ ) { |m| $1.upcase } end
 
@@ -104,6 +107,9 @@ class AmqpElement
 
   def to_s() "#<#{self.class}(#{name})>"; end
   def inspect() to_s; end
+
+  # Text of doc child if there is one.
+  def doc() d=xml.elements["doc"]; d and d.text; end
 end
 
 AmqpResponse = AmqpElement
@@ -135,7 +141,7 @@ end
 
 class AmqpConstant < AmqpElement
   def initialize(xml, parent) super; end
-  amqp_attr_reader :value, :datatype
+  amqp_attr_reader :value, :class
 end
 
 class AmqpResult < AmqpElement
@@ -192,7 +198,7 @@ class AmqpRoot < AmqpElement
   end
 
   amqp_attr_reader :major, :minor
-  amqp_child_reader :class, :domain
+  amqp_child_reader :class, :domain, :constant
 
   def version() major + "-" + minor; end
 
