@@ -181,8 +181,8 @@ bool Channel::get(Message& msg, const Queue& queue, AckMode ackMode) {
     if (response.isA<BasicGetEmptyBody>()) {
         return false;
     } else {
-        ReceivedContent::shared_ptr content = gets.pop();
-        content->populate(msg);
+        FrameSet::shared_ptr content = gets.pop();
+        msg.populate(*content);
         return true;
     }
 }
@@ -232,13 +232,13 @@ void Channel::join() {
 void Channel::run() {
     try {
         while (true) {
-            ReceivedContent::shared_ptr content = session->get();
+            FrameSet::shared_ptr content = session->get();
             //need to dispatch this to the relevant listener:
             if (content->isA<BasicDeliverBody>()) {
                 ConsumerMap::iterator i = consumers.find(content->as<BasicDeliverBody>()->getConsumerTag());
                 if (i != consumers.end()) {
                     Message msg;
-                    content->populate(msg);
+                    msg.populate(*content);
                     i->second.listener->received(msg);
                 } else {
                     QPID_LOG(warning, "Dropping message for unrecognised consumer: " << content->getMethod());                        

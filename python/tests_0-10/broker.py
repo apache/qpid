@@ -37,19 +37,19 @@ class BrokerTests(TestBase):
         ctag = "tag1"
         ch.message_subscribe(queue = "myqueue", destination = ctag, confirm_mode = 0)
         body = "test no-ack"
-        ch.message_transfer(routing_key = "myqueue", body = body)
+        ch.message_transfer(content = Content(body, properties = {"routing_key" : "myqueue"}))
         msg = self.client.queue(ctag).get(timeout = 5)
-        self.assert_(msg.body == body)
+        self.assert_(msg.content.body == body)
 
         # Acknowledging consumer
         self.queue_declare(ch, queue = "otherqueue")
         ctag = "tag2"
         ch.message_subscribe(queue = "otherqueue", destination = ctag, confirm_mode = 1)
         body = "test ack"
-        ch.message_transfer(routing_key = "otherqueue", body = body)
+        ch.message_transfer(content = Content(body, properties = {"routing_key" : "otherqueue"}))
         msg = self.client.queue(ctag).get(timeout = 5)
         msg.complete()
-        self.assert_(msg.body == body)
+        self.assert_(msg.content.body == body)
         
     def test_simple_delivery_immediate(self):
         """
@@ -64,9 +64,9 @@ class BrokerTests(TestBase):
         queue = self.client.queue(consumer_tag)
 
         body = "Immediate Delivery"
-        channel.message_transfer(destination="test-exchange", routing_key="key", body=body, immediate=True)
+        channel.message_transfer(destination="test-exchange", content = Content(body, properties = {"routing_key" : "key"}))
         msg = queue.get(timeout=5)
-        self.assert_(msg.body == body)
+        self.assert_(msg.content.body == body)
 
         # TODO: Ensure we fail if immediate=True and there's no consumer.
 
@@ -81,13 +81,13 @@ class BrokerTests(TestBase):
         self.queue_declare(channel, queue="test-queue")
         channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
         body = "Queued Delivery"
-        channel.message_transfer(destination="test-exchange", routing_key="key", body=body)
+        channel.message_transfer(destination="test-exchange", content = Content(body, properties = {"routing_key" : "key"}))
 
         consumer_tag = "tag1"
         channel.message_subscribe(queue="test-queue", destination=consumer_tag, confirm_mode = 0)
         queue = self.client.queue(consumer_tag)
         msg = queue.get(timeout=5)
-        self.assert_(msg.body == body)
+        self.assert_(msg.content.body == body)
 
     def test_invalid_channel(self):
         channel = self.client.channel(200)
@@ -114,8 +114,9 @@ class BrokerTests(TestBase):
         channel.message_subscribe(destination="my-tag", queue="flow_test_queue")
         incoming = self.client.queue("my-tag")
         
-        channel.channel_flow(active=False)        
-        channel.message_transfer(routing_key="flow_test_queue", body="abcdefghijklmnopqrstuvwxyz")
+        channel.channel_flow(active=False)
+        c = Content("abcdefghijklmnopqrstuvwxyz", properties = {"routing_key" : "flow_test_queue"})
+        channel.message_transfer(content = c)
         try:
             incoming.get(timeout=1) 
             self.fail("Received message when flow turned off.")
@@ -123,4 +124,4 @@ class BrokerTests(TestBase):
         
         channel.channel_flow(active=True)
         msg = incoming.get(timeout=1)
-        self.assertEqual("abcdefghijklmnopqrstuvwxyz", msg.body)
+        self.assertEqual("abcdefghijklmnopqrstuvwxyz", msg.content.body)

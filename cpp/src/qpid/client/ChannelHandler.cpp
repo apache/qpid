@@ -75,7 +75,7 @@ void ChannelHandler::open(uint16_t _id)
     id = _id;
 
     setState(OPENING);
-    AMQFrame f(version, id, ChannelOpenBody(version));
+    AMQFrame f(id, ChannelOpenBody(version));
     out(f);
 
     std::set<int> states;
@@ -90,7 +90,7 @@ void ChannelHandler::open(uint16_t _id)
 void ChannelHandler::close(uint16_t code, const std::string& message, uint16_t classId, uint16_t methodId)
 {
     setState(CLOSING);
-    AMQFrame f(version, id, ChannelCloseBody(version, code, message, classId, methodId));
+    AMQFrame f(id, ChannelCloseBody(version, code, message, classId, methodId));
     out(f);
 }
 

@@ -21,7 +21,7 @@
 #ifndef _NameGenerator_
 #define _NameGenerator_
 
-#include "BrokerMessage.h"
+#include <string>
 
 namespace qpid {
     namespace broker {

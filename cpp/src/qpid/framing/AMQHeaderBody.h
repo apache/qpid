@@ -22,6 +22,12 @@
 #include "AMQBody.h"
 #include "Buffer.h"
 #include "BasicHeaderProperties.h"
+#include "qpid/framing/DeliveryProperties.h"
+#include "qpid/framing/MessageProperties.h"
+#include <iostream>
+#include <vector>
+#include <boost/variant.hpp>
+#include <boost/variant/get.hpp>
 
 #ifndef _AMQHeaderBody_
 #define _AMQHeaderBody_
@@ -31,24 +37,85 @@ namespace framing {
 
 class AMQHeaderBody :  public AMQBody
 {
-    BasicHeaderProperties properties;
-    uint16_t weight;
-    uint64_t contentSize;
-  public:
-    AMQHeaderBody(int classId);
+    typedef std::vector< boost::variant<BasicHeaderProperties, DeliveryProperties, MessageProperties> > PropertyList; 
+
+    PropertyList properties;
+
+    template <class T> void decode(T t, Buffer& b, uint32_t size) {
+        t.decode(b, size);
+        properties.push_back(t);
+    }
+
+    class Encode : public boost::static_visitor<> {
+        Buffer& buffer;
+    public:
+        Encode(Buffer& b) : buffer(b) {}
+
+        template <class T> void operator()(T& t) const {
+            buffer.putLong(t.size() + 2/*typecode*/);
+            buffer.putShort(T::TYPE);
+            t.encode(buffer);
+        }
+    };
+
+    class CalculateSize : public boost::static_visitor<> {
+        uint32_t size;
+    public:
+        CalculateSize() : size(0) {}
+
+        template <class T> void operator()(T& t) {
+            size += t.size();
+        }
+
+        uint32_t totalSize() { 
+            return size; 
+        }        
+    };
+
+    class Print : public boost::static_visitor<> {
+        std::ostream& out;
+    public:
+        Print(std::ostream& o) : out(o) {}
+
+        template <class T> void operator()(T& t) {
+            out << t;
+        }
+    };
+
+public:
+
     AMQHeaderBody();
+    ~AMQHeaderBody();
     inline uint8_t type() const { return HEADER_BODY; }
-    BasicHeaderProperties* getProperties(){ return &properties; }
-    const BasicHeaderProperties* getProperties() const { return &properties; }
-    inline uint64_t getContentSize() const { return contentSize; }
-    inline void setContentSize(uint64_t _size) { contentSize = _size; }
-    virtual ~AMQHeaderBody();
-    virtual uint32_t size() const;
-    virtual void encode(Buffer& buffer) const;
-    virtual void decode(Buffer& buffer, uint32_t size);
-    virtual void print(std::ostream& out) const;
+
+    uint32_t size() const;
+    void encode(Buffer& buffer) const;
+    void decode(Buffer& buffer, uint32_t size);
+    uint64_t getContentLength() const;
+    void print(std::ostream& out) const;
 
     void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
+
+    template <class T> T* get(bool create) { 
+        for (PropertyList::iterator i = properties.begin(); i != properties.end(); i++) {
+            T* p = boost::get<T>(&(*i));
+            if (p) return p;
+        }
+        if (create) {
+            properties.push_back(T());
+            return boost::get<T>(&(properties.back()));
+        } else {
+            return 0;
+        }
+    }
+
+    template <class T> const T* get() const { 
+        for (PropertyList::const_iterator i = properties.begin(); i != properties.end(); i++) {
+            const T* p = boost::get<T>(&(*i));
+            if (p) return p;
+        }
+        return 0;
+    }
 };
 
 }

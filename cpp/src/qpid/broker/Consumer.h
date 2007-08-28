@@ -21,7 +21,7 @@
 #ifndef _Consumer_
 #define _Consumer_
 
-#include "BrokerMessage.h"
+#include "Message.h"
 
 namespace qpid {
     namespace broker {

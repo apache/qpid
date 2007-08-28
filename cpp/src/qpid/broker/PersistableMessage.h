@@ -34,7 +34,7 @@ namespace broker {
  * The interface messages must expose to the MessageStore in order to
  * be persistable.
  */
-    class PersistableMessage : public Persistable
+class PersistableMessage : public Persistable
 {
 
 
@@ -72,10 +72,11 @@ public:
     virtual uint32_t encodedHeaderSize() const = 0;
 
     virtual ~PersistableMessage() {};
+
     PersistableMessage():
-    enqueueCompleted(false),
-    asyncCounter(0),
-    dequeueCompleted(false){};
+        enqueueCompleted(false),
+        asyncCounter(0),
+        dequeueCompleted(false){};
     
     inline bool isEnqueueComplete() {return enqueueCompleted;};
     inline void enqueueComplete() {

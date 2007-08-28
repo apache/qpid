@@ -25,10 +25,10 @@
 #include <list>
 #include <ostream>
 #include "AccumulatedAck.h"
-#include "BrokerMessage.h"
-#include "Prefetch.h"
 #include "BrokerQueue.h"
 #include "DeliveryId.h"
+#include "Message.h"
+#include "Prefetch.h"
 
 namespace qpid {
     namespace broker {

@@ -53,21 +53,21 @@ class TxTests(TestBase):
         #check results
         for i in range(1, 5):
             msg = queue_c.get(timeout=1)
-            self.assertEqual("TxMessage %d" % i, msg.body)
+            self.assertEqual("TxMessage %d" % i, msg.content.body)
             msg.complete()
 
         msg = queue_b.get(timeout=1)
-        self.assertEqual("TxMessage 6", msg.body)
+        self.assertEqual("TxMessage 6", msg.content.body)
         msg.complete()
 
         msg = queue_a.get(timeout=1)
-        self.assertEqual("TxMessage 7", msg.body)
+        self.assertEqual("TxMessage 7", msg.content.body)
         msg.complete()
 
         for q in [queue_a, queue_b, queue_c]:
             try:
                 extra = q.get(timeout=1)
-                self.fail("Got unexpected message: " + extra.body)
+                self.fail("Got unexpected message: " + extra.content.body)
             except Empty: None
 
         #cleanup
@@ -83,7 +83,7 @@ class TxTests(TestBase):
         for q in [queue_a, queue_b, queue_c]:
             try:
                 extra = q.get(timeout=1)
-                self.fail("Got unexpected message: " + extra.body)
+                self.fail("Got unexpected message: " + extra.content.body)
             except Empty: None
 
         channel.tx_rollback()
@@ -91,21 +91,21 @@ class TxTests(TestBase):
         #check results
         for i in range(1, 5):
             msg = queue_a.get(timeout=1)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message %d" % i, msg.content.body)
             msg.complete()
 
         msg = queue_b.get(timeout=1)
-        self.assertEqual("Message 6", msg.body)
+        self.assertEqual("Message 6", msg.content.body)
         msg.complete()
 
         msg = queue_c.get(timeout=1)
-        self.assertEqual("Message 7", msg.body)
+        self.assertEqual("Message 7", msg.content.body)
         msg.complete()
 
         for q in [queue_a, queue_b, queue_c]:
             try:
                 extra = q.get(timeout=1)
-                self.fail("Got unexpected message: " + extra.body)
+                self.fail("Got unexpected message: " + extra.content.body)
             except Empty: None
 
         #cleanup
@@ -121,7 +121,7 @@ class TxTests(TestBase):
         for q in [queue_a, queue_b, queue_c]:
             try:
                 extra = q.get(timeout=1)
-                self.fail("Got unexpected message: " + extra.body)
+                self.fail("Got unexpected message: " + extra.content.body)
             except Empty: None
 
         channel.tx_rollback()
@@ -129,21 +129,21 @@ class TxTests(TestBase):
         #check results
         for i in range(1, 5):
             msg = queue_a.get(timeout=1)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message %d" % i, msg.content.body)
             msg.complete()
 
         msg = queue_b.get(timeout=1)
-        self.assertEqual("Message 6", msg.body)
+        self.assertEqual("Message 6", msg.content.body)
         msg.complete()
 
         msg = queue_c.get(timeout=1)
-        self.assertEqual("Message 7", msg.body)
+        self.assertEqual("Message 7", msg.content.body)
         msg.complete()
 
         for q in [queue_a, queue_b, queue_c]:
             try:
                 extra = q.get(timeout=1)
-                self.fail("Got unexpected message: " + extra.body)
+                self.fail("Got unexpected message: " + extra.content.body)
             except Empty: None
 
         #cleanup
@@ -166,10 +166,12 @@ class TxTests(TestBase):
         channel.queue_bind(queue=name_c, exchange="amq.topic", routing_key=topic)
 
         for i in range(1, 5):
-            channel.message_transfer(routing_key=name_a, message_id="msg%d" % i, body="Message %d" % i)
+            channel.message_transfer(content=Content(properties={'routing_key':name_a, 'message_id':"msg%d" % i}, body="Message %d" % i))
 
-        channel.message_transfer(routing_key=key, destination="amq.direct", message_id="msg6", body="Message 6")
-        channel.message_transfer(routing_key=topic, destination="amq.topic", message_id="msg7", body="Message 7")
+        channel.message_transfer(destination="amq.direct",
+                                 content=Content(properties={'routing_key':key, 'message_id':"msg6"}, body="Message 6"))
+        channel.message_transfer(destination="amq.topic",
+                                 content=Content(properties={'routing_key':topic, 'message_id':"msg7"}, body="Message 7"))
 
         channel.tx_select()
 
@@ -178,27 +180,31 @@ class TxTests(TestBase):
         queue_a = self.client.queue("sub_a")
         for i in range(1, 5):
             msg = queue_a.get(timeout=1)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message %d" % i, msg.content.body)
 
         msg.complete()
 
         channel.message_subscribe(queue=name_b, destination="sub_b", confirm_mode=1)
         queue_b = self.client.queue("sub_b")
         msg = queue_b.get(timeout=1)
-        self.assertEqual("Message 6", msg.body)
+        self.assertEqual("Message 6", msg.content.body)
         msg.complete()
 
         sub_c = channel.message_subscribe(queue=name_c, destination="sub_c", confirm_mode=1)
         queue_c = self.client.queue("sub_c")
         msg = queue_c.get(timeout=1)
-        self.assertEqual("Message 7", msg.body)
+        self.assertEqual("Message 7", msg.content.body)
         msg.complete()
 
         #publish messages
         for i in range(1, 5):
-            channel.message_transfer(routing_key=topic, destination="amq.topic", message_id="tx-msg%d" % i, body="TxMessage %d" % i)
+            channel.message_transfer(destination="amq.topic",
+                                     content=Content(properties={'routing_key':topic, 'message_id':"tx-msg%d" % i},
+                                                     body="TxMessage %d" % i))
 
-        channel.message_transfer(routing_key=key, destination="amq.direct", message_id="tx-msg6", body="TxMessage 6")
-        channel.message_transfer(routing_key=name_a, message_id="tx-msg7", body="TxMessage 7")
-
+        channel.message_transfer(destination="amq.direct",
+                                 content=Content(properties={'routing_key':key, 'message_id':"tx-msg6"},
+                                                 body="TxMessage 6"))
+        channel.message_transfer(content=Content(properties={'routing_key':name_a, 'message_id':"tx-msg7"},
+                                                 body="TxMessage 7"))
         return queue_a, queue_b, queue_c

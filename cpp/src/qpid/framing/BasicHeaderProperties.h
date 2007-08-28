@@ -47,15 +47,18 @@ class BasicHeaderProperties : public HeaderProperties
     string userId;
     string appId;
     string clusterId;
+    uint64_t contentLength;
 	
     uint16_t getFlags() const;
 
   public:
+    static const uint16_t TYPE = BASIC;
+
     BasicHeaderProperties();
     virtual ~BasicHeaderProperties();
     virtual uint32_t size() const;
     virtual void encode(Buffer& buffer) const;
-    virtual void decode(Buffer& buffer, uint32_t size);
+    virtual void decode(Buffer& buffer, uint32_t size = 0);
 
     virtual uint8_t classId() const { return BASIC; }
 
@@ -74,6 +77,7 @@ class BasicHeaderProperties : public HeaderProperties
     string getUserId() const { return userId; }
     string getAppId() const { return appId; }
     string getClusterId() const { return clusterId; }
+    uint64_t getContentLength() const { return contentLength; }
 
     void setContentType(const string& _type){ contentType = _type; }
     void setContentEncoding(const string& encoding){ contentEncoding = encoding; }
@@ -89,6 +93,9 @@ class BasicHeaderProperties : public HeaderProperties
     void setUserId(const string& _userId){ userId = _userId; }
     void setAppId(const string& _appId){appId = _appId; }
     void setClusterId(const string& _clusterId){ clusterId = _clusterId; }
+    void setContentLength(uint64_t _contentLength){ contentLength = _contentLength; }
+
+    friend std::ostream& operator<<(std::ostream&, const BasicHeaderProperties&);
 
     /** \internal
      * Template to copy between types like BasicHeaderProperties.
@@ -109,6 +116,7 @@ class BasicHeaderProperties : public HeaderProperties
         to.setUserId(from.getUserId());
         to.setAppId(from.getAppId());
         to.setClusterId(from.getClusterId());
+        to.setContentLength(from.getContentLength());
     }
 };
 }}

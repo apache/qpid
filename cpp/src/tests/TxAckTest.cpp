@@ -68,11 +68,13 @@ public:
     TxAckTest() : acked(0), queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries)
     {
         for(int i = 0; i < 10; i++){
-            Message::shared_ptr msg(
-                new BasicMessage(0, "exchange", "routing_key", false, false));
-            AMQHeaderBody body(BASIC);
-            msg->setHeader(&body);
-            msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
+            Message::shared_ptr msg(new Message());
+            AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, "exchange", 0, 0));
+            AMQFrame header(0, AMQHeaderBody());
+            msg->getFrames().append(method);
+            msg->getFrames().append(header);
+            msg->getProperties<DeliveryProperties>()->setDeliveryMode(PERSISTENT);
+            msg->getProperties<DeliveryProperties>()->setRoutingKey("routing_key");
             messages.push_back(msg);
             deliveries.push_back(DeliveryRecord(msg, queue, "xyz", (i+1)));
         }

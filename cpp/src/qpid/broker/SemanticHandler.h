@@ -25,6 +25,7 @@
 #include "BrokerChannel.h"
 #include "Connection.h"
 #include "DeliveryAdapter.h"
+#include "MessageBuilder.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/FrameHandler.h"
@@ -55,8 +56,17 @@ class SemanticHandler : private framing::ChannelAdapter,
     framing::Window incoming;
     framing::Window outgoing;
     sys::Mutex outLock;
+    MessageBuilder msgBuilder;
 
-    void handleL4(framing::AMQMethodBody* method);
+    enum TrackId {SESSION_CONTROL_TRACK, EXECUTION_CONTROL_TRACK, MODEL_COMMAND_TRACK, MODEL_CONTENT_TRACK};
+    TrackId getTrack(const framing::AMQFrame& frame);
+    uint16_t getClassId(const framing::AMQFrame& frame);
+    uint16_t getMethodId(const framing::AMQFrame& frame);
+
+    void handleL3(framing::AMQMethodBody* method);
+    void handleL2(framing::AMQMethodBody* method);
+    void handleCommand(framing::AMQMethodBody* method);
+    void handleContent(framing::AMQFrame& frame);
 
     //ChannelAdapter virtual methods:
     void handleMethod(framing::AMQMethodBody* method);
