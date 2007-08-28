@@ -78,9 +78,6 @@ class #{@classname} {
 
     virtual ProtocolVersion getVersion() const = 0;
 
-    // Include framing constant declarations - why?
-    //#include "qpid/framing/AMQP_Constants.h"
-
     // Inner classes
 EOS
   indent { @amqp.classes.each { |c| handler_class(c) } }
