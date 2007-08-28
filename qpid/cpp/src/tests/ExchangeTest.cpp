@@ -31,6 +31,7 @@
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include "qpid/framing/BasicGetBody.h"
+#include "MessageUtils.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -63,7 +64,7 @@ class ExchangeTest : public CppUnit::TestCase
         queue.reset();
         queue2.reset();
 
-        Message::shared_ptr msgPtr(new BasicMessage(0, "e", "A", true, true));
+        Message::shared_ptr msgPtr(MessageUtils::createMessage("exchange", "key", "id"));
         DeliverableMessage msg(msgPtr);
         topic.route(msg, "abc", 0);
         direct.route(msg, "abc", 0);

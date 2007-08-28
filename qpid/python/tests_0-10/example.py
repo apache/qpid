@@ -76,10 +76,9 @@ class ExampleTest (TestBase):
 
         # Now lets publish a message and see if our consumer gets it. To do
         # this we need to import the Content class.
-        body = "Hello World!"
-        channel.message_transfer(destination="test",
-                                 routing_key="key",
-                                 body = body)
+        sent = Content("Hello World!")
+        sent["routing_key"] = "key"
+        channel.message_transfer(destination="test", content=sent)
 
         # Now we'll wait for the message to arrive. We can use the timeout
         # argument in case the server hangs. By default queue.get() will wait
@@ -87,7 +86,7 @@ class ExampleTest (TestBase):
         msg = queue.get(timeout=10)
 
         # And check that we got the right response with assertEqual
-        self.assertEqual(body, msg.body)
+        self.assertEqual(sent.body, msg.content.body)
 
         # Now acknowledge the message.
         msg.complete()

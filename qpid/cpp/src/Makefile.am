@@ -111,10 +111,12 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Buffer.cpp \
   qpid/framing/FieldTable.cpp \
   qpid/framing/FramingContent.cpp \
+  qpid/framing/FrameSet.cpp \
   qpid/framing/InitiationHandler.cpp \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
   qpid/framing/ProtocolVersionException.cpp \
+  qpid/framing/SendContent.cpp \
   qpid/framing/SequenceNumber.cpp \
   qpid/framing/SequenceNumberSet.cpp \
   qpid/framing/Value.cpp \
@@ -159,8 +161,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerSingleton.cpp \
   qpid/broker/BrokerChannel.cpp \
   qpid/broker/BrokerExchange.cpp \
-  qpid/broker/BrokerMessage.cpp \
-  qpid/broker/BrokerMessageMessage.cpp \
   qpid/broker/BrokerQueue.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionAdapter.cpp \
@@ -178,9 +178,9 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ExchangeRegistry.cpp \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/HeadersExchange.cpp \
-  qpid/broker/InMemoryContent.cpp \
-  qpid/broker/LazyLoadedContent.cpp \
+  qpid/broker/Message.cpp \
   qpid/broker/MessageBuilder.cpp \
+  qpid/broker/MessageDelivery.cpp \
   qpid/broker/MessageHandlerImpl.cpp \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/NameGenerator.cpp \
@@ -191,7 +191,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveryManagerImpl.cpp \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
-  qpid/broker/Reference.cpp \
   qpid/broker/SessionState.h \
   qpid/broker/SuspendedSessions.h \
   qpid/broker/SuspendedSessions.cpp \
@@ -222,7 +221,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResponse.cpp		\
   qpid/client/FutureFactory.cpp			\
-  qpid/client/ReceivedContent.cpp		\
   qpid/client/SessionCore.cpp			\
   qpid/client/StateManager.cpp
 
@@ -232,10 +230,7 @@ nobase_include_HEADERS = \
   qpid/broker/AccumulatedAck.h \
   qpid/broker/BrokerChannel.h \
   qpid/broker/BrokerExchange.h \
-  qpid/broker/BrokerMessage.h \
-  qpid/broker/BrokerMessageBase.h \
   qpid/broker/BrokerQueue.h \
-  qpid/broker/CompletionHandler.h \
   qpid/broker/Consumer.h \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.h \
@@ -252,8 +247,10 @@ nobase_include_HEADERS = \
   qpid/broker/ExchangeRegistry.h \
   qpid/broker/FanOutExchange.h \
   qpid/broker/HandlerImpl.h \
-  qpid/broker/InMemoryContent.h \
+  qpid/broker/Message.h \
+  qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \
+  qpid/broker/MessageDelivery.h \
   qpid/broker/MessageHandlerImpl.h \
   qpid/broker/MessageStoreModule.h \
   qpid/broker/NameGenerator.h \
@@ -269,23 +266,19 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveredEnqueue.h \
   qpid/broker/RecoveredDequeue.h \
-  qpid/broker/Reference.h \
   qpid/broker/TxBuffer.h \
   qpid/broker/TxOp.h \
   qpid/broker/TxPublish.h \
   qpid/broker/Broker.h \
   qpid/broker/BrokerAdapter.h \
-  qpid/broker/BrokerMessageMessage.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionAdapter.h \
   qpid/broker/ConnectionFactory.h \
   qpid/broker/ConnectionToken.h \
-  qpid/broker/Content.h \
   qpid/broker/Daemon.h \
   qpid/broker/DeliveryRecord.h \
   qpid/broker/HeadersExchange.h \
-  qpid/broker/LazyLoadedContent.h \
   qpid/broker/MessageStore.h \
   qpid/broker/PersistableExchange.h \
   qpid/broker/PersistableMessage.h \
@@ -316,7 +309,6 @@ nobase_include_HEADERS = \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResponse.h \
   qpid/client/FutureFactory.h \
-  qpid/client/ReceivedContent.h \
   qpid/client/Response.h \
   qpid/client/SessionCore.h \
   qpid/client/StateManager.h \
@@ -334,6 +326,8 @@ nobase_include_HEADERS = \
   qpid/framing/FieldTable.h \
   qpid/framing/FrameDefaultVisitor.h \
   qpid/framing/FramingContent.h \
+  qpid/framing/FrameSet.h \
+  qpid/framing/frame_functors.h \
   qpid/framing/HeaderProperties.h \
   qpid/framing/InitiationHandler.h \
   qpid/framing/InputHandler.h \
@@ -343,10 +337,12 @@ nobase_include_HEADERS = \
   qpid/framing/ProtocolVersion.h \
   qpid/framing/ProtocolVersionException.h \
   qpid/framing/Proxy.h \
-  qpid/framing/SerializeHandler.h \
+  qpid/framing/SendContent.h \
   qpid/framing/SequenceNumber.h \
   qpid/framing/SequenceNumberSet.h \
+  qpid/framing/SerializeHandler.h \
   qpid/framing/StructHelper.h \
+  qpid/framing/TypeFilter.h \
   qpid/framing/Value.h \
   qpid/framing/Visitor.h \
   qpid/framing/Uuid.h \

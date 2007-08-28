@@ -49,7 +49,7 @@ class TestBaseTest(TestBase):
     def testAssertEmptyFail(self):
         self.queue_declare(queue="full")
         q = self.consume("full")
-        self.channel.message_transfer(routing_key="full", body="")
+        self.channel.message_transfer(content=Content("", properties={'routing_key':"full"}))
         try:
             self.assertEmpty(q);
             self.fail("assertEmpty did not assert on non-empty queue")

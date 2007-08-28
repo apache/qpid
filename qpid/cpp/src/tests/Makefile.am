@@ -82,11 +82,8 @@ broker_unit_tests =	\
   DtxWorkRecordTest     \
   ExchangeTest		\
   HeadersExchangeTest	\
-  InMemoryContentTest	\
-  LazyLoadedContentTest	\
   MessageBuilderTest	\
   MessageTest		\
-  ReferenceTest         \
   QueueRegistryTest	\
   QueueTest		\
   QueuePolicyTest	\
@@ -142,6 +139,7 @@ EXTRA_DIST +=								\
   .valgrind.supp-default						\
   .valgrindrc-default							\
   InProcessBroker.h							\
+  MessageUtils.h								\
   MockChannel.h								\
   MockConnectionInputHandler.h						\
   TxMocks.h								\

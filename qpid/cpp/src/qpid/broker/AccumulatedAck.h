@@ -48,13 +48,12 @@ namespace qpid {
         class AccumulatedAck {
 	public:
             /**
-             * If not zero, then everything up to this value has been
-             * acked.
+             * Everything up to this value has been acked.
              */
             DeliveryId mark;
             /**
-             * List of individually acked messages that are not
-             * included in the range marked by 'range'.
+             * List of individually acked messages greater than the
+             * 'mark'.
              */
             std::list<Range> ranges;
 

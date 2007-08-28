@@ -115,8 +115,6 @@ class ClientDelegate(Delegate):
     self.client.started.set()
 
   def message_transfer(self, ch, msg):
-    if isinstance(msg.body, ReferenceId):
-      msg.reference = ch.references.get(msg.body.id)
     self.client.queue(msg.destination).put(msg)
 
   def message_open(self, ch, msg):

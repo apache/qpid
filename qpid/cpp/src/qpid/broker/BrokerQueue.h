@@ -28,7 +28,7 @@
 #include "qpid/framing/amqp_types.h"
 #include "ConnectionToken.h"
 #include "Consumer.h"
-#include "BrokerMessage.h"
+#include "Message.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Serializer.h"
 #include "qpid/sys/Monitor.h"
@@ -43,6 +43,7 @@ namespace qpid {
     namespace broker {
         class MessageStore;
         class QueueRegistry;
+        class TransactionContext;
         class Exchange;
 
         /**

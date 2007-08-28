@@ -26,6 +26,7 @@
 #include <list>
 #include <vector>
 #include "MockChannel.h"
+#include "MessageUtils.h"
 
 using std::list;
 using std::pair;
@@ -70,12 +71,10 @@ public:
     TxPublishTest() :
         queue1(new Queue("queue1", false, &store, 0)), 
         queue2(new Queue("queue2", false, &store, 0)), 
-        msg(new BasicMessage(0, "exchange", "routing_key", false, false)),
+        msg(MessageUtils::createMessage("exchange", "routing_key", "id")),
         op(msg)
     {
-        AMQHeaderBody body(BASIC);
-        msg->setHeader(&body);
-        msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
+        msg->getProperties<DeliveryProperties>()->setDeliveryMode(PERSISTENT);
         op.deliverTo(queue1);
         op.deliverTo(queue2);
     }      

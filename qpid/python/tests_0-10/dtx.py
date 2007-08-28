@@ -248,8 +248,8 @@ class DtxTests(TestBase):
         #setup
         channel1.queue_declare(queue="one", exclusive=True)
         channel1.queue_declare(queue="two", exclusive=True)
-        channel1.message_transfer(routing_key="one", message_id="a", body="DtxMessage")
-        channel1.message_transfer(routing_key="two", message_id="b", body="DtxMessage")
+        channel1.message_transfer(content=Content(properties={'routing_key':"one", 'message_id':"a"}, body="DtxMessage"))
+        channel1.message_transfer(content=Content(properties={'routing_key':"two", 'message_id':"b"}, body="DtxMessage"))
 
         #create a xid
         tx = self.xid("dummy")
@@ -284,8 +284,8 @@ class DtxTests(TestBase):
         #setup
         channel.queue_declare(queue="one", exclusive=True)
         channel.queue_declare(queue="two", exclusive=True)
-        channel.message_transfer(routing_key="one", message_id="a", body="DtxMessage")
-        channel.message_transfer(routing_key="two", message_id="b", body="DtxMessage")
+        channel.message_transfer(content=Content(properties={'routing_key':"one", 'message_id':"a"}, body="DtxMessage"))
+        channel.message_transfer(content=Content(properties={'routing_key':"two", 'message_id':"b"}, body="DtxMessage"))
 
         tx = self.xid("dummy")
 
@@ -358,17 +358,17 @@ class DtxTests(TestBase):
         channel.dtx_demarcation_select()
         tx = self.xid("dummy")
         channel.dtx_demarcation_start(xid=tx)
-        channel.message_transfer(routing_key="tx-queue", message_id="one", body="DtxMessage")        
+        channel.message_transfer(content=Content(properties={'routing_key':"tx-queue", 'message_id':"one"}, body="DtxMessage"))
         channel.dtx_demarcation_end(xid=tx)
 
         #now that association with txn is ended, publish another message
-        channel.message_transfer(routing_key="tx-queue", message_id="two", body="DtxMessage")
+        channel.message_transfer(content=Content(properties={'routing_key':"tx-queue", 'message_id':"two"}, body="DtxMessage"))
 
         #check the second message is available, but not the first
         self.assertMessageCount(1, "tx-queue")
         channel.message_subscribe(queue="tx-queue", destination="results", confirm_mode=1)
         msg = self.client.queue("results").get(timeout=1)
-        self.assertEqual("two", msg.message_id)
+        self.assertEqual("two", msg.content['message_id'])
         channel.message_cancel(destination="results")
         #ack the message then close the channel
         msg.complete()
@@ -393,7 +393,7 @@ class DtxTests(TestBase):
         tester.dtx_demarcation_select()
         tx = self.xid("dummy")
         tester.dtx_demarcation_start(xid=tx)
-        tester.message_transfer(routing_key="dummy", body="whatever")
+        tester.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="whatever"))
         tester.dtx_demarcation_end(xid=tx)
         tester.dtx_coordination_prepare(xid=tx)
         failed = False
@@ -427,7 +427,7 @@ class DtxTests(TestBase):
         tester.dtx_demarcation_select()
         tx = self.xid("dummy")
         tester.dtx_demarcation_start(xid=tx)
-        tester.message_transfer(routing_key="dummy", body="whatever")
+        tester.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="whatever"))
         tester.dtx_demarcation_end(xid=tx)
         failed = False
         try:
@@ -456,14 +456,14 @@ class DtxTests(TestBase):
 
         #setup:
         channel2.queue_declare(queue="dummy", exclusive=True)
-        channel2.message_transfer(routing_key="dummy", body="whatever")
+        channel2.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="whatever"))
         tx = self.xid("dummy")
 
         channel2.dtx_demarcation_select()
         channel2.dtx_demarcation_start(xid=tx)
         channel2.message_get(queue="dummy", destination="dummy")
         self.client.queue("dummy").get(timeout=1).complete()
-        channel2.message_transfer(routing_key="dummy", body="whatever")
+        channel2.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="whatever"))
         channel2.channel_close()
 
         self.assertEqual(self.XA_RBROLLBACK, channel1.dtx_coordination_prepare(xid=tx).status)
@@ -497,7 +497,7 @@ class DtxTests(TestBase):
         tx = self.xid("dummy")
         channel.queue_declare(queue="queue-a", exclusive=True)
         channel.queue_declare(queue="queue-b", exclusive=True)
-        channel.message_transfer(routing_key="queue-a", message_id="timeout", body="DtxMessage")
+        channel.message_transfer(content=Content(properties={'routing_key':"queue-a", 'message_id':"timeout"}, body="DtxMessage"))
 
         channel.dtx_demarcation_select()
         channel.dtx_demarcation_start(xid=tx)
@@ -527,7 +527,7 @@ class DtxTests(TestBase):
         for i in range(1, 10):
             tx = self.xid("tx%s" % (i))
             channel.dtx_demarcation_start(xid=tx)
-            channel.message_transfer(routing_key="dummy", body="message%s" % (i))
+            channel.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="message%s" % (i)))
             channel.dtx_demarcation_end(xid=tx)
             if i in [2, 5, 6, 8]:
                 channel.dtx_coordination_prepare(xid=tx)
@@ -575,7 +575,7 @@ class DtxTests(TestBase):
         channel.queue_declare(queue="queue-a", exclusive=True)
         channel.queue_declare(queue="queue-b", exclusive=True)
         #put message with specified id on one queue:
-        channel.message_transfer(routing_key="queue-a", message_id=id, body="DtxMessage")
+        channel.message_transfer(content=Content(properties={'routing_key':"queue-a", 'message_id':id}, body="DtxMessage"))
 
         #start the transaction:
         channel.dtx_demarcation_select()        
@@ -594,12 +594,13 @@ class DtxTests(TestBase):
         msg.complete();        
 
         #re-publish to dest
-        channel.message_transfer(routing_key=dest, message_id=msg.message_id, body=msg.body)        
+        channel.message_transfer(content=Content(properties={'routing_key':dest, 'message_id':msg.content['message_id']},
+                                                 body=msg.content.body))
 
     def assertMessageCount(self, expected, queue):
         self.assertEqual(expected, self.channel.queue_query(queue=queue).message_count)
 
     def assertMessageId(self, expected, queue):
         self.channel.message_subscribe(queue=queue, destination="results")
-        self.assertEqual(expected, self.client.queue("results").get(timeout=1).message_id)
+        self.assertEqual(expected, self.client.queue("results").get(timeout=1).content['message_id'])
         self.channel.message_cancel(destination="results")

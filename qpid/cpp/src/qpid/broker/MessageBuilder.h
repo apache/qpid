@@ -21,37 +21,35 @@
 #ifndef _MessageBuilder_
 #define _MessageBuilder_
 
-#include <memory>
-#include "qpid/QpidError.h"
-#include "BrokerExchange.h"
-#include "BrokerMessage.h"
-#include "MessageStore.h"
-#include "qpid/framing/AMQContentBody.h"
-#include "qpid/framing/AMQHeaderBody.h"
-#include "qpid/framing/BasicPublishBody.h"
-#include "CompletionHandler.h"
+#include "boost/shared_ptr.hpp"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
     namespace broker {
-        class MessageBuilder{
+        class Message;
+        class MessageStore;
+
+        class MessageBuilder : public framing::FrameHandler{
         public:
-            MessageBuilder(CompletionHandler* _handler,
-                           MessageStore* const store = 0,
-                           uint64_t stagingThreshold = 0);
-            void initialise(Message::shared_ptr& msg);
-            void setHeader(framing::AMQHeaderBody* header);
-            void addContent(framing::AMQContentBody* content);
-            Message::shared_ptr getMessage() { return message; }
+            MessageBuilder(MessageStore* const store = 0, uint64_t stagingThreshold = 0);
+            void handle(framing::AMQFrame& frame);
+            boost::shared_ptr<Message> getMessage() { return message; }
+            void start(const framing::SequenceNumber& id);
+            void end();
         private:
-            Message::shared_ptr message;
-            CompletionHandler* handler;
+            enum State {DORMANT, METHOD, HEADER, CONTENT};
+            State state;
+            boost::shared_ptr<Message> message;
             MessageStore* const store;
             const uint64_t stagingThreshold;
+            bool staging;
 
-            void route();
+            void checkType(uint8_t expected, uint8_t actual);
         };
     }
 }
 
 
 #endif
+

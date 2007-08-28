@@ -21,9 +21,9 @@
 #ifndef _DeliveryAdapter_
 #define _DeliveryAdapter_
 
-#include "BrokerMessageBase.h"
 #include "DeliveryId.h"
 #include "DeliveryToken.h"
+#include "Message.h"
 #include "qpid/framing/amqp_types.h"
 
 namespace qpid {

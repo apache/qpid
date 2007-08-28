@@ -22,7 +22,10 @@
 
 //TODO: This could be easily generated from the spec
 
-qpid::framing::BasicHeaderProperties::BasicHeaderProperties() : deliveryMode(DeliveryMode(0)), priority(0), timestamp(0){}
+qpid::framing::BasicHeaderProperties::BasicHeaderProperties() : deliveryMode(DeliveryMode(0)), 
+                                                                priority(0), 
+                                                                timestamp(0), 
+                                                                contentLength(0){}
 qpid::framing::BasicHeaderProperties::~BasicHeaderProperties(){}
 
 uint32_t qpid::framing::BasicHeaderProperties::size() const{
@@ -41,6 +44,7 @@ uint32_t qpid::framing::BasicHeaderProperties::size() const{
     if(userId.length() > 0) bytes += userId.length() + 1;
     if(appId.length() > 0) bytes += appId.length() + 1;
     if(clusterId.length() > 0) bytes += clusterId.length() + 1;
+    if(contentLength != 0) bytes += 8;
 
     return bytes;
 }
@@ -63,6 +67,7 @@ void qpid::framing::BasicHeaderProperties::encode(qpid::framing::Buffer& buffer)
     if(userId.length() > 0) buffer.putShortString(userId);
     if(appId.length() > 0) buffer.putShortString(appId);
     if(clusterId.length() > 0) buffer.putShortString(clusterId);    
+    if(contentLength != 0) buffer.putLongLong(contentLength);
 }
 
 void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer, uint32_t /*size*/){
@@ -81,6 +86,7 @@ void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer,
     if(flags & (1 <<  4)) buffer.getShortString(userId);
     if(flags & (1 <<  3)) buffer.getShortString(appId);
     if(flags & (1 <<  2)) buffer.getShortString(clusterId);    
+    if(flags & (1 <<  1)) contentLength = buffer.getLongLong();    
 }
 
 uint16_t qpid::framing::BasicHeaderProperties::getFlags() const{
@@ -99,5 +105,32 @@ uint16_t qpid::framing::BasicHeaderProperties::getFlags() const{
     if(userId.length() > 0)          flags |= (1 <<  4);
     if(appId.length() > 0)           flags |= (1 <<  3);
     if(clusterId.length() > 0)       flags |= (1 <<  2);
+    if(contentLength != 0)           flags |= (1 <<  1);
     return flags;
 }
+
+namespace qpid{
+namespace framing{
+
+    std::ostream& operator<<(std::ostream& out, const BasicHeaderProperties& props) 
+    {
+        if(props.contentType.length() > 0) out << "contentType=" << props.contentType << ";";
+        if(props.contentEncoding.length() > 0) out << "contentEncoding=" << props.contentEncoding << ";";
+        if(props.headers.count() > 0) out << "headers=" << props.headers << ";";
+        if(props.deliveryMode != 0) out << "deliveryMode=" << props.deliveryMode << ";";
+        if(props.priority != 0) out << "priority=" << props.priority << ";";
+        if(props.correlationId.length() > 0) out << "correlationId=" << props.correlationId << ";";
+        if(props.replyTo.length() > 0) out << "replyTo=" << props.replyTo << ";";
+        if(props.expiration.length() > 0) out << "expiration=" << props.expiration << ";";
+        if(props.messageId.length() > 0) out << "messageId=" << props.messageId << ";";
+        if(props.timestamp != 0) out << "timestamp=" << props.timestamp << ";";
+        if(props.type.length() > 0) out << "type=" << props.type << ";";
+        if(props.userId.length() > 0) out << "userId=" << props.userId << ";";
+        if(props.appId.length() > 0) out << "appId=" << props.appId << ";";
+        if(props.clusterId.length() > 0) out << "clusterId=" << props.clusterId << ";";    
+        if(props.contentLength != 0) out << "contentLength=" << props.contentLength << ";";
+
+        return out;
+    }
+
+}}

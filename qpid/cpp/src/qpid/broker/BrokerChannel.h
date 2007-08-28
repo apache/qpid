@@ -37,14 +37,12 @@
 #include "Deliverable.h"
 #include "DtxBuffer.h"
 #include "DtxManager.h"
-#include "MessageBuilder.h"
 #include "NameGenerator.h"
 #include "Prefetch.h"
 #include "TxBuffer.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/ChannelAdapter.h"
 #include "qpid/framing/ChannelOpenBody.h"
-#include "CompletionHandler.h"
 
 namespace qpid {
 namespace broker {
@@ -60,7 +58,7 @@ using framing::string;
  * Maintains state for an AMQP channel. Handles incoming and
  * outgoing messages for that channel.
  */
-class Channel : public CompletionHandler
+class Channel
 {
     class ConsumerImpl : public Consumer
     {
@@ -113,25 +111,22 @@ class Channel : public CompletionHandler
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
     AccumulatedAck accumulatedAck;
-    MessageStore* const store;
-    MessageBuilder messageBuilder;//builder for in-progress message
     bool opened;
     bool flowActive;
     
-    std::string cacheExchangeName;       // pair holds last exchange used for routing
-    Exchange::shared_ptr cacheExchange;
+    boost::shared_ptr<Exchange> cacheExchange;
     
     void route(Message::shared_ptr msg, Deliverable& strategy);
-    void complete(Message::shared_ptr msg);// completion handler for MessageBuilder
     void record(const DeliveryRecord& delivery);
     bool checkPrefetch(Message::shared_ptr& msg);
     void checkDtxTimeout();
     ConsumerImpl& find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
     void acknowledged(const DeliveryRecord&);
-        
+
+
   public:
-    Channel(Connection& parent, DeliveryAdapter& out, framing::ChannelId id, MessageStore* const store = 0);    
+    Channel(Connection& parent, DeliveryAdapter& out, framing::ChannelId id);    
     ~Channel();
 
     bool isOpen() const { return opened; }
@@ -162,7 +157,7 @@ class Channel : public CompletionHandler
     bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
     void close();
     void startTx();
-    void commit();
+    void commit(MessageStore* const store);
     void rollback();
     void selectDtx();
     void startDtx(const std::string& xid, DtxManager& mgr, bool join);
@@ -174,12 +169,8 @@ class Channel : public CompletionHandler
     void recover(bool requeue);
     void flow(bool active);
     void deliver(Message::shared_ptr& msg, const string& consumerTag, DeliveryId deliveryTag);            
-    void handlePublish(Message* msg);
-    void handleHeader(framing::AMQHeaderBody*);
-    void handleContent(framing::AMQContentBody*);
-    void handleHeartbeat(framing::AMQHeartbeatBody*);
-    
-    void handleInlineTransfer(Message::shared_ptr msg);
+
+    void handle(Message::shared_ptr msg);
 };
 
 }} // namespace broker
