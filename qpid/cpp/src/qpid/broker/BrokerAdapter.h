@@ -183,9 +183,6 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
                      bool noLocal, bool noAck, bool exclusive, bool nowait,
                      const qpid::framing::FieldTable& fields); 
         void cancel(const std::string& consumerTag); 
-        void publish(uint16_t ticket,
-                     const std::string& exchange, const std::string& routingKey, 
-                     bool rejectUnroutable, bool immediate); 
         void get(uint16_t ticket, const std::string& queue, bool noAck); 
         void ack(uint64_t deliveryTag, bool multiple); 
         void reject(uint64_t deliveryTag, bool requeue); 

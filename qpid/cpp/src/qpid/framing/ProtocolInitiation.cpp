@@ -31,7 +31,7 @@ ProtocolInitiation::ProtocolInitiation(ProtocolVersion p) : version(p) {}
 
 ProtocolInitiation::~ProtocolInitiation(){}
 
-void ProtocolInitiation::encode(Buffer& buffer){
+void ProtocolInitiation::encode(Buffer& buffer) const {
     buffer.putOctet('A');
     buffer.putOctet('M');
     buffer.putOctet('Q');

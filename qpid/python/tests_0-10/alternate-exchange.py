@@ -50,17 +50,17 @@ class AlternateExchangeTests(TestBase):
 
         #publish to the primary exchange
         #...one message that makes it to the 'processed' queue:
-        channel.message_transfer(destination="primary", routing_key="my-key", body="Good")
+        channel.message_transfer(destination="primary", content=Content("Good", properties={'routing_key':"my-key"}))
         #...and one that does not:
-        channel.message_transfer(destination="primary", routing_key="unused-key", body="Bad")
+        channel.message_transfer(destination="primary", content=Content("Bad", properties={'routing_key':"unused-key"}))
 
         #delete the exchanges
         channel.exchange_delete(exchange="primary")
         channel.exchange_delete(exchange="secondary")
 
         #verify behaviour
-        self.assertEqual("Good", processed.get(timeout=1).body)
-        self.assertEqual("Bad", returned.get(timeout=1).body)
+        self.assertEqual("Good", processed.get(timeout=1).content.body)
+        self.assertEqual("Bad", returned.get(timeout=1).content.body)
         self.assertEmpty(processed)
         self.assertEmpty(returned)
 
@@ -79,18 +79,18 @@ class AlternateExchangeTests(TestBase):
         #create a queue using the dlq as its alternate exchange:
         channel.queue_declare(queue="delete-me", alternate_exchange="dlq")
         #send it some messages:
-        channel.message_transfer(routing_key="delete-me", body="One")
-        channel.message_transfer(routing_key="delete-me", body="Two")
-        channel.message_transfer(routing_key="delete-me", body="Three")
+        channel.message_transfer(content=Content("One", properties={'routing_key':"delete-me"}))
+        channel.message_transfer(content=Content("Two", properties={'routing_key':"delete-me"}))
+        channel.message_transfer(content=Content("Three", properties={'routing_key':"delete-me"}))
         #delete it:
         channel.queue_delete(queue="delete-me")
         #delete the dlq exchange:
         channel.exchange_delete(exchange="dlq")
 
         #check the messages were delivered to the dlq:
-        self.assertEqual("One", dlq.get(timeout=1).body)
-        self.assertEqual("Two", dlq.get(timeout=1).body)
-        self.assertEqual("Three", dlq.get(timeout=1).body)
+        self.assertEqual("One", dlq.get(timeout=1).content.body)
+        self.assertEqual("Two", dlq.get(timeout=1).content.body)
+        self.assertEqual("Three", dlq.get(timeout=1).content.body)
         self.assertEmpty(dlq)
 
 
@@ -109,10 +109,11 @@ class AlternateExchangeTests(TestBase):
         #create a queue using the dlq as its alternate exchange:
         channel.queue_declare(queue="no-consumers", alternate_exchange="dlq", exclusive=True)
         #send it some messages:
-        channel.message_transfer(routing_key="no-consumers", body="no one wants me", immediate=True)
+        #TODO: WE HAVE LOST THE IMMEDIATE FLAG; FIX THIS ONCE ITS BACK
+        channel.message_transfer(content=Content("no one wants me", properties={'routing_key':"no-consumers"}))
 
         #check the messages were delivered to the dlq:
-        self.assertEqual("no one wants me", dlq.get(timeout=1).body)
+        self.assertEqual("no one wants me", dlq.get(timeout=1).content.body)
         self.assertEmpty(dlq)
 
         #cleanup:

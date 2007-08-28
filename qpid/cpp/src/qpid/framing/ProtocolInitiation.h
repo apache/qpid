@@ -39,7 +39,7 @@ public:
     ProtocolInitiation(uint8_t major, uint8_t minor);
     ProtocolInitiation(ProtocolVersion p);
     virtual ~ProtocolInitiation();
-    virtual void encode(Buffer& buffer); 
+    virtual void encode(Buffer& buffer) const; 
     virtual bool decode(Buffer& buffer); 
     inline virtual uint32_t size() const { return 8; }
     inline uint8_t getMajor() const { return version.getMajor(); }

@@ -239,9 +239,7 @@ class Response(Frame):
     return "[%s] Response(%s,%s,%s) %s" % (self.channel, self.id, self.request_id, self.batch_offset, self.method)
 
 def uses_struct_encoding(spec):
-  return (spec.major == 0 and
-          spec.minor == 10 and
-          "transitional" not in spec.file)
+  return (spec.major == 0 and spec.minor == 10)
 
 class Header(Frame):
 

@@ -33,6 +33,16 @@ class StructGen < CppGen
 
   ValueTypes=["octet", "short", "long", "longlong", "timestamp"]
 
+  def default_initialisation(s)
+    params = s.fields.select {|f| ValueTypes.include?(f.domain.type_) || f.domain.type_ == "bit"}
+    strings = params.collect {|f| "#{f.cppname}(0)"}   
+    if strings.empty?
+      return ""
+    else
+      return " : " + strings.join(", ")
+    end
+  end
+
   def printable_form(f)
     if (f.cpptype.name == "u_int8_t")
       return "(int) " + f.cppname
@@ -108,12 +118,19 @@ class StructGen < CppGen
   end
 
   def methodbody_extra_defs(s)
+    if (s.content)
+      content = "true"
+    else 
+      content = "false"
+    end
+
     gen <<EOS
     using  AMQMethodBody::accept;
     void accept(MethodBodyConstVisitor& v) const { v.visit(*this); }
 
     inline ClassId amqpClassId() const { return CLASS_ID; }
     inline MethodId amqpMethodId() const { return METHOD_ID; }
+    inline bool isContentBearing() const { return  #{content}; }
 EOS
   end
 
@@ -131,6 +148,9 @@ EOS
     end
     if (s.kind_of? AmqpMethod)
       genl "#{name}(ProtocolVersion=ProtocolVersion()) {}"
+    end
+    if (s.kind_of? AmqpStruct)
+      genl "#{name}() #{default_initialisation(s)} {}"
     end
   end
 

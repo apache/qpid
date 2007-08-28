@@ -20,8 +20,7 @@
  */
 #include "RecoveryManagerImpl.h"
 
-#include "BrokerMessage.h"
-#include "BrokerMessageMessage.h"
+#include "Message.h"
 #include "BrokerQueue.h"
 #include "RecoveredEnqueue.h"
 #include "RecoveredDequeue.h"
@@ -110,10 +109,7 @@ RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buff
 {
     buffer.record();
     //peek at type:
-    Message::shared_ptr message(decodeMessageType(buffer) == MESSAGE ?  
-                                ((Message*) new MessageMessage()) : 
-                                ((Message*) new BasicMessage()));
-    buffer.restore();
+    Message::shared_ptr message(new Message());
     message->decodeHeader(buffer);
     return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message, stagingThreshold));    
 }
@@ -129,21 +125,6 @@ RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const
 void RecoveryManagerImpl::recoveryComplete()
 {
     //TODO (finalise binding setup etc)
-}
-
-uint8_t RecoveryManagerImpl::decodeMessageType(framing::Buffer& buffer)
-{
-    return buffer.getOctet();
-}
-
-void RecoveryManagerImpl::encodeMessageType(const Message& msg, framing::Buffer& buffer)
-{
-    buffer.putOctet(dynamic_cast<const MessageMessage*>(&msg) ? MESSAGE : BASIC);
-}
-
-uint32_t RecoveryManagerImpl::encodedMessageTypeSize()
-{
-    return 1;
 }
 
 bool RecoverableMessageImpl::loadContent(uint64_t available)

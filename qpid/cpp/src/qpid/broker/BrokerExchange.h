@@ -51,7 +51,7 @@ namespace qpid {
                 : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0){}
             virtual ~Exchange(){}
 
-            string getName() const { return name; }
+            const string& getName() const { return name; }
             bool isDurable() { return durable; }
             qpid::framing::FieldTable& getArgs() { return args; }
 

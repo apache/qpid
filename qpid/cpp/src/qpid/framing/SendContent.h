@@ -18,28 +18,35 @@
  * under the License.
  *
  */
-#ifndef _InMemoryContent_
-#define _InMemoryContent_
+#include <string>
+#include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/FrameHandler.h"
 
-#include "Content.h"
-#include "qpid/framing/AMQContentBody.h"
-#include <vector>
-
+#ifndef _SendContent_
+#define _SendContent_
 
 namespace qpid {
-    namespace broker {
-        class InMemoryContent : public Content{
-            typedef std::vector<framing::AMQContentBody> content_list;
-            typedef content_list::iterator content_iterator;
+namespace framing {
 
-            content_list content;
-        public:
-            void add(framing::AMQContentBody* data);
-            uint32_t size();
-            void send(framing::ChannelAdapter&, uint32_t framesize);
-            void encode(framing::Buffer& buffer);
-        };
-    }
+/**
+ * Functor that sends frame to handler, refragmenting if
+ * necessary. Currently only works on content frames but this could be
+ * changed once we support multi-frame segments in general.
+ */
+class SendContent
+{
+    mutable FrameHandler& handler;
+    const uint16_t channel;
+    const uint16_t maxFrameSize;
+
+    void sendFragment(const AMQContentBody& body, uint32_t offset, uint16_t size) const;
+public:
+    SendContent(FrameHandler& _handler, uint16_t channel, uint16_t _maxFrameSize);
+    void operator()(AMQFrame& f) const;
+};
+
+}
 }
 
 

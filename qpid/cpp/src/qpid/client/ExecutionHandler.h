@@ -23,12 +23,12 @@
 
 #include <queue>
 #include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/FrameSet.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "BlockingQueue.h"
 #include "ChainableFrameHandler.h"
 #include "CompletionTracker.h"
 #include "Correlator.h"
-#include "ReceivedContent.h"
 
 namespace qpid {
 namespace client {
@@ -39,7 +39,7 @@ class ExecutionHandler :
 {
     framing::Window incoming;
     framing::Window outgoing;
-    ReceivedContent::shared_ptr arriving;
+    framing::FrameSet::shared_ptr arriving;
     Correlator correlation;
     CompletionTracker completion;
     framing::ProtocolVersion version;
@@ -52,7 +52,7 @@ class ExecutionHandler :
     void sync();
 
 public:
-    BlockingQueue<ReceivedContent::shared_ptr> received; 
+    BlockingQueue<framing::FrameSet::shared_ptr> received; 
 
     ExecutionHandler(uint64_t maxFrameSize = 65536);
 

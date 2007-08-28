@@ -45,10 +45,6 @@ namespace broker {
         RecoverableTransaction::shared_ptr recoverTransaction(const std::string& xid, 
                                                               std::auto_ptr<TPCTransactionContext> txn);
         void recoveryComplete();
-
-        static uint8_t decodeMessageType(framing::Buffer& buffer);
-        static void encodeMessageType(const Message& msg, framing::Buffer& buffer);
-        static uint32_t encodedMessageTypeSize();
     };
 
     

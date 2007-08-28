@@ -17,13 +17,9 @@ class OperationsGen < CppGen
   
   def handler_method (m)
     return_type = m.result ? m.result.cpptype.ret : "void"
-    if (m.parent.name == "message" && (m.name == "transfer" || m.name == "append"))
-      gen "\nvirtual #{return_type} #{m.cppname}(const framing::AMQMethodBody& context) = 0;\n"
-    else
-      gen "\nvirtual #{return_type} #{m.cppname}("
-      gen m.signature.join(",\n")
-      gen ") = 0;\n"
-    end
+    gen "\nvirtual #{return_type} #{m.cppname}("
+    gen m.signature.join(",\n")
+    gen ") = 0;\n"
   end
 
   def handler_classname(c) c.name.caps+"Handler"; end
@@ -40,7 +36,7 @@ class #{handlerclass} : public virtual Invocable {
     virtual ~#{handlerclass}() {}
     // Protocol methods
 EOS
-      c.methods_on(@chassis).each { |m| handler_method(m) }
+      c.methods_on(@chassis).each { |m| handler_method(m) if !m.content() }
       gen <<EOS
 }; // class #{handlerclass}
 

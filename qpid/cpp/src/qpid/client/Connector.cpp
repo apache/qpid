@@ -180,7 +180,7 @@ void Connector::run(){
 		inbuf.move(received);
 		inbuf.flip();//position = 0, limit = total data read
 		
-		AMQFrame frame(version);
+		AMQFrame frame;
 		while(frame.decode(inbuf)){
                     QPID_LOG(trace, "RECV: " << frame);
 		    input->received(frame);

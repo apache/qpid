@@ -70,8 +70,13 @@ class QueueTest : public CppUnit::TestCase
 
   public:
     Message::shared_ptr message(std::string exchange, std::string routingKey) {
-        return Message::shared_ptr(
-            new BasicMessage(0, exchange, routingKey, false, false));
+        Message::shared_ptr msg(new Message());
+        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(0, AMQHeaderBody());
+        msg->getFrames().append(method);
+        msg->getFrames().append(header);
+        msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
+        return msg;
     }
     
     

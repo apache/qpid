@@ -23,7 +23,6 @@
 
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
-#include "Reference.h"
 #include "HandlerImpl.h"
 
 namespace qpid {
@@ -40,7 +39,7 @@ class MessageHandlerImpl :
   public:
     MessageHandlerImpl(CoreRefs& parent);
 
-    void append(const framing::AMQMethodBody& context);
+    void append(const std::string& reference, const std::string& bytes);
 
     void cancel(const std::string& destination );
 
@@ -75,8 +74,6 @@ class MessageHandlerImpl :
     void resume(const std::string& reference,
                  const std::string& identifier );
 
-    void transfer(const framing::AMQMethodBody& context);
-
     void flow(const std::string& destination, u_int8_t unit, u_int32_t value);
     
     void flowMode(const std::string& destination, u_int8_t mode);
@@ -98,8 +95,6 @@ class MessageHandlerImpl :
                    bool exclusive,
                    const framing::FieldTable& filter);
 
-  private:
-    ReferenceRegistry references;
 };
 
 }} // namespace qpid::broker

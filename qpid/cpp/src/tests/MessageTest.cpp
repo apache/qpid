@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "qpid/broker/BrokerMessage.h"
+#include "qpid/broker/Message.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include "qpid/framing/AMQP_HighestVersion.h"
@@ -45,40 +45,45 @@ class MessageTest : public CppUnit::TestCase
         string data1("abcdefg");
         string data2("hijklmn");
 
-        BasicMessage::shared_ptr msg(
-            new BasicMessage(0, exchange, routingKey, false, false));
-        AMQHeaderBody header(BASIC);
-        header.setContentSize(14);        
-        AMQContentBody part1(data1);
-        AMQContentBody part2(data2);        
-        msg->setHeader(&header);
-        msg->addContent(&part1);
-        msg->addContent(&part2);
+        Message::shared_ptr msg(new Message());
 
-        msg->getHeaderProperties()->setMessageId(messageId);
-        msg->getHeaderProperties()->setDeliveryMode(PERSISTENT);
-        msg->getHeaderProperties()->getHeaders().setString("abc", "xyz");
+        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(0, AMQHeaderBody());
+        AMQFrame content1(0, AMQContentBody(data1));
+        AMQFrame content2(0, AMQContentBody(data2));
+
+        msg->getFrames().append(method);
+        msg->getFrames().append(header);
+        msg->getFrames().append(content1);
+        msg->getFrames().append(content2);
+
+        MessageProperties* mProps = msg->getFrames().getHeaders()->get<MessageProperties>(true);
+        mProps->setContentLength(data1.size() + data2.size());        
+        mProps->setMessageId(messageId);
+        FieldTable applicationHeaders;
+        applicationHeaders.setString("abc", "xyz");
+        mProps->setApplicationHeaders(applicationHeaders);
+        DeliveryProperties* dProps = msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
+        dProps->setRoutingKey(routingKey);
+        dProps->setDeliveryMode(PERSISTENT);
+        CPPUNIT_ASSERT(msg->isPersistent());
+
 
         Buffer buffer(msg->encodedSize());
         msg->encode(buffer);
-        buffer.flip();
-        
-        msg.reset(new BasicMessage());
-        msg->decode(buffer);
-        CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchange());
-        CPPUNIT_ASSERT_EQUAL(routingKey, msg->getRoutingKey());
-        CPPUNIT_ASSERT_EQUAL(messageId, msg->getHeaderProperties()->getMessageId());
-        CPPUNIT_ASSERT_EQUAL(PERSISTENT, msg->getHeaderProperties()->getDeliveryMode());
-        CPPUNIT_ASSERT_EQUAL(string("xyz"), msg->getHeaderProperties()->getHeaders().getString("abc"));
-        CPPUNIT_ASSERT_EQUAL((uint64_t) 14, msg->contentSize());
+        buffer.flip();        
+        msg.reset(new Message());
+        msg->decodeHeader(buffer);
+        msg->decodeContent(buffer);
 
-        MockChannel channel(1);
-        msg->deliver(channel, "ignore", 0, 100); 
-        CPPUNIT_ASSERT_EQUAL((size_t) 3, channel.out.frames.size());
-        AMQContentBody* contentBody(
-            dynamic_cast<AMQContentBody*>(channel.out.frames[2].getBody()));
-        CPPUNIT_ASSERT(contentBody);
-        CPPUNIT_ASSERT_EQUAL(data1 + data2, contentBody->getData());
+        CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchangeName());
+        CPPUNIT_ASSERT_EQUAL(routingKey, msg->getRoutingKey());
+        CPPUNIT_ASSERT_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
+        CPPUNIT_ASSERT_EQUAL((uint64_t) data1.size() + data2.size(), msg->getProperties<MessageProperties>()->getContentLength());
+        CPPUNIT_ASSERT_EQUAL(messageId, msg->getProperties<MessageProperties>()->getMessageId());
+        CPPUNIT_ASSERT_EQUAL(string("xyz"), msg->getProperties<MessageProperties>()->getApplicationHeaders().getString("abc"));
+        CPPUNIT_ASSERT_EQUAL((uint8_t) PERSISTENT, msg->getProperties<DeliveryProperties>()->getDeliveryMode());
+        CPPUNIT_ASSERT(msg->isPersistent());
     }
 };
 

@@ -83,7 +83,7 @@ class Channel : private sys::Runnable
     std::auto_ptr<Session> session;
     SessionCore::shared_ptr sessionCore;
     framing::ChannelId channelId;
-    BlockingQueue<ReceivedContent::shared_ptr> gets;
+    BlockingQueue<framing::FrameSet::shared_ptr> gets;
     framing::Uuid uniqueId;
     uint32_t nameCounter;
 
