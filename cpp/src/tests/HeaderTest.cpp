@@ -36,8 +36,8 @@ public:
 
     void testGenericProperties() 
     {
-        AMQHeaderBody body(BASIC);
-        dynamic_cast<BasicHeaderProperties*>(body.getProperties())->getHeaders().setString("A", "BCDE");
+        AMQHeaderBody body;
+        body.get<BasicHeaderProperties>(true)->getHeaders().setString("A", "BCDE");
         Buffer buffer(100);
 
         body.encode(buffer);
@@ -45,7 +45,7 @@ public:
         AMQHeaderBody body2;
         body2.decode(buffer, body.size());
         BasicHeaderProperties* props =
-            dynamic_cast<BasicHeaderProperties*>(body2.getProperties());
+            body2.get<BasicHeaderProperties>(true);
         CPPUNIT_ASSERT_EQUAL(std::string("BCDE"),
                              props->getHeaders().getString("A"));
     }
@@ -64,10 +64,11 @@ public:
 	string userId("guest");
 	string appId("just testing");
 	string clusterId("no clustering required");
+        uint64_t contentLength(54321);
 
-        AMQHeaderBody body(BASIC);
+        AMQFrame out(0, AMQHeaderBody());
         BasicHeaderProperties* properties = 
-            dynamic_cast<BasicHeaderProperties*>(body.getProperties());
+            out.castBody<AMQHeaderBody>()->get<BasicHeaderProperties>(true);
         properties->setContentType(contentType);
         properties->getHeaders().setString("A", "BCDE");
         properties->setDeliveryMode(deliveryMode);
@@ -81,13 +82,14 @@ public:
         properties->setUserId(userId);
         properties->setAppId(appId);
         properties->setClusterId(clusterId);
+        properties->setContentLength(contentLength);
 
         Buffer buffer(10000);
-        body.encode(buffer);
+        out.encode(buffer);
         buffer.flip();     
-        AMQHeaderBody temp;
-        temp.decode(buffer, body.size());
-        properties = dynamic_cast<BasicHeaderProperties*>(temp.getProperties());
+        AMQFrame in;
+        in.decode(buffer);
+        properties = in.castBody<AMQHeaderBody>()->get<BasicHeaderProperties>(true);
 
         CPPUNIT_ASSERT_EQUAL(contentType, properties->getContentType());
         CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), properties->getHeaders().getString("A"));
@@ -102,6 +104,7 @@ public:
         CPPUNIT_ASSERT_EQUAL(userId, properties->getUserId());
         CPPUNIT_ASSERT_EQUAL(appId, properties->getAppId());
         CPPUNIT_ASSERT_EQUAL(clusterId, properties->getClusterId());
+        CPPUNIT_ASSERT_EQUAL(contentLength, properties->getContentLength());
     }
 
     void testSomeSpecificProperties(){
@@ -111,9 +114,9 @@ public:
         string expiration("Z");
         uint64_t timestamp(0xabe4a34a);
 
-        AMQHeaderBody body(BASIC);
+        AMQHeaderBody body;
         BasicHeaderProperties* properties = 
-            dynamic_cast<BasicHeaderProperties*>(body.getProperties());
+            body.get<BasicHeaderProperties>(true);
         properties->setContentType(contentType);
         properties->setDeliveryMode(deliveryMode);
         properties->setPriority(priority);
@@ -125,7 +128,7 @@ public:
         buffer.flip();     
         AMQHeaderBody temp;
         temp.decode(buffer, body.size());
-        properties = dynamic_cast<BasicHeaderProperties*>(temp.getProperties());
+        properties = temp.get<BasicHeaderProperties>(true);
 
         CPPUNIT_ASSERT_EQUAL(contentType, properties->getContentType());
         CPPUNIT_ASSERT_EQUAL((int) deliveryMode, (int) properties->getDeliveryMode());

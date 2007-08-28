@@ -22,7 +22,6 @@
 #define _NullMessageStore_
 
 #include <set>
-#include "BrokerMessage.h"
 #include "MessageStore.h"
 #include "BrokerQueue.h"
 

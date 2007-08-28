@@ -77,7 +77,7 @@ Response SessionCore::send(const AMQMethodBody& method, const MethodContent& con
     return Response(f);
 }
 
-ReceivedContent::shared_ptr SessionCore::get()
+FrameSet::shared_ptr SessionCore::get()
 {
     return l3.received.pop();
 }

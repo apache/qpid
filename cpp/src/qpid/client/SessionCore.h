@@ -25,11 +25,11 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
 #include "ChannelHandler.h"
 #include "ExecutionHandler.h"
 #include "FutureFactory.h"
-#include "ReceivedContent.h"
 #include "Response.h"
 
 namespace qpid {
@@ -49,7 +49,7 @@ public:
     SessionCore(uint16_t id, boost::shared_ptr<framing::FrameHandler> out, uint64_t maxFrameSize);
     Response send(const framing::AMQMethodBody& method, bool expectResponse = false);
     Response send(const framing::AMQMethodBody& method, const framing::MethodContent& content, bool expectResponse = false);
-    ReceivedContent::shared_ptr get();
+    framing::FrameSet::shared_ptr get();
     uint16_t getId() const { return id; } 
     void setSync(bool);
     bool isSync();

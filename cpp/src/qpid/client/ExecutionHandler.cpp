@@ -64,9 +64,9 @@ void ExecutionHandler::handle(AMQFrame& frame)
     if (!invoke(body, this)) {
         if (isContentFrame(frame)) {
             if (!arriving) {
-                arriving = ReceivedContent::shared_ptr(new ReceivedContent(++incoming.hwm));
+                arriving = FrameSet::shared_ptr(new FrameSet(++incoming.hwm));
             }
-            arriving->append(body);
+            arriving->append(frame);
             if (arriving->isComplete()) {
                 received.push(arriving);
                 arriving.reset();
@@ -123,7 +123,7 @@ void ExecutionHandler::sync()
 
 void ExecutionHandler::sendFlush()
 {
-    AMQFrame frame(version, 0, ExecutionFlushBody());
+    AMQFrame frame(0, ExecutionFlushBody());
     out(frame);        
 }
 
@@ -139,8 +139,7 @@ void ExecutionHandler::send(const AMQBody& command, CompletionTracker::Listener 
         correlation.listen(g);
     }
 
-    AMQFrame frame(version, 0/*id will be filled in be channel handler*/,
-                   command);
+    AMQFrame frame(0/*id will be filled in be channel handler*/, command);
     out(frame);
 }
 
@@ -149,10 +148,10 @@ void ExecutionHandler::sendContent(const AMQBody& command, const BasicHeaderProp
 {
     send(command, f, g);
 
-    AMQHeaderBody header(BASIC);
-    BasicHeaderProperties::copy(*static_cast<BasicHeaderProperties*>(header.getProperties()), headers);
-    header.setContentSize(data.size());
-    AMQFrame h(version, 0, header);
+    AMQHeaderBody header;
+    BasicHeaderProperties::copy(*header.get<BasicHeaderProperties>(true), headers);
+    header.get<BasicHeaderProperties>(true)->setContentLength(data.size());
+    AMQFrame h(0, header);
     out(h);
 
     u_int64_t data_length = data.length();
@@ -160,7 +159,7 @@ void ExecutionHandler::sendContent(const AMQBody& command, const BasicHeaderProp
         //frame itself uses 8 bytes
         u_int32_t frag_size = maxFrameSize - 8;
         if(data_length < frag_size){
-            AMQFrame frame(version, 0, AMQContentBody(data));
+            AMQFrame frame(0, AMQContentBody(data));
             out(frame);
         }else{
             u_int32_t offset = 0;
@@ -168,7 +167,7 @@ void ExecutionHandler::sendContent(const AMQBody& command, const BasicHeaderProp
             while (remaining > 0) {
                 u_int32_t length = remaining > frag_size ? frag_size : remaining;
                 string frag(data.substr(offset, length));
-                AMQFrame frame(version, 0, AMQContentBody(frag));
+                AMQFrame frame(0, AMQContentBody(frag));
                 out(frame);
                 offset += length;
                 remaining = data_length - offset;

@@ -24,10 +24,10 @@
 #include <algorithm>
 #include <functional>
 #include <list>
-#include "Deliverable.h"
-#include "BrokerMessage.h"
-#include "MessageStore.h"
 #include "BrokerQueue.h"
+#include "Deliverable.h"
+#include "Message.h"
+#include "MessageStore.h"
 #include "TxOp.h"
 
 namespace qpid {

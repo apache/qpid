@@ -21,6 +21,7 @@
 #include "BrokerChannel.h"
 #include "Connection.h"
 #include "DeliveryToken.h"
+#include "MessageDelivery.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/Exception.h"
 
@@ -327,7 +328,7 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
     //need to generate name here, so we have it for the adapter (it is
     //also version specific behaviour now)
     if (newTag.empty()) newTag = tagGenerator.generate();
-    DeliveryToken::shared_ptr token(BasicMessage::createConsumeToken(newTag));
+    DeliveryToken::shared_ptr token(MessageDelivery::getBasicConsumeToken(newTag));
     channel.consume(token, newTag, queue, noLocal, !noAck, exclusive, &fields);
 
     if(!nowait) client.consumeOk(newTag);
@@ -340,21 +341,9 @@ void BrokerAdapter::BasicHandlerImpl::cancel(const string& consumerTag){
     channel.cancel(consumerTag);
 } 
         
-void BrokerAdapter::BasicHandlerImpl::publish(uint16_t /*ticket*/, 
-    const string& exchangeName, const string& routingKey, 
-    bool rejectUnroutable, bool immediate)
-{
-
-      // exeption moved to ChannelAdaptor -- TODO this code should be removed once basic is removed
-
-      BasicMessage* msg = new BasicMessage(&connection, exchangeName, routingKey, rejectUnroutable, immediate);
-      channel.handlePublish(msg);
-
-} 
-        
 void BrokerAdapter::BasicHandlerImpl::get(uint16_t /*ticket*/, const string& queueName, bool noAck){
     Queue::shared_ptr queue = getQueue(queueName);    
-    DeliveryToken::shared_ptr token(BasicMessage::createGetToken(queue));
+    DeliveryToken::shared_ptr token(MessageDelivery::getBasicGetToken(queue));
     if(!channel.get(token, queue, !noAck)){
         string clusterId;//not used, part of an imatix hack
 
@@ -384,7 +373,7 @@ void BrokerAdapter::TxHandlerImpl::select()
 
 void BrokerAdapter::TxHandlerImpl::commit()
 {
-    channel.commit();
+    channel.commit(&broker.getStore());
 }
 
 void BrokerAdapter::TxHandlerImpl::rollback()

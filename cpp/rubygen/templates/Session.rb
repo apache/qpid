@@ -88,7 +88,7 @@ public:
     #{@classname}(ConnectionImpl::shared_ptr, SessionCore::shared_ptr);
     ~#{@classname}();
 
-    ReceivedContent::shared_ptr get() { return impl->get(); }
+    framing::FrameSet::shared_ptr get() { return impl->get(); }
     void setSynchronous(bool sync) { impl->setSync(sync); } 
     void close();
 EOS

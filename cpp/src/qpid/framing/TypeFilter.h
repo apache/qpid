@@ -18,32 +18,34 @@
  * under the License.
  *
  */
-#ifndef _LazyLoadedContent_
-#define _LazyLoadedContent_
+#include <string>
+#include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/FrameHandler.h"
 
-#include "Content.h"
-#include "MessageStore.h"
-#include "BrokerMessageBase.h"
+#ifndef _TypeFilter_
+#define _TypeFilter_
 
 namespace qpid {
-    namespace broker {
-        class LazyLoadedContent : public Content{
-            MessageStore* const store;
-            Message* const msg;
-            const uint64_t expectedSize;
-        public:
-            LazyLoadedContent(
-                MessageStore* const store, Message* const msg,
-                uint64_t expectedSize);
-            ~LazyLoadedContent();
-            void add(qpid::framing::AMQContentBody* data);
-            uint32_t size();
-            void send(
-                framing::ChannelAdapter&,
-                uint32_t framesize);
-            void encode(qpid::framing::Buffer& buffer);
-        };
-    }
+namespace framing {
+
+/**
+ * Predicate that selects frames by type
+ */
+class TypeFilter
+{
+    std::vector<uint8_t> types;
+public:
+    TypeFilter(uint8_t type) { add(type); }
+    TypeFilter(uint8_t type1, uint8_t type2) { add(type1); add(type2); }
+    void add(uint8_t type) { types.push_back(type); }
+    bool operator()(const AMQFrame& f) const 
+    { 
+        return find(types.begin(), types.end(), f.getBody()->type()) != types.end(); 
+    } 
+};
+
+}
 }
 
 

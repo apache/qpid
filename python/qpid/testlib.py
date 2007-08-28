@@ -280,18 +280,17 @@ class TestBase(unittest.TestCase):
                 routing_key=routing_key)
         else:
             self.channel.message_transfer(
-                destination=exchange, body=body,
-                application_headers=properties,
-                routing_key=routing_key)
+                destination=exchange,
+                content=Content(body, properties={'application_headers':properties,'routing_key':routing_key}))
         msg = queue.get(timeout=1)
         if testrunner.use08spec():
             self.assertEqual(body, msg.content.body)
             if (properties):
                 self.assertEqual(properties, msg.content.properties)
         else:
-            self.assertEqual(body, msg.body)
+            self.assertEqual(body, msg.content.body)
             if (properties):
-                self.assertEqual(properties, msg.application_headers)
+                self.assertEqual(properties, msg.content['application_headers'])
 
     def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
         """

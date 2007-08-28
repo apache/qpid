@@ -51,7 +51,7 @@ struct BrokerHandler : public FrameHandler, private ChannelAdapter, private Deli
     // 
     BrokerHandler(Broker& broker) :
         connection(0, broker),
-        channel(connection, *this, 1, 0),
+        channel(connection, *this, 1),
         adapter(channel, connection, broker, *this) {}
 
     void handle(AMQFrame& frame) {

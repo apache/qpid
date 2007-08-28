@@ -70,7 +70,7 @@ const AMQBody* AMQFrame::getBody() const {
     return boost::apply_visitor(GetBodyVisitor(), const_cast<Variant&>(body));
 }
 
-void AMQFrame::encode(Buffer& buffer)
+void AMQFrame::encode(Buffer& buffer) const
 {
     buffer.putOctet(getBody()->type());
     buffer.putShort(channel);    
@@ -80,8 +80,11 @@ void AMQFrame::encode(Buffer& buffer)
 }
 
 uint32_t AMQFrame::size() const{
-    return 1/*type*/ + 2/*channel*/ + 4/*body size*/ +
-        boost::apply_visitor(SizeVisitor(), body) + 1/*0xCE*/;
+    return frameOverhead() + boost::apply_visitor(SizeVisitor(), body);
+}
+
+uint32_t AMQFrame::frameOverhead() {
+    return 1/*type*/ + 2/*channel*/ + 4/*body size*/ + 1/*0xCE*/;
 }
 
 bool AMQFrame::decode(Buffer& buffer)

@@ -22,8 +22,8 @@
 #define _DeliverableMessage_
 
 #include "Deliverable.h"
-#include "BrokerMessage.h"
 #include "BrokerQueue.h"
+#include "Message.h"
 
 namespace qpid {
     namespace broker {

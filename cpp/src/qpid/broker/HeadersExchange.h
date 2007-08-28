@@ -24,7 +24,6 @@
 #include <vector>
 #include "BrokerExchange.h"
 #include "qpid/framing/FieldTable.h"
-#include "BrokerMessage.h"
 #include "qpid/sys/Monitor.h"
 #include "BrokerQueue.h"
 

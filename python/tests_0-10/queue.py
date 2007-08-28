@@ -33,9 +33,9 @@ class QueueTests(TestBase):
         channel.exchange_declare(exchange="test-exchange", type="direct")
         channel.queue_declare(queue="test-queue", exclusive=True)
         channel.queue_bind(queue="test-queue", exchange="test-exchange", routing_key="key")
-        channel.message_transfer(destination="test-exchange", routing_key="key", body="one")
-        channel.message_transfer(destination="test-exchange", routing_key="key", body="two")
-        channel.message_transfer(destination="test-exchange", routing_key="key", body="three")
+        channel.message_transfer(destination="test-exchange", content=Content("one", properties={'routing_key':"key"}))
+        channel.message_transfer(destination="test-exchange", content=Content("two", properties={'routing_key':"key"}))
+        channel.message_transfer(destination="test-exchange", content=Content("three", properties={'routing_key':"key"}))
 
         #check that the queue now reports 3 messages:
         channel.queue_declare(queue="test-queue")
@@ -48,11 +48,11 @@ class QueueTests(TestBase):
         self.assertEqual(0, reply.message_count)        
 
         #send a further message and consume it, ensuring that the other messages are really gone
-        channel.message_transfer(destination="test-exchange", routing_key="key", body="four")
+        channel.message_transfer(destination="test-exchange", content=Content("four", properties={'routing_key':"key"}))
         channel.message_subscribe(queue="test-queue", destination="tag")
         queue = self.client.queue("tag")
         msg = queue.get(timeout=1)
-        self.assertEqual("four", msg.body)
+        self.assertEqual("four", msg.content.body)
 
         #check error conditions (use new channels): 
         channel = self.client.channel(2)
@@ -179,23 +179,25 @@ class QueueTests(TestBase):
         channel.queue_bind(exchange=exchange, queue="queue-2", routing_key=routing_key, arguments=args)
 
         #send a message that will match both bindings
-        channel.message_transfer(destination=exchange, routing_key=routing_key, application_headers=headers, body="one")
+        channel.message_transfer(destination=exchange,
+                                 content=Content("one", properties={'routing_key':routing_key, 'application_headers':headers}))
         
         #unbind first queue
         channel.queue_unbind(exchange=exchange, queue="queue-1", routing_key=routing_key, arguments=args)
         
         #send another message
-        channel.message_transfer(destination=exchange, routing_key=routing_key, application_headers=headers, body="two")
+        channel.message_transfer(destination=exchange,
+                                 content=Content("two", properties={'routing_key':routing_key, 'application_headers':headers}))
 
         #check one queue has both messages and the other has only one
-        self.assertEquals("one", queue1.get(timeout=1).body)
+        self.assertEquals("one", queue1.get(timeout=1).content.body)
         try:
             msg = queue1.get(timeout=1)
-            self.fail("Got extra message: %s" % msg.body)
+            self.fail("Got extra message: %s" % msg.content.body)
         except Empty: pass
 
-        self.assertEquals("one", queue2.get(timeout=1).body)
-        self.assertEquals("two", queue2.get(timeout=1).body)
+        self.assertEquals("one", queue2.get(timeout=1).content.body)
+        self.assertEquals("two", queue2.get(timeout=1).content.body)
         try:
             msg = queue2.get(timeout=1)
             self.fail("Got extra message: " + msg)
@@ -210,9 +212,9 @@ class QueueTests(TestBase):
 
         #straight-forward case:
         channel.queue_declare(queue="delete-me")
-        channel.message_transfer(routing_key="delete-me", body="a")
-        channel.message_transfer(routing_key="delete-me", body="b")
-        channel.message_transfer(routing_key="delete-me", body="c")        
+        channel.message_transfer(content=Content("a", properties={'routing_key':"delete-me"}))
+        channel.message_transfer(content=Content("b", properties={'routing_key':"delete-me"}))
+        channel.message_transfer(content=Content("c", properties={'routing_key':"delete-me"}))
         channel.queue_delete(queue="delete-me")
         #check that it has gone be declaring passively
         try:
@@ -241,7 +243,7 @@ class QueueTests(TestBase):
         #create a queue and add a message to it (use default binding):
         channel.queue_declare(queue="delete-me-2")
         channel.queue_declare(queue="delete-me-2", passive="True")
-        channel.message_transfer(routing_key="delete-me-2", body="message")
+        channel.message_transfer(content=Content("message", properties={'routing_key':"delete-me-2"}))
 
         #try to delete, but only if empty:
         try:
@@ -258,7 +260,7 @@ class QueueTests(TestBase):
         channel.message_subscribe(destination="consumer_tag", queue="delete-me-2")
         queue = self.client.queue("consumer_tag")
         msg = queue.get(timeout=1)
-        self.assertEqual("message", msg.body)
+        self.assertEqual("message", msg.content.body)
         channel.message_cancel(destination="consumer_tag")
 
         #retry deletion on empty queue:

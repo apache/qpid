@@ -37,14 +37,14 @@ namespace framing {
 class AMQFrame : public AMQDataBlock
 {
   public:
-    AMQFrame(ProtocolVersion=ProtocolVersion()) {}
+    AMQFrame() : channel(0) {}
 
     /** Construct a frame with a copy of b */
-    AMQFrame(ProtocolVersion, ChannelId c, const AMQBody* b) : channel(c) {
+    AMQFrame(ChannelId c, const AMQBody* b) : channel(c) {
         setBody(*b);
     }
     
-    AMQFrame(ProtocolVersion, ChannelId c, const AMQBody& b) : channel(c) {
+    AMQFrame(ChannelId c, const AMQBody& b) : channel(c) {
         setBody(b);
     }
     
@@ -52,21 +52,26 @@ class AMQFrame : public AMQDataBlock
     void setChannel(ChannelId c) { channel = c; }
 
     AMQBody* getBody();
-    const AMQBody* getBody() const;
+    const AMQBody* getBody() const;    
 
     /** Copy a body instance to the frame */
     void setBody(const AMQBody& b) { CopyVisitor cv(*this); b.accept(cv); }
 
     /** Convenience template to cast the body to an expected type. */
     template <class T> T* castBody() {
-        boost::polymorphic_downcast<T*>(getBody());
+        return boost::polymorphic_downcast<T*>(getBody());
+    }
+
+    template <class T> const T* castBody() const {
+        return boost::polymorphic_downcast<const T*>(getBody());
     }
 
     bool empty() { return boost::get<boost::blank>(&body); }
 
-    void encode(Buffer& buffer); 
+    void encode(Buffer& buffer) const; 
     bool decode(Buffer& buffer); 
     uint32_t size() const;
+    static uint32_t frameOverhead();
 
   private:
     struct CopyVisitor : public AMQBodyConstVisitor {
@@ -77,7 +82,7 @@ class AMQFrame : public AMQDataBlock
         void visit(const AMQHeartbeatBody& x) { frame.body=x; }
         void visit(const AMQMethodBody& x) { frame.body=MethodHolder(x); }
     };
-  friend struct CopyVisitor;
+    friend struct CopyVisitor;
 
     typedef boost::variant<boost::blank,
                            AMQHeaderBody,

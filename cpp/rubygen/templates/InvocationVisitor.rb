@@ -12,11 +12,7 @@ class InvocationVisitor < CppGen
   end
 
   def invocation_args(m)
-      if (m.parent.name == "message" && (m.name == "transfer" || m.name == "append"))
-        "body"
-      else
-        m.param_names.collect {|p| "body.get" + p.caps + "()" }.join(",\n")
-      end
+    m.param_names.collect {|p| "body.get" + p.caps + "()" }.join(",\n")
   end
 
   def null_visit(m)
@@ -95,7 +91,7 @@ EOS
         }
         genl "}"
         genl
-        @amqp.methods_.each { |m| m.on_server? ? define_visit(m) : null_visit(m) }
+        @amqp.methods_.each { |m| m.on_server? && !m.content() ? define_visit(m) : null_visit(m) }
       }
     }
   end

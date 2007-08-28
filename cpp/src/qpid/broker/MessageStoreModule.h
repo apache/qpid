@@ -21,7 +21,6 @@
 #ifndef _MessageStoreModule_
 #define _MessageStoreModule_
 
-#include "BrokerMessage.h"
 #include "MessageStore.h"
 #include "BrokerQueue.h"
 #include "RecoveryManager.h"

@@ -23,7 +23,12 @@
  */
 #include <string>
 #include "qpid/framing/BasicHeaderProperties.h"
+#include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
+
+#include "qpid/framing/BasicDeliverBody.h"
+#include "qpid/framing/BasicGetOkBody.h"
+#include "qpid/framing/MessageTransferBody.h"
 
 namespace qpid {
 namespace client {
@@ -54,6 +59,17 @@ class Message : public framing::BasicHeaderProperties, public framing::MethodCon
     void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
 
     const HeaderProperties& getMethodHeaders() const { return *this; }
+
+
+    //TODO: move this elsewhere (GRS 24/08/2007)
+    void populate(framing::FrameSet& frameset)
+    {
+        const BasicHeaderProperties* properties = frameset.getHeaders()->get<BasicHeaderProperties>();
+        if (properties) {
+            BasicHeaderProperties::copy<Message, BasicHeaderProperties>(*this, *properties);
+        }
+        frameset.getContent(data);
+    }
 
   private:
     std::string data;
