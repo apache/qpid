@@ -35,12 +35,29 @@ namespace qpid {
 namespace broker {
 
 class Connection;
-struct Handler;
 
 class ConnectionAdapter : public framing::ChannelAdapter, public framing::AMQP_ServerOperations
 {
+    struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler
+    {
+        framing::AMQP_ClientProxy proxy;
+        framing::AMQP_ClientProxy::Connection client;
+        Connection& connection;
+    
+        Handler(Connection& connection, ConnectionAdapter& adapter);
+        void startOk(const qpid::framing::FieldTable& clientProperties,
+                     const std::string& mechanism, const std::string& response,
+                     const std::string& locale); 
+        void secureOk(const std::string& response); 
+        void tuneOk(uint16_t channelMax, uint32_t frameMax, uint16_t heartbeat); 
+        void open(const std::string& virtualHost,
+                  const std::string& capabilities, bool insist); 
+        void close(uint16_t replyCode, const std::string& replyText,
+                   uint16_t classId, uint16_t methodId); 
+        void closeOk(); 
+    };
     std::auto_ptr<Handler> handler;
-public:
+  public:
     ConnectionAdapter(Connection& connection);
     void init(const framing::ProtocolInitiation& header);
     void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
@@ -74,24 +91,6 @@ public:
     framing::ProtocolVersion getVersion() const;
 };
 
-struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler
-{
-    framing::AMQP_ClientProxy proxy;
-    framing::AMQP_ClientProxy::Connection client;
-    Connection& connection;
-    
-    Handler(Connection& connection, ConnectionAdapter& adapter);
-    void startOk(const qpid::framing::FieldTable& clientProperties,
-                 const std::string& mechanism, const std::string& response,
-                 const std::string& locale); 
-    void secureOk(const std::string& response); 
-    void tuneOk(uint16_t channelMax, uint32_t frameMax, uint16_t heartbeat); 
-    void open(const std::string& virtualHost,
-              const std::string& capabilities, bool insist); 
-    void close(uint16_t replyCode, const std::string& replyText,
-               uint16_t classId, uint16_t methodId); 
-    void closeOk(); 
-};
 
 }}
 

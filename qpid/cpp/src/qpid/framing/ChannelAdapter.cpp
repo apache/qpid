@@ -31,28 +31,24 @@ using boost::format;
 namespace qpid {
 namespace framing {
 
-/** Framehandler that feeds into the channel. */
-struct ChannelAdapter::ChannelAdapterHandler : public FrameHandler {
-    ChannelAdapterHandler(ChannelAdapter& channel_) : channel(channel_) {}
-    void handle(AMQFrame& frame) { channel.handleBody(frame.getBody()); }
-    ChannelAdapter& channel;
-};
+ChannelAdapter::Handler::Handler(ChannelAdapter& c) : parent(c) {}
+void ChannelAdapter::Handler::handle(AMQFrame& f) { parent.handleBody(f.getBody()); }
 
-void ChannelAdapter::init(ChannelId i, OutputHandler& out, ProtocolVersion v)
+ChannelAdapter::ChannelAdapter() : handler(*this), id(0) {}
+
+void ChannelAdapter::init(ChannelId i, OutputHandler& out, ProtocolVersion v) 
 {
     assertChannelNotOpen();
     id = i;
     version = v;
-
-    handlers.in = make_shared_ptr(new ChannelAdapterHandler(*this));
-    handlers.out= make_shared_ptr(new OutputHandlerFrameHandler(out));
+    handlers.reset(&handler, &out);
 }
 
 void ChannelAdapter::send(const AMQBody& body)
 {
     assertChannelOpen();
     AMQFrame frame(getId(), body);
-    handlers.out->handle(frame);
+    handlers.out(frame);
 }
 
 void ChannelAdapter::assertMethodOk(AMQMethodBody& method) const {
@@ -72,5 +68,7 @@ void ChannelAdapter::assertChannelNotOpen() const {
         throw ConnectionException(
             504, format("Channel %d is already open.") % getId());
 }
+
+void ChannelAdapter::handle(AMQFrame& f) { handleBody(f.getBody()); }
 
 }} // namespace qpid::framing

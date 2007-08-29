@@ -55,7 +55,7 @@ class ChannelAdapter : protected BodyHandler {
     /**
      *@param output Processed frames are forwarded to this handler.
      */
-    ChannelAdapter() : id(0) {}
+    ChannelAdapter();
     virtual ~ChannelAdapter() {}
 
     /** Initialize the channel adapter. */
@@ -69,7 +69,8 @@ class ChannelAdapter : protected BodyHandler {
     virtual void send(const AMQBody& body);
 
     virtual bool isOpen() const = 0;
-    
+
+    void handle(AMQFrame& f);
   protected:
     void assertMethodOk(AMQMethodBody& method) const;
     void assertChannelOpen() const;
@@ -78,9 +79,12 @@ class ChannelAdapter : protected BodyHandler {
     virtual void handleMethod(AMQMethodBody*) = 0;
 
   private:
-    class ChannelAdapterHandler;
-    friend class ChannelAdapterHandler;
-    
+    struct Handler : public FrameHandler {
+        Handler(ChannelAdapter&);
+        void handle(AMQFrame&);
+        ChannelAdapter& parent;
+    };
+    Handler handler;
     ChannelId id;
     ProtocolVersion version;
     FrameHandler::Chains handlers;

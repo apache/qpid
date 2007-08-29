@@ -131,10 +131,7 @@ void MessageDelivery::deliver(Message::shared_ptr msg,
     boost::shared_ptr<BaseToken> t = dynamic_pointer_cast<BaseToken>(token);
     t->sendMethod(msg, channel, id);
 
-    boost::shared_ptr<FrameHandler> handler = channel.getHandlers().out;
-    //send header
-    msg->sendHeader(*handler, channel.getId(), framesize);
-
-    //send content    
-    msg->sendContent(*handler, channel.getId(), framesize);
+    FrameHandler& handler = channel.getHandlers().out;
+    msg->sendHeader(handler, channel.getId(), framesize);
+    msg->sendContent(handler, channel.getId(), framesize);
 }
