@@ -22,43 +22,45 @@
  *
  */
 
-#include "qpid/framing/FrameDefaultVisitor.h"
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/broker/SuspendedSessions.h"
+#include "qpid/broker/Session.h"
+#include "qpid/framing/amqp_types.h"
 
 namespace qpid {
 namespace broker {
 
+class Connection;
+class Session;
+
 /**
- * Session Handler: Handles frames arriving for a session.
- * Implements AMQP session class commands, forwards other traffic
- * to the next handler in the chain.
+ * A SessionAdapter is associated with each active channel. It
+ * receives incoming frames, handles session commands and manages the
+ * association between the channel and a session.
+ *
+ * SessionAdapters can be stored in a map by value.
  */
-class SessionAdapter : public framing::FrameVisitorHandler
+class SessionAdapter : public framing::FrameHandler
 {
   public:
-    SessionAdapter();
+    SessionAdapter(Connection&, framing::ChannelId);
     ~SessionAdapter();
 
-  protected:
-    void visit(const framing::SessionAckBody&);
-    void visit(const framing::SessionAttachedBody&);
-    void visit(const framing::SessionCloseBody&);
-    void visit(const framing::SessionClosedBody&);
-    void visit(const framing::SessionDetachedBody&);
-    void visit(const framing::SessionFlowBody&);
-    void visit(const framing::SessionFlowOkBody&);
-    void visit(const framing::SessionHighWaterMarkBody&);
-    void visit(const framing::SessionOpenBody&);
-    void visit(const framing::SessionResumeBody&);
-    void visit(const framing::SessionSolicitAckBody&);
-    void visit(const framing::SessionSuspendBody&);
+    /** Handle AMQP session methods, pass other frames to the session
+     * if there is one. Frames channel must be == getChannel()
+     */
+    void handle(framing::AMQFrame&);
 
-    using FrameDefaultVisitor::visit;
+    /** Returns 0 if not attached to a session */
+    Session* getSession() const { return session.get(); }
+
+    framing::ChannelId getChannel() const { return channel; }
+    Connection& getConnection() { return connection; }
+    const Connection& getConnection() const { return connection; }
     
   private:
-    SessionState state;
-    SuspendedSessions* suspended;
+    Connection& connection;
+    const framing::ChannelId channel;
+    shared_ptr<Session> session;
 };
 
 }} // namespace qpid::broker

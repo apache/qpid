@@ -54,7 +54,7 @@ class ConnectionHandler : private StateManager,
 {
     enum STATES {NOT_STARTED, NEGOTIATING, OPENING, OPEN, CLOSING, CLOSED, FAILED};
     std::set<int> ESTABLISHED;
-    
+
     void handle(framing::AMQMethodBody* method);
     void send(const framing::AMQBody& body);
     void error(uint16_t code, const std::string& message, uint16_t classId = 0, uint16_t methodId = 0);
@@ -62,6 +62,7 @@ class ConnectionHandler : private StateManager,
     void fail(const std::string& message);
 
 public:
+    using InputHandler::handle;
     typedef boost::function<void()> CloseListener;    
     typedef boost::function<void(uint16_t, const std::string&)> ErrorListener;    
 

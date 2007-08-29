@@ -38,6 +38,9 @@
 #include "qpid/Exception.h"
 #include "BrokerChannel.h"
 #include "ConnectionAdapter.h"
+#include "SessionAdapter.h"
+
+#include <boost/optional.hpp>
 
 namespace qpid {
 namespace broker {
@@ -82,8 +85,8 @@ class Connection : public sys::ConnectionInputHandler,
     void closed();
 
   private:
-    typedef std::map<framing::ChannelId, framing::FrameHandler::Chains> ChannelMap;
-
+    // Use boost::optional to allow default-constructed uninitialized entries in the map.
+    typedef std::map<framing::ChannelId, boost::optional<SessionAdapter> >ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     framing::ProtocolVersion version;
