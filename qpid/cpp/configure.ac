@@ -116,9 +116,7 @@ AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 # It requires several external tools and files, which we check for here.
 
 AC_CHECK_PROG([RUBY], [ruby], [ruby])
-AC_CHECK_PROG([JAVA], [java], [java])
-AC_CHECK_PROG([JAVAC], [javac], [javac])
-test -n "$RUBY" -a -n "$JAVA" -a -n "$JAVAC" && generate=yes
+test -n "$RUBY" && generate=yes
 
 specdir=`pwd`/$srcdir/../specs  
 AMQP_XML=$specdir/amqp-transitional.0-10.xml
