@@ -18,28 +18,23 @@
  *
  */
 
+#include "Session.h"
+#include "SemanticHandler.h"
 #include "SessionAdapter.h"
 
 namespace qpid {
 namespace broker {
-using namespace framing;
 
-SessionAdapter::SessionAdapter(Connection& c, ChannelId ch)
-    : connection(c), channel(ch)
+Session::Session(SessionAdapter& a, uint32_t t)
+    : adapter(&a), timeout(t)
 {
-    // FIXME aconway 2007-08-29: When we handle session commands,
-    // do this on open.
-    session.reset(new Session(*this, 0));
+    assert(adapter);
+    // FIXME aconway 2007-08-29: handler to get Session, not connection.
+    handlers.push_back(new SemanticHandler(adapter->getChannel(), adapter->getConnection()));
+    in = &handlers[0];
+    out = &adapter->getConnection().getOutput();
 }
 
-SessionAdapter::~SessionAdapter() {}
-
-
-void SessionAdapter::handle(AMQFrame& f) {
-    // FIXME aconway 2007-08-29: handle session commands here, forward
-    // other frames.
-    session->in(f);
-}
 
 
 }} // namespace qpid::broker
