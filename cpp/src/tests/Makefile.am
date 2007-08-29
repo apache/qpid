@@ -19,10 +19,12 @@ CLEANFILES=
 #
 # Unit test programs.
 # 
-TESTS+=Session
-check_PROGRAMS+=Session
-Session_SOURCES=Session.cpp
-Session_LDADD=-lboost_unit_test_framework $(lib_broker)
+
+# FIXME aconway 2007-08-29: enable when session is reinstated.
+# TESTS+=Session
+# check_PROGRAMS+=Session
+# Session_SOURCES=Session.cpp
+# Session_LDADD=-lboost_unit_test_framework $(lib_broker)
 
 TESTS+=Blob
 check_PROGRAMS+=Blob

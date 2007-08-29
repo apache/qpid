@@ -27,24 +27,12 @@
 namespace qpid {
 namespace framing {
 
-class InputHandler : private boost::noncopyable {
+// FIXME aconway 2007-08-29: Eliminate, replace with FrameHandler.
+class InputHandler : public FrameHandler {
   public:
     virtual ~InputHandler() {}
     virtual void received(AMQFrame&) = 0;
-};
-
-/** FrameHandler that delegates to an InputHandler */
-struct InputHandlerFrameHandler : public FrameHandler {
-    InputHandlerFrameHandler(InputHandler& in_) : in(in_) {}
-    void handle(ParamType frame) { in.received(frame); }
-    InputHandler& in;
-};
-
-/** InputHandler that delegates to a FrameHandler */
-struct FrameHandlerInputHandler : public InputHandler {
-    FrameHandlerInputHandler(shared_ptr<FrameHandler> h) : handler(h) {}
-    void received(AMQFrame& frame) { handler->handle(frame); }
-    FrameHandler::Chain handler;
+    void handle(AMQFrame& f) { received(f); }
 };
 
 }}

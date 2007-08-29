@@ -28,6 +28,8 @@
 #include "BrokerAdapter.h"
 #include "SemanticHandler.h"
 
+#include <boost/utility/in_place_factory.hpp>
+
 using namespace boost;
 using namespace qpid::sys;
 using namespace qpid::framing;
@@ -50,11 +52,12 @@ void Connection::received(framing::AMQFrame& frame){
     if (frame.getChannel() == 0) {
         adapter.handle(frame);
     } else {
+        // FIXME aconway 2007-08-29: review shutdown, not more shared_ptr.
+        // OLD COMMENT:
         // Assign handler to new shared_ptr, as it may be erased
         // from the map by handle() if frame is a ChannelClose.
         // 
-        FrameHandler::Chain handler=getChannel((frame.getChannel())).in;
-        handler->handle(frame);
+        getChannel((frame.getChannel())).in(frame);
     }
 }
 
@@ -97,15 +100,16 @@ void Connection::closeChannel(uint16_t id) {
 
 
 FrameHandler::Chains& Connection::getChannel(ChannelId id) {
-    ChannelMap::iterator i = channels.find(id);
-    if (i == channels.end()) {
-        FrameHandler::Chains chains(
-            new SemanticHandler(id, *this),
-            new OutputHandlerFrameHandler(*out));
-        broker.update(id, chains);
-        i = channels.insert(ChannelMap::value_type(id, chains)).first;
-    }        
-    return i->second;
+    // FIXME aconway 2007-08-29: Assuming session on construction,
+    // move this to SessionAdapter::open.
+    boost::optional<SessionAdapter>& ch = channels[id];
+    if (!ch) {
+        ch = boost::in_place(boost::ref(*this), id); // FIXME aconway 2007-08-29: 
+        assert(ch->getSession());
+        broker.update(id, *ch->getSession());
+    }
+    assert(ch->getSession());
+    return *ch->getSession();
 }
 
 

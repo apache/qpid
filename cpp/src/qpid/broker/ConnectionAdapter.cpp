@@ -66,7 +66,7 @@ framing::ProtocolVersion ConnectionAdapter::getVersion() const
 
 void ConnectionAdapter::handle(framing::AMQFrame& frame)
 {
-    getHandlers().in->handle(frame);
+    getHandlers().in(frame);
 }
 
 ConnectionAdapter::ConnectionAdapter(Connection& connection) 
@@ -74,27 +74,27 @@ ConnectionAdapter::ConnectionAdapter(Connection& connection)
     handler = std::auto_ptr<Handler>(new Handler(connection, *this));
 }
 
-Handler::Handler(Connection& c, ConnectionAdapter& a) : 
+ConnectionAdapter::Handler:: Handler(Connection& c, ConnectionAdapter& a) : 
     proxy(a), client(proxy.getConnection()), connection(c) {}
 
 
-void Handler::startOk(const FieldTable& /*clientProperties*/,
+void ConnectionAdapter::Handler::startOk(const FieldTable& /*clientProperties*/,
     const string& /*mechanism*/, 
     const string& /*response*/, const string& /*locale*/)
 {
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), connection.getHeartbeat());
 }
         
-void Handler::secureOk(const string& /*response*/){}
+void ConnectionAdapter::Handler::secureOk(const string& /*response*/){}
         
-void Handler::tuneOk(uint16_t /*channelmax*/,
+void ConnectionAdapter::Handler::tuneOk(uint16_t /*channelmax*/,
     uint32_t framemax, uint16_t heartbeat)
 {
     connection.setFrameMax(framemax);
     connection.setHeartbeat(heartbeat);
 }
         
-void Handler::open(const string& /*virtualHost*/,
+void ConnectionAdapter::Handler::open(const string& /*virtualHost*/,
     const string& /*capabilities*/, bool /*insist*/)
 {
     string knownhosts;
@@ -102,13 +102,13 @@ void Handler::open(const string& /*virtualHost*/,
 }
 
         
-void Handler::close(uint16_t /*replyCode*/, const string& /*replyText*/, 
+void ConnectionAdapter::Handler::close(uint16_t /*replyCode*/, const string& /*replyText*/, 
     uint16_t /*classId*/, uint16_t /*methodId*/)
 {
     client.closeOk();
     connection.getOutput().close();
 } 
         
-void Handler::closeOk(){
+void ConnectionAdapter::Handler::closeOk(){
     connection.getOutput().close();
 } 
