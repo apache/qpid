@@ -119,9 +119,7 @@ class AmqpDomain
     "content"=>CppType.new("Content").passcref.retcref.code("Content"),
     "rfc1982-long-set"=>CppType.new("SequenceNumberSet").passcref.retcref,
     "long-struct"=>CppType.new("string").passcref.retcref.code("LongString"),
-    # FIXME aconway 2007-08-25: Use Uuid class.
-    # "uuid"=>CppType.new("Uuid").passcref.retcref.code,
-    "uuid"=>CppType.new("string").passcref.retcref.code("ShortString") 
+    "uuid"=>CppType.new("Uuid").passcref.retcref
   }
 
   def cppname() name.caps; end
