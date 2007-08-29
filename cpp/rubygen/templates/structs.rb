@@ -20,8 +20,7 @@ class StructGen < CppGen
     "timestamp"=>"LongLong",
     "table"=>"FieldTable",
     "content"=>"Content",
-    "long-struct"=>"LongString",
-    "uuid" => "ShortString"        # FIXME aconway 2007-08-27: Remove.
+    "long-struct"=>"LongString"
   }
   SizeMap={
     "octet"=>"1",
