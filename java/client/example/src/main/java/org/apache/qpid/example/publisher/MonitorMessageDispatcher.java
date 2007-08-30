@@ -18,18 +18,18 @@
  */
 package org.apache.qpid.example.publisher;
 
-import org.apache.log4j.Logger;
 import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 
-import javax.jms.*;
-
-import java.util.Properties;
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
 
 /**
- * Class that sends heartbeat messages to allow monitoring of message consumption
- * Sends regular (currently 20 seconds apart) heartbeat message
+ * Class that sends heartbeat messages to allow monitoring of message consumption Sends regular (currently 20 seconds
+ * apart) heartbeat message
  */
-public class MonitorMessageDispatcher {
+public class MonitorMessageDispatcher
+{
 
     private static final Logger _logger = Logger.getLogger(MonitorMessageDispatcher.class);
 
@@ -39,17 +39,19 @@ public class MonitorMessageDispatcher {
 
     /**
      * Easy entry point for running a message dispatcher for monitoring consumption
+     * Sends 1000 messages with no delay 
+     *
      * @param args
      */
     public static void main(String[] args)
     {
-
         //Switch on logging appropriately for your app
         BasicConfigurator.configure();
 
         try
         {
-            while(true)
+            int i =0;
+            while (i < 1000)
             {
                 try
                 {
@@ -62,9 +64,10 @@ public class MonitorMessageDispatcher {
                     }
 
                     //sleep for twenty seconds and then publish again - change if appropriate
-                    Thread.sleep(20000);
+                    //Thread.sleep(1000);
+                    i++   ;
                 }
-                catch(UndeliveredMessageException a)
+                catch (UndeliveredMessageException a)
                 {
                     //trigger application specific failure handling here
                     _logger.error("Problem delivering monitor message");
@@ -72,7 +75,7 @@ public class MonitorMessageDispatcher {
                 }
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             _logger.error("Error trying to dispatch AMS monitor message: " + e);
             System.exit(1);
@@ -81,7 +84,7 @@ public class MonitorMessageDispatcher {
         {
             if (getMonitorPublisher() != null)
             {
-               getMonitorPublisher().cleanup();
+                getMonitorPublisher().cleanup();
             }
         }
 
@@ -90,19 +93,24 @@ public class MonitorMessageDispatcher {
 
     /**
      * Publish heartbeat message
+     *
      * @throws JMSException
      * @throws UndeliveredMessageException
      */
     public static void publish() throws JMSException, UndeliveredMessageException
     {
         //Send the message generated from the payload using the _publisher
-        getMonitorPublisher().sendImmediateMessage
-          (FileMessageFactory.createSimpleEventMessage(getMonitorPublisher().getSession(),"monitor:" +System.currentTimeMillis()));
+//        getMonitorPublisher().sendImmediateMessage
+//          (FileMessageFactory.createSimpleEventMessage(getMonitorPublisher().getSession(),"monitor:" +System.currentTimeMillis()));
+
+        getMonitorPublisher().sendMessage
+                (getMonitorPublisher()._session,
+                 FileMessageFactory.createSimpleEventMessage(getMonitorPublisher().getSession(), "monitor:" + System.currentTimeMillis()),
+                 DeliveryMode.PERSISTENT, false, true);
+
     }
 
-    /**
-     * Cleanup publishers
-     */
+    /** Cleanup publishers */
     public static void cleanup()
     {
         if (getMonitorPublisher() != null)
@@ -119,16 +127,16 @@ public class MonitorMessageDispatcher {
     //Returns a _publisher for the monitor queue
     private static MonitorPublisher getMonitorPublisher()
     {
-       if (_monitorPublisher != null)
-       {
-           return _monitorPublisher;
-       }
+        if (_monitorPublisher != null)
+        {
+            return _monitorPublisher;
+        }
 
-       //Create a _publisher using failover details and constant for monitor queue
-       _monitorPublisher = new MonitorPublisher();
+        //Create a _publisher using failover details and constant for monitor queue
+        _monitorPublisher = new MonitorPublisher();
 
-       _monitorPublisher.setName(MonitorMessageDispatcher.DEFAULT_MONITOR_PUB_NAME);
-       return _monitorPublisher;
+        _monitorPublisher.setName(MonitorMessageDispatcher.DEFAULT_MONITOR_PUB_NAME);
+        return _monitorPublisher;
     }
 
 }

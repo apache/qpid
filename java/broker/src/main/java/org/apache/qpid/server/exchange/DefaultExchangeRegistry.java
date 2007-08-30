@@ -20,17 +20,18 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.protocol.ExchangeInitialiser;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.messageStore.MessageStore;
-import org.apache.qpid.server.exception.InternalErrorException;
+
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {
@@ -66,13 +67,15 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         _exchangeMap.put(exchange.getName(), exchange);
         if(exchange.isDurable())
         {
-            try
-            {
                 getMessageStore().createExchange(exchange);
-            } catch (InternalErrorException e)
-            {
-                throw new AMQException(null, "problem registering excahgne " + exchange, e);
-            }
+            //DTX MessageStore
+//            try
+//            {
+//                getMessageStore().createExchange(exchange);
+//            } catch (InternalErrorException e)
+//            {
+//                throw new AMQException(null, "problem registering excahgne " + exchange, e);
+//            }
         }
     }
 
@@ -86,21 +89,28 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
         return _defaultExchange;
     }
 
+    public Collection<AMQShortString> getExchangeNames()
+    {
+        return _exchangeMap.keySet();
+    }
+
     public void unregisterExchange(AMQShortString name, boolean inUse) throws AMQException
     {
         // TODO: check inUse argument
         Exchange e = _exchangeMap.remove(name);
         if (e != null)
         {
-            if(e.isDurable())
+            if (e.isDurable())
             {
-                try
-                {
-                    getMessageStore().removeExchange(e);
-                } catch (InternalErrorException e1)
-                {
-                    throw new AMQException(null, "Problem unregistering Exchange " + name, e1);
-                }
+                getMessageStore().removeExchange(e);
+                //DTX MessageStore
+//                try
+//                {
+//                    getMessageStore().removeExchange(e);
+//                } catch (InternalErrorException e1)
+//                {
+//                    throw new AMQException(null, "Problem unregistering Exchange " + name, e1);
+//                }
             }
             e.close();
         }

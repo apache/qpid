@@ -57,11 +57,11 @@ public class NullApplicationRegistry extends ApplicationRegistry
         super(new MapConfiguration(new HashMap()));
     }
 
-    public void initialise()
-            throws
-            Exception
+    public void initialise() throws Exception
     {
-        _configuration.addProperty("store.class", "org.apache.qpid.server.messageStore.MemoryMessageStore");
+        //DTX MessageStore
+//        _configuration.addProperty("store.class", "org.apache.qpid.server.messageStore.MemoryMessageStore");
+        _configuration.addProperty("store.class", "org.apache.qpid.server.store.MemoryMessageStore");        
         _configuration.addProperty("txn.class", "org.apache.qpid.server.txn.MemoryTransactionManager");
        // _configuration.addProperty("store.class", "org.apache.qpid.server.messageStore.JDBCStore");
        // _configuration.addProperty("txn.class", "org.apache.qpid.server.txn.JDBCTransactionManager");

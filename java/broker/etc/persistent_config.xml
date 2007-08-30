@@ -73,8 +73,8 @@
     <virtualhosts>
         <virtualhost>
             <name>localhost</name>
-            <localhost>               
-								<store>                  
+            <localhost>
+                <store>
                     <environment-path>${work}/bdbstore/localhost-store</environment-path>
                    <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> 
                 </store>             

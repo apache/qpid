@@ -23,8 +23,8 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.messageStore.StorableQueue;
 
+import java.util.Collection;
 
 public interface QueueRegistry
 {
@@ -35,4 +35,9 @@ public interface QueueRegistry
     void unregisterQueue(AMQShortString name) throws AMQException;
 
     AMQQueue getQueue(AMQShortString name);
+
+    Collection<AMQShortString> getQueueNames();
+
+    Collection<AMQQueue> getQueues();
+
 }

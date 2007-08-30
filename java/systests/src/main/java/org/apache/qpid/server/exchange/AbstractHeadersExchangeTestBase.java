@@ -28,10 +28,10 @@ import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.messageStore.MessageStore;
-import org.apache.qpid.server.store.SkeletonMessageStore;
-import org.apache.qpid.server.messageStore.MemoryMessageStore;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.SkeletonMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 import org.apache.qpid.server.RequiredDeliveryException;
@@ -49,7 +49,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     /**
      * Not used in this test, just there to stub out the routing calls
      */
-    private MessageStore _store = new MemoryMessageStore();
+    private MessageStore _store = new SkeletonMessageStore();
 
     private StoreContext _storeContext = new StoreContext();
 

@@ -42,11 +42,9 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.exception.InternalErrorException;
-import org.apache.qpid.server.exception.QueueAlreadyExistsException;
 import org.apache.commons.configuration.Configuration;
 
 public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclareBody>
@@ -95,6 +93,11 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
             if (((queue = queueRegistry.getQueue(body.queue)) == null))
             {
+                if(body.queue != null)
+                {
+                    body.queue = body.queue.intern();
+                }
+
                 if (body.passive)
                 {
                     String msg = "Queue: " + body.queue + " not found on VirtualHost(" + virtualHost + ").";
@@ -105,13 +108,14 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     queue = createQueue(body, virtualHost, session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
-                        try
-                        {
+                        //DTX MessageStore
+//                        try
+//                        {
                             store.createQueue(queue);
-                        } catch (Exception e)
-                        {
-                           throw new AMQException(null, "Problem when creating queue " + queue,  e);
-                        }
+//                        } catch (Exception e)
+//                        {
+//                           throw new AMQException(null, "Problem when creating queue " + queue,  e);
+//                        }
                     }
                     queueRegistry.registerQueue(queue);
                     if (autoRegister)

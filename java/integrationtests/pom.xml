@@ -40,21 +40,26 @@
 
     <dependencies>
 
-        <!-- These tests depend on the client API only. -->
         <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-client</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-systests</artifactId>
+        </dependency>
+
+        <dependency>  
+            <groupId>org.slf4j</groupId> 
+            <artifactId>slf4j-log4j12</artifactId>  
             <version>1.4.0</version>
         </dependency>
 
         <dependency>
             <groupId>uk.co.thebadgerset</groupId>
             <artifactId>junit-toolkit</artifactId>
+            <version>0.6-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
 

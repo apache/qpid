@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class DefaultQueueRegistry implements QueueRegistry
 {
@@ -56,5 +57,15 @@ public class DefaultQueueRegistry implements QueueRegistry
     public AMQQueue getQueue(AMQShortString name)
     {
         return _queueMap.get(name);
+    }
+
+    public Collection<AMQShortString> getQueueNames()
+    {
+        return _queueMap.keySet();
+    }
+
+    public Collection<AMQQueue> getQueues()
+    {
+        return _queueMap.values();
     }
 }

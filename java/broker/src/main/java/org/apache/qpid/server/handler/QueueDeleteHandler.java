@@ -30,7 +30,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exception.InternalErrorException;
@@ -111,7 +111,9 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
                 {
                     try
                     {
-                        store.destroyQueue(queue);
+                        //DTX MessageStore
+//                        store.destroyQueue(queue);                        
+                        store.removeQueue(queue.getName());
                     } catch (Exception e)
                     {
                       throw new AMQException(null, "problem when destroying queue " + queue, e);

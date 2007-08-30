@@ -20,6 +20,14 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.URLHelper;
+import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -35,6 +43,8 @@ import org.apache.qpid.url.URLSyntaxException;
 
 public class AMQConnectionURL implements ConnectionURL
 {
+    private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionURL.class);
+
     private String _url;
     private String _failoverMethod;
     private HashMap<String, String> _failoverOptions;
@@ -182,7 +192,7 @@ public class AMQConnectionURL implements ConnectionURL
         if (colonIndex == -1)
         {
             throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, userinfo.length(),
-                "Null password in user information not allowed.", _url);
+                                       "Null password in user information not allowed.", _url);
         }
         else
         {
@@ -387,7 +397,14 @@ public class AMQConnectionURL implements ConnectionURL
             if (_password != null)
             {
                 sb.append(':');
-                sb.append(_password);
+                if (_logger.isDebugEnabled())
+                {
+                    sb.append(_password);
+                }
+                else
+                {
+                    sb.append("********");
+                }
             }
 
             sb.append('@');

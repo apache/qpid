@@ -37,6 +37,16 @@ public class AMQVMBrokerCreationException extends AMQTransportConnectionExceptio
 {
     private int _port;
 
+    /**
+     * @param port
+     *
+     * @deprecated
+     */
+    public AMQVMBrokerCreationException(int port)
+    {
+        this(null, port, "Unable to create vm broker", null);
+    }
+
     public AMQVMBrokerCreationException(AMQConstant errorCode, int port, String message, Throwable cause)
     {
         super(errorCode, message, cause);

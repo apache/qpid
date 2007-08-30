@@ -21,12 +21,10 @@
 package org.apache.qpid.test.unit.transacted;
 
 import junit.framework.TestCase;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.URLSyntaxException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,6 +55,9 @@ public class CommitRollbackTest extends TestCase
 
     private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
     private static final String BROKER = "vm://:1";
+    private boolean _gotone = false;
+    private boolean _gottwo = false;
+    private boolean _gottwoRedelivered = false;
 
     protected void setUp() throws Exception
     {
@@ -340,57 +341,98 @@ public class CommitRollbackTest extends TestCase
      *
      * @throws Exception On error
      */
-    /*public void testSend2ThenRollback() throws Exception
+    public void testSend2ThenRollback() throws Exception
     {
-        assertTrue("session is not transacted", _session.getTransacted());
-        assertTrue("session is not transacted", _pubSession.getTransacted());
-
-        _logger.info("sending two test messages");
-        _publisher.send(_pubSession.createTextMessage("1"));
-        _publisher.send(_pubSession.createTextMessage("2"));
-        _pubSession.commit();
-
-        _logger.info("getting test message");
-        assertEquals("1", ((TextMessage) _consumer.receive(1000)).getText());
-
-        _logger.info("rolling back");
-        _session.rollback();
-
-        _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
-
-        assertNotNull("test message was consumed and rolled back, but is gone", result);
-
-
-        if (((TextMessage) result).getText().equals("2"))
+        int run = 0;
+        while (run < 10)
         {
-            assertTrue("Messasge is marked as redelivered", !result.getJMSRedelivered());
+            run++;
+            _logger.info("Run:" + run);
+            assertTrue("session is not transacted", _session.getTransacted());
+            assertTrue("session is not transacted", _pubSession.getTransacted());
 
-            result = _consumer.receive(1000);
-            assertEquals("1", ((TextMessage) result).getText());
-            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
+            _logger.info("sending two test messages");
+            _publisher.send(_pubSession.createTextMessage("1"));
+            _publisher.send(_pubSession.createTextMessage("2"));
+            _pubSession.commit();
+
+            _logger.info("getting test message");
+            assertEquals("1", ((TextMessage) _consumer.receive(1000)).getText());
+
+            _logger.info("rolling back");
+            _session.rollback();
+
+            _logger.info("receiving result");
+            Message result = _consumer.receive(1000);
+
+            assertNotNull("test message was consumed and rolled back, but is gone", result);
+
+            // Message Order is:
+
+            // Send 1 , 2
+            // Retrieve 1 and then rollback
+            // Receieve 1 (redelivered) , 2 (may or may not be redelivered??)
+
+            verifyMessages(result);
+
+            // Occassionally get message 2 first!
+//            assertEquals("Should get message one first", "1", ((TextMessage) result).getText());
+//            assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
+//
+//            result = _consumer.receive(1000);
+//            assertEquals("Second message should be message 2", "2", ((TextMessage) result).getText());
+//            assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
+//
+//            result = _consumer.receive(1000);
+//            assertNull("There should be no more messages", result);
+
+            _session.commit();
+        }
+    }
+
+    private void verifyMessages(Message result) throws JMSException
+    {
+
+        if (result == null)
+        {
+            assertTrue("Didn't receive redelivered message one", _gotone);
+            assertTrue("Didn't receive message two at all", _gottwo | _gottwoRedelivered);
+            _gotone = false;
+            _gottwo = false;
+            _gottwoRedelivered = false;
+            return;
+        }
+
+        if (((TextMessage) result).getText().equals("1"))
+        {
+            _logger.info("Got 1 redelivered");
+            assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
+            assertFalse("Already received message one", _gotone);
+            _gotone = true;
+
         }
         else
         {
-            assertEquals("1", ((TextMessage) result).getText());
-            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
-            result = _consumer.receive(1000);
-            assertNotNull("test message was consumed and rolled back, but is gone", result);
             assertEquals("2", ((TextMessage) result).getText());
-            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
+
+            if (result.getJMSRedelivered())
+            {
+                _logger.info("Got 2 redelivered, message was prefetched");
+                assertFalse("Already received message redelivered two", _gottwoRedelivered);
+
+                _gottwoRedelivered = true;
+            }
+            else
+            {
+                _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");                
+                assertFalse("Already received message two", _gottwo);
+
+                _gottwo = true;
+            }
         }
 
-        result = _consumer.receive(1000);
-
-        if (result != null)
-        {
-            assertEquals("2", ((TextMessage) result).getText());
-            assertTrue("Messasge is not marked as redelivered", result.getJMSRedelivered());
-            result = _consumer.receive(1000);
-        }
-
-        assertNull("test message should be null", result);
-    }*/
+        verifyMessages(_consumer.receive(1000));
+    }
 
     public void testSend2ThenCloseAfter1andTryAgain() throws Exception
     {
@@ -417,12 +459,12 @@ public class CommitRollbackTest extends TestCase
 
         _logger.info("receiving result");
 
-        // NOTE: Both msg 1 & 2 will be marked as redelivered as they have both will have been rejected.
-        // Only the occasion where it is not rejected will it mean it hasn't arrived at the client yet.
+// NOTE: Both msg 1 & 2 will be marked as redelivered as they have both will have been rejected.
+// Only the occasion where it is not rejected will it mean it hasn't arrived at the client yet.
         result = _consumer.receive(1000);
         assertNotNull("test message was consumed and rolled back, but is gone", result);
 
-        // The first message back will be either 1 or 2 being redelivered
+// The first message back will be either 1 or 2 being redelivered
         if (result.getJMSRedelivered())
         {
             assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());

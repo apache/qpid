@@ -17,24 +17,21 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.messageStore.StorableMessage;
-import org.apache.qpid.server.messageStore.JDBCStore;
-import org.apache.qpid.server.exception.InternalErrorException;
-import org.apache.qpid.server.exception.MessageDoesntExistException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.log4j.Logger;
+import org.apache.qpid.server.store.StoreContext;
 
 import javax.transaction.xa.Xid;
-import java.util.List;
-import java.util.LinkedList;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by Arnaud Simon
@@ -94,7 +91,8 @@ public class StorableMessageHandle implements AMQMessageHandle
             try
             {
                 _contentHeaderBody = _messageStore.getContentHeaderBody(_message);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new AMQException(AMQConstant.INTERNAL_ERROR, e.getMessage(), e);
             }
@@ -106,17 +104,17 @@ public class StorableMessageHandle implements AMQMessageHandle
             throws
             AMQException
     {
-       if (_chunks == null )
-       {
-           if(_message.isStaged() )
-           {
-              loadChunks();
-           }
-           else
-           {
-               return 0;
-           }
-      }
+        if (_chunks == null)
+        {
+            if (_message.isStaged())
+            {
+                loadChunks();
+            }
+            else
+            {
+                return 0;
+            }
+        }
         return _chunks.size();
     }
 
@@ -144,8 +142,8 @@ public class StorableMessageHandle implements AMQMessageHandle
             AMQException
     {
         try
-            {
-                _chunks = new LinkedList<ContentChunk>();
+        {
+            _chunks = new LinkedList<ContentChunk>();
             byte[] underlying = _messageStore.loadContent(_message, 1, 0);
             final int size = underlying.length;
             final org.apache.mina.common.ByteBuffer data =
@@ -169,7 +167,8 @@ public class StorableMessageHandle implements AMQMessageHandle
                 }
             };
             _chunks.add(cb);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new AMQException(AMQConstant.INTERNAL_ERROR, e.getMessage(), e);
         }
@@ -198,8 +197,10 @@ public class StorableMessageHandle implements AMQMessageHandle
             // read it from the store
             try
             {
+
                 _messagePublishInfo = _messageStore.getMessagePublishInfo(_message);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new AMQException(AMQConstant.INTERNAL_ERROR, e.getMessage(), e);
             }
@@ -222,7 +223,7 @@ public class StorableMessageHandle implements AMQMessageHandle
             AMQException
     {
         return _contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
-                ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
+               ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 2;
     }
 
     public void setPublishAndContentHeaderBody(StoreContext storeContext, Long messageId,
@@ -254,7 +255,8 @@ public class StorableMessageHandle implements AMQMessageHandle
             {
                 _messageStore.enqueue((Xid) storeContext.getPayload(), _message, queue);
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new AMQException(null, "PRoblem during message enqueue", e);
         }
@@ -270,7 +272,8 @@ public class StorableMessageHandle implements AMQMessageHandle
             {
                 _messageStore.dequeue((Xid) storeContext.getPayload(), _message, queue);
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new AMQException(null, "PRoblem during message dequeue", e);
         }
