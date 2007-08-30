@@ -20,7 +20,11 @@ AIS_TESTS=
 
 ais_check: ais_tests
 ais_tests:
-	echo $(AIS_TESTS) >$@
+	echo $(AIS_TESTS)
+	echo "# AIS tests" >$@
+	for t in $(AIS_TESTS); do echo ./$$t >$@; done
+	chmod a+x $@
+
 CLEANFILES+=ais_tests
 
 AIS_TESTS+=Cpg

@@ -28,6 +28,8 @@
 #include "qpid/broker/BrokerChannel.h"
 #include "qpid/framing/ChannelAdapter.h"
 
+#include <boost/utility/in_place_factory.hpp>
+
 namespace qpid {
 namespace cluster {
 
@@ -36,7 +38,9 @@ using namespace sys;
 using namespace broker;
 
 /** Handler to send frames direct to local broker (bypass correlation etc.) */
-struct BrokerHandler : public FrameHandler, private ChannelAdapter, private DeliveryAdapter {
+struct SessionManager::BrokerHandler :
+        public FrameHandler, private ChannelAdapter, private DeliveryAdapter
+{
     Connection connection;
     Channel channel;
     BrokerAdapter adapter;
@@ -74,38 +78,35 @@ struct BrokerHandler : public FrameHandler, private ChannelAdapter, private Deli
     virtual void redeliver(Message::shared_ptr&, DeliveryToken::shared_ptr, DeliveryId) {}
 };
 
-SessionManager::SessionManager(Broker& b) : localBroker(new BrokerHandler(b)) {}
+SessionManager::~SessionManager(){}
+
+SessionManager::SessionManager(Broker& b, FrameHandler& c)
+    : cluster(c), localBroker(new BrokerHandler(b)) {}
 
 void SessionManager::update(ChannelId channel, FrameHandler::Chains& chains) {
     Mutex::ScopedLock l(lock);
     // Create a new local session, store local chains.
-    sessions[channel] = chains;
-    
-    // Replace local "in" chain to mcast wiring and process other frames
-    // as normal.
-    assert(clusterSend);
-    chains.in = make_shared_ptr(
-        new ClassifierHandler(clusterSend, chains.in));
+    assert(!sessions[channel]);
+    boost::optional<Session>& session=sessions[channel];
+    session = boost::in_place(boost::ref(cluster), boost::ref(chains.in));
+    chains.in = &session->classifier;
 }
 
 void SessionManager::handle(AMQFrame& frame) {
     // Incoming from cluster.
     {
         Mutex::ScopedLock l(lock);
-        SessionMap::iterator i = sessions.find(frame.getChannel());
+        SessionMap::iterator i=sessions.find(frame.getChannel());
         if (i == sessions.end()) {
             // Non-local wiring method frame, invoke locally.
-            localBroker->handle(frame);
+            (*localBroker)(frame);
         }
         else {
             // Local frame continuing on local chain
-            i->second.in->handle(frame);
+            assert(i->second);
+            i->second->cont(frame);
         }
     }
-}
-
-void SessionManager::setClusterSend(const FrameHandler::Chain& send) {
-    clusterSend=send;
 }
 
 }} // namespace qpid::cluster
