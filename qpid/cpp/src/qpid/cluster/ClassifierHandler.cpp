@@ -18,59 +18,34 @@
 
 #include "ClassifierHandler.h"
 
+#include "qpid/framing/FrameDefaultVisitor.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/ExchangeDeclareBody.h"
-#include "qpid/framing/ExchangeDeleteBody.h"
-#include "qpid/framing/QueueBindBody.h"
-#include "qpid/framing/QueueDeclareBody.h"
-#include "qpid/framing/QueueDeleteBody.h"
-#include "qpid/framing/QueueUnbindBody.h"
-
 
 namespace qpid {
 namespace cluster {
 
 using namespace framing;
 
-typedef uint32_t FullMethodId;  // Combind class & method ID.
+struct ClassifierHandler::Visitor : public FrameDefaultVisitor {
+    Visitor(AMQFrame& f, ClassifierHandler& c)
+        : chosen(0), frame(f), classifier(c) { f.getBody()->accept(*this); }
 
-FullMethodId fullId(ClassId c, MethodId m) { return c<<16+m; }
+    void visit(const ExchangeDeclareBody&) { chosen=&classifier.wiring; }
+    void visit(const ExchangeDeleteBody&) { chosen=&classifier.wiring; }
+    void visit(const QueueBindBody&) { chosen=&classifier.wiring; }
+    void visit(const QueueDeclareBody&) { chosen=&classifier.wiring; }
+    void visit(const QueueDeleteBody&) { chosen=&classifier.wiring; }
+    void visit(const QueueUnbindBody&) { chosen=&classifier.wiring; }
+    void defaultVisit(const AMQBody&) { chosen=&classifier.other; }
 
-FullMethodId fullId(const AMQMethodBody* body) {
-    return fullId(body->amqpClassId(), body->amqpMethodId());
-}
+    using framing::FrameDefaultVisitor::visit;
+    using framing::FrameDefaultVisitor::defaultVisit;
 
-template <class M>
-FullMethodId fullId() { return fullId(M::CLASS_ID, M::METHOD_ID); }
+    FrameHandler::Chain chosen;
+    AMQFrame& frame;
+    ClassifierHandler& classifier;
+};
 
-
-ClassifierHandler::ClassifierHandler(Chain wiring, Chain other)
-    : FrameHandler(other)
-{
-    map[fullId<ExchangeDeclareBody>()] = wiring;
-    map[fullId<ExchangeDeleteBody>()] = wiring;
-    map[fullId<QueueBindBody>()] = wiring;
-    map[fullId<QueueDeclareBody>()] = wiring;
-    map[fullId<QueueDeleteBody>()] = wiring;
-    map[fullId<QueueUnbindBody>()] = wiring;
-}
-
-void  ClassifierHandler::handle(AMQFrame& frame) {
-    // TODO aconway 2007-07-03: Flatten the frame hierarchy so we
-    // can do a single lookup to dispatch a frame.
-    Chain chosen;
-    AMQMethodBody* method = dynamic_cast<AMQMethodBody*>(frame.getBody());
-
-    // FIXME aconway 2007-07-05: Need to stop bypassed frames
-    // from overtaking mcast frames.
-    //
-    if (method) 
-        chosen=map[fullId(method)];
-    if (chosen)
-        chosen->handle(frame);
-    else
-        next->handle(frame);
-}
- 
+void ClassifierHandler::handle(AMQFrame& f) { Visitor(f, *this).chosen(f); }
 
 }} // namespace qpid::cluster

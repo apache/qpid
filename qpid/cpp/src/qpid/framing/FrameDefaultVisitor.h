@@ -45,24 +45,17 @@ class AMQHeartbeatBody;
  */
 struct FrameDefaultVisitor : public AMQBodyConstVisitor, public MethodBodyDefaultVisitor
 {
-    void visit(const AMQHeaderBody&) { defaultVisit(); }
-    void visit(const AMQContentBody&) { defaultVisit(); }
-    void visit(const AMQHeartbeatBody&) { defaultVisit(); }
-    void visit(const AMQMethodBody& method) { method.accept(static_cast<MethodBodyDefaultVisitor&>(*this)); }
+    virtual void defaultVisit(const AMQBody&) = 0;
 
+    void visit(const AMQHeaderBody& b) { defaultVisit(b); }
+    void visit(const AMQContentBody& b) { defaultVisit(b); }
+    void visit(const AMQHeartbeatBody& b) { defaultVisit(b); }
+    void visit(const AMQMethodBody& b) { b.accept(static_cast<MethodBodyDefaultVisitor&>(*this)); }
+    void defaultVisit(const AMQMethodBody& method) { defaultVisit(static_cast<const AMQBody&>(method)); }
+    
     using AMQBodyConstVisitor::visit;
     using MethodBodyDefaultVisitor::visit;
 };
-
-/**
- * A FrameHandler that is implemented as a visitor.
- */
-struct FrameVisitorHandler : public FrameHandler,
-                             protected FrameDefaultVisitor
-{
-    void handle(AMQFrame& f) { f.getBody()->accept(*this); }
-};
-
 
 }} // namespace qpid::framing
 

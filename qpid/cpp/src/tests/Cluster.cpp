@@ -42,8 +42,8 @@ BOOST_AUTO_TEST_CASE(testClusterOne) {
     BOOST_CHECK_EQUAL(1u, cluster.size());
     Cluster::MemberList members = cluster.getMembers();
     BOOST_CHECK_EQUAL(1u, members.size());
-    shared_ptr<const Cluster::Member> me=members.front();
-    BOOST_REQUIRE_EQUAL(me->url, "amqp:one:1");
+    Cluster::Member me=members.front();
+    BOOST_REQUIRE_EQUAL(me.url, "amqp:one:1");
 }
 
 /** Fork a process to test a cluster with two members */
@@ -93,18 +93,18 @@ struct CountHandler : public FrameHandler {
 BOOST_AUTO_TEST_CASE(testClassifierHandlerWiring) {
     AMQFrame queueDecl(0, QueueDeclareBody(VER));
     AMQFrame messageTrans(0, MessageTransferBody(VER));
-    shared_ptr<CountHandler> wiring(new CountHandler());
-    shared_ptr<CountHandler> other(new CountHandler());
+    CountHandler wiring;
+    CountHandler other;
     
     ClassifierHandler classify(wiring, other);
 
     classify.handle(queueDecl);
-    BOOST_CHECK_EQUAL(1u, wiring->count);
-    BOOST_CHECK_EQUAL(0u, other->count);
+    BOOST_CHECK_EQUAL(1u, wiring.count);
+    BOOST_CHECK_EQUAL(0u, other.count);
     
     classify.handle(messageTrans);
-    BOOST_CHECK_EQUAL(1u, wiring->count);
-    BOOST_CHECK_EQUAL(1u, other->count);
+    BOOST_CHECK_EQUAL(1u, wiring.count);
+    BOOST_CHECK_EQUAL(1u, other.count);
 }
     
 

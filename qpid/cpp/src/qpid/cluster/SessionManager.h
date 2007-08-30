@@ -19,12 +19,15 @@
  *
  */
 
+#include "ClassifierHandler.h"
+
 #include "qpid/framing/HandlerUpdater.h"
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/Uuid.h"
 #include "qpid/sys/Mutex.h"
 
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/optional.hpp>
 
 #include <map>
 
@@ -34,25 +37,31 @@ namespace broker {
 class Broker;
 }
 
+namespace framing {
+class Uuid;
+}
+
 namespace cluster {
 
 /**
- * Manage sessions and handler chains for the cluster.
+ * Manage the clusters session map.
  * 
  */
 class SessionManager : public framing::HandlerUpdater, public framing::FrameHandler,
                        private boost::noncopyable
 {
   public:
-    SessionManager(broker::Broker& broker);
+    SessionManager(broker::Broker& broker, framing::FrameHandler& cluster);
+    ~SessionManager();
 
-    /** Set the handler to send to the cluster */
-    void setClusterSend(const framing::FrameHandler::Chain& send);
-    
-    /** As ChannelUpdater update the handler chains. */
+    /** ChannelUpdater: add cluster handlers to session. */
     void update(framing::ChannelId, framing::FrameHandler::Chains&);
 
-    /** As FrameHandler frames received from the cluster */
+    // FIXME aconway 2007-08-30: Need setUp and tearDown instead of just
+    // update, so we can tear down closed sesions.
+    // Or add FrameHandler::destroy(Session) to notify all handlers?
+
+    /** FrameHandler: map frames from the cluster to sessions. */
     void handle(framing::AMQFrame&);
 
     /** Get ChannelID for UUID. Return 0 if no mapping */
@@ -60,11 +69,20 @@ class SessionManager : public framing::HandlerUpdater, public framing::FrameHand
     
   private:
     class SessionOperations;
-    typedef std::map<framing::ChannelId,framing::FrameHandler::Chains> SessionMap;
+    class BrokerHandler;
+
+    struct Session {
+        Session(framing::FrameHandler& cluster, framing::FrameHandler& cont_)
+            : cont(cont_), classifier(cluster,cont_) {}
+        framing::FrameHandler& cont; // Continue local dispatch
+        ClassifierHandler classifier;
+    };
+
+    typedef std::map<framing::ChannelId,boost::optional<Session> > SessionMap;
 
     sys::Mutex lock;
-    framing::FrameHandler::Chain clusterSend;
-    framing::FrameHandler::Chain localBroker;
+    framing::FrameHandler& cluster;
+    boost::scoped_ptr<BrokerHandler> localBroker;
     SessionMap sessions;
 };
 

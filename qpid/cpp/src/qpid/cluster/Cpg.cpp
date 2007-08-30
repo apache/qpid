@@ -25,6 +25,8 @@
 #include <limits>
 #include <iterator>
 
+#include <unistd.h>
+
 namespace qpid {
 namespace cluster {
 
@@ -172,6 +174,11 @@ ostream& operator <<(ostream& out, const Cpg::Id& id) {
 
 ostream& operator <<(ostream& out, const cpg_name& name) {
     return out << string(name.value, name.length);
+}
+
+
+Cpg::Id Cpg::Id::self(Cpg& cpg) {
+    return Id(cpg.getLocalNoideId(), getpid());
 }
 
 }} // namespace qpid::cluster

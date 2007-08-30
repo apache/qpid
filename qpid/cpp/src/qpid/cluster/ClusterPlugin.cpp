@@ -20,6 +20,10 @@
 #include "qpid/cluster/SessionManager.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
+#include "qpid/shared_ptr.h"
+
+#include <boost/optional.hpp>
+#include <boost/utility/in_place_factory.hpp>
 
 namespace qpid {
 namespace cluster {
@@ -38,23 +42,18 @@ struct ClusterPlugin : public Plugin {
     };
 
     ClusterOptions options;
-    shared_ptr<Cluster> cluster;
-    shared_ptr<SessionManager> sessions;
+    boost::optional<Cluster> cluster;
+    boost::optional<SessionManager> sessions;
 
-    Options* getOptions() {
-        return &options;
-    }
+    Options* getOptions() { return &options; }
 
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker, and only if the --cluster config is set.
         if (broker && !options.clusterName.empty()) {
             assert(!cluster); // A process can only belong to one cluster.
-
-            sessions.reset(new SessionManager(*broker));
-            cluster.reset(new Cluster(options.clusterName, broker->getUrl(), sessions));
-            sessions->setClusterSend(cluster); 
-            broker->add(sessions);
+            cluster = boost::in_place(options.clusterName, broker->getUrl(), boost::ref(*broker));
+            broker->add(make_shared_ptr(&cluster->getHandlerUpdater(), nullDeleter));
         }
     }
 };

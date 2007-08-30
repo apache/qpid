@@ -20,9 +20,6 @@
  */
 
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/amqp_types.h"
-
-#include <map>
 
 namespace qpid {
 namespace cluster {
@@ -33,12 +30,17 @@ namespace cluster {
 class ClassifierHandler : public framing::FrameHandler
 {
   public:
-    ClassifierHandler(Chain wiring, Chain other);
+    ClassifierHandler(framing::FrameHandler& wiring_,
+                      framing::FrameHandler& other_)
+        : wiring(wiring_), other(other_) {}
 
-    void handle(framing::AMQFrame& frame);
-
+    void handle(framing::AMQFrame&);
+    
   private:
-    std::map<uint32_t, framing::FrameHandler::Chain> map;
+    struct Visitor;
+  friend struct Visitor;
+    framing::FrameHandler& wiring;
+    framing::FrameHandler& other;
 };
 
 }} // namespace qpid::cluster
