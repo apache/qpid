@@ -61,7 +61,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _logger.info("Shutting down application registries...");
             try
             {
-                synchronized (ApplicationRegistry.class)
+                synchronized (_instanceMap)
                 {
                     Iterator<IApplicationRegistry> keyIterator = _instanceMap.values().iterator();
 
@@ -87,40 +87,46 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static void initialise(IApplicationRegistry instance, int instanceID) throws Exception
     {
-        if (instance != null)
+        synchronized (_instanceMap)
         {
-            _logger.info("Initialising Application Registry:" + instanceID);
-            _instanceMap.put(instanceID, instance);
+            if (instance != null)
+            {
+                _logger.info("Initialising Application Registry:" + instanceID);
+                _instanceMap.put(instanceID, instance);
 
-            try
-            {
-                instance.initialise();
+                try
+                {
+                    instance.initialise();
+                }
+                catch (Exception e)
+                {
+                    _instanceMap.remove(instanceID);
+                    throw e;
+                }
             }
-            catch (Exception e)
+            else
             {
-                _instanceMap.remove(instanceID);
-                throw e;
+                remove(instanceID);
             }
-        }
-        else
-        {
-            remove(instanceID);
         }
     }
 
     public static void remove(int instanceID)
     {
-        try
+        synchronized (_instanceMap)
         {
-            _instanceMap.get(instanceID).close();
-        }
-        catch (Exception e)
-        {
+            try
+            {
+                _instanceMap.get(instanceID).close();
+            }
+            catch (Exception e)
+            {
 
-        }
-        finally
-        {
-            _instanceMap.remove(instanceID);
+            }
+            finally
+            {
+                _instanceMap.remove(instanceID);
+            }
         }
     }
 
@@ -137,28 +143,31 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static IApplicationRegistry getInstance(int instanceID)
     {
-        IApplicationRegistry instance = _instanceMap.get(instanceID);
+        synchronized (_instanceMap)
+        {
+            IApplicationRegistry instance = _instanceMap.get(instanceID);
 
-        if (instance == null)
-        {
-            try
+            if (instance == null)
             {
-                _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + _APPLICATION_REGISTRY + " : Instance:" + instanceID);
-                IApplicationRegistry registry = (IApplicationRegistry) Class.forName(_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
-                ApplicationRegistry.initialise(registry, instanceID);
-                _logger.info("Initialised Application Registry:" + instanceID);
-                return registry;
+                try
+                {
+                    _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + _APPLICATION_REGISTRY + " : Instance:" + instanceID);
+                    IApplicationRegistry registry = (IApplicationRegistry) Class.forName(_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
+                    ApplicationRegistry.initialise(registry, instanceID);
+                    _logger.info("Initialised Application Registry:" + instanceID);
+                    return registry;
+                }
+                catch (Exception e)
+                {
+                    _logger.error("Error configuring application: " + e, e);
+                    //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
+                    throw new RuntimeException("Unable to create Application Registry", e);
+                }
             }
-            catch (Exception e)
+            else
             {
-                _logger.error("Error configuring application: " + e, e);
-                //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
-                throw new RuntimeException("Unable to create Application Registry", e);
+                return instance;
             }
-        }
-        else
-        {
-            return instance;
         }
     }
 
