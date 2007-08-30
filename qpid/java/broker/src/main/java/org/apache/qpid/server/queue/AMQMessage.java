@@ -20,17 +20,8 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-
-/** Combines the information that make up a deliverable message into a more manageable form. */
-
 import org.apache.log4j.Logger;
-
 import org.apache.mina.common.ByteBuffer;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
@@ -40,22 +31,33 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
-import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.messageStore.StorableMessage;
 import org.apache.qpid.server.messageStore.StorableQueue;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.TransactionalContext;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Combines the information that make up a deliverable message into a more manageable form.
  */
 public class AMQMessage implements StorableMessage
 {
+    /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
 
-    // The ordered list of queues into which this message is enqueued.
+    // The ordered list of queues into which this message is enqueued.    
     private List<StorableQueue> _queues = new LinkedList<StorableQueue>();
     // Indicates whether this message is staged
     private boolean _isStaged = false;
@@ -66,7 +68,7 @@ public class AMQMessage implements StorableMessage
     private Set<Object> _tokens;
 
     /**
-     * Only use in clustering - should ideally be removed?
+     * Only use in clustering - //todo: should ideally be removed?
      */
     private AMQProtocolSession _publisher;
 
@@ -76,12 +78,13 @@ public class AMQMessage implements StorableMessage
 
     private AMQMessageHandle _messageHandle;
 
+    /** Holds the transactional context in which this message is being processed. */
     // TODO: ideally this should be able to go into the transient message date - check this! (RG)
     private TransactionalContext _txnContext;
 
     /**
-     * Flag to indicate whether message has been delivered to a consumer. Used in implementing return functionality for
-     * messages published with the 'immediate' flag.
+     * Flag to indicate whether this message has been delivered to a consumer. Used in implementing return functionality
+     * for messages published with the 'immediate' flag.
      */
     private boolean _deliveredToConsumer;
     /**
@@ -89,18 +92,25 @@ public class AMQMessage implements StorableMessage
      * checkDelieveredToConsumer is called, the message may already have been received and acknowledged, and the body
      * removed from the store.
      */
+
+    /** Flag to indicate that this message requires 'immediate' delivery. */
     private boolean _immediate;
 
     // private Subscription _takenBySubcription;
     // private AtomicBoolean _taken = new AtomicBoolean(false);
     private TransientMessageData _transientMessageData = new TransientMessageData();
 
+    //todo: this should be part of a messageOnQueue object
     private Set<Subscription> _rejectedBy = null;
 
+    //todo: this should be part of a messageOnQueue object
     private Map<AMQQueue, AtomicBoolean> _takenMap = new HashMap<AMQQueue, AtomicBoolean>();
+    //todo: this should be part of a messageOnQueue object
     private Map<AMQQueue, Subscription> _takenBySubcriptionMap = new HashMap<AMQQueue, Subscription>();
 
     private final int hashcode = System.identityHashCode(this);
+
+    //todo: this should be part of a messageOnQueue object
     private long _expiration;
 
     public String debugIdentity()
@@ -111,9 +121,9 @@ public class AMQMessage implements StorableMessage
     public void setExpiration()
     {
         long expiration =
-            ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getExpiration();
+                ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getExpiration();
         long timestamp =
-            ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
+                ((BasicContentHeaderProperties) _transientMessageData.getContentHeaderBody().properties).getTimestamp();
 
         if (ApplicationRegistry.getInstance().getConfiguration().getBoolean("advanced.synced-clocks", false))
         {
@@ -176,8 +186,8 @@ public class AMQMessage implements StorableMessage
             {
 
                 AMQBody cb =
-                    getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(),
-                            _messageId, ++_index));
+                        getProtocolVersionMethodConverter().convertToBody(_messageHandle.getContentChunk(getStoreContext(),
+                                                                                                         _messageId, ++_index));
 
                 return new AMQFrame(_channel, cb);
             }
@@ -259,10 +269,11 @@ public class AMQMessage implements StorableMessage
      * @param messageId
      * @param store
      * @param factory
+     *
      * @throws AMQException
      */
     public AMQMessage(Long messageId, MessageStore store, MessageHandleFactory factory, TransactionalContext txnConext)
-        throws AMQException
+            throws AMQException
     {
         _messageId = messageId;
         _messageHandle = factory.createMessageHandle(store, this, true);
@@ -279,7 +290,7 @@ public class AMQMessage implements StorableMessage
      * @param contentHeader
      */
     public AMQMessage(Long messageId, MessagePublishInfo info, TransactionalContext txnContext,
-        ContentHeaderBody contentHeader) throws AMQException
+                      ContentHeaderBody contentHeader) throws AMQException
     {
         this(messageId, info, txnContext);
         setContentHeaderBody(contentHeader);
@@ -294,11 +305,12 @@ public class AMQMessage implements StorableMessage
      * @param contentHeader
      * @param destinationQueues
      * @param contentBodies
+     *
      * @throws AMQException
      */
     public AMQMessage(Long messageId, MessagePublishInfo info, TransactionalContext txnContext,
-        ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues, List<ContentChunk> contentBodies,
-        MessageStore messageStore, StoreContext storeContext, MessageHandleFactory messageHandleFactory) throws AMQException
+                      ContentHeaderBody contentHeader, List<AMQQueue> destinationQueues, List<ContentChunk> contentBodies,
+                      MessageStore messageStore, StoreContext storeContext, MessageHandleFactory messageHandleFactory) throws AMQException
     {
         this(messageId, info, txnContext, contentHeader);
         _transientMessageData.setDestinationQueues(destinationQueues);
@@ -443,22 +455,23 @@ public class AMQMessage implements StorableMessage
     }
 
     public void routingComplete(MessageStore store, StoreContext storeContext, MessageHandleFactory factory)
-        throws AMQException
+            throws AMQException
     {
         final boolean persistent = isPersistent();
         _messageHandle = factory.createMessageHandle(store, this, persistent);
-        // if (persistent)
-        // {
-        _txnContext.beginTranIfNecessary();
-        // }
+        if (persistent)  //DTX was removed
+        {
+            _txnContext.beginTranIfNecessary();
+        }
 
         // enqueuing the messages ensure that if required the destinations are recorded to a
         // persistent store
 
-        // for (AMQQueue q : _transientMessageData.getDestinationQueues())
-        // {
-        // _messageHandle.enqueue(storeContext, _messageId, q);
-        // }
+        //DTX was removed
+        for (AMQQueue q : _transientMessageData.getDestinationQueues())
+        {
+            _messageHandle.enqueue(storeContext, _messageId, q);
+        }
 
         if (_transientMessageData.getContentHeaderBody().bodySize == 0)
         {
@@ -494,10 +507,11 @@ public class AMQMessage implements StorableMessage
      */
     public AMQMessage takeReference()
     {
-        _referenceCount.incrementAndGet();
+        incrementReference(); // _referenceCount.incrementAndGet();
 
         return this;
     }
+
 
     /**
      * Threadsafe. Increment the reference count on the message.
@@ -516,6 +530,7 @@ public class AMQMessage implements StorableMessage
      * message store.
      *
      * @param storeContext
+     *
      * @throws MessageCleanupException when an attempt was made to remove the message from the message store and that
      *                                 failed
      */
@@ -555,7 +570,7 @@ public class AMQMessage implements StorableMessage
             if (count < 0)
             {
                 throw new MessageCleanupException("Reference count for message id " + debugIdentity() + " has gone below 0.",
-                    null);
+                                                  null);
             }
         }
     }
@@ -684,6 +699,7 @@ public class AMQMessage implements StorableMessage
      * AMQMessageHandle implementation can be picked based on various criteria.
      *
      * @param queue the queue
+     *
      * @throws org.apache.qpid.AMQException if there is an error enqueuing the message
      */
     public void enqueue(AMQQueue queue) throws AMQException
@@ -756,14 +772,13 @@ public class AMQMessage implements StorableMessage
     /**
      * Checks to see if the message has expired. If it has the message is dequeued.
      *
-     * @param storecontext
-     * @param queue
+     * @param queue The queue to check the expiration against. (Currently not used)
      *
      * @return true if the message has expire
      *
      * @throws AMQException
      */
-    public boolean expired(StoreContext storecontext, AMQQueue queue) throws AMQException
+    public boolean expired(AMQQueue queue) throws AMQException
     {
         // note: If the storecontext isn't need then we can remove the getChannel() from Subscription.
 
@@ -771,12 +786,7 @@ public class AMQMessage implements StorableMessage
         {
             long now = System.currentTimeMillis();
 
-            if (now > _expiration)
-            {
-                dequeue(storecontext, queue);
-
-                return true;
-            }
+            return (now > _expiration);
         }
 
         return false;
@@ -803,7 +813,7 @@ public class AMQMessage implements StorableMessage
             // first we allow the handle to know that the message has been fully received. This is useful if it is
             // maintaining any calculated values based on content chunks
             _messageHandle.setPublishAndContentHeaderBody(storeContext, _messageId,
-                _transientMessageData.getMessagePublishInfo(), _transientMessageData.getContentHeaderBody());
+                                                          _transientMessageData.getMessagePublishInfo(), _transientMessageData.getContentHeaderBody());
 
             // we then allow the transactional context to do something with the message content
             // now that it has all been received, before we attempt delivery
@@ -1039,7 +1049,7 @@ public class AMQMessage implements StorableMessage
         // _taken + " by :" + _takenBySubcription;
 
         return "Message[" + debugIdentity() + "]: " + _messageId + "; ref count: " + _referenceCount + "; taken for queues: "
-            + _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
+               + _takenMap.toString() + " by Subs:" + _takenBySubcriptionMap.toString();
     }
 
     public Subscription getDeliveredSubscription(AMQQueue queue)
@@ -1053,6 +1063,7 @@ public class AMQMessage implements StorableMessage
 
     public void reject(Subscription subscription)
     {
+
         if (subscription != null)
         {
             if (_rejectedBy == null)

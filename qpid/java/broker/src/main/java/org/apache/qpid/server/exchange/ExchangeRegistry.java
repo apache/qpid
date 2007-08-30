@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.commons.configuration.Configuration;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 
+import java.util.Collection;
 
 public interface ExchangeRegistry extends MessageRouter
 {
@@ -44,6 +43,8 @@ public interface ExchangeRegistry extends MessageRouter
     void setDefaultExchange(Exchange exchange);
 
     Exchange getDefaultExchange();
+
+    Collection<AMQShortString> getExchangeNames();
 
     void initialise() throws AMQException;
 }

@@ -18,15 +18,23 @@
  */
 package org.apache.qpid.server.messageStore;
 
-import org.apache.qpid.server.exception.*;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.txn.TransactionManager;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.commons.configuration.Configuration;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.InvalidXidException;
+import org.apache.qpid.server.exception.MessageAlreadyStagedException;
+import org.apache.qpid.server.exception.MessageDoesntExistException;
+import org.apache.qpid.server.exception.QueueAlreadyExistsException;
+import org.apache.qpid.server.exception.QueueDoesntExistException;
+import org.apache.qpid.server.exception.UnknownXidException;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.TransactionManager;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.transaction.xa.Xid;
 import java.util.Collection;
@@ -203,7 +211,7 @@ public interface MessageStore
      * @throws InternalErrorException      In case of internal message store problem
      * @throws MessageDoesntExistException If the message does not exist
      */
-      public MessagePublishInfo getMessagePublishInfo(StorableMessage m)
+    public MessagePublishInfo getMessagePublishInfo(StorableMessage m)
             throws
             InternalErrorException,
             MessageDoesntExistException;

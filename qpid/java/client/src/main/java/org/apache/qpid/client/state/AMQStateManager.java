@@ -51,7 +51,6 @@ import org.apache.qpid.framing.ExchangeBoundOkBody;
 import org.apache.qpid.framing.QueueDeleteOkBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -254,8 +253,10 @@ public class AMQStateManager implements AMQMethodListener
 
             if (_currentState != s)
             {
-                _logger.warn("State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s);
-                throw new AMQException(null, "State not achieved within permitted time.  Current state " + _currentState + ", desired state: " + s, null);
+                _logger.warn("State not achieved within permitted time.  Current state " + _currentState
+                             + ", desired state: " + s);
+                throw new AMQException(null, "State not achieved within permitted time.  Current state " + _currentState
+                                             + ", desired state: " + s, null);
             }
         }
 

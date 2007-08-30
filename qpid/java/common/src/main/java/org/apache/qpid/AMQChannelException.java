@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,11 +39,8 @@ public class AMQChannelException extends AMQException
 {
     private final int _classId;
     private final int _methodId;
-
-    /** AMQP version for which exception ocurred, major code. */
+    /* AMQP version for which exception ocurred */
     private final byte major;
-
-    /** AMQP version for which exception ocurred, minor code. */
     private final byte minor;
 
     public AMQChannelException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor,

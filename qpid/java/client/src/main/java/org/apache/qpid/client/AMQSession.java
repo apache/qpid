@@ -73,7 +73,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,7 +100,6 @@ import javax.jms.Topic;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
-
 import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -293,6 +291,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     /** Indicates that runtime exceptions should be generated on vilations of the strict AMQP. */
     private final boolean _strictAMQPFATAL;
+    private final Object _messageDeliveryLock = new Object();
 
     /**
      * Creates a new session on a connection.
@@ -505,49 +504,53 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                          + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
         }
 
-        // We must close down all producers and consumers in an orderly fashion. This is the only method
-        // that can be called from a different thread of control from the one controlling the session.
-        synchronized (_connection.getFailoverMutex())
+        synchronized (_messageDeliveryLock)
         {
-            // Ensure we only try and close an open session.
-            if (!_closed.getAndSet(true))
+
+            // We must close down all producers and consumers in an orderly fashion. This is the only method
+            // that can be called from a different thread of control from the one controlling the session.
+            synchronized (_connection.getFailoverMutex())
             {
-                // we pass null since this is not an error case
-                closeProducersAndConsumers(null);
-
-                try
+                // Ensure we only try and close an open session.
+                if (!_closed.getAndSet(true))
                 {
+                    // we pass null since this is not an error case
+                    closeProducersAndConsumers(null);
 
-                    getProtocolHandler().closeSession(this);
+                    try
+                    {
 
-                    final AMQFrame frame =
-                            ChannelCloseBody.createAMQFrame(getChannelId(), getProtocolMajorVersion(), getProtocolMinorVersion(),
-                                                            0, // classId
-                                                            0, // methodId
-                                                            AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
-                                                            new AMQShortString("JMS client closing channel")); // replyText
+                        getProtocolHandler().closeSession(this);
 
-                    getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
+                        final AMQFrame frame =
+                                ChannelCloseBody.createAMQFrame(getChannelId(), getProtocolMajorVersion(), getProtocolMinorVersion(),
+                                                                0, // classId
+                                                                0, // methodId
+                                                                AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
+                                                                new AMQShortString("JMS client closing channel")); // replyText
 
-                    // When control resumes at this point, a reply will have been received that
-                    // indicates the broker has closed the channel successfully.
-                }
-                catch (AMQException e)
-                {
-                    JMSException jmse = new JMSException("Error closing session: " + e);
-                    jmse.setLinkedException(e);
-                    throw jmse;
-                }
-                // This is ignored because the channel is already marked as closed so the fail-over process will
-                // not re-open it.
-                catch (FailoverException e)
-                {
-                    _logger.debug(
-                            "Got FailoverException during channel close, ignored as channel already marked as closed.");
-                }
-                finally
-                {
-                    _connection.deregisterSession(_channelId);
+                        getProtocolHandler().syncWrite(frame, ChannelCloseOkBody.class, timeout);
+
+                        // When control resumes at this point, a reply will have been received that
+                        // indicates the broker has closed the channel successfully.
+                    }
+                    catch (AMQException e)
+                    {
+                        JMSException jmse = new JMSException("Error closing session: " + e);
+                        jmse.setLinkedException(e);
+                        throw jmse;
+                    }
+                    // This is ignored because the channel is already marked as closed so the fail-over process will
+                    // not re-open it.
+                    catch (FailoverException e)
+                    {
+                        _logger.debug(
+                                "Got FailoverException during channel close, ignored as channel already marked as closed.");
+                    }
+                    finally
+                    {
+                        _connection.deregisterSession(_channelId);
+                    }
                 }
             }
         }
@@ -560,23 +563,26 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public void closed(Throwable e) throws JMSException
     {
-        synchronized (_connection.getFailoverMutex())
+        synchronized (_messageDeliveryLock)
         {
-            // An AMQException has an error code and message already and will be passed in when closure occurs as a
-            // result of a channel close request
-            _closed.set(true);
-            AMQException amqe;
-            if (e instanceof AMQException)
+            synchronized (_connection.getFailoverMutex())
             {
-                amqe = (AMQException) e;
-            }
-            else
-            {
-                amqe = new AMQException(null, "Closing session forcibly", e);
-            }
+                // An AMQException has an error code and message already and will be passed in when closure occurs as a
+                // result of a channel close request
+                _closed.set(true);
+                AMQException amqe;
+                if (e instanceof AMQException)
+                {
+                    amqe = (AMQException) e;
+                }
+                else
+                {
+                    amqe = new AMQException(null, "Closing session forcibly", e);
+                }
 
-            _connection.deregisterSession(_channelId);
-            closeProducersAndConsumers(amqe);
+                _connection.deregisterSession(_channelId);
+                closeProducersAndConsumers(amqe);
+            }
         }
     }
 
@@ -1279,7 +1285,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
-   public void declareAndBind(AMQDestination amqd)
+    public void declareAndBind(AMQDestination amqd)
             throws
             AMQException
     {
@@ -2664,7 +2670,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                             _lock.wait();
                         }
 
-                        dispatchMessage(message);
+                        synchronized (_messageDeliveryLock)
+                        {
+                            dispatchMessage(message);
+                        }
 
                         while (connectionStopped())
                         {

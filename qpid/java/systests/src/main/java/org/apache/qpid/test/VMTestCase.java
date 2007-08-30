@@ -25,6 +25,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
@@ -112,6 +113,8 @@ public class VMTestCase extends TestCase
     protected void tearDown() throws Exception
     {
         TransportConnection.killVMBroker(1);
+        ApplicationRegistry.remove(1);
+        
         super.tearDown();
     }
 

@@ -20,28 +20,10 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.openmbean.ArrayType;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.management.MBeanConstructor;
@@ -49,6 +31,17 @@ import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.management.JMException;
+import javax.management.MBeanException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class DestNameExchange extends AbstractExchange
 {
@@ -78,7 +71,7 @@ public class DestNameExchange extends AbstractExchange
                                             boolean autoDelete) throws AMQException
         {
             DestNameExchange exch = new DestNameExchange();
-            exch.initialise(host,name,durable,autoDelete);
+            exch.initialise(host, name, durable, autoDelete);
             return exch;
         }
     };
@@ -90,7 +83,7 @@ public class DestNameExchange extends AbstractExchange
     private final class DestNameExchangeMBean extends ExchangeMBean
     {
         @MBeanConstructor("Creates an MBean for AMQ direct exchange")
-        public DestNameExchangeMBean()  throws JMException
+        public DestNameExchangeMBean() throws JMException
         {
             super();
             _exchangeType = "direct";
@@ -200,7 +193,7 @@ public class DestNameExchange extends AbstractExchange
             }
             else
             {
-                _logger.error("MESSAGE LOSS: Message should be sent on a Dead Letter Queue");                
+                _logger.error("MESSAGE LOSS: Message should be sent on a Dead Letter Queue");
                 _logger.warn(msg);
             }
         }
@@ -218,19 +211,24 @@ public class DestNameExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, FieldTable arguments, AMQQueue queue)
+    {
+        return isBound(routingKey, queue);
+    }
+
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
         final List<AMQQueue> queues = _index.get(routingKey);
         return queues != null && queues.contains(queue);
     }
 
-    public boolean isBound(AMQShortString routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey)
     {
         final List<AMQQueue> queues = _index.get(routingKey);
         return queues != null && !queues.isEmpty();
     }
 
-    public boolean isBound(AMQQueue queue) throws AMQException
+    public boolean isBound(AMQQueue queue)
     {
         Map<AMQShortString, List<AMQQueue>> bindings = _index.getBindingsMap();
         for (List<AMQQueue> queues : bindings.values())
@@ -243,8 +241,13 @@ public class DestNameExchange extends AbstractExchange
         return false;
     }
 
-    public boolean hasBindings() throws AMQException
+    public boolean hasBindings()
     {
         return !_index.getBindingsMap().isEmpty();
+    }
+
+    public Map<AMQShortString, List<AMQQueue>> getBindings()
+    {
+        return _index.getBindingsMap();
     }
 }

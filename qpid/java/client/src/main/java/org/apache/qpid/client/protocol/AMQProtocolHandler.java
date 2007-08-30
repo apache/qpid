@@ -25,7 +25,6 @@ import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
@@ -55,7 +54,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.ssl.SSLContextFactory;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -273,10 +271,9 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
                 if (_failoverState != FailoverState.IN_PROGRESS)
                 {
-                    _logger.info("sessionClose() not allowed to failover");
-                    _connection.exceptionReceived(
-                            new AMQDisconnectedException("Server closed connection and reconnection " +
-                                                         "not permitted.", null));
+                    _logger.debug("sessionClose() not allowed to failover");
+                    _connection.exceptionReceived(new AMQDisconnectedException(
+                            "Server closed connection and reconnection " + "not permitted.", null));
                 }
                 else
                 {

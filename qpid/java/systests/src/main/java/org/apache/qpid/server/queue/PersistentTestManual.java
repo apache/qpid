@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.AMQException;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQConnectionClosedException;
-import org.apache.qpid.util.CommandLineParser;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.log4j.Logger;
+import org.apache.qpid.util.CommandLineParser;
 
-import javax.jms.Session;
 import javax.jms.JMSException;
-import javax.jms.Queue;
 import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
 import javax.jms.TextMessage;
 import java.io.IOException;
 import java.util.Properties;
@@ -259,8 +259,8 @@ public class PersistentTestManual
     {
         PersistentTestManual test;
 
-        Properties options = CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][]{}), null);
-
+        Properties options =
+                CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][]{}), System.getProperties());
 
         test = new PersistentTestManual(options);
         try

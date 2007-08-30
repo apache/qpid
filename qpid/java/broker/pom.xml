@@ -78,13 +78,6 @@
 
         <!-- Test Dependencies -->
         <dependency>
-            <groupId>org.slf4j</groupId> 
-            <artifactId>slf4j-log4j12</artifactId>  
-            <version>1.4.0</version>  
-            <scope>test</scope> 
-        </dependency>
-
-        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -101,6 +94,25 @@
     <build>
 
         <plugins>
+
+
+           <!--plugin>
+                <artifactId>minijar-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>minijars</goal>
+                        </goals>
+                        <configuration>
+                            <stripUnusedClasses>true</stripUnusedClasses>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin-->
+
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-antrun-plugin</artifactId>
@@ -171,7 +183,8 @@
             </testResource>
         </testResources>
 
-        <pluginManagement>
+        <!-- DISABLED - TOBE fixed by ritchiem - should use Jython. -->
+        <!--pluginManagement>
             <plugins>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -204,7 +217,8 @@
 
                                     <property name="command" 
                                               value="python run-tests -v -I java_failing_0-8.txt"/>
-                                              <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
+
+                                              <-value="bash -c 'python run-tests -v -I java_failing.txt'"/>->
 
                                     <ant antfile="python-test.xml" inheritRefs="true">
                                         <target name="run-tests" />
@@ -219,7 +233,7 @@
                     </executions>
                 </plugin>
             </plugins>
-        </pluginManagement>
+        </pluginManagement-->
 
 
     </build>
