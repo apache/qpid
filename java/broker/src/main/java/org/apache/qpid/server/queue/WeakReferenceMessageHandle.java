@@ -34,7 +34,6 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 
 /**
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
  */
 public class WeakReferenceMessageHandle implements AMQMessageHandle
 {

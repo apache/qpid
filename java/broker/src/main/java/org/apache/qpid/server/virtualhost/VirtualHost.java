@@ -41,7 +41,7 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.store.MessageStore;
 
 public class VirtualHost implements Accessable
 {
@@ -112,7 +112,6 @@ public class VirtualHost implements Accessable
 
     /**
      * Used for testing only
-     *
      * @param name
      * @param store
      *
@@ -165,8 +164,6 @@ public class VirtualHost implements Accessable
 
         _exchangeRegistry.initialise();
 
-
-        _logger.warn("VirtualHost authentication Managers require spec change to be operational.");
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(name, hostConfig);
 
         _accessManager = new AccessManagerImpl(name, hostConfig);
@@ -188,7 +185,9 @@ public class VirtualHost implements Accessable
                                          " does not.");
         }
         _messageStore = (MessageStore) o;
-        _messageStore.configure(this, _transactionManager, "store", config);
+          //DTX MessageStore
+//        _messageStore.configure(this, _transactionManager, "store", config);
+        _messageStore.configure(this, "store", config);
     }
 
     private void initialiseTransactionManager(Configuration config) throws Exception

@@ -37,19 +37,11 @@
  */
 package org.apache.qpid.server;
 
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectName;
-
 import org.apache.commons.configuration.Configuration;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.exception.InternalErrorException;
-import org.apache.qpid.server.exception.QueueAlreadyExistsException;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
@@ -58,10 +50,15 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.management.ManagedBroker;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.management.JMException;
+import javax.management.MBeanException;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -113,9 +110,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 Exchange exchange = _exchangeRegistry.getExchange(new AMQShortString(exchangeName));
                 if (exchange == null)
                 {
-                    exchange =
-                        _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type), durable,
-                            false, 0);
+                    exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName),
+                                                               new AMQShortString(type), durable, false, 0);
                     _exchangeRegistry.registerExchange(exchange);
                 }
                 else
@@ -181,20 +177,21 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             queue = new AMQQueue(new AMQShortString(queueName), durable, ownerShortString, false, getVirtualHost());
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                try
-                {
+                //DTX MessageStore
+//                try
+//                {
                     _messageStore.createQueue(queue);
-                }
-                catch (Exception e)
-                {
-                    JMException jme = new JMException("problem creating queue " + queue.getName());
-                    jme.initCause(e);
-                    throw jme;
-                }
+//                }
+//                catch (Exception e)
+//                {
+//                    JMException jme = new JMException("problem creating queue " + queue.getName());
+//                    jme.initCause(e);
+//                    throw jme;
+//                }
             }
 
             Configuration virtualHostDefaultQueueConfiguration =
-                VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
+                    VirtualHostConfiguration.getDefaultQueueConfiguration(queue);
             if (virtualHostDefaultQueueConfiguration != null)
             {
                 Configurator.configure(queue, virtualHostDefaultQueueConfiguration);
@@ -230,10 +227,13 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         try
         {
             queue.delete();
-            if (queue.isDurable())
-            {
-                _messageStore.destroyQueue(queue);
-            }
+
+            //DTX MessageStore
+//            if (queue.isDurable())
+//            {
+//                _messageStore.destroyQueue(queue);
+            _messageStore.removeQueue(queue.getName());
+//            }
         }
         catch (Exception ex)
         {

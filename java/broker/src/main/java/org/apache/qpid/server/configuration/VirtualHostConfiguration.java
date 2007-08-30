@@ -36,7 +36,7 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.exception.InternalErrorException;
 import org.apache.qpid.server.exception.QueueAlreadyExistsException;
@@ -193,19 +193,22 @@ public class VirtualHostConfiguration
 
                 if (queue.isDurable())
                 {
-                    try
-                    {
-                        messageStore.createQueue(queue);
-                    } catch (InternalErrorException e)
-                    {
-                        _logger.error("Problem when creating Queue '" + queueNameString
-                                + "' on virtual host " + virtualHost.getName() + ", not creating.");
 
-                    } catch (QueueAlreadyExistsException e)
-                    {
-                        _logger.error("Queue '" + queueNameString
-                                + "' already exists on virtual host " + virtualHost.getName() + ", not creating.");
-                    }
+                    messageStore.createQueue(queue);
+                    //DTX MessageStore
+//                    try
+//                    {
+//                        messageStore.createQueue(queue);
+//                    } catch (InternalErrorException e)
+//                    {
+//                        _logger.error("Problem when creating Queue '" + queueNameString
+//                                + "' on virtual host " + virtualHost.getName() + ", not creating.");
+//
+//                    } catch (QueueAlreadyExistsException e)
+//                    {
+//                        _logger.error("Queue '" + queueNameString
+//                                + "' already exists on virtual host " + virtualHost.getName() + ", not creating.");
+//                    }
                 }
 
                 queueRegistry.registerQueue(queue);
@@ -260,10 +263,7 @@ public class VirtualHostConfiguration
     }
 
 
-    public void performBindings()
-            throws
-            AMQException,
-            ConfigurationException
+    public void performBindings() throws AMQException, ConfigurationException
     {
         List virtualHostNames = _config.getList(VIRTUALHOST_PROPERTY_BASE + "name");
         String defaultVirtualHostName = _config.getString("default");

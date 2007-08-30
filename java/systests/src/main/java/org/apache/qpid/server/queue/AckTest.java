@@ -23,26 +23,25 @@ package org.apache.qpid.server.queue;
 import junit.framework.TestCase;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.messageStore.TestableMemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.txn.MemoryTransactionManager;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
-import org.apache.qpid.server.txn.MemoryTransactionManager;
-import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.util.NullApplicationRegistry;
 
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
-import java.util.HashSet;
 
 /**
  * Tests that acknowledgements are handled correctly.
@@ -80,7 +79,7 @@ public class AckTest extends TestCase
         _messageStore = new TestableMemoryMessageStore();
         _txm = new MemoryTransactionManager();
         _protocolSession = new MockProtocolSession(_messageStore);
-        _channel = new AMQChannel(_protocolSession,5,_txm, _messageStore, null/*dont need exchange registry*/);
+        _channel = new AMQChannel(_protocolSession, 5, _txm, _messageStore, null/*dont need exchange registry*/);
 
         _protocolSession.addChannel(_channel);
         _subscriptionManager = new SubscriptionSet();
@@ -161,7 +160,10 @@ public class AckTest extends TestCase
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == msgCount);
- //       assertTrue(_messageStore.getNumberStoredMessages() == msgCount);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == msgCount);
+        
+        //DTX
+        //       assertTrue(_messageStore.getNumberStoredMessages() == msgCount);
 
         Set<Long> deliveryTagSet = map.getDeliveryTags();
         int i = 1;
@@ -174,6 +176,9 @@ public class AckTest extends TestCase
         }
 
         assertTrue(map.size() == msgCount);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == msgCount);
+        
+        //DTX
 //        assertTrue(_messageStore.getNumberStoredMessages() == msgCount);
     }
 
@@ -189,7 +194,9 @@ public class AckTest extends TestCase
 
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
-        assertTrue(_messageStore.getNumberStoredMessages() == 0);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == 0);
+        //DTX MessageStore
+//        assertTrue(_messageStore.getNumberStoredMessages() == 0);
     }
 
     /**

@@ -90,18 +90,19 @@
     <virtualhosts>
         <virtualhost>
             <name>localhost</name>
-            <localhost>                
-							  <store>                  
-                    <environment-path>${work}/localhost-store</environment-path> 
-                   <!-- <class>org.apache.qpid.server.store.berkeleydb.messageStore.MessageStoreImpl</class> -->
-                    <class>org.apache.qpid.server.messageStore.MemoryMessageStore</class>
-                </store>             
+            <localhost>
+                <store>
+                    <!-- <class>org.apache.qpid.server.store.berkeleydb.BDBMessageStore</class>
+                    <environment-path>${work}/localhost-store</environment-path> -->
+
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
+                </store>
                 <txn>
                     <environment-tx-timeout>60</environment-tx-timeout>
                 	  <!-- <class>org.apache.qpid.server.store.berkeleydb.txn.TransactionManagerImpl</class> -->
                 	  <class>org.apache.qpid.server.txn.MemoryTransactionManager</class>
                 </txn>
-                
+
                 <security>
                     <!-- Need protocol changes to allow this-->
                     <authentication>
@@ -129,8 +130,8 @@
         <virtualhost>
             <name>development</name>
             <development>
-                <store>                  
-                    <class>org.apache.qpid.server.messageStore.MemoryMessageStore</class>
+                <store>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>             
                 <txn>
                   	  <class>org.apache.qpid.server.txn.MemoryTransactionManager</class>
@@ -147,7 +148,7 @@
             <name>test</name>
             <test>
                 <store>                  
-                    <class>org.apache.qpid.server.messageStore.MemoryMessageStore</class>
+                    <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>             
                 <txn>
                   	  <class>org.apache.qpid.server.txn.MemoryTransactionManager</class>

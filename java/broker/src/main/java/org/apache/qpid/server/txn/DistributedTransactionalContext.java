@@ -26,8 +26,6 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.messageStore.MessageStore;
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.exception.InternalErrorException;
-import org.apache.qpid.server.exception.InvalidXidException;
 import org.apache.log4j.Logger;
 
 import javax.transaction.xa.Xid;

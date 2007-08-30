@@ -26,9 +26,10 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.messageStore.MemoryMessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
 
@@ -167,7 +168,7 @@ public class TxAckTest extends TestCase
             _op.consolidate();
             _op.undoPrepare();
 
-            assertCount(_acked, 0);
+            assertCount(_acked, 1); //DTX Changed to 0, but that is wrong msg 5 is acked!
             assertCount(_unacked, 0);
         }
 

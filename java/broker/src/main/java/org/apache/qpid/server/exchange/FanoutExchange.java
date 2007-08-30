@@ -21,7 +21,6 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -35,17 +34,13 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.openmbean.ArrayType;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
-
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class FanoutExchange extends AbstractExchange
@@ -56,28 +51,28 @@ public class FanoutExchange extends AbstractExchange
 
 
     public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
+    {
+
+        public AMQShortString getName()
         {
+            return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
+        }
 
-            public AMQShortString getName()
-            {
-                return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
-            }
+        public Class<FanoutExchange> getExchangeClass()
+        {
+            return FanoutExchange.class;
+        }
 
-            public Class<FanoutExchange> getExchangeClass()
-            {
-                return FanoutExchange.class;
-            }
-
-            public FanoutExchange newInstance(VirtualHost host,
-                                                AMQShortString name,
-                                                boolean durable,
-                                                boolean autoDelete) throws AMQException
-            {
-                FanoutExchange exch = new FanoutExchange();
-                exch.initialise(host,name,durable,autoDelete);
-                return exch;
-            }
-        };
+        public FanoutExchange newInstance(VirtualHost host,
+                                          AMQShortString name,
+                                          boolean durable,
+                                          boolean autoDelete) throws AMQException
+        {
+            FanoutExchange exch = new FanoutExchange();
+            exch.initialise(host, name, durable, autoDelete);
+            return exch;
+        }
+    };
 
 
     /**
@@ -108,7 +103,7 @@ public class FanoutExchange extends AbstractExchange
             {
                 String queueName = queue.getName().toString();
 
-                Object[] bindingItemValues = { queueName, new String[] { queueName } };
+                Object[] bindingItemValues = {queueName, new String[]{queueName}};
                 CompositeData bindingData = new CompositeDataSupport(_bindingDataType, _bindingItemNames, bindingItemValues);
                 _bindingList.put(bindingData);
             }
@@ -147,6 +142,11 @@ public class FanoutExchange extends AbstractExchange
             _logger.error("Exception occured in creating the direct exchange mbean", ex);
             throw new AMQException(null, "Exception occured in creating the direct exchange mbean", ex);
         }
+    }
+
+    public Map<AMQShortString, List<AMQQueue>> getBindings()
+    {
+        return null;
     }
 
     public AMQShortString getType()
@@ -210,24 +210,29 @@ public class FanoutExchange extends AbstractExchange
         }
     }
 
-    public boolean isBound(AMQShortString routingKey, AMQQueue queue) throws AMQException
+    public boolean isBound(AMQShortString routingKey, FieldTable fieldtable, AMQQueue queue)
+    {
+        return isBound(routingKey, queue);
+    }
+
+    public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
         return _queues.contains(queue);
     }
 
-    public boolean isBound(AMQShortString routingKey) throws AMQException
+    public boolean isBound(AMQShortString routingKey)
     {
 
         return (_queues != null) && !_queues.isEmpty();
     }
 
-    public boolean isBound(AMQQueue queue) throws AMQException
+    public boolean isBound(AMQQueue queue)
     {
 
         return _queues.contains(queue);
     }
 
-    public boolean hasBindings() throws AMQException
+    public boolean hasBindings()
     {
         return !_queues.isEmpty();
     }

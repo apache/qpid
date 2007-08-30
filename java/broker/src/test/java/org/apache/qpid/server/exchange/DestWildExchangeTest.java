@@ -14,15 +14,14 @@
  *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  *  KIND, either express or implied.  See the License for the
  *  specific language governing permissions and limitations
- *  under the License.
+ *  under the License.    
  *
- *
+ * 
  */
 package org.apache.qpid.server.exchange;
 
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
@@ -32,13 +31,12 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.RequiredDeliveryException;
-import org.apache.qpid.server.messageStore.MemoryMessageStore;
-import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageHandleFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-// import org.apache.qpid.server.store.MemoryMessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
@@ -57,7 +55,6 @@ public class DestWildExchangeTest extends TestCase
     {
         _exchange = new DestWildExchange();
         _vhost = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHosts().iterator().next();
-        // _store = new MemoryMessageStore();
         _store = new MemoryMessageStore();
         _context = new StoreContext();
     }
@@ -117,7 +114,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has no route and should fail to be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
@@ -175,6 +173,8 @@ public class DestWildExchangeTest extends TestCase
         }
         catch (AMQException nre)
         { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
@@ -269,7 +269,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has no route and should fail to be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
     }
@@ -333,7 +334,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -365,7 +367,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has  route and should not be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -405,7 +408,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -444,7 +448,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -483,7 +488,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -503,7 +509,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -523,7 +530,8 @@ public class DestWildExchangeTest extends TestCase
             fail("Message has route and should not be routed");
         }
         catch (AMQException nre)
-        { }
+        {
+        }
 
         Assert.assertEquals(0, queue.getMessageCount());
 
@@ -533,9 +541,9 @@ public class DestWildExchangeTest extends TestCase
     {
         MessagePublishInfo info = new PublishInfo(new AMQShortString(s));
 
-        TransactionalContext trancontext =
-            new NonTransactionalContext(_store, _context, null, new LinkedList<RequiredDeliveryException>(),
-                new HashSet<Long>());
+        TransactionalContext trancontext = new NonTransactionalContext(_store, _context, null,
+                                                                       new LinkedList<RequiredDeliveryException>(),
+                                                                       new HashSet<Long>());
 
         AMQMessage message = new AMQMessage(0L, info, trancontext);
         message.setContentHeaderBody(new ContentHeaderBody());
