@@ -142,6 +142,10 @@ AC_CHECK_LIB([cpg],[cpg_local_get],[cpg_lib=yes],[cpg_lib=no])
 AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes])
 test x$cpg_lib = xyes -a x$cpg_h = xyes && enable_CLUSTER=yes 
 
+# FIXME aconway 2007-08-30: Disable cluster till build problems
+# are fixed
+enable_CLUSTER=no
+     
 if test x$enable_CLUSTER = xyes; then
   AC_ARG_ENABLE([cluster],  
     [AS_HELP_STRING([--disable-cluster],

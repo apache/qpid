@@ -47,7 +47,7 @@ struct Handler {
      * linked list of handlers.
      */
     struct Chain : public Handler<T> {
-        Chain(Handler<T>* first) : Handler(first) {}
+        Chain(Handler<T>* first=0) : Handler(first) {}
         void operator=(Handler<T>* h) { next = h; }
         void handle(T t) { (*next)(t); }
         // TODO aconway 2007-08-29: chain modifier ops here.
