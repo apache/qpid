@@ -17,29 +17,50 @@
  */
 package org.apache.qpid.server.messageStore;
 
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exception.*;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.txn.*;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.store.StoreContext;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.AMQException;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.exception.InternalErrorException;
+import org.apache.qpid.server.exception.InvalidXidException;
+import org.apache.qpid.server.exception.MessageAlreadyStagedException;
+import org.apache.qpid.server.exception.MessageDoesntExistException;
+import org.apache.qpid.server.exception.QueueAlreadyExistsException;
+import org.apache.qpid.server.exception.QueueDoesntExistException;
+import org.apache.qpid.server.exception.UnknownXidException;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MessageHandleFactory;
+import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.JDBCAbstractRecord;
+import org.apache.qpid.server.txn.JDBCDequeueRecord;
+import org.apache.qpid.server.txn.JDBCEnqueueRecord;
+import org.apache.qpid.server.txn.JDBCTransaction;
+import org.apache.qpid.server.txn.JDBCTransactionManager;
+import org.apache.qpid.server.txn.Transaction;
+import org.apache.qpid.server.txn.TransactionManager;
+import org.apache.qpid.server.txn.TransactionRecord;
+import org.apache.qpid.server.txn.TransactionalContext;
+import org.apache.qpid.server.txn.XidImpl;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.transaction.xa.Xid;
-import java.util.Collection;
-import java.util.List;
+import java.sql.Blob;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.sql.*;
+import java.util.List;
 
 /**
  * Created by Arnaud Simon
@@ -173,16 +194,18 @@ public class JDBCStore implements MessageStore
                 if (pstmt == null)
                 {
                     pstmt = connection.getConnection().prepareStatement("INSERT INTO " + _tableNameExchange +
-                            " (Name,Type) VALUES (?,?)");
+                                                                        " (Name,Type) VALUES (?,?)");
                     connection.getStatements()[CREATE_EXCHANGE] = pstmt;
                 }
                 pstmt.setString(1, exchange.getName().asString());
                 pstmt.setString(2, exchange.getType().asString());
                 pstmt.executeUpdate();
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new InternalErrorException("Cannot create Exchange: " + exchange, e);
-            } finally
+            }
+            finally
             {
                 if (connection != null)
                 {
@@ -190,7 +213,8 @@ public class JDBCStore implements MessageStore
                     {
                         connection.getConnection().commit();
                         _connectionPool.releaseInstance(connection);
-                    } catch (SQLException e)
+                    }
+                    catch (SQLException e)
                     {
                         // we did not manage to commit this connection
                         // it is better to release it
@@ -216,15 +240,17 @@ public class JDBCStore implements MessageStore
                 if (pstmt == null)
                 {
                     pstmt = connection.getConnection().prepareStatement("DELETE FROM " + _tableNameExchange +
-                            " WHERE Name = ?");
+                                                                        " WHERE Name = ?");
                     connection.getStatements()[DELETE_EXCHANGE] = pstmt;
                 }
                 pstmt.setString(1, exchange.getName().asString());
                 pstmt.executeUpdate();
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new InternalErrorException("Cannot remove Exchange: " + exchange, e);
-            } finally
+            }
+            finally
             {
                 if (connection != null)
                 {
@@ -232,7 +258,8 @@ public class JDBCStore implements MessageStore
                     {
                         connection.getConnection().commit();
                         _connectionPool.releaseInstance(connection);
-                    } catch (SQLException e)
+                    }
+                    catch (SQLException e)
                     {
                         // we did not manage to commit this connection
                         // it is better to release it
@@ -258,7 +285,7 @@ public class JDBCStore implements MessageStore
                 if (pstmt == null)
                 {
                     pstmt = connection.getConnection().prepareStatement("INSERT INTO " + _tableNameExchangeQueueRelation +
-                            " (QueueID,Name,RoutingKey,fieldTable) VALUES (?,?,?,?)");
+                                                                        " (QueueID,Name,RoutingKey,fieldTable) VALUES (?,?,?,?)");
                     connection.getStatements()[BIND_QUEUE] = pstmt;
                 }
                 pstmt.setInt(1, queue.getQueueID());
@@ -267,15 +294,18 @@ public class JDBCStore implements MessageStore
                 if (args != null)
                 {
                     pstmt.setBytes(4, args.getDataAsBytes());
-                } else
+                }
+                else
                 {
                     pstmt.setBytes(4, null);
                 }
                 pstmt.executeUpdate();
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new InternalErrorException("Cannot create Exchange: " + exchange, e);
-            } finally
+            }
+            finally
             {
                 if (connection != null)
                 {
@@ -283,7 +313,8 @@ public class JDBCStore implements MessageStore
                     {
                         connection.getConnection().commit();
                         _connectionPool.releaseInstance(connection);
-                    } catch (SQLException e)
+                    }
+                    catch (SQLException e)
                     {
                         // we did not manage to commit this connection
                         // it is better to release it
@@ -307,17 +338,19 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("DELETE FROM " + _tableNameExchangeQueueRelation +
-                        " WHERE QueueID = ? AND NAME = ? AND RoutingKey = ?");
+                                                                    " WHERE QueueID = ? AND NAME = ? AND RoutingKey = ?");
                 connection.getStatements()[UNBIND_QUEUE] = pstmt;
             }
             pstmt.setInt(1, queue.getQueueID());
             pstmt.setString(2, exchange.getName().asString());
             pstmt.setString(3, routingKey.asString());
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot remove Exchange: " + exchange, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -325,7 +358,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -349,7 +383,7 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("INSERT INTO " + _tableNameQueue +
-                        " (QueueID,Name,Owner) VALUES (?,?,?)");
+                                                                    " (QueueID,Name,Owner) VALUES (?,?,?)");
                 connection.getStatements()[CREATE_QUEUE] = pstmt;
             }
             pstmt.setInt(1, queue.getQueueID());
@@ -357,15 +391,18 @@ public class JDBCStore implements MessageStore
             if (queue.getOwner() != null)
             {
                 pstmt.setString(3, queue.getOwner().asString());
-            } else
+            }
+            else
             {
                 pstmt.setString(3, null);
             }
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot create Queue: " + queue, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -373,7 +410,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -397,15 +435,17 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("DELETE FROM " + _tableNameQueue +
-                        " WHERE QueueID = ?");
+                                                                    " WHERE QueueID = ?");
                 connection.getStatements()[DELETE_QUEUE] = pstmt;
             }
             pstmt.setInt(1, queue.getQueueID());
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot remove Queue: " + queue, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -413,7 +453,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -439,10 +480,12 @@ public class JDBCStore implements MessageStore
         {
             connection = (MyConnection) _connectionPool.acquireInstance();
             stage(connection, m);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot stage Message: " + m, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -450,7 +493,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -470,19 +514,21 @@ public class JDBCStore implements MessageStore
         if (!m.isStaged())
         {
             _log.error("Cannot append content of message Id "
-                    + m.getMessageId() + " as it has not been staged");
+                       + m.getMessageId() + " as it has not been staged");
             throw new MessageDoesntExistException("Cannot append content of message Id "
-                    + m.getMessageId() + " as it has not been staged");
+                                                  + m.getMessageId() + " as it has not been staged");
         }
         MyConnection connection = null;
         try
         {
             connection = (MyConnection) _connectionPool.acquireInstance();
             appendContent(connection, m, data, offset, size);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot stage Message: " + m, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -490,7 +536,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -515,7 +562,7 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("SELECT Payload FROM " + _tableNameMessage +
-                        " WHERE MessageID = ? ");
+                                                                    " WHERE MessageID = ? ");
                 connection.getStatements()[SELECT_MESSAGE_PAYLOAD] = pstmt;
             }
             pstmt.setLong(1, m.getMessageId());
@@ -523,7 +570,7 @@ public class JDBCStore implements MessageStore
             if (!rs.next())
             {
                 throw new MessageDoesntExistException("Cannot load content of message Id "
-                        + m.getMessageId() + " as it has not been found");
+                                                      + m.getMessageId() + " as it has not been found");
             }
             Blob myBlob = rs.getBlob(1);
 
@@ -532,21 +579,25 @@ public class JDBCStore implements MessageStore
                 if (size == 0)
                 {
                     result = myBlob.getBytes(offset, (int) myBlob.length());
-                } else
+                }
+                else
                 {
                     result = myBlob.getBytes(offset, size);
                 }
-            } else
+            }
+            else
             {
                 throw new MessageDoesntExistException("Cannot load content of message Id "
-                        + m.getMessageId() + " as it has not been found");
+                                                      + m.getMessageId() + " as it has not been found");
             }
             rs.close();
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot load Message: " + m, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -554,7 +605,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -575,10 +627,12 @@ public class JDBCStore implements MessageStore
         {
             connection = (MyConnection) _connectionPool.acquireInstance();
             destroy(connection, m);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot destroy message: " + m, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -586,7 +640,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -613,14 +668,16 @@ public class JDBCStore implements MessageStore
         {
             // add an enqueue record
             tx.addRecord(new JDBCEnqueueRecord(m, queue));
-        } else
+        }
+        else
         {
             try
             {
                 if (tx != null)
                 {
                     connection = tx.getConnection();
-                } else
+                }
+                else
                 {
                     connection = (MyConnection) _connectionPool.acquireInstance();
                 }
@@ -634,7 +691,7 @@ public class JDBCStore implements MessageStore
                 if (pstmt == null)
                 {
                     pstmt = connection.getConnection().prepareStatement("INSERT INTO " + _tableNameQueueMessageRelation +
-                            " (QueueID,MessageID,Prepared) VALUES (?,?,0)");
+                                                                        " (QueueID,MessageID,Prepared) VALUES (?,?,0)");
                     connection.getStatements()[ENQUEUE] = pstmt;
                 }
                 pstmt.setInt(1, queue.getQueueID());
@@ -642,10 +699,12 @@ public class JDBCStore implements MessageStore
                 pstmt.executeUpdate();
                 m.enqueue(queue);
                 queue.enqueue(m);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue, e);
-            } finally
+            }
+            finally
             {
                 if (tx == null && connection != null)
                 {
@@ -653,7 +712,8 @@ public class JDBCStore implements MessageStore
                     {
                         connection.getConnection().commit();
                         _connectionPool.releaseInstance(connection);
-                    } catch (SQLException e)
+                    }
+                    catch (SQLException e)
                     {
                         // we did not manage to commit this connection
                         // it is better to release it
@@ -680,14 +740,16 @@ public class JDBCStore implements MessageStore
         {
             // add an dequeue record
             tx.addRecord(new JDBCDequeueRecord(m, queue));
-        } else
+        }
+        else
         {
             try
             {
                 if (tx != null)
                 {
                     connection = tx.getConnection();
-                } else
+                }
+                else
                 {
                     connection = (MyConnection) _connectionPool.acquireInstance();
                 }
@@ -695,7 +757,7 @@ public class JDBCStore implements MessageStore
                 if (pstmt == null)
                 {
                     pstmt = connection.getConnection().prepareStatement("DELETE FROM " + _tableNameQueueMessageRelation +
-                            " WHERE QueueID = ? AND MessageID = ?");
+                                                                        " WHERE QueueID = ? AND MessageID = ?");
                     connection.getStatements()[DEQUEUE] = pstmt;
                 }
                 pstmt.setInt(1, queue.getQueueID());
@@ -708,10 +770,12 @@ public class JDBCStore implements MessageStore
                     destroy(connection, m);
                 }
                 queue.dequeue(m);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 throw new InternalErrorException("Cannot enqueue message : " + m + " in queue: " + queue, e);
-            } finally
+            }
+            finally
             {
                 if (tx == null && connection != null)
                 {
@@ -719,7 +783,8 @@ public class JDBCStore implements MessageStore
                     {
                         connection.getConnection().commit();
                         _connectionPool.releaseInstance(connection);
-                    } catch (SQLException e)
+                    }
+                    catch (SQLException e)
                     {
                         // we did not manage to commit this connection
                         // it is better to release it
@@ -756,14 +821,16 @@ public class JDBCStore implements MessageStore
                     queueOwner = new AMQShortString(rs.getString(3));
                 }
                 result.add(new AMQQueue(new AMQShortString(rs.getString(2)), true, queueOwner,
-                        false, _virtualHost));
+                                        false, _virtualHost));
             }
             rs.close();
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot get all queues", e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -771,7 +838,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -791,10 +859,12 @@ public class JDBCStore implements MessageStore
         {
             connection = (MyConnection) _connectionPool.acquireInstance();
             return getAllMessages(connection, queue);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot get all queues", e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -802,7 +872,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -821,7 +892,7 @@ public class JDBCStore implements MessageStore
         HashMap<Xid, Transaction> result = new HashMap<Xid, Transaction>();
         try
         {
-            TransactionalContext txnContext = new NonTransactionalContext(this, new StoreContext(), null, null, null);
+            //TransactionalContext txnContext = new NonTransactionalContext(this, new StoreContext(), null, null, null);
             MessageHandleFactory messageHandleFactory = new MessageHandleFactory();
             // re-create all the tx
             connection = (MyConnection) _connectionPool.acquireInstance();
@@ -840,11 +911,11 @@ public class JDBCStore implements MessageStore
                 }
                 foundTx = new JDBCTransaction();
                 foundXid = new XidImpl(rs.getBlob(3).getBytes(1, (int) rs.getBlob(3).length()),
-                        rs.getInt(2), rs.getBlob(4).getBytes(1, (int) rs.getBlob(4).length()));
+                                       rs.getInt(2), rs.getBlob(4).getBytes(1, (int) rs.getBlob(4).length()));
                 // get all the records
                 Statement stmtr = connection.getConnection().createStatement();
                 ResultSet rsr = stmtr.executeQuery("SELECT * FROM " + _tableNameRecord +
-                        " WHERE XID_ID = " + rs.getLong(1));
+                                                   " WHERE XID_ID = " + rs.getLong(1));
                 int foundType;
                 AMQQueue foundQueue;
                 StorableMessage foundMessage;
@@ -854,11 +925,14 @@ public class JDBCStore implements MessageStore
                     // those messages were not recovered before so they need to be recreated
                     foundType = rsr.getInt(2);
                     foundQueue = _queueMap.get(new Integer(rsr.getInt(4)));
-                    foundMessage = new AMQMessage(rs.getLong(3), this, messageHandleFactory, txnContext);
+
+                    //DTX MessageStore - this -> null , txContext -> null
+                    foundMessage = new AMQMessage(rs.getLong(3), null, messageHandleFactory, null);
                     if (foundType == JDBCAbstractRecord.TYPE_DEQUEUE)
                     {
                         foundRecord = new JDBCDequeueRecord(foundMessage, foundQueue);
-                    } else
+                    }
+                    else
                     {
                         foundRecord = new JDBCEnqueueRecord(foundMessage, foundQueue);
                     }
@@ -870,10 +944,12 @@ public class JDBCStore implements MessageStore
             }
             rs.close();
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot recover: ", e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -881,7 +957,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -917,7 +994,8 @@ public class JDBCStore implements MessageStore
         {
             connection.getConnection().commit();
             _connectionPool.releaseInstance(connection);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             // we did not manage to commit this connection
             // it is better to release it
@@ -934,7 +1012,8 @@ public class JDBCStore implements MessageStore
         {
             connection.getConnection().rollback();
             _connectionPool.releaseInstance(connection);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             // we did not manage to rollback this connection
             // it is better to release it
@@ -952,7 +1031,7 @@ public class JDBCStore implements MessageStore
         if (pstmt == null)
         {
             pstmt = connection.getConnection().prepareStatement("SELECT Payload FROM " + _tableNameMessage +
-                    " WHERE MessageID = ? ");
+                                                                " WHERE MessageID = ? ");
             connection.getStatements()[SELECT_MESSAGE_PAYLOAD] = pstmt;
         }
         pstmt.setLong(1, m.getMessageId());
@@ -960,14 +1039,15 @@ public class JDBCStore implements MessageStore
         if (!rs.next())
         {
             throw new MessageDoesntExistException("Cannot append content of message Id "
-                    + m.getMessageId() + " as it has not been found");
+                                                  + m.getMessageId() + " as it has not been found");
         }
         Blob myBlob = rs.getBlob(1);
         byte[] oldPayload;
         if (myBlob != null && myBlob.length() > 0)
         {
             oldPayload = myBlob.getBytes(1, (int) myBlob.length());
-        } else
+        }
+        else
         {
             oldPayload = new byte[0];
         }
@@ -980,7 +1060,7 @@ public class JDBCStore implements MessageStore
         if (pstmtUpdate == null)
         {
             pstmtUpdate = connection.getConnection().prepareStatement("UPDATE " + _tableNameMessage +
-                    " SET Payload = ? WHERE MessageID = ?");
+                                                                      " SET Payload = ? WHERE MessageID = ?");
             connection.getStatements()[UPDATE_MESSAGE_PAYLOAD] = pstmtUpdate;
         }
         pstmtUpdate.setBytes(1, newPayload);
@@ -996,7 +1076,7 @@ public class JDBCStore implements MessageStore
         if (pstmt == null)
         {
             pstmt = connection.getConnection().prepareStatement("INSERT INTO " + _tableNameMessage +
-                    " (MessageID,Header,ExchangeName,RoutingKey,Mandatory,Is_Immediate) VALUES (?,?,?,?,?,?)");
+                                                                " (MessageID,Header,ExchangeName,RoutingKey,Mandatory,Is_Immediate) VALUES (?,?,?,?,?,?)");
             connection.getStatements()[STAGE_MESSAGE] = pstmt;
         }
         pstmt.setLong(1, m.getMessageId());
@@ -1019,7 +1099,7 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("INSERT INTO " + _tableNameRecord +
-                        " (XID_ID,Type,MessageID,QueueID) VALUES (?,?,?,?)");
+                                                                    " (XID_ID,Type,MessageID,QueueID) VALUES (?,?,?,?)");
                 connection.getStatements()[SAVE_RECORD] = pstmt;
             }
             pstmt.setLong(1, tx.getXidID());
@@ -1027,7 +1107,8 @@ public class JDBCStore implements MessageStore
             pstmt.setLong(3, record.getMessageID());
             pstmt.setLong(4, record.getQueueID());
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot save record: " + record, e);
         }
@@ -1043,7 +1124,7 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("INSERT INTO " + _tableNameTransaction +
-                        " (XID_ID,FormatId, BranchQualifier,GlobalTransactionId) VALUES (?,?,?,?)");
+                                                                    " (XID_ID,FormatId, BranchQualifier,GlobalTransactionId) VALUES (?,?,?,?)");
                 connection.getStatements()[SAVE_XID] = pstmt;
             }
             pstmt.setLong(1, tx.getXidID());
@@ -1051,7 +1132,8 @@ public class JDBCStore implements MessageStore
             pstmt.setBytes(3, xid.getBranchQualifier());
             pstmt.setBytes(4, xid.getGlobalTransactionId());
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot save xid: " + xid, e);
         }
@@ -1067,12 +1149,13 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("DELETE FROM " + _tableNameRecord +
-                        " WHERE XID_ID = ?");
+                                                                    " WHERE XID_ID = ?");
                 connection.getStatements()[DELETE_RECORD] = pstmt;
             }
             pstmt.setLong(1, tx.getXidID());
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot delete record: " + tx.getXidID(), e);
         }
@@ -1088,12 +1171,13 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("DELETE FROM " + _tableNameTransaction +
-                        " WHERE XID_ID = ?");
+                                                                    " WHERE XID_ID = ?");
                 connection.getStatements()[DELETE_XID] = pstmt;
             }
             pstmt.setLong(1, tx.getXidID());
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot delete xid: " + tx.getXidID(), e);
         }
@@ -1142,14 +1226,15 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("UPDATE " + _tableNameQueueMessageRelation +
-                        " SET Prepared = ? WHERE MessageID = ? AND QueueID = ?");
+                                                                    " SET Prepared = ? WHERE MessageID = ? AND QueueID = ?");
                 connection.getStatements()[UPDATE_QMR] = pstmt;
             }
             pstmt.setInt(1, prepared);
             pstmt.setLong(2, messageId);
             pstmt.setInt(3, queueID);
             pstmt.executeUpdate();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot update QMR", e);
         }
@@ -1169,8 +1254,8 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("SELECT ExchangeName, RoutingKey," +
-                        " Mandatory, Is_Immediate from " + _tableNameMessage +
-                        " WHERE MessageID = ?");
+                                                                    " Mandatory, Is_Immediate from " + _tableNameMessage +
+                                                                    " WHERE MessageID = ?");
                 connection.getStatements()[GET_MESSAGE_INFO] = pstmt;
             }
             pstmt.setLong(1, m.getMessageId());
@@ -1204,16 +1289,19 @@ public class JDBCStore implements MessageStore
                         return routingKey;
                     }
                 };
-            } else
+            }
+            else
             {
                 throw new InternalErrorException("Cannot get MessagePublishInfo of message: " + m);
             }
             rs.close();
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot get MessagePublishInfo of message: " + m, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -1221,7 +1309,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -1245,7 +1334,7 @@ public class JDBCStore implements MessageStore
             if (pstmt == null)
             {
                 pstmt = connection.getConnection().prepareStatement("SELECT Header from " + _tableNameMessage +
-                        " WHERE MessageID = ?");
+                                                                    " WHERE MessageID = ?");
                 connection.getStatements()[GET_CONTENT_HEADER] = pstmt;
             }
             pstmt.setLong(1, m.getMessageId());
@@ -1253,16 +1342,19 @@ public class JDBCStore implements MessageStore
             if (rs.next())
             {
                 result = new ContentHeaderBody(ByteBuffer.wrap(rs.getBlob(1).getBytes(1, (int) rs.getBlob(1).length())), 0);
-            } else
+            }
+            else
             {
                 throw new InternalErrorException("Cannot get Content Header of message: " + m);
             }
             rs.close();
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot get Content Header of message: " + m, e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -1270,7 +1362,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -1287,21 +1380,21 @@ public class JDBCStore implements MessageStore
             AMQException
     {
         List<StorableMessage> result = new ArrayList<StorableMessage>();
-        TransactionalContext txnContext = new NonTransactionalContext(this, new StoreContext(), null, null, null);
+//        TransactionalContext txnContext = new NonTransactionalContext(this, new StoreContext(), null, null, null);
         MessageHandleFactory messageHandleFactory = new MessageHandleFactory();
         PreparedStatement pstmt = connection.getStatements()[GET_ALL_MESSAGES];
         if (pstmt == null)
         {
             pstmt = connection.getConnection().prepareStatement("SELECT " + _tableNameMessage + ".MessageID, Header FROM " +
-                    _tableNameMessage +
-                    " INNER JOIN " +
-                    _tableNameQueueMessageRelation +
-                    " ON " +
-                    _tableNameMessage + ".MessageID = " + _tableNameQueueMessageRelation + ".MessageID" +
-                    " WHERE " +
-                    _tableNameQueueMessageRelation + ".QueueID = ?" +
-                    " AND " +
-                    _tableNameQueueMessageRelation + ".Prepared = 0");
+                                                                _tableNameMessage +
+                                                                " INNER JOIN " +
+                                                                _tableNameQueueMessageRelation +
+                                                                " ON " +
+                                                                _tableNameMessage + ".MessageID = " + _tableNameQueueMessageRelation + ".MessageID" +
+                                                                " WHERE " +
+                                                                _tableNameQueueMessageRelation + ".QueueID = ?" +
+                                                                " AND " +
+                                                                _tableNameQueueMessageRelation + ".Prepared = 0");
             connection.getStatements()[GET_ALL_MESSAGES] = pstmt;
         }
         pstmt.setInt(1, queue.getQueueID());
@@ -1310,7 +1403,10 @@ public class JDBCStore implements MessageStore
         // ContentHeaderBody hb;
         while (rs.next())
         {
-            foundMessage = new AMQMessage(rs.getLong(1), this, messageHandleFactory, txnContext);
+
+            //DTX MessageStore - this -> null , txContext -> null
+            foundMessage = new AMQMessage(rs.getLong(1), null, messageHandleFactory, null);
+            
             result.add(foundMessage);
         }
         rs.close();
@@ -1340,7 +1436,7 @@ public class JDBCStore implements MessageStore
                     owner = new AMQShortString(rs.getString(3));
                 }
                 foundQueue = new AMQQueue(new AMQShortString(rs.getString(2)),
-                        true, owner, false, _virtualHost);
+                                          true, owner, false, _virtualHost);
                 // get all the Messages of that queue
                 foundMessages = getAllMessages(connection, foundQueue);
                 // enqueue those messages
@@ -1350,7 +1446,7 @@ public class JDBCStore implements MessageStore
                 }
                 for (StorableMessage foundMessage : foundMessages)
                 {
-                    foundMessage.staged();                    
+                    foundMessage.staged();
                     foundMessage.enqueue(foundQueue);
                     foundQueue.enqueue(foundMessage);
                     foundQueue.process(context, (AMQMessage) foundMessage, false);
@@ -1362,10 +1458,12 @@ public class JDBCStore implements MessageStore
             }
             rs.close();
             return result;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot recover: ", e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -1373,7 +1471,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -1404,7 +1503,7 @@ public class JDBCStore implements MessageStore
                 // get all the bindings
                 Statement stmtb = connection.getConnection().createStatement();
                 ResultSet rsb = stmtb.executeQuery("SELECT * FROM " + _tableNameExchangeQueueRelation +
-                        " WHERE Name = '" + rs.getString(1) + "'");
+                                                   " WHERE Name = '" + rs.getString(1) + "'");
                 while (rsb.next())
                 {
                     foundQueue = queueMap.get(new Integer(rsb.getInt(1)));
@@ -1426,10 +1525,12 @@ public class JDBCStore implements MessageStore
                 _virtualHost.getExchangeRegistry().registerExchange(foundExchange);
             }
             rs.close();
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             throw new InternalErrorException("Cannot recover: ", e);
-        } finally
+        }
+        finally
         {
             if (connection != null)
             {
@@ -1437,7 +1538,8 @@ public class JDBCStore implements MessageStore
                 {
                     connection.getConnection().commit();
                     _connectionPool.releaseInstance(connection);
-                } catch (SQLException e)
+                }
+                catch (SQLException e)
                 {
                     // we did not manage to commit this connection
                     // it is better to release it
@@ -1456,7 +1558,7 @@ public class JDBCStore implements MessageStore
         if (pstmt == null)
         {
             pstmt = connection.getConnection().prepareStatement("DELETE FROM " + _tableNameMessage +
-                    " WHERE MessageID = ?");
+                                                                " WHERE MessageID = ?");
             connection.getStatements()[DELETE_MESSAGE] = pstmt;
         }
         pstmt.setLong(1, m.getMessageId());
@@ -1589,8 +1691,8 @@ public class JDBCStore implements MessageStore
             try
             {
                 stmt.executeUpdate("CREATE TABLE " + _tableNameMessage + " (MessageID FLOAT NOT NULL, Header BLOB," +
-                        " Payload BLOB, ExchangeName VARCHAR(1024), RoutingKey VARCHAR(1024)," +
-                        " Mandatory INTEGER, Is_Immediate INTEGER, PRIMARY KEY(MessageID))");
+                                   " Payload BLOB, ExchangeName VARCHAR(1024), RoutingKey VARCHAR(1024)," +
+                                   " Mandatory INTEGER, Is_Immediate INTEGER, PRIMARY KEY(MessageID))");
                 myconnection._connection.commit();
             }
             catch (SQLException ex)
@@ -1602,7 +1704,7 @@ public class JDBCStore implements MessageStore
             try
             {
                 stmt.executeUpdate("CREATE TABLE " + _tableNameQueue + " (QueueID INTEGER NOT NULL, " +
-                        "Name VARCHAR(1024) NOT NULL, Owner VARCHAR(1024), PRIMARY KEY(QueueID))");
+                                   "Name VARCHAR(1024) NOT NULL, Owner VARCHAR(1024), PRIMARY KEY(QueueID))");
                 myconnection._connection.commit();
             }
             catch (SQLException ex)
@@ -1614,7 +1716,7 @@ public class JDBCStore implements MessageStore
             try
             {
                 stmt.executeUpdate("CREATE TABLE " + _tableNameQueueMessageRelation + " (QueueID INTEGER NOT NULL, " +
-                        "MessageID FLOAT NOT NULL, Prepared INTEGER)");
+                                   "MessageID FLOAT NOT NULL, Prepared INTEGER)");
                 myconnection._connection.commit();
             }
             catch (SQLException ex)
@@ -1625,7 +1727,7 @@ public class JDBCStore implements MessageStore
             try
             {
                 stmt.executeUpdate("CREATE TABLE " + _tableNameExchange + " (Name VARCHAR(1024) NOT NULL, " +
-                        "Type VARCHAR(1024) NOT NULL, PRIMARY KEY(Name))");
+                                   "Type VARCHAR(1024) NOT NULL, PRIMARY KEY(Name))");
                 myconnection._connection.commit();
             }
             catch (SQLException ex)
@@ -1636,7 +1738,7 @@ public class JDBCStore implements MessageStore
             try
             {
                 stmt.executeUpdate("CREATE TABLE " + _tableNameExchangeQueueRelation + " (QueueID INTEGER NOT NULL, " +
-                        "Name VARCHAR(1024) NOT NULL, RoutingKey VARCHAR(1024), FieldTable BLOB )");
+                                   "Name VARCHAR(1024) NOT NULL, RoutingKey VARCHAR(1024), FieldTable BLOB )");
                 myconnection._connection.commit();
             }
             catch (SQLException ex)
@@ -1647,7 +1749,7 @@ public class JDBCStore implements MessageStore
             try
             {
                 stmt.executeUpdate("CREATE TABLE " + _tableNameRecord + " (XID_ID FLOAT, Type INTEGER, MessageID FLOAT, " +
-                        "QueueID INTEGER, PRIMARY KEY(Type, MessageID, QueueID))");
+                                   "QueueID INTEGER, PRIMARY KEY(Type, MessageID, QueueID))");
                 // we could alter the table with QueueID as foreign key
                 myconnection._connection.commit();
             }
@@ -1659,7 +1761,7 @@ public class JDBCStore implements MessageStore
             try
             {
                 stmt.executeUpdate("CREATE TABLE " + _tableNameTransaction + " (XID_ID FLOAT, FormatId INTEGER, " +
-                        "BranchQualifier BLOB, GlobalTransactionId BLOB, PRIMARY KEY(XID_ID))");
+                                   "BranchQualifier BLOB, GlobalTransactionId BLOB, PRIMARY KEY(XID_ID))");
                 myconnection._connection.commit();
             }
             catch (SQLException ex)

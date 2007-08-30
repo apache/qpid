@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.server.messageStore.MessageStore;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.messageStore.StorableMessage;
 
 /**
  * Constructs a message handle based on the publish body, the content header and the queue to which the message
  * has been routed.
  *
- * @author Robert Greig (robert.j.greig@jpmorgan.com)
  */
 public class MessageHandleFactory
 {
@@ -37,8 +36,9 @@ public class MessageHandleFactory
         // just hardcoded for now
         if (persistent)
         {
-          //  return new WeakReferenceMessageHandle(store);
-          return new StorableMessageHandle(store, m);                             
+            return new WeakReferenceMessageHandle(store);
+             //DTX MessageStore
+//          return new StorableMessageHandle(store, m);
         }
         else
         {

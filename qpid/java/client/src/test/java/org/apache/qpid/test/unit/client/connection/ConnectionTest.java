@@ -47,12 +47,12 @@ public class ConnectionTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-//        TransportConnection.createVMBroker(1);
+        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
-//        TransportConnection.killVMBroker(1);
+        TransportConnection.killVMBroker(1);
     }
 
     public void testSimpleConnection()
