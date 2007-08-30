@@ -13,19 +13,20 @@ class MethodBodyDefaultVisitorGen < CppGen
     h_file(@filename) {
       include "qpid/framing/MethodBodyConstVisitor"
       namespace(@namespace) { 
-        genl
+        genl "class AMQMethodBody;"
         cpp_class(@classname, "public MethodBodyConstVisitor") {
           genl "public:"
-          genl "virtual void defaultVisit() = 0;"
+          genl "virtual void defaultVisit(const AMQMethodBody&) = 0;"
           @amqp.methods_.each { |m|
             genl "virtual void visit(const #{m.body_name}&);" }
         }}}
 
     cpp_file(@filename) {
       include(@filename)
+      include("all_method_bodies.h")
       namespace(@namespace) {
         @amqp.methods_.each { |m|
-          genl "void #{@classname}::visit(const #{m.body_name}&) { defaultVisit(); }"
+          genl "void #{@classname}::visit(const #{m.body_name}& b) { defaultVisit(b); }"
         }}}
   end
 end

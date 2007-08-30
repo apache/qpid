@@ -14,7 +14,7 @@ class ConstantsGen < CppGen
     h_file("#{@dir}/constants") {
       namespace(@namespace) { 
         @amqp.constants.each { |c|
-          genl "inline const int #{c.name.shout} = #{c.value};"
+          genl "enum { #{c.name.shout} = #{c.value} };"
         }
       }
     }
