@@ -37,7 +37,7 @@ ostream& operator <<(ostream& out, const Cluster& cluster) {
 }
 
 ostream& operator<<(ostream& out, const Cluster::MemberMap::value_type& m) {
-    return out << m.first << "=" << m.second->url;
+    return out << m.first << "=" << m.second.url;
 }
 
 ostream& operator <<(ostream& out, const Cluster::MemberMap& members) {
@@ -46,21 +46,16 @@ ostream& operator <<(ostream& out, const Cluster::MemberMap& members) {
     return out;
 }
 
-
-
-
-Cluster::Cluster(
-    const std::string& name_, const std::string& url_,
-    const FrameHandler::Chain& next
-) :
-    FrameHandler(next), 
-    cpg(new Cpg(*this)),
+Cluster::Cluster(const std::string& name_, const std::string& url_, broker::Broker& broker) :
+    FrameHandler(&sessions), 
+    cpg(*this),
     name(name_),
     url(url_), 
-    self(cpg->getLocalNoideId(), getpid())
+    self(Id::self(cpg)),
+    sessions(broker, *this)
 {
     QPID_LOG(trace, *this << " Joining cluster: " << name_);
-    cpg->join(name);
+    cpg.join(name);
     notify();
     dispatcher=Thread(*this);
     // Wait till we show up in the cluster map.
@@ -74,8 +69,7 @@ Cluster::Cluster(
 Cluster::~Cluster() {
     QPID_LOG(trace, *this << " Leaving cluster.");
     try {
-        cpg->leave(name);
-        cpg.reset();
+        cpg.leave(name);
         dispatcher.join();
     }
     catch (const std::exception& e) {
@@ -90,7 +84,7 @@ void Cluster::handle(AMQFrame& frame) {
     frame.encode(buf);
     buf.flip();
     iovec iov = { buf.start(), frame.size() };
-    cpg->mcast(name, &iov, 1);
+    cpg.mcast(name, &iov, 1);
 }
 
 void Cluster::notify() {
@@ -104,7 +98,6 @@ size_t Cluster::size() const {
 }
 
 Cluster::MemberList Cluster::getMembers() const {
-    // TODO aconway 2007-07-04: use read/write lock?
     Mutex::ScopedLock l(lock);
     MemberList result(members.size());
     std::transform(members.begin(), members.end(), result.begin(),
@@ -150,11 +143,7 @@ void Cluster::handleClusterFrame(Id from, AMQFrame& frame) {
     MemberList list;
     {
         Mutex::ScopedLock l(lock);
-        shared_ptr<Member>& member=members[from];
-        if (!member) 
-            member.reset(new Member(notifyIn->getUrl()));
-        else 
-            member->url = notifyIn->getUrl();
+        members[from].url=notifyIn->getUrl();
         lock.notifyAll();
         QPID_LOG(trace, *this << ": members joined: " << members);
     }
@@ -186,7 +175,7 @@ void Cluster::configChange(
 }
 
 void Cluster::run() {
-    cpg->dispatchBlocking();
+    cpg.dispatchBlocking();
 }
 
 }} // namespace qpid::cluster
