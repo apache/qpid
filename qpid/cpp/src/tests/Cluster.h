@@ -58,7 +58,7 @@ typedef TestHandler<AMQFrame> TestFrameHandler;
 struct TestCluster : public Cluster
 {
     TestCluster(string name, string url)
-        : Cluster(name, url, make_shared_ptr(&received, nullDeleter)) {}
+        : Cluster(name, url, *(qpid::broker::Broker*)0) {}
 
     /** Wait for cluster to be of size n. */
     bool waitFor(size_t n) {

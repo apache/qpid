@@ -19,16 +19,16 @@
  *
  */
 
-#include "qpid/cluster/Cpg.h"
-#include "qpid/framing/FrameHandler.h"
-#include "qpid/shared_ptr.h"
+#include "SessionManager.h"
+#include "Cpg.h"
+
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Logger.h"
 
+#include <boost/optional.hpp>
 #include <boost/function.hpp>
-#include <boost/scoped_ptr.hpp>
 
 #include <map>
 #include <vector>
@@ -42,8 +42,6 @@ namespace qpid { namespace cluster {
  * As FrameHandler, handles frames by sending them to the
  * cluster. Frames received from the cluster are sent to the next
  * FrameHandler in the chain.
- * 
- * 
  */
 class Cluster : public framing::FrameHandler,
                 private sys::Runnable, private Cpg::Handler
@@ -51,24 +49,23 @@ class Cluster : public framing::FrameHandler,
   public:
     /** Details of a cluster member */
     struct Member {
-        typedef shared_ptr<const Member> Ptr;
-        Member(const std::string& url_) : url(url_) {}
+        Member(const std::string& url_=std::string()) : url(url_) {}
         std::string url;        ///< Broker address.
     };
     
-    typedef std::vector<Member::Ptr> MemberList;
+    typedef std::vector<Member> MemberList;
 
     /**
      * Join a cluster.
      * @param name of the cluster.
      * @param url of this broker, sent to the cluster.
-     * @param handler for frames received from the cluster.
      */
-    Cluster(const std::string& name, const std::string& url,
-            const framing::FrameHandler::Chain& next);
+    Cluster(const std::string& name, const std::string& url, broker::Broker&);
 
     virtual ~Cluster();
 
+    framing::HandlerUpdater& getHandlerUpdater() { return sessions; }
+    
     /** Get the current cluster membership. */
     MemberList getMembers() const;
 
@@ -90,7 +87,7 @@ class Cluster : public framing::FrameHandler,
     
   private:
     typedef Cpg::Id Id;
-    typedef std::map<Id, shared_ptr<Member> >  MemberMap;
+    typedef std::map<Id, Member>  MemberMap;
     
     void notify();              ///< Notify cluster of my details.
 
@@ -114,13 +111,14 @@ class Cluster : public framing::FrameHandler,
     void handleClusterFrame(Id from, framing::AMQFrame&);
 
     mutable sys::Monitor lock;
-    boost::scoped_ptr<Cpg> cpg;
+    Cpg cpg;
     Cpg::Name name;
     std::string url;
     Id self;
     MemberMap members;
     sys::Thread dispatcher;
     boost::function<void()> callback;
+    SessionManager sessions;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);

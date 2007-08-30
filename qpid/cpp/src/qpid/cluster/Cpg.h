@@ -61,6 +61,8 @@ class Cpg : public Dispatchable {
         Id(uint32_t nodeid, uint32_t pid) { id=(uint64_t(nodeid)<<32)+ pid; }
         Id(const cpg_address& addr) : id(Id(addr.nodeid, addr.pid)) {}
 
+        static Id self(Cpg& cpg);
+
         operator uint64_t() const { return id; }
         uint32_t nodeId() const { return id >> 32; }
         pid_t pid() const { return id & 0xFFFF; }
