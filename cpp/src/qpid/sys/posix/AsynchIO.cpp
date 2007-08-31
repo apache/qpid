@@ -121,7 +121,7 @@ void AsynchIO::start(Poller::shared_ptr poller) {
     DispatchHandle::startWatch(poller);
 }
 
-void AsynchIO::queueReadBuffer(Buffer* buff) {
+void AsynchIO::queueReadBuffer(BufferBase* buff) {
 	assert(buff);
     buff->dataStart = 0;
     buff->dataCount = 0;
@@ -129,7 +129,7 @@ void AsynchIO::queueReadBuffer(Buffer* buff) {
     DispatchHandle::rewatchRead();
 }
 
-void AsynchIO::unread(Buffer* buff) {
+void AsynchIO::unread(BufferBase* buff) {
 	assert(buff);
 	if (buff->dataStart != 0) {
 		memmove(buff->bytes, buff->bytes+buff->dataStart, buff->dataCount);
@@ -141,7 +141,7 @@ void AsynchIO::unread(Buffer* buff) {
 
 // Either queue for writing or announce that there is something to write
 // and we should ask for it
-void AsynchIO::queueWrite(Buffer* buff) {
+void AsynchIO::queueWrite(BufferBase* buff) {
 	// If no buffer then don't queue anything
 	// (but still wake up for writing) 
 	if (buff) {
@@ -163,11 +163,11 @@ void AsynchIO::queueWriteClose() {
 /** Return a queued buffer if there are enough
  * to spare
  */
-AsynchIO::Buffer* AsynchIO::getQueuedBuffer() {
+AsynchIO::BufferBase* AsynchIO::getQueuedBuffer() {
 	// Always keep at least one buffer (it might have data that was "unread" in it)
 	if (bufferQueue.size()<=1)
 		return 0;
-	Buffer* buff = bufferQueue.back();
+	BufferBase* buff = bufferQueue.back();
 	buff->dataStart = 0;
 	buff->dataCount = 0;
 	bufferQueue.pop_back();
@@ -183,7 +183,7 @@ void AsynchIO::readable(DispatchHandle& h) {
         // (Try to) get a buffer
         if (!bufferQueue.empty()) {
             // Read into buffer
-            Buffer* buff = bufferQueue.front();
+            BufferBase* buff = bufferQueue.front();
             bufferQueue.pop_front();
             errno = 0;
             int readCount = buff->byteCount-buff->dataCount;
@@ -239,7 +239,7 @@ void AsynchIO::writeable(DispatchHandle& h) {
         // See if we've got something to write
         if (!writeQueue.empty()) {
             // Write buffer
-            Buffer* buff = writeQueue.back();
+            BufferBase* buff = writeQueue.back();
             writeQueue.pop_back();
             errno = 0;
             assert(buff->dataStart+buff->dataCount <= buff->byteCount);

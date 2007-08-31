@@ -62,12 +62,14 @@ BOOST_AUTO_TEST_CASE(testUuidOstream) {
 }
 
 BOOST_AUTO_TEST_CASE(testUuidEncodeDecode) {
-    Buffer buf(Uuid::size());
+    char* buff = static_cast<char*>(::alloca(Uuid::size()));
+    Buffer wbuf(buff, Uuid::size());
     Uuid uuid(sample.c_array());
-    uuid.encode(buf);
-    buf.flip();
+    uuid.encode(wbuf);
+
+    Buffer rbuf(buff, Uuid::size());
     Uuid decoded;
-    decoded.decode(buf);
+    decoded.decode(rbuf);
     BOOST_CHECK_EQUAL(string(sample.begin(), sample.end()),
                       string(decoded.begin(), decoded.end()));
 }

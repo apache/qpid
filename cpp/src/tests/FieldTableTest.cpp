@@ -39,11 +39,13 @@ class FieldTableTest : public CppUnit::TestCase
         ft.setString("A", "BCDE");
         CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), ft.getString("A"));
 
-        Buffer buffer(100);
-        buffer.putFieldTable(ft);
-        buffer.flip();     
+        char buff[100];
+        Buffer wbuffer(buff, 100);
+        wbuffer.putFieldTable(ft);
+
+        Buffer rbuffer(buff, 100);
         FieldTable ft2;
-        buffer.getFieldTable(ft2);
+        rbuffer.getFieldTable(ft2);
         CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), ft2.getString("A"));
 
     }
@@ -68,10 +70,12 @@ class FieldTableTest : public CppUnit::TestCase
             FieldTable c;
             c = a;
             
-            Buffer buffer(c.size());
-            buffer.putFieldTable(c);
-            buffer.flip();     
-            buffer.getFieldTable(d);
+            char* buff = static_cast<char*>(::alloca(c.size()));
+            Buffer wbuffer(buff, c.size());
+            wbuffer.putFieldTable(c);
+
+            Buffer rbuffer(buff, c.size());
+            rbuffer.getFieldTable(d);
             CPPUNIT_ASSERT_EQUAL(c, d);
             CPPUNIT_ASSERT_EQUAL(std::string("CCCC"), c.getString("A"));
             CPPUNIT_ASSERT_EQUAL(1234, c.getInt("B"));

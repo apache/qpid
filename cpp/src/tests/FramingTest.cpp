@@ -68,114 +68,130 @@ class FramingTest : public CppUnit::TestCase
     CPPUNIT_TEST_SUITE_END();
 
   private:
-    Buffer buffer;
+    char buffer[1024];
     ProtocolVersion version;
     
   public:
 
-    FramingTest() : buffer(1024), version(highestProtocolVersion) {}
+    FramingTest() : version(highestProtocolVersion) {}
 
     void testBasicQosBody() 
     {
+        Buffer wbuff(buffer, sizeof(buffer));
         BasicQosBody in(version, 0xCAFEBABE, 0xABBA, true);
-        in.encode(buffer);
-        buffer.flip(); 
+        in.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         BasicQosBody out(version);
-        out.decode(buffer);
+        out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
     
     void testConnectionSecureBody() 
     {
+        Buffer wbuff(buffer, sizeof(buffer));
         std::string s = "security credential";
         ConnectionSecureBody in(version, s);
-        in.encode(buffer);
-        buffer.flip(); 
+        in.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         ConnectionSecureBody out(version);
-        out.decode(buffer);
+        out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
     void testConnectionRedirectBody()
     {
+        Buffer wbuff(buffer, sizeof(buffer));
         std::string a = "hostA";
         std::string b = "hostB";
         ConnectionRedirectBody in(version, a, b);
-        in.encode(buffer);
-        buffer.flip(); 
+        in.encode(wbuff);
+        
+        Buffer rbuff(buffer, sizeof(buffer));
         ConnectionRedirectBody out(version);
-        out.decode(buffer);
+        out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
     void testAccessRequestBody()
     {
+        Buffer wbuff(buffer, sizeof(buffer));
         std::string s = "text";
         AccessRequestBody in(version, s, true, false, true, false, true);
-        in.encode(buffer);
-        buffer.flip(); 
+        in.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         AccessRequestBody out(version);
-        out.decode(buffer);
+        out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
     void testBasicConsumeBody()
     {
+        Buffer wbuff(buffer, sizeof(buffer));
         std::string q = "queue";
         std::string t = "tag";
         BasicConsumeBody in(version, 0, q, t, false, true, false, false,
                             FieldTable());
-        in.encode(buffer);
-        buffer.flip(); 
+        in.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         BasicConsumeBody out(version);
-        out.decode(buffer);
+        out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
     
 
     void testConnectionRedirectBodyFrame()
     {
+        Buffer wbuff(buffer, sizeof(buffer));
         std::string a = "hostA";
         std::string b = "hostB";
         AMQFrame in(999, ConnectionRedirectBody(version, a, b));
-        in.encode(buffer);
-        buffer.flip(); 
+        in.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         AMQFrame out;
-        out.decode(buffer);
+        out.decode(rbuff);
         CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
     void testBasicConsumeOkBodyFrame()
     {
+        Buffer wbuff(buffer, sizeof(buffer));
         std::string s = "hostA";
         AMQFrame in(999, BasicConsumeOkBody(version, s));
-        in.encode(buffer);
-        buffer.flip(); 
+        in.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         AMQFrame out;
-        for(int i = 0; i < 5; i++){
-            out.decode(buffer);
-            CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
-        }
+        out.decode(rbuff);
+        CPPUNIT_ASSERT_EQUAL(tostring(in), tostring(out));
     }
 
     void testInlineContent() {        
+        Buffer wbuff(buffer, sizeof(buffer));
         Content content(INLINE, "MyData");
         CPPUNIT_ASSERT(content.isInline());
-        content.encode(buffer);
-        buffer.flip();
+        content.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         Content recovered;
-        recovered.decode(buffer);
+        recovered.decode(rbuff);
         CPPUNIT_ASSERT(recovered.isInline());
         CPPUNIT_ASSERT_EQUAL(content.getValue(), recovered.getValue());
     }
 
     void testContentReference() {        
+        Buffer wbuff(buffer, sizeof(buffer));
         Content content(REFERENCE, "MyRef");
         CPPUNIT_ASSERT(content.isReference());
-        content.encode(buffer);
-        buffer.flip();
+        content.encode(wbuff);
+
+        Buffer rbuff(buffer, sizeof(buffer));
         Content recovered;
-        recovered.decode(buffer);
+        recovered.decode(rbuff);
         CPPUNIT_ASSERT(recovered.isReference());
         CPPUNIT_ASSERT_EQUAL(content.getValue(), recovered.getValue());
     }
@@ -198,11 +214,13 @@ class FramingTest : public CppUnit::TestCase
         }
         
         try {
-            buffer.putOctet(2);
-            buffer.putLongString("blah, blah");
-            buffer.flip();
+            Buffer wbuff(buffer, sizeof(buffer));
+            wbuff.putOctet(2);
+            wbuff.putLongString("blah, blah");
+            
+            Buffer rbuff(buffer, sizeof(buffer));
             Content content;
-            content.decode(buffer);
+            content.decode(rbuff);
             CPPUNIT_ASSERT(false);//fail, expected exception
         } catch (QpidError& e) {
             CPPUNIT_ASSERT_EQUAL(FRAMING_ERROR, e.code);

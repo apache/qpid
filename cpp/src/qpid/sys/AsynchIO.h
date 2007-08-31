@@ -63,26 +63,24 @@ private:
  */
 class AsynchIO : private DispatchHandle {
 public:
-    struct Buffer {
-        typedef boost::function1<void, const Buffer&> RecycleStorage;
-        
+    struct BufferBase {
         char* const bytes;
         const int32_t byteCount;
         int32_t dataStart;
         int32_t dataCount;
         
-        Buffer(char* const b, const int32_t s) :
+        BufferBase(char* const b, const int32_t s) :
             bytes(b),
             byteCount(s),
             dataStart(0),
             dataCount(0)
         {}
         
-        virtual ~Buffer()
+        virtual ~BufferBase()
         {}
     };
 
-    typedef boost::function2<void, AsynchIO&, Buffer*> ReadCallback;
+    typedef boost::function2<void, AsynchIO&, BufferBase*> ReadCallback;
     typedef boost::function1<void, AsynchIO&> EofCallback;
     typedef boost::function1<void, AsynchIO&> DisconnectCallback;
     typedef boost::function2<void, AsynchIO&, const Socket&> ClosedCallback;
@@ -96,8 +94,8 @@ private:
     ClosedCallback closedCallback;
     BuffersEmptyCallback emptyCallback;
     IdleCallback idleCallback;
-    std::deque<Buffer*> bufferQueue;
-    std::deque<Buffer*> writeQueue;
+    std::deque<BufferBase*> bufferQueue;
+    std::deque<BufferBase*> writeQueue;
     bool queuedClose;
 
 public:
@@ -107,11 +105,11 @@ public:
     void queueForDeletion();
 
     void start(Poller::shared_ptr poller);
-    void queueReadBuffer(Buffer* buff);
-    void queueWrite(Buffer* buff = 0);
-    void unread(Buffer* buff);
+    void queueReadBuffer(BufferBase* buff);
+    void queueWrite(BufferBase* buff = 0);
+    void unread(BufferBase* buff);
     void queueWriteClose();
-    Buffer* getQueuedBuffer();
+    BufferBase* getQueuedBuffer();
     const Socket& getSocket() const { return DispatchHandle::getSocket(); }
 
 private:
