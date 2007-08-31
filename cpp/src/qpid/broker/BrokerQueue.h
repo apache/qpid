@@ -46,9 +46,6 @@ namespace qpid {
         class TransactionContext;
         class Exchange;
 
-        /**
-         * Thrown when exclusive access would be violated.
-         */
         using std::string;
 
         /**
@@ -59,7 +56,7 @@ namespace qpid {
          */
         class Queue : public PersistableQueue{
             typedef std::vector<Consumer*> Consumers;
-            typedef std::deque<Message::shared_ptr> Messages;
+            typedef std::deque<QueuedMessage> Messages;
             
             struct DispatchFunctor {
                 Queue& queue;
@@ -84,10 +81,11 @@ namespace qpid {
             boost::shared_ptr<Exchange> alternateExchange;
             qpid::sys::Serializer<DispatchFunctor> serializer;
             DispatchFunctor dispatchCallback;
+            framing::SequenceNumber sequence;
 
             void pop();
             void push(Message::shared_ptr& msg);
-            bool dispatch(Message::shared_ptr& msg);
+            bool dispatch(QueuedMessage& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             /**
              * only called by serilizer
@@ -132,7 +130,7 @@ namespace qpid {
              * available it will be dispatched immediately, else it
              * will be returned to the front of the queue.
              */
-            void requeue(Message::shared_ptr& msg);
+            void requeue(const QueuedMessage& msg);
             /**
              * Used during recovery to add stored messages back to the queue
              */
@@ -166,7 +164,7 @@ namespace qpid {
             /**
              * dequeues from memory only
              */
-            Message::shared_ptr dequeue();
+            QueuedMessage dequeue();
 
             const QueuePolicy* const getPolicy();
 

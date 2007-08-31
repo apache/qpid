@@ -69,17 +69,20 @@ class Channel
         const Queue::shared_ptr queue;
         const bool ackExpected;
         const bool nolocal;
+        const bool acquire;
         bool blocked;
         bool windowing;
-        uint32_t msgCredit;
-	
+        uint32_t msgCredit;	
         uint32_t byteCredit;
+
+        bool checkCredit(Message::shared_ptr& msg);
 
       public:
         ConsumerImpl(Channel* parent, DeliveryToken::shared_ptr token, 
-                     const string& name, Queue::shared_ptr queue, bool ack, bool nolocal);
+                     const string& name, Queue::shared_ptr queue, 
+                     bool ack, bool nolocal, bool acquire = true);
         ~ConsumerImpl();
-        bool deliver(Message::shared_ptr& msg);            
+        bool deliver(QueuedMessage& msg);            
         void redeliver(Message::shared_ptr& msg, DeliveryId deliveryTag);
         void cancel();
         void requestDispatch();
@@ -90,7 +93,6 @@ class Channel
         void addMessageCredit(uint32_t value);
         void flush();
         void stop();
-        bool checkCredit(Message::shared_ptr& msg);
         void acknowledged(const DeliveryRecord&);    
     };
 

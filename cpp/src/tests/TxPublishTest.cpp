@@ -99,13 +99,13 @@ public:
         op.prepare(0);
         op.commit();
         CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue1->getMessageCount());
-	Message::shared_ptr msg_dequeue = queue1->dequeue();
+	Message::shared_ptr msg_dequeue = queue1->dequeue().payload;
 
  	CPPUNIT_ASSERT_EQUAL( true, ((PersistableMessage*) msg_dequeue.get())->isEnqueueComplete());
         CPPUNIT_ASSERT_EQUAL(msg, msg_dequeue);
 
         CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue2->getMessageCount());
-        CPPUNIT_ASSERT_EQUAL(msg, queue2->dequeue());            
+        CPPUNIT_ASSERT_EQUAL(msg, queue2->dequeue().payload);            
     }
 };
 

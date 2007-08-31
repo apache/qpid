@@ -76,7 +76,9 @@ public:
             msg->getProperties<DeliveryProperties>()->setDeliveryMode(PERSISTENT);
             msg->getProperties<DeliveryProperties>()->setRoutingKey("routing_key");
             messages.push_back(msg);
-            deliveries.push_back(DeliveryRecord(msg, queue, "xyz", (i+1)));
+            QueuedMessage qm;
+            qm.payload = msg;
+            deliveries.push_back(DeliveryRecord(qm, queue, "xyz", (i+1)));
         }
 
         //assume msgs 1-5, 7 and 9 are all acked (i.e. 6, 8 & 10 are not)

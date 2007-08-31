@@ -25,9 +25,20 @@
 
 namespace qpid {
     namespace broker {
+
+        struct QueuedMessage
+        {
+            Message::shared_ptr payload;
+            framing::SequenceNumber position;
+
+            QueuedMessage(Message::shared_ptr msg, framing::SequenceNumber sn) : payload(msg), position(sn) {}
+            QueuedMessage() {}
+        };
+        
+
         class Consumer{
         public:
-            virtual bool deliver(Message::shared_ptr& msg) = 0;
+            virtual bool deliver(QueuedMessage& msg) = 0;
             virtual ~Consumer(){}
         };
     }

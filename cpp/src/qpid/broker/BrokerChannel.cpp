@@ -218,31 +218,33 @@ Channel::ConsumerImpl::ConsumerImpl(Channel* _parent,
                                     const string& _name, 
                                     Queue::shared_ptr _queue, 
                                     bool ack,
-                                    bool _nolocal 
+                                    bool _nolocal,
+                                    bool _acquire
                                     ) : parent(_parent), 
                                         token(_token), 
                                         name(_name), 
                                         queue(_queue), 
                                         ackExpected(ack), 
                                         nolocal(_nolocal), 
+                                        acquire(_acquire),
                                         blocked(false), 
                                         windowing(true), 
                                         msgCredit(0xFFFFFFFF), 
                                         byteCredit(0xFFFFFFFF) {}
 
-bool Channel::ConsumerImpl::deliver(Message::shared_ptr& msg)
+bool Channel::ConsumerImpl::deliver(QueuedMessage& msg)
 {
-    if (nolocal && &(parent->connection) == msg->getPublisher()) {
+    if (nolocal && &(parent->connection) == msg.payload->getPublisher()) {
         return false;
     } else {
-        if (!checkCredit(msg) || !parent->flowActive || (ackExpected && !parent->checkPrefetch(msg))) {
+        if (!checkCredit(msg.payload) || !parent->flowActive || (ackExpected && !parent->checkPrefetch(msg.payload))) {
             blocked = true;
         } else {
             blocked = false;
 
             Mutex::ScopedLock locker(parent->deliveryLock);
 
-            DeliveryId deliveryTag = parent->out.deliver(msg, token);
+            DeliveryId deliveryTag = parent->out.deliver(msg.payload, token);
             if (ackExpected) {
                 parent->record(DeliveryRecord(msg, queue, name, deliveryTag));
             }
@@ -409,10 +411,10 @@ void Channel::recover(bool requeue)
 
 bool Channel::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected)
 {
-    Message::shared_ptr msg = queue->dequeue();
-    if(msg){
+    QueuedMessage msg = queue->dequeue();
+    if(msg.payload){
         Mutex::ScopedLock locker(deliveryLock);
-        DeliveryId myDeliveryTag = out.deliver(msg, token);
+        DeliveryId myDeliveryTag = out.deliver(msg.payload, token);
         if(ackExpected){
             unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
         }
