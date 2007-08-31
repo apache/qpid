@@ -83,9 +83,6 @@
     <fileSet>
       <directory>../management/eclipse-plugin/bin</directory>
       <outputDirectory>qpidmc/bin</outputDirectory>
-      <includes>
-        <include>**</include>
-      </includes>
       <fileMode>777</fileMode>
     </fileSet>
     <fileSet>
@@ -94,6 +91,10 @@
       <includes>
         <include>MANIFEST.MF</include>
       </includes>
+    </fileSet>
+    <fileSet>
+        <directory>../management/eclipse-plugin/src/main/resources/org.apache.commons.codec</directory>
+        <outputDirectory>qpidmc/eclipse/plugins/</outputDirectory>
     </fileSet>
   </fileSets>
 
