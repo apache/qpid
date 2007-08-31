@@ -19,7 +19,7 @@
 
 #include <boost/format.hpp>
 #include "Broker.h"
-#include "BrokerChannel.h"
+#include "Session.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -41,7 +41,7 @@ DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : CoreRefs(parent) {}
 
 void DtxHandlerImpl::select()
 {
-    channel.selectDtx();
+    session.selectDtx();
 }
 
 DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
@@ -51,7 +51,7 @@ DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
 {
     try {
         if (fail) {
-            channel.endDtx(xid, true);
+            session.endDtx(xid, true);
             if (suspend) {
                 throw ConnectionException(503, "End and suspend cannot both be set.");
             } else {
@@ -59,9 +59,9 @@ DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
             }
         } else {
             if (suspend) {
-                channel.suspendDtx(xid);
+                session.suspendDtx(xid);
             } else {
-                channel.endDtx(xid, false);
+                session.endDtx(xid, false);
             }
             return DtxDemarcationEndResult(XA_OK);
         }
@@ -80,9 +80,9 @@ DtxDemarcationStartResult DtxHandlerImpl::start(u_int16_t /*ticket*/,
     }
     try {
         if (resume) {
-            channel.resumeDtx(xid);
+            session.resumeDtx(xid);
         } else {
-            channel.startDtx(xid, broker.getDtxManager(), join);
+            session.startDtx(xid, broker.getDtxManager(), join);
         }
         return DtxDemarcationStartResult(XA_OK);
     } catch (const DtxTimeoutException& e) {

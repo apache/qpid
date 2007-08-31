@@ -19,7 +19,7 @@
  *
  */
 #include "DeliveryRecord.h"
-#include "BrokerChannel.h"
+#include "Session.h"
 
 using namespace qpid::broker;
 using std::string;
@@ -64,12 +64,12 @@ bool DeliveryRecord::coveredBy(const AccumulatedAck* const range) const{
     return range->covers(deliveryTag);
 }
 
-void DeliveryRecord::redeliver(Channel* const channel) const{
+void DeliveryRecord::redeliver(Session* const session) const{
     if(pull){
         //if message was originally sent as response to get, we must requeue it
         requeue();
     }else{
-        channel->deliver(msg.payload, consumerTag, deliveryTag);
+        session->deliver(msg.payload, consumerTag, deliveryTag);
     }
 }
 

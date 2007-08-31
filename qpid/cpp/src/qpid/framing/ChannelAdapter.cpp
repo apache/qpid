@@ -36,7 +36,7 @@ void ChannelAdapter::Handler::handle(AMQFrame& f) { parent.handleBody(f.getBody(
 
 ChannelAdapter::ChannelAdapter() : handler(*this), id(0) {}
 
-void ChannelAdapter::init(ChannelId i, OutputHandler& out, ProtocolVersion v) 
+void ChannelAdapter::init(ChannelId i, FrameHandler& out, ProtocolVersion v) 
 {
     assertChannelNotOpen();
     id = i;

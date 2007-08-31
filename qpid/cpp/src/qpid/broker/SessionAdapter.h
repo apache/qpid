@@ -23,10 +23,15 @@
  */
 
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/broker/Session.h"
+#include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/amqp_types.h"
 
 namespace qpid {
+
+namespace framing {
+class AMQP_ClientProxy;
+}
+
 namespace broker {
 
 class Connection;
@@ -39,7 +44,10 @@ class Session;
  *
  * SessionAdapters can be stored in a map by value.
  */
-class SessionAdapter : public framing::FrameHandler
+class SessionAdapter :
+        public framing::FrameHandler::Chains,
+        private framing::FrameHandler,
+        private framing::AMQP_ServerOperations::ChannelHandler
 {
   public:
     SessionAdapter(Connection&, framing::ChannelId);
@@ -56,11 +64,29 @@ class SessionAdapter : public framing::FrameHandler
     framing::ChannelId getChannel() const { return channel; }
     Connection& getConnection() { return connection; }
     const Connection& getConnection() const { return connection; }
-    
+
   private:
+    void assertOpen(const char* method);
+    void assertClosed(const char* method);
+
+    framing::AMQP_ClientProxy& getProxy();
+    
+    // FIXME aconway 2007-08-31: Replace channel commands with session.
+    void open(const std::string& outOfBand); 
+    void flow(bool active); 
+    void flowOk(bool active); 
+    void ok(  );
+    void ping(  );
+    void pong(  );
+    void resume( const std::string& channelId );
+    void close(uint16_t replyCode, const
+               std::string& replyText, uint16_t classId, uint16_t methodId); 
+    void closeOk(); 
+    
     Connection& connection;
     const framing::ChannelId channel;
     shared_ptr<Session> session;
+    bool ignoring;
 };
 
 }} // namespace qpid::broker
