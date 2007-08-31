@@ -24,6 +24,8 @@
 #include "qpid/Exception.h"
 #include "Buffer.h"
 
+#include <stdlib.h> // For alloca
+
 namespace qpid {
 namespace framing {
 
@@ -33,20 +35,24 @@ public:
 
     template <class T> void encode(const T t, std::string& data) {
         uint32_t size = t.size() + 2/*type*/;
-        Buffer buffer(size);
-        buffer.putShort(T::TYPE);
-        t.encode(buffer);
-        buffer.flip();
-        buffer.getRawData(data, size);        
+        char* bytes = static_cast<char*>(::alloca(size));
+        Buffer wbuffer(bytes, size);
+        wbuffer.putShort(T::TYPE);
+        t.encode(wbuffer);
+        
+        Buffer rbuffer(bytes, size);
+        rbuffer.getRawData(data, size);        
     }
 
     template <class T> void decode(T t, std::string& data) {
-        Buffer buffer(data.length());
-        buffer.putRawData(data);        
-        buffer.flip();
-        uint16_t type = buffer.getShort();
+        char* bytes = static_cast<char*>(::alloca(data.length()));
+        Buffer wbuffer(bytes, data.length());
+        wbuffer.putRawData(data);        
+
+        Buffer rbuffer(bytes, data.length());
+        uint16_t type = rbuffer.getShort();
         if (type == T::TYPE) {
-            t.decode(buffer);
+            t.decode(rbuffer);
         } else {
             throw Exception("Type code does not match");
         }

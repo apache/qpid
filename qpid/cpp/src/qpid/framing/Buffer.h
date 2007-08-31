@@ -41,18 +41,18 @@ class Buffer
 
 public:
 
-    Buffer(uint32_t size);
+    //Buffer(uint32_t size);
     Buffer(char* data, uint32_t size);
     ~Buffer();
 
-    void flip();
-    void clear();
-    void compact();
+    //void flip();
+    //void clear();
+    //void compact();
     void record();
     void restore();
     uint32_t available();
-    char* start();
-    void move(uint32_t bytes);
+    //char* start();
+    //void move(uint32_t bytes);
     
     void putOctet(uint8_t i);
     void putShort(uint16_t i);
