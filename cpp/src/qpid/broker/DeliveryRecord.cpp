@@ -24,26 +24,28 @@
 using namespace qpid::broker;
 using std::string;
 
-DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg, 
+DeliveryRecord::DeliveryRecord(QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
                                const string _consumerTag, 
                                const DeliveryId _deliveryTag) : msg(_msg), 
-                                                               queue(_queue), 
-                                                               consumerTag(_consumerTag),
-                                                               deliveryTag(_deliveryTag),
-                                                               pull(false){}
+                                                                queue(_queue), 
+                                                                consumerTag(_consumerTag),
+                                                                deliveryTag(_deliveryTag),
+                                                                acquired(false),
+                                                                pull(false){}
 
-DeliveryRecord::DeliveryRecord(Message::shared_ptr _msg, 
+DeliveryRecord::DeliveryRecord(QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
                                const DeliveryId _deliveryTag) : msg(_msg), 
-                                                               queue(_queue), 
-                                                               consumerTag(""),
-                                                               deliveryTag(_deliveryTag),
-                                                               pull(true){}
+                                                                queue(_queue), 
+                                                                consumerTag(""),
+                                                                deliveryTag(_deliveryTag),
+                                                                acquired(false),
+                                                                pull(true){}
 
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
-    queue->dequeue(ctxt, msg);
+    queue->dequeue(ctxt, msg.payload);
 }
 
 bool DeliveryRecord::matches(DeliveryId tag) const{
@@ -67,18 +69,18 @@ void DeliveryRecord::redeliver(Channel* const channel) const{
         //if message was originally sent as response to get, we must requeue it
         requeue();
     }else{
-        channel->deliver(msg, consumerTag, deliveryTag);
+        channel->deliver(msg.payload, consumerTag, deliveryTag);
     }
 }
 
 void DeliveryRecord::requeue() const{
-    msg->redeliver();
+    msg.payload->redeliver();
     queue->requeue(msg);
 }
 
 void DeliveryRecord::updateByteCredit(uint32_t& credit) const
 {
-    credit += msg->getRequiredCredit();
+    credit += msg.payload->getRequiredCredit();
 }
 
 
@@ -86,7 +88,7 @@ void DeliveryRecord::addTo(Prefetch& prefetch) const{
     if(!pull){
         //ignore 'pulled' messages (i.e. those that were sent in
         //response to get) when calculating prefetch
-        prefetch.size += msg->contentSize();
+        prefetch.size += msg.payload->contentSize();
         prefetch.count++;
     }    
 }
@@ -95,7 +97,7 @@ void DeliveryRecord::subtractFrom(Prefetch& prefetch) const{
     if(!pull){
         //ignore 'pulled' messages (i.e. those that were sent in
         //response to get) when calculating prefetch
-        prefetch.size -= msg->contentSize();
+        prefetch.size -= msg.payload->contentSize();
         prefetch.count--;
     }
 }

@@ -40,10 +40,10 @@ public:
     bool received;
     TestConsumer(): received(false) {};
 
-    virtual bool deliver(Message::shared_ptr& msg){
-    last = msg;
-    received = true;
-    return true;
+    virtual bool deliver(QueuedMessage& msg){
+        last = msg.payload;
+        received = true;
+        return true;
     };
 };
 
@@ -97,7 +97,7 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(!c1.received);
  	msg1->enqueueComplete();
 
-        received = queue->dequeue();
+        received = queue->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1.get(), received.get());
  	
    
@@ -190,11 +190,11 @@ class QueueTest : public CppUnit::TestCase
 
         CPPUNIT_ASSERT_EQUAL(uint32_t(3), queue->getMessageCount());
         
-        received = queue->dequeue();
+        received = queue->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1.get(), received.get());
         CPPUNIT_ASSERT_EQUAL(uint32_t(2), queue->getMessageCount());
 
-        received = queue->dequeue();
+        received = queue->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg2.get(), received.get());
         CPPUNIT_ASSERT_EQUAL(uint32_t(1), queue->getMessageCount());
 
@@ -207,7 +207,7 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(msg3.get(), consumer.last.get());
         CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getMessageCount());
 
-        received = queue->dequeue();
+        received = queue->dequeue().payload;
         CPPUNIT_ASSERT(!received);
         CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getMessageCount());
         

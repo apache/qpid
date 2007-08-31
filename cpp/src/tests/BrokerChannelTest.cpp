@@ -256,13 +256,13 @@ class BrokerChannelTest : public CppUnit::TestCase
         queue->deliver(msg3);
 	sleep(2);
         
-        Message::shared_ptr next = queue->dequeue();
+        Message::shared_ptr next = queue->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1, next);
         CPPUNIT_ASSERT_EQUAL((uint32_t) data1.size(), next->encodedContentSize());
-        next = queue->dequeue();
+        next = queue->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg2, next);
         CPPUNIT_ASSERT_EQUAL((uint32_t) data2.size(), next->encodedContentSize());
-        next = queue->dequeue();
+        next = queue->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg3, next);
         CPPUNIT_ASSERT_EQUAL((uint32_t) 0, next->encodedContentSize());
 
@@ -295,11 +295,11 @@ class BrokerChannelTest : public CppUnit::TestCase
         queue3->deliver(msg1);
 	sleep(2);
         
-        Message::shared_ptr next = queue1->dequeue();
+        Message::shared_ptr next = queue1->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1, next);
-        next = queue2->dequeue();
+        next = queue2->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1, next);
-        next = queue3->dequeue();
+        next = queue3->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1, next);
 
         }
