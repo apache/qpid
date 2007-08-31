@@ -64,7 +64,6 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
-
 /**
  * Control class for the MBean operations tab. It creates the required widgets
  * for the selected MBean.
@@ -519,12 +518,12 @@ public class OperationTabControl extends TabControl
     private void populateResults(Object result)
     {
         Display display = Display.getCurrent();
-        int width = 600;
-        int height = 400;
+        int width = 610;
+        int height = 400;        
         Shell shell = ViewUtility.createPopupShell(RESULT, width, height);
         shell.setImage(ApplicationRegistry.getImage(CONSOLE_IMAGE));
         ViewUtility.populateCompositeWithData(_toolkit, shell, result);
-        
+       
         shell.open();
         while (!shell.isDisposed()) {
             if (!display.readAndDispatch()) {
