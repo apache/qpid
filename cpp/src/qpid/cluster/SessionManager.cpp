@@ -25,7 +25,6 @@
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/broker/BrokerAdapter.h"
 #include "qpid/broker/Connection.h"
-#include "qpid/broker/BrokerChannel.h"
 #include "qpid/framing/ChannelAdapter.h"
 
 #include <boost/utility/in_place_factory.hpp>
@@ -38,13 +37,13 @@ using namespace sys;
 using namespace broker;
 
 /** Handler to send frames direct to local broker (bypass correlation etc.) */
-struct SessionManager::BrokerHandler :
-        public FrameHandler, private ChannelAdapter, private DeliveryAdapter
+struct SessionManager::BrokerHandler : public FrameHandler, private ChannelAdapter
 {
     Connection connection;
-    Channel channel;
+    SessionAdapter sessionAdapter;
+    broker::Session session;
     BrokerAdapter adapter;
-
+    
     // TODO aconway 2007-07-23: Lots of needless flab here (Channel,
     // Connection, ChannelAdapter) As these classes are untangled the
     // flab can be reduced. The real requirements are:
@@ -55,8 +54,9 @@ struct SessionManager::BrokerHandler :
     // 
     BrokerHandler(Broker& broker) :
         connection(0, broker),
-        channel(connection, *this, 1),
-        adapter(channel, connection, broker, *this) {}
+        sessionAdapter(connection, 0),
+        session(sessionAdapter, 1),
+        adapter(session, static_cast<ChannelAdapter&>(*this)) {}
 
     void handle(AMQFrame& frame) {
         AMQMethodBody* body=dynamic_cast<AMQMethodBody*>(frame.getBody());

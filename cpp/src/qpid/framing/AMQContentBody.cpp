@@ -40,4 +40,7 @@ void qpid::framing::AMQContentBody::decode(Buffer& buffer, uint32_t _size){
 void qpid::framing::AMQContentBody::print(std::ostream& out) const
 {
     out << "content (" << size() << " bytes)";
+#ifndef NDEBUG
+    out << data.substr(0,10);
+#endif
 }

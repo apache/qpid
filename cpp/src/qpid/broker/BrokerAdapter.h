@@ -18,11 +18,13 @@
  * limitations under the License.
  *
  */
-#include "qpid/framing/AMQP_ServerOperations.h"
+#include "DtxHandlerImpl.h"
 #include "HandlerImpl.h"
 #include "MessageHandlerImpl.h"
-#include "DtxHandlerImpl.h"
+#include "NameGenerator.h"
 #include "qpid/Exception.h"
+#include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace broker {
@@ -48,18 +50,17 @@ class MessageHandlerImpl;
  * Per-channel protocol adapter.
  *
  * A container for a collection of AMQP-class adapters that translate
- * AMQP method bodies into calls on the core Channel, Connection and
- * Broker objects. Each adapter class also provides a client proxy
- * to send methods to the peer.
+ * AMQP method bodies into calls on the core Broker objects. Each
+ * adapter class also provides a client proxy to send methods to the
+ * peer.
  * 
  */
 class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 {
   public:
-    BrokerAdapter(Channel& ch, Connection& c, Broker& b, framing::ChannelAdapter& a);
+    BrokerAdapter(Session& session, framing::ChannelAdapter& a);
 
     framing::ProtocolVersion getVersion() const;
-    ChannelHandler* getChannelHandler() { return &channelHandler; }
     BasicHandler* getBasicHandler() { return &basicHandler; }
     ExchangeHandler* getExchangeHandler() { return &exchangeHandler; }
     BindingHandler* getBindingHandler() { return &bindingHandler; }
@@ -67,46 +68,27 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
     TxHandler* getTxHandler() { return &txHandler;  }
     MessageHandler* getMessageHandler() { return &messageHandler;  }
     AccessHandler* getAccessHandler() {
-        throw ConnectionException(540, "Access class not implemented");  }
+        throw framing::NotImplementedException("Access class not implemented");  }
     FileHandler* getFileHandler() {
-        throw ConnectionException(540, "File class not implemented");  }
+        throw framing::NotImplementedException("File class not implemented");  }
     StreamHandler* getStreamHandler() {
-        throw ConnectionException(540, "Stream class not implemented");  }
+        throw framing::NotImplementedException("Stream class not implemented");  }
     TunnelHandler* getTunnelHandler() {
-        throw ConnectionException(540, "Tunnel class not implemented"); }
-    SessionHandler* getSessionHandler() { throw ConnectionException(503, "Session class not implemented yet"); }
-
+        throw framing::NotImplementedException("Tunnel class not implemented"); }
     DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
     DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
     ExecutionHandler* getExecutionHandler() { throw ConnectionException(531, "Wrong adapter for execution layer method!"); }
 
-    ConnectionHandler* getConnectionHandler() { 
-        throw ConnectionException(503, "Can't access connection class on non-zero channel!");        
-    }
+    // Handlers no longer implemented in BrokerAdapter:
+#define BADHANDLER() assert(0); throw framing::InternalErrorException()
+    ConnectionHandler* getConnectionHandler() { BADHANDLER(); }
+    SessionHandler* getSessionHandler() { BADHANDLER(); }
+    ChannelHandler* getChannelHandler() { BADHANDLER(); }
+#undef BADHANDLER
 
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
 
   private:
-
-    class ChannelHandlerImpl :
-        public ChannelHandler,
-        public HandlerImpl<framing::AMQP_ClientProxy::Channel>
-    {
-      public:
-        ChannelHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
-        
-        void open(const std::string& outOfBand); 
-        void flow(bool active); 
-        void flowOk(bool active); 
-        void ok(  );
-        void ping(  );
-        void pong(  );
-        void resume( const std::string& channelId );
-        void close(uint16_t replyCode, const
-                   std::string& replyText, uint16_t classId, uint16_t methodId); 
-        void closeOk(); 
-    };
-    
     class ExchangeHandlerImpl :
         public ExchangeHandler,
         public HandlerImpl<framing::AMQP_ClientProxy::Exchange>
@@ -201,9 +183,7 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
         void rollback();
     };
 
-    Connection& connection;
     BasicHandlerImpl basicHandler;
-    ChannelHandlerImpl channelHandler;
     ExchangeHandlerImpl exchangeHandler;
     BindingHandlerImpl bindingHandler;
     MessageHandlerImpl messageHandler;

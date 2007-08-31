@@ -159,7 +159,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerAdapter.cpp \
   qpid/broker/BrokerSingleton.cpp \
-  qpid/broker/BrokerChannel.cpp \
   qpid/broker/BrokerExchange.cpp \
   qpid/broker/BrokerQueue.cpp \
   qpid/broker/Connection.cpp \
@@ -227,7 +226,6 @@ libqpidclient_la_SOURCES =			\
 nobase_include_HEADERS = \
   $(platform_hdr) \
   qpid/broker/AccumulatedAck.h \
-  qpid/broker/BrokerChannel.h \
   qpid/broker/BrokerExchange.h \
   qpid/broker/BrokerQueue.h \
   qpid/broker/Consumer.h \
