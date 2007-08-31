@@ -29,12 +29,9 @@
 #include "ProtocolVersion.h"
 #include "amqp_types.h"
 #include "FrameHandler.h"
-#include "OutputHandler.h"
 
 namespace qpid {
 namespace framing {
-
-class OutputHandler;
 
 /**
  * Base class for client and broker channels.
@@ -59,7 +56,7 @@ class ChannelAdapter : protected BodyHandler {
     virtual ~ChannelAdapter() {}
 
     /** Initialize the channel adapter. */
-    void init(ChannelId, OutputHandler&, ProtocolVersion);
+    void init(ChannelId, FrameHandler&, ProtocolVersion);
 
     FrameHandler::Chains& getHandlers() { return handlers; }
 

@@ -52,7 +52,10 @@ class AMQFrame : public AMQDataBlock
     void setChannel(ChannelId c) { channel = c; }
 
     AMQBody* getBody();
-    const AMQBody* getBody() const;    
+    const AMQBody* getBody() const;
+
+    AMQMethodBody* getMethod() { return getBody()->getMethod(); }
+    const AMQMethodBody* getMethod() const { return getBody()->getMethod(); }
 
     /** Copy a body instance to the frame */
     void setBody(const AMQBody& b) { CopyVisitor cv(*this); b.accept(cv); }

@@ -20,19 +20,13 @@
  */
 
 #include "Broker.h"
-#include "BrokerChannel.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 
 namespace qpid {
-
-namespace framing {
-class AMQP_ClientProxy;
-}
-
 namespace broker {
 
-    //class Channel;
 class Connection;
+class Session;
 
 /**
  * A collection of references to the core objects required by an adapter,
@@ -40,36 +34,14 @@ class Connection;
  */
 struct CoreRefs
 {
-    CoreRefs(Channel& ch, Connection& c, Broker& b, framing::ChannelAdapter& a)
-        : channel(ch), connection(c), broker(b), adapter(a), proxy(a) {}
+    CoreRefs(Session& ch, Connection& c, Broker& b, framing::ChannelAdapter& a)
+        : session(ch), connection(c), broker(b), adapter(a), proxy(a) {}
 
-    Channel& channel;
+    Session& session;
     Connection& connection;
     Broker& broker;
     framing::ChannelAdapter& adapter;
     framing::AMQP_ClientProxy proxy;
-
-    /**
-     * Get named queue, never returns 0.
-     * @return: named queue or default queue for channel if name=""
-     * @exception: ChannelException if no queue of that name is found.
-     * @exception: ConnectionException if name="" and channel has no default.
-     */
-    Queue::shared_ptr getQueue(const string& name) {
-        //Note: this can be removed soon as the default queue for channels is scrapped in 0-10
-        Queue::shared_ptr queue;
-        if (name.empty()) {
-            queue = channel.getDefaultQueue();
-            if (!queue) throw ConnectionException( 530, "Queue must be specified or previously declared" );
-        } else {
-            queue = broker.getQueues().find(name);
-            if (queue == 0) {
-                throw ChannelException( 404, "Queue not found: " + name);
-            }
-        }
-        return queue;
-    }
-
 };
 
 

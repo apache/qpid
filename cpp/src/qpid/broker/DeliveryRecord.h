@@ -32,44 +32,44 @@
 #include "Prefetch.h"
 
 namespace qpid {
-    namespace broker {
-        class Channel;
+namespace broker {
+class Session;
 
-        /**
-         * Record of a delivery for which an ack is outstanding.
-         */
-        class DeliveryRecord{
-            mutable QueuedMessage msg;
-            mutable Queue::shared_ptr queue;
-            const std::string consumerTag;
-            const DeliveryId deliveryTag;
-            bool acquired;
-            const bool pull;
+/**
+ * Record of a delivery for which an ack is outstanding.
+ */
+class DeliveryRecord{
+    mutable QueuedMessage msg;
+    mutable Queue::shared_ptr queue;
+    const std::string consumerTag;
+    const DeliveryId deliveryTag;
+    bool acquired;
+    const bool pull;
 
-        public:
-            DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const std::string consumerTag, const DeliveryId deliveryTag);
-            DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId deliveryTag);
+  public:
+    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const std::string consumerTag, const DeliveryId deliveryTag);
+    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId deliveryTag);
             
-            void dequeue(TransactionContext* ctxt = 0) const;
-            bool matches(DeliveryId tag) const;
-            bool matchOrAfter(DeliveryId tag) const;
-            bool after(DeliveryId tag) const;
-            bool coveredBy(const AccumulatedAck* const range) const;
-            void requeue() const;
-            void redeliver(Channel* const) const;
-            void updateByteCredit(uint32_t& credit) const;
-            void addTo(Prefetch&) const;
-            void subtractFrom(Prefetch&) const;
-            const std::string& getConsumerTag() const { return consumerTag; } 
-            bool isPull() const { return pull; }
-            bool isAcquired() const { return acquired; }
-            void setAcquired(bool isAcquired) { acquired = isAcquired; }
+    void dequeue(TransactionContext* ctxt = 0) const;
+    bool matches(DeliveryId tag) const;
+    bool matchOrAfter(DeliveryId tag) const;
+    bool after(DeliveryId tag) const;
+    bool coveredBy(const AccumulatedAck* const range) const;
+    void requeue() const;
+    void redeliver(Session* const) const;
+    void updateByteCredit(uint32_t& credit) const;
+    void addTo(Prefetch&) const;
+    void subtractFrom(Prefetch&) const;
+    const std::string& getConsumerTag() const { return consumerTag; } 
+    bool isPull() const { return pull; }
+    bool isAcquired() const { return acquired; }
+    void setAcquired(bool isAcquired) { acquired = isAcquired; }
             
-            friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
-        };
+  friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
+};
 
-        typedef std::list<DeliveryRecord>::iterator ack_iterator; 
-    }
+typedef std::list<DeliveryRecord>::iterator ack_iterator; 
+}
 }
 
 

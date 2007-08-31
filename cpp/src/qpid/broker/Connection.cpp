@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #include "Connection.h"
-#include "BrokerChannel.h"
+#include "Session.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "BrokerAdapter.h"
 #include "SemanticHandler.h"
@@ -52,12 +52,8 @@ void Connection::received(framing::AMQFrame& frame){
     if (frame.getChannel() == 0) {
         adapter.handle(frame);
     } else {
-        // FIXME aconway 2007-08-29: review shutdown, not more shared_ptr.
-        // OLD COMMENT:
-        // Assign handler to new shared_ptr, as it may be erased
-        // from the map by handle() if frame is a ChannelClose.
-        // 
-        getChannel((frame.getChannel())).in(frame);
+        SessionAdapter sa = getChannel(frame.getChannel());
+        sa.in(frame);
     }
 }
 
@@ -98,18 +94,12 @@ void Connection::closeChannel(uint16_t id) {
     if (i != channels.end()) channels.erase(i);
 }
 
-
-FrameHandler::Chains& Connection::getChannel(ChannelId id) {
-    // FIXME aconway 2007-08-29: Assuming session on construction,
-    // move this to SessionAdapter::open.
+SessionAdapter Connection::getChannel(ChannelId id) {
     boost::optional<SessionAdapter>& ch = channels[id];
     if (!ch) {
-        ch = boost::in_place(boost::ref(*this), id); // FIXME aconway 2007-08-29: 
-        assert(ch->getSession());
-        broker.update(id, *ch->getSession());
+        ch = boost::in_place(boost::ref(*this), id); 
     }
-    assert(ch->getSession());
-    return *ch->getSession();
+    return *ch;
 }
 
 

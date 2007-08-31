@@ -13,14 +13,13 @@ class ConstantsGen < CppGen
   def generate()
     h_file("#{@dir}/constants") {
       namespace(@namespace) { 
-        @amqp.constants.each { |c|
-          genl "enum { #{c.name.shout} = #{c.value} };"
+        scope("enum AmqpConstant {","};") { 
+          genl @amqp.constants.map { |c| "#{c.name.shout}=#{c.value}" }.join(",\n")
         }
       }
     }
     
     h_file("#{@dir}/reply_exceptions") {
-      include "constants"
       include "qpid/Exception"
       namespace(@namespace) {
         @amqp.constants.each { |c|
@@ -35,6 +34,7 @@ class ConstantsGen < CppGen
         }
       }
     }
+    
   end
 end
 
