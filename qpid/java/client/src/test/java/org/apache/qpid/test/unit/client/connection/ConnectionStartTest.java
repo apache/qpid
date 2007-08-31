@@ -96,7 +96,7 @@ public class ConnectionStartTest extends TestCase
             // should really not be called before _connection start
             assertTrue("There should not be messages waiting for the consumer", _consumer.receiveNoWait() == null);
             _connection.start();
-            assertTrue("There should be messages waiting for the consumer", _consumer.receiveNoWait() == null);
+            assertTrue("There should be messages waiting for the consumer", _consumer.receive(10*1000) == null);
             assertTrue("Connection should be started", _connection.started());
 
         }
