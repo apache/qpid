@@ -68,14 +68,14 @@ class MessageTest : public CppUnit::TestCase
         dProps->setDeliveryMode(PERSISTENT);
         CPPUNIT_ASSERT(msg->isPersistent());
 
-
-        Buffer buffer(msg->encodedSize());
-        msg->encode(buffer);
-        buffer.flip();        
+        char* buff = static_cast<char*>(::alloca(msg->encodedSize()));
+        Buffer wbuffer(buff, msg->encodedSize());
+        msg->encode(wbuffer);
+        
+        Buffer rbuffer(buff, msg->encodedSize());
         msg.reset(new Message());
-        msg->decodeHeader(buffer);
-        msg->decodeContent(buffer);
-
+        msg->decodeHeader(rbuffer);
+        msg->decodeContent(rbuffer);
         CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchangeName());
         CPPUNIT_ASSERT_EQUAL(routingKey, msg->getRoutingKey());
         CPPUNIT_ASSERT_EQUAL((uint64_t) data1.size() + data2.size(), msg->contentSize());
