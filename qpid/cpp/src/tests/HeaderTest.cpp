@@ -38,12 +38,13 @@ public:
     {
         AMQHeaderBody body;
         body.get<BasicHeaderProperties>(true)->getHeaders().setString("A", "BCDE");
-        Buffer buffer(100);
+        char buff[100];
+        Buffer wbuffer(buff, 100);
+        body.encode(wbuffer);
 
-        body.encode(buffer);
-        buffer.flip();     
+        Buffer rbuffer(buff, 100);
         AMQHeaderBody body2;
-        body2.decode(buffer, body.size());
+        body2.decode(rbuffer, body.size());
         BasicHeaderProperties* props =
             body2.get<BasicHeaderProperties>(true);
         CPPUNIT_ASSERT_EQUAL(std::string("BCDE"),
@@ -84,11 +85,13 @@ public:
         properties->setClusterId(clusterId);
         properties->setContentLength(contentLength);
 
-        Buffer buffer(10000);
-        out.encode(buffer);
-        buffer.flip();     
+        char buff[10000];
+        Buffer wbuffer(buff, 10000);
+        out.encode(wbuffer);
+
+        Buffer rbuffer(buff, 10000);
         AMQFrame in;
-        in.decode(buffer);
+        in.decode(rbuffer);
         properties = in.castBody<AMQHeaderBody>()->get<BasicHeaderProperties>(true);
 
         CPPUNIT_ASSERT_EQUAL(contentType, properties->getContentType());
@@ -123,11 +126,13 @@ public:
         properties->setExpiration(expiration);
         properties->setTimestamp(timestamp);
 
-        Buffer buffer(100);
-        body.encode(buffer);
-        buffer.flip();     
+        char buff[100];
+        Buffer wbuffer(buff, 100);
+        body.encode(wbuffer);
+
+        Buffer rbuffer(buff, 100);
         AMQHeaderBody temp;
-        temp.decode(buffer, body.size());
+        temp.decode(rbuffer, body.size());
         properties = temp.get<BasicHeaderProperties>(true);
 
         CPPUNIT_ASSERT_EQUAL(contentType, properties->getContentType());

@@ -74,9 +74,9 @@ AsynchIOAcceptor::AsynchIOAcceptor(int16_t port, int backlog, int threads) :
 {}
 
 // Buffer definition
-struct Buff : public AsynchIO::Buffer {
+struct Buff : public AsynchIO::BufferBase {
     Buff() :
-        AsynchIO::Buffer(new char[65536], 65536)
+        AsynchIO::BufferBase(new char[65536], 65536)
     {}
     ~Buff()
     { delete [] bytes;}
@@ -113,7 +113,7 @@ public:
 	void close();
 
 	// Input side
-	void readbuff(AsynchIO& aio, AsynchIO::Buffer* buff);
+	void readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff);
 	void eof(AsynchIO& aio);
 	void disconnect(AsynchIO& aio);
 	
@@ -200,7 +200,7 @@ void AsynchIOHandler::close() {
 }
 
 // Input side
-void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::Buffer* buff) {
+void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
 	framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
     if(initiated){
         framing::AMQFrame frame;
@@ -264,7 +264,7 @@ void AsynchIOHandler::idle(AsynchIO&){
 	
 	do {
 		// Try and get a queued buffer if not then construct new one
-		AsynchIO::Buffer* buff = aio->getQueuedBuffer();
+		AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
 		if (!buff)
 			buff = new Buff;
 		framing::Buffer out(buff->bytes, buff->byteCount);

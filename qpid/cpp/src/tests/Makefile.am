@@ -84,7 +84,6 @@ broker_unit_tests =	\
   DtxWorkRecordTest     \
   ExchangeTest		\
   HeadersExchangeTest	\
-  MessageBuilderTest	\
   MessageTest		\
   QueueRegistryTest	\
   QueueTest		\
@@ -96,6 +95,7 @@ broker_unit_tests =	\
   TxPublishTest		\
   ValueTest		\
   MessageHandlerTest
+#  MessageBuilderTest
 
 #client_unit_tests =	\
   ClientChannelTest

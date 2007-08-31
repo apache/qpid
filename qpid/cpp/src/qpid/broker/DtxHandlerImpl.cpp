@@ -149,14 +149,17 @@ DtxCoordinationRecoverResult DtxHandlerImpl::recover(u_int16_t /*ticket*/,
     for (std::set<std::string>::iterator i = xids.begin(); i != xids.end(); i++) {
         size += i->size() + 1/*shortstr size*/;        
     }
-    Buffer buffer(size + 4/*longstr size*/);
-    buffer.putLong(size);
+
+    char* bytes = static_cast<char*>(::alloca(size + 4/*longstr size*/));
+    Buffer wbuffer(bytes, size + 4/*longstr size*/);
+    wbuffer.putLong(size);
     for (std::set<std::string>::iterator i = xids.begin(); i != xids.end(); i++) {
-        buffer.putShortString(*i);
+        wbuffer.putShortString(*i);
     }
-    buffer.flip();
+
+    Buffer rbuffer(bytes, size + 4/*longstr size*/);
     string data;
-    buffer.getLongString(data);
+    rbuffer.getLongString(data);
 
     FieldTable response;
     response.setString("xids", data);
