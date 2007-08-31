@@ -36,7 +36,7 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "Broker.h"
 #include "qpid/Exception.h"
-#include "BrokerChannel.h"
+#include "Session.h"
 #include "ConnectionAdapter.h"
 #include "SessionAdapter.h"
 
@@ -45,19 +45,14 @@
 namespace qpid {
 namespace broker {
 
-class Channel;
-
 class Connection : public sys::ConnectionInputHandler, 
                    public ConnectionToken
 {
   public:
     Connection(sys::ConnectionOutputHandler* out, Broker& broker);
 
-    /** Get a channel. Create if it does not already exist */
-    framing::FrameHandler::Chains& getChannel(framing::ChannelId channel);
-
-    /** Close a channel */
-    void closeChannel(framing::ChannelId channel);
+    /** Get the SessionAdapter for channel. Create if it does not already exist */
+    SessionAdapter getChannel(framing::ChannelId channel);
 
     /** Close the connection */
     void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
@@ -84,7 +79,11 @@ class Connection : public sys::ConnectionInputHandler,
     void idleIn();
     void closed();
 
+    // FIXME aconway 2007-08-30: When does closeChannel close the session?
+    void closeChannel(framing::ChannelId channel);
+
   private:
+
     // Use boost::optional to allow default-constructed uninitialized entries in the map.
     typedef std::map<framing::ChannelId, boost::optional<SessionAdapter> >ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
@@ -97,7 +96,6 @@ class Connection : public sys::ConnectionInputHandler,
     framing::AMQP_ClientProxy::Connection* client;
     uint64_t stagingThreshold;
     ConnectionAdapter adapter;
-
 };
 
 }}

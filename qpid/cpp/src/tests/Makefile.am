@@ -28,8 +28,8 @@ CLEANFILES=
 
 TESTS+=Blob
 check_PROGRAMS+=Blob
-Blob_SOURCES=Blob.cpp ../qpid/framing/Blob.cpp
-Blob_LDADD=-lboost_unit_test_framework
+Blob_SOURCES=Blob.cpp 
+Blob_LDADD=-lboost_unit_test_framework $(lib_common)
 
 TESTS+=logging
 check_PROGRAMS+=logging
@@ -80,7 +80,6 @@ perftest_LDADD=$(lib_client)
 # Unit tests
 broker_unit_tests =	\
   AccumulatedAckTest	\
-  BrokerChannelTest 	\
   DtxWorkRecordTest     \
   ExchangeTest		\
   HeadersExchangeTest	\
