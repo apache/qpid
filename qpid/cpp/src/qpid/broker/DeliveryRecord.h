@@ -26,6 +26,7 @@
 #include <ostream>
 #include "AccumulatedAck.h"
 #include "BrokerQueue.h"
+#include "Consumer.h"
 #include "DeliveryId.h"
 #include "Message.h"
 #include "Prefetch.h"
@@ -38,15 +39,16 @@ namespace qpid {
          * Record of a delivery for which an ack is outstanding.
          */
         class DeliveryRecord{
-            mutable Message::shared_ptr msg;
+            mutable QueuedMessage msg;
             mutable Queue::shared_ptr queue;
             const std::string consumerTag;
             const DeliveryId deliveryTag;
-            bool pull;
+            bool acquired;
+            const bool pull;
 
         public:
-            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const std::string consumerTag, const DeliveryId deliveryTag);
-            DeliveryRecord(Message::shared_ptr msg, Queue::shared_ptr queue, const DeliveryId deliveryTag);
+            DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const std::string consumerTag, const DeliveryId deliveryTag);
+            DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId deliveryTag);
             
             void dequeue(TransactionContext* ctxt = 0) const;
             bool matches(DeliveryId tag) const;
@@ -60,6 +62,8 @@ namespace qpid {
             void subtractFrom(Prefetch&) const;
             const std::string& getConsumerTag() const { return consumerTag; } 
             bool isPull() const { return pull; }
+            bool isAcquired() const { return acquired; }
+            void setAcquired(bool isAcquired) { acquired = isAcquired; }
             
             friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
         };
