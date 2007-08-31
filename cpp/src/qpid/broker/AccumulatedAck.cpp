@@ -35,10 +35,11 @@ void AccumulatedAck::update(DeliveryId first, DeliveryId last){
 
     Range r(first, last);
     bool handled = false;
+    bool markMerged = false;
     list<Range>::iterator merged = ranges.end();
     if (r.mergeable(mark)) {
         mark = r.end;
-        merged = ranges.begin();
+        markMerged = true;
         handled = true;
     } else {
         for (list<Range>::iterator i = ranges.begin(); i != ranges.end() && !handled; i++) {
@@ -57,9 +58,9 @@ void AccumulatedAck::update(DeliveryId first, DeliveryId last){
         while (!ranges.empty() && ranges.front().end <= mark) { 
             ranges.pop_front(); 
         }
-        //new range is incorporated, but may be possible to consolidate
-        if (merged == ranges.begin()) {
-            //consolidate mark
+        if (markMerged) {
+            //new range is incorporated, but may be possible to consolidate
+            merged = ranges.begin();
             while (merged != ranges.end() && merged->mergeable(mark)) {
                 mark = merged->end;
                 merged = ranges.erase(merged);
