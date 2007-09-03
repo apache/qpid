@@ -57,7 +57,7 @@ namespace qpid {
              */
             std::list<Range> ranges;
 
-            AccumulatedAck(DeliveryId r) : mark(r) {}
+            explicit AccumulatedAck(DeliveryId r) : mark(r) {}
             void update(DeliveryId firstTag, DeliveryId lastTag);
             void consolidate();
             void clear();

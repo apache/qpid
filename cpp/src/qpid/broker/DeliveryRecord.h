@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <list>
+#include <vector>
 #include <ostream>
 #include "AccumulatedAck.h"
 #include "BrokerQueue.h"
@@ -42,13 +43,14 @@ class DeliveryRecord{
     mutable QueuedMessage msg;
     mutable Queue::shared_ptr queue;
     const std::string consumerTag;
-    const DeliveryId deliveryTag;
+    const DeliveryId id;
     bool acquired;
     const bool pull;
 
   public:
-    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const std::string consumerTag, const DeliveryId deliveryTag);
-    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId deliveryTag);
+    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const std::string consumerTag, 
+                   const DeliveryId id, bool acquired);
+    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId id);
             
     void dequeue(TransactionContext* ctxt = 0) const;
     bool matches(DeliveryId tag) const;
@@ -56,6 +58,8 @@ class DeliveryRecord{
     bool after(DeliveryId tag) const;
     bool coveredBy(const AccumulatedAck* const range) const;
     void requeue() const;
+    void release();
+    void reject();
     void redeliver(Session* const) const;
     void updateByteCredit(uint32_t& credit) const;
     void addTo(Prefetch&) const;
@@ -63,12 +67,33 @@ class DeliveryRecord{
     const std::string& getConsumerTag() const { return consumerTag; } 
     bool isPull() const { return pull; }
     bool isAcquired() const { return acquired; }
-    void setAcquired(bool isAcquired) { acquired = isAcquired; }
+    //void setAcquired(bool isAcquired) { acquired = isAcquired; }
+    void acquire(std::vector<DeliveryId>& results);
             
   friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };
 
 typedef std::list<DeliveryRecord>::iterator ack_iterator; 
+
+struct AckRange
+{
+    ack_iterator start;
+    ack_iterator end;    
+    AckRange(ack_iterator _start, ack_iterator _end) : start(_start), end(_end) {}
+};
+
+struct AcquireFunctor
+{
+    std::vector<DeliveryId>& results;
+
+    AcquireFunctor(std::vector<DeliveryId>& _results) : results(_results) {}
+
+    void operator()(DeliveryRecord& record)
+    {
+        record.acquire(results);
+    }
+};
+
 }
 }
 

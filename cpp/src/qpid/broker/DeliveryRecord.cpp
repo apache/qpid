@@ -19,7 +19,9 @@
  *
  */
 #include "DeliveryRecord.h"
+#include "DeliverableMessage.h"
 #include "Session.h"
+#include "qpid/log/Statement.h"
 
 using namespace qpid::broker;
 using std::string;
@@ -27,29 +29,32 @@ using std::string;
 DeliveryRecord::DeliveryRecord(QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
                                const string _consumerTag, 
-                               const DeliveryId _deliveryTag) : msg(_msg), 
+                               const DeliveryId _id,
+                               bool _acquired) : msg(_msg), 
                                                                 queue(_queue), 
                                                                 consumerTag(_consumerTag),
-                                                                deliveryTag(_deliveryTag),
-                                                                acquired(false),
+                                                                id(_id),
+                                                                acquired(_acquired),
                                                                 pull(false){}
 
 DeliveryRecord::DeliveryRecord(QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
-                               const DeliveryId _deliveryTag) : msg(_msg), 
+                               const DeliveryId _id) : msg(_msg), 
                                                                 queue(_queue), 
                                                                 consumerTag(""),
-                                                                deliveryTag(_deliveryTag),
-                                                                acquired(false),
+                                                                id(_id),
+                                                                acquired(true),
                                                                 pull(true){}
 
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
-    queue->dequeue(ctxt, msg.payload);
+    if (acquired) {
+        queue->dequeue(ctxt, msg.payload);
+    }
 }
 
 bool DeliveryRecord::matches(DeliveryId tag) const{
-    return deliveryTag == tag;
+    return id == tag;
 }
 
 bool DeliveryRecord::matchOrAfter(DeliveryId tag) const{
@@ -57,11 +62,11 @@ bool DeliveryRecord::matchOrAfter(DeliveryId tag) const{
 }
 
 bool DeliveryRecord::after(DeliveryId tag) const{
-    return deliveryTag > tag;
+    return id > tag;
 }
 
 bool DeliveryRecord::coveredBy(const AccumulatedAck* const range) const{
-    return range->covers(deliveryTag);
+    return range->covers(id);
 }
 
 void DeliveryRecord::redeliver(Session* const session) const{
@@ -69,13 +74,34 @@ void DeliveryRecord::redeliver(Session* const session) const{
         //if message was originally sent as response to get, we must requeue it
         requeue();
     }else{
-        session->deliver(msg.payload, consumerTag, deliveryTag);
+        session->deliver(msg.payload, consumerTag, id);
     }
 }
 
-void DeliveryRecord::requeue() const{
+void DeliveryRecord::requeue() const
+{
     msg.payload->redeliver();
     queue->requeue(msg);
+}
+
+void DeliveryRecord::release() 
+{
+    queue->requeue(msg);
+    acquired = false;
+}
+
+void DeliveryRecord::reject() 
+{    
+    Exchange::shared_ptr alternate = queue->getAlternateExchange();
+    if (alternate) {
+        DeliverableMessage delivery(msg.payload);
+        alternate->route(delivery, msg.payload->getRoutingKey(), &(msg.payload->getApplicationHeaders()));
+        QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to " 
+                 << alternate->getName());
+    } else {
+        //just drop it
+        QPID_LOG(info, "Dropping rejected message from " << queue->getName());
+    }
 }
 
 void DeliveryRecord::updateByteCredit(uint32_t& credit) const
@@ -102,11 +128,18 @@ void DeliveryRecord::subtractFrom(Prefetch& prefetch) const{
     }
 }
 
+void DeliveryRecord::acquire(std::vector<DeliveryId>& results) {
+    if (queue->acquire(msg)) {
+        acquired = true;
+        results.push_back(id);
+    }
+}
+
 namespace qpid {
 namespace broker {
 
 std::ostream& operator<<(std::ostream& out, const DeliveryRecord& r) {
-    out << "{" << "id=" << r.deliveryTag.getValue();
+    out << "{" << "id=" << r.id.getValue();
     out << ", consumer=" << r.consumerTag;
     out << ", queue=" << r.queue->getName() << "}";
     return out;

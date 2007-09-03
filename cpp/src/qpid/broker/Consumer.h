@@ -36,8 +36,13 @@ namespace qpid {
         };
         
 
-        class Consumer{
+        class Consumer {
+            const bool acquires;
         public:
+            framing::SequenceNumber position;
+
+            Consumer(bool preAcquires = true) : acquires(preAcquires) {}
+            bool preAcquires() const { return acquires; }
             virtual bool deliver(QueuedMessage& msg) = 0;
             virtual ~Consumer(){}
         };

@@ -68,7 +68,8 @@ namespace qpid {
             const bool autodelete;
             MessageStore* const store;
             const ConnectionToken* const owner;
-            Consumers consumers;
+            Consumers acquirers;
+            Consumers browsers;
             Messages messages;
             int next;
             mutable qpid::sys::RWlock consumerLock;
@@ -91,6 +92,8 @@ namespace qpid {
              * only called by serilizer
 	     */
             void dispatch();
+            void cancel(Consumer* c, Consumers& set);
+            void serviceBrowser(Consumer* c);
  
         protected:
 	   /**
@@ -114,6 +117,9 @@ namespace qpid {
             void destroy();
             void bound(const string& exchange, const string& key, const qpid::framing::FieldTable& args);
             void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
+
+            bool acquire(const QueuedMessage& msg);
+
             /**
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
@@ -141,7 +147,7 @@ namespace qpid {
              * at any time, so this call schedules the despatch based on
 	     * the serilizer policy.
              */
-            void requestDispatch();
+            void requestDispatch(Consumer* c = 0, bool sync = false);
             void consume(Consumer* c, bool exclusive = false);
             void cancel(Consumer* c);
             uint32_t purge();
