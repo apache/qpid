@@ -39,7 +39,7 @@ class DtxTests(TestBase):
 
     XA_RBROLLBACK = 1
     XA_RBTIMEOUT = 2
-    XA_OK = 8
+    XA_OK = 0
     tx_counter = 0
 
     def reset_channel(self):

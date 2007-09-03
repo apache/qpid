@@ -93,8 +93,8 @@ broker_unit_tests =	\
   TxBufferTest		\
   TxPublishTest		\
   ValueTest		\
-  MessageHandlerTest
-#  MessageBuilderTest
+  MessageHandlerTest    \
+  MessageBuilderTest
 
 #client_unit_tests =	\
   ClientChannelTest
