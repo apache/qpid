@@ -20,19 +20,11 @@
 #include <boost/format.hpp>
 #include "Broker.h"
 #include "Session.h"
+#include "qpid/framing/constants.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
 using std::string;
-
-const int XA_RBROLLBACK(1);
-const int XA_RBTIMEOUT(2);
-const int XA_HEURHAZ(3);
-const int XA_HEURCOM(4);
-const int XA_HEURRB(5);
-const int XA_HEURMIX(6);
-const int XA_RDONLY(7);
-const int XA_OK(8);
 
 DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : CoreRefs(parent) {}
 
