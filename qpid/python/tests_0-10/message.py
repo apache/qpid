@@ -339,20 +339,19 @@ class MessageTests(TestBase):
         msg = queue.get(timeout=1)
         self.assertEqual(large, msg.content.body)
 
-
-
     def test_reject(self):
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, alternate_exchange="amq.fanout")
+        channel.queue_declare(queue = "r", exclusive=True)
+        channel.queue_bind(queue = "r", exchange = "amq.fanout")
 
-        channel.message_subscribe(queue = "q", destination = "consumer")
+        channel.message_subscribe(queue = "q", destination = "consumer", confirm_mode = 1)
         channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body="blah, blah"))
         msg = self.client.queue("consumer").get(timeout = 1)
         self.assertEquals(msg.content.body, "blah, blah")
-        channel.message_cancel(destination = "consumer")
-        msg.reject()
+        channel.message_reject([msg.command_id, msg.command_id])
 
-        channel.message_subscribe(queue = "q", destination = "checker")
+        channel.message_subscribe(queue = "r", destination = "checker")
         msg = self.client.queue("checker").get(timeout = 1)
         self.assertEquals(msg.content.body, "blah, blah")
 
@@ -492,6 +491,71 @@ class MessageTests(TestBase):
             msg.complete(cumulative=False)
             self.assertDataEquals(channel, q.get(timeout = 1), "abcdefgh")
             self.assertEmpty(q)
+
+    def test_subscribe_not_acquired(self):
+        """
+        Test the not-acquired modes works as expected for a simple case
+        """
+        #NOTE: I'm using not-acquired == 1 and pre-acquired == 0 as
+        #that keeps the default behaviour as expected. This was
+        #discussed by the SIG, and I'd rather not change all the
+        #existing tests twice.
+        
+        channel = self.channel
+        channel.queue_declare(queue = "q", exclusive=True)
+        for i in range(1, 6):
+            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %s" % i))
+
+        channel.message_subscribe(queue = "q", destination = "a", acquire_mode = 1)
+        channel.message_subscribe(queue = "q", destination = "b", acquire_mode = 1)
+
+        for i in range(6, 11):
+            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %s" % i))
+
+        #both subscribers should see all messages
+        qA = self.client.queue("a")
+        qB = self.client.queue("b")
+        for i in range(1, 11):
+            for q in [qA, qB]:
+                msg = q.get(timeout = 1)
+                self.assertEquals("Message %s" % i, msg.content.body)
+                msg.complete()
+
+        #messages should still be on the queue:
+        self.assertEquals(10, channel.queue_query(queue = "q").message_count)
+
+    def test_acquire(self):
+        """
+        Test explicit acquire function
+        """
+        channel = self.channel
+        channel.queue_declare(queue = "q", exclusive=True)
+        channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "acquire me"))
+
+        channel.message_subscribe(queue = "q", destination = "a", acquire_mode = 1, confirm_mode = 1)
+        msg = self.client.queue("a").get(timeout = 1)
+        channel.message_acquire([msg.command_id, msg.command_id])
+        msg.complete()
+
+        #message should have been removed from the queue:
+        self.assertEquals(0, channel.queue_query(queue = "q").message_count)
+
+    def test_release(self):
+        """
+        Test explicit release function
+        """
+        channel = self.channel
+        channel.queue_declare(queue = "q", exclusive=True)
+        channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "release me"))
+
+        channel.message_subscribe(queue = "q", destination = "a", acquire_mode = 0, confirm_mode = 1)
+        msg = self.client.queue("a").get(timeout = 1)
+        channel.message_cancel(destination = "a")
+        channel.message_release([msg.command_id, msg.command_id])
+        msg.complete()
+
+        #message should not have been removed from the queue:
+        self.assertEquals(1, channel.queue_query(queue = "q").message_count)
 
     def assertDataEquals(self, channel, msg, expected):
         self.assertEquals(expected, msg.content.body)

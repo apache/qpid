@@ -190,6 +190,7 @@ class Channel:
     self.completion = OutgoingCompletion()
     self.incoming_completion = IncomingCompletion(self)
     self.futures = {}
+    self.control_queue = Queue(0)#used for incoming methods that appas may want to handle themselves
 
     # Use reliable framing if version == 0-9.
     if spec.major == 0 and spec.minor == 9:

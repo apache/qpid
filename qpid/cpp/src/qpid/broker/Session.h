@@ -40,6 +40,7 @@
 #include <boost/ptr_container/ptr_vector.hpp>
 
 #include <list>
+#include <vector>
 
 namespace qpid {
 
@@ -80,7 +81,7 @@ class Session : public framing::FrameHandler::Chains,
       public:
         ConsumerImpl(Session* parent, DeliveryToken::shared_ptr token, 
                      const string& name, Queue::shared_ptr queue,
-                     bool ack, bool nolocal, bool acquire=true);
+                     bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
         bool deliver(QueuedMessage& msg);            
         void redeliver(Message::shared_ptr& msg, DeliveryId deliveryTag);
@@ -131,6 +132,8 @@ class Session : public framing::FrameHandler::Chains,
 
     // FIXME aconway 2007-08-31: remove, temporary hack.
     SemanticHandler* semanticHandler;
+
+    AckRange findRange(DeliveryId first, DeliveryId last);
     
 
   public:
@@ -166,7 +169,7 @@ class Session : public framing::FrameHandler::Chains,
      *@param tagInOut - if empty it is updated with the generated token.
      */
     void consume(DeliveryToken::shared_ptr token, string& tagInOut, Queue::shared_ptr queue, 
-                 bool nolocal, bool acks, bool exclusive, const framing::FieldTable* = 0);
+                 bool nolocal, bool acks, bool acquire, bool exclusive, const framing::FieldTable* = 0);
 
     void cancel(const string& tag);
 
@@ -192,6 +195,9 @@ class Session : public framing::FrameHandler::Chains,
     void recover(bool requeue);
     void flow(bool active);
     void deliver(Message::shared_ptr& msg, const string& consumerTag, DeliveryId deliveryTag);            
+    void acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired);
+    void release(DeliveryId first, DeliveryId last);
+    void reject(DeliveryId first, DeliveryId last);
 
     void handle(Message::shared_ptr msg);
 

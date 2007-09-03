@@ -126,6 +126,9 @@ class ClientDelegate(Delegate):
   def message_append(self, ch, msg):
     ch.references.get(msg.reference).append(msg.bytes)
 
+  def message_acquired(self, ch, msg):
+    ch.control_queue.put(msg)
+
   def basic_deliver(self, ch, msg):
     self.client.queue(msg.consumer_tag).put(msg)
 
