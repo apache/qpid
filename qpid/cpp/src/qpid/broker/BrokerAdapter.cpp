@@ -306,7 +306,7 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
     //also version specific behaviour now)
     if (newTag.empty()) newTag = tagGenerator.generate();
     DeliveryToken::shared_ptr token(MessageDelivery::getBasicConsumeToken(newTag));
-    session.consume(token, newTag, queue, noLocal, !noAck, exclusive, &fields);
+    session.consume(token, newTag, queue, noLocal, !noAck, true, exclusive, &fields);
 
     if(!nowait) client.consumeOk(newTag);
 

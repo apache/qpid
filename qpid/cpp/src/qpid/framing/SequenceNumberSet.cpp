@@ -44,6 +44,22 @@ uint32_t SequenceNumberSet::encodedSize() const
     return 2 /*count*/ + (size() * 4);
 }
 
+SequenceNumberSet SequenceNumberSet::condense() const
+{
+    SequenceNumberSet result;
+    const_iterator last = end();
+    for (const_iterator i = begin(); i != end(); i++) {
+        if (last == end()) {
+            last = i;
+        } else if (*i - *last > 1) {
+            result.push_back(*last);
+            result.push_back(*i);            
+            last = end();
+        }
+    }
+    return result;
+}
+
 namespace qpid{
 namespace framing{
 

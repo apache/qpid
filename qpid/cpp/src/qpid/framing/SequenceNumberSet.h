@@ -39,6 +39,7 @@ public:
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
     uint32_t encodedSize() const;   
+    SequenceNumberSet condense() const;
 
     friend std::ostream& operator<<(std::ostream&, const SequenceNumberSet&);
 };    
