@@ -1,4 +1,3 @@
 tests_0-10.alternate-exchange.AlternateExchangeTests.test_immediate
-tests_0-10.message.MessageTests.test_reject
 tests_0-10.basic.BasicTests.test_get
 
