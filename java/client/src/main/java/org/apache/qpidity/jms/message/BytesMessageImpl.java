@@ -836,25 +836,10 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
         {
             try
             {
-                /*
-                 * messageData.array() throws an UnsupportedOperationException
-                System.out.println("messageData Array : " +messageData.array().length);
-                
-                _dataIn = new DataInputStream(
-                        new ByteArrayInputStream(messageData.array(), messageData.arrayOffset() + messageData.position()
-                                , messageData.remaining()));
-                */
-                
-                // temp hack
-                byte[] b = new byte[messageData.limit()];
-                messageData.get(b);
-                _dataIn = new DataInputStream(
-                        new ByteArrayInputStream(b));
-                                
+                _dataIn = new DataInputStream(asInputStream());
             }
             catch (Exception e)
             {
-                e.printStackTrace();
                 throw new QpidException("Cannot retrieve data from message ", null, e);
             }
         }
