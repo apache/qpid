@@ -22,6 +22,8 @@ import org.apache.qpidity.QpidException;
 import javax.jms.TextMessage;
 import javax.jms.JMSException;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.*;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -119,10 +121,9 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
         {
             try
             {
-                _messageText = new String(messageData.array(), messageData.arrayOffset() + messageData.position(),
-                                          messageData.remaining(), CHARACTER_ENCODING);
+                _messageText = getString();
             }
-            catch (UnsupportedEncodingException e)
+            catch (Exception e)
             {
                 throw new QpidException("Problem when decoding text", null, e);
             }
@@ -142,6 +143,186 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
     {
         super.clearBody();
         _messageText = null;
+    }
+
+    /**
+     * This method is taken from Mina code
+     * 
+     * Reads a <code>NUL</code>-terminated string from this buffer using the
+     * specified <code>decoder</code> and returns it.  This method reads
+     * until the limit of this buffer if no <tt>NUL</tt> is found.
+     *
+     * @return
+     * @throws java.nio.charset.CharacterCodingException
+     *
+     */
+    public String getString() throws CharacterCodingException
+    {
+        if (!getMessageData().hasRemaining())
+        {
+            return "";
+        }
+        Charset charset = Charset.forName(CHARACTER_ENCODING);
+        CharsetDecoder decoder = charset.newDecoder();
+
+        boolean utf16 = decoder.charset().name().startsWith("UTF-16");
+
+        int oldPos = getMessageData().position();
+        int oldLimit = getMessageData().limit();
+        int end = -1;
+        int newPos;
+
+        if (!utf16)
+        {
+            end = indexOf((byte) 0x00);
+            if (end < 0)
+            {
+                newPos = end = oldLimit;
+            }
+            else
+            {
+                newPos = end + 1;
+            }
+        }
+        else
+        {
+            int i = oldPos;
+            for (; ;)
+            {
+                boolean wasZero = getMessageData().get(i) == 0;
+                i++;
+
+                if (i >= oldLimit)
+                {
+                    break;
+                }
+
+                if (getMessageData().get(i) != 0)
+                {
+                    i++;
+                    if (i >= oldLimit)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
+
+                if (wasZero)
+                {
+                    end = i - 1;
+                    break;
+                }
+            }
+
+            if (end < 0)
+            {
+                newPos = end = oldPos + ((oldLimit - oldPos) & 0xFFFFFFFE);
+            }
+            else
+            {
+                if (end + 2 <= oldLimit)
+                {
+                    newPos = end + 2;
+                }
+                else
+                {
+                    newPos = end;
+                }
+            }
+        }
+
+        if (oldPos == end)
+        {
+            getMessageData().position(newPos);
+            return "";
+        }
+
+        getMessageData().limit(end);
+        decoder.reset();
+
+        int expectedLength = (int) (getMessageData().remaining() * decoder.averageCharsPerByte()) + 1;
+        CharBuffer out = CharBuffer.allocate(expectedLength);
+        for (; ;)
+        {
+            CoderResult cr;
+            if (getMessageData().hasRemaining())
+            {
+                cr = decoder.decode(getMessageData(), out, true);
+            }
+            else
+            {
+                cr = decoder.flush(out);
+            }
+
+            if (cr.isUnderflow())
+            {
+                break;
+            }
+
+            if (cr.isOverflow())
+            {
+                CharBuffer o = CharBuffer.allocate(out.capacity() + expectedLength);
+                out.flip();
+                o.put(out);
+                out = o;
+                continue;
+            }
+
+            if (cr.isError())
+            {
+                // Revert the buffer back to the previous state.
+                getMessageData().limit(oldLimit);
+                getMessageData().position(oldPos);
+                cr.throwException();
+            }
+        }
+
+        getMessageData().limit(oldLimit);
+        getMessageData().position(newPos);
+        return out.flip().toString();
+    }
+
+    /**
+     * Returns the first occurence position of the specified byte from the current position to
+     * the current limit.
+     *
+     * @return <tt>-1</tt> if the specified byte is not found
+     * @param b
+     */
+    public int indexOf(byte b)
+    {
+        if (getMessageData().hasArray())
+        {
+            int arrayOffset = getMessageData().arrayOffset();
+            int beginPos = arrayOffset + getMessageData().position();
+            int limit = arrayOffset + getMessageData().limit();
+            byte[] array = getMessageData().array();
+
+            for (int i = beginPos; i < limit; i++)
+            {
+                if (array[i] == b)
+                {
+                    return i - arrayOffset;
+                }
+            }
+        }
+        else
+        {
+            int beginPos = getMessageData().position();
+            int limit = getMessageData().limit();
+
+            for (int i = beginPos; i < limit; i++)
+            {
+                if (getMessageData().get(i) == b)
+                {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 }
 

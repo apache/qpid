@@ -594,10 +594,7 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
         {
             try
             {
-                ByteArrayInputStream bais = new ByteArrayInputStream(messageData.array(),
-                                                                     messageData.arrayOffset() + messageData.position(),
-                                                                     messageData.remaining());
-                ObjectInputStream ois = new ObjectInputStream(bais);
+                ObjectInputStream ois = new ObjectInputStream(asInputStream());
                 _map = (Map<String, Object>) ois.readObject();
             }
             catch (IOException ioe)

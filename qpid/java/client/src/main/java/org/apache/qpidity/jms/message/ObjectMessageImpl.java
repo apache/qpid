@@ -158,10 +158,7 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
         {
             try
             {
-                ByteArrayInputStream bais = new ByteArrayInputStream(messageData.array(),
-                                                                     messageData.arrayOffset() + messageData.position(),
-                                                                     messageData.remaining());
-                ObjectInputStream ois = new ObjectInputStream(bais);
+                ObjectInputStream ois = new ObjectInputStream(asInputStream());
                 _object = (Serializable) ois.readObject();
             }
             catch (IOException ioe)

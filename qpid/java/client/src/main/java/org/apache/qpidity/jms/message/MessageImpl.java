@@ -23,6 +23,12 @@ import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
 import java.util.Enumeration;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CoderResult;
 
 /**
  * Implementation of javax.jms.Message
@@ -56,7 +62,7 @@ public class MessageImpl extends QpidMessage implements Message
     /**
      * Indicate whether the message properties are in writeable status.
      */
-    protected boolean _proertiesReadOnly = false;
+    protected boolean _propertiesReadOnly = false;
 
     /**
      * The message consumer through which this message was received.
@@ -83,7 +89,7 @@ public class MessageImpl extends QpidMessage implements Message
     {
         super(message);
     }
-    
+
     //---- javax.jms.Message interface
     /**
      * Get the message ID.
@@ -506,7 +512,7 @@ public class MessageImpl extends QpidMessage implements Message
     {
         // The properties can now be written
         // Properties are read only when the message is received.
-        _proertiesReadOnly = false;
+        _propertiesReadOnly = false;
         super.clearMessageProperties();
     }
 
@@ -827,7 +833,7 @@ public class MessageImpl extends QpidMessage implements Message
      */
     public void setObjectProperty(String name, Object value) throws JMSException
     {
-        if (_proertiesReadOnly)
+        if (_propertiesReadOnly)
         {
             throw new MessageNotWriteableException("Error the message properties are read only");
         }
@@ -895,7 +901,7 @@ public class MessageImpl extends QpidMessage implements Message
         // recreate a destination object for the encoded ReplyTo destination (if it exists)
         //          _replyTo = // todo
 
-        _proertiesReadOnly = true;
+        _propertiesReadOnly = true;
         _readOnly = true;
     }
 
@@ -924,4 +930,87 @@ public class MessageImpl extends QpidMessage implements Message
         _messageConsumer = messageConsumer;
     }
 
+    /**
+     * Returns an {@link java.io.InputStream} that reads the data from this mesage buffer.
+     * {@link java.io.InputStream#read()} returns <tt>-1</tt> if the buffer position
+     * reaches to the limit.
+     *
+     * @return An {@link java.io.InputStream} that reads the data from this mesage buffer.
+     */
+    public InputStream asInputStream()
+    {
+        return new InputStream()
+        {
+            @Override
+            public int available()
+            {
+                return getMessageData().remaining();
+            }
+
+            @Override
+            public synchronized void mark(int readlimit)
+            {
+                getMessageData().mark();
+            }
+
+            @Override
+            public boolean markSupported()
+            {
+                return true;
+            }
+
+            @Override
+            public int read()
+            {
+                if (getMessageData().hasRemaining())
+                {
+                    return getMessageData().get() & 0xff;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len)
+            {
+                int remaining = getMessageData().remaining();
+                if (remaining > 0)
+                {
+                    int readBytes = Math.min(remaining, len);
+                    getMessageData().get(b, off, readBytes);
+                    return readBytes;
+                }
+                else
+                {
+                    return -1;
+                }
+            }
+
+            @Override
+            public synchronized void reset()
+            {
+                getMessageData().reset();
+            }
+
+            @Override
+            public long skip(long n)
+            {
+                int bytes;
+                if (n > Integer.MAX_VALUE)
+                {
+                    bytes = getMessageData().remaining();
+                }
+                else
+                {
+                    bytes = Math.min(getMessageData().remaining(), (int) n);
+                }
+                getMessageData().position(getMessageData().position() + bytes);
+                return bytes;
+            }
+        };
+    }
+
+  
 }

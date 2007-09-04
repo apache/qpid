@@ -40,7 +40,8 @@ import org.apache.qpidity.jms.message.QpidMessage;
 /**
  * Implementation of JMS message consumer
  */
-public class MessageConsumerImpl extends MessageActor implements MessageConsumer, org.apache.qpidity.client.util.MessageListener
+public class MessageConsumerImpl extends MessageActor
+        implements MessageConsumer, org.apache.qpidity.client.util.MessageListener
 {
     // we can receive up to 100 messages for an asynchronous listener
     public static final int MAX_MESSAGE_TRANSFERRED = 100;
@@ -78,28 +79,19 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     private MessageListener _messageListener;
 
     /**
-     * The synchronous message just delivered
-     */
-    private QpidMessage _incomingMessage;
-
-    /**
      * A lcok on the syncrhonous message
      */
     private final Object _incomingMessageLock = new Object();
 
-    /**
-     * Indicates that this consumer is receiving a synch message
-     */
-    private boolean _isReceiving = false;
 
     /**
      * Number of mesages received asynchronously
      * Nether exceed MAX_MESSAGE_TRANSFERRED
      */
     private int _messageAsyncrhonouslyReceived = 0;
-    
+
     private LinkedBlockingQueue<QpidMessage> _queue = new LinkedBlockingQueue<QpidMessage>();
-    
+
     //----- Constructors
     /**
      * Create a new MessageProducerImpl.
@@ -126,7 +118,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         _subscriptionName = subscriptionName;
         _isStopped = getSession().isStopped();
         // let's create a message part assembler
-        
+
         MessagePartListener messageAssembler = new MessagePartListenerAdapter(this);
 
         if (destination instanceof Queue)
@@ -283,12 +275,10 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         // Check if we can get a message immediately
         Message result;
         result = receiveNoWait();
-        
-        if(result != null)
+        if (result != null)
         {
             return result;
         }
-        
         try
         {
             // Now issue a credit and wait for the broker to send a message
@@ -296,7 +286,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             // This will only overload the broker. After the initial try we can wait
             // for the broker to send a message when it gets one
             requestCredit(1);
-            return (Message)_queue.take();
+            return (Message) _queue.take();
         }
         catch (Exception e)
         {
@@ -323,19 +313,19 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         {
             throw new JMSException("Invalid timeout value: " + timeout);
         }
-        
+
         Message result;
         try
         {
             // first check if we have any in the queue already
-            result = (Message)_queue.poll();
-            if(result == null)
+            result = (Message) _queue.poll();
+            if (result == null)
             {
                 requestCredit(1);
                 requestFlush();
                 // We shouldn't do a sync(). Bcos the timeout can happen
                 // before the sync() returns
-                return (Message)_queue.poll(timeout,TimeUnit.MILLISECONDS);
+                return (Message) _queue.poll(timeout, TimeUnit.MILLISECONDS);
             }
             else
             {
@@ -362,50 +352,71 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         try
         {
             // first check if we have any in the queue already
-            result = (Message)_queue.poll();
-            if(result == null)
+            result = (Message) _queue.poll();
+            if (result == null)
             {
                 requestCredit(1);
                 requestFlush();
                 requestSync();
-                return (Message)_queue.poll();
+                return (Message) _queue.poll();
             }
             else
             {
                 return result;
-            }            
+            }
         }
         catch (Exception e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
     }
-    
-    // not public methods    
-    private void requestCredit(int units)
+
+    // not public methods
+    /**
+     * Upon receipt of this method, the broker adds "value"
+     * number of messages to the available credit balance for this consumer.
+     *
+     * @param value Number of credits, a value of 0 indicates an infinite amount of credit.
+     */
+    private void requestCredit(int value)
     {
         getSession().getQpidSession()
-        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, units);
+                .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, value);
     }
-    
+
+    /**
+     * Forces the broker to exhaust its credit supply.
+     * <p> The broker's credit will always be zero when
+     * this method completes.
+     */
     private void requestFlush()
     {
         getSession().getQpidSession().messageFlush(getMessageActorID());
     }
-        
+
+    /**
+     * Sync method will block until all outstanding broker
+     * commands
+     * are executed.
+     */
     private void requestSync()
     {
         getSession().getQpidSession().sync();
     }
-    
+
+    /**
+     * Check whether this consumer is closed.
+     *
+     * @throws JMSException If this consumer is closed.
+     */
     private void checkClosed() throws JMSException
     {
-        if(_isStopped)
+        if (_isStopped)
         {
             throw new JMSException("Session is closed");
         }
     }
-    
+
     /**
      * Stop the delivery of messages to this consumer.
      * <p>For asynchronous receiver, this operation blocks until the message listener
@@ -428,10 +439,14 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
     {
         synchronized (_incomingMessageLock)
         {
-            _isStopped = false;            
+            _isStopped = false;
         }
     }
 
+    /**
+     * This method notifies this consumer that a message has been delivered
+     * @param message The received message.
+     */
     public void onMessage(org.apache.qpidity.api.Message message)
     {
         try
@@ -440,7 +455,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             if (checkPreConditions(jmsMessage))
             {
                 preApplicationProcessing(jmsMessage);
-            
+
                 if (_messageListener == null)
                 {
                     _queue.offer(jmsMessage);
@@ -453,16 +468,16 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                     notifyMessageListener(jmsMessage);
                 }
             }
-        }    
+        }
         catch (Exception e)
         {
             throw new RuntimeException(e.getMessage());
         }
     }
-    
-   
-    public void notifyMessageListener(QpidMessage message)throws RuntimeException
-    {        
+
+
+    public void notifyMessageListener(QpidMessage message) throws RuntimeException
+    {
         try
         {
             _messageAsyncrhonouslyReceived++;
@@ -471,8 +486,7 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 // ask the server for the delivery of MAX_MESSAGE_TRANSFERRED more messages
                 resetAsynchMessageReceived();
             }
-            
-            
+
             // The JMS specs says:
             /* The result of a listener throwing a RuntimeException depends on the session?s
             * acknowledgment mode.
@@ -484,9 +498,9 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             *
             * The number of time we try redelivering the message is 0
             **/
-           try
+            try
             {
-                
+
                 _messageListener.onMessage((Message) message);
             }
             catch (RuntimeException re)
@@ -494,14 +508,19 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
                 // do nothing as this message will not be redelivered
             }
 
-            
+
         }
         catch (Exception e)
         {
             throw new RuntimeException(e.getMessage());
         }
     }
-    
+
+    /**
+     * Check whether this consumer is asynchronous
+     *
+     * @throws javax.jms.IllegalStateException If this consumer is asynchronous.
+     */
     private void checkIfListenerSet() throws javax.jms.IllegalStateException
     {
 
@@ -510,8 +529,14 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
             throw new javax.jms.IllegalStateException("A listener has already been set.");
         }
     }
-    
-    private void preApplicationProcessing(QpidMessage message)throws Exception
+
+    /**
+     * pre process a received message.
+     *
+     * @param message The message to pre-process.
+     * @throws Exception If the message  cannot be pre-processed due to some internal error.
+     */
+    private void preApplicationProcessing(QpidMessage message) throws Exception
     {
         getSession().preProcessMessage(message);
         // If the session is transacted we need to ack the message first
@@ -522,41 +547,54 @@ public class MessageConsumerImpl extends MessageActor implements MessageConsumer
         }
         message.afterMessageReceive();
     }
-                    
-    private boolean checkPreConditions(QpidMessage message)throws QpidException
+
+    /**
+     * Check whether a message can be delivered to this consumer.
+     *
+     * @param message The message to be checked.
+     * @return true if the message matches the selector and can be acquired, false otherwise.
+     * @throws QpidException If the message preConditions cannot be checked due to some internal error.
+     */
+    private boolean checkPreConditions(QpidMessage message) throws QpidException
     {
         boolean messageOk = true;
         if (_messageSelector != null)
         {
-            messageOk = _filter.matches((Message) message);     
-            if (!messageOk)
-            {
-                System.out.println("Message not OK, releasing");
-                releaseMessage(message);
-                return false;
-            }
+            messageOk = _filter.matches((Message) message);
         }
-        
-        System.out.println("messageOk " + messageOk);
-        System.out.println("_preAcquire " + _preAcquire);
-        
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("messageOk " + messageOk);
+            _logger.debug("_preAcquire " + _preAcquire);
+        }
         if (!messageOk && _preAcquire)
         {
             // this is the case for topics
             // We need to ack this message
-            System.out.println("filterMessage - trying to ack message");                
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("filterMessage - trying to ack message");
+            }
             acknowledgeMessage(message);
-            System.out.println("filterMessage - acked message");
+        }
+        else if (!messageOk)
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Message not OK, releasing");
+            }
+            releaseMessage(message);
         }
         // now we need to acquire this message if needed
         // this is the case of queue with a message selector set
         if (!_preAcquire && messageOk)
         {
-            System.out.println("filterMessage - trying to acquire message");
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("filterMessage - trying to acquire message");
+            }
             messageOk = acquireMessage(message);
-            System.out.println("filterMessage - acquired message");
         }
-        
         return messageOk;
     }
 
