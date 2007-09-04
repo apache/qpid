@@ -1092,4 +1092,17 @@ public class AMQMessage implements StorableMessage
             return rejected;
         }
     }
+
+    public String getBodyAsString()
+    {
+        StringBuilder b = new StringBuilder();
+        for (Iterator<ContentChunk> it = getContentBodyIterator(); it.hasNext(); )
+        {
+            ByteBuffer buf = it.next().getData();
+            byte[] bytes = new byte[buf.remaining()];
+            buf.duplicate().get(bytes);
+            b.append(new String(bytes));
+        }
+        return b.toString();
+    }
 }
