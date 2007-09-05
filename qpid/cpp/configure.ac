@@ -136,9 +136,6 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-LDFLAGS="$LDFLAGS -lprofiler"
-
-
 # Check for cluster requirements. Need openais 0.80.3 or higher.x1
 save_ldflags=$LDFLAGS  
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
