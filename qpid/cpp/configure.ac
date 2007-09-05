@@ -117,6 +117,7 @@ AM_CONDITIONAL([HAS_RPMLINT], [test -n "$RPMLINT"])
 
 AC_CHECK_PROG([RUBY], [ruby], [ruby])
 test -n "$RUBY" && generate=yes
+test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 specdir=`pwd`/$srcdir/../specs  
 AMQP_XML=$specdir/amqp-transitional.0-10.xml
@@ -134,6 +135,9 @@ AC_SUBST(DOWNLOAD_URL)
 # Check for headers from required devel kits.
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
+
+LDFLAGS="$LDFLAGS -lprofiler"
+
 
 # Check for cluster requirements. Need openais 0.80.3 or higher.x1
 save_ldflags=$LDFLAGS  
