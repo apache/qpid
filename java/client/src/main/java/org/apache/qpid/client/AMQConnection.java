@@ -535,7 +535,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                         // open it, so that there is no window where we could receive data on the channel and not be set
                         // up to handle it appropriately.
                         AMQSession session =
-                                new AMQSession(AMQConnection.this, channelId, transacted, acknowledgeMode, prefetchHigh,
+                                new AMQSession_0_8(AMQConnection.this, channelId, transacted, acknowledgeMode, prefetchHigh,
                                                prefetchLow);
                         // _protocolHandler.addSessionByChannel(channelId, session);
                         registerSession(channelId, session);

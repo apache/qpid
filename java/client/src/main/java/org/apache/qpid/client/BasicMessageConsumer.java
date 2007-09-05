@@ -20,27 +20,6 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.MessageFactoryRegistry;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicCancelBody;
-import org.apache.qpid.framing.BasicCancelOkBody;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.jms.MessageConsumer;
-import org.apache.qpid.jms.Session;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageListener;
-
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -50,7 +29,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class BasicMessageConsumer extends Closeable implements MessageConsumer
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageListener;
+
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.jms.MessageConsumer;
+import org.apache.qpid.jms.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public abstract class BasicMessageConsumer extends Closeable implements MessageConsumer
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
@@ -69,10 +63,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
     /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
-    private AMQShortString _consumerTag;
+    protected AMQShortString _consumerTag;
 
     /** We need to know the channel id when constructing frames */
-    private int _channelId;
+    protected int _channelId;
 
     /**
      * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
@@ -84,7 +78,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
     private final AMQSession _session;
 
-    private AMQProtocolHandler _protocolHandler;
+    protected AMQProtocolHandler _protocolHandler;
 
     /** We need to store the "raw" field table so that we can resubscribe in the event of failover being required */
     private FieldTable _rawSelectorFieldTable;
@@ -482,29 +476,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 if (sendClose)
                 {
                     // TODO: Be aware of possible changes to parameter order as versions change.
-                    final AMQFrame cancelFrame =
-                        BasicCancelBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
-                            _protocolHandler.getProtocolMinorVersion(), _consumerTag, // consumerTag
-                            false); // nowait
-
-                    try
-                    {
-                        _protocolHandler.syncWrite(cancelFrame, BasicCancelOkBody.class);
-
-                        if (_logger.isDebugEnabled())
-                        {
-                            _logger.debug("CancelOk'd for consumer:" + debugIdentity());
-                        }
-
-                    }
-                    catch (AMQException e)
-                    {
-                        throw new JMSAMQException("Error closing consumer: " + e, e);
-                    }
-                    catch (FailoverException e)
-                    {
-                        throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
-                    }
+                    sendCancel();
                 }
                 else
                 {
@@ -527,6 +499,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             }
         }
     }
+
+    public abstract void sendCancel() throws JMSAMQException;
 
     /**
      * Called when you need to invalidate a consumer. Used for example when failover has occurred and the client has
