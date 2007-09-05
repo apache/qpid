@@ -60,7 +60,7 @@ all of the above plus:
 
 On linux most packages can be installed using your distribution's package
 management tool. For example on Fedora:
-  # yum install pkgconfig e2fsprogs boost-devel cppunit-devel openais
+  # yum install pkgconfig e2fsprogs boost-devel cppunit-devel openais ruby
   # yum install make gcc-c++ autoconf automake libtool doxygen help2man graphviz
 
 Follow the manual installation instruction below for any packages not
