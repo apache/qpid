@@ -22,28 +22,34 @@
 #define _ExecutionHandler_
 
 #include <queue>
+#include "qpid/framing/AccumulatedAck.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/FrameSet.h"
+#include "qpid/framing/MethodContent.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "BlockingQueue.h"
 #include "ChainableFrameHandler.h"
 #include "CompletionTracker.h"
 #include "Correlator.h"
+#include "Execution.h"
 
 namespace qpid {
 namespace client {
 
 class ExecutionHandler : 
     private framing::AMQP_ServerOperations::ExecutionHandler,
-    public ChainableFrameHandler
+    public ChainableFrameHandler,
+    public Execution
 {
     framing::Window incoming;
     framing::Window outgoing;
     framing::FrameSet::shared_ptr arriving;
     Correlator correlation;
     CompletionTracker completion;
+    BlockingQueue<framing::FrameSet::shared_ptr> received; 
     framing::ProtocolVersion version;
     uint64_t maxFrameSize;
+    framing::AccumulatedAck completionStatus;
 
     void complete(uint32_t mark, const framing::SequenceNumberSet& range);    
     void flush();
@@ -51,22 +57,29 @@ class ExecutionHandler :
     void result(uint32_t command, const std::string& data);
     void sync();
 
+    void sendCompletion();
+
+    void sendContent(const framing::BasicHeaderProperties& headers, const std::string& data);
+
 public:
-    BlockingQueue<framing::FrameSet::shared_ptr> received; 
+    typedef CompletionTracker::ResultListener ResultListener;
 
     ExecutionHandler(uint64_t maxFrameSize = 65536);
 
-    void setMaxFrameSize(uint64_t size) { maxFrameSize = size; }
-
     void handle(framing::AMQFrame& frame);
-    void send(const framing::AMQBody& command, 
-              CompletionTracker::Listener f = CompletionTracker::Listener(), 
-              Correlator::Listener g = Correlator::Listener());
-    void sendContent(const framing::AMQBody& command, 
-                     const framing::BasicHeaderProperties& headers, const std::string& data, 
-                     CompletionTracker::Listener f = CompletionTracker::Listener(), 
-                     Correlator::Listener g = Correlator::Listener());
-    void sendFlush();
+    framing::SequenceNumber send(const framing::AMQBody& command, ResultListener=ResultListener());
+    framing::SequenceNumber send(const framing::AMQBody& command, const framing::MethodContent& content, 
+                                 ResultListener=ResultListener());
+    void sendSyncRequest();
+    void sendFlushRequest();
+    void completed(const framing::SequenceNumber& id, bool cumulative, bool send);
+    void syncTo(const framing::SequenceNumber& point);
+    void flushTo(const framing::SequenceNumber& point);
+
+    void setMaxFrameSize(uint64_t size) { maxFrameSize = size; }
+    Correlator& getCorrelator() { return correlation; }
+    CompletionTracker& getCompletionTracker() { return completion; }
+    BlockingQueue<framing::FrameSet::shared_ptr>& getReceived() { return received; }
 };
 
 }}

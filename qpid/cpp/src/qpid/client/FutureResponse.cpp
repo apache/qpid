@@ -21,14 +21,17 @@
 
 #include "FutureResponse.h"
 
+#include "SessionCore.h"
+
 using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
 
-AMQMethodBody* FutureResponse::getResponse()
+AMQMethodBody* FutureResponse::getResponse(SessionCore& session)
 {
     waitForCompletion();
+    session.checkClosed();            
     return response.get();
 }
 

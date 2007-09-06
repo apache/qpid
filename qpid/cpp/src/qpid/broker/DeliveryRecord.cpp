@@ -65,7 +65,7 @@ bool DeliveryRecord::after(DeliveryId tag) const{
     return id > tag;
 }
 
-bool DeliveryRecord::coveredBy(const AccumulatedAck* const range) const{
+bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const{
     return range->covers(id);
 }
 

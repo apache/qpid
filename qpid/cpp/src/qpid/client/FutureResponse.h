@@ -29,11 +29,13 @@
 namespace qpid {
 namespace client {
 
+class SessionCore;
+
 class FutureResponse : public FutureCompletion 
 {
     framing::MethodHolder response;
 public:
-    framing::AMQMethodBody* getResponse();
+    framing::AMQMethodBody* getResponse(SessionCore& session);
     void received(framing::AMQMethodBody* response);
 };
 

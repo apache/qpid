@@ -22,7 +22,6 @@
  *
  */
 
-#include "AccumulatedAck.h"
 #include "Consumer.h"
 #include "Deliverable.h"
 #include "DeliveryAdapter.h"
@@ -35,6 +34,7 @@
 #include "TxBuffer.h"
 #include "SemanticHandler.h"  // FIXME aconway 2007-08-31: remove
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/AccumulatedAck.h"
 #include "qpid/shared_ptr.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -116,7 +116,7 @@ class Session : public framing::FrameHandler::Chains,
     TxBuffer::shared_ptr txBuffer;
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
-    AccumulatedAck accumulatedAck;
+    framing::AccumulatedAck accumulatedAck;
     bool opened;
     bool flowActive;
 

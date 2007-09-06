@@ -117,19 +117,15 @@ class StructGen < CppGen
   end
 
   def methodbody_extra_defs(s)
-    if (s.content)
-      content = "true"
-    else 
-      content = "false"
-    end
-
     gen <<EOS
     using  AMQMethodBody::accept;
     void accept(MethodBodyConstVisitor& v) const { v.visit(*this); }
 
     inline ClassId amqpClassId() const { return CLASS_ID; }
     inline MethodId amqpMethodId() const { return METHOD_ID; }
-    inline bool isContentBearing() const { return  #{content}; }
+    inline bool isContentBearing() const { return  #{s.content ? "true" : "false" }; }
+    inline bool resultExpected() const { return  #{s.result ? "true" : "false"}; }
+    inline bool responseExpected() const { return  #{s.responses().empty? ? "false" : "true"}; }
 EOS
   end
 
@@ -201,7 +197,7 @@ EOS
         #as result structs have types that are only unique to the
         #class, they have a class dependent qualifier added to them
         #(this is inline with current python code but a formal
-        #solution is expected from the WG
+        #solution is expected from the WG)
         indent { genl "static const uint16_t TYPE = #{s.type_} + #{s.parent.parent.parent.index} * 256;" }
       else
         indent { genl "static const uint16_t TYPE = #{s.type_};" } 

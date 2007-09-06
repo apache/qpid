@@ -12,8 +12,18 @@ class SessionGen < CppGen
     @classname="Session"
   end
   
+  def return_type(m)
+    if (m.result)
+      return "TypedResult<qpid::framing::#{m.result.cpptype.ret}>"
+    elsif (not m.responses().empty?)
+      return "Response"
+    else
+      return "Completion"
+    end 
+  end
+
   def declare_method (m)
-    gen "Response #{m.parent.name.lcaps}#{m.name.caps}(" 
+    gen "#{return_type(m)} #{m.parent.name.lcaps}#{m.name.caps}(" 
     if (m.content())
       params=m.signature + ["const MethodContent& content"]
     else
@@ -28,7 +38,7 @@ class SessionGen < CppGen
   end
 
   def define_method (m)
-    gen "Response Session::#{m.parent.name.lcaps}#{m.name.caps}(" 
+    gen "#{return_type(m)} Session::#{m.parent.name.lcaps}#{m.name.caps}(" 
     if (m.content())
       params=m.signature + ["const MethodContent& content"]
     else
@@ -37,19 +47,15 @@ class SessionGen < CppGen
     indent { gen params.join(",\n") }
     gen "){\n\n"
     indent (2) { 
-      gen "return impl->send(#{m.body_name}(" 
+      gen "return #{return_type(m)}(impl()->send(#{m.body_name}(" 
       params = ["version"] + m.param_names
       gen params.join(", ")
       other_params=[]
       if (m.content())
-        other_params << "content"
+        gen "), content), impl());\n"
+      else
+        gen ")), impl());\n"
       end
-      if m.responses().empty?
-        other_params << "false"
-      else 
-        other_params << "true"
-      end
-      gen "), #{other_params.join(", ")});\n"
     }
     gen "}\n\n"
   end
@@ -65,11 +71,13 @@ class SessionGen < CppGen
       gen <<EOS
 #include <sstream> 
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/amqp_structs.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/MethodContent.h"
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Response.h"
-#include "qpid/client/SessionCore.h"
+#include "qpid/client/ScopedAssociation.h"
+#include "qpid/client/TypedResult.h"
 
 namespace qpid {
 namespace client {
@@ -81,16 +89,20 @@ using framing::MethodContent;
 using framing::SequenceNumberSet;
 
 class #{@classname} {
-  ConnectionImpl::shared_ptr parent;
-  SessionCore::shared_ptr impl;
+  ScopedAssociation::shared_ptr assoc;
   framing::ProtocolVersion version;
-public:
-    #{@classname}(ConnectionImpl::shared_ptr, SessionCore::shared_ptr);
-    ~#{@classname}();
+  
+  SessionCore::shared_ptr impl();
 
-    framing::FrameSet::shared_ptr get() { return impl->get(); }
-    void setSynchronous(bool sync) { impl->setSync(sync); } 
+public:
+    #{@classname}();
+    #{@classname}(ScopedAssociation::shared_ptr);
+
+    framing::FrameSet::shared_ptr get() { return impl()->get(); }
+    void setSynchronous(bool sync) { impl()->setSync(sync); } 
     void close();
+    Execution& execution() { return impl()->getExecution(); }
+
 EOS
   indent { @amqp.classes.each { |c| declare_class(c) if !excludes.include?(c.name) } }
   gen <<EOS
@@ -112,24 +124,18 @@ using namespace qpid::framing;
 namespace qpid {
 namespace client {
 
-#{@classname}::#{@classname}(ConnectionImpl::shared_ptr _parent, SessionCore::shared_ptr _impl) : parent(_parent), impl(_impl) {}
+#{@classname}::#{@classname}() {}
+#{@classname}::#{@classname}(ScopedAssociation::shared_ptr _assoc) : assoc(_assoc) {}
 
-#{@classname}::~#{@classname}()
+SessionCore::shared_ptr #{@classname}::impl()
 {
-    impl->stop();
-    if (parent) { 
-        parent->released(impl);
-        parent.reset();
-    }
+    if (!assoc) throw Exception("Uninitialised session");
+    return assoc->session;
 }
 
 void #{@classname}::close()
 {
-    impl->close(); 
-    if (parent) { 
-        parent->released(impl);
-        parent.reset();
-    }
+    impl()->close(); 
 }
 
 EOS
