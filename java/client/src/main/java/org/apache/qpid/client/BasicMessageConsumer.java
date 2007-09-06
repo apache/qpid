@@ -44,7 +44,7 @@ import org.apache.qpid.jms.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class BasicMessageConsumer extends Closeable implements MessageConsumer
+public abstract class BasicMessageConsumer<H,B> extends Closeable implements MessageConsumer
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
@@ -74,7 +74,7 @@ public abstract class BasicMessageConsumer extends Closeable implements MessageC
      */
     private final ArrayBlockingQueue _synchronousQueue;
 
-    private MessageFactoryRegistry _messageFactory;
+    protected MessageFactoryRegistry _messageFactory;
 
     private final AMQSession _session;
 
@@ -543,16 +543,12 @@ public abstract class BasicMessageConsumer extends Closeable implements MessageC
 
         if (debug)
         {
-            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliverBody().deliveryTag);
+            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliveryTag());
         }
 
         try
         {
-            AbstractJMSMessage jmsMessage =
-                _messageFactory.createMessage(messageFrame.getDeliverBody().deliveryTag,
-                    messageFrame.getDeliverBody().redelivered, messageFrame.getDeliverBody().exchange,
-                    messageFrame.getDeliverBody().routingKey, messageFrame.getContentHeader(), messageFrame.getBodies());
-
+            AbstractJMSMessage jmsMessage = createJMSMessageFromUnprocessedMessage(messageFrame);
             if (debug)
             {
                 _logger.debug("Message is of type: " + jmsMessage.getClass().getName());
@@ -589,6 +585,8 @@ public abstract class BasicMessageConsumer extends Closeable implements MessageC
             }
         }
     }
+
+    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<H,B> messageFrame)throws Exception;
 
     /**
      * @param jmsMessage this message has already been processed so can't redo preDeliver
