@@ -21,13 +21,12 @@
 package org.apache.qpid.client.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.ReturnMessage;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicReturnBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,8 +44,14 @@ public class BasicReturnMethodHandler implements StateAwareMethodListener
     public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
         throws AMQException
     {
+        BasicReturnBody returnBody = (BasicReturnBody)evt.getMethod();
         _logger.debug("New JmsBounce method received");
-        final UnprocessedMessage msg = new UnprocessedMessage(evt.getChannelId(), (BasicReturnBody) evt.getMethod());
+        final ReturnMessage msg = new ReturnMessage(evt.getChannelId(),
+                                                    returnBody.getExchange(),
+                                                    returnBody.getRoutingKey(),
+                                                    returnBody.getReplyText(),
+                                                    returnBody.getReplyCode()
+                                                    );
 
         protocolSession.unprocessedMessageReceived(msg);
     }

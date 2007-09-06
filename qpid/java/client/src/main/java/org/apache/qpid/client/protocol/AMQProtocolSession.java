@@ -32,7 +32,9 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
 // import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
+import org.apache.qpid.client.message.ReturnMessage;
 import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.message.UnprocessedMessage_0_8;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQShortString;
@@ -93,7 +95,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      * Maps from a channel id to an unprocessed message. This is used to tie together the JmsDeliverBody (which arrives
      * first) with the subsequent content header and content bodies.
      */
-    protected ConcurrentMap _channelId2UnprocessedMsgMap = new ConcurrentHashMap();
+    protected ConcurrentMap<Integer,UnprocessedMessage_0_8> _channelId2UnprocessedMsgMap = new ConcurrentHashMap<Integer,UnprocessedMessage_0_8>();
 
     /** Counter to ensure unique queue names */
     protected int _queueId = 1;
@@ -228,14 +230,14 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
      *
      * @throws AMQException if this was not expected
      */
-    public void unprocessedMessageReceived(UnprocessedMessage message) throws AMQException
+    public void unprocessedMessageReceived(UnprocessedMessage_0_8 message) throws AMQException
     {
         _channelId2UnprocessedMsgMap.put(message.getChannelId(), message);
     }
 
     public void messageContentHeaderReceived(int channelId, ContentHeaderBody contentHeader) throws AMQException
     {
-        UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
+        UnprocessedMessage_0_8 msg = (UnprocessedMessage_0_8) _channelId2UnprocessedMsgMap.get(channelId);
         if (msg == null)
         {
             throw new AMQException(null, "Error: received content header without having received a BasicDeliver frame first", null);
@@ -255,7 +257,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void messageContentBodyReceived(int channelId, ContentBody contentBody) throws AMQException
     {
-        UnprocessedMessage msg = (UnprocessedMessage) _channelId2UnprocessedMsgMap.get(channelId);
+        UnprocessedMessage_0_8 msg = _channelId2UnprocessedMsgMap.get(channelId);
         if (msg == null)
         {
             throw new AMQException(null, "Error: received content body without having received a JMSDeliver frame first", null);
