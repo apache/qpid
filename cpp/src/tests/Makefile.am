@@ -94,10 +94,11 @@ broker_unit_tests =	\
   TxPublishTest		\
   ValueTest		\
   MessageHandlerTest    \
-  MessageBuilderTest
+  MessageBuilderTest    \
+  ClientSessionTest
 
 #client_unit_tests =	\
-  ClientChannelTest
+  ClientChannelTest     
 
 framing_unit_tests =	\
   FieldTableTest	\

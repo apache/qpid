@@ -31,19 +31,15 @@ namespace client {
 class FutureCompletion 
 {
 protected:
-    sys::Monitor lock;
+    mutable sys::Monitor lock;
     bool complete;
-    bool closed;
-    uint16_t code;
-    std::string text;
 
 public:
     FutureCompletion();
     virtual ~FutureCompletion(){}
-    bool isComplete();
-    void waitForCompletion();
+    bool isComplete() const;
+    void waitForCompletion() const;
     void completed();
-    void close(uint16_t code, const std::string& text);
 };
 
 }}

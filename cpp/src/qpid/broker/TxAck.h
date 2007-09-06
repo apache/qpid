@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <list>
-#include "AccumulatedAck.h"
+#include "qpid/framing/AccumulatedAck.h"
 #include "DeliveryRecord.h"
 #include "TxOp.h"
 
@@ -35,7 +35,7 @@ namespace qpid {
          * transactional channel.
          */
         class TxAck : public TxOp{
-            AccumulatedAck& acked;
+            framing::AccumulatedAck& acked;
             std::list<DeliveryRecord>& unacked;
 
         public:
@@ -44,7 +44,7 @@ namespace qpid {
              * acks received
              * @param unacked the record of delivered messages
              */
-            TxAck(AccumulatedAck& acked, std::list<DeliveryRecord>& unacked);
+            TxAck(framing::AccumulatedAck& acked, std::list<DeliveryRecord>& unacked);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <list>
-#include "AccumulatedAck.h"
+#include "qpid/framing/AccumulatedAck.h"
 #include "DeliveryRecord.h"
 #include "TxOp.h"
 
@@ -34,7 +34,7 @@ namespace qpid {
             std::list<DeliveryRecord> pending;
 
         public:
-            DtxAck(const AccumulatedAck& acked, std::list<DeliveryRecord>& unacked);
+            DtxAck(const framing::AccumulatedAck& acked, std::list<DeliveryRecord>& unacked);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

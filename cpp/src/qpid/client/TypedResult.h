@@ -19,30 +19,33 @@
  *
  */
 
-#include "FutureCompletion.h"
+#ifndef _TypedResult_
+#define _TypedResult_
 
-using namespace qpid::client;
-using namespace qpid::sys;
+#include "Completion.h"
 
-FutureCompletion::FutureCompletion() : complete(false) {}
+namespace qpid {
+namespace client {
 
-bool FutureCompletion::isComplete() const
+template <class T> class TypedResult : public Completion
 {
-    Monitor::ScopedLock l(lock);
-    return complete;
-}
+    T result;
+    bool decoded;
 
-void FutureCompletion::completed()
-{
-    Monitor::ScopedLock l(lock);
-    complete = true;
-    lock.notifyAll();
-}
+public:
+    TypedResult(Future f, SessionCore::shared_ptr s) : Completion(f, s), decoded(false) {}
 
-void FutureCompletion::waitForCompletion() const
-{
-    Monitor::ScopedLock l(lock);
-    while (!complete) {
-        lock.wait();
+    T& get() 
+    {
+        if (!decoded) {
+            future.decodeResult(result, *session);
+            decoded = true;
+        }
+        
+        return result;
     }
-}
+};
+
+}}
+
+#endif

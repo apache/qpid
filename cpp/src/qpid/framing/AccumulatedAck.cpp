@@ -26,9 +26,9 @@
 using std::list;
 using std::max;
 using std::min;
-using namespace qpid::broker;
+using namespace qpid::framing;
 
-void AccumulatedAck::update(DeliveryId first, DeliveryId last){
+void AccumulatedAck::update(SequenceNumber first, SequenceNumber last){
     assert(first <= last);
     if (last < mark) return;
 
@@ -84,7 +84,7 @@ void AccumulatedAck::clear(){
     ranges.clear();
 }
 
-bool AccumulatedAck::covers(DeliveryId tag) const{
+bool AccumulatedAck::covers(SequenceNumber tag) const{
     if (tag <= mark) return true;
     for (list<Range>::const_iterator i = ranges.begin(); i != ranges.end(); i++) {
         if (i->contains(tag)) return true;
@@ -92,7 +92,15 @@ bool AccumulatedAck::covers(DeliveryId tag) const{
     return false;
 }
 
-bool Range::contains(DeliveryId i) const 
+void AccumulatedAck::collectRanges(SequenceNumberSet& set) const
+{
+    for (list<Range>::const_iterator i = ranges.begin(); i != ranges.end(); i++) {
+        set.push_back(i->start);
+        set.push_back(i->end);
+    }
+}
+
+bool Range::contains(SequenceNumber i) const 
 { 
     return i >= start && i <= end; 
 }
@@ -113,7 +121,7 @@ bool Range::merge(const Range& r)
     }
 }
 
-bool Range::mergeable(const DeliveryId& s) const
+bool Range::mergeable(const SequenceNumber& s) const
 { 
     if (contains(s) || start - s == 1) {
         return true;
@@ -122,11 +130,11 @@ bool Range::mergeable(const DeliveryId& s) const
     }
 }
 
-Range::Range(DeliveryId s, DeliveryId e) : start(s), end(e) {}
+Range::Range(SequenceNumber s, SequenceNumber e) : start(s), end(e) {}
 
 
 namespace qpid{
-namespace broker{
+namespace framing{
     std::ostream& operator<<(std::ostream& out, const Range& r)
     {
         out << "[" << r.start.getValue() << "-" << r.end.getValue() << "]";
