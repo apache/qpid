@@ -22,57 +22,24 @@
 #include "FramingContent.h" 
 #include "FieldTable.h" 
 
-//qpid::framing::Buffer::Buffer(uint32_t _size) : size(_size), owner(true), position(0), limit(_size){
-//    data = new char[size];
-//}
-
-qpid::framing::Buffer::Buffer(char* _data, uint32_t _size) : size(_size), owner(false), data(_data), position(0), limit(_size){
+qpid::framing::Buffer::Buffer(char* _data, uint32_t _size)
+    : size(_size), data(_data), position(0) {
 }
-
-qpid::framing::Buffer::~Buffer(){
-    if(owner) delete[] data;
-}
-
-//void qpid::framing::Buffer::flip(){
-//    limit = position;
-//    position = 0;
-//}
-
-//void qpid::framing::Buffer::clear(){
-//    limit = size;
-//    position = 0;
-//}
-
-//void qpid::framing::Buffer::compact(){
-//    uint32_t p = limit - position;
-//    //copy p chars from position to 0
-//    memmove(data, data + position, p);
-//    limit = size;
-//    position = p;
-//}
 
 void qpid::framing::Buffer::record(){
     r_position = position;
-    r_limit = limit;
 }
 
 void qpid::framing::Buffer::restore(){
     position = r_position;
-    limit = r_limit;
 }
 
 uint32_t qpid::framing::Buffer::available(){
-    return limit - position;
+    return size - position;
 }
 
-//char* qpid::framing::Buffer::start(){
-//    return data + position;
-//}
+///////////////////////////////////////////////////
 
-//void qpid::framing::Buffer::move(uint32_t bytes){
-//    position += bytes;
-//}
-    
 void qpid::framing::Buffer::putOctet(uint8_t i){
     data[position++] = i;
 }

@@ -32,27 +32,17 @@ class FieldTable;
 class Buffer
 {
     const uint32_t size;
-    const bool owner;//indicates whether the data is owned by this instance
     char* data;
     uint32_t position;
-    uint32_t limit;
     uint32_t r_position;
-    uint32_t r_limit;
 
 public:
 
-    //Buffer(uint32_t size);
     Buffer(char* data, uint32_t size);
-    ~Buffer();
 
-    //void flip();
-    //void clear();
-    //void compact();
     void record();
     void restore();
     uint32_t available();
-    //char* start();
-    //void move(uint32_t bytes);
     
     void putOctet(uint8_t i);
     void putShort(uint16_t i);
