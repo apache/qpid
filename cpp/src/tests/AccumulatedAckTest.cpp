@@ -19,13 +19,13 @@
  * under the License.
  *
  */
-#include "qpid/broker/AccumulatedAck.h"
+#include "qpid/framing/AccumulatedAck.h"
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include <list>
 
 using std::list;
-using namespace qpid::broker;
+using namespace qpid::framing;
 
 class AccumulatedAckTest : public CppUnit::TestCase  
 {
@@ -44,12 +44,12 @@ class AccumulatedAckTest : public CppUnit::TestCase
 public:
     bool covers(const AccumulatedAck& ack, int i)
     {
-        return ack.covers(DeliveryId(i));
+        return ack.covers(SequenceNumber(i));
     }
 
     void update(AccumulatedAck& ack, int start, int end)
     {
-        ack.update(DeliveryId(start), DeliveryId(end));
+        ack.update(SequenceNumber(start), SequenceNumber(end));
     }
 
     void testGeneral()

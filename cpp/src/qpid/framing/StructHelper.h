@@ -44,7 +44,7 @@ public:
         rbuffer.getRawData(data, size);        
     }
 
-    template <class T> void decode(T t, std::string& data) {
+    template <class T> void decode(T& t, const std::string& data) {
         char* bytes = static_cast<char*>(::alloca(data.length()));
         Buffer wbuffer(bytes, data.length());
         wbuffer.putRawData(data);        

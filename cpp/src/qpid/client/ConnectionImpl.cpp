@@ -60,11 +60,11 @@ void ConnectionImpl::handle(framing::AMQFrame& frame)
 void ConnectionImpl::incoming(framing::AMQFrame& frame)
 {
     uint16_t id = frame.getChannel();
-    SessionCore::shared_ptr session = sessions[id];
-    if (!session) {
+    SessionMap::iterator i = sessions.find(id);
+    if (i == sessions.end()) {
         throw ConnectionException(504, (boost::format("Invalid channel number %g") % id).str());
     }
-    session->handle(frame);
+    i->second->handle(frame);
 }
 
 void ConnectionImpl::open(const std::string& host, int port,
@@ -111,7 +111,8 @@ void ConnectionImpl::idleOut()
     connector->send(frame);
 }
 
-void ConnectionImpl::shutdown() {
+void ConnectionImpl::shutdown() 
+{
     //this indicates that the socket to the server has closed
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); i++) {
         i->second->closed(0, "Unexpected socket closure.");

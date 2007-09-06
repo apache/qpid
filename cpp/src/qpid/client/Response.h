@@ -24,33 +24,26 @@
 
 #include <boost/shared_ptr.hpp>
 #include "qpid/framing/amqp_framing.h"
-#include "FutureResponse.h"
+#include "Completion.h"
 
 namespace qpid {
 namespace client {
 
-class Response
+class Response : public Completion
 {
-    boost::shared_ptr<FutureResponse> future;
-
 public:
-    Response(boost::shared_ptr<FutureResponse> f) : future(f) {}
+    Response(Future f, SessionCore::shared_ptr s) : Completion(f, s) {}
 
     template <class T> T& as() 
     {
-        framing::AMQMethodBody* response(future->getResponse());
-        assert(response);
+        framing::AMQMethodBody* response(future.getResponse(*session));
         return *boost::polymorphic_downcast<T*>(response);
     }
+
     template <class T> bool isA() 
     {
-        framing::AMQMethodBody* response(future->getResponse());
+        framing::AMQMethodBody* response(future.getResponse(*session));
         return response && response->isA<T>();
-    }
-    
-    void sync()
-    {
-        return future->waitForCompletion();
     }
 };
 

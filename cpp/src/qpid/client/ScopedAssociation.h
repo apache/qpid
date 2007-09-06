@@ -18,31 +18,36 @@
  * under the License.
  *
  */
+#ifndef _ScopedAssociation_
+#define _ScopedAssociation_
 
-#include "FutureCompletion.h"
+#include "ConnectionImpl.h"
+#include "SessionCore.h"
 
-using namespace qpid::client;
-using namespace qpid::sys;
+namespace qpid {
+namespace client {
 
-FutureCompletion::FutureCompletion() : complete(false) {}
-
-bool FutureCompletion::isComplete() const
+struct ScopedAssociation 
 {
-    Monitor::ScopedLock l(lock);
-    return complete;
-}
+    typedef boost::shared_ptr<ScopedAssociation> shared_ptr;
 
-void FutureCompletion::completed()
-{
-    Monitor::ScopedLock l(lock);
-    complete = true;
-    lock.notifyAll();
-}
+    SessionCore::shared_ptr session;
+    ConnectionImpl::shared_ptr connection;    
 
-void FutureCompletion::waitForCompletion() const
-{
-    Monitor::ScopedLock l(lock);
-    while (!complete) {
-        lock.wait();
+    ScopedAssociation() {}
+
+    ScopedAssociation(SessionCore::shared_ptr s, ConnectionImpl::shared_ptr c) : session(s), connection(c) 
+    {
+        connection->allocated(session);
     }
-}
+
+    ~ScopedAssociation() 
+    { 
+        if (connection && session) connection->released(session); 
+    }
+};
+
+
+}}
+
+#endif

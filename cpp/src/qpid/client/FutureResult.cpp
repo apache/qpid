@@ -19,30 +19,25 @@
  *
  */
 
-#include "FutureCompletion.h"
+#include "FutureResult.h"
+
+#include "SessionCore.h"
 
 using namespace qpid::client;
+using namespace qpid::framing;
 using namespace qpid::sys;
 
-FutureCompletion::FutureCompletion() : complete(false) {}
-
-bool FutureCompletion::isComplete() const
+const std::string& FutureResult::getResult(SessionCore& session) const
 {
-    Monitor::ScopedLock l(lock);
-    return complete;
+    waitForCompletion();
+    session.checkClosed();            
+    return result;
 }
 
-void FutureCompletion::completed()
+void FutureResult::received(const std::string& r)
 {
     Monitor::ScopedLock l(lock);
+    result = r;
     complete = true;
     lock.notifyAll();
-}
-
-void FutureCompletion::waitForCompletion() const
-{
-    Monitor::ScopedLock l(lock);
-    while (!complete) {
-        lock.wait();
-    }
 }

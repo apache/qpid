@@ -22,6 +22,7 @@
 #ifndef _SessionCore_
 #define _SessionCore_
 
+#include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/FrameHandler.h"
@@ -29,35 +30,44 @@
 #include "qpid/framing/MethodContent.h"
 #include "ChannelHandler.h"
 #include "ExecutionHandler.h"
-#include "FutureFactory.h"
-#include "Response.h"
 
 namespace qpid {
 namespace client {
 
+class Future;
+
 class SessionCore : public framing::FrameHandler
 {
+    struct Reason
+    {
+        uint16_t code;
+        std::string text;
+    };
+
     ExecutionHandler l3;
     ChannelHandler l2;
-    FutureFactory futures;
     const uint16_t id;
     bool sync;
+    bool isClosed;
+    Reason reason;
     
 public:    
     typedef boost::shared_ptr<SessionCore> shared_ptr;
 
     SessionCore(uint16_t id, boost::shared_ptr<framing::FrameHandler> out, uint64_t maxFrameSize);
-    Response send(const framing::AMQMethodBody& method, bool expectResponse = false);
-    Response send(const framing::AMQMethodBody& method, const framing::MethodContent& content, bool expectResponse = false);
     framing::FrameSet::shared_ptr get();
     uint16_t getId() const { return id; } 
     void setSync(bool);
     bool isSync();
-    void flush();
     void open();
     void close();
     void stop();
     void closed(uint16_t code, const std::string& text);
+    void checkClosed();
+    ExecutionHandler& getExecution();
+
+    Future send(const framing::AMQBody& command);
+    Future send(const framing::AMQBody& command, const framing::MethodContent& content);
     
     //for incoming frames:
     void handle(framing::AMQFrame& frame);    

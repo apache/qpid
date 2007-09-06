@@ -19,30 +19,35 @@
  *
  */
 
-#include "FutureCompletion.h"
+#ifndef _Completion_
+#define _Completion_
 
-using namespace qpid::client;
-using namespace qpid::sys;
+#include <boost/shared_ptr.hpp>
+#include "Future.h"
+#include "SessionCore.h"
 
-FutureCompletion::FutureCompletion() : complete(false) {}
+namespace qpid {
+namespace client {
 
-bool FutureCompletion::isComplete() const
+class Completion
 {
-    Monitor::ScopedLock l(lock);
-    return complete;
-}
+protected:
+    Future future;
+    SessionCore::shared_ptr session;
 
-void FutureCompletion::completed()
-{
-    Monitor::ScopedLock l(lock);
-    complete = true;
-    lock.notifyAll();
-}
+public:
+    Completion(Future f, SessionCore::shared_ptr s) : future(f), session(s) {}
 
-void FutureCompletion::waitForCompletion() const
-{
-    Monitor::ScopedLock l(lock);
-    while (!complete) {
-        lock.wait();
+    void sync()
+    {
+        future.sync(*session);
     }
-}
+
+    bool isComplete() {
+        return future.isComplete();
+    }
+};
+
+}}
+
+#endif

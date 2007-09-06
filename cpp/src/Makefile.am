@@ -98,6 +98,7 @@ libqpidcommon_la_LIBADD = \
 libqpidcommon_la_SOURCES = \
   $(rgen_common_cpp) \
   $(platform_src) \
+  qpid/framing/AccumulatedAck.cpp \
   qpid/framing/AMQBody.cpp \
   qpid/framing/AMQMethodBody.cpp \
   qpid/framing/AMQContentBody.cpp \
@@ -155,7 +156,6 @@ libqpidcommon_la_SOURCES = \
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \
-  qpid/broker/AccumulatedAck.cpp \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerAdapter.cpp \
   qpid/broker/BrokerSingleton.cpp \
@@ -218,14 +218,13 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ExecutionHandler.cpp		\
   qpid/client/FutureCompletion.cpp		\
   qpid/client/FutureResponse.cpp		\
-  qpid/client/FutureFactory.cpp			\
+  qpid/client/FutureResult.cpp			\
   qpid/client/SessionCore.cpp			\
   qpid/client/StateManager.cpp
 
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
-  qpid/broker/AccumulatedAck.h \
   qpid/broker/BrokerExchange.h \
   qpid/broker/BrokerQueue.h \
   qpid/broker/Consumer.h \
@@ -295,6 +294,7 @@ nobase_include_HEADERS = \
   qpid/client/Connection.h \
   qpid/client/ConnectionImpl.h \
   qpid/client/Connector.h \
+  qpid/client/Completion.h \
   qpid/client/MessageListener.h \
   qpid/client/BlockingQueue.h \
   qpid/client/Correlator.h \
@@ -302,13 +302,18 @@ nobase_include_HEADERS = \
   qpid/client/ChannelHandler.h \
   qpid/client/ChainableFrameHandler.h	\
   qpid/client/ConnectionHandler.h \
+  qpid/client/Execution.h \
   qpid/client/ExecutionHandler.h \
+  qpid/client/Future.h \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResponse.h \
-  qpid/client/FutureFactory.h \
+  qpid/client/FutureResult.h \
   qpid/client/Response.h \
+  qpid/client/ScopedAssociation.h \
   qpid/client/SessionCore.h \
   qpid/client/StateManager.h \
+  qpid/client/TypedResult.h \
+  qpid/framing/AccumulatedAck.h \
   qpid/framing/AMQBody.h \
   qpid/framing/AMQContentBody.h \
   qpid/framing/AMQDataBlock.h \

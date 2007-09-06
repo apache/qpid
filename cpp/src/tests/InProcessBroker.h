@@ -101,6 +101,7 @@ class InProcessBroker : public client::Connector {
         ) : sender(sender_), conversation(conversation_), in(ih) {}
 
         void send(framing::AMQFrame& frame) {
+            //std::cout << (sender == CLIENT ? "C->S: " : "S->C: ") << frame << std::endl;
             conversation.push_back(TaggedFrame(sender, frame));
             in->received(frame);
         }
