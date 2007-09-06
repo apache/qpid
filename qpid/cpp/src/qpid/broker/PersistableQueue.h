@@ -28,6 +28,19 @@
 namespace qpid {
 namespace broker {
 
+
+/**
+* Empty class to be used by any module that wanted to set an external per queue store into
+* persistableQueue
+*/
+
+class ExternalQueueStore
+{
+
+
+};
+
+
 /**
  * The interface queues must expose to the MessageStore in order to be
  * persistable.
@@ -37,7 +50,17 @@ class PersistableQueue : public Persistable
 public:
 
     virtual const std::string& getName() const = 0;
-    virtual ~PersistableQueue() {};
+    virtual ~PersistableQueue() {
+        if (externalQueueStore) 
+	   delete externalQueueStore;
+    };
+
+    inline void setExternalQueueStore(ExternalQueueStore* inst) {externalQueueStore = inst;};
+    inline ExternalQueueStore* getExternalQueueStore() {return externalQueueStore;};
+    
+    PersistableQueue():externalQueueStore(NULL){
+    };
+    
     
 protected:
     /**
@@ -48,6 +71,8 @@ protected:
     * this callback you will block the store.
     */
     virtual void notifyDurableIOComplete()  = 0;
+    
+    ExternalQueueStore* externalQueueStore;
     
 };
 
