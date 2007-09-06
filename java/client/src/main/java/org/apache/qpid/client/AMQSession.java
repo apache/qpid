@@ -71,79 +71,22 @@ import org.apache.qpid.client.message.JMSObjectMessage;
 import org.apache.qpid.client.message.JMSStreamMessage;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.ReturnMessage;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
-import org.apache.qpid.common.AMQPFilterTypes;
-import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicAckBody;
-import org.apache.qpid.framing.BasicConsumeBody;
-import org.apache.qpid.framing.BasicConsumeOkBody;
-import org.apache.qpid.framing.BasicRecoverBody;
-import org.apache.qpid.framing.BasicRecoverOkBody;
-import org.apache.qpid.framing.BasicRejectBody;
-import org.apache.qpid.framing.ChannelCloseBody;
-import org.apache.qpid.framing.ChannelCloseOkBody;
-import org.apache.qpid.framing.ChannelFlowBody;
-import org.apache.qpid.framing.ChannelFlowOkBody;
-import org.apache.qpid.framing.ExchangeBoundBody;
-import org.apache.qpid.framing.ExchangeBoundOkBody;
-import org.apache.qpid.framing.ExchangeDeclareBody;
-import org.apache.qpid.framing.ExchangeDeclareOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
-import org.apache.qpid.framing.QueueBindBody;
-import org.apache.qpid.framing.QueueBindOkBody;
-import org.apache.qpid.framing.QueueDeclareBody;
-import org.apache.qpid.framing.QueueDeclareOkBody;
-import org.apache.qpid.framing.QueueDeleteBody;
-import org.apache.qpid.framing.QueueDeleteOkBody;
-import org.apache.qpid.framing.TxCommitBody;
-import org.apache.qpid.framing.TxCommitOkBody;
 import org.apache.qpid.framing.TxRollbackBody;
 import org.apache.qpid.framing.TxRollbackOkBody;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.BytesMessage;
-import javax.jms.Destination;
-import javax.jms.IllegalStateException;
-import javax.jms.InvalidDestinationException;
-import javax.jms.InvalidSelectorException;
-import javax.jms.JMSException;
-import javax.jms.MapMessage;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-import javax.jms.Queue;
-import javax.jms.QueueBrowser;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSender;
-import javax.jms.QueueSession;
-import javax.jms.StreamMessage;
-import javax.jms.TemporaryQueue;
-import javax.jms.TemporaryTopic;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
-import javax.jms.TopicSubscriber;
-import java.io.Serializable;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -1269,19 +1212,17 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Message["
-                          + ((message.getDeliverBody() == null) ? ("B:" + message.getBounceBody()) : ("D:" + message.getDeliverBody()))
-                          + "] received in session with channel id " + _channelId);
+            _logger.debug("Message[" + message.toString() + "] received in session");
         }
 
-        if (message.getDeliverBody() == null)
+        if (message instanceof ReturnMessage)
         {
             // Return of the bounced message.
-            returnBouncedMessage(message);
+            returnBouncedMessage((ReturnMessage)message);
         }
         else
         {
-            _highestDeliveryTag.set(message.getDeliverBody().deliveryTag);
+            _highestDeliveryTag.set(message.getDeliveryTag());
             _queue.add(message);
         }
     }
@@ -1374,10 +1315,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
         if (_logger.isTraceEnabled())
         {
-            _logger.trace("Rejecting Unacked message:" + message.getDeliverBody().deliveryTag);
+            _logger.trace("Rejecting Unacked message:" + message.getDeliveryTag());
         }
 
-        rejectMessage(message.getDeliverBody().deliveryTag, requeue);
+        rejectMessage(message.getDeliveryTag(), requeue);
     }
 
     public void rejectMessage(AbstractJMSMessage message, boolean requeue)
@@ -2320,12 +2261,12 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         {
             UnprocessedMessage message = (UnprocessedMessage) messages.next();
 
-            if ((consumerTag == null) || message.getDeliverBody().consumerTag.equals(consumerTag))
+            if ((consumerTag == null) || message.getConsumerTag().equals(consumerTag))
             {
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Removing message(" + System.identityHashCode(message) + ") from _queue DT:"
-                                  + message.getDeliverBody().deliveryTag);
+                                  + message.getDeliveryTag());
                 }
 
                 messages.remove();
@@ -2334,7 +2275,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("Rejected the message(" + message.getDeliverBody() + ") for consumer :" + consumerTag);
+                    _logger.debug("Rejected the message(" + message.toString() + ") for consumer :" + consumerTag);
                 }
             }
         }
@@ -2363,7 +2304,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    private void returnBouncedMessage(final UnprocessedMessage message)
+    private void returnBouncedMessage(final ReturnMessage msg)
     {
         _connection.performConnectionTask(new Runnable()
         {
@@ -2373,11 +2314,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                 {
                     // Bounced message is processed here, away from the mina thread
                     AbstractJMSMessage bouncedMessage =
-                            _messageFactoryRegistry.createMessage(0, false, message.getBounceBody().exchange,
-                                                                  message.getBounceBody().routingKey, message.getContentHeader(), message.getBodies());
+                            _messageFactoryRegistry.createMessage(0, false, msg.getExchange(),
+                                                                  msg.getExchange(), msg.getContentHeader(), msg.getBodies());
 
-                    AMQConstant errorCode = AMQConstant.getConstant(message.getBounceBody().replyCode);
-                    AMQShortString reason = message.getBounceBody().replyText;
+                    AMQConstant errorCode = AMQConstant.getConstant(msg.getReplyCode());
+                    AMQShortString reason = msg.getReplyText();
                     _logger.debug("Message returned with error code " + errorCode + " (" + reason + ")");
 
                     // @TODO should this be moved to an exception handler of sorts. Somewhere errors are converted to correct execeptions.
@@ -2565,7 +2506,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                             _lock.wait();
                         }
 
-                        if (message.getDeliverBody().deliveryTag <= _rollbackMark.get())
+                        if (message.getDeliveryTag() <= _rollbackMark.get())
                         {
                             rejectMessage(message, true);
                         }
@@ -2619,10 +2560,11 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
         private void dispatchMessage(UnprocessedMessage message)
         {
-            if (message.getDeliverBody() != null)
-            {
+            //This if block is not needed anymore as bounce messages are handled separately
+            //if (message.getDeliverBody() != null)
+            //{
                 final BasicMessageConsumer consumer =
-                        (BasicMessageConsumer) _consumers.get(message.getDeliverBody().consumerTag);
+                        (BasicMessageConsumer) _consumers.get(new AMQShortString(message.getConsumerTag()));
 
                 if ((consumer == null) || consumer.isClosed())
                 {
@@ -2631,13 +2573,13 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                         if (consumer == null)
                         {
                             _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
-                                                   + message.getDeliverBody().deliveryTag + "] from queue "
-                                                   + message.getDeliverBody().consumerTag + " )without a handler - rejecting(requeue)...");
+                                                   + message.getDeliveryTag() + "] from queue "
+                                                   + message.getConsumerTag() + " )without a handler - rejecting(requeue)...");
                         }
                         else
                         {
                             _dispatcherLogger.info("Received a message(" + System.identityHashCode(message) + ")" + "["
-                                                   + message.getDeliverBody().deliveryTag + "] from queue " + " consumer("
+                                                   + message.getDeliveryTag() + "] from queue " + " consumer("
                                                    + consumer.debugIdentity() + ") is closed rejecting(requeue)...");
                         }
                     }
@@ -2652,7 +2594,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
                     consumer.notifyMessage(message, _channelId);
                 }
             }
-        }
+        //}
     }
 
     /*public void requestAccess(AMQShortString realm, boolean exclusive, boolean passive, boolean active, boolean write,
