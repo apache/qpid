@@ -20,10 +20,13 @@
  */
 package org.apache.qpid.client.message;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.qpid.framing.AMQShortString;
-
+import org.apache.qpidity.DeliveryProperties;
+import org.apache.qpidity.Struct;
 
 /**
  * This class contains everything needed to process a JMS message. It assembles the deliver body, the content header and
@@ -32,60 +35,47 @@ import org.apache.qpid.framing.AMQShortString;
  * Note that the actual work of creating a JMS message for the client code's use is done outside of the MINA dispatcher
  * thread in order to minimise the amount of work done in the MINA dispatcher thread.
  */
-public abstract class UnprocessedMessage<H,B>
+public class UnprocessedMessage_0_10 extends UnprocessedMessage<Struct[],ByteBuffer>
 {
-    private final int _channelId;
-    private final long _deliveryId;
-    private final String _consumerTag;
-    protected AMQShortString _exchange;
-    protected AMQShortString _routingKey;
-    protected boolean _redelivered;
+    private Struct[] _headers;
 
-    public UnprocessedMessage(int channelId,long deliveryId,String consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
+    /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
+    private List<ByteBuffer> _bodies = new ArrayList<ByteBuffer>();
+
+    public UnprocessedMessage_0_10(int channelId,long deliveryId,String consumerTag,AMQShortString exchange,AMQShortString routingKey,boolean redelivered)
     {
-        _channelId = channelId;
-        _deliveryId = deliveryId;
-        _consumerTag = consumerTag;
-        _exchange = exchange;
-        _routingKey = routingKey;
-        _redelivered = redelivered;
+        super(channelId,deliveryId,consumerTag,exchange,routingKey,redelivered);
     }
 
-    public abstract void receiveBody(B nativeMessageBody);
-
-    public abstract void setContentHeader(H nativeMessageHeader);
-
-    public int getChannelId()
+    public void receiveBody(ByteBuffer body)
     {
-        return _channelId;
+
+        _bodies.add(body);
     }
 
-    public long getDeliveryTag()
+    public void setContentHeader(Struct[] headers)
     {
-        return _deliveryId;
+        this._headers = headers;
+        for(Struct s: headers)
+        {
+            if (s instanceof DeliveryProperties)
+            {
+                DeliveryProperties props = (DeliveryProperties)s;
+                _exchange = new AMQShortString(props.getExchange());
+                _routingKey = new AMQShortString(props.getRoutingKey());
+                _redelivered = props.getRedelivered();
+            }
+        }
     }
 
-    public String getConsumerTag()
+    public Struct[] getContentHeader()
     {
-        return _consumerTag;
+        return _headers;
     }
 
-    public AMQShortString getExchange()
+    public List<ByteBuffer> getBodies()
     {
-        return _exchange;
+        return _bodies;
     }
 
-    public AMQShortString getRoutingKey()
-    {
-        return _routingKey;
-    }
-
-    public boolean isRedelivered()
-    {
-        return _redelivered;
-    }
-
-    public abstract List<B> getBodies();
-
-    public abstract H getContentHeader();
 }

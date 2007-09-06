@@ -22,16 +22,20 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicCancelOkBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BasicMessageConsumer_0_8 extends BasicMessageConsumer
+public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeaderBody,ContentBody>
 {
     protected final Logger _logger = LoggerFactory.getLogger(getClass());
 
@@ -70,5 +74,14 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer
         {
             throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
         }
+    }
+
+    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<ContentHeaderBody,ContentBody> messageFrame)throws Exception
+    {
+
+        return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
+            messageFrame.isRedelivered(), messageFrame.getExchange(),
+            messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
+
     }
 }
