@@ -25,21 +25,22 @@
 #include <functional>
 #include <list>
 #include <ostream>
-#include "DeliveryId.h"
+#include "SequenceNumber.h"
+#include "SequenceNumberSet.h"
 
 namespace qpid {
-    namespace broker {
+    namespace framing {
 
         struct Range
         {
-            DeliveryId start;
-            DeliveryId end;
+            SequenceNumber start;
+            SequenceNumber end;
 
-            Range(DeliveryId s, DeliveryId e);
-            bool contains(DeliveryId i) const;
+            Range(SequenceNumber s, SequenceNumber e);
+            bool contains(SequenceNumber i) const;
             bool intersect(const Range& r) const;
             bool merge(const Range& r);
-            bool mergeable(const DeliveryId& r) const;
+            bool mergeable(const SequenceNumber& r) const;
         };
         /**
          * Keeps an accumulated record of acked messages (by delivery
@@ -50,18 +51,19 @@ namespace qpid {
             /**
              * Everything up to this value has been acked.
              */
-            DeliveryId mark;
+            SequenceNumber mark;
             /**
              * List of individually acked messages greater than the
              * 'mark'.
              */
             std::list<Range> ranges;
 
-            explicit AccumulatedAck(DeliveryId r) : mark(r) {}
-            void update(DeliveryId firstTag, DeliveryId lastTag);
+            explicit AccumulatedAck(SequenceNumber r = SequenceNumber()) : mark(r) {}
+            void update(SequenceNumber firstTag, SequenceNumber lastTag);
             void consolidate();
             void clear();
-            bool covers(DeliveryId tag) const;
+            bool covers(SequenceNumber tag) const;
+            void collectRanges(SequenceNumberSet& set) const;
         };
         std::ostream& operator<<(std::ostream&, const Range&);
         std::ostream& operator<<(std::ostream&, const AccumulatedAck&);

@@ -50,7 +50,9 @@ class AMQMethodBody : public AMQBody {
     virtual MethodId amqpMethodId() const = 0;
     virtual ClassId  amqpClassId() const = 0;
     virtual bool isContentBearing() const = 0;
-    
+    virtual bool resultExpected() const = 0;    
+    virtual bool responseExpected() const = 0;    
+
     void invoke(AMQP_ServerOperations&);
     bool invoke(Invocable*);
 

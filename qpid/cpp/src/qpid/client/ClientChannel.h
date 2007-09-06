@@ -79,18 +79,17 @@ class Channel : private sys::Runnable
     bool running;
 
     ConsumerMap consumers;
-    ConnectionImpl::shared_ptr connection;
-    std::auto_ptr<Session> session;
-    SessionCore::shared_ptr sessionCore;
+    Session session;
     framing::ChannelId channelId;
     BlockingQueue<framing::FrameSet::shared_ptr> gets;
     framing::Uuid uniqueId;
     uint32_t nameCounter;
+    bool active;
 
     void stop();
 
     void setQos();
-    void open(ConnectionImpl::shared_ptr, SessionCore::shared_ptr);
+    void open(const Session& session);
     void closeInternal();
     void join();
 

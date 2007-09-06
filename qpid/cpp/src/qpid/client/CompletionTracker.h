@@ -19,7 +19,7 @@
  *
  */
 
-#include <queue>
+#include <list>
 #include <boost/function.hpp>
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/SequenceNumber.h"
@@ -34,19 +34,40 @@ namespace client {
 class CompletionTracker
 {
 public:
-    typedef boost::function<void()> Listener;    
+    //typedef boost::function<void()> CompletionListener;    
+    typedef boost::function0<void> CompletionListener;    
+    typedef boost::function<void(const std::string&)> ResultListener;
 
     CompletionTracker();
     CompletionTracker(const framing::SequenceNumber& mark);
     void completed(const framing::SequenceNumber& mark);
-    void listen(const framing::SequenceNumber& point, Listener l);
+    void received(const framing::SequenceNumber& id, const std::string& result);
+    void listenForCompletion(const framing::SequenceNumber& point, CompletionListener l);
+    void listenForResult(const framing::SequenceNumber& point, ResultListener l);
+    void close();
 
 private:
+    struct Record 
+    {
+        framing::SequenceNumber id; 
+        CompletionListener f;
+        ResultListener g;        
+
+        Record(const framing::SequenceNumber& _id, CompletionListener l) : id(_id), f(l) {}
+        Record(const framing::SequenceNumber& _id, ResultListener l) : id(_id), g(l) {}
+        void completed();
+        void received(const std::string& result);
+
+    };
+
+    typedef std::list<Record> Listeners;
+
     sys::Mutex lock;
     framing::SequenceNumber mark;
-    std::queue< std::pair<framing::SequenceNumber, Listener> > listeners;
+    Listeners listeners;
 
-    bool add(const framing::SequenceNumber& point, Listener l);
+    bool add(const Record& r);
+    Listeners::iterator seek(const framing::SequenceNumber&);
 };
 
 }

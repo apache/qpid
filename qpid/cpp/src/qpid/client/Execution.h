@@ -18,31 +18,23 @@
  * under the License.
  *
  */
+#ifndef _Execution_
+#define _Execution_
 
-#include "FutureCompletion.h"
+#include "qpid/framing/SequenceNumber.h"
 
-using namespace qpid::client;
-using namespace qpid::sys;
+namespace qpid {
+namespace client {
 
-FutureCompletion::FutureCompletion() : complete(false) {}
-
-bool FutureCompletion::isComplete() const
+class Execution 
 {
-    Monitor::ScopedLock l(lock);
-    return complete;
-}
+public:
+    virtual ~Execution() {}
+    virtual void sendSyncRequest() = 0;
+    virtual void sendFlushRequest() = 0;
+    virtual void completed(const framing::SequenceNumber& id, bool cumulative, bool send) = 0;
+};
 
-void FutureCompletion::completed()
-{
-    Monitor::ScopedLock l(lock);
-    complete = true;
-    lock.notifyAll();
-}
+}}
 
-void FutureCompletion::waitForCompletion() const
-{
-    Monitor::ScopedLock l(lock);
-    while (!complete) {
-        lock.wait();
-    }
-}
+#endif

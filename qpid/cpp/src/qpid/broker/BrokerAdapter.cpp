@@ -171,7 +171,6 @@ QueueQueryResult BrokerAdapter::QueueHandlerImpl::query(const string& name)
                             queue->getSettings(),
                             queue->getMessageCount(),
                             queue->getConsumerCount());
-
 }
 
 void BrokerAdapter::QueueHandlerImpl::declare(uint16_t /*ticket*/, const string& name, const string& alternateExchange,
