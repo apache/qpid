@@ -53,7 +53,6 @@ void APRSocket::write(qpid::framing::Buffer& buffer){
 
 void APRSocket::close(){
     if(!closed){
-        std::cout << "Closing socket " << socket << "@" << this << std::endl;
         CHECK_APR_SUCCESS(apr_socket_close(socket));
         closed = true;
     }

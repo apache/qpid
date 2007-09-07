@@ -138,8 +138,6 @@ void SessionHandlerImpl::initiated(qpid::framing::ProtocolInitiation* header){
     	client = new qpid::framing::AMQP_ClientProxy(context, header->getMajor(), header->getMinor());
 
 
-	std::cout << "---------------" << this << std::endl;
-	  
     	//send connection start
     	FieldTable properties;
     	string mechanisms("PLAIN");
