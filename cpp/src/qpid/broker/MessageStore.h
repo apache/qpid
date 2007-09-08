@@ -40,11 +40,11 @@ public:
     /**
      * Record the existence of a durable queue
      */
-    virtual void create(const PersistableQueue& queue) = 0;
+    virtual void create(PersistableQueue& queue) = 0;
     /**
      * Destroy a durable queue
      */
-    virtual void destroy(const PersistableQueue& queue) = 0;
+    virtual void destroy(PersistableQueue& queue) = 0;
     
     /**
      * Record the existence of a durable exchange
