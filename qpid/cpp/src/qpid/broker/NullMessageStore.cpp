@@ -49,12 +49,12 @@ using namespace qpid::broker;
 
 NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
 
-void NullMessageStore::create(const PersistableQueue& queue)
+void NullMessageStore::create(PersistableQueue& queue)
 {
     QPID_LOG(info, "Can't create durable queue '" << queue.getName() << "'. Persistence not enabled.");
 }
 
-void NullMessageStore::destroy(const PersistableQueue& queue)
+void NullMessageStore::destroy(PersistableQueue& queue)
 {
     QPID_LOG(info, "Can't destroy durable queue '" << queue.getName() << "'. Persistence not enabled.");
 }
