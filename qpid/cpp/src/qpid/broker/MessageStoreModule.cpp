@@ -28,12 +28,12 @@ MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
 {
 }
 
-void MessageStoreModule::create(const PersistableQueue& queue)
+void MessageStoreModule::create(PersistableQueue& queue)
 {
     store->create(queue);
 }
 
-void MessageStoreModule::destroy(const PersistableQueue& queue)
+void MessageStoreModule::destroy(PersistableQueue& queue)
 {
     store->destroy(queue);
 }

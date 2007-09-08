@@ -56,7 +56,7 @@ public:
     };
 
     inline void setExternalQueueStore(ExternalQueueStore* inst) {externalQueueStore = inst;};
-    inline ExternalQueueStore* getExternalQueueStore() {return externalQueueStore;};
+    inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
     
     PersistableQueue():externalQueueStore(NULL){
     };
