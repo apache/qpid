@@ -75,13 +75,4 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
             throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
         }
     }
-
-    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<ContentHeaderBody,ContentBody> messageFrame)throws Exception
-    {
-
-        return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
-            messageFrame.isRedelivered(), messageFrame.getExchange(),
-            messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
-
-    }
 }
