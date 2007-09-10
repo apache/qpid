@@ -68,7 +68,7 @@ void Queue::deliver(Message::shared_ptr& msg){
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg);
-            alternateExchange->route(deliverable, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+            alternateExchange->route(deliverable, msg->getRoutingKey(), msg->getApplicationHeaders());
         }
     } else {
 
@@ -358,7 +358,7 @@ void Queue::destroy()
         while(!messages.empty()){
             DeliverableMessage msg(messages.front().payload);
             alternateExchange->route(msg, msg.getMessage().getRoutingKey(),
-                                     &(msg.getMessage().getApplicationHeaders()));
+                                     msg.getMessage().getApplicationHeaders());
             pop();
         }
         alternateExchange->decAlternateUsers();

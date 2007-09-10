@@ -59,11 +59,11 @@ public:
 
     uint64_t contentSize() const;
 
-    const std::string& getRoutingKey() const;
+    std::string getRoutingKey() const;
     const boost::shared_ptr<Exchange> getExchange(ExchangeRegistry&) const;
-    const std::string& getExchangeName() const;
+    std::string getExchangeName() const;
     bool isImmediate() const;
-    const framing::FieldTable& getApplicationHeaders() const;
+    const framing::FieldTable* getApplicationHeaders() const;
     bool isPersistent();
 
     framing::FrameSet& getFrames() { return frames; } 

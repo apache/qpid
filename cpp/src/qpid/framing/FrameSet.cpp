@@ -56,17 +56,17 @@ bool FrameSet::isComplete() const
 
 const AMQMethodBody* FrameSet::getMethod() const
 {
-    return parts.empty() ? 0 : dynamic_cast<const AMQMethodBody*>(parts[0].getBody());
+    return parts.empty() ? 0 : parts[0].getMethod();
 }
 
 const AMQHeaderBody* FrameSet::getHeaders() const
 {
-    return parts.size() < 2 ? 0 : dynamic_cast<const AMQHeaderBody*>(parts[1].getBody());
+    return parts.size() < 2 ? 0 : parts[1].castBody<AMQHeaderBody>();
 }
 
 AMQHeaderBody* FrameSet::getHeaders()
 {
-    return parts.size() < 2 ? 0 : dynamic_cast<AMQHeaderBody*>(parts[1].getBody());
+    return parts.size() < 2 ? 0 : parts[1].castBody<AMQHeaderBody>();
 }
 
 uint64_t FrameSet::getContentSize() const
@@ -80,4 +80,11 @@ void FrameSet::getContent(std::string& out) const
 {
     AccumulateContent accumulator(out);
     map_if(accumulator, TypeFilter(CONTENT_BODY));
+}
+
+std::string FrameSet::getContent() const
+{
+    std::string out;
+    getContent(out);
+    return out;
 }

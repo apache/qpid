@@ -336,13 +336,13 @@ void Session::route(Message::shared_ptr msg, Deliverable& strategy) {
         cacheExchange = getAdapter()->getConnection().broker.getExchanges().get(exchangeName);
     }
 
-    cacheExchange->route(strategy, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+    cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
 
     if (!strategy.delivered) {
         //TODO:if reject-unroutable, then reject
         //else route to alternate exchange
         if (cacheExchange->getAlternate()) {
-            cacheExchange->getAlternate()->route(strategy, msg->getRoutingKey(), &(msg->getApplicationHeaders()));
+            cacheExchange->getAlternate()->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
         }
     }
 

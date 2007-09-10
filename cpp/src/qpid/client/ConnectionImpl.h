@@ -25,6 +25,7 @@
 #include <map>
 #include <boost/shared_ptr.hpp>
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
 #include "ConnectionHandler.h"
@@ -44,6 +45,7 @@ class ConnectionImpl : public framing::FrameHandler,
     ConnectionHandler handler;
     boost::shared_ptr<Connector> connector;
     framing::ProtocolVersion version;
+    sys::Mutex lock;
 
     void incoming(framing::AMQFrame& frame);    
     void closed();
@@ -51,6 +53,9 @@ class ConnectionImpl : public framing::FrameHandler,
     void idleOut();
     void idleIn();
     void shutdown();
+    void signalClose(uint16_t, const std::string&);
+    SessionCore::shared_ptr find(uint16_t);
+
 public:
     typedef boost::shared_ptr<ConnectionImpl> shared_ptr;
 

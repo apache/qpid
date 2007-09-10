@@ -132,6 +132,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Blob.cpp \
   qpid/framing/MethodHolder.h qpid/framing/MethodHolder.cpp \
   qpid/framing/MethodHolderMaxSize.h \
+  qpid/framing/TransferContent.cpp \
   qpid/Exception.cpp \
   qpid/Plugin.h \
   qpid/Plugin.cpp \
@@ -178,6 +179,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/Message.cpp \
+  qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
   qpid/broker/MessageDelivery.cpp \
   qpid/broker/MessageHandlerImpl.cpp \
@@ -344,6 +346,7 @@ nobase_include_HEADERS = \
   qpid/framing/SequenceNumberSet.h \
   qpid/framing/SerializeHandler.h \
   qpid/framing/StructHelper.h \
+  qpid/framing/TransferContent.h \
   qpid/framing/TypeFilter.h \
   qpid/framing/Value.h \
   qpid/framing/Visitor.h \

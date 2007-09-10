@@ -24,6 +24,7 @@
 
 using namespace qpid::client;
 using namespace qpid::framing;
+using namespace qpid::sys;
 
 ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c) : connector(c)
 {
@@ -38,6 +39,7 @@ ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c) : connector(c)
 
 void ConnectionImpl::allocated(SessionCore::shared_ptr session)
 {
+    Mutex::ScopedLock l(lock);
     if (sessions.find(session->getId()) != sessions.end()) {
         throw Exception("Id already in use.");
     }
@@ -46,6 +48,7 @@ void ConnectionImpl::allocated(SessionCore::shared_ptr session)
 
 void ConnectionImpl::released(SessionCore::shared_ptr session)
 {
+    Mutex::ScopedLock l(lock);
     SessionMap::iterator i = sessions.find(session->getId());
     if (i != sessions.end()) {
         sessions.erase(i);
@@ -59,12 +62,7 @@ void ConnectionImpl::handle(framing::AMQFrame& frame)
 
 void ConnectionImpl::incoming(framing::AMQFrame& frame)
 {
-    uint16_t id = frame.getChannel();
-    SessionMap::iterator i = sessions.find(id);
-    if (i == sessions.end()) {
-        throw ConnectionException(504, (boost::format("Invalid channel number %g") % id).str());
-    }
-    i->second->handle(frame);
+    find(frame.getChannel())->handle(frame);
 }
 
 void ConnectionImpl::open(const std::string& host, int port,
@@ -93,10 +91,7 @@ void ConnectionImpl::closed()
 
 void ConnectionImpl::closedByPeer(uint16_t code, const std::string& text)
 {
-    for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); i++) {
-        i->second->closed(code, text);
-    }
-    sessions.clear();
+    signalClose(code, text);
     connector->close();
 }
 
@@ -114,8 +109,25 @@ void ConnectionImpl::idleOut()
 void ConnectionImpl::shutdown() 
 {
     //this indicates that the socket to the server has closed
+    signalClose(0, "Unexpected socket closure.");
+}
+
+void ConnectionImpl::signalClose(uint16_t code, const std::string& text) 
+{
+    Mutex::ScopedLock l(lock);
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); i++) {
-        i->second->closed(0, "Unexpected socket closure.");
+        Mutex::ScopedUnlock u(lock);
+        i->second->closed(code, text);
     }
     sessions.clear();
+}
+
+SessionCore::shared_ptr ConnectionImpl::find(uint16_t id)
+{
+    Mutex::ScopedLock l(lock);
+    SessionMap::iterator i = sessions.find(id);
+    if (i == sessions.end()) {
+        throw ConnectionException(504, (boost::format("Invalid channel number %g") % id).str());
+    }
+    return i->second;
 }
