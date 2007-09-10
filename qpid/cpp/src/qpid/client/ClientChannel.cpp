@@ -80,7 +80,7 @@ bool Channel::isOpen() const {
 }
 
 void Channel::setQos() {
-    session.basicQos(0, getPrefetch(), false);
+    session.basicQos((prefetchCount=getPrefetch(), global=false));
     if(isTransactional()) {
         //I think this is wrong! should only send TxSelect once...
         session.txSelect();
@@ -92,34 +92,32 @@ void Channel::setPrefetch(uint16_t _prefetch){
     setQos();
 }
 
-void Channel::declareExchange(Exchange& exchange, bool synch){
-    FieldTable args;
+void Channel::declareExchange(Exchange& _exchange, bool synch){
     ScopedSync s(session, synch);
-    session.exchangeDeclare(0, exchange.getName(), exchange.getType(), empty, false, false, false, args);
+    session.exchangeDeclare((exchange=_exchange.getName(), type=_exchange.getType()));
 }
 
-void Channel::deleteExchange(Exchange& exchange, bool synch){
+void Channel::deleteExchange(Exchange& _exchange, bool synch){
     ScopedSync s(session, synch);
-    session.exchangeDelete(0, exchange.getName(), false);
+    session.exchangeDelete((exchange=_exchange.getName(), ifUnused=false));
 }
 
-void Channel::declareQueue(Queue& queue, bool synch){
-    if (queue.getName().empty()) {
+void Channel::declareQueue(Queue& _queue, bool synch){
+    if (_queue.getName().empty()) {
         stringstream uniqueName;
         uniqueName << uniqueId << "-queue-" << ++nameCounter;
-        queue.setName(uniqueName.str());
+        _queue.setName(uniqueName.str());
     }
 
-    FieldTable args;
     ScopedSync s(session, synch);
-    session.queueDeclare(0, queue.getName(), empty, false/*passive*/, queue.isDurable(),
-                          queue.isExclusive(), queue.isAutoDelete(), args);
+    session.queueDeclare((queue=_queue.getName(), passive=false/*passive*/, durable=_queue.isDurable(),
+                              exclusive=_queue.isExclusive(), autoDelete=_queue.isAutoDelete()));
     
 }
 
-void Channel::deleteQueue(Queue& queue, bool ifunused, bool ifempty, bool synch){
+void Channel::deleteQueue(Queue& _queue, bool ifunused, bool ifempty, bool synch){
     ScopedSync s(session, synch);
-    session.queueDelete(0, queue.getName(), ifunused, ifempty);
+    session.queueDelete((queue=_queue.getName(), ifUnused=ifunused, ifEmpty=ifempty));
 }
 
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){

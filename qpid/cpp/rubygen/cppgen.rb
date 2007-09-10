@@ -68,6 +68,7 @@ class CppType
   def retcref() @ret="const #{name}&"; self; end
   def passcref() @param="const #{name}&"; self; end
   def code(str) @code=str; self; end
+  def defval(str) @defval=str; self; end
 
   def encode(value, buffer)
     @code ? "#{buffer}.put#{@code}(#{value});" : "#{value}.encode(#{buffer});"
@@ -83,6 +84,10 @@ class CppType
     else
       "#{value}.decode(#{buffer});"
     end
+  end
+
+  def default_value()
+    return @defval ||= "#{name}()"
   end
 
   def to_s() name; end;
@@ -107,12 +112,12 @@ end
 
 class AmqpDomain
   @@typemap = {
-    "bit"=> CppType.new("bool").code("Octet"),
-    "octet"=>CppType.new("uint8_t").code("Octet"), 
-    "short"=>CppType.new("uint16_t").code("Short"),
-    "long"=>CppType.new("uint32_t").code("Long"),
-    "longlong"=>CppType.new("uint64_t").code("LongLong"),
-    "timestamp"=>CppType.new("uint64_t").code("LongLong"),
+    "bit"=> CppType.new("bool").code("Octet").defval("false"),
+    "octet"=>CppType.new("uint8_t").code("Octet").defval("0"), 
+    "short"=>CppType.new("uint16_t").code("Short").defval("0"),
+    "long"=>CppType.new("uint32_t").code("Long").defval("0"),
+    "longlong"=>CppType.new("uint64_t").code("LongLong").defval("0"),
+    "timestamp"=>CppType.new("uint64_t").code("LongLong").defval("0"),
     "longstr"=>CppType.new("string").passcref.retcref.code("LongString"),
     "shortstr"=>CppType.new("string").passcref.retcref.code("ShortString"),
     "table"=>CppType.new("FieldTable").passcref.retcref.code("FieldTable"),
