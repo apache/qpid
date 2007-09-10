@@ -18,23 +18,47 @@
  * under the License.
  *
  */
-#ifndef _MethodContent_
-#define _MethodContent_
 
-#include <string>
-#include "AMQHeaderBody.h"
+#include "TransferContent.h"
 
 namespace qpid {
 namespace framing {
 
-class MethodContent
+TransferContent::TransferContent(const std::string& _data)
 {
-public:
-    virtual ~MethodContent() {}
-    //TODO: rethink this interface
-    virtual AMQHeaderBody getHeader() const = 0;
-    virtual const std::string& getData() const = 0;
-};
+    setData(_data);
+}
+
+AMQHeaderBody TransferContent::getHeader() const
+{
+    return header;
+}
+
+const std::string& TransferContent::getData() const
+{
+    return data;
+}
+
+void TransferContent::setData(const std::string& _data)
+{
+    data = _data;
+    header.get<MessageProperties>(true)->setContentLength(data.size());
+}
+
+void TransferContent::appendData(const std::string& _data)
+{
+    data += _data;
+    header.get<MessageProperties>(true)->setContentLength(data.size());
+}
+
+MessageProperties& TransferContent::getMessageProperties()
+{
+    return *header.get<MessageProperties>(true);
+}
+
+DeliveryProperties& TransferContent::getDeliveryProperties()
+{
+    return *header.get<DeliveryProperties>(true);
+}
 
 }}
-#endif  

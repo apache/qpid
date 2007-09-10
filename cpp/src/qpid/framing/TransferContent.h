@@ -12,35 +12,35 @@
  * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
-n * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
  *
  */
-#include "AMQContentBody.h"
-#include <iostream>
+#ifndef _TransferContent_
+#define _TransferContent_
 
-qpid::framing::AMQContentBody::AMQContentBody(){
-}
+#include "MethodContent.h"
+#include "qpid/framing/MessageProperties.h"
+#include "qpid/framing/DeliveryProperties.h"
 
-qpid::framing::AMQContentBody::AMQContentBody(const string& _data) : data(_data){
-}
+namespace qpid {
+namespace framing {
 
-uint32_t qpid::framing::AMQContentBody::size() const{
-    return data.size();
-}
-void qpid::framing::AMQContentBody::encode(Buffer& buffer) const{
-    buffer.putRawData(data);
-}
-void qpid::framing::AMQContentBody::decode(Buffer& buffer, uint32_t _size){
-    buffer.getRawData(data, _size);
-}
-
-void qpid::framing::AMQContentBody::print(std::ostream& out) const
+class TransferContent : public MethodContent
 {
-    out << "content (" << size() << " bytes)";
-#ifndef NDEBUG
-    out << " " << data.substr(0,10);
-#endif
-}
+    AMQHeaderBody header;
+    std::string data;
+public:
+    TransferContent(const std::string& data);
+    AMQHeaderBody getHeader() const;
+    void setData(const std::string&);
+    void appendData(const std::string&);
+    const std::string& getData() const;
+    MessageProperties& getMessageProperties();
+    DeliveryProperties& getDeliveryProperties();
+};
+
+}}
+#endif  

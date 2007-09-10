@@ -59,7 +59,7 @@ class ExecutionHandler :
 
     void sendCompletion();
 
-    void sendContent(const framing::BasicHeaderProperties& headers, const std::string& data);
+    void sendContent(const framing::MethodContent&);
 
 public:
     typedef CompletionTracker::ResultListener ResultListener;

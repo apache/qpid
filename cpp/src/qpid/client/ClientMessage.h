@@ -58,8 +58,14 @@ class Message : public framing::BasicHeaderProperties, public framing::MethodCon
     bool isRedelivered() const { return redelivered; }
     void setRedelivered(bool _redelivered){  redelivered = _redelivered; }
 
-    const HeaderProperties& getMethodHeaders() const { return *this; }
-
+    framing::AMQHeaderBody getHeader() const
+    { 
+        framing::AMQHeaderBody header;
+        BasicHeaderProperties* properties = header.get<BasicHeaderProperties>(true);
+        BasicHeaderProperties::copy<BasicHeaderProperties, Message>(*properties, *this);
+        properties->setContentLength(data.size());
+        return header;
+    }
 
     //TODO: move this elsewhere (GRS 24/08/2007)
     void populate(framing::FrameSet& frameset)
