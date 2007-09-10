@@ -38,68 +38,29 @@ struct MessageAdapter
 {
     virtual ~MessageAdapter() {}
 
-    virtual const std::string& getRoutingKey(const framing::FrameSet& f) = 0;
-    virtual const std::string& getExchange(const framing::FrameSet& f) = 0;
+    virtual std::string getRoutingKey(const framing::FrameSet& f) = 0;
+    virtual std::string getExchange(const framing::FrameSet& f) = 0;
     virtual bool isImmediate(const framing::FrameSet& f) = 0;
-    virtual const framing::FieldTable& getApplicationHeaders(const framing::FrameSet& f) = 0;
+    virtual const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f) = 0;
     virtual bool isPersistent(const framing::FrameSet& f) = 0;
 };
 
 struct PublishAdapter : MessageAdapter
 {
-    const std::string& getRoutingKey(const framing::FrameSet& f)
-    {
-        return f.as<framing::BasicPublishBody>()->getRoutingKey();
-    }
-
-    const std::string& getExchange(const framing::FrameSet& f)
-    {
-        return f.as<framing::BasicPublishBody>()->getExchange();
-    }
-
-    bool isImmediate(const framing::FrameSet& f)
-    {
-        return f.as<framing::BasicPublishBody>()->getImmediate();
-    }
-
-    const framing::FieldTable& getApplicationHeaders(const framing::FrameSet& f)
-    {
-        return f.getHeaders()->get<framing::BasicHeaderProperties>()->getHeaders();
-    }
-
-    bool isPersistent(const framing::FrameSet& f)
-    {
-        return f.getHeaders()->get<framing::BasicHeaderProperties>()->getDeliveryMode() == 2;
-    }
+    std::string getRoutingKey(const framing::FrameSet& f);
+    std::string getExchange(const framing::FrameSet& f);
+    bool isImmediate(const framing::FrameSet& f);
+    const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f);
+    bool isPersistent(const framing::FrameSet& f);
 };
 
 struct TransferAdapter : MessageAdapter
 {
-    const std::string& getRoutingKey(const framing::FrameSet& f)
-    {
-        return f.getHeaders()->get<framing::DeliveryProperties>()->getRoutingKey();
-    }
-
-    const std::string& getExchange(const framing::FrameSet& f)
-    {
-        return f.as<framing::MessageTransferBody>()->getDestination();
-    }
-
-    bool isImmediate(const framing::FrameSet&)
-    {
-        //TODO: we seem to have lost the immediate flag
-        return false;
-    }
-
-    const framing::FieldTable& getApplicationHeaders(const framing::FrameSet& f)
-    {
-        return f.getHeaders()->get<framing::MessageProperties>()->getApplicationHeaders();
-    }
-
-    bool isPersistent(const framing::FrameSet& f)
-    {
-        return f.getHeaders()->get<framing::DeliveryProperties>()->getDeliveryMode() == 2;
-    }
+    std::string getRoutingKey(const framing::FrameSet& f);
+    std::string getExchange(const framing::FrameSet& f);
+    bool isImmediate(const framing::FrameSet&);
+    const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f);
+    bool isPersistent(const framing::FrameSet& f);
 };
 
 }}

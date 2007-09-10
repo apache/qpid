@@ -38,12 +38,12 @@ PublishAdapter Message::PUBLISH;
 
 Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), publisher(0), store(0), adapter(0) {}
 
-const std::string& Message::getRoutingKey() const
+std::string Message::getRoutingKey() const
 {
     return getAdapter().getRoutingKey(frames);
 }
 
-const std::string& Message::getExchangeName() const 
+std::string Message::getExchangeName() const 
 {
     return getAdapter().getExchange(frames);
 }
@@ -61,7 +61,7 @@ bool Message::isImmediate() const
     return getAdapter().isImmediate(frames);
 }
 
-const FieldTable& Message::getApplicationHeaders() const
+const FieldTable* Message::getApplicationHeaders() const
 {
     return getAdapter().getApplicationHeaders(frames);
 }
