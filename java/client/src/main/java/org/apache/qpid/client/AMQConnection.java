@@ -1114,6 +1114,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         {
             _exceptionListener.onException(je);
         }
+        else
+        {
+            _logger.error("Throwable Received but no listener set: " + cause.getMessage());
+        }
 
         if (!(cause instanceof AMQUndeliveredException) && !(cause instanceof AMQAuthenticationException))
         {
