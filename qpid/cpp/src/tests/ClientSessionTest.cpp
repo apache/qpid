@@ -50,7 +50,7 @@ class ClientSessionTest : public CppUnit::TestCase
     {
         std::string name("my-queue");
         std::string alternate("amq.fanout");
-        session.queueDeclare(0, name, alternate, false, false, true, true, FieldTable());
+        session.queueDeclare((queue=name, alternateExchange=alternate, exclusive=true, autoDelete=true));
         TypedResult<QueueQueryResult> result = session.queueQuery(name);
         CPPUNIT_ASSERT_EQUAL(false, result.get().getDurable());
         CPPUNIT_ASSERT_EQUAL(true, result.get().getExclusive());
@@ -59,16 +59,16 @@ class ClientSessionTest : public CppUnit::TestCase
 
     void testTransfer()
     {
-        std::string queue("my-queue");
+        std::string queueName("my-queue");
         std::string dest("my-dest");
         std::string data("my message");
-        session.queueDeclare(0, queue, "", false, false, true, true, FieldTable());
+        session.queueDeclare_(queue=queueName, exclusive=true, autoDelete=true);
         //subcribe to the queue with confirm_mode = 1:
-        session.messageSubscribe(0, queue, dest, false, 1, 0, false, FieldTable());
+        session.messageSubscribe_(queue=queueName, destination=dest, acquireMode=1);
         //publish a message:
-        TransferContent content(data);
-        content.getDeliveryProperties().setRoutingKey("my-queue");
-        session.messageTransfer(0, "", 0, 0, content);
+        TransferContent _content(data);
+        _content.getDeliveryProperties().setRoutingKey("my-queue");
+        session.messageTransfer_(content=_content);
         //get & test the message:
         FrameSet::shared_ptr msg = session.get();
         CPPUNIT_ASSERT(msg->isA<MessageTransferBody>());
