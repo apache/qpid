@@ -350,22 +350,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    /**
-     * Creates a new session on a connection with the default message factory factory.
-     *
-     * @param con                     The connection on which to create the session.
-     * @param channelId               The unique identifier for the session.
-     * @param transacted              Indicates whether or not the session is transactional.
-     * @param acknowledgeMode         The acknoledgement mode for the session.
-     * @param defaultPrefetchHigh     The maximum number of messages to prefetched before suspending the session.
-     * @param defaultPrefetchLow      The number of prefetched messages at which to resume the session.
-     */
-    AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetchHigh,
-               int defaultPrefetchLow)
-    {
-        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh,
-             defaultPrefetchLow);
-    }
+
 
     // ===== JMS Session methods.
 
