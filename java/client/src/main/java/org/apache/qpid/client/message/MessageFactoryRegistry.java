@@ -41,7 +41,7 @@ public class MessageFactoryRegistry
      * Construct a new registry with the default message factories registered
      * @return a message factory registry
      */
-    public static MessageFactoryRegistry newDefaultRegistry()
+    public static MessageFactoryRegistry newDefault08Registry()
     {
         MessageFactoryRegistry mf = new MessageFactoryRegistry();
         mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
@@ -54,6 +54,26 @@ public class MessageFactoryRegistry
 
         return mf;
     }
+
+    /**
+     * Construct a new 010 registry with the default message factories registered
+     * @return a message factory registry
+     */
+    public static MessageFactoryRegistry newDefault010Registry()
+    {
+        // TODO use 0.10 classes 
+        MessageFactoryRegistry mf = new MessageFactoryRegistry();
+        mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
+        mf.registerFactory("text/plain", new JMSTextMessageFactory());
+        mf.registerFactory("text/xml", new JMSTextMessageFactory());
+        mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
+        mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
+        mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
+        mf.registerFactory(null, new JMSBytesMessageFactory());
+
+        return mf;
+    }
+
 
     public void registerFactory(String mimeType, MessageFactory mf)
     {
