@@ -306,9 +306,10 @@ public class AMQSession_0_10 extends AMQSession
     {
         getQpidSession().messageSubscribe(queueName.toString(), tag.toString(), Session.TRANSFER_CONFIRM_MODE_REQUIRED,
                                           Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
-                                          new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer),
-                                          null, consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
+                                          new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
+                                          consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
+        getQpidSession().messageFlowMode(tag.toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
