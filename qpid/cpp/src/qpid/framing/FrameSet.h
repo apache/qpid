@@ -48,6 +48,7 @@ public:
 
     uint64_t getContentSize() const;
     void getContent(std::string&) const;
+    std::string getContent() const;
 
     const AMQMethodBody* getMethod() const;
     const AMQHeaderBody* getHeaders() const;

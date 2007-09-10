@@ -181,31 +181,28 @@ SequenceNumber ExecutionHandler::send(const AMQBody& command, const MethodConten
                                       CompletionTracker::ResultListener l)
 {
     SequenceNumber id = send(command, l);
-    sendContent(dynamic_cast<const BasicHeaderProperties&>(content.getMethodHeaders()), content.getData());
+    sendContent(content);
     return id;
 }
 
-void ExecutionHandler::sendContent(const BasicHeaderProperties& headers, const std::string& data)
+void ExecutionHandler::sendContent(const MethodContent& content)
 {
-    AMQHeaderBody header;
-    BasicHeaderProperties::copy(*header.get<BasicHeaderProperties>(true), headers);
-    header.get<BasicHeaderProperties>(true)->setContentLength(data.size());
-    AMQFrame h(0, header);
-    out(h);
+    AMQFrame header(0, content.getHeader());
+    out(header);
 
-    u_int64_t data_length = data.length();
+    u_int64_t data_length = content.getData().length();
     if(data_length > 0){
         //frame itself uses 8 bytes
         u_int32_t frag_size = maxFrameSize - 8;
         if(data_length < frag_size){
-            AMQFrame frame(0, AMQContentBody(data));
+            AMQFrame frame(0, AMQContentBody(content.getData()));
             out(frame);
         }else{
             u_int32_t offset = 0;
             u_int32_t remaining = data_length - offset;
             while (remaining > 0) {
                 u_int32_t length = remaining > frag_size ? frag_size : remaining;
-                string frag(data.substr(offset, length));
+                string frag(content.getData().substr(offset, length));
                 AMQFrame frame(0, AMQContentBody(frag));
                 out(frame);
                 offset += length;

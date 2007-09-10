@@ -22,6 +22,7 @@
 #include "qpid_test_plugin.h"
 #include "InProcessBroker.h"
 #include "qpid/client/Session.h"
+#include "qpid/framing/TransferContent.h"
 
 using namespace qpid::client;
 using namespace qpid::framing;
@@ -29,7 +30,8 @@ using namespace qpid::framing;
 class ClientSessionTest : public CppUnit::TestCase
 {
     CPPUNIT_TEST_SUITE(ClientSessionTest);
-    CPPUNIT_TEST(testQueueQuery);;
+    CPPUNIT_TEST(testQueueQuery);
+    CPPUNIT_TEST(testTransfer);
     CPPUNIT_TEST_SUITE_END();
 
     boost::shared_ptr<Connector> broker;
@@ -55,14 +57,24 @@ class ClientSessionTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(alternate, result.get().getAlternateExchange());
     }
 
-    void testCompletion()
+    void testTransfer()
     {
         std::string queue("my-queue");
         std::string dest("my-dest");
+        std::string data("my message");
         session.queueDeclare(0, queue, "", false, false, true, true, FieldTable());
-        //subcribe to the queue with confirm_mode = 1
+        //subcribe to the queue with confirm_mode = 1:
         session.messageSubscribe(0, queue, dest, false, 1, 0, false, FieldTable());
-        //publish some messages
+        //publish a message:
+        TransferContent content(data);
+        content.getDeliveryProperties().setRoutingKey("my-queue");
+        session.messageTransfer(0, "", 0, 0, content);
+        //get & test the message:
+        FrameSet::shared_ptr msg = session.get();
+        CPPUNIT_ASSERT(msg->isA<MessageTransferBody>());
+        CPPUNIT_ASSERT_EQUAL(data, msg->getContent());
+        //confirm receipt:
+        session.execution().completed(msg->getId(), true, true);
     }
 };
 

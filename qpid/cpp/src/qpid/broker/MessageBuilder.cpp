@@ -22,8 +22,8 @@
 
 #include "Message.h"
 #include "MessageStore.h"
-#include "qpid/Exception.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -46,7 +46,7 @@ void MessageBuilder::handle(AMQFrame& frame)
         checkType(CONTENT_BODY, frame.getBody()->type());
         break;
     default:
-        throw ConnectionException(504, "Invalid frame sequence for message.");        
+        throw CommandInvalidException(QPID_MSG("Invalid frame sequence for message (state=" << state << ")"));
     }
     if (staging) {
         store->appendContent(*message, frame.castBody<AMQContentBody>()->getData());
@@ -58,13 +58,6 @@ void MessageBuilder::handle(AMQFrame& frame)
             message->releaseContent(store);
             staging = true;
         }
-    }
-}
-
-void MessageBuilder::checkType(uint8_t expected, uint8_t actual)
-{
-    if (expected != actual) {
-        throw ConnectionException(504, "Invalid frame sequence for message.");
     }
 }
 
@@ -80,4 +73,33 @@ void MessageBuilder::start(const SequenceNumber& id)
     message = Message::shared_ptr(new Message(id));
     state = METHOD;
     staging = false;
+}
+
+namespace {
+
+const std::string HEADER_BODY_S = "HEADER";
+const std::string METHOD_BODY_S = "METHOD";
+const std::string CONTENT_BODY_S = "CONTENT";
+const std::string HEARTBEAT_BODY_S = "HEARTBEAT";
+const std::string UNKNOWN = "unknown";
+
+std::string type_str(uint8_t type) 
+{
+    switch(type) {
+    case METHOD_BODY: return METHOD_BODY_S;
+    case HEADER_BODY: return HEADER_BODY_S;
+    case CONTENT_BODY: return CONTENT_BODY_S;
+    case HEARTBEAT_BODY: return HEARTBEAT_BODY_S;
+    }
+    return UNKNOWN;
+}
+
+}
+
+void MessageBuilder::checkType(uint8_t expected, uint8_t actual)
+{
+    if (expected != actual) {
+        throw CommandInvalidException(QPID_MSG("Invalid frame sequence for message (expected " 
+                                               << type_str(expected) << " got " << type_str(actual) << ")"));
+    }
 }
