@@ -122,7 +122,7 @@ public class SessionImpl implements Session
      * This session connection
      */
     private ConnectionImpl _connection;
-    
+
     /**
      * This will be used as the message actor id
      * This in turn will be set as the destination
@@ -465,13 +465,13 @@ public class SessionImpl implements Session
             throw new IllegalStateException("Session is transacted");
         }
         // release all unack messages
+        RangeSet ranges = new RangeSet();
         for (QpidMessage message : _unacknowledgedMessages)
         {
-            // release this message
-            RangeSet ranges = new RangeSet();
+            // release this message           
             ranges.add(message.getMessageTransferId());
-            getQpidSession().messageRelease(ranges);
         }
+        getQpidSession().messageRelease(ranges);
     }
 
     /**
@@ -599,7 +599,8 @@ public class SessionImpl implements Session
         MessageConsumerImpl consumer;
         try
         {
-            consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null,String.valueOf(_consumerTag.incrementAndGet()));
+            consumer = new MessageConsumerImpl(this, (DestinationImpl) destination, messageSelector, noLocal, null,
+                                               String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {
@@ -726,7 +727,8 @@ public class SessionImpl implements Session
         try
         {
             subscriber = new TopicSubscriberImpl(this, topic, messageSelector, noLocal,
-                                                 _connection.getClientID() + ":" + name,String.valueOf(_consumerTag.incrementAndGet()));
+                                                 _connection.getClientID() + ":" + name,
+                                                 String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {
@@ -770,7 +772,8 @@ public class SessionImpl implements Session
         QueueBrowserImpl browser;
         try
         {
-            browser = new QueueBrowserImpl(this, queue, messageSelector,String.valueOf(_consumerTag.incrementAndGet()));
+            browser =
+                    new QueueBrowserImpl(this, queue, messageSelector, String.valueOf(_consumerTag.incrementAndGet()));
         }
         catch (Exception e)
         {
@@ -1301,7 +1304,7 @@ public class SessionImpl implements Session
                     {
                         try
                         {
-                           // mc.onMessage(message.getMessage());
+                            // mc.onMessage(message.getMessage());
                             mc.notifyMessageListener(message.getMessage());
                         }
                         catch (RuntimeException t)
