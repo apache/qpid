@@ -39,6 +39,8 @@ import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
 import org.slf4j.Logger;
@@ -586,7 +588,14 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         }
     }
 
-    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<H,B> messageFrame)throws Exception;
+    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<ContentHeaderBody, ContentBody> messageFrame)throws Exception
+     {
+
+        return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
+            messageFrame.isRedelivered(), messageFrame.getExchange(),
+            messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
+
+    }
 
     /**
      * @param jmsMessage this message has already been processed so can't redo preDeliver
@@ -629,7 +638,7 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         }
     }
 
-    private void preDeliver(AbstractJMSMessage msg)
+    void preDeliver(AbstractJMSMessage msg)
     {
         switch (_acknowledgeMode)
         {
@@ -646,7 +655,7 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         }
     }
 
-    private void postDeliver(AbstractJMSMessage msg) throws JMSException
+     void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
         msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
