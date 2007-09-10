@@ -36,7 +36,8 @@ namespace broker {
 
 class ExternalQueueStore
 {
-
+public:
+    virtual ~ExternalQueueStore() {};
 
 };
 
