@@ -240,15 +240,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             if (messageListener != null)
             {
-                // handle case where connection has already been started, and the dispatcher has alreaded started
+                //todo: handle case where connection has already been started, and the dispatcher has alreaded started
                 // putting values on the _synchronousQueue
 
-                synchronized (_session)
-                {
                     _messageListener.set(messageListener);
                     _session.setHasMessageListeners();
                     _session.startDistpatcherIfNecessary();
-                }
             }
         }
     }
