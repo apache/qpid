@@ -21,12 +21,16 @@
 #ifndef _TransferContent_
 #define _TransferContent_
 
+#include "FrameSet.h"
 #include "MethodContent.h"
+#include "qpid/Exception.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/DeliveryProperties.h"
 
 namespace qpid {
 namespace framing {
+
+struct NoSuchPropertiesException : public Exception {};
 
 class TransferContent : public MethodContent
 {
@@ -37,9 +41,16 @@ public:
     AMQHeaderBody getHeader() const;
     void setData(const std::string&);
     void appendData(const std::string&);
-    const std::string& getData() const;
     MessageProperties& getMessageProperties();
     DeliveryProperties& getDeliveryProperties();
+
+    const std::string& getData() const;
+    const MessageProperties& getMessageProperties() const;
+    const DeliveryProperties& getDeliveryProperties() const;
+    bool hasMessageProperties() const;
+    bool hasDeliveryProperties() const;
+
+    void populate(const FrameSet& frameset);
 };
 
 }}
