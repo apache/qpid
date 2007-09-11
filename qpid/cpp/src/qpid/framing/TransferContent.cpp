@@ -61,4 +61,35 @@ DeliveryProperties& TransferContent::getDeliveryProperties()
     return *header.get<DeliveryProperties>(true);
 }
 
+void TransferContent::populate(const FrameSet& frameset)
+{
+    header = *frameset.getHeaders();
+    frameset.getContent(data);
+}
+
+const MessageProperties& TransferContent::getMessageProperties() const
+{
+    const MessageProperties* props = header.get<MessageProperties>();
+    if (!props) throw NoSuchPropertiesException();
+    return *props;
+}
+
+const DeliveryProperties& TransferContent::getDeliveryProperties() const
+{
+    const DeliveryProperties* props = header.get<DeliveryProperties>();
+    if (!props) throw NoSuchPropertiesException();
+    return *props;
+}
+
+bool TransferContent::hasMessageProperties() const
+{
+    return header.get<MessageProperties>();
+}
+
+bool TransferContent::hasDeliveryProperties() const
+{
+    return header.get<DeliveryProperties>();
+}
+
+
 }}

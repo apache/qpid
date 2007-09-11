@@ -47,6 +47,7 @@ using namespace qpid::sys;
 using qpid::TestCase;
 using qpid::TestOptions;
 using qpid::framing::FieldTable;
+using qpid::framing::ReplyTo;
 using namespace std;
 
 class DummyRun : public TestCase
@@ -73,14 +74,14 @@ class Listener : public MessageListener, private Runnable{
     const string topic;
     TestMap::iterator test;
     auto_ptr<Thread> runner;
-    string reportTo;
+    ReplyTo reportTo;
     string reportCorrelator;    
 
     void shutdown();
     bool invite(const string& name);
     void run();
 
-    void sendResponse(Message& response, string replyTo);
+    void sendResponse(Message& response, ReplyTo replyTo);
     void sendResponse(Message& response, Message& request);
     void sendSimpleResponse(const string& type, Message& request);
     void sendReport();
@@ -146,30 +147,19 @@ void Listener::sendSimpleResponse(const string& type, Message& request)
     response.getHeaders().setString("CONTROL_TYPE", type);
     response.getHeaders().setString("CLIENT_NAME", name);
     response.getHeaders().setString("CLIENT_PRIVATE_CONTROL_KEY", topic);
-    response.setCorrelationId(request.getCorrelationId());
+    response.getMessageProperties().setCorrelationId(request.getMessageProperties().getCorrelationId());
     sendResponse(response, request);
 }
 
 void Listener::sendResponse(Message& response, Message& request)
 {
-    sendResponse(response, request.getReplyTo()); 
+    sendResponse(response, request.getMessageProperties().getReplyTo()); 
 }
 
-void Listener::sendResponse(Message& response, string replyTo)
+void Listener::sendResponse(Message& response, ReplyTo replyTo)
 {
-    //Exchange and routing key need to be extracted from the reply-to
-    //field. Format is assumed to be:
-    //
-    //    <exchange type>://<exchange name>/<routing key>?<options>
-    //
-    //and all we need is the exchange name and routing key
-    // 
-    if (replyTo.empty()) throw qpid::Exception("Reply address not set!"); 
-    const string delims(":/?=");
-
-    string::size_type start = replyTo.find(':');//skip exchange type
-    string exchange = parse_next_word(replyTo, delims, start);
-    string routingKey = parse_next_word(replyTo, delims, start);
+    string exchange = replyTo.getExchangeName();
+    string routingKey = replyTo.getRoutingKey();
     channel.publish(response, exchange, routingKey);
 }
 
@@ -188,12 +178,12 @@ void Listener::received(Message& message)
         test->assign(message.getHeaders().getString("ROLE"), message.getHeaders(), options);
         sendSimpleResponse("ACCEPT_ROLE", message);
     } else if (type == "START") {        
-        reportTo = message.getReplyTo();
-        reportCorrelator = message.getCorrelationId();
+        reportTo = message.getMessageProperties().getReplyTo();
+        reportCorrelator = message.getMessageProperties().getCorrelationId();
         runner = auto_ptr<Thread>(new Thread(this));
     } else if (type == "STATUS_REQUEST") {
-        reportTo = message.getReplyTo();
-        reportCorrelator = message.getCorrelationId();
+        reportTo = message.getMessageProperties().getReplyTo();
+        reportCorrelator = message.getMessageProperties().getCorrelationId();
         test->stop();
         sendReport();
     } else if (type == "TERMINATE") {
@@ -229,7 +219,7 @@ void Listener::sendReport()
     Message report;
     report.getHeaders().setString("CONTROL_TYPE", "REPORT");
     test->report(report);
-    report.setCorrelationId(reportCorrelator);
+    report.getMessageProperties().setCorrelationId(reportCorrelator);
     sendResponse(report, reportTo);
 }
 
