@@ -93,6 +93,8 @@ class Channel : private sys::Runnable
     void closeInternal();
     void join();
 
+    void dispatch(framing::FrameSet& msg, const std::string& destination);
+
     // FIXME aconway 2007-02-23: Get rid of friendships.
     friend class Connection;
 
@@ -301,7 +303,7 @@ class Channel : private sys::Runnable
      * receive this message on publication, the message will be
      * returned (see setReturnedMessageHandler()).
      */
-    void publish(const Message& msg, const Exchange& exchange,
+    void publish(Message& msg, const Exchange& exchange,
                  const std::string& routingKey, 
                  bool mandatory = false, bool immediate = false);
 

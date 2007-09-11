@@ -152,6 +152,9 @@ EOS
   def define_accessors(f)
     genl "void set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) { #{f.cppname} = _#{f.cppname}; }"
     genl "#{f.cpptype.ret} get#{f.name.caps}() const { return #{f.cppname}; }"
+    if (f.cpptype.name == "FieldTable")
+      genl "#{f.cpptype.name}& get#{f.name.caps}() { return #{f.cppname}; }"
+    end
   end
 
   def define_struct(s)
