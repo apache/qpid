@@ -204,12 +204,6 @@
                             <configuration>
                                 <tasks>
 
-                                    <condition property="broker.dir" 
-                                               else="${user.dir}${file.separator}broker"
-                                               value="${user.dir}">
-                                        <contains string="${user.dir}" substring="broker" />
-                                    </condition>
-
                                     <condition property="skip-python-tests" value="true">
                                         <isset property="skip.python.tests"/>
                                     </condition>

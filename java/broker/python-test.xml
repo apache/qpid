@@ -28,7 +28,9 @@ under the License.
       <echo message="Used via maven to run python tests."/>
   </target>
 
-  <property name="pythondir" value="../../python"/>
+  <dirname property="broker.dir" file="${ant.file.python-test}"/>
+
+  <property name="pythondir" value="${broker.dir}/../../python"/>
 
   <target name="run-tests" unless="skip-python-tests">
 
