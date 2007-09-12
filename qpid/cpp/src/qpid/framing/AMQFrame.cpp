@@ -70,40 +70,70 @@ const AMQBody* AMQFrame::getBody() const {
     return boost::apply_visitor(GetBodyVisitor(), const_cast<Variant&>(body));
 }
 
-void AMQFrame::encode(Buffer& buffer) const
-{
-    buffer.putOctet(getBody()->type());
-    buffer.putShort(channel);    
-    buffer.putLong(boost::apply_visitor(SizeVisitor(), body));
-    boost::apply_visitor(EncodeVisitor(buffer), body);
-    buffer.putOctet(0xCE);
-}
-
+// This is now misleadingly named as it is not the frame size as defined in the spec 
+// (as it also includes the end marker)
 uint32_t AMQFrame::size() const{
     return frameOverhead() + boost::apply_visitor(SizeVisitor(), body);
 }
 
 uint32_t AMQFrame::frameOverhead() {
-    return 1/*type*/ + 2/*channel*/ + 4/*body size*/ + 1/*0xCE*/;
+    return 12 /*frame header*/ + 1/*0xCE*/;
+}
+
+void AMQFrame::encode(Buffer& buffer) const
+{
+    uint8_t flags = (bof ? 0x08 : 0) | (eof ? 0x04 : 0) | (bos ? 0x02 : 0) | (eos ? 0x01 : 0);
+    buffer.putOctet(flags);
+    buffer.putOctet(getBody()->type());
+    buffer.putShort(size() - 1); // Don't include end marker (it's not part of the frame itself)
+    buffer.putOctet(0);
+    buffer.putOctet(0x0f & subchannel);
+    buffer.putShort(channel);    
+    buffer.putLong(0);
+    boost::apply_visitor(EncodeVisitor(buffer), body);
+    buffer.putOctet(0xCE);
 }
 
 bool AMQFrame::decode(Buffer& buffer)
 {    
-    if(buffer.available() < 7)
+    if(buffer.available() < frameOverhead() - 1)
         return false;
     buffer.record();
 
-    uint8_t type = buffer.getOctet();
+    uint8_t  flags = buffer.getOctet();
+    uint8_t framing_version = (flags & 0xc0) >> 6;
+    if (framing_version != 0)
+        THROW_QPID_ERROR(FRAMING_ERROR, "Framing version unsupported");
+    bof = flags & 0x08;
+    eof = flags & 0x04;
+    bos = flags & 0x02;
+    bos = flags & 0x01;
+    uint8_t  type = buffer.getOctet();
+    uint16_t frame_size =  buffer.getShort();
+    if (frame_size < frameOverhead()-1)
+        THROW_QPID_ERROR(FRAMING_ERROR, "Frame size too small");    
+    uint8_t  reserved1 = buffer.getOctet();
+    uint8_t  field1 = buffer.getOctet();
+    subchannel = field1 & 0x0f;
     channel = buffer.getShort();
-    uint32_t size =  buffer.getLong();
+    (void) buffer.getLong(); // reserved2
+    
+    // Verify that the protocol header meets current spec
+    // TODO: should we check reserved2 against zero as well? - the spec isn't clear
+    if ((flags & 0x30) != 0 || reserved1 != 0 || (field1 & 0xf0) != 0)
+        THROW_QPID_ERROR(FRAMING_ERROR, "Reserved bits not zero");
 
-    if(buffer.available() < size+1){
+    // TODO: should no longer care about body size and only pass up B,E,b,e flags
+    uint16_t body_size = frame_size + 1 - frameOverhead(); 
+    if (buffer.available() < body_size+1u){
         buffer.restore();
         return false;
     }
-    decodeBody(buffer, size, type);
+    decodeBody(buffer, body_size, type);
+
     uint8_t end = buffer.getOctet();
-    if(end != 0xCE) THROW_QPID_ERROR(FRAMING_ERROR, "Frame end not found");
+    if (end != 0xCE)
+        THROW_QPID_ERROR(FRAMING_ERROR, "Frame end not found");
     return true;
 }
 
