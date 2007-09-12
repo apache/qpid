@@ -251,8 +251,8 @@ Session::ConsumerImpl::ConsumerImpl(Session* _parent,
     acquire(_acquire),
     blocked(false), 
     windowing(true), 
-    msgCredit(0xFFFFFFFF), 
-    byteCredit(0xFFFFFFFF) {}
+    msgCredit(0), 
+    byteCredit(0) {}
 
 bool Session::ConsumerImpl::deliver(QueuedMessage& msg)
 {

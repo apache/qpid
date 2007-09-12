@@ -126,7 +126,7 @@ bool Queue::acquire(const QueuedMessage& msg) {
 void Queue::requestDispatch(Consumer* c, bool sync){
     if (!c || c->preAcquires()) {
         if (sync) {
-            serializer.dispatch();
+            dispatch();
         } else {
             serializer.execute(dispatchCallback);
         }
