@@ -107,8 +107,6 @@ RecoverableQueue::shared_ptr RecoveryManagerImpl::recoverQueue(framing::Buffer& 
 
 RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buffer& buffer)
 {
-    buffer.record();
-    //peek at type:
     Message::shared_ptr message(new Message());
     message->decodeHeader(buffer);
     return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message, stagingThreshold));    

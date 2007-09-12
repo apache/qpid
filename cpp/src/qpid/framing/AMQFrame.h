@@ -37,14 +37,14 @@ namespace framing {
 class AMQFrame : public AMQDataBlock
 {
   public:
-    AMQFrame() : channel(0) {}
+    AMQFrame() : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(0) {}
 
     /** Construct a frame with a copy of b */
-    AMQFrame(ChannelId c, const AMQBody* b) : channel(c) {
+    AMQFrame(ChannelId c, const AMQBody* b) : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(c) {
         setBody(*b);
     }
     
-    AMQFrame(ChannelId c, const AMQBody& b) : channel(c) {
+    AMQFrame(ChannelId c, const AMQBody& b) : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(c) {
         setBody(b);
     }
     
@@ -97,6 +97,11 @@ class AMQFrame : public AMQDataBlock
 
     void decodeBody(Buffer& buffer, uint32_t size, uint8_t type);
 
+    bool bof;
+    bool eof;
+    bool bos;
+    bool eos;
+    uint8_t subchannel;
     uint16_t channel;
     Variant body;
 };
