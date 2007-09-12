@@ -71,7 +71,7 @@ class Channel : private sys::Runnable
     mutable sys::Mutex lock;
     sys::Thread dispatcher;
 
-    uint16_t prefetch;
+    uint32_t prefetch;
     const bool transactional;
     framing::ProtocolVersion version;
 
@@ -88,7 +88,6 @@ class Channel : private sys::Runnable
 
     void stop();
 
-    void setQos();
     void open(const Session& session);
     void closeInternal();
     void join();
@@ -110,7 +109,7 @@ class Channel : private sys::Runnable
      * messages the channel is willing to have sent to it
      * asynchronously
      */
-    Channel(bool transactional = false, u_int16_t prefetch = 500);
+    Channel(bool transactional = false, u_int16_t prefetch = 0);
      
     ~Channel();    
 
@@ -204,9 +203,9 @@ class Channel : private sys::Runnable
     /**
      * Change the prefetch in use.
      */
-    void setPrefetch(uint16_t prefetch);
+    void setPrefetch(uint32_t prefetch);
 
-    uint16_t getPrefetch() { return prefetch; }
+    uint32_t getPrefetch() { return prefetch; }
 
     /**
      * Start message dispatching on a new thread

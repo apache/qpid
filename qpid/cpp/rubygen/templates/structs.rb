@@ -43,7 +43,7 @@ class StructGen < CppGen
   end
 
   def printable_form(f)
-    if (f.cpptype.name == "u_int8_t")
+    if (f.cpptype.name == "uint8_t")
       return "(int) " + f.cppname
     else
       return f.cppname

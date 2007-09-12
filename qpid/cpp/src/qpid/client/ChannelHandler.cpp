@@ -36,7 +36,9 @@ void ChannelHandler::incoming(AMQFrame& frame)
         ChannelCloseBody* closeBody=
             dynamic_cast<ChannelCloseBody*>(body->getMethod());
         if (closeBody) {
-            setState(CLOSED);
+            setState(CLOSED_BY_PEER);
+            code = closeBody->getReplyCode();
+            text = closeBody->getReplyText();
             if (onClose) {
                 onClose(closeBody->getReplyCode(), closeBody->getReplyText());
             }
@@ -65,8 +67,10 @@ void ChannelHandler::outgoing(AMQFrame& frame)
     if (getState() == OPEN) {
         frame.setChannel(id);
         out(frame);
-    } else {
+    } else if (getState() == CLOSED) {
         throw Exception("Channel not open");
+    } else if (getState() == CLOSED_BY_PEER) {
+        throw ChannelException(code, text);
     }
 }
 
@@ -80,7 +84,7 @@ void ChannelHandler::open(uint16_t _id)
 
     std::set<int> states;
     states.insert(OPEN);
-    states.insert(CLOSED);
+    states.insert(CLOSED_BY_PEER);
     waitFor(states);
     if (getState() != OPEN) {
         throw Exception("Failed to open channel.");

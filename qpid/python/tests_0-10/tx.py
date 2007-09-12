@@ -41,13 +41,13 @@ class TxTests(TestBase):
         channel = self.channel
         channel.tx_select()
 
-        channel.message_subscribe(queue="tx-commit-a", destination="qa", confirm_mode=1)
+        self.subscribe(channel, queue="tx-commit-a", destination="qa", confirm_mode=1)
         queue_a = self.client.queue("qa")
 
-        channel.message_subscribe(queue="tx-commit-b", destination="qb", confirm_mode=1)
+        self.subscribe(channel, queue="tx-commit-b", destination="qb", confirm_mode=1)
         queue_b = self.client.queue("qb")
 
-        channel.message_subscribe(queue="tx-commit-c", destination="qc", confirm_mode=1)
+        self.subscribe(channel, queue="tx-commit-c", destination="qc", confirm_mode=1)
         queue_c = self.client.queue("qc")
 
         #check results
@@ -176,7 +176,7 @@ class TxTests(TestBase):
         channel.tx_select()
 
         #consume and ack messages
-        channel.message_subscribe(queue=name_a, destination="sub_a", confirm_mode=1)
+        self.subscribe(channel, queue=name_a, destination="sub_a", confirm_mode=1)
         queue_a = self.client.queue("sub_a")
         for i in range(1, 5):
             msg = queue_a.get(timeout=1)
@@ -184,13 +184,13 @@ class TxTests(TestBase):
 
         msg.complete()
 
-        channel.message_subscribe(queue=name_b, destination="sub_b", confirm_mode=1)
+        self.subscribe(channel, queue=name_b, destination="sub_b", confirm_mode=1)
         queue_b = self.client.queue("sub_b")
         msg = queue_b.get(timeout=1)
         self.assertEqual("Message 6", msg.content.body)
         msg.complete()
 
-        sub_c = channel.message_subscribe(queue=name_c, destination="sub_c", confirm_mode=1)
+        sub_c = self.subscribe(channel, queue=name_c, destination="sub_c", confirm_mode=1)
         queue_c = self.client.queue("sub_c")
         msg = queue_c.get(timeout=1)
         self.assertEqual("Message 7", msg.content.body)

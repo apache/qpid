@@ -366,7 +366,7 @@ class DtxTests(TestBase):
 
         #check the second message is available, but not the first
         self.assertMessageCount(1, "tx-queue")
-        channel.message_subscribe(queue="tx-queue", destination="results", confirm_mode=1)
+        self.subscribe(channel, queue="tx-queue", destination="results", confirm_mode=1)
         msg = self.client.queue("results").get(timeout=1)
         self.assertEqual("two", msg.content['message_id'])
         channel.message_cancel(destination="results")
@@ -602,5 +602,7 @@ class DtxTests(TestBase):
 
     def assertMessageId(self, expected, queue):
         self.channel.message_subscribe(queue=queue, destination="results")
+        self.channel.message_flow(destination="results", unit=0, value=1)
+        self.channel.message_flow(destination="results", unit=1, value=0xFFFFFFFF)
         self.assertEqual(expected, self.client.queue("results").get(timeout=1).content['message_id'])
         self.channel.message_cancel(destination="results")
