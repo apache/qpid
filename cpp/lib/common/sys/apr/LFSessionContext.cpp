@@ -158,7 +158,7 @@ void LFSessionContext::close(){
 void LFSessionContext::handleClose(){
     handler->closed();
     APRPool::free(fd.p);
-    std::cout << "Session closed [" << &socket << "]" << std::endl;
+    if (debug) std::cout << "Session closed [" << &socket << "]" << std::endl;
     delete handler;
     delete this;
 }
