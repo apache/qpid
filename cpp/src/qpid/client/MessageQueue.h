@@ -18,44 +18,35 @@
  * under the License.
  *
  */
-#ifndef _ChannelHandler_
-#define _ChannelHandler_
 
-#include "StateManager.h"
-#include "ChainableFrameHandler.h"
-#include "qpid/framing/amqp_framing.h"
+#ifndef _MessageQueue_
+#define _MessageQueue_
+#include <iostream>
+#include "BlockingQueue.h"
+#include "MessageListener.h"
 
 namespace qpid {
 namespace client {
 
-class ChannelHandler : private StateManager, public ChainableFrameHandler
-{
-    enum STATES {OPENING, OPEN, CLOSING, CLOSED, CLOSED_BY_PEER};
-    framing::ProtocolVersion version;
-    uint16_t id;
-    
-    uint16_t code;
-    std::string text;
+    /**
+     * A MessageListener implementation that simply queues up
+     * messages.
+     *
+     * \ingroup clientapi
+     */
+    class MessageQueue : public MessageListener, public BlockingQueue<Message>
+    {
+        std::queue<Message> messages;
+    public:
+        void received(Message& msg)
+        {
+            std::cout << "Adding message to queue: " << msg.getData() << std::endl;
+            push(msg);
+        }
+    };
 
-    void handleMethod(framing::AMQMethodBody* method);
+}
+}
 
-    void close(uint16_t code, const std::string& message, uint16_t classId, uint16_t methodId);
-
-
-public:
-    typedef boost::function<void(uint16_t, const std::string&)> CloseListener;    
-
-    ChannelHandler();
-
-    void incoming(framing::AMQFrame& frame);
-    void outgoing(framing::AMQFrame& frame);
-
-    void open(uint16_t id);
-    void close();
-
-    CloseListener onClose;
-};
-
-}}
 
 #endif

@@ -68,7 +68,7 @@ void ExecutionHandler::handle(AMQFrame& frame)
             }
             arriving->append(frame);
             if (arriving->isComplete()) {
-                received.push(arriving);
+                demux.handle(arriving);
                 arriving.reset();
             }
         } else {

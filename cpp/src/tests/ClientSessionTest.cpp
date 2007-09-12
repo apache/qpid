@@ -65,6 +65,8 @@ class ClientSessionTest : public CppUnit::TestCase
         session.queueDeclare_(queue=queueName, exclusive=true, autoDelete=true);
         //subcribe to the queue with confirm_mode = 1:
         session.messageSubscribe_(queue=queueName, destination=dest, acquireMode=1);
+        session.messageFlow((destination=dest, unit=0, value=1));//messages
+        session.messageFlow((destination=dest, unit=1, value=0xFFFFFFFF));//bytes
         //publish a message:
         TransferContent _content(data);
         _content.getDeliveryProperties().setRoutingKey("my-queue");

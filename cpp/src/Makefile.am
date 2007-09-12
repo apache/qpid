@@ -212,6 +212,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/ClientQueue.cpp			\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
+  qpid/client/Demux.cpp				\
   qpid/client/MessageListener.cpp		\
   qpid/client/Correlator.cpp			\
   qpid/client/CompletionTracker.cpp		\
@@ -297,7 +298,9 @@ nobase_include_HEADERS = \
   qpid/client/ConnectionImpl.h \
   qpid/client/Connector.h \
   qpid/client/Completion.h \
+  qpid/client/Demux.h \
   qpid/client/MessageListener.h \
+  qpid/client/MessageQueue.h \
   qpid/client/BlockingQueue.h \
   qpid/client/Correlator.h \
   qpid/client/CompletionTracker.h \

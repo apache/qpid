@@ -27,10 +27,10 @@
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
 #include "qpid/framing/SequenceNumber.h"
-#include "BlockingQueue.h"
 #include "ChainableFrameHandler.h"
 #include "CompletionTracker.h"
 #include "Correlator.h"
+#include "Demux.h"
 #include "Execution.h"
 
 namespace qpid {
@@ -46,7 +46,7 @@ class ExecutionHandler :
     framing::FrameSet::shared_ptr arriving;
     Correlator correlation;
     CompletionTracker completion;
-    BlockingQueue<framing::FrameSet::shared_ptr> received; 
+    Demux demux;
     framing::ProtocolVersion version;
     uint64_t maxFrameSize;
     framing::AccumulatedAck completionStatus;
@@ -79,7 +79,7 @@ public:
     void setMaxFrameSize(uint64_t size) { maxFrameSize = size; }
     Correlator& getCorrelator() { return correlation; }
     CompletionTracker& getCompletionTracker() { return completion; }
-    BlockingQueue<framing::FrameSet::shared_ptr>& getReceived() { return received; }
+    Demux& getDemux() { return demux; }
 };
 
 }}

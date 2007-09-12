@@ -50,7 +50,7 @@ ExecutionHandler& SessionCore::getExecution()
 
 FrameSet::shared_ptr SessionCore::get()
 {
-    return l3.getReceived().pop();
+    return l3.getDemux().getDefault().pop();
 }
 
 void SessionCore::setSync(bool s)
@@ -71,7 +71,7 @@ void SessionCore::close()
 
 void SessionCore::stop()
 {
-    l3.getReceived().close();
+    l3.getDemux().close();
     l3.getCompletionTracker().close();
 }
 
@@ -98,6 +98,8 @@ void SessionCore::checkClosed()
 
 Future SessionCore::send(const AMQBody& command)
 { 
+    checkClosed();
+
     Future f;
     //any result/response listeners must be set before the command is sent
     if (command.getMethod()->resultExpected()) {
@@ -120,6 +122,7 @@ Future SessionCore::send(const AMQBody& command)
 
 Future SessionCore::send(const AMQBody& command, const MethodContent& content)
 {
+    checkClosed();
     //content bearing methods don't currently have responses or
     //results, if that changes should follow procedure for the other
     //send method impl:

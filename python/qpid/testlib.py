@@ -259,7 +259,16 @@ class TestBase(unittest.TestCase):
             else: self.uniqueTag += 1
             consumer_tag = "tag" + str(self.uniqueTag)
             self.channel.message_subscribe(queue=queueName, destination=consumer_tag)
+            self.channel.message_flow(destination=consumer_tag, unit=0, value=0xFFFFFFFF)
+            self.channel.message_flow(destination=consumer_tag, unit=1, value=0xFFFFFFFF)
             return self.client.queue(consumer_tag)
+
+    def subscribe(self, channel=None, **keys):
+        channel = channel or self.channel
+        consumer_tag = keys["destination"]
+        channel.message_subscribe(**keys)
+        channel.message_flow(destination=consumer_tag, unit=0, value=0xFFFFFFFF)
+        channel.message_flow(destination=consumer_tag, unit=1, value=0xFFFFFFFF)
 
     def assertEmpty(self, queue):
         """Assert that the queue is empty"""

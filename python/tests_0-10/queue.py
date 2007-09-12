@@ -49,7 +49,7 @@ class QueueTests(TestBase):
 
         #send a further message and consume it, ensuring that the other messages are really gone
         channel.message_transfer(destination="test-exchange", content=Content("four", properties={'routing_key':"key"}))
-        channel.message_subscribe(queue="test-queue", destination="tag")
+        self.subscribe(queue="test-queue", destination="tag")
         queue = self.client.queue("tag")
         msg = queue.get(timeout=1)
         self.assertEqual("four", msg.content.body)
@@ -169,8 +169,8 @@ class QueueTests(TestBase):
         channel.queue_declare(queue="queue-1", exclusive="True")
         channel.queue_declare(queue="queue-2", exclusive="True")
 
-        channel.message_subscribe(queue="queue-1", destination="queue-1")
-        channel.message_subscribe(queue="queue-2", destination="queue-2")
+        self.subscribe(queue="queue-1", destination="queue-1")
+        self.subscribe(queue="queue-2", destination="queue-2")
 
         queue1 = self.client.queue("queue-1")
         queue2 = self.client.queue("queue-2")
@@ -257,7 +257,7 @@ class QueueTests(TestBase):
         channel.channel_open()
 
         #empty queue:
-        channel.message_subscribe(destination="consumer_tag", queue="delete-me-2")
+        self.subscribe(channel, destination="consumer_tag", queue="delete-me-2")
         queue = self.client.queue("consumer_tag")
         msg = queue.get(timeout=1)
         self.assertEqual("message", msg.content.body)
@@ -282,7 +282,7 @@ class QueueTests(TestBase):
         #create a queue and register a consumer:
         channel.queue_declare(queue="delete-me-3")
         channel.queue_declare(queue="delete-me-3", passive="True")
-        channel.message_subscribe(destination="consumer_tag", queue="delete-me-3")
+        self.subscribe(destination="consumer_tag", queue="delete-me-3")
 
         #need new channel now:    
         channel2 = self.client.channel(2)
