@@ -747,7 +747,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             Subscription s = _subscriptions.nextSubscriber(msg);
 
-            if (s == null) //no-one can take the message right now.
+            if (s == null || hasQueuedMessages()) //no-one can take the message right now or we're queueing
             {
                 if (debugEnabled)
                 {
@@ -795,6 +795,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             }
             else
             {
+
+                if (_messages.size() > 0)
+                {
+                    _log.error("Direct delivery with queued msgs:" + _messages.size());
+                }
+
                 //release lock now
                 _lock.unlock();
                 synchronized (s.getSendLock())
