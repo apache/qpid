@@ -62,7 +62,7 @@ public:
         }
     }
 
-    void push(T t)
+    void push(const T& t)
     {
         sys::Monitor::ScopedLock l(lock);
         bool wasEmpty = queue.empty();
@@ -77,6 +77,12 @@ public:
         sys::Monitor::ScopedLock l(lock);
         closed = true;
         lock.notifyAll();
+    }
+    
+    bool empty()
+    {
+        sys::Monitor::ScopedLock l(lock);
+        return queue.empty();
     }
 };
 

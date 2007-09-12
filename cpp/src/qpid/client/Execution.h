@@ -22,6 +22,7 @@
 #define _Execution_
 
 #include "qpid/framing/SequenceNumber.h"
+#include "Demux.h"
 
 namespace qpid {
 namespace client {
@@ -33,6 +34,7 @@ public:
     virtual void sendSyncRequest() = 0;
     virtual void sendFlushRequest() = 0;
     virtual void completed(const framing::SequenceNumber& id, bool cumulative, bool send) = 0;
+    virtual Demux& getDemux() = 0;
 };
 
 }}

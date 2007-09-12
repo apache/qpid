@@ -69,6 +69,8 @@ class ExampleTest (TestBase):
         # field that is filled if the reply includes content. In this case the
         # interesting field is the consumer_tag.
         channel.message_subscribe(queue="test-queue", destination="consumer_tag")
+        channel.message_flow(destination="consumer_tag", unit=0, value=0xFFFFFFFF)
+        channel.message_flow(destination="consumer_tag", unit=1, value=0xFFFFFFFF)
 
         # We can use the Client.queue(...) method to access the queue
         # corresponding to our consumer_tag.
