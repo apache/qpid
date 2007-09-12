@@ -92,23 +92,44 @@ class Connection:
 
   def write(self, frame):
     c = self.codec
+    c.encode_octet(0x0f) # TODO: currently fixed at ver=0, B=E=b=e=1
     c.encode_octet(self.spec.constants.byname[frame.type].id)
-    c.encode_short(frame.channel)
     body = StringIO()
     enc = codec.Codec(body, self.spec)
     frame.encode(enc)
     enc.flush()
-    c.encode_longstr(body.getvalue())
+    frame_size = len(body.getvalue()) + 12 # TODO: Magic number (frame header size)
+    c.encode_short(frame_size)
+    c.encode_octet(0) # Reserved
+    c.encode_octet(frame.subchannel & 0x0f)
+    c.encode_short(frame.channel)
+    c.encode_long(0) # Reserved
+    c.write(body.getvalue())
     c.encode_octet(self.FRAME_END)
 
   def read(self):
     c = self.codec
+    flags = c.decode_octet() # TODO: currently ignoring flags
+    framing_version = (flags & 0xc0) >> 6
+    if framing_version != 0:
+      raise "frame error: unknown framing version"
     type = self.spec.constants.byid[c.decode_octet()].name
+    frame_size = c.decode_short()
+    if frame_size < 12: # TODO: Magic number (frame header size)
+      raise "frame error: frame size too small"
+    reserved1 = c.decode_octet()
+    field = c.decode_octet()
+    subchannel = field & 0x0f
     channel = c.decode_short()
-    body = c.decode_longstr()
+    reserved2 = c.decode_long() # TODO: reserved maybe need to ensure 0
+    if (flags & 0x30) != 0 or reserved1 != 0 or (field & 0xf0) != 0:
+      raise "frame error: reserved bits not all zero"
+    body_size = frame_size - 12 # TODO: Magic number (frame header size)
+    body = c.read(body_size)
     dec = codec.Codec(StringIO(body), self.spec)
     frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
     frame.channel = channel
+    frame.subchannel = subchannel
     end = c.decode_octet()
     if end != self.FRAME_END:
       garbage = ""
@@ -145,6 +166,7 @@ class Frame:
 
   def init(self, args, kwargs):
     self.channel = kwargs.pop("channel", 0)
+    self.subchannel = kwargs.pop("subchannel", 0)
 
   def encode(self, enc): abstract
 

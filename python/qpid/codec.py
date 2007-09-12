@@ -53,7 +53,7 @@ class Codec:
 
   def read(self, n):
     """
-    reads in 'n' bytes from the stream. Can raise EFO exception
+    reads in 'n' bytes from the stream. Can raise EOF exception
     """
     data = self.stream.read(n)
     if n > 0 and len(data) == 0:
