@@ -77,7 +77,9 @@ class Connection:
     self.codec = codec.Codec(io, spec)
     self.spec = spec
     self.FRAME_END = self.spec.constants.byname["frame_end"].id
-
+    self.write = getattr(self, "write_%s_%s" % (self.spec.major, self.spec.minor))
+    self.read = getattr(self, "read_%s_%s" % (self.spec.major, self.spec.minor))
+    
   def flush(self):
     self.codec.flush()
 
@@ -89,8 +91,36 @@ class Connection:
 
   def tini(self):
     self.codec.unpack(Connection.INIT)
+  
+  def write_8_0(self, frame):
+    c = self.codec
+    c.encode_octet(self.spec.constants.byname[frame.type].id)
+    c.encode_short(frame.channel)
+    body = StringIO()
+    enc = codec.Codec(body, self.spec)
+    frame.encode(enc)
+    enc.flush()
+    c.encode_longstr(body.getvalue())
+    c.encode_octet(self.FRAME_END)
 
-  def write(self, frame):
+  def read_8_0(self):
+    c = self.codec
+    type = self.spec.constants.byid[c.decode_octet()].name
+    channel = c.decode_short()
+    body = c.decode_longstr()
+    dec = codec.Codec(StringIO(body), self.spec)
+    frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
+    frame.channel = channel
+    end = c.decode_octet()
+    if end != self.FRAME_END:
+      garbage = ""
+      while end != self.FRAME_END:
+        garbage += chr(end)
+        end = c.decode_octet()
+      raise "frame error: expected %r, got %r" % (self.FRAME_END, garbage)
+    return frame
+
+  def write_0_10(self, frame):
     c = self.codec
     c.encode_octet(0x0f) # TODO: currently fixed at ver=0, B=E=b=e=1
     c.encode_octet(self.spec.constants.byname[frame.type].id)
@@ -107,7 +137,7 @@ class Connection:
     c.write(body.getvalue())
     c.encode_octet(self.FRAME_END)
 
-  def read(self):
+  def read_0_10(self):
     c = self.codec
     flags = c.decode_octet() # TODO: currently ignoring flags
     framing_version = (flags & 0xc0) >> 6
