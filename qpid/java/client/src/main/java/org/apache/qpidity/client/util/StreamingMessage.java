@@ -5,8 +5,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-import org.apache.qpidity.DeliveryProperties;
-import org.apache.qpidity.MessageProperties;
+import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageProperties;
 import org.apache.qpidity.api.Message;
 
 public class StreamingMessage extends ReadOnlyMessage implements Message

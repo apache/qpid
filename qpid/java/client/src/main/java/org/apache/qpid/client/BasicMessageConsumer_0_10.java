@@ -28,7 +28,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.Struct;
+import org.apache.qpidity.transport.Struct;
 
 import javax.jms.JMSException;
 import java.io.IOException;

@@ -26,7 +26,7 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpidity.jms.ExceptionHelper;
 import org.apache.qpidity.client.util.ByteBufferMessage;
-import org.apache.qpidity.ReplyTo;
+import org.apache.qpidity.transport.ReplyTo;
 
 import javax.jms.Message;
 import javax.jms.JMSException;

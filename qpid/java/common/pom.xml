@@ -6,9 +6,9 @@
     to you under the Apache License, Version 2.0 (the
     "License"); you may not use this file except in compliance
     with the License. You may obtain a copy of the License at
-    
+
     http://www.apache.org/licenses/LICENSE-2.0
-    
+
     Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -87,9 +87,11 @@
                                 <param>-Dpython.path=${basedir}/jython-lib.jar/Lib${path.separator}${mllib.dir}</param>
                                 <param>${basedir}/generate</param>
                                 <param>${generated.path}</param>
-                                <param>org.apache.qpidity</param>
+                                <param>org.apache.qpidity.transport</param>
                                 <param>${specs.dir}/amqp.0-10-preview.xml</param>
                             </params>
+                            <source>${specs.dir}/amqp.0-10-preview.xml</source>
+                            <timestamp>${generated.path}/generated.timestamp</timestamp>
                         </configuration>
                         <goals>
                           <goal>jython</goal>
@@ -97,8 +99,8 @@
                     </execution>
                 </executions>
             </plugin>
-            
-            <!-- Generates message selector grammar --> 
+
+            <!-- Generates message selector grammar -->
               <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>javacc-maven-plugin</artifactId>
@@ -145,13 +147,13 @@
 
                 </executions>
             </plugin>
-            
+
         </plugins>
     </build>
 
     <dependencies>
 
-        <dependency>  
+        <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
         </dependency>
@@ -166,14 +168,14 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.4.0</version> 
+            <version>1.4.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.4.0</version>
-            <scope>test</scope> 
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -204,7 +206,7 @@
             <scope>provided</scope>
         </dependency>
 			<!--- This is used by filter -->
- 			<dependency>
+			<dependency>
             <groupId>org.apache.geronimo.specs</groupId>
             <artifactId>geronimo-jms_1.1_spec</artifactId>
         </dependency>

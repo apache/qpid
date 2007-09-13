@@ -27,8 +27,8 @@ import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpidity.client.Session;
 import org.apache.qpidity.client.util.MessagePartListenerAdapter;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.RangeSet;
-import org.apache.qpidity.Option;
+import org.apache.qpidity.transport.RangeSet;
+import org.apache.qpidity.transport.Option;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

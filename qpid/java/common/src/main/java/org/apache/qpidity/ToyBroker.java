@@ -20,7 +20,10 @@
  */
 package org.apache.qpidity;
 
-import static org.apache.qpidity.Functions.str;
+import org.apache.qpidity.transport.*;
+import org.apache.qpidity.transport.network.mina.MinaHandler;
+
+import static org.apache.qpidity.transport.util.Functions.str;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -44,10 +47,10 @@ class ToyBroker extends SessionDelegate
     private ToyExchange exchange;
     private MessageTransfer xfr = null;
     private DeliveryProperties props = null;
-    private Struct[] headers = null;
-    private List<Frame> frames = null;
+    private Header header = null;
+    private List<Data> body = null;
     private Map<String,Consumer> consumers = new ConcurrentHashMap<String,Consumer>();
-    
+
     public ToyBroker(ToyExchange exchange)
     {
         this.exchange = exchange;
@@ -58,7 +61,7 @@ class ToyBroker extends SessionDelegate
         exchange.createQueue(qd.getQueue());
         System.out.println("\n==================> declared queue: " + qd.getQueue() + "\n");
     }
-    
+
     @Override public void queueBind(Session ssn, QueueBind qb)
     {
         exchange.bindQueue(qb.getExchange(), qb.getRoutingKey(),qb.getQueue());
@@ -70,22 +73,22 @@ class ToyBroker extends SessionDelegate
         QueueQueryResult result = new QueueQueryResult().queue(qq.getQueue());
         ssn.executionResult(qq.getId(), result);
     }
-    
+
     @Override public void messageSubscribe(Session ssn, MessageSubscribe ms)
     {
         Consumer c = new Consumer();
         c._queueName = ms.getQueue();
         consumers.put(ms.getDestination(),c);
-        System.out.println("\n==================> message subscribe : " + ms.getDestination() + " queue: " + ms.getQueue()  + "\n");              
-    }   
-    
+        System.out.println("\n==================> message subscribe : " + ms.getDestination() + " queue: " + ms.getQueue()  + "\n");
+    }
+
     @Override public void messageFlow(Session ssn,MessageFlow struct)
     {
         Consumer c = consumers.get(struct.getDestination());
         c._credit = struct.getValue();
         System.out.println("\n==================> message flow : " + struct.getDestination() + " credit: " + struct.getValue()  + "\n");
     }
-    
+
     @Override public void messageFlush(Session ssn,MessageFlush struct)
     {
         System.out.println("\n==================> message flush for consumer : " + struct.getDestination() + "\n");
@@ -95,47 +98,44 @@ class ToyBroker extends SessionDelegate
     @Override public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
         this.xfr = xfr;
-        frames = new ArrayList<Frame>();
+        body = new ArrayList<Data>();
         System.out.println("received transfer " + xfr.getDestination());
     }
 
-    public void headers(Session ssn, Struct ... headers)
+    @Override public void header(Session ssn, Header header)
     {
-        if (xfr == null || frames == null)
+        if (xfr == null || body == null)
         {
             ssn.connectionClose(503, "no method segment", 0, 0);
-            // XXX: close at our end
+            ssn.close();
             return;
         }
 
-        for (Struct hdr : headers)
+        props = header.get(DeliveryProperties.class);
+        if (props != null)
         {
-            if (hdr instanceof DeliveryProperties)
-            {
-                props = (DeliveryProperties) hdr;
-                System.out.println("received headers routing_key " + props.getRoutingKey());
-            }
+            System.out.println("received headers routing_key " + props.getRoutingKey());
         }
-        
-        this.headers = headers;
+
+        this.header = header;
     }
 
-    public void data(Session ssn, Frame frame)
+    @Override public void data(Session ssn, Data data)
     {
-        if (xfr == null || frames == null)
+        if (xfr == null || body == null)
         {
             ssn.connectionClose(503, "no method segment", 0, 0);
-            // XXX: close at our end
+            ssn.close();
             return;
         }
 
-        frames.add(frame);
+        body.add(data);
 
-        if (frame.isLastSegment() && frame.isLastFrame())
+        if (data.isLast())
         {
             String dest = xfr.getDestination();
-            Message m = new Message(headers, frames);
-            
+            Message m = new Message(header, body);
+
             if (exchange.route(dest,props.getRoutingKey(),m))
             {
                 System.out.println("queued " + m);
@@ -143,12 +143,12 @@ class ToyBroker extends SessionDelegate
             }
             else
             {
-                
+
                 reject(ssn);
             }
             ssn.processed(xfr);
             xfr = null;
-            frames = null;
+            body = null;
         }
     }
 
@@ -165,22 +165,22 @@ class ToyBroker extends SessionDelegate
             ssn.messageReject(ranges, 0, "no such destination");
         }
     }
-    
+
     private void transferMessageToPeer(Session ssn,String dest, Message m)
     {
         System.out.println("\n==================> Transfering message to: " +dest + "\n");
         ssn.messageTransfer(dest, (short)0, (short)0);
-        ssn.headers(m.headers);
-        for (Frame f : m.frames)
+        ssn.header(m.header);
+        for (Data d : m.body)
         {
-            for (ByteBuffer b : f)
+            for (ByteBuffer b : d.getFragments())
             {
                 ssn.data(b);
             }
         }
         ssn.endData();
     }
-    
+
     private void dispatchMessages(Session ssn)
     {
         for (String dest: consumers.keySet())
@@ -188,8 +188,8 @@ class ToyBroker extends SessionDelegate
             checkAndSendMessagesToConsumer(ssn,dest);
         }
     }
-    
-    private void checkAndSendMessagesToConsumer(Session ssn,String dest)    
+
+    private void checkAndSendMessagesToConsumer(Session ssn,String dest)
     {
         Consumer c = consumers.get(dest);
         LinkedBlockingQueue<Message> queue = exchange.getQueue(c._queueName);
@@ -204,33 +204,33 @@ class ToyBroker extends SessionDelegate
 
     class Message
     {
-        private final Struct[] headers;
-        private final List<Frame> frames;
+        private final Header header;
+        private final List<Data> body;
 
-        public Message(Struct[] headers, List<Frame> frames)
+        public Message(Header header, List<Data> body)
         {
-            this.headers = headers;
-            this.frames = frames;
+            this.header = header;
+            this.body = body;
         }
 
         public String toString()
         {
             StringBuilder sb = new StringBuilder();
 
-            if (headers != null)
+            if (header != null)
             {
                 boolean first = true;
-                for (Struct hdr : headers)
+                for (Struct st : header.getStructs())
                 {
                     if (first) { first = false; }
                     else { sb.append(" "); }
-                    sb.append(hdr);
+                    sb.append(st);
                 }
             }
 
-            for (Frame f : frames)
+            for (Data d : body)
             {
-                for (ByteBuffer b : f)
+                for (ByteBuffer b : d.getFragments())
                 {
                     sb.append(" | ");
                     sb.append(str(b));
@@ -241,7 +241,7 @@ class ToyBroker extends SessionDelegate
         }
 
     }
-    
+
     // ugly, but who cares :)
     // assumes unit is always no of messages, not bytes
     // assumes it's credit mode and not window
@@ -253,7 +253,7 @@ class ToyBroker extends SessionDelegate
 
     public static final void main(String[] args) throws IOException
     {
-        final ToyExchange exchange = new ToyExchange();        
+        final ToyExchange exchange = new ToyExchange();
         ConnectionDelegate delegate = new ConnectionDelegate()
         {
             public SessionDelegate getSessionDelegate()
@@ -261,11 +261,11 @@ class ToyBroker extends SessionDelegate
                 return new ToyBroker(exchange);
             }
         };
-        
+
         //hack
         delegate.setUsername("guest");
         delegate.setPassword("guest");
-        
+
         MinaHandler.accept("0.0.0.0", 5672, delegate);
     }
 

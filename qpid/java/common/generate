@@ -8,6 +8,7 @@ from cStringIO import StringIO
 out_dir=sys.argv[1]
 out_pkg = sys.argv[2]
 spec_file = sys.argv[3]
+
 spec = mllib.xml_parse(spec_file)
 
 class Output:
@@ -26,6 +27,8 @@ class Output:
     self.line("import org.apache.qpidity.codec.Decoder;")
     self.line("import org.apache.qpidity.codec.Encodable;")
     self.line("import org.apache.qpidity.codec.Encoder;")
+    self.line()
+    self.line("import org.apache.qpidity.transport.network.Frame;")
     self.line()
     self.line()
 
@@ -363,7 +366,7 @@ fct.line("}");
 fct.write()
 
 dlg = Output(out_dir, out_pkg, "Delegate")
-dlg.line("public abstract class Delegate<C> {")
+dlg.line("public abstract class Delegate<C> extends AbstractDelegate<C> {")
 for s in structs:
   dlg.line("    public void %s(C context, %s struct) {}" %
            (dromedary(s.name), s.name))
