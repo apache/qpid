@@ -27,6 +27,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 /**
  * @author Apache Software Foundation
@@ -60,7 +61,7 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     }
 
 
-    JMSStreamMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+    JMSStreamMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
                      AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         super(messageNbr, contentHeader, exchange, routingKey, data);

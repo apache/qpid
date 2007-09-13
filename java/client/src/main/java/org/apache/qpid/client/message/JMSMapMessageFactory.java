@@ -26,6 +26,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 public class JMSMapMessageFactory extends AbstractJMSMessageFactory
 {
@@ -36,8 +37,9 @@ public class JMSMapMessageFactory extends AbstractJMSMessageFactory
 
     protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data,
                                                AMQShortString exchange, AMQShortString routingKey, 
-                                               ContentHeaderBody contentHeader) throws AMQException
+                                               BasicContentHeaderProperties contentHeader) throws AMQException
     {
         return new JMSMapMessage(deliveryTag, contentHeader, exchange, routingKey, data);
+
     }
 }

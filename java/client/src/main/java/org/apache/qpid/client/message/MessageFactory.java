@@ -27,12 +27,19 @@ import javax.jms.JMSException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpidity.Struct;
 
 
 public interface MessageFactory
 {
     AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
                                      ContentHeaderBody contentHeader,
+                                     AMQShortString exchange, AMQShortString routingKey,
+                                     List bodies)
+        throws JMSException, AMQException;
+
+     AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered,
+                                     Struct[] contentHeader,
                                      AMQShortString exchange, AMQShortString routingKey,
                                      List bodies)
         throws JMSException, AMQException;
