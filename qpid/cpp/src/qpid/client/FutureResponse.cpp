@@ -35,7 +35,7 @@ AMQMethodBody* FutureResponse::getResponse(SessionCore& session)
     return response.get();
 }
 
-void FutureResponse::received(AMQMethodBody* r)
+void FutureResponse::received(const AMQMethodBody* r)
 {
     Monitor::ScopedLock l(lock);
     response = *r;

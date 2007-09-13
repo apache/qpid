@@ -144,7 +144,7 @@ void Message::sendContent(framing::FrameHandler& out, uint16_t channel, uint16_t
     if (isContentReleased()) {
         //load content from store in chunks of maxContentSize
         uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
-        uint64_t expectedSize(frames.getHeaders()->getContentLength());//TODO: how do we know how much data to load?
+        uint64_t expectedSize(frames.getHeaders()->getContentLength());
         for (uint64_t offset = 0; offset < expectedSize; offset += maxContentSize)
         {            
             uint64_t remaining = expectedSize - offset;
@@ -153,11 +153,22 @@ void Message::sendContent(framing::FrameHandler& out, uint16_t channel, uint16_t
 
             store->loadContent(*this, data, offset,
                                remaining > maxContentSize ? maxContentSize : remaining);
+            frame.setBof(false);
+            if (offset > 0) {
+                frame.setBos(false);
+            }
+            if (remaining) {
+                frame.setEos(false);
+                frame.setEof(false);
+            }
             out.handle(frame);
         }
 
     } else {
-        SendContent f(out, channel, maxFrameSize);
+        Count c;
+        frames.map_if(c, TypeFilter(CONTENT_BODY));
+
+        SendContent f(out, channel, maxFrameSize, c.getCount());
         frames.map_if(f, TypeFilter(CONTENT_BODY));
     }
 }

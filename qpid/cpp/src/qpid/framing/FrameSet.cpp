@@ -38,20 +38,13 @@ void FrameSet::append(AMQFrame& part)
 
 bool FrameSet::isComplete() const
 {
-    //TODO: should eventually use the 0-10 frame header flags when available
+    return !parts.empty() && parts.back().getEof();
+}
+
+bool FrameSet::isContentBearing() const
+{
     const AMQMethodBody* method = getMethod();
-    if (!method) {
-        return false;
-    } else if (method->isContentBearing()) {
-        const AMQHeaderBody* header = getHeaders();
-        if (header) {
-            return header->getContentLength() == getContentSize();
-        } else {
-            return false;
-        }
-    } else {
-        return true;        
-    }
+    return method && method->isContentBearing();
 }
 
 const AMQMethodBody* FrameSet::getMethod() const

@@ -126,6 +126,7 @@ bool Queue::acquire(const QueuedMessage& msg) {
 void Queue::requestDispatch(Consumer* c, bool sync){
     if (!c || c->preAcquires()) {
         if (sync) {
+	    Mutex::ScopedLock locker(messageLock);
             dispatch();
         } else {
             serializer.execute(dispatchCallback);
@@ -153,7 +154,9 @@ bool Queue::dispatch(QueuedMessage& msg){
         int start = next;
         while(c){
             next++;
-            if(c->deliver(msg)) return true;            
+            if(c->deliver(msg)) {
+                return true;            
+            }
             next = next % acquirers.size();
             c = next == start ? 0 : acquirers[next];            
         }

@@ -59,6 +59,7 @@ class ExecutionHandler :
 
     void sendCompletion();
 
+    framing::SequenceNumber send(const framing::AMQBody&, CompletionTracker::ResultListener, bool hasContent);
     void sendContent(const framing::MethodContent&);
 
 public:
