@@ -100,7 +100,7 @@ public class AMQSession_0_8 extends AMQSession
     AMQSession_0_8(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetchHigh,
                int defaultPrefetchLow)
     {
-        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefault08Registry(), defaultPrefetchHigh,
+        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh,
              defaultPrefetchLow);
     }
 

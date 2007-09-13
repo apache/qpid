@@ -112,7 +112,7 @@ public class AMQSession_0_10 extends AMQSession
                     int defaultPrefetchLow)
     {
 
-        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefault010Registry(),
+        this(con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(),
              defaultPrefetchHigh, defaultPrefetchLow);
     }
 
