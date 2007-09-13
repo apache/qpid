@@ -172,10 +172,11 @@ bool SemanticHandler::isOpen() const {
 DeliveryId SemanticHandler::deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token)
 {
     Mutex::ScopedLock l(outLock);
-    SequenceNumber copy(outgoing.hwm);
-    ++copy;
-    MessageDelivery::deliver(msg, *this, copy.getValue(), token, connection.getFrameMax());
-    return outgoing.hwm.getValue();
+    //SequenceNumber copy(outgoing.hwm);
+    //++copy;
+    MessageDelivery::deliver(msg, *this, ++outgoing.hwm, token, connection.getFrameMax());
+    return outgoing.hwm;
+    //return outgoing.hwm.getValue();
 }
 
 void SemanticHandler::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId tag)

@@ -114,6 +114,7 @@ int main(int argc, char** argv){
             channel.consume(control, "c1", &listener, AckMode(args.ackmode));
             cout << "topic_listener: Consuming." << endl;
             channel.run();
+            cout << "topic_listener: run returned, closing connection" << endl;
             connection.close();
             cout << "topic_listener: normal exit" << endl;
         }

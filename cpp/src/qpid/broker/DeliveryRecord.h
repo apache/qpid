@@ -45,11 +45,12 @@ class DeliveryRecord{
     const std::string consumerTag;
     const DeliveryId id;
     bool acquired;
+    const bool confirmed;
     const bool pull;
 
   public:
     DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const std::string consumerTag, 
-                   const DeliveryId id, bool acquired);
+                   const DeliveryId id, bool acquired, bool confirmed = false);
     DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId id);
             
     void dequeue(TransactionContext* ctxt = 0) const;

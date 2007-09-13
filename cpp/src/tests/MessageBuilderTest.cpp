@@ -126,6 +126,10 @@ class MessageBuilderTest : public CppUnit::TestCase
         AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
         AMQFrame header(0, AMQHeaderBody());
         AMQFrame content(0, AMQContentBody(data));
+        method.setEof(false);
+        header.setBof(false);
+        header.setEof(false);
+        content.setBof(false);
 
         header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(data.size());        
         header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);
@@ -156,6 +160,12 @@ class MessageBuilderTest : public CppUnit::TestCase
         AMQFrame header(0, AMQHeaderBody());
         AMQFrame content1(0, AMQContentBody(data1));
         AMQFrame content2(0, AMQContentBody(data2));
+        method.setEof(false);
+        header.setBof(false);
+        header.setEof(false);
+        content1.setBof(false);
+        content1.setEof(false);
+        content2.setBof(false);
 
         header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(data1.size() + data2.size());        
         header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);

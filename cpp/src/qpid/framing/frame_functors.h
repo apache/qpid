@@ -49,6 +49,15 @@ public:
     uint64_t getSize() { return size; }
 };
 
+class Count
+{
+    uint count;
+public:
+    Count() : count(0) {}
+    void operator()(const AMQFrame&) { count++; }
+    uint getCount() { return count; }
+};
+
 class EncodeFrame
 {
     Buffer& buffer;
