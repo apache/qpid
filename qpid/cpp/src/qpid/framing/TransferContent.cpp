@@ -63,7 +63,10 @@ DeliveryProperties& TransferContent::getDeliveryProperties()
 
 void TransferContent::populate(const FrameSet& frameset)
 {
-    header = *frameset.getHeaders();
+    const AMQHeaderBody* h = frameset.getHeaders();
+    if (h) {
+        header = *h;
+    }
     frameset.getContent(data);
 }
 

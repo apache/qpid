@@ -36,7 +36,7 @@ class FutureResponse : public FutureCompletion
     framing::MethodHolder response;
 public:
     framing::AMQMethodBody* getResponse(SessionCore& session);
-    void received(framing::AMQMethodBody* response);
+    void received(const framing::AMQMethodBody* response);
 };
 
 }}

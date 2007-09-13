@@ -74,6 +74,17 @@ class AMQFrame : public AMQDataBlock
     void encode(Buffer& buffer) const; 
     bool decode(Buffer& buffer); 
     uint32_t size() const;
+
+    bool getBof() const { return bof; }
+    void setBof(bool isBof) { bof = isBof; }
+    bool getEof() const { return eof; }
+    void setEof(bool isEof) { eof = isEof; }
+
+    bool getBos() const { return bos; }
+    void setBos(bool isBos) { bos = isBos; }
+    bool getEos() const { return eos; }
+    void setEos(bool isEos) { eos = isEos; }
+
     static uint32_t frameOverhead();
 
   private:

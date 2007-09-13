@@ -122,7 +122,13 @@ class Connection:
 
   def write_0_10(self, frame):
     c = self.codec
-    c.encode_octet(0x0f) # TODO: currently fixed at ver=0, B=E=b=e=1
+    flags = 0
+    if frame.bof: flags |= 0x08
+    if frame.eof: flags |= 0x04
+    if frame.bos: flags |= 0x02
+    if frame.eos: flags |= 0x01
+
+    c.encode_octet(flags) # TODO: currently fixed at ver=0, B=E=b=e=1
     c.encode_octet(self.spec.constants.byname[frame.type].id)
     body = StringIO()
     enc = codec.Codec(body, self.spec)
@@ -197,6 +203,10 @@ class Frame:
   def init(self, args, kwargs):
     self.channel = kwargs.pop("channel", 0)
     self.subchannel = kwargs.pop("subchannel", 0)
+    self.bos = True
+    self.eos = True
+    self.bof = True
+    self.eof = True
 
   def encode(self, enc): abstract
 
@@ -216,6 +226,7 @@ class Method(Frame):
     self.method = method
     self.method_type = method
     self.args = args
+    self.eof = not method.content
 
   def encode(self, c):
     c.encode_short(self.method.klass.id)
@@ -302,6 +313,8 @@ class Header(Frame):
     self.weight = weight
     self.size = size
     self.properties = properties
+    self.eof = size == 0
+    self.bof = False
 
   def __getitem__(self, name):
     return self.properties[name]
@@ -429,6 +442,8 @@ class Body(Frame):
 
   def __init__(self, content):
     self.content = content
+    self.eof = True
+    self.bof = False
 
   def encode(self, enc):
     enc.write(self.content)

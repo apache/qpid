@@ -21,31 +21,47 @@
 
 #include "SendContent.h"
 
-qpid::framing::SendContent::SendContent(FrameHandler& h, uint16_t c, uint16_t mfs) : handler(h), channel(c), maxFrameSize(mfs) {}
+qpid::framing::SendContent::SendContent(FrameHandler& h, uint16_t c, uint16_t mfs, uint efc) : handler(h), channel(c), 
+                                                                                              maxFrameSize(mfs),
+                                                                                               expectedFrameCount(efc), frameCount(0) {}
 
-void qpid::framing::SendContent::operator()(AMQFrame& f) const
+void qpid::framing::SendContent::operator()(const AMQFrame& f)
 {
+    bool first = frameCount == 0;
+    bool last = ++frameCount == expectedFrameCount;
+
     uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
     const AMQContentBody* body(f.castBody<AMQContentBody>()); 
     if (body->size() > maxContentSize) {
         uint32_t offset = 0;
         for (int chunk = body->size() / maxContentSize; chunk > 0; chunk--) {
-            sendFragment(*body, offset, maxContentSize);
+            sendFragment(*body, offset, maxContentSize, first && offset == 0, last && offset + maxContentSize == body->size());
             offset += maxContentSize;
         }
         uint32_t remainder = body->size() % maxContentSize;
         if (remainder) {
-            sendFragment(*body, offset, remainder);
+            sendFragment(*body, offset, remainder, first && offset == 0, last);
         }
     } else {
         AMQFrame copy(f);
+        setFlags(copy, first, last);
         copy.setChannel(channel);
         handler.handle(copy);
     }        
 }
 
-void qpid::framing::SendContent::sendFragment(const AMQContentBody& body, uint32_t offset, uint16_t size) const
+void qpid::framing::SendContent::sendFragment(const AMQContentBody& body, uint32_t offset, uint16_t size, bool first, bool last) const
 {
     AMQFrame fragment(channel, AMQContentBody(body.getData().substr(offset, size)));
+    setFlags(fragment, first, last);
     handler.handle(fragment);
 }
+
+void qpid::framing::SendContent::setFlags(AMQFrame& f, bool first, bool last) const
+{
+    f.setBof(false);
+    f.setBos(first);
+    f.setEof(last);
+    f.setEos(last);
+}
+

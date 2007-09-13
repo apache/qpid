@@ -36,9 +36,9 @@ namespace client {
 class Correlator
 {
 public:
-    typedef boost::function<void(framing::AMQMethodBody*)> Listener;
+    typedef boost::function<void(const framing::AMQMethodBody*)> Listener;
 
-    void receive(framing::AMQMethodBody*);
+    bool receive(const framing::AMQMethodBody*);
     void listen(Listener l);
 
 private:

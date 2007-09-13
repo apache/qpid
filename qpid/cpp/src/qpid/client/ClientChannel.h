@@ -63,8 +63,7 @@ class Channel : private sys::Runnable
     struct Consumer{
         MessageListener* listener;
         AckMode ackMode;
-        int count;
-        u_int64_t lastDeliveryTag;
+        uint32_t count;
     };
     typedef std::map<std::string, Consumer> ConsumerMap;
         
@@ -75,7 +74,7 @@ class Channel : private sys::Runnable
     const bool transactional;
     framing::ProtocolVersion version;
 
-    sys::Mutex stopLock;
+    mutable sys::Mutex stopLock;
     bool running;
 
     ConsumerMap consumers;

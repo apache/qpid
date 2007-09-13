@@ -58,7 +58,7 @@ void ChannelHandler::incoming(AMQFrame& frame)
         if (body->getMethod()) 
             handleMethod(body->getMethod());
         else
-            throw new ConnectionException(504, "Channel not open.");
+            throw ConnectionException(504, "Channel not open for content.");
     }
 }
 
@@ -68,7 +68,7 @@ void ChannelHandler::outgoing(AMQFrame& frame)
         frame.setChannel(id);
         out(frame);
     } else if (getState() == CLOSED) {
-        throw Exception("Channel not open");
+        throw Exception(QPID_MSG("Channel not open, can't send " << frame));
     } else if (getState() == CLOSED_BY_PEER) {
         throw ChannelException(code, text);
     }
@@ -120,7 +120,7 @@ void ChannelHandler::handleMethod(AMQMethodBody* method)
         } //else just ignore it
         break;
       case CLOSED:
-        throw ConnectionException(504, "Channel not opened.");
+        throw ConnectionException(504, "Channel is closed.");
       default:
         throw Exception("Unexpected state encountered in ChannelHandler!");
     }

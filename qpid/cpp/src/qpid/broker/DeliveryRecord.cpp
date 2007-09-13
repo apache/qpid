@@ -30,12 +30,15 @@ DeliveryRecord::DeliveryRecord(QueuedMessage& _msg,
                                Queue::shared_ptr _queue, 
                                const string _consumerTag, 
                                const DeliveryId _id,
-                               bool _acquired) : msg(_msg), 
-                                                                queue(_queue), 
-                                                                consumerTag(_consumerTag),
-                                                                id(_id),
-                                                                acquired(_acquired),
-                                                                pull(false){}
+                               bool _acquired, bool _confirmed) : msg(_msg), 
+                                                                  queue(_queue), 
+                                                                  consumerTag(_consumerTag),
+                                                                  id(_id),
+                                                                  acquired(_acquired),
+                                                                  confirmed(_confirmed),
+                                                                  pull(false)
+{
+}
 
 DeliveryRecord::DeliveryRecord(QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
@@ -44,11 +47,12 @@ DeliveryRecord::DeliveryRecord(QueuedMessage& _msg,
                                                                 consumerTag(""),
                                                                 id(_id),
                                                                 acquired(true),
+                                                                confirmed(false),
                                                                 pull(true){}
 
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
-    if (acquired) {
+    if (acquired && !confirmed) {
         queue->dequeue(ctxt, msg.payload);
     }
 }
@@ -70,24 +74,30 @@ bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const
 }
 
 void DeliveryRecord::redeliver(Session* const session) const{
-    if(pull){
-        //if message was originally sent as response to get, we must requeue it
-        requeue();
-    }else{
-        session->deliver(msg.payload, consumerTag, id);
+    if (!confirmed) {
+        if(pull){
+            //if message was originally sent as response to get, we must requeue it
+            requeue();
+        }else{
+            session->deliver(msg.payload, consumerTag, id);
+        }
     }
 }
 
 void DeliveryRecord::requeue() const
 {
-    msg.payload->redeliver();
-    queue->requeue(msg);
+    if (!confirmed) {
+        msg.payload->redeliver();
+        queue->requeue(msg);
+    }
 }
 
 void DeliveryRecord::release() 
 {
-    queue->requeue(msg);
-    acquired = false;
+    if (!confirmed) {
+        queue->requeue(msg);
+        acquired = false;
+    }
 }
 
 void DeliveryRecord::reject() 
