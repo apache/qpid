@@ -32,11 +32,12 @@ import org.apache.qpidity.Struct;
 
 import javax.jms.JMSException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * This is a 0.10 message consumer.
  */
-public class BasicMessageConsumer_0_10 extends BasicMessageConsumer
+public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], ByteBuffer>
         implements org.apache.qpidity.client.util.MessageListener
 {
     /**
@@ -108,5 +109,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer
         ((AMQSession_0_10) getSession()).addMessageTag(msg.getDeliveryTag());
         super.postDeliver(msg);
     }
-  
+
+
+    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<Struct[], ByteBuffer>  messageFrame) throws Exception
+    {
+        return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
+            messageFrame.isRedelivered(), messageFrame.getExchange(),
+            messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
+    }
 }

@@ -34,6 +34,7 @@ import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessage
 {
@@ -57,7 +58,7 @@ public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessag
         super(data); // this instanties a content header
     }
 
-    JMSBytesMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+    JMSBytesMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
                     AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         super(messageNbr, contentHeader, exchange, routingKey, data);

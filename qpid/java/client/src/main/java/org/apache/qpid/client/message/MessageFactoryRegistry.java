@@ -30,18 +30,29 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpidity.Struct;
+import org.apache.qpidity.DeliveryProperties;
+import org.apache.qpidity.MessageProperties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MessageFactoryRegistry
 {
+    /**
+     * This class logger
+     */
+    protected final Logger _logger = LoggerFactory.getLogger(getClass());
+
     private final Map<String, MessageFactory> _mimeStringToFactoryMap = new HashMap<String, MessageFactory>();
     private final Map<AMQShortString, MessageFactory> _mimeShortStringToFactoryMap =
-        new HashMap<AMQShortString, MessageFactory>();
+            new HashMap<AMQShortString, MessageFactory>();
 
     /**
      * Construct a new registry with the default message factories registered
+     *
      * @return a message factory registry
      */
-    public static MessageFactoryRegistry newDefault08Registry()
+    public static MessageFactoryRegistry newDefaultRegistry()
     {
         MessageFactoryRegistry mf = new MessageFactoryRegistry();
         mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
@@ -55,24 +66,6 @@ public class MessageFactoryRegistry
         return mf;
     }
 
-    /**
-     * Construct a new 010 registry with the default message factories registered
-     * @return a message factory registry
-     */
-    public static MessageFactoryRegistry newDefault010Registry()
-    {
-        // TODO use 0.10 classes 
-        MessageFactoryRegistry mf = new MessageFactoryRegistry();
-        mf.registerFactory(JMSMapMessage.MIME_TYPE, new JMSMapMessageFactory());
-        mf.registerFactory("text/plain", new JMSTextMessageFactory());
-        mf.registerFactory("text/xml", new JMSTextMessageFactory());
-        mf.registerFactory(JMSBytesMessage.MIME_TYPE, new JMSBytesMessageFactory());
-        mf.registerFactory(JMSObjectMessage.MIME_TYPE, new JMSObjectMessageFactory());
-        mf.registerFactory(JMSStreamMessage.MIME_TYPE, new JMSStreamMessageFactory());
-        mf.registerFactory(null, new JMSBytesMessageFactory());
-
-        return mf;
-    }
 
 
     public void registerFactory(String mimeType, MessageFactory mf)
@@ -96,25 +89,26 @@ public class MessageFactoryRegistry
     /**
      * Create a message. This looks up the MIME type from the content header and instantiates the appropriate
      * concrete message type.
-     * @param deliveryTag the AMQ message id
-     * @param redelivered true if redelivered
+     *
+     * @param deliveryTag   the AMQ message id
+     * @param redelivered   true if redelivered
      * @param contentHeader the content header that was received
-     * @param bodies a list of ContentBody instances
+     * @param bodies        a list of ContentBody instances
      * @return the message.
      * @throws AMQException
      * @throws JMSException
      */
     public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered, AMQShortString exchange,
                                             AMQShortString routingKey, ContentHeaderBody contentHeader, List bodies)
-                                     throws AMQException, JMSException
+            throws AMQException, JMSException
     {
         BasicContentHeaderProperties properties = (BasicContentHeaderProperties) contentHeader.properties;
 
         // Get the message content type. This may be null for pure AMQP messages, but will always be set for JMS over
         // AMQP. When the type is null, it can only be assumed that the message is a byte message.
         AMQShortString contentTypeShortString = properties.getContentType();
-        contentTypeShortString = (contentTypeShortString == null) ? new AMQShortString(JMSBytesMessage.MIME_TYPE)
-                                                                  : contentTypeShortString;
+        contentTypeShortString = (contentTypeShortString == null) ? new AMQShortString(
+                JMSBytesMessage.MIME_TYPE) : contentTypeShortString;
 
         MessageFactory mf = _mimeShortStringToFactoryMap.get(contentTypeShortString);
         if (mf == null)
@@ -126,6 +120,29 @@ public class MessageFactoryRegistry
             return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies);
         }
     }
+
+    public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered, AMQShortString exchange,
+                                            AMQShortString routingKey, Struct[] contentHeader, List bodies)
+            throws AMQException, JMSException
+    {
+        MessageProperties mprop = (MessageProperties) contentHeader[0];
+        String messageType =  mprop.getContentType();
+        if (messageType == null)
+        {
+            _logger.debug("no message type specified, building a byte message");
+            messageType = JMSBytesMessage.MIME_TYPE;
+        }
+        MessageFactory mf = _mimeShortStringToFactoryMap.get(new AMQShortString(messageType));
+        if (mf == null)
+        {
+            throw new AMQException(null, "Unsupport MIME type of " + messageType, null);
+        }
+        else
+        {
+            return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies);
+        }
+    }
+
 
     public AbstractJMSMessage createMessage(String mimeType) throws AMQException, JMSException
     {

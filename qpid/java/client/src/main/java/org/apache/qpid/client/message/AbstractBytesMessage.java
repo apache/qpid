@@ -72,11 +72,11 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
         _data.setAutoExpand(true);
     }
 
-    AbstractBytesMessage(long messageNbr, ContentHeaderBody contentHeader, AMQShortString exchange,
+    AbstractBytesMessage(long messageNbr, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
         AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         // TODO: this casting is ugly. Need to review whole ContentHeaderBody idea
-        super(messageNbr, (BasicContentHeaderProperties) contentHeader.properties, exchange, routingKey, data);
+        super(messageNbr, contentHeader, exchange, routingKey, data);
         getContentHeaderProperties().setContentType(getMimeTypeAsShortString());
     }
 

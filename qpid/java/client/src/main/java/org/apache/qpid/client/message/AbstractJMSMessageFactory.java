@@ -26,6 +26,10 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpidity.Struct;
+import org.apache.qpidity.MessageProperties;
+import org.apache.qpidity.DeliveryProperties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +44,12 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     private static final Logger _logger = LoggerFactory.getLogger(AbstractJMSMessageFactory.class);
 
     protected abstract AbstractJMSMessage createMessage(long messageNbr, ByteBuffer data, AMQShortString exchange,
-        AMQShortString routingKey, ContentHeaderBody contentHeader) throws AMQException;
+                                                        AMQShortString routingKey,
+                                                        BasicContentHeaderProperties contentHeader) throws AMQException;
 
-    protected AbstractJMSMessage createMessageWithBody(long messageNbr, ContentHeaderBody contentHeader,
-        AMQShortString exchange, AMQShortString routingKey, List bodies) throws AMQException
+    protected AbstractJMSMessage create08MessageWithBody(long messageNbr, ContentHeaderBody contentHeader,
+                                                         AMQShortString exchange, AMQShortString routingKey,
+                                                         List bodies) throws AMQException
     {
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
@@ -62,8 +68,8 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         {
             if (debug)
             {
-                _logger.debug("Fragmented message body (" + bodies.size() + " frames, bodySize=" + contentHeader.bodySize
-                    + ")");
+                _logger.debug("Fragmented message body (" + bodies
+                        .size() + " frames, bodySize=" + contentHeader.bodySize + ")");
             }
 
             data = ByteBuffer.allocate((int) contentHeader.bodySize); // XXX: Is cast a problem?
@@ -84,17 +90,71 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
         if (debug)
         {
-            _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining="
-                + data.remaining());
+            _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data
+                    .remaining());
         }
 
-        return createMessage(messageNbr, data, exchange, routingKey, contentHeader);
+        return createMessage(messageNbr, data, exchange, routingKey,
+                             (BasicContentHeaderProperties) contentHeader.properties);
     }
 
-    public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, ContentHeaderBody contentHeader,
-        AMQShortString exchange, AMQShortString routingKey, List bodies) throws JMSException, AMQException
+    protected AbstractJMSMessage create010MessageWithBody(long messageNbr, Struct[] contentHeader,
+                                                          AMQShortString exchange, AMQShortString routingKey,
+                                                          List bodies) throws AMQException
     {
-        final AbstractJMSMessage msg = createMessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
+        ByteBuffer data;
+        final boolean debug = _logger.isDebugEnabled();
+
+        // we optimise the non-fragmented case to avoid copying
+        if ((bodies != null))
+        {
+            data = ByteBuffer.wrap((java.nio.ByteBuffer) bodies.get(0));
+        }
+        else // bodies == null
+        {
+            data = ByteBuffer.allocate(0);
+        }
+
+        if (debug)
+        {
+            _logger.debug("Creating message from buffer with position=" + data.position() + " and remaining=" + data
+                    .remaining());
+        }
+        BasicContentHeaderProperties props = new BasicContentHeaderProperties();
+        // set the properties of this message
+        MessageProperties mprop = (MessageProperties) contentHeader[0];
+        DeliveryProperties devprop = (DeliveryProperties) contentHeader[1];
+        props.setContentType(mprop.getContentType());
+        props.setCorrelationId(mprop.getCorrelationId());
+        props.setEncoding(mprop.getContentEncoding());
+        props.setExpiration(devprop.getExpiration());
+        // todo update when fieldtable is used props.setHeaders(mprop.getApplicationHeaders());
+        props.setMessageId(mprop.getMessageId());
+        props.setPriority((byte) devprop.getPriority());
+        // todo we need to match the reply to props.setReplyTo(new AMQShortString(mprop.getReplyTo()));
+        props.setTimestamp(devprop.getTimestamp());
+        props.setType(mprop.getType());
+        props.setUserId(mprop.getUserId());
+        return createMessage(messageNbr, data, exchange, routingKey, props);
+    }
+
+
+    public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, ContentHeaderBody contentHeader,
+                                            AMQShortString exchange, AMQShortString routingKey, List bodies)
+            throws JMSException, AMQException
+    {
+        final AbstractJMSMessage msg = create08MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
+        msg.setJMSRedelivered(redelivered);
+
+        return msg;
+    }
+
+    public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, Struct[] contentHeader,
+                                            AMQShortString exchange, AMQShortString routingKey, List bodies)
+            throws JMSException, AMQException
+    {
+        final AbstractJMSMessage msg =
+                create010MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
         msg.setJMSRedelivered(redelivered);
 
         return msg;
