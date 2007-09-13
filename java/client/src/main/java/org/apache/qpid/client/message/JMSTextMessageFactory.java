@@ -38,9 +38,9 @@ public class JMSTextMessageFactory extends AbstractJMSMessageFactory
 
     protected AbstractJMSMessage createMessage(long deliveryTag, ByteBuffer data,
                                                AMQShortString exchange, AMQShortString routingKey, 
-                                               ContentHeaderBody contentHeader) throws AMQException
+                                               BasicContentHeaderProperties contentHeader) throws AMQException
     {
-        return new JMSTextMessage(deliveryTag, (BasicContentHeaderProperties) contentHeader.properties, 
+        return new JMSTextMessage(deliveryTag,  contentHeader, 
                                   exchange, routingKey, data);
     }
 }

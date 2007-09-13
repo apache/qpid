@@ -39,18 +39,18 @@ import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class BasicMessageConsumer<H,B> extends Closeable implements MessageConsumer
+public abstract class BasicMessageConsumer<H, B> extends Closeable implements MessageConsumer
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
-    /** The connection being used by this consumer */
+    /**
+     * The connection being used by this consumer
+     */
     private AMQConnection _connection;
 
     private String _messageSelector;
@@ -59,15 +59,23 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
 
     private AMQDestination _destination;
 
-    /** When true indicates that a blocking receive call is in progress */
+    /**
+     * When true indicates that a blocking receive call is in progress
+     */
     private final AtomicBoolean _receiving = new AtomicBoolean(false);
-    /** Holds an atomic reference to the listener installed. */
+    /**
+     * Holds an atomic reference to the listener installed.
+     */
     private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
-    /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
+    /**
+     * The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker
+     */
     protected AMQShortString _consumerTag;
 
-    /** We need to know the channel id when constructing frames */
+    /**
+     * We need to know the channel id when constructing frames
+     */
     protected int _channelId;
 
     /**
@@ -82,7 +90,9 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
 
     protected AMQProtocolHandler _protocolHandler;
 
-    /** We need to store the "raw" field table so that we can resubscribe in the event of failover being required */
+    /**
+     * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
+     */
     private FieldTable _rawSelectorFieldTable;
 
     /**
@@ -97,7 +107,9 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
      */
     private int _prefetchLow;
 
-    /** We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover */
+    /**
+     * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
+     */
     private boolean _exclusive;
 
     /**
@@ -107,7 +119,9 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
      */
     private int _acknowledgeMode;
 
-    /** Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode */
+    /**
+     * Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode
+     */
     private int _outstanding;
 
     /**
@@ -118,7 +132,9 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
 
     private ConcurrentLinkedQueue<Long> _unacknowledgedDeliveryTags = new ConcurrentLinkedQueue<Long>();
 
-    /** List of tags delievered, The last of which which should be acknowledged on commit in transaction mode. */
+    /**
+     * List of tags delievered, The last of which which should be acknowledged on commit in transaction mode.
+     */
     private ConcurrentLinkedQueue<Long> _receivedDeliveryTags = new ConcurrentLinkedQueue<Long>();
 
     /**
@@ -138,9 +154,10 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
     private List<StackTraceElement> _closedStack = null;
 
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
-        String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
-        AMQProtocolHandler protocolHandler, FieldTable rawSelectorFieldTable, int prefetchHigh, int prefetchLow,
-        boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
+                                   String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
+                                   AMQSession session, AMQProtocolHandler protocolHandler,
+                                   FieldTable rawSelectorFieldTable, int prefetchHigh, int prefetchLow,
+                                   boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose)
     {
         _channelId = channelId;
         _connection = connection;
@@ -216,8 +233,8 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
 
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Session stopped : Message listener(" + messageListener + ") set for destination "
-                    + _destination);
+                _logger.debug(
+                        "Session stopped : Message listener(" + messageListener + ") set for destination " + _destination);
             }
         }
         else
@@ -418,9 +435,7 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
      * it by throwing it (if an exception) or returning it (in any other case).
      *
      * @param o
-     *
      * @return a message only if o is a Message
-     *
      * @throws JMSException if the argument is a throwable. If it is a JMSException it is rethrown as is, but if not a
      *                      JMSException is created with the linked exception set appropriately
      */
@@ -465,8 +480,8 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
                 {
                     if (_closedStack != null)
                     {
-                        _logger.trace(_consumerTag + " close():"
-                            + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+                        _logger.trace(_consumerTag + " close():" + Arrays.asList(Thread.currentThread().getStackTrace())
+                                .subList(3, 6));
                         _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
                     }
                     else
@@ -518,8 +533,8 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
             {
                 if (_closedStack != null)
                 {
-                    _logger.trace(_consumerTag + " markClosed():"
-                        + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
+                    _logger.trace(_consumerTag + " markClosed():" + Arrays
+                            .asList(Thread.currentThread().getStackTrace()).subList(3, 8));
                     _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
                 }
                 else
@@ -588,14 +603,9 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         }
     }
 
-    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<ContentHeaderBody, ContentBody> messageFrame)throws Exception
-     {
+    public abstract AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<H, B> messageFrame)
+            throws Exception;
 
-        return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
-            messageFrame.isRedelivered(), messageFrame.getExchange(),
-            messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
-
-    }
 
     /**
      * @param jmsMessage this message has already been processed so can't redo preDeliver
@@ -643,77 +653,79 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         switch (_acknowledgeMode)
         {
 
-        case Session.PRE_ACKNOWLEDGE:
-            _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-            break;
+            case Session.PRE_ACKNOWLEDGE:
+                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                break;
 
-        case Session.CLIENT_ACKNOWLEDGE:
-            // we set the session so that when the user calls acknowledge() it can call the method on session
-            // to send out the appropriate frame
-            msg.setAMQSession(_session);
-            break;
+            case Session.CLIENT_ACKNOWLEDGE:
+                // we set the session so that when the user calls acknowledge() it can call the method on session
+                // to send out the appropriate frame
+                msg.setAMQSession(_session);
+                break;
         }
     }
 
-     void postDeliver(AbstractJMSMessage msg) throws JMSException
+    void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
         msg.setJMSDestination(_destination);
         switch (_acknowledgeMode)
         {
 
-        case Session.CLIENT_ACKNOWLEDGE:
-            if (isNoConsume())
-            {
-                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-            }
+            case Session.CLIENT_ACKNOWLEDGE:
+                if (isNoConsume())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
 
-            break;
+                break;
 
-        case Session.DUPS_OK_ACKNOWLEDGE:
-            if (++_outstanding >= _prefetchHigh)
-            {
-                _dups_ok_acknowledge_send = true;
-            }
+            case Session.DUPS_OK_ACKNOWLEDGE:
+                if (++_outstanding >= _prefetchHigh)
+                {
+                    _dups_ok_acknowledge_send = true;
+                }
 
-            if (_outstanding <= _prefetchLow)
-            {
-                _dups_ok_acknowledge_send = false;
-            }
+                if (_outstanding <= _prefetchLow)
+                {
+                    _dups_ok_acknowledge_send = false;
+                }
 
-            if (_dups_ok_acknowledge_send)
-            {
+                if (_dups_ok_acknowledge_send)
+                {
+                    if (!_session.isInRecovery())
+                    {
+                        _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                    }
+                }
+
+                break;
+
+            case Session.AUTO_ACKNOWLEDGE:
+                // we do not auto ack a message if the application code called recover()
                 if (!_session.isInRecovery())
                 {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
                 }
-            }
 
-            break;
+                break;
 
-        case Session.AUTO_ACKNOWLEDGE:
-            // we do not auto ack a message if the application code called recover()
-            if (!_session.isInRecovery())
-            {
-                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-            }
+            case Session.SESSION_TRANSACTED:
+                if (isNoConsume())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                else
+                {
+                    _receivedDeliveryTags.add(msg.getDeliveryTag());
+                }
 
-            break;
-
-        case Session.SESSION_TRANSACTED:
-            if (isNoConsume())
-            {
-                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-            }
-            else
-            {
-                _receivedDeliveryTags.add(msg.getDeliveryTag());
-            }
-
-            break;
+                break;
         }
     }
 
-    /** Acknowledge up to last message delivered (if any). Used when commiting. */
+    /**
+     * Acknowledge up to last message delivered (if any). Used when commiting.
+     */
     void acknowledgeLastDelivered()
     {
         if (!_receivedDeliveryTags.isEmpty())
@@ -740,8 +752,8 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
             {
                 if (_closedStack != null)
                 {
-                    _logger.trace(_consumerTag + " notifyError():"
-                        + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
+                    _logger.trace(_consumerTag + " notifyError():" + Arrays
+                            .asList(Thread.currentThread().getStackTrace()).subList(3, 8));
                     _logger.trace(_consumerTag + " previously" + _closedStack.toString());
                 }
                 else
@@ -819,7 +831,9 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         }
     }
 
-    /** Called on recovery to reset the list of delivery tags */
+    /**
+     * Called on recovery to reset the list of delivery tags
+     */
     public void clearUnackedMessages()
     {
         _unacknowledgedDeliveryTags.clear();
@@ -860,8 +874,8 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags.size() + ") in _receivedDTs (RQ)"
-                    + "for consumer with tag:" + _consumerTag);
+                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags
+                        .size() + ") in _receivedDTs (RQ)" + "for consumer with tag:" + _consumerTag);
             }
 
             Long tag = _receivedDeliveryTags.poll();
@@ -890,8 +904,8 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Rejecting the messages(" + _synchronousQueue.size() + ") in _syncQueue (PRQ)"
-                    + "for consumer with tag:" + _consumerTag);
+                _logger.debug("Rejecting the messages(" + _synchronousQueue
+                        .size() + ") in _syncQueue (PRQ)" + "for consumer with tag:" + _consumerTag);
             }
 
             Iterator iterator = _synchronousQueue.iterator();
@@ -914,8 +928,8 @@ public abstract class BasicMessageConsumer<H,B> extends Closeable implements Mes
                 }
                 else
                 {
-                    _logger.error("Queue contained a :" + o.getClass()
-                        + " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
+                    _logger.error("Queue contained a :" + o
+                            .getClass() + " unable to reject as it is not an AbstractJMSMessage. Will be cleared");
                     iterator.remove();
                 }
             }

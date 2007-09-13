@@ -21,19 +21,19 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ExchangeDeclareBody;
-import org.apache.qpidity.jms.message.MessageImpl;
-import org.apache.qpidity.jms.message.MessageHelper;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpidity.jms.ExceptionHelper;
-import org.apache.qpidity.QpidException;
+import org.apache.qpidity.client.util.ByteBufferMessage;
+import org.apache.qpidity.ReplyTo;
 
 import javax.jms.Message;
 import javax.jms.JMSException;
-import java.util.UUID;
 import java.io.IOException;
 
 /**
- *
- *  This is a 0_10 message producer. 
+ * This is a 0_10 message producer.
  */
 public class BasicMessageProducer_0_10 extends BasicMessageProducer
 {
@@ -66,85 +66,79 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     //--- Overwritten methods
 
-
     /**
      * Sends a message to a given destination
-     * We will always convert the received message
      */
     public void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
                             int deliveryMode, int priority, long timeToLive, boolean mandatory, boolean immediate,
                             boolean wait) throws JMSException
     {
-        // Only get current time if required
-        long currentTime = Long.MIN_VALUE;
-        if (!((timeToLive == 0) && _disableTimestamps))
-        {
-            currentTime = System.currentTimeMillis();
-        }
-        // the messae UID
-        String uid = (getDisableMessageID()) ? "MSG_ID_DISABLED" : UUID.randomUUID().toString();
-        MessageImpl qpidMessage;
-        // check that the message is not a foreign one
+        message.prepareForSending();
+        org.apache.qpidity.api.Message qpidityMessage = new ByteBufferMessage();
+        // set the payload
         try
         {
-            qpidMessage = (MessageImpl) origMessage;
+            qpidityMessage.appendData(message.getData().buf());
         }
-        catch (ClassCastException cce)
-        {
-            // this is a foreign message
-            qpidMessage = MessageHelper.transformMessage(origMessage);
-            // set message's properties in case they are queried after send.
-            origMessage.setJMSDestination(destination);
-            origMessage.setJMSDeliveryMode(deliveryMode);
-            origMessage.setJMSPriority(priority);
-            origMessage.setJMSMessageID(uid);
-            if (timeToLive != 0)
-            {
-                origMessage.setJMSExpiration(timeToLive + currentTime);
-                _logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
-            }
-            else
-            {
-                origMessage.setJMSExpiration(timeToLive);
-            }
-            origMessage.setJMSTimestamp(currentTime);
-        }
-        // set the message properties
-        qpidMessage.setJMSDestination(destination);
-        qpidMessage.setJMSMessageID(uid);
-        qpidMessage.setJMSDeliveryMode(deliveryMode);
-        qpidMessage.setJMSPriority(priority);
-        if (timeToLive != 0)
-        {
-            qpidMessage.setJMSExpiration(timeToLive + currentTime);
-        }
-        else
-        {
-            qpidMessage.setJMSExpiration(timeToLive);
-        }
-        qpidMessage.setJMSTimestamp(currentTime);
-        qpidMessage.setRoutingKey(destination.getDestinationName().toString());
-        qpidMessage.setExchangeName(destination.getExchangeName().toString());
-        // call beforeMessageDispatch
-        try
-        {
-            qpidMessage.beforeMessageDispatch();
-        }
-        catch (QpidException e)
+        catch (IOException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
+        // set the delivery properties
+        if (!_disableTimestamps)
+        {
+            final long currentTime = System.currentTimeMillis();
+            qpidityMessage.getDeliveryProperties().setTimestamp(currentTime);
+            if (timeToLive > 0)
+            {
+                qpidityMessage.getDeliveryProperties().setExpiration(currentTime + timeToLive);
+            }
+            else
+            {
+                qpidityMessage.getDeliveryProperties().setExpiration(0);
+            }
+        }
+        qpidityMessage.getDeliveryProperties().setDeliveryMode((byte) deliveryMode);
+        qpidityMessage.getDeliveryProperties().setPriority((byte) priority);
+        qpidityMessage.getDeliveryProperties().setExchange(destination.getExchangeName().toString());
+        qpidityMessage.getDeliveryProperties().setRoutingKey(destination.getRoutingKey().toString());
+        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
+        // set the application properties
+        qpidityMessage.getMessageProperties().setContentType(contentHeaderProperties.getContentType().toString());
+        qpidityMessage.getMessageProperties().setCorrelationId(contentHeaderProperties.getCorrelationId().toString());
+        String replyToURL = contentHeaderProperties.getReplyToAsString();
+        if (replyToURL != null)
+        {
+            AMQBindingURL dest;
+            try
+            {
+                dest = new AMQBindingURL(replyToURL);
+            }
+            catch (URLSyntaxException e)
+            {
+                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+            }
+            qpidityMessage.getMessageProperties()
+                    .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
+        }
+        if (contentHeaderProperties.getHeaders() != null)
+        {
+            // todo use the new fieldTable
+            qpidityMessage.getMessageProperties().setApplicationHeaders(null);
+        }
+        // send the message 
         try
         {
-            ((AMQSession_0_10) getSession()).getQpidSession().messageTransfer(qpidMessage.getExchangeName(),
-                                                                              qpidMessage.getQpidityMessage(),
+            ((AMQSession_0_10) getSession()).getQpidSession().messageTransfer(destination.getExchangeName().toString(),
+                                                                              qpidityMessage,
                                                                               org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                                                               org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
         }
         catch (IOException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }       
+        }
+
     }
 }
 
