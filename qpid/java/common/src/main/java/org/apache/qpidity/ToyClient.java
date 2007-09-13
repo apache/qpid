@@ -20,6 +20,9 @@
  */
 package org.apache.qpidity;
 
+import org.apache.qpidity.transport.*;
+import org.apache.qpidity.transport.network.mina.MinaHandler;
+
 
 /**
  * ToyClient
@@ -42,17 +45,17 @@ class ToyClient extends SessionDelegate
         }
     }
 
-    public void headers(Session ssn, Struct ... headers)
+    @Override public void header(Session ssn, Header header)
     {
-        for (Struct hdr : headers)
+        for (Struct st : header.getStructs())
         {
-            System.out.println("header: " + hdr);
+            System.out.println("header: " + st);
         }
     }
 
-    public void data(Session ssn, Frame frame)
+    @Override public void data(Session ssn, Data data)
     {
-        System.out.println("got data: " + frame);
+        System.out.println("got data: " + data);
     }
 
     public static final void main(String[] args)
@@ -65,7 +68,7 @@ class ToyClient extends SessionDelegate
                                                       return new ToyClient();
                                                   }
                                               });
-        conn.getOutputHandler().handle(conn.getHeader().toByteBuffer());
+        conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
 
         Channel ch = conn.getChannel(0);
         Session ssn = new Session();
@@ -76,8 +79,8 @@ class ToyClient extends SessionDelegate
         ssn.sync();
 
         ssn.messageTransfer("asdf", (short) 0, (short) 1);
-        ssn.headers(new DeliveryProperties(),
-                    new MessageProperties());
+        ssn.header(new DeliveryProperties(),
+                   new MessageProperties());
         ssn.data("this is the data");
         ssn.endData();
 
@@ -88,6 +91,8 @@ class ToyClient extends SessionDelegate
 
         Future<QueueQueryResult> future = ssn.queueQuery("asdf");
         System.out.println(future.get().getQueue());
+        ssn.close();
+        conn.close();
     }
 
 }

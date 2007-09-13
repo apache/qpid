@@ -22,7 +22,9 @@ package org.apache.qpidity;
 
 import java.nio.ByteBuffer;
 
-import static org.apache.qpidity.Functions.*;
+import org.apache.qpidity.transport.Sender;
+
+import static org.apache.qpidity.transport.util.Functions.*;
 
 
 /**
@@ -31,12 +33,17 @@ import static org.apache.qpidity.Functions.*;
  * @author Rafael H. Schloming
  */
 
-class ConsoleOutput implements Handler<ByteBuffer>
+public class ConsoleOutput implements Sender<ByteBuffer>
 {
 
-    public void handle(ByteBuffer buf)
+    public void send(ByteBuffer buf)
     {
         System.out.println(str(buf));
+    }
+
+    public void close()
+    {
+        System.out.println("CLOSED");
     }
 
 }
