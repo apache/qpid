@@ -21,8 +21,10 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
-import org.apache.qpidity.*;
+import org.apache.qpidity.QpidException;
 import org.apache.qpidity.dtx.XidImpl;
+import org.apache.qpidity.transport.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

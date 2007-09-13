@@ -2,8 +2,8 @@ package org.apache.qpidity.client.util;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpidity.DeliveryProperties;
-import org.apache.qpidity.MessageProperties;
+import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageProperties;
 import org.apache.qpidity.api.Message;
 
 public abstract class ReadOnlyMessage implements Message

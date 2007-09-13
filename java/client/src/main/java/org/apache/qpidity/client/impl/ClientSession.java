@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.qpidity.Option;
+import org.apache.qpidity.transport.Option;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Range;
-import org.apache.qpidity.RangeSet;
+import org.apache.qpidity.transport.Range;
+import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.client.ExceptionListener;
 import org.apache.qpidity.client.MessagePartListener;
@@ -16,7 +16,7 @@ import org.apache.qpidity.client.MessagePartListener;
 /**
  * Implements a Qpid Sesion. 
  */
-public class ClientSession extends org.apache.qpidity.Session implements org.apache.qpidity.client.Session
+public class ClientSession extends org.apache.qpidity.transport.Session implements org.apache.qpidity.client.Session
 {
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
     private ExceptionListener _exceptionListner;
@@ -46,7 +46,7 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
         // The javadoc clearly says that this method is suitable for small messages
         // therefore reading the content in one shot.
         super.messageTransfer(destination, confirmMode, acquireMode);
-        super.headers(msg.getDeliveryProperties(),msg.getMessageProperties());
+        super.header(msg.getDeliveryProperties(),msg.getMessageProperties());
         super.data(msg.readData());
         super.endData();        
     }
@@ -54,7 +54,7 @@ public class ClientSession extends org.apache.qpidity.Session implements org.apa
     public void messageStream(String destination, Message msg, short confirmMode, short acquireMode) throws IOException
     {
         super.messageTransfer(destination, confirmMode, acquireMode);
-        super.headers(msg.getDeliveryProperties(),msg.getMessageProperties());
+        super.header(msg.getDeliveryProperties(),msg.getMessageProperties());
         boolean b = true;
         int count = 0;
         while(b)

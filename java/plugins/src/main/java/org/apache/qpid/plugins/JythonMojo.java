@@ -21,6 +21,7 @@
 package org.apache.qpid.plugins;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -46,9 +47,44 @@ public class JythonMojo extends AbstractMojo
      */
     private String[] params = new String[0];
 
+    /**
+     * Source file.
+     *
+     * @parameter
+     */
+    private File source;
+
+    /**
+     * Optional timestamp.
+     *
+     * @parameter
+     */
+    private File timestamp;
+
     public void execute() throws MojoExecutionException
     {
+        if (source != null && timestamp != null)
+        {
+            if (timestamp.lastModified() > source.lastModified())
+            {
+                return;
+            }
+        }
+
         jython.main(params);
+
+        if (timestamp != null)
+        {
+            try
+            {
+                timestamp.createNewFile();
+            }
+            catch (IOException e)
+            {
+                throw new MojoExecutionException("cannot create timestamp", e);
+            }
+            timestamp.setLastModified(System.currentTimeMillis());
+        }
     }
 
 }

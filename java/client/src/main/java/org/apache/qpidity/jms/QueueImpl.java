@@ -18,7 +18,7 @@
 package org.apache.qpidity.jms;
 
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Option;
+import org.apache.qpidity.transport.Option;
 import org.apache.qpidity.url.BindingURL;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 

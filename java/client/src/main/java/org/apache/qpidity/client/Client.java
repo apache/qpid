@@ -6,16 +6,18 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.qpidity.BrokerDetails;
-import org.apache.qpidity.Channel;
-import org.apache.qpidity.Connection;
-import org.apache.qpidity.ConnectionClose;
-import org.apache.qpidity.ConnectionDelegate;
 import org.apache.qpidity.ErrorCode;
-import org.apache.qpidity.MinaHandler;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.SessionDelegate;
 import org.apache.qpidity.client.impl.ClientSession;
 import org.apache.qpidity.client.impl.ClientSessionDelegate;
+import org.apache.qpidity.transport.Channel;
+import org.apache.qpidity.transport.Connection;
+import org.apache.qpidity.transport.ConnectionClose;
+import org.apache.qpidity.transport.ConnectionDelegate;
+import org.apache.qpidity.transport.ConnectionEvent;
+import org.apache.qpidity.transport.ProtocolHeader;
+import org.apache.qpidity.transport.SessionDelegate;
+import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.url.QpidURL;
 
 
@@ -25,47 +27,48 @@ public class Client implements org.apache.qpidity.client.Connection
     private Connection _conn;
     private ExceptionListener _exceptionListner;
     private final Lock _lock = new ReentrantLock();
-    
+
     /**
-     * 
+     *
      * @return returns a new connection to the broker.
      */
     public static org.apache.qpidity.client.Connection createConnection()
     {
         return new Client();
     }
-    
+
     public void connect(String host, int port,String virtualHost,String username, String password) throws QpidException
     {
         Condition negotiationComplete = _lock.newCondition();
         _lock.lock();
-        
+
         ConnectionDelegate connectionDelegate = new ConnectionDelegate()
-        {            
+        {
             public SessionDelegate getSessionDelegate()
             {
                 return new ClientSessionDelegate();
             }
-            
-            @Override public void connectionClose(Channel context, ConnectionClose connectionClose) 
+
+            @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
             {
                 _exceptionListner.onException(
-                        new QpidException("Server closed the connection: Reason " + 
+                        new QpidException("Server closed the connection: Reason " +
                                            connectionClose.getReplyText(),
                                            ErrorCode.get(connectionClose.getReplyCode()),
                                            null));
             }
         };
-        
+
         connectionDelegate.setCondition(_lock,negotiationComplete);
         connectionDelegate.setUsername(username);
         connectionDelegate.setPassword(password);
         connectionDelegate.setVirtualHost(virtualHost);
-        
+
         _conn = MinaHandler.connect(host, port,connectionDelegate);
-                
-        _conn.getOutputHandler().handle(_conn.getHeader().toByteBuffer());        
-        
+
+        // XXX: hardcoded version numbers
+        _conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
+
         try
         {
             negotiationComplete.await();
@@ -79,7 +82,7 @@ public class Client implements org.apache.qpidity.client.Connection
             _lock.unlock();
         }
     }
-    
+
     /*
      * Until the dust settles with the URL disucssion
      * I am not going to implement this.
@@ -94,9 +97,9 @@ public class Client implements org.apache.qpidity.client.Connection
                 details.getUserName(),
                 details.getPassword());
     }
-    
+
     public void close() throws QpidException
-    {   
+    {
         Channel ch = _conn.getChannel(0);
         ch.connectionClose(0, "client is closing", 0, 0);
         //need to close the connection underneath as well
@@ -104,7 +107,7 @@ public class Client implements org.apache.qpidity.client.Connection
 
     public Session createSession(long expiryInSeconds)
     {
-        Channel ch = _conn.getChannel(_channelNo.incrementAndGet());   
+        Channel ch = _conn.getChannel(_channelNo.incrementAndGet());
         ClientSession ssn = new ClientSession();
         ssn.attach(ch);
         ssn.sessionOpen(expiryInSeconds);
@@ -116,10 +119,10 @@ public class Client implements org.apache.qpidity.client.Connection
         // TODO Auto-generated method stub
         return null;
     }
-    
+
     public void setExceptionListener(ExceptionListener exceptionListner)
     {
-        _exceptionListner = exceptionListner;        
+        _exceptionListner = exceptionListner;
     }
 
 }

@@ -18,15 +18,15 @@
  */
 package org.apache.qpidity.client;
 
-import org.apache.qpidity.DtxCoordinationCommitResult;
-import org.apache.qpidity.DtxCoordinationGetTimeoutResult;
-import org.apache.qpidity.DtxCoordinationPrepareResult;
-import org.apache.qpidity.DtxCoordinationRecoverResult;
-import org.apache.qpidity.DtxCoordinationRollbackResult;
-import org.apache.qpidity.DtxDemarcationEndResult;
-import org.apache.qpidity.DtxDemarcationStartResult;
-import org.apache.qpidity.Future;
-import org.apache.qpidity.Option;
+import org.apache.qpidity.transport.DtxCoordinationCommitResult;
+import org.apache.qpidity.transport.DtxCoordinationGetTimeoutResult;
+import org.apache.qpidity.transport.DtxCoordinationPrepareResult;
+import org.apache.qpidity.transport.DtxCoordinationRecoverResult;
+import org.apache.qpidity.transport.DtxCoordinationRollbackResult;
+import org.apache.qpidity.transport.DtxDemarcationEndResult;
+import org.apache.qpidity.transport.DtxDemarcationStartResult;
+import org.apache.qpidity.transport.Future;
+import org.apache.qpidity.transport.Option;
 
 /**
  * This session�s resources are control under the scope of a distributed transaction.

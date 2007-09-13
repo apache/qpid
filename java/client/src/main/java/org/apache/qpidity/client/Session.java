@@ -22,9 +22,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import org.apache.qpidity.Option;
-import org.apache.qpidity.RangeSet;
-import org.apache.qpidity.Struct;
+import org.apache.qpidity.transport.Option;
+import org.apache.qpidity.transport.RangeSet;
+import org.apache.qpidity.transport.Struct;
 import org.apache.qpidity.api.Message;
 
 /**
@@ -186,7 +186,7 @@ public interface Session
      * @see org.apache.qpidity.DeliveryProperties
      * @see org.apache.qpidity.MessageProperties
      */
-    public void headers(Struct... headers);
+    public void header(Struct... headers);
 
     /**
      * Add the following byte array to the content of the message being sent.

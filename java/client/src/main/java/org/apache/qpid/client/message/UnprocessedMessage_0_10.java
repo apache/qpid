@@ -25,8 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpidity.DeliveryProperties;
-import org.apache.qpidity.Struct;
+import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.Struct;
 
 /**
  * This class contains everything needed to process a JMS message. It assembles the deliver body, the content header and

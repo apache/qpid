@@ -19,7 +19,7 @@ package org.apache.qpidity.client;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpidity.Struct;
+import org.apache.qpidity.transport.Header;
 
 /**
  * Assembles message parts.
@@ -47,7 +47,7 @@ public interface MessagePartListener
      *
      * @param headers Either <code>DeliveryProperties</code> or <code>ApplicationProperties</code>
      */
-    public void messageHeaders(Struct... headers);
+    public void messageHeader(Header header);
 
     /**
      * Add the following byte array to the content of the message being received
