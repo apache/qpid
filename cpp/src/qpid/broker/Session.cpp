@@ -268,8 +268,8 @@ bool Session::ConsumerImpl::deliver(QueuedMessage& msg)
 
             DeliveryId deliveryTag =
                 parent->deliveryAdapter->deliver(msg.payload, token);
-            if (ackExpected) {
-                parent->record(DeliveryRecord(msg, queue, name, deliveryTag, acquire));
+            if (windowing || ackExpected) {
+                parent->record(DeliveryRecord(msg, queue, name, deliveryTag, acquire, !ackExpected));
             }
         }
         return !blocked;
@@ -565,12 +565,14 @@ AckRange Session::findRange(DeliveryId first, DeliveryId last)
     ack_iterator start = find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matchOrAfter), first));
     ack_iterator end = start;
      
-    if (first == last) {
-        //just acked single element (move end past it)
-        ++end;
-    } else {
-        //need to find end (position it just after the last record in range)
-        end = find_if(start, unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::after), last));
+    if (start != unacked.end()) {
+        if (first == last) {
+            //just acked single element (move end past it)
+            ++end;
+        } else {
+            //need to find end (position it just after the last record in range)
+            end = find_if(start, unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::after), last));
+        }
     }
     return AckRange(start, end);
 }

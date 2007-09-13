@@ -25,14 +25,15 @@ using qpid::client::Correlator;
 using namespace qpid::framing;
 using namespace boost;
 
-void Correlator::receive(AMQMethodBody* response)
+bool Correlator::receive(const AMQMethodBody* response)
 {
     if (listeners.empty()) {
-        throw ConnectionException(503, "Unexpected method!");//TODO: include the method & class name
+        return false;
     } else {
         Listener l = listeners.front();
         if (l) l(response);
         listeners.pop();
+        return true;
     }
 }
 

@@ -50,6 +50,8 @@ public:
     void getContent(std::string&) const;
     std::string getContent() const;
 
+    bool isContentBearing() const;
+
     const AMQMethodBody* getMethod() const;
     const AMQHeaderBody* getHeaders() const;
     AMQHeaderBody* getHeaders();
