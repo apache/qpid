@@ -2,8 +2,6 @@ package org.apache.qpidity.client.impl;
 
 import java.io.FileInputStream;
 
-import org.apache.qpidity.DeliveryProperties;
-import org.apache.qpidity.MessageProperties;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.client.Client;
@@ -13,6 +11,8 @@ import org.apache.qpidity.client.Session;
 import org.apache.qpidity.client.util.FileMessage;
 import org.apache.qpidity.client.util.MessageListener;
 import org.apache.qpidity.client.util.MessagePartListenerAdapter;
+import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageProperties;
 
 public class LargeMsgDemoClient
 {

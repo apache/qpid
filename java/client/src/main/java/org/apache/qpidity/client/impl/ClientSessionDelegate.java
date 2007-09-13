@@ -3,17 +3,20 @@ package org.apache.qpidity.client.impl;
 import java.nio.ByteBuffer;
 
 import org.apache.qpidity.ErrorCode;
-import org.apache.qpidity.Frame;
-import org.apache.qpidity.MessageAcquired;
-import org.apache.qpidity.MessageReject;
-import org.apache.qpidity.MessageTransfer;
-import org.apache.qpidity.QpidException;
-import org.apache.qpidity.Range;
-import org.apache.qpidity.Session;
-import org.apache.qpidity.SessionClosed;
-import org.apache.qpidity.SessionDelegate;
-import org.apache.qpidity.Struct;
+
 import org.apache.qpidity.client.MessagePartListener;
+
+import org.apache.qpidity.QpidException;
+import org.apache.qpidity.transport.Data;
+import org.apache.qpidity.transport.Header;
+import org.apache.qpidity.transport.MessageAcquired;
+import org.apache.qpidity.transport.MessageReject;
+import org.apache.qpidity.transport.MessageTransfer;
+import org.apache.qpidity.transport.Range;
+import org.apache.qpidity.transport.Session;
+import org.apache.qpidity.transport.SessionClosed;
+import org.apache.qpidity.transport.SessionDelegate;
+import org.apache.qpidity.transport.Struct;
 
 
 public class ClientSessionDelegate extends SessionDelegate
@@ -29,22 +32,22 @@ public class ClientSessionDelegate extends SessionDelegate
     //  --------------------------------------------
     //   Message methods
     // --------------------------------------------
-    @Override public void data(Session ssn, Frame frame)
+    @Override public void data(Session ssn, Data data)
     {
-        for (ByteBuffer b : frame)
+        for (ByteBuffer b : data.getFragments())
         {    
             _currentMessageListener.data(b);
         }
-        if (frame.isLastSegment() && frame.isLastFrame())
+        if (data.isLast())
         {
             _currentMessageListener.messageReceived();
         }
         
     }
 
-    @Override public void headers(Session ssn, Struct... headers)
+    @Override public void header(Session ssn, Header header)
     {
-        _currentMessageListener.messageHeaders(headers);
+        _currentMessageListener.messageHeader(header);
     }
 
 

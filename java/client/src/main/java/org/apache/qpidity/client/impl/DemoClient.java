@@ -1,7 +1,5 @@
 package org.apache.qpidity.client.impl;
 
-import org.apache.qpidity.DeliveryProperties;
-import org.apache.qpidity.MessageProperties;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.client.Client;
@@ -10,6 +8,8 @@ import org.apache.qpidity.client.ExceptionListener;
 import org.apache.qpidity.client.Session;
 import org.apache.qpidity.client.util.MessageListener;
 import org.apache.qpidity.client.util.MessagePartListenerAdapter;
+import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageProperties;
 
 public class DemoClient
 {
@@ -53,14 +53,14 @@ public class DemoClient
 
         // queue
         ssn.messageTransfer("amq.direct", (short) 0, (short) 1);
-        ssn.headers(new DeliveryProperties().setRoutingKey("queue1"),new MessageProperties().setMessageId("123"));
+        ssn.header(new DeliveryProperties().setRoutingKey("queue1"),new MessageProperties().setMessageId("123"));
         ssn.data("this is the data");
         ssn.endData();
 
         //reject
         ssn.messageTransfer("amq.direct", (short) 0, (short) 1);
         ssn.data("this should be rejected");
-        ssn.headers(new DeliveryProperties().setRoutingKey("stocks"));
+        ssn.header(new DeliveryProperties().setRoutingKey("stocks"));
         ssn.endData();
         ssn.sync();
         
@@ -81,7 +81,7 @@ public class DemoClient
         // topic
         ssn.messageTransfer("amq.topic", (short) 0, (short) 1);
         ssn.data("Topic message");
-        ssn.headers(new DeliveryProperties().setRoutingKey("stock.us.ibm"),new MessageProperties().setMessageId("456"));
+        ssn.header(new DeliveryProperties().setRoutingKey("stock.us.ibm"),new MessageProperties().setMessageId("456"));
         ssn.endData();
         ssn.sync();
     }
