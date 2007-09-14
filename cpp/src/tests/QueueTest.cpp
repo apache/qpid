@@ -91,6 +91,7 @@ class QueueTest : public CppUnit::TestCase
        
         //Test basic delivery:
         Message::shared_ptr msg1 = message("e", "A");
+        msg1->enqueueAsync();//this is done on enqueue which is not called from process
         queue->process(msg1);
 	sleep(2);
 
@@ -107,6 +108,7 @@ class QueueTest : public CppUnit::TestCase
     void testAsyncMessageCount(){
         Queue::shared_ptr queue(new Queue("my_test_queue", true));
         Message::shared_ptr msg1 = message("e", "A");
+        msg1->enqueueAsync();//this is done on enqueue which is not called from process
 	
         queue->process(msg1);
 	sleep(2);
