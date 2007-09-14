@@ -513,13 +513,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
         }
 
+
+
         synchronized(_messageDeliveryLock)
         {
-
         // We must close down all producers and consumers in an orderly fashion. This is the only method
         // that can be called from a different thread of control from the one controlling the session.
         synchronized (_connection.getFailoverMutex())
         {
+
+
             // Ensure we only try and close an open session.
             if (!_closed.getAndSet(true))
             {
@@ -572,6 +575,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public void closed(Throwable e) throws JMSException
     {
+
         synchronized(_messageDeliveryLock)
         {
         synchronized (_connection.getFailoverMutex())
@@ -2543,6 +2547,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 throw new AMQException("Fail-over interrupted suspend/unsuspend channel.", e);
             }
         }
+    }
+
+    Object getMessageDeliveryLock()
+    {
+        return _messageDeliveryLock;
     }
 
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
