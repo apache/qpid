@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.client;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.qpid.client.url.URLParser_0_8;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -28,27 +34,14 @@ import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.StringTokenizer;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.url.URLHelper;
-import org.apache.qpid.url.URLSyntaxException;
-
 public class AMQConnectionURL implements ConnectionURL
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionURL.class);
 
     private String _url;
     private String _failoverMethod;
-    private HashMap<String, String> _failoverOptions;
-    private HashMap<String, String> _options;
+    private Map<String, String> _failoverOptions;
+    private Map<String, String> _options;
     private List<BrokerDetails> _brokers;
     private String _clientName;
     private String _username;
@@ -58,209 +51,40 @@ public class AMQConnectionURL implements ConnectionURL
     private AMQShortString _defaultTopicExchangeName;
     private AMQShortString _temporaryTopicExchangeName;
     private AMQShortString _temporaryQueueExchangeName;
+    private byte _urlVersion;
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
+        if (fullURL == null) throw new IllegalArgumentException("URL cannot be null");
         _url = fullURL;
         _options = new HashMap<String, String>();
         _brokers = new LinkedList<BrokerDetails>();
         _failoverOptions = new HashMap<String, String>();
 
-        // Connection URL format
-        // amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\',option=\'value\';vm://:3/virtualpath?option=\'value\'',failover='method?option=\'value\',option='value''"
-        // Options are of course optional except for requiring a single broker in the broker list.
-        try
+        if (!Boolean.getBoolean("SwitchCon"))
         {
-            URI connection = new URI(fullURL);
-
-            if ((connection.getScheme() == null) || !(connection.getScheme().equalsIgnoreCase(AMQ_PROTOCOL)))
+            // We need to decided the version based on URL
+            if (fullURL.startsWith("qpid"))
             {
-                throw new URISyntaxException(fullURL, "Not an AMQP URL");
-            }
-
-            if ((connection.getHost() == null) || connection.getHost().equals(""))
-            {
-                String uid = AMQConnectionFactory.getUniqueClientID();
-                if (uid == null)
-                {
-                    throw URLHelper.parseError(-1, "Client Name not specified", fullURL);
-                }
-                else
-                {
-                    setClientName(uid);
-                }
-
+                //URLParser
+                _urlVersion = URL_0_10;
             }
             else
             {
-                setClientName(connection.getHost());
+                URLParser_0_8 urlParser = new URLParser_0_8(this);
+                _urlVersion = URL_0_8;
             }
-
-            String userInfo = connection.getUserInfo();
-
-            if (userInfo == null)
-            {
-                // Fix for Java 1.5 which doesn't parse UserInfo for non http URIs
-                userInfo = connection.getAuthority();
-
-                if (userInfo != null)
-                {
-                    int atIndex = userInfo.indexOf('@');
-
-                    if (atIndex != -1)
-                    {
-                        userInfo = userInfo.substring(0, atIndex);
-                    }
-                    else
-                    {
-                        userInfo = null;
-                    }
-                }
-
-            }
-
-            if (userInfo == null)
-            {
-                throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, "User information not found on url", fullURL);
-            }
-            else
-            {
-                parseUserInfo(userInfo);
-            }
-
-            String virtualHost = connection.getPath();
-
-            if ((virtualHost != null) && (!virtualHost.equals("")))
-            {
-                setVirtualHost(virtualHost);
-            }
-            else
-            {
-                int authLength = connection.getAuthority().length();
-                int start = AMQ_PROTOCOL.length() + 3;
-                int testIndex = start + authLength;
-                if ((testIndex < fullURL.length()) && (fullURL.charAt(testIndex) == '?'))
-                {
-                    throw URLHelper.parseError(start, testIndex - start, "Virtual host found", fullURL);
-                }
-                else
-                {
-                    throw URLHelper.parseError(-1, "Virtual host not specified", fullURL);
-                }
-
-            }
-
-            URLHelper.parseOptions(_options, connection.getQuery());
-
-            processOptions();
-        }
-        catch (URISyntaxException uris)
-        {
-            if (uris instanceof URLSyntaxException)
-            {
-                throw (URLSyntaxException) uris;
-            }
-
-            int slash = fullURL.indexOf("\\");
-
-            if (slash == -1)
-            {
-                throw URLHelper.parseError(uris.getIndex(), uris.getReason(), uris.getInput());
-            }
-            else
-            {
-                if ((slash != 0) && (fullURL.charAt(slash - 1) == ':'))
-                {
-                    throw URLHelper.parseError(slash - 2, fullURL.indexOf('?') - slash + 2,
-                        "Virtual host looks like a windows path, forward slash not allowed in URL", fullURL);
-                }
-                else
-                {
-                    throw URLHelper.parseError(slash, "Forward slash not allowed in URL", fullURL);
-                }
-            }
-
         }
     }
 
-    private void parseUserInfo(String userinfo) throws URLSyntaxException
+    public byte getURLVersion()
     {
-        // user info = user:pass
-
-        int colonIndex = userinfo.indexOf(':');
-
-        if (colonIndex == -1)
-        {
-            throw URLHelper.parseError(AMQ_PROTOCOL.length() + 3, userinfo.length(),
-                                       "Null password in user information not allowed.", _url);
-        }
-        else
-        {
-            setUsername(userinfo.substring(0, colonIndex));
-            setPassword(userinfo.substring(colonIndex + 1));
-        }
-
+        return _urlVersion;
     }
 
-    private void processOptions() throws URLSyntaxException
+    public void setURLVersion(byte version)
     {
-        if (_options.containsKey(OPTIONS_BROKERLIST))
-        {
-            String brokerlist = _options.get(OPTIONS_BROKERLIST);
-
-            // brokerlist tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'
-            StringTokenizer st = new StringTokenizer(brokerlist, "" + URLHelper.BROKER_SEPARATOR);
-
-            while (st.hasMoreTokens())
-            {
-                String broker = st.nextToken();
-
-                _brokers.add(new AMQBrokerDetails(broker));
-            }
-
-            _options.remove(OPTIONS_BROKERLIST);
-        }
-
-        if (_options.containsKey(OPTIONS_FAILOVER))
-        {
-            String failover = _options.get(OPTIONS_FAILOVER);
-
-            // failover='method?option='value',option='value''
-
-            int methodIndex = failover.indexOf('?');
-
-            if (methodIndex > -1)
-            {
-                _failoverMethod = failover.substring(0, methodIndex);
-                URLHelper.parseOptions(_failoverOptions, failover.substring(methodIndex + 1));
-            }
-            else
-            {
-                _failoverMethod = failover;
-            }
-
-            _options.remove(OPTIONS_FAILOVER);
-        }
-
-        if (_options.containsKey(OPTIONS_DEFAULT_TOPIC_EXCHANGE))
-        {
-            _defaultTopicExchangeName = new AMQShortString(_options.get(OPTIONS_DEFAULT_TOPIC_EXCHANGE));
-        }
-
-        if (_options.containsKey(OPTIONS_DEFAULT_QUEUE_EXCHANGE))
-        {
-            _defaultQueueExchangeName = new AMQShortString(_options.get(OPTIONS_DEFAULT_QUEUE_EXCHANGE));
-        }
-
-        if (_options.containsKey(OPTIONS_TEMPORARY_QUEUE_EXCHANGE))
-        {
-            _temporaryQueueExchangeName = new AMQShortString(_options.get(OPTIONS_TEMPORARY_QUEUE_EXCHANGE));
-        }
-
-        if (_options.containsKey(OPTIONS_TEMPORARY_TOPIC_EXCHANGE))
-        {
-            _temporaryTopicExchangeName = new AMQShortString(_options.get(OPTIONS_TEMPORARY_TOPIC_EXCHANGE));
-        }
+        _urlVersion = version;
     }
 
     public String getURL()
@@ -268,9 +92,24 @@ public class AMQConnectionURL implements ConnectionURL
         return _url;
     }
 
+    public Map<String,String> getOptions()
+    {
+        return _options;
+    }
+
     public String getFailoverMethod()
     {
         return _failoverMethod;
+    }
+
+    public void setFailoverMethod(String failoverMethod)
+    {
+        _failoverMethod = failoverMethod;
+    }
+
+    public Map<String,String> getFailoverOptions()
+    {
+        return _failoverOptions;
     }
 
     public String getFailoverOption(String key)
@@ -368,9 +207,19 @@ public class AMQConnectionURL implements ConnectionURL
         return _defaultQueueExchangeName;
     }
 
+    public void setDefaultQueueExchangeName(AMQShortString defaultQueueExchangeName)
+    {
+        _defaultQueueExchangeName = defaultQueueExchangeName;
+    }
+
     public AMQShortString getDefaultTopicExchangeName()
     {
         return _defaultTopicExchangeName;
+    }
+
+    public void setDefaultTopicExchangeName(AMQShortString defaultTopicExchangeName)
+    {
+        _defaultTopicExchangeName = defaultTopicExchangeName;
     }
 
     public AMQShortString getTemporaryQueueExchangeName()
@@ -378,9 +227,19 @@ public class AMQConnectionURL implements ConnectionURL
         return _temporaryQueueExchangeName;
     }
 
+    public void setTemporaryQueueExchangeName(AMQShortString temporaryQueueExchangeName)
+    {
+        _temporaryQueueExchangeName = temporaryQueueExchangeName;
+    }
+
     public AMQShortString getTemporaryTopicExchangeName()
     {
         return _temporaryTopicExchangeName;
+    }
+
+    public void setTemporaryTopicExchangeName(AMQShortString temporaryTopicExchangeName)
+    {
+        _temporaryTopicExchangeName = temporaryTopicExchangeName;
     }
 
     public String toString()
