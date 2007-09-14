@@ -323,6 +323,7 @@ bool Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr& msg)
 bool Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr& msg)
 {
     if (msg->isPersistent() && store) {
+	msg->dequeueAsync(); //increment to async counter -- for message sent to more than one queue
         store->dequeue(ctxt, *msg.get(), *this);
 	return true;
     }
