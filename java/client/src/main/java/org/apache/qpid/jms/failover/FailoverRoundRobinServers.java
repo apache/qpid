@@ -199,7 +199,7 @@ public class FailoverRoundRobinServers implements FailoverMethod
 
         int index = _connectionDetails.getAllBrokerDetails().indexOf(broker);
 
-        String serverRetries = broker.getOption(BrokerDetails.OPTIONS_RETRY);
+        String serverRetries = broker.getProperty(BrokerDetails.OPTIONS_RETRY);
 
         if (serverRetries != null)
         {

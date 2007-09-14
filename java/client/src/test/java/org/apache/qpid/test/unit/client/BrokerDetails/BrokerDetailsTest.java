@@ -34,8 +34,8 @@ public class BrokerDetailsTest extends TestCase
 
         AMQBrokerDetails broker = new AMQBrokerDetails(url);
 
-        assertTrue(broker.getOption("timeout").equals("200"));
-        assertTrue(broker.getOption("immediatedelivery").equals("true"));
+        assertTrue(broker.getProperty("timeout").equals("200"));
+        assertTrue(broker.getProperty("immediatedelivery").equals("true"));
     }
 
     public void testVMBroker() throws URLSyntaxException

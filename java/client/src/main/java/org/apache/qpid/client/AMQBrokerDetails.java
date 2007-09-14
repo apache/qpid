@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLHelper;
@@ -34,8 +35,8 @@ public class AMQBrokerDetails implements BrokerDetails
     private int _port;
     private String _transport;
 
-    private HashMap<String, String> _options;
-    
+    private Map<String, String> _options;
+
     private SSLConfiguration _sslConfiguration;
 
     public AMQBrokerDetails()
@@ -214,12 +215,12 @@ public class AMQBrokerDetails implements BrokerDetails
     }
 
 
-    public String getOption(String key)
+    public String getProperty(String key)
     {
         return _options.get(key);
     }
 
-    public void setOption(String key, String value)
+    public void setProperty(String key, String value)
     {
         _options.put(key, value);
     }
@@ -243,17 +244,17 @@ public class AMQBrokerDetails implements BrokerDetails
 
     public void setTimeout(long timeout)
     {
-        setOption(OPTIONS_CONNECT_TIMEOUT, Long.toString(timeout));
+        setProperty(OPTIONS_CONNECT_TIMEOUT, Long.toString(timeout));
     }
-    
+
     public SSLConfiguration getSSLConfiguration()
     {
-    	return _sslConfiguration;
+        return _sslConfiguration;
     }
-    
+
     public void setSSLConfiguration(SSLConfiguration sslConfig)
     {
-    	_sslConfiguration = sslConfig;
+        _sslConfiguration = sslConfig;
     }
 
     public String toString()
@@ -320,23 +321,23 @@ public class AMQBrokerDetails implements BrokerDetails
 
         return optionsURL.toString();
     }
-    
+
     // Do we need to do a more in-depth comparison?
-    private boolean compareSSLConfigurations(SSLConfiguration other) 
+    private boolean compareSSLConfigurations(SSLConfiguration other)
     {
-    	boolean retval = false;
-    	if (_sslConfiguration == null &&
-    			other == null) 
-    	{
-    		retval = true;
-    	}
-    	else if (_sslConfiguration != null && 
-    			other != null)
-    	{
-    		retval = true;
-    	}
-    	
-    	return retval;
+        boolean retval = false;
+        if (_sslConfiguration == null &&
+                other == null)
+        {
+            retval = true;
+        }
+        else if (_sslConfiguration != null &&
+                other != null)
+        {
+            retval = true;
+        }
+
+        return retval;
     }
 
     public static String checkTransport(String broker)
@@ -349,5 +350,15 @@ public class AMQBrokerDetails implements BrokerDetails
         {
             return broker;
         }
+    }
+
+    public Map<String, String> getProperties()
+    {
+        return _options;
+    }
+
+    public void setProperties(Map<String, String> props)
+    {
+        _options = props;
     }
 }

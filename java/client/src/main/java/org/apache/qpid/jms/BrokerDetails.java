@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,6 +19,8 @@
  *
  */
 package org.apache.qpid.jms;
+
+import java.util.Map;
 
 import org.apache.qpid.client.SSLConfiguration;
 
@@ -44,6 +46,15 @@ public interface BrokerDetails
     public static final long DEFAULT_CONNECT_TIMEOUT = 30000L;
     public static final boolean USE_SSL_DEFAULT = false;
 
+    // pulled these properties from the new BrokerDetails class in the qpidity package
+    public static final String PROTOCOL_TCP = "tcp";
+    public static final String PROTOCOL_TLS = "tls";
+
+    public static final String VIRTUAL_HOST = "virtualhost";
+    public static final String CLIENT_ID = "client_id";
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
+
     String getHost();
 
     void setHost(String host);
@@ -56,16 +67,30 @@ public interface BrokerDetails
 
     void setTransport(String transport);
 
-    String getOption(String key);
+    String getProperty(String key);
 
-    void setOption(String key, String value);
+    void setProperty(String key, String value);
+
+    /**
+     * Ex: keystore path
+     *
+     * @return the Properties associated with this connection.
+     */
+    public Map<String,String> getProperties();
+
+    /**
+     * Sets the properties associated with this connection
+     *
+     * @param props the new p[roperties.
+     */
+    public void setProperties(Map<String,String> props);
 
     long getTimeout();
 
     void setTimeout(long timeout);
-    
+
     SSLConfiguration getSSLConfiguration();
-    
+
     void setSSLConfiguration(SSLConfiguration sslConfiguration);
 
     String toString();

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -125,21 +125,21 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         }
         _defaultPassword = password;
     }
-    
+
     /**
      * Getter for SSLConfiguration
      * @return SSLConfiguration if set, otherwise null
      */
     public final SSLConfiguration getSSLConfiguration() {
-    	return _sslConfig;
+        return _sslConfig;
     }
-    
+
     /**
      * Setter for SSLConfiguration
      * @param sslConfig config to store
      */
     public final void setSSLConfiguration(SSLConfiguration sslConfig) {
-    	_sslConfig = sslConfig;
+        _sslConfig = sslConfig;
     }
 
     /**
@@ -234,7 +234,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         _virtualPath = path;
     }
 
-    static String getUniqueClientID()
+    public static String getUniqueClientID()
     {
         try
         {

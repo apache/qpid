@@ -21,6 +21,7 @@
 package org.apache.qpid.url;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class URLHelper
 {
@@ -28,7 +29,7 @@ public class URLHelper
     public static char ALTERNATIVE_OPTION_SEPARATOR = ',';
     public static char BROKER_SEPARATOR = ';';
 
-    public static void parseOptions(HashMap<String, String> optionMap, String options) throws URLSyntaxException
+    public static void parseOptions(Map<String, String> optionMap, String options) throws URLSyntaxException
     {
         // options looks like this
         // brokerlist='tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'',failover='method?option='value',option='value''
@@ -142,7 +143,7 @@ public class URLHelper
         return new URLSyntaxException(url, error, index, length);
     }
 
-    public static String printOptions(HashMap<String, String> options)
+    public static String printOptions(Map<String, String> options)
     {
         if (options.isEmpty())
         {
