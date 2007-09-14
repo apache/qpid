@@ -108,6 +108,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  *
@@ -219,6 +220,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      * @todo Weaken the type once {@link FlowControllingBlockingQueue} implements Queue.
      */
     private final FlowControllingBlockingQueue _queue;
+
+    /**
+     * Holds the highest received delivery tag.
+     */
+    private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
 
     /** Holds the dispatcher thread for this session. */
     private Dispatcher _dispatcher;
@@ -1278,6 +1284,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
         else
         {
+            _highestDeliveryTag.set(message.getDeliverBody().deliveryTag);
             _queue.add(message);
         }
     }
@@ -2558,6 +2565,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         private final AtomicBoolean _closed = new AtomicBoolean(false);
 
         private final Object _lock = new Object();
+        private final AtomicLong _rollbackMark = new AtomicLong(-1);
 
         public Dispatcher()
         {
@@ -2614,7 +2622,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     setConnectionStopped(true);
                 }
 
-                rejectAllMessages(true);
+                _rollbackMark.set(_highestDeliveryTag.get());
 
                 _dispatcherLogger.debug("Session Pre Dispatch Queue cleared");
 
@@ -2650,7 +2658,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             // Allow disptacher to start stopped
             synchronized (_lock)
             {
-                while (connectionStopped())
+                while (!_closed.get() && connectionStopped())
                 {
                     try
                     {
@@ -2675,14 +2683,16 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                             _lock.wait();
                         }
 
-                        synchronized (_messageDeliveryLock)
+                        if (message.getDeliverBody().deliveryTag <= _rollbackMark.get())
                         {
-                            dispatchMessage(message);
+                            rejectMessage(message, true);
                         }
-
-                        while (connectionStopped())
+                        else
                         {
-                            _lock.wait();
+                            synchronized (_messageDeliveryLock)
+                            {
+                                dispatchMessage(message);
+                            }
                         }
 
                     }

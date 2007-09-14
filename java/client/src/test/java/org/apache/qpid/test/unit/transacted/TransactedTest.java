@@ -171,34 +171,33 @@ public class TransactedTest extends TestCase
     public void testRollback() throws Exception
     {
         // add some messages
-        _logger.info("Send prep A");
-        prepProducer1.send(prepSession.createTextMessage("A"));
-        _logger.info("Send prep B");
-        prepProducer1.send(prepSession.createTextMessage("B"));
-        _logger.info("Send prep C");
-        prepProducer1.send(prepSession.createTextMessage("C"));
+        _logger.info("Send prep RB_A");
+        prepProducer1.send(prepSession.createTextMessage("RB_A"));
+        _logger.info("Send prep RB_B");
+        prepProducer1.send(prepSession.createTextMessage("RB_B"));
+        _logger.info("Send prep RB_C");
+        prepProducer1.send(prepSession.createTextMessage("RB_C"));
 
-        // Quick sleep to ensure all three get pre-fetched
+        _logger.info("Sending RB_X RB_Y RB_Z");
+        producer2.send(session.createTextMessage("RB_X"));
+        producer2.send(session.createTextMessage("RB_Y"));
+        producer2.send(session.createTextMessage("RB_Z"));
+        _logger.info("Receiving RB_A RB_B");
+        expect("RB_A", consumer1.receive(1000));
+        expect("RB_B", consumer1.receive(1000));
+        // Don't consume 'RB_C' leave it in the prefetch cache to ensure rollback removes it.
+        // Quick sleep to ensure 'RB_C' gets pre-fetched
         Thread.sleep(500);
-
-        _logger.info("Sending X Y Z");
-        producer2.send(session.createTextMessage("X"));
-        producer2.send(session.createTextMessage("Y"));
-        producer2.send(session.createTextMessage("Z"));
-        _logger.info("Receiving A B");
-        expect("A", consumer1.receive(1000));
-        expect("B", consumer1.receive(1000));
-        // Don't consume 'C' leave it in the prefetch cache to ensure rollback removes it.
 
         // rollback
         _logger.info("rollback");
         session.rollback();
 
-        _logger.info("Receiving A B C");
+        _logger.info("Receiving RB_A RB_B RB_C");
         // ensure sent messages are not visible and received messages are requeued
-        expect("A", consumer1.receive(1000), true);
-        expect("B", consumer1.receive(1000), true);
-        expect("C", consumer1.receive(1000), true);
+        expect("RB_A", consumer1.receive(1000), true);
+        expect("RB_B", consumer1.receive(1000), true);
+        expect("RB_C", consumer1.receive(1000), true);
 
         _logger.info("Starting new connection");
         testCon.start();
