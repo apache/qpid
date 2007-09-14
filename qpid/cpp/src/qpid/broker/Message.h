@@ -57,6 +57,8 @@ public:
     const ConnectionToken* getPublisher() const {  return publisher; }
     void setPublisher(ConnectionToken* p) {  publisher = p; }
 
+    const framing::SequenceNumber& getCommandId() { return frames.getId(); }
+
     uint64_t contentSize() const;
 
     std::string getRoutingKey() const;
