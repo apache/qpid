@@ -28,6 +28,8 @@
 namespace qpid {
 namespace broker {
 
+class ExternalQueueStore;
+
 /**
  * The interface through which messages are added back to queues on
  * recovery.
@@ -43,6 +45,11 @@ public:
      */
     virtual void recover(RecoverableMessage::shared_ptr msg) = 0;
     virtual ~RecoverableQueue() {};
+
+    virtual const std::string& getName() const = 0;
+    virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
+
+
 };
 
 }}

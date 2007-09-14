@@ -56,7 +56,12 @@ public:
 	   delete externalQueueStore;
     };
 
-    inline void setExternalQueueStore(ExternalQueueStore* inst) {externalQueueStore = inst;};
+    inline void setExternalQueueStore(ExternalQueueStore* inst){
+        if (externalQueueStore!=inst && externalQueueStore) 
+	   delete externalQueueStore; 
+        externalQueueStore = inst;
+    };
+    
     inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
     
     PersistableQueue():externalQueueStore(NULL){
