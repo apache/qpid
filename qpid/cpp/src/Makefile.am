@@ -178,6 +178,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ExchangeRegistry.cpp \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/HeadersExchange.cpp \
+  qpid/broker/IncomingExecutionContext.cpp \
   qpid/broker/Message.cpp \
   qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
@@ -278,6 +279,7 @@ nobase_include_HEADERS = \
   qpid/broker/Daemon.h \
   qpid/broker/DeliveryRecord.h \
   qpid/broker/HeadersExchange.h \
+  qpid/broker/IncomingExecutionContext.h \
   qpid/broker/MessageStore.h \
   qpid/broker/PersistableExchange.h \
   qpid/broker/PersistableMessage.h \

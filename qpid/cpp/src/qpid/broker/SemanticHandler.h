@@ -25,6 +25,7 @@
 #include "BrokerAdapter.h"
 #include "DeliveryAdapter.h"
 #include "MessageBuilder.h"
+#include "IncomingExecutionContext.h"
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
@@ -53,7 +54,7 @@ class SemanticHandler : public DeliveryAdapter,
     Session& session;
     Connection& connection;
     BrokerAdapter adapter;
-    framing::Window incoming;
+    IncomingExecutionContext incoming;
     framing::Window outgoing;
     sys::Mutex outLock;
     MessageBuilder msgBuilder;
@@ -64,6 +65,8 @@ class SemanticHandler : public DeliveryAdapter,
     void handleL3(framing::AMQMethodBody* method);
     void handleCommand(framing::AMQMethodBody* method);
     void handleContent(framing::AMQFrame& frame);
+
+    void sendCompletion();
 
     //ChannelAdapter virtual methods:
     void handleMethod(framing::AMQMethodBody* method);
