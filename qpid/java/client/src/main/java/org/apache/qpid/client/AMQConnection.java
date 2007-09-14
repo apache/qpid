@@ -228,19 +228,30 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(connection), sslConfig);
     }
 
-    // 0-10 stuff
-    public AMQConnection(QpidURL connectionURL) throws AMQException
-    {
-
-    }
-
     /**
      * @todo Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception
      *       was thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
      */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
-        if (Boolean.getBoolean("0-10"))
+        /* This JVM arg is only used for test code
+         Unless u pass a url it is difficult to determine which version to use
+         Most of the test code use an AMQConnection constructor that doesn't use
+         the url. So you need this switch to say which code path to test.
+
+        Another complication is that when a constructor is called with out a url
+        they would construct a 0-8 url and pass into the construtor that takes a url.
+
+        In such an instance u need the jvm argument to force an 0-10 connection
+        Once the 0-10 code base stabilises, 0-10 will be the default.
+        */
+
+        if (Boolean.getBoolean("SwitchCon"))
+        {
+            connectionURL.setURLVersion((Boolean.getBoolean("0-10")?  ConnectionURL.URL_0_10:ConnectionURL.URL_0_8));
+        }
+
+        if (connectionURL.getURLVersion() == ConnectionURL.URL_0_10)
         {
             _delegate = new AMQConnectionDelegate_0_10(this);
         }
@@ -287,8 +298,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _temporaryTopicExchangeName = connectionURL.getTemporaryTopicExchangeName();
         }
 
-        _failoverPolicy = new FailoverPolicy(connectionURL);
 
+        _failoverPolicy = new FailoverPolicy(connectionURL);
         _protocolHandler = new AMQProtocolHandler(this);
 
         // We are not currently connected
