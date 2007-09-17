@@ -60,16 +60,26 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     {
     }
 
+    /**
+     * This is the Only constructor used!
+     * It is used form the context and from the JNDI objects.
+     */
     public AMQConnectionFactory(String url) throws URLSyntaxException
     {
         _connectionDetails = new AMQConnectionURL(url);
     }
 
+    /**
+     * This constructor is never used!
+     */
     public AMQConnectionFactory(ConnectionURL url)
     {
         _connectionDetails = url;
     }
 
+     /**
+     * This constructor is never used!
+     */
     public AMQConnectionFactory(String broker, String username, String password,
                                 String clientName, String virtualHost) throws URLSyntaxException
     {
@@ -78,11 +88,17 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
                                   virtualHost + "?brokerlist='" + broker + "'"));
     }
 
+     /**
+     * This constructor is never used!
+     */
     public AMQConnectionFactory(String host, int port, String virtualPath)
     {
         this(host, port, "guest", "guest", virtualPath);
     }
 
+     /**
+     * This constructor is never used!
+     */
     public AMQConnectionFactory(String host, int port, String defaultUsername, String defaultPassword,
                                 String virtualPath)
     {
@@ -382,7 +398,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 
                 if (addr != null)
                 {
-                    return new AMQConnectionFactory(new AMQConnectionURL((String) addr.getContent()));
+                    return new AMQConnectionFactory((String) addr.getContent());
                 }
             }
 

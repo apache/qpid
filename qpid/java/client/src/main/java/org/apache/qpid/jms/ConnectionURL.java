@@ -60,6 +60,8 @@ public interface ConnectionURL
 
     void addBrokerDetails(BrokerDetails broker);
 
+    void setBrokerDetails(List<BrokerDetails> brokers);
+
     List<BrokerDetails> getAllBrokerDetails();
 
     String getClientName();

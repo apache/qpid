@@ -75,7 +75,7 @@ public class QpidClientConnection implements ExceptionListener
             String brokerUrl = "amqp://guest:guest@" + virtualHost + "?brokerlist='" + brokerlist + "'";
             try
             {
-                AMQConnectionFactory factory = new AMQConnectionFactory(new AMQConnectionURL(brokerUrl));
+                AMQConnectionFactory factory = new AMQConnectionFactory(brokerUrl);
                 _logger.info("connecting to Qpid :" + brokerUrl);
                 connection = factory.createConnection();
 
