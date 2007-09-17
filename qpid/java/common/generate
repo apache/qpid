@@ -210,7 +210,7 @@ class Struct:
     out.line("    }")
 
     out.line()
-    out.line("    public <C> void delegate(C context, Delegate<C> delegate) {")
+    out.line("    public <C> void dispatch(C context, MethodDelegate<C> delegate) {")
     out.line("        delegate.%s(context, this);" % dromedary(self.name))
     out.line("    }")
 
@@ -365,8 +365,8 @@ fct.line("    }")
 fct.line("}");
 fct.write()
 
-dlg = Output(out_dir, out_pkg, "Delegate")
-dlg.line("public abstract class Delegate<C> extends AbstractDelegate<C> {")
+dlg = Output(out_dir, out_pkg, "MethodDelegate")
+dlg.line("public abstract class MethodDelegate<C> {")
 for s in structs:
   dlg.line("    public void %s(C context, %s struct) {}" %
            (dromedary(s.name), s.name))

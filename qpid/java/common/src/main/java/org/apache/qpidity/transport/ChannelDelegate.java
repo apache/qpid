@@ -29,7 +29,7 @@ import java.util.UUID;
  * @author Rafael H. Schloming
  */
 
-class ChannelDelegate extends Delegate<Channel>
+class ChannelDelegate extends MethodDelegate<Channel>
 {
 
     public @Override void sessionOpen(Channel channel, SessionOpen open)

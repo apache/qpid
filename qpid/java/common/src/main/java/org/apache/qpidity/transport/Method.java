@@ -54,9 +54,11 @@ public abstract class Method extends Struct implements ProtocolEvent
 
     public abstract byte getEncodedTrack();
 
-    public <C> void delegate(C context, Switch sw)
+    public abstract <C> void dispatch(C context, MethodDelegate<C> delegate);
+
+    public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {
-        sw.method(context, this);
+        delegate.method(context, this);
     }
 
 }
