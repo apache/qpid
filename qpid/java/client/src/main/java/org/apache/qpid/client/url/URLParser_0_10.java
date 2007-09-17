@@ -96,7 +96,7 @@ public class URLParser_0_10
 
     public URLParser_0_10(String url) throws MalformedURLException
     {
-        _url = (url + "END_OF_URL_MARKER").toCharArray();
+        _url = (url + END_OF_URL_MARKER).toCharArray();
         _endOfURL = false;
         _currentParserState = URLParserState.QPID_URL_START;
         URLParserState prevState = _currentParserState; // for error handling
@@ -402,7 +402,7 @@ public class URLParser_0_10
 
     public static void main(String[] args)
     {
-        String testurl = "qpid:password=pass;username=name@tcp:test1,tcp:fooBroker,keystore=/usr/foo@tls:tlsBroker";
+        String testurl = "qpid:password=pass;username=name@tcp:test1";
         try
         {
             URLParser_0_10 impl = new URLParser_0_10(testurl);
