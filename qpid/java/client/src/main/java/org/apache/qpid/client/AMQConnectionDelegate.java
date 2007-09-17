@@ -36,4 +36,6 @@ public interface AMQConnectionDelegate
             final int prefetchHigh, final int prefetchLow) throws JMSException;
 
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException;
+
+    public void closeConneciton(long timeout) throws JMSException, AMQException;
 }

@@ -689,8 +689,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
                     // adjust timeout
                     timeout = adjustTimeout(timeout, startCloseTime);
-
-                    _protocolHandler.closeConnection(timeout);
+                    _delegate.closeConneciton(timeout);
+                    //_protocolHandler.closeConnection(timeout);
 
                 }
                 catch (AMQException e)
@@ -702,6 +702,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
         }
     }
+
+
 
     /**
      * Marks all sessions and their children as closed without sending any protocol messages. Useful when you need to

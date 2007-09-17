@@ -126,7 +126,11 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         DeliveryProperties devprop = (DeliveryProperties) contentHeader[1];
         props.setContentType(mprop.getContentType());
         props.setCorrelationId(mprop.getCorrelationId());
-        props.setEncoding(mprop.getContentEncoding());
+        String encoding = mprop.getContentEncoding();
+        if (!encoding.equals(""))
+        {
+            props.setEncoding(encoding);
+        }
         props.setExpiration(devprop.getExpiration());
         // todo update when fieldtable is used props.setHeaders(mprop.getApplicationHeaders());
         props.setMessageId(mprop.getMessageId());

@@ -22,6 +22,7 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpidity.jms.ExceptionHelper;
@@ -48,20 +49,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     public void declareDestination(AMQDestination destination)
     {
-        // Declare the exchange
-        // Note that the durable and internal arguments are ignored since passive is set to false
-        AMQFrame declare = ExchangeDeclareBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
-                                                              _protocolHandler.getProtocolMinorVersion(), null,
-                                                              // arguments
-                                                              false, // autoDelete
-                                                              false, // durable
-                                                              destination.getExchangeName(), // exchange
-                                                              false, // internal
-                                                              true, // nowait
-                                                              false, // passive
-                                                              _session.getTicket(), // ticket
-                                                              destination.getExchangeClass()); // type
-        _protocolHandler.writeFrame(declare);
+        ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare(destination.getExchangeName().toString(),
+                                                                          destination.getExchangeClass().toString(),
+                                                                          null,
+                                                                          null
+                                                                          );
     }
 
     //--- Overwritten methods
@@ -105,7 +97,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
         // set the application properties
         qpidityMessage.getMessageProperties().setContentType(contentHeaderProperties.getContentType().toString());
-        qpidityMessage.getMessageProperties().setCorrelationId(contentHeaderProperties.getCorrelationId().toString());
+        AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
+        if( correlationID != null )
+        {
+            qpidityMessage.getMessageProperties().setCorrelationId(correlationID.toString());
+        }
         String replyToURL = contentHeaderProperties.getReplyToAsString();
         if (replyToURL != null)
         {
