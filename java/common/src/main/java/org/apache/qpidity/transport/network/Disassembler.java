@@ -27,9 +27,10 @@ import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.Data;
 import org.apache.qpidity.transport.Header;
 import org.apache.qpidity.transport.Method;
-import org.apache.qpidity.transport.ProtocolHeader;
+import org.apache.qpidity.transport.ProtocolDelegate;
 import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolEvent;
+import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.Sender;
 import org.apache.qpidity.transport.Struct;
 
@@ -45,8 +46,8 @@ import static java.lang.Math.*;
  *
  */
 
-public class Disassembler
-    implements Sender<ConnectionEvent>, ProtocolEvent.Switch<ConnectionEvent>
+public class Disassembler implements Sender<ConnectionEvent>,
+                                     ProtocolDelegate<ConnectionEvent>
 {
 
     private final Sender<NetworkEvent> sender;
