@@ -35,12 +35,13 @@ import static org.apache.qpidity.transport.util.Functions.*;
  * @author Rafael H. Schloming
  */
 
-public class Channel extends Invoker implements Receiver<ProtocolEvent>
+public class Channel extends Invoker
+    implements Receiver<ProtocolEvent>, ProtocolDelegate<Void>
 {
 
     final private Connection connection;
     final private int channel;
-    final private Delegate<Channel> delegate;
+    final private MethodDelegate<Channel> delegate;
     final private SessionDelegate sessionDelegate;
     // session may be null
     private Session session;
@@ -63,38 +64,49 @@ public class Channel extends Invoker implements Receiver<ProtocolEvent>
 
     public void received(ProtocolEvent event)
     {
-        switch (event.getEncodedTrack())
+        event.delegate(null, this);
+    }
+
+    public void init(Void v, ProtocolHeader hdr)
+    {
+        connection.getConnectionDelegate().init(this, hdr);
+    }
+
+    public void method(Void v, Method method)
+    {
+        switch (method.getEncodedTrack())
         {
         case L1:
-            event.delegate(this, connection.getConnectionDelegate());
+            method.dispatch(this, connection.getConnectionDelegate());
             break;
         case L2:
-            event.delegate(this, delegate);
+            method.dispatch(this, delegate);
             break;
         case L3:
-            event.delegate(session, sessionDelegate);
+            method.delegate(session, sessionDelegate);
             break;
         case L4:
-            // XXX
-            if (event instanceof Method)
-            {
-                Method method = (Method) event;
-                method.setId(session.nextCommandId());
-                method.delegate(session, sessionDelegate);
-                if (!method.hasPayload())
-                {
-                    session.processed(method);
-                }
-            }
-            else
-            {
-                event.delegate(session, sessionDelegate);
-            }
+            method.delegate(session, sessionDelegate);
             break;
         default:
             throw new IllegalStateException
-                ("unknown track: " + event.getEncodedTrack());
+                ("unknown track: " + method.getEncodedTrack());
         }
+    }
+
+    public void header(Void v, Header header)
+    {
+        header.delegate(session, sessionDelegate);
+    }
+
+    public void data(Void v, Data data)
+    {
+        data.delegate(session, sessionDelegate);
+    }
+
+    public void error(Void v, ProtocolError error)
+    {
+        error.delegate(session, sessionDelegate);
     }
 
     public void closed()

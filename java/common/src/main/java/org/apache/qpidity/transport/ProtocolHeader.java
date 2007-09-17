@@ -89,19 +89,14 @@ public class ProtocolHeader implements NetworkEvent, ProtocolEvent
         return buf;
     }
 
-    public <C> void delegate(C context, Switch sw)
+    public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {
-        sw.init(context, this);
+        delegate.init(context, this);
     }
 
     public void delegate(NetworkDelegate delegate)
     {
         delegate.init(this);
-    }
-
-    public <C> void delegate(C context, Delegate<C> delegate)
-    {
-        delegate.init(context, this);
     }
 
     public String toString()

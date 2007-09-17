@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity.transport;
 
+import org.apache.qpidity.transport.network.Frame;
+
 
 /**
  * SessionDelegate
@@ -27,10 +29,29 @@ package org.apache.qpidity.transport;
  * @author Rafael H. Schloming
  */
 
-public abstract class SessionDelegate extends Delegate<Session>
+public abstract class SessionDelegate
+    extends MethodDelegate<Session>
+    implements ProtocolDelegate<Session>
 {
+    public void init(Session ssn, ProtocolHeader hdr) { }
 
-    private static final Struct[] EMPTY_STRUCT_ARRAY = {};
+    public void method(Session ssn, Method method) {
+        if (method.getEncodedTrack() == Frame.L4)
+        {
+            method.setId(ssn.nextCommandId());
+            method.dispatch(ssn, this);
+            if (!method.hasPayload())
+            {
+                ssn.processed(method);
+            }
+        }
+    }
+
+    public void header(Session ssn, Header header) { }
+
+    public void data(Session ssn, Data data) { }
+
+    public void error(Session ssn, ProtocolError error) { }
 
     @Override public void executionResult(Session ssn, ExecutionResult result)
     {

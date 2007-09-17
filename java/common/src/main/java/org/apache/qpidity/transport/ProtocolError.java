@@ -54,19 +54,14 @@ public class ProtocolError implements NetworkEvent, ProtocolEvent
         return String.format(format, args);
     }
 
-    public <C> void delegate(C context, Switch sw)
+    public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {
-        sw.error(context, this);
+        delegate.error(context, this);
     }
 
     public void delegate(NetworkDelegate delegate)
     {
         delegate.error(this);
-    }
-
-    public <C> void delegate(C context, Delegate<C> delegate)
-    {
-        delegate.error(context, this);
     }
 
 }

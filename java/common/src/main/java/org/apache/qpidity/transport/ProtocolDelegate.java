@@ -22,15 +22,21 @@ package org.apache.qpidity.transport;
 
 
 /**
- * ProtocolEvent
+ * ProtocolDelegate
  *
  */
 
-public interface ProtocolEvent
+public interface ProtocolDelegate<C>
 {
 
-    byte getEncodedTrack();
+    void init(C context, ProtocolHeader header);
 
-    <C> void delegate(C context, ProtocolDelegate<C> delegate);
+    void method(C context, Method method);
+
+    void header(C context, Header header);
+
+    void data(C context, Data data);
+
+    void error(C context, ProtocolError error);
 
 }

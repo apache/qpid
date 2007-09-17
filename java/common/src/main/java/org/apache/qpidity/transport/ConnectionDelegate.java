@@ -47,7 +47,7 @@ import javax.security.sasl.SaslServer;
  *
  * the connectionClose is kind of different for both sides
  */
-public abstract class ConnectionDelegate extends Delegate<Channel>
+public abstract class ConnectionDelegate extends MethodDelegate<Channel>
 {
     private String _username = "guest";
     private String _password = "guest";;
@@ -68,7 +68,7 @@ public abstract class ConnectionDelegate extends Delegate<Channel>
         _negotiationCompleteLock = negotiationCompleteLock;
     }
 
-    @Override public void init(Channel ch, ProtocolHeader hdr)
+    public void init(Channel ch, ProtocolHeader hdr)
     {
         System.out.println(hdr);
         // XXX: hardcoded version
@@ -85,11 +85,6 @@ public abstract class ConnectionDelegate extends Delegate<Channel>
 
             ch.connectionStart(hdr.getMajor(), hdr.getMinor(), null, "PLAIN", "utf8");
         }
-    }
-
-    @Override public void error(Channel ch, ProtocolError error)
-    {
-        throw new RuntimeException(error.getMessage());
     }
 
     // ----------------------------------------------
