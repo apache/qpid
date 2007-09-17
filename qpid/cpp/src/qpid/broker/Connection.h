@@ -38,7 +38,7 @@
 #include "qpid/Exception.h"
 #include "Session.h"
 #include "ConnectionAdapter.h"
-#include "SessionAdapter.h"
+#include "SessionHandler.h"
 
 #include <boost/optional.hpp>
 
@@ -51,8 +51,8 @@ class Connection : public sys::ConnectionInputHandler,
   public:
     Connection(sys::ConnectionOutputHandler* out, Broker& broker);
 
-    /** Get the SessionAdapter for channel. Create if it does not already exist */
-    SessionAdapter getChannel(framing::ChannelId channel);
+    /** Get the SessionHandler for channel. Create if it does not already exist */
+    SessionHandler getChannel(framing::ChannelId channel);
 
     /** Close the connection */
     void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);
@@ -85,7 +85,7 @@ class Connection : public sys::ConnectionInputHandler,
   private:
 
     // Use boost::optional to allow default-constructed uninitialized entries in the map.
-    typedef std::map<framing::ChannelId, boost::optional<SessionAdapter> >ChannelMap;
+    typedef std::map<framing::ChannelId, boost::optional<SessionHandler> >ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     framing::ProtocolVersion version;

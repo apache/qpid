@@ -38,20 +38,20 @@ class Connection;
 class Session;
 
 /**
- * A SessionAdapter is associated with each active channel. It
+ * A SessionHandler is associated with each active channel. It
  * receives incoming frames, handles session commands and manages the
  * association between the channel and a session.
  *
- * SessionAdapters can be stored in a map by value.
+ * SessionHandlers can be stored in a map by value.
  */
-class SessionAdapter :
+class SessionHandler :
         public framing::FrameHandler::Chains,
         private framing::FrameHandler,
         private framing::AMQP_ServerOperations::ChannelHandler
 {
   public:
-    SessionAdapter(Connection&, framing::ChannelId);
-    ~SessionAdapter();
+    SessionHandler(Connection&, framing::ChannelId);
+    ~SessionHandler();
 
     /** Handle AMQP session methods, pass other frames to the session
      * if there is one. Frames channel must be == getChannel()

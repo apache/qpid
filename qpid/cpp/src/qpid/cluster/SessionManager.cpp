@@ -40,7 +40,7 @@ using namespace broker;
 struct SessionManager::BrokerHandler : public FrameHandler, private ChannelAdapter
 {
     Connection connection;
-    SessionAdapter sessionAdapter;
+    SessionHandler sessionAdapter;
     broker::Session session;
     BrokerAdapter adapter;
     
