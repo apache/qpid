@@ -47,12 +47,10 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
     {
         _conn.checkNotClosed();
         int channelId = _conn._idFactory.incrementAndGet();
-        AMQSession session =
-                new AMQSession_0_10(_conn, channelId, transacted, acknowledgeMode, prefetchHigh, prefetchLow);
+        AMQSession session;
         try
-        {
-            // create the qpid session with an expiry  <= 0 so that the session does not expire
-            _qpidConnection.createSession(0);
+        {         
+            session = new AMQSession_0_10(_qpidConnection, _conn, channelId, transacted, acknowledgeMode, prefetchHigh, prefetchLow);
             _conn.registerSession(channelId, session);
             if (_conn._started)
             {
@@ -98,8 +96,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
      */
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
-       //NOT implemented as railover is handled at a lower level
-       throw new FailoverException("failing to reconnect during failover, operation not supported.");
+        //NOT implemented as railover is handled at a lower level
+        throw new FailoverException("failing to reconnect during failover, operation not supported.");
     }
 
 }
