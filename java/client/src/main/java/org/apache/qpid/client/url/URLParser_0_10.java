@@ -356,7 +356,7 @@ public class URLParser_0_10
         try
         {
             char next = _url[_index];
-            while (next != ADDRESS_SEPERATOR_CHAR)
+            while (next != ADDRESS_SEPERATOR_CHAR && next != END_OF_URL_MARKER )
             {
                 b.append(next);
                 next = _url[++_index];
@@ -378,6 +378,10 @@ public class URLParser_0_10
             {
                 int port = Integer.parseInt(portStr);
                 _currentBroker.setPort(port);
+                if( _url[_index] == END_OF_URL_MARKER )
+                {
+                    _endOfURL = true;
+                }
                 return URLParserState.ADDRESS_END;
             }
             catch (NumberFormatException e)

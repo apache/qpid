@@ -49,8 +49,9 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
         int channelId = _conn._idFactory.incrementAndGet();
         AMQSession session;
         try
-        {         
-            session = new AMQSession_0_10(_qpidConnection, _conn, channelId, transacted, acknowledgeMode, prefetchHigh, prefetchLow);
+        {
+            session = new AMQSession_0_10(_qpidConnection, _conn, channelId, transacted, acknowledgeMode, prefetchHigh,
+                                          prefetchLow);
             _conn.registerSession(channelId, session);
             if (_conn._started)
             {
@@ -100,4 +101,17 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
         throw new FailoverException("failing to reconnect during failover, operation not supported.");
     }
 
+
+    public void closeConneciton(long timeout) throws JMSException, AMQException
+    {
+        try
+        {
+            _qpidConnection.close();
+        }
+        catch (QpidException e)
+        {
+            throw new AMQException(AMQConstant.CHANNEL_ERROR, "cannot close connection", e);
+        }
+
+    }
 }
