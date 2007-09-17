@@ -63,14 +63,9 @@ public class Header implements ProtocolEvent {
         return Frame.L4;
     }
 
-    public <C> void delegate(C context, Delegate<C> delegate)
+    public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {
         delegate.header(context, this);
-    }
-
-    public <C> void delegate(C context, Switch sw)
-    {
-        sw.header(context, this);
     }
 
 }
