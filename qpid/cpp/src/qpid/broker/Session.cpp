@@ -29,7 +29,7 @@
 #include "DtxTimeout.h"
 #include "Message.h"
 #include "SemanticHandler.h"
-#include "SessionAdapter.h"
+#include "SessionHandler.h"
 #include "TxAck.h"
 #include "TxPublish.h"
 #include "qpid/QpidError.h"
@@ -56,7 +56,7 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-Session::Session(SessionAdapter& a, uint32_t t)
+Session::Session(SessionHandler& a, uint32_t t)
     : adapter(&a),
       broker(adapter->getConnection().broker),
       timeout(t),

@@ -21,7 +21,7 @@
 
 #include "SemanticHandler.h"
 #include "Session.h"
-#include "SessionAdapter.h"
+#include "SessionHandler.h"
 #include "BrokerAdapter.h"
 #include "MessageDelivery.h"
 #include "Connection.h"
@@ -187,7 +187,7 @@ void SemanticHandler::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_
 void SemanticHandler::send(const AMQBody& body)
 {
     Mutex::ScopedLock l(outLock);
-    // FIXME aconway 2007-08-31: SessionAdapter should not send
+    // FIXME aconway 2007-08-31: SessionHandler should not send
     // channel/session commands  via the semantic handler, it should shortcut
     // directly to its own output handler. That will make the CLASS_ID
     // part of the test unnecessary.
