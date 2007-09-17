@@ -535,7 +535,13 @@ void Session::ConsumerImpl::addMessageCredit(uint32_t value)
 
 void Session::ConsumerImpl::flush()
 {
+    //need to prevent delivery after requestDispatch returns but
+    //before credit is reduced to zero; TODO: come up with better
+    //implementation of flush.
+    Mutex::ScopedLock l(lock);
     queue->requestDispatch(this, true);
+    byteCredit = 0;
+    msgCredit = 0;
 }
 
 void Session::ConsumerImpl::stop()
