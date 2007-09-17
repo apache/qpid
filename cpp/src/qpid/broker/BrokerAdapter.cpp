@@ -17,7 +17,7 @@
  */
 #include "BrokerAdapter.h"
 #include "Session.h"
-#include "SessionAdapter.h"
+#include "SessionHandler.h"
 #include "Connection.h"
 #include "DeliveryToken.h"
 #include "MessageDelivery.h"

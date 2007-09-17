@@ -50,7 +50,7 @@ class AMQP_ClientProxy;
 
 namespace broker {
 
-class SessionAdapter;
+class SessionHandler;
 class Broker;
 
 /**
@@ -99,7 +99,7 @@ class Session : public framing::FrameHandler::Chains,
 
     typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
 
-    SessionAdapter* adapter;
+    SessionHandler* adapter;
     Broker& broker;
     uint32_t timeout;
     boost::ptr_vector<framing::FrameHandler>  handlers;
@@ -137,12 +137,12 @@ class Session : public framing::FrameHandler::Chains,
     
 
   public:
-    Session(SessionAdapter&, uint32_t timeout);
+    Session(SessionHandler&, uint32_t timeout);
     ~Session();
 
     /** Returns 0 if this session is not currently attached */
-    SessionAdapter* getAdapter() { return adapter; }
-    const SessionAdapter* getAdapter() const { return adapter; }
+    SessionHandler* getAdapter() { return adapter; }
+    const SessionHandler* getAdapter() const { return adapter; }
 
     Broker& getBroker() const { return broker; }
     
