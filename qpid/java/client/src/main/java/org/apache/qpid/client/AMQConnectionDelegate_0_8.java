@@ -51,6 +51,13 @@ public class AMQConnectionDelegate_0_8 implements AMQConnectionDelegate
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_0_8.class);
     private AMQConnection _conn;
 
+
+    public void closeConneciton(long timeout) throws JMSException, AMQException
+    {
+        _conn.getProtocolHandler().closeConnection(timeout);
+
+    }
+
     public AMQConnectionDelegate_0_8(AMQConnection conn)
     {
         _conn = conn;
