@@ -24,8 +24,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.net.MalformedURLException;
 
 import org.apache.qpid.client.url.URLParser_0_8;
+import org.apache.qpid.client.url.URLParser_0_10;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -67,11 +69,28 @@ public class AMQConnectionURL implements ConnectionURL
             if (fullURL.startsWith("qpid"))
             {
                 //URLParser
+                URLParser_0_10 parser = null;
+                try
+                {
+                    parser = new URLParser_0_10(fullURL);
+                }
+                catch (MalformedURLException e)
+                {
+                    throw new URLSyntaxException(fullURL,e.getMessage(),0,0);
+                }
+                setBrokerDetails(parser.getAllBrokerDetails());
+                // use the first instance username and password
+                // This is temporary as the URL must be changed for olding this information as part of the full URL
+                BrokerDetails firstBroker = getBrokerDetails(0);
+                setUsername(firstBroker.getProperty(BrokerDetails.USERNAME));
+                setPassword(firstBroker.getProperty(BrokerDetails.PASSWORD));
+                setClientName(firstBroker.getProperty(BrokerDetails.CLIENT_ID));
+                setVirtualHost(firstBroker.getProperty(BrokerDetails.VIRTUAL_HOST));
                 _urlVersion = URL_0_10;
             }
             else
             {
-                URLParser_0_8 urlParser = new URLParser_0_8(this);
+                 new URLParser_0_8(this);
                 _urlVersion = URL_0_8;
             }
         }
@@ -145,6 +164,11 @@ public class AMQConnectionURL implements ConnectionURL
         {
             _brokers.add(broker);
         }
+    }
+
+    public void setBrokerDetails(List<BrokerDetails> brokers)
+    {
+        _brokers = brokers;
     }
 
     public List<BrokerDetails> getAllBrokerDetails()
