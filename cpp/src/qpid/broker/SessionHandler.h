@@ -44,19 +44,11 @@ class Session;
  *
  * SessionHandlers can be stored in a map by value.
  */
-class SessionHandler :
-        public framing::FrameHandler::Chains,
-        private framing::FrameHandler,
-        private framing::AMQP_ServerOperations::ChannelHandler
+class SessionHandler : public framing::FrameHandler::InOutHandler
 {
   public:
     SessionHandler(Connection&, framing::ChannelId);
     ~SessionHandler();
-
-    /** Handle AMQP session methods, pass other frames to the session
-     * if there is one. Frames channel must be == getChannel()
-     */
-    void handle(framing::AMQFrame&);
 
     /** Returns 0 if not attached to a session */
     Session* getSession() const { return session.get(); }
@@ -65,28 +57,40 @@ class SessionHandler :
     Connection& getConnection() { return connection; }
     const Connection& getConnection() const { return connection; }
 
+  protected:
+    void handleIn(framing::AMQFrame&);
+    void handleOut(framing::AMQFrame&);
+    
   private:
+    // FIXME aconway 2007-08-31: Move to session methods.
+    struct ChannelMethods : public framing::AMQP_ServerOperations::ChannelHandler {
+        SessionHandler& parent;
+
+        ChannelMethods(SessionHandler& p) : parent(p) {}
+        void open(const std::string& outOfBand); 
+        void flow(bool active); 
+        void flowOk(bool active); 
+        void ok(  );
+        void ping(  );
+        void pong(  );
+        void resume( const std::string& channelId );
+        void close(uint16_t replyCode,
+                   const std::string& replyText,
+                   uint16_t classId, uint16_t methodId); 
+        void closeOk(); 
+    };
+  friend class ChannelMethods;
+        
     void assertOpen(const char* method);
     void assertClosed(const char* method);
 
     framing::AMQP_ClientProxy& getProxy();
     
-    // FIXME aconway 2007-08-31: Replace channel commands with session.
-    void open(const std::string& outOfBand); 
-    void flow(bool active); 
-    void flowOk(bool active); 
-    void ok(  );
-    void ping(  );
-    void pong(  );
-    void resume( const std::string& channelId );
-    void close(uint16_t replyCode, const
-               std::string& replyText, uint16_t classId, uint16_t methodId); 
-    void closeOk(); 
-    
     Connection& connection;
     const framing::ChannelId channel;
     shared_ptr<Session> session;
     bool ignoring;
+    ChannelMethods channelHandler;
 };
 
 }} // namespace qpid::broker
