@@ -22,6 +22,7 @@
 
 #include "ConnectionAdapter.h"
 #include "Connection.h"
+#include "qpid/framing/ChannelAdapter.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -75,7 +76,7 @@ ConnectionAdapter::ConnectionAdapter(Connection& connection)
 }
 
 ConnectionAdapter::Handler:: Handler(Connection& c, ConnectionAdapter& a) : 
-    proxy(a), client(proxy.getConnection()), connection(c) {}
+    proxy(a.getHandlers().out), client(proxy.getConnection()), connection(c) {}
 
 
 void ConnectionAdapter::Handler::startOk(const FieldTable& /*clientProperties*/,

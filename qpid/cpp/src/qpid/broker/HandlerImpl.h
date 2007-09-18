@@ -21,6 +21,7 @@
 
 #include "Broker.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
+#include "qpid/framing/ChannelAdapter.h"
 
 namespace qpid {
 namespace broker {
@@ -35,7 +36,7 @@ class Session;
 struct CoreRefs
 {
     CoreRefs(Session& ch, Connection& c, Broker& b, framing::ChannelAdapter& a)
-        : session(ch), connection(c), broker(b), adapter(a), proxy(a) {}
+        : session(ch), connection(c), broker(b), adapter(a), proxy(a.getHandlers().out) {}
 
     Session& session;
     Connection& connection;
