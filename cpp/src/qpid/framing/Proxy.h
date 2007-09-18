@@ -19,31 +19,29 @@
  *
  */
 
+#include "FrameHandler.h"
 #include "ProtocolVersion.h"
-#include "amqp_types.h"
 
 namespace qpid {
 namespace framing {
 
-class ChannelAdapter;
-class FieldTable;
-class Content;
-class Uuid;
+class AMQBody;
 
 /**
  * Base class for proxies.
  */
 class Proxy
 {
-
   public:
-    Proxy(ChannelAdapter& ch) : channel(ch) {}
+    Proxy(FrameHandler& h) : out(h) {}
     virtual ~Proxy();
 
-    ProtocolVersion getProtocolVersion() const;
+    void send(const AMQBody&);
+
+    ProtocolVersion getVersion() const;
 
   protected:
-    ChannelAdapter& channel;
+    FrameHandler& out;
 };
 
 }} // namespace qpid::framing

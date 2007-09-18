@@ -53,6 +53,7 @@ typedef uint16_t ReplyCode;
 class Content;
 class FieldTable;
 class SequenceNumberSet;
+class Uuid;
 
 // Useful constants
 
