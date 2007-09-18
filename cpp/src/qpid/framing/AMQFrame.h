@@ -48,6 +48,10 @@ class AMQFrame : public AMQDataBlock
         setBody(b);
     }
     
+    AMQFrame(const AMQBody& b) : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(0) {
+        setBody(b);
+    }
+    
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 

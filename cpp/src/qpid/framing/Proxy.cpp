@@ -17,16 +17,21 @@
  */
 
 #include "Proxy.h"
-#include "ChannelAdapter.h"
-#include "ProtocolVersion.h"
+#include "AMQFrame.h"
 
 namespace qpid {
 namespace framing {
 
 Proxy::~Proxy() {}
 
-ProtocolVersion  Proxy::getProtocolVersion() const {
-    return channel.getVersion();
+void Proxy::send(const AMQBody& b) {
+    AMQFrame f(b);
+    out.handle(f);
+}
+
+
+ProtocolVersion Proxy::getVersion() const {
+    return ProtocolVersion();
 }
 
 }} // namespace qpid::framing
