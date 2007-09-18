@@ -22,6 +22,8 @@
  *
  */
 #include <string>
+#include "qpid/client/Session.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/TransferContent.h"
 
 namespace qpid {
@@ -40,12 +42,7 @@ public:
 
     std::string getDestination() const 
     { 
-        return destination; 
-    }
-    
-    void setDestination(const std::string& dest) 
-    { 
-        destination = dest; 
+        return method.getDestination(); 
     }
 
     bool isRedelivered() const 
@@ -53,7 +50,8 @@ public:
         return hasDeliveryProperties() && getDeliveryProperties().getRedelivered(); 
     }
 
-    void setRedelivered(bool redelivered) { 
+    void setRedelivered(bool redelivered) 
+    { 
         getDeliveryProperties().setRedelivered(redelivered); 
     }
 
@@ -62,8 +60,25 @@ public:
         return getMessageProperties().getApplicationHeaders(); 
     }
 
+    void acknowledge(Session& session, bool cumulative = true, bool send = true) const
+    {
+        session.execution().completed(id, cumulative, send);
+    }
+
+    Message(const framing::FrameSet& frameset) : method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId())
+    {
+        populate(frameset);
+    }
+
+    const framing::MessageTransferBody& getMethod() const
+    {
+        return method;
+    }
+
 private:
-    std::string destination;
+    //method and id are only set for received messages:
+    const framing::MessageTransferBody method;
+    const framing::SequenceNumber id;
 };
 
 }}
