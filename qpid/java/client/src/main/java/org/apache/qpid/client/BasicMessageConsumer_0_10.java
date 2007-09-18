@@ -29,6 +29,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.transport.Struct;
+import org.apache.qpidity.transport.ExchangeQueryResult;
+import org.apache.qpidity.transport.Future;
 
 import javax.jms.JMSException;
 import java.io.IOException;
@@ -76,6 +78,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             getSession().getAMQConnection().exceptionReceived(e);
         }
         Struct[] headers = {message.getMessageProperties(), message.getDeliveryProperties()};
+        // if there is a replyto destination then we need to request the exchange info
+        if (message.getMessageProperties().getReplyTo() != null)
+        {
+            Future<ExchangeQueryResult> future = ((AMQSession_0_10) getSession()).getQpidSession()
+                    .exchangeQuery(message.getMessageProperties().getReplyTo().getExchangeName());
+            ExchangeQueryResult res = future.get();
+            // <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
+            String replyToUrl = res.getType() + "://" + message.getMessageProperties().getReplyTo()
+                    .getExchangeName() + "/" + message.getMessageProperties().getReplyTo()
+                    .getRoutingKey() + "/" + message.getMessageProperties().getReplyTo().getRoutingKey();
+            newMessage.setReplyToURL(replyToUrl);
+        }
         newMessage.setContentHeader(headers);
         getSession().messageReceived(newMessage);
     }
@@ -111,10 +125,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     }
 
 
-    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(UnprocessedMessage<Struct[], ByteBuffer>  messageFrame) throws Exception
+    public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(
+            UnprocessedMessage<Struct[], ByteBuffer> messageFrame) throws Exception
     {
-        return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
-            messageFrame.isRedelivered(), messageFrame.getExchange(),
-            messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
+        return _messageFactory.createMessage(messageFrame.getDeliveryTag(), messageFrame.isRedelivered(),
+                                             messageFrame.getExchange(), messageFrame.getRoutingKey(),
+                                             messageFrame.getContentHeader(), messageFrame.getBodies(), messageFrame.getReplyToURL());
     }
 }
