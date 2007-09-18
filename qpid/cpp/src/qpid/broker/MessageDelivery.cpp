@@ -23,7 +23,7 @@
 #include "DeliveryToken.h"
 #include "Message.h"
 #include "BrokerQueue.h"
-#include "qpid/framing/ChannelAdapter.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/BasicDeliverBody.h"
 #include "qpid/framing/BasicGetOkBody.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -114,7 +114,7 @@ DeliveryToken::shared_ptr MessageDelivery::getMessageDeliveryToken(const std::st
 }
 
 void MessageDelivery::deliver(Message::shared_ptr msg, 
-                              framing::ChannelAdapter& channel, 
+                              framing::FrameHandler& handler, 
                               DeliveryId id, 
                               DeliveryToken::shared_ptr token, 
                               uint16_t framesize)
@@ -123,15 +123,10 @@ void MessageDelivery::deliver(Message::shared_ptr msg,
     //another may well have the wrong headers; however we will only
     //have one content class for 0-10 proper
 
-    FrameHandler& handler = channel.getHandlers().out;
-
-    //send method
     boost::shared_ptr<BaseToken> t = dynamic_pointer_cast<BaseToken>(token);
     AMQFrame method = t->sendMethod(msg, id);
     method.setEof(false);
-    method.setChannel(channel.getId());
     handler.handle(method);
-
-    msg->sendHeader(handler, channel.getId(), framesize);
-    msg->sendContent(handler, channel.getId(), framesize);
+    msg->sendHeader(handler, framesize);
+    msg->sendContent(handler, framesize);
 }

@@ -26,14 +26,14 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using std::string;
 
-DtxHandlerImpl::DtxHandlerImpl(CoreRefs& parent) : CoreRefs(parent) {}
+DtxHandlerImpl::DtxHandlerImpl(Session& s) : HandlerImpl(s) {}
 
 // DtxDemarcationHandler:
 
 
 void DtxHandlerImpl::select()
 {
-    session.selectDtx();
+    getSession().selectDtx();
 }
 
 DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
@@ -43,7 +43,7 @@ DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
 {
     try {
         if (fail) {
-            session.endDtx(xid, true);
+            getSession().endDtx(xid, true);
             if (suspend) {
                 throw ConnectionException(503, "End and suspend cannot both be set.");
             } else {
@@ -51,9 +51,9 @@ DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
             }
         } else {
             if (suspend) {
-                session.suspendDtx(xid);
+                getSession().suspendDtx(xid);
             } else {
-                session.endDtx(xid, false);
+                getSession().endDtx(xid, false);
             }
             return DtxDemarcationEndResult(XA_OK);
         }
@@ -72,9 +72,9 @@ DtxDemarcationStartResult DtxHandlerImpl::start(u_int16_t /*ticket*/,
     }
     try {
         if (resume) {
-            session.resumeDtx(xid);
+            getSession().resumeDtx(xid);
         } else {
-            session.startDtx(xid, broker.getDtxManager(), join);
+            getSession().startDtx(xid, getBroker().getDtxManager(), join);
         }
         return DtxDemarcationStartResult(XA_OK);
     } catch (const DtxTimeoutException& e) {
@@ -88,7 +88,7 @@ DtxCoordinationPrepareResult DtxHandlerImpl::prepare(u_int16_t /*ticket*/,
                              const string& xid)
 {
     try {
-        bool ok = broker.getDtxManager().prepare(xid);
+        bool ok = getBroker().getDtxManager().prepare(xid);
         return DtxCoordinationPrepareResult(ok ? XA_OK : XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
         return DtxCoordinationPrepareResult(XA_RBTIMEOUT);        
@@ -100,7 +100,7 @@ DtxCoordinationCommitResult DtxHandlerImpl::commit(u_int16_t /*ticket*/,
                             bool onePhase)
 {
     try {
-        bool ok = broker.getDtxManager().commit(xid, onePhase);
+        bool ok = getBroker().getDtxManager().commit(xid, onePhase);
         return DtxCoordinationCommitResult(ok ? XA_OK : XA_RBROLLBACK);
     } catch (const DtxTimeoutException& e) {
         return DtxCoordinationCommitResult(XA_RBTIMEOUT);        
@@ -112,7 +112,7 @@ DtxCoordinationRollbackResult DtxHandlerImpl::rollback(u_int16_t /*ticket*/,
                               const string& xid )
 {
     try {
-        broker.getDtxManager().rollback(xid);
+        getBroker().getDtxManager().rollback(xid);
         return DtxCoordinationRollbackResult(XA_OK);
     } catch (const DtxTimeoutException& e) {
         return DtxCoordinationRollbackResult(XA_RBTIMEOUT);        
@@ -136,7 +136,7 @@ DtxCoordinationRecoverResult DtxHandlerImpl::recover(u_int16_t /*ticket*/,
     // note that this restricts the length of the xids more than is
     // strictly 'legal', but that is ok for testing
     std::set<std::string> xids;
-    broker.getStore().collectPreparedXids(xids);        
+    getBroker().getStore().collectPreparedXids(xids);        
     uint size(0);
     for (std::set<std::string>::iterator i = xids.begin(); i != xids.end(); i++) {
         size += i->size() + 1/*shortstr size*/;        
@@ -167,7 +167,7 @@ void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
 
 DtxCoordinationGetTimeoutResult DtxHandlerImpl::getTimeout(const string& xid)
 {
-    uint32_t timeout = broker.getDtxManager().getTimeout(xid);
+    uint32_t timeout = getBroker().getDtxManager().getTimeout(xid);
     return DtxCoordinationGetTimeoutResult(timeout);    
 }
 
@@ -176,7 +176,7 @@ void DtxHandlerImpl::setTimeout(u_int16_t /*ticket*/,
                                 const string& xid,
                                 u_int32_t timeout)
 {
-    broker.getDtxManager().setTimeout(xid, timeout);
+    getBroker().getDtxManager().setTimeout(xid, timeout);
 }
 
 

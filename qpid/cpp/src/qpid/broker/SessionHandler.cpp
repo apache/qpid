@@ -29,18 +29,10 @@ namespace qpid {
 namespace broker {
 using namespace framing;
 
-// FIXME aconway 2007-08-31: the SessionHandler should create its
-// private proxy directly on the connections out handler.
-// Session/channel methods should not go thru the other layers.
-// Need to get rid of ChannelAdapter and allow proxies to be created
-// directly on output handlers.
-// 
-framing::AMQP_ClientProxy& SessionHandler::getProxy() {
-    return session->getProxy();
-}
-
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
-    : InOutHandler(0, &c.getOutput()), connection(c), channel(ch), ignoring(false), channelHandler(*this) {}
+    : InOutHandler(0, &c.getOutput()),
+      connection(c), channel(ch), proxy(out),
+      ignoring(false), channelHandler(*this) {}
 
 SessionHandler::~SessionHandler() {}
 

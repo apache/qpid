@@ -26,12 +26,12 @@
 #include "DeliveryAdapter.h"
 #include "MessageBuilder.h"
 #include "IncomingExecutionContext.h"
+#include "HandlerImpl.h"
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceNumber.h"
-#include "qpid/framing/ChannelAdapter.h"
 
 namespace qpid {
 
@@ -49,11 +49,8 @@ class Session;
 class SemanticHandler : public DeliveryAdapter,
                         public framing::FrameHandler, 
                         public framing::AMQP_ServerOperations::ExecutionHandler,
-                        private framing::ChannelAdapter
+                        private HandlerImpl
 {
-    Session& session;
-    Connection& connection;
-    BrokerAdapter adapter;
     IncomingExecutionContext incoming;
     framing::Window outgoing;
     sys::Mutex outLock;
@@ -68,17 +65,6 @@ class SemanticHandler : public DeliveryAdapter,
 
     void sendCompletion();
 
-    //ChannelAdapter virtual methods:
-    void handleMethod(framing::AMQMethodBody* method);
-    
-    bool isOpen() const;
-    void handleHeader(framing::AMQHeaderBody*);
-    void handleContent(framing::AMQContentBody*);
-    void handleHeartbeat(framing::AMQHeartbeatBody*);
-
-    void send(const framing::AMQBody& body);
-
-
     //delivery adapter methods:
     DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token);
     void redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId tag);
@@ -88,9 +74,6 @@ public:
 
     //frame handler:
     void handle(framing::AMQFrame& frame);
-
-    // FIXME aconway 2007-08-31: Move proxy to Session.
-    framing::AMQP_ClientProxy& getProxy() { return adapter.getProxy(); }
 
     //execution class method handlers:
     void complete(uint32_t cumulativeExecutionMark, const framing::SequenceNumberSet& range);    

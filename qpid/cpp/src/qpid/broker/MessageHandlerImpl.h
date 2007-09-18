@@ -34,10 +34,10 @@ class MessageMessage;
 
 class MessageHandlerImpl :
         public framing::AMQP_ServerOperations::MessageHandler,
-        public HandlerImpl<framing::AMQP_ClientProxy::Message>
+        public HandlerImpl
 {
   public:
-    MessageHandlerImpl(CoreRefs& parent);
+    MessageHandlerImpl(Session&);
 
     void append(const std::string& reference, const std::string& bytes);
 

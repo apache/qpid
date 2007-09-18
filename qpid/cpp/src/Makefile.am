@@ -247,7 +247,6 @@ nobase_include_HEADERS = \
   qpid/broker/DtxWorkRecord.h \
   qpid/broker/ExchangeRegistry.h \
   qpid/broker/FanOutExchange.h \
-  qpid/broker/HandlerImpl.h \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \

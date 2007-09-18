@@ -27,12 +27,12 @@ namespace qpid {
 namespace broker {
 
 class DtxHandlerImpl 
-    : public CoreRefs,
+    : public HandlerImpl,
       public framing::AMQP_ServerOperations::DtxCoordinationHandler,
       public framing::AMQP_ServerOperations::DtxDemarcationHandler
 {    
 public:
-    DtxHandlerImpl(CoreRefs& parent);
+    DtxHandlerImpl(Session&);
 
     // DtxCoordinationHandler:
 

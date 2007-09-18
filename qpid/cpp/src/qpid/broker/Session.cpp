@@ -68,11 +68,9 @@ Session::Session(SessionHandler& a, uint32_t t)
       flowActive(true)
 {
     outstanding.reset();
-    // FIXME aconway 2007-08-29: handler to get Session, not connection.
     std::auto_ptr<SemanticHandler> semantic(new SemanticHandler(*this));
+    // FIXME aconway 2007-08-29:  move deliveryAdapter to SemanticHandlerState. 
     deliveryAdapter=semantic.get();
-    // FIXME aconway 2007-08-31: Remove, workaround.
-    semanticHandler=semantic.get();
     handlers.push_back(semantic.release());
     in = &handlers[0];
     out = &adapter->out;
@@ -256,7 +254,7 @@ Session::ConsumerImpl::ConsumerImpl(Session* _parent,
 
 bool Session::ConsumerImpl::deliver(QueuedMessage& msg)
 {
-    if (nolocal && &parent->getAdapter()->getConnection() == msg.payload->getPublisher()) {
+    if (nolocal && &parent->getHandler()->getConnection() == msg.payload->getPublisher()) {
         return false;
     } else {
         if (!checkCredit(msg.payload) || !parent->flowActive || (ackExpected && !parent->checkPrefetch(msg.payload))) {
@@ -306,7 +304,7 @@ void Session::ConsumerImpl::cancel()
     if(queue) {
         queue->cancel(this);
         if (queue->canAutoDelete()) {            
-            parent->getAdapter()->getConnection().broker.getQueues().destroyIf(queue->getName(), 
+            parent->getHandler()->getConnection().broker.getQueues().destroyIf(queue->getName(), 
                                                                                boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue));
         }
     }
@@ -333,7 +331,7 @@ void Session::handle(Message::shared_ptr msg) {
 void Session::route(Message::shared_ptr msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();      
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
-        cacheExchange = getAdapter()->getConnection().broker.getExchanges().get(exchangeName);
+        cacheExchange = getHandler()->getConnection().broker.getExchanges().get(exchangeName);
     }
 
     cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());

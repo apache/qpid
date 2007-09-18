@@ -21,7 +21,7 @@
 
 #include "SendContent.h"
 
-qpid::framing::SendContent::SendContent(FrameHandler& h, uint16_t c, uint16_t mfs, uint efc) : handler(h), channel(c), 
+qpid::framing::SendContent::SendContent(FrameHandler& h, uint16_t mfs, uint efc) : handler(h), 
                                                                                               maxFrameSize(mfs),
                                                                                                expectedFrameCount(efc), frameCount(0) {}
 
@@ -45,14 +45,13 @@ void qpid::framing::SendContent::operator()(const AMQFrame& f)
     } else {
         AMQFrame copy(f);
         setFlags(copy, first, last);
-        copy.setChannel(channel);
         handler.handle(copy);
     }        
 }
 
 void qpid::framing::SendContent::sendFragment(const AMQContentBody& body, uint32_t offset, uint16_t size, bool first, bool last) const
 {
-    AMQFrame fragment(channel, AMQContentBody(body.getData().substr(offset, size)));
+    AMQFrame fragment(0, AMQContentBody(body.getData().substr(offset, size)));
     setFlags(fragment, first, last);
     handler.handle(fragment);
 }
