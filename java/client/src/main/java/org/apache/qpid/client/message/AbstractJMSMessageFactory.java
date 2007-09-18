@@ -100,7 +100,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
     protected AbstractJMSMessage create010MessageWithBody(long messageNbr, Struct[] contentHeader,
                                                           AMQShortString exchange, AMQShortString routingKey,
-                                                          List bodies) throws AMQException
+                                                          List bodies, String replyToURL) throws AMQException
     {
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
@@ -135,7 +135,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         // todo update when fieldtable is used props.setHeaders(mprop.getApplicationHeaders());
         props.setMessageId(mprop.getMessageId());
         props.setPriority((byte) devprop.getPriority());
-        // todo we need to match the reply to props.setReplyTo(new AMQShortString(mprop.getReplyTo()));
+        props.setReplyTo(replyToURL);
         props.setTimestamp(devprop.getTimestamp());
         props.setType(mprop.getType());
         props.setUserId(mprop.getUserId());
@@ -154,11 +154,12 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     }
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, Struct[] contentHeader,
-                                            AMQShortString exchange, AMQShortString routingKey, List bodies)
+                                            AMQShortString exchange, AMQShortString routingKey, List bodies,
+                                            String replyToURL)
             throws JMSException, AMQException
     {
         final AbstractJMSMessage msg =
-                create010MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
+                create010MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies, replyToURL);
         msg.setJMSRedelivered(redelivered);
 
         return msg;

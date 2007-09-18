@@ -38,6 +38,7 @@ import org.apache.qpidity.transport.Struct;
 public class UnprocessedMessage_0_10 extends UnprocessedMessage<Struct[],ByteBuffer>
 {
     private Struct[] _headers;
+    private String _replyToURL;
 
     /** List of ContentBody instances. Due to fragmentation you don't know how big this will be in general */
     private List<ByteBuffer> _bodies = new ArrayList<ByteBuffer>();
@@ -78,4 +79,14 @@ public class UnprocessedMessage_0_10 extends UnprocessedMessage<Struct[],ByteBuf
         return _bodies;
     }
 
+    // additional 0_10 method
+    public String getReplyToURL()
+    {
+        return _replyToURL;
+    }
+
+    public void setReplyToURL(String url)
+    {
+        _replyToURL = url;
+    }
 }
