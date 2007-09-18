@@ -88,4 +88,10 @@ public abstract class UnprocessedMessage<H,B>
     public abstract List<B> getBodies();
 
     public abstract H getContentHeader();
+
+    // specific to 0_10
+    public String getReplyToURL()
+    {
+        return "";
+    }
 }
