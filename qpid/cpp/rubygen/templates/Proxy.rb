@@ -15,16 +15,11 @@ class ProxyGen < CppGen
   
   def inner_class_decl(c)
     cname=c.name.caps
-    cpp_class(cname) {
-          gen <<EOS          
-ChannelAdapter& channel;
-
+    cpp_class(cname, "Proxy") {
+          gen <<EOS
 public:
-#{cname}(ChannelAdapter& ch) : channel(ch) {}
-virtual ~#{cname}() {}
-
+#{cname}(FrameHandler& f) : Proxy(f) {}
 static #{cname}& get(#{@classname}& proxy) { return proxy.get#{cname}(); }
-
 EOS
       c.methods_on(@chassis).each { |m|
         genl "virtual void #{m.cppname}(#{m.signature.join(",\n            ")});"
@@ -37,8 +32,8 @@ EOS
     c.methods_on(@chassis).each { |m| 
       genl "void #{@classname}::#{cname}::#{m.cppname}(#{m.signature.join(", ")})"
       scope { 
-        params=(["channel.getVersion()"]+m.param_names).join(", ")
-        genl "channel.send(#{m.body_name}(#{params}));"
+        params=(["getVersion()"]+m.param_names).join(", ")
+        genl "send(#{m.body_name}(#{params}));"
       }}
   end
 
@@ -46,10 +41,11 @@ EOS
     # .h file
     h_file(@filename) {
       include "qpid/framing/Proxy.h"
+      include "qpid/framing/amqp_types.h"
       namespace("qpid::framing") { 
         cpp_class(@classname, "public Proxy") {
           public
-          genl "#{@classname}(ChannelAdapter& ch);"
+          genl "#{@classname}(FrameHandler& out);"
           genl
           @amqp.classes.each { |c|
             inner_class_decl(c)
@@ -65,14 +61,13 @@ EOS
   cpp_file(@filename) {
       include "<sstream>"
       include "#{@classname}.h"
-      include "qpid/framing/ChannelAdapter.h"
       include "qpid/framing/amqp_types_full.h"
       Amqp.methods_on(@chassis).each { |m| include "qpid/framing/"+m.body_name }
       genl
       namespace("qpid::framing") { 
-        genl "#{@classname}::#{@classname}(ChannelAdapter& ch) :"
-        gen "    Proxy(ch)"
-        @amqp.classes.each { |c| gen ",\n    "+proxy_member(c)+"(channel)" }
+        genl "#{@classname}::#{@classname}(FrameHandler& f) :"
+        gen "    Proxy(f)"
+        @amqp.classes.each { |c| gen ",\n    "+proxy_member(c)+"(f)" }
         genl "{}\n"
         @amqp.classes.each { |c| inner_class_defn(c) }
       }}
