@@ -79,7 +79,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         Struct[] headers = {message.getMessageProperties(), message.getDeliveryProperties()};
         // if there is a replyto destination then we need to request the exchange info
-        if (message.getMessageProperties().getReplyTo() != null)
+        if (! message.getMessageProperties().getReplyTo().getExchangeName().equals(""))
         {
             Future<ExchangeQueryResult> future = ((AMQSession_0_10) getSession()).getQpidSession()
                     .exchangeQuery(message.getMessageProperties().getReplyTo().getExchangeName());
