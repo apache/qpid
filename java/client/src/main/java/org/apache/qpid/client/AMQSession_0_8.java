@@ -327,7 +327,7 @@ public class AMQSession_0_8 extends AMQSession
 
     public BasicMessageConsumer_0_8 createMessageConsumer(final AMQDestination destination, final int prefetchHigh,
             final int prefetchLow, final boolean noLocal, final boolean exclusive, String messageSelector, final FieldTable ft,
-            final boolean noConsume, final boolean autoClose)
+            final boolean noConsume, final boolean autoClose)  throws JMSException
     {
 
         final AMQProtocolHandler protocolHandler = getProtocolHandler();
