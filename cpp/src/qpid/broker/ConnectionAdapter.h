@@ -26,7 +26,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/ChannelAdapter.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
@@ -36,15 +36,15 @@ namespace broker {
 
 class Connection;
 
-class ConnectionAdapter : public framing::ChannelAdapter, public framing::AMQP_ServerOperations
+// TODO aconway 2007-09-18: Rename to ConnectionHandler
+class ConnectionAdapter : public framing::FrameHandler, public framing::AMQP_ServerOperations
 {
     struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler
     {
-        framing::AMQP_ClientProxy proxy;
         framing::AMQP_ClientProxy::Connection client;
         Connection& connection;
     
-        Handler(Connection& connection, ConnectionAdapter& adapter);
+        Handler(Connection& connection);
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
                      const std::string& locale); 
@@ -62,14 +62,6 @@ class ConnectionAdapter : public framing::ChannelAdapter, public framing::AMQP_S
     void init(const framing::ProtocolInitiation& header);
     void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
     void handle(framing::AMQFrame& frame);
-
-    //ChannelAdapter virtual methods:
-    void handleMethod(framing::AMQMethodBody* method);
-    bool isOpen() const { return true; } //channel 0 is always open
-    //never needed:
-    void handleHeader(framing::AMQHeaderBody*) {}
-    void handleContent(framing::AMQContentBody*) {}
-    void handleHeartbeat(framing::AMQHeartbeatBody*) {}
 
     //AMQP_ServerOperations:
     ConnectionHandler* getConnectionHandler();

@@ -22,17 +22,13 @@
 
 #include "ConnectionAdapter.h"
 #include "Connection.h"
-#include "qpid/framing/ChannelAdapter.h"
+#include "qpid/framing/ConnectionStartBody.h"
 
 using namespace qpid;
 using namespace qpid::broker;
-using qpid::framing::ReplyCode;
-using qpid::framing::ClassId;
-using qpid::framing::MethodId;
-using qpid::framing::FieldTable;
+using namespace qpid::framing;
 
 void ConnectionAdapter::init(const framing::ProtocolInitiation& header) {
-    ChannelAdapter::init(0, handler->connection.getOutput(), handler->connection.getVersion());
     FieldTable properties;
     string mechanisms("PLAIN");
     string locales("en_US");
@@ -44,16 +40,6 @@ void ConnectionAdapter::close(ReplyCode code, const string& text, ClassId classI
     handler->client.close(code, text, classId, methodId);
 }
 
-void ConnectionAdapter::handleMethod(framing::AMQMethodBody* method)
-{
-    try{
-        method->invoke(*this);
-    }catch(ConnectionException& e){
-        handler->client.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());
-    }catch(std::exception& e){
-        handler->client.close(541/*internal error*/, e.what(), method->amqpClassId(), method->amqpMethodId());
-    }
-}
 
 framing::AMQP_ServerOperations::ConnectionHandler* ConnectionAdapter::getConnectionHandler() 
 { 
@@ -67,17 +53,19 @@ framing::ProtocolVersion ConnectionAdapter::getVersion() const
 
 void ConnectionAdapter::handle(framing::AMQFrame& frame)
 {
-    getHandlers().in(frame);
+    AMQMethodBody* method=frame.getBody()->getMethod();
+    try{
+        method->invoke(*this);
+    }catch(ConnectionException& e){
+        handler->client.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());
+    }catch(std::exception& e){
+        handler->client.close(541/*internal error*/, e.what(), method->amqpClassId(), method->amqpMethodId());
+    }
 }
 
-ConnectionAdapter::ConnectionAdapter(Connection& connection) 
-{
-    handler = std::auto_ptr<Handler>(new Handler(connection, *this));
-}
+ConnectionAdapter::ConnectionAdapter(Connection& connection)  : handler(new Handler(connection)) {}
 
-ConnectionAdapter::Handler:: Handler(Connection& c, ConnectionAdapter& a) : 
-    proxy(a.getHandlers().out), client(proxy.getConnection()), connection(c) {}
-
+ConnectionAdapter::Handler:: Handler(Connection& c) : client(c.getOutput()), connection(c) {}
 
 void ConnectionAdapter::Handler::startOk(const FieldTable& /*clientProperties*/,
     const string& /*mechanism*/, 
