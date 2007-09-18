@@ -19,7 +19,6 @@
  *
  */
 #include "DtxHandlerImpl.h"
-#include "HandlerImpl.h"
 #include "MessageHandlerImpl.h"
 #include "NameGenerator.h"
 #include "qpid/Exception.h"
@@ -55,18 +54,28 @@ class MessageHandlerImpl;
  * peer.
  * 
  */
-class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
+
+// TODO aconway 2007-09-18: BrokerAdapter is no longer an appropriate way
+// to group methods as seen by the BADHANDLERs below.
+// Handlers should be grouped by layer, the BrokerAdapter stuff
+// belongs on the SemanticHandler.
+// 
+class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
 {
   public:
-    BrokerAdapter(Session& session, framing::ChannelAdapter& a);
+    BrokerAdapter(Session& session);
 
-    framing::ProtocolVersion getVersion() const;
     BasicHandler* getBasicHandler() { return &basicHandler; }
     ExchangeHandler* getExchangeHandler() { return &exchangeHandler; }
     BindingHandler* getBindingHandler() { return &bindingHandler; }
     QueueHandler* getQueueHandler() { return &queueHandler; }
     TxHandler* getTxHandler() { return &txHandler;  }
     MessageHandler* getMessageHandler() { return &messageHandler;  }
+    DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
+    DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
+    framing::ProtocolVersion getVersion() const { return getConnection().getVersion(); }
+
+
     AccessHandler* getAccessHandler() {
         throw framing::NotImplementedException("Access class not implemented");  }
     FileHandler* getFileHandler() {
@@ -75,26 +84,22 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
         throw framing::NotImplementedException("Stream class not implemented");  }
     TunnelHandler* getTunnelHandler() {
         throw framing::NotImplementedException("Tunnel class not implemented"); }
-    DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
-    DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
-    ExecutionHandler* getExecutionHandler() { throw ConnectionException(531, "Wrong adapter for execution layer method!"); }
 
     // Handlers no longer implemented in BrokerAdapter:
 #define BADHANDLER() assert(0); throw framing::InternalErrorException()
+    ExecutionHandler* getExecutionHandler() { BADHANDLER(); }
     ConnectionHandler* getConnectionHandler() { BADHANDLER(); }
     SessionHandler* getSessionHandler() { BADHANDLER(); }
     ChannelHandler* getChannelHandler() { BADHANDLER(); }
 #undef BADHANDLER
 
-    framing::AMQP_ClientProxy& getProxy() { return proxy; }
-
   private:
     class ExchangeHandlerImpl :
         public ExchangeHandler,
-        public HandlerImpl<framing::AMQP_ClientProxy::Exchange>
+        public HandlerImpl
     {
       public:
-        ExchangeHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        ExchangeHandlerImpl(Session& session) : HandlerImpl(session) {}
         
         void declare(uint16_t ticket,
                      const std::string& exchange, const std::string& type,
@@ -111,10 +116,10 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 
     class BindingHandlerImpl : 
         public BindingHandler,
-            public HandlerImpl<framing::AMQP_ClientProxy::Binding>
+            public HandlerImpl
     {
     public:
-        BindingHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        BindingHandlerImpl(Session& session) : HandlerImpl(session) {}
 
         framing::BindingQueryResult query(u_int16_t ticket,
                                           const std::string& exchange,
@@ -125,10 +130,10 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 
     class QueueHandlerImpl :
         public QueueHandler,
-        public HandlerImpl<framing::AMQP_ClientProxy::Queue>
+        public HandlerImpl
     {
       public:
-        QueueHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        QueueHandlerImpl(Session& session) : HandlerImpl(session) {}
         
         void declare(uint16_t ticket, const std::string& queue,
                      const std::string& alternateExchange, 
@@ -151,12 +156,12 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 
     class BasicHandlerImpl :
         public BasicHandler,
-        public HandlerImpl<framing::AMQP_ClientProxy::Basic>
+        public HandlerImpl
     {
         NameGenerator tagGenerator;
 
       public:
-        BasicHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent), tagGenerator("sgen") {}
+        BasicHandlerImpl(Session& session) : HandlerImpl(session), tagGenerator("sgen") {}
 
         void qos(uint32_t prefetchSize,
                  uint16_t prefetchCount, bool global); 
@@ -173,10 +178,10 @@ class BrokerAdapter : public CoreRefs, public framing::AMQP_ServerOperations
 
     class TxHandlerImpl :
         public TxHandler,
-        public HandlerImpl<framing::AMQP_ClientProxy::Tx>
+        public HandlerImpl
     {
       public:
-        TxHandlerImpl(BrokerAdapter& parent) : HandlerImplType(parent) {}
+        TxHandlerImpl(Session& session) : HandlerImpl(session) {}
         
         void select();
         void commit();

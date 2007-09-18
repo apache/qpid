@@ -139,7 +139,7 @@ void Message::releaseContent(MessageStore* _store)
     frames.remove(TypeFilter(CONTENT_BODY));
 }
 
-void Message::sendContent(framing::FrameHandler& out, uint16_t channel, uint16_t maxFrameSize)
+void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize)
 {
     if (isContentReleased()) {
         //load content from store in chunks of maxContentSize
@@ -148,7 +148,7 @@ void Message::sendContent(framing::FrameHandler& out, uint16_t channel, uint16_t
         for (uint64_t offset = 0; offset < expectedSize; offset += maxContentSize)
         {            
             uint64_t remaining = expectedSize - offset;
-            AMQFrame frame(channel, AMQContentBody());
+            AMQFrame frame(0, AMQContentBody());
             string& data = frame.castBody<AMQContentBody>()->getData();
 
             store->loadContent(*this, data, offset,
@@ -168,15 +168,14 @@ void Message::sendContent(framing::FrameHandler& out, uint16_t channel, uint16_t
         Count c;
         frames.map_if(c, TypeFilter(CONTENT_BODY));
 
-        SendContent f(out, channel, maxFrameSize, c.getCount());
+        SendContent f(out, maxFrameSize, c.getCount());
         frames.map_if(f, TypeFilter(CONTENT_BODY));
     }
 }
 
-void Message::sendHeader(framing::FrameHandler& out, uint16_t channel, uint16_t /*maxFrameSize*/)
+void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/)
 {
-    Relay f(out, channel);
-    frames.map_if(f, TypeFilter(HEADER_BODY));    
+    frames.map_if(out, TypeFilter(HEADER_BODY));    
 }
 
 MessageAdapter& Message::getAdapter() const

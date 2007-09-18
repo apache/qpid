@@ -114,8 +114,8 @@ public:
      */
     void releaseContent(MessageStore* store);
 
-    void sendContent(framing::FrameHandler& out, uint16_t channel, uint16_t maxFrameSize);
-    void sendHeader(framing::FrameHandler& out, uint16_t channel, uint16_t maxFrameSize);
+    void sendContent(framing::FrameHandler& out, uint16_t maxFrameSize);
+    void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize);
 
     bool isContentLoaded() const;
 

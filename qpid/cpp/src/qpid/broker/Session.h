@@ -32,7 +32,6 @@
 #include "NameGenerator.h"
 #include "Prefetch.h"
 #include "TxBuffer.h"
-#include "SemanticHandler.h"  // FIXME aconway 2007-08-31: remove
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/AccumulatedAck.h"
 #include "qpid/shared_ptr.h"
@@ -43,11 +42,6 @@
 #include <vector>
 
 namespace qpid {
-
-namespace framing {
-class AMQP_ClientProxy;
-}
-
 namespace broker {
 
 class SessionHandler;
@@ -129,20 +123,15 @@ class Session : public framing::FrameHandler::Chains,
     ConsumerImpl& find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
     void acknowledged(const DeliveryRecord&);
-
-    // FIXME aconway 2007-08-31: remove, temporary hack.
-    SemanticHandler* semanticHandler;
-
     AckRange findRange(DeliveryId first, DeliveryId last);
-    
 
   public:
     Session(SessionHandler&, uint32_t timeout);
     ~Session();
 
     /** Returns 0 if this session is not currently attached */
-    SessionHandler* getAdapter() { return adapter; }
-    const SessionHandler* getAdapter() const { return adapter; }
+    SessionHandler* getHandler() { return adapter; }
+    const SessionHandler* getHandler() const { return adapter; }
 
     Broker& getBroker() const { return broker; }
     
@@ -198,13 +187,7 @@ class Session : public framing::FrameHandler::Chains,
     void acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired);
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);
-
     void handle(Message::shared_ptr msg);
-
-    framing::AMQP_ClientProxy& getProxy() {
-        // FIXME aconway 2007-08-31: Move proxy to Session.
-        return semanticHandler->getProxy();
-    }    
 };
 
 }} // namespace qpid::broker

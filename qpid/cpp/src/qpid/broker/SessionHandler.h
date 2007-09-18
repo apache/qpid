@@ -24,14 +24,10 @@
 
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
+#include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
 
 namespace qpid {
-
-namespace framing {
-class AMQP_ClientProxy;
-}
-
 namespace broker {
 
 class Connection;
@@ -51,11 +47,16 @@ class SessionHandler : public framing::FrameHandler::InOutHandler
     ~SessionHandler();
 
     /** Returns 0 if not attached to a session */
-    Session* getSession() const { return session.get(); }
+    Session* getSession() { return session.get(); }
+    const Session* getSession() const { return session.get(); }
 
     framing::ChannelId getChannel() const { return channel; }
+    
     Connection& getConnection() { return connection; }
     const Connection& getConnection() const { return connection; }
+
+    framing::AMQP_ClientProxy& getProxy() { return proxy; }
+    const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
 
   protected:
     void handleIn(framing::AMQFrame&);
@@ -84,10 +85,9 @@ class SessionHandler : public framing::FrameHandler::InOutHandler
     void assertOpen(const char* method);
     void assertClosed(const char* method);
 
-    framing::AMQP_ClientProxy& getProxy();
-    
     Connection& connection;
     const framing::ChannelId channel;
+    framing::AMQP_ClientProxy proxy;
     shared_ptr<Session> session;
     bool ignoring;
     ChannelMethods channelHandler;
