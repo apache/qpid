@@ -93,12 +93,11 @@ void SemanticHandler::complete(uint32_t cumulative, const SequenceNumberSet& ran
 
 void SemanticHandler::sendCompletion()
 {
-    if (getSessionHandler()) {
-        SequenceNumber mark = incoming.getMark();
-        SequenceNumberSet range = incoming.getRange();
-        Mutex::ScopedLock l(outLock);
-        getProxy().getExecution().complete(mark.getValue(), range);
-    }
+    SequenceNumber mark = incoming.getMark();
+    SequenceNumberSet range = incoming.getRange();
+    Mutex::ScopedLock l(outLock);
+    assert(getSessionHandler()); 
+    getProxy().getExecution().complete(mark.getValue(), range);
 }
 void SemanticHandler::flush()
 {
