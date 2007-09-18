@@ -1552,7 +1552,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
 
     public abstract BasicMessageConsumer createMessageConsumer(final AMQDestination destination, final int prefetchHigh,
             final int prefetchLow, final boolean noLocal, final boolean exclusive, String selector, final FieldTable rawSelector,
-            final boolean noConsume, final boolean autoClose);
+            final boolean noConsume, final boolean autoClose) throws JMSException;
 
     /**
      * Called by the MessageConsumer when closing, to deregister the consumer from the map from consumerTag to consumer
