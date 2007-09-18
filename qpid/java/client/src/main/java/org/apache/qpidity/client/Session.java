@@ -22,9 +22,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
-import org.apache.qpidity.transport.Option;
-import org.apache.qpidity.transport.RangeSet;
-import org.apache.qpidity.transport.Struct;
+import org.apache.qpidity.transport.*;
 import org.apache.qpidity.api.Message;
 
 /**
@@ -151,11 +149,11 @@ public interface Session
 
     /**
      * Declare the beginning of a message transfer operation. This operation must
-     * be followed by {@link Session#headers} then followed by any number of {@link Session#data}.
+     * be followed by {@link Session#header} then followed by any number of {@link Session#data}.
      * The transfer is ended by {@link Session#endData}.
      * <p> This way of transferring messages is useful when streaming large messages
      * <p> In the interval [messageTransfer endData] any attempt to call a method other than
-     * {@link Session#headers}, {@link Session#endData} ore {@link Session#sessionClose}
+     * {@link Session#header}, {@link Session#endData} ore {@link Session#sessionClose}
      * will result in an exception being thrown.
      *
      * @param destination The exchange the message is being sent.
@@ -181,10 +179,10 @@ public interface Session
     /**
      * Add a set of headers the following headers to the message being sent.
      *
-     * @param headers Are either <code>{@link org.apache.qpidity.DeliveryProperties}</code>
-     *                or <code>{@link org.apache.qpidity.MessageProperties}</code>
-     * @see org.apache.qpidity.DeliveryProperties
-     * @see org.apache.qpidity.MessageProperties
+     * @param headers Are either <code>{@link org.apache.qpidity.transport.DeliveryProperties}</code>
+     *                or <code>{@link org.apache.qpidity.transport.MessageProperties}</code>
+     * @see org.apache.qpidity.transport.DeliveryProperties
+     * @see org.apache.qpidity.transport.MessageProperties
      */
     public void header(Struct... headers);
 
@@ -595,6 +593,16 @@ public interface Session
      * @see Option
      */
     public void exchangeDelete(String exchangeName, Option... options);
+
+
+    /**
+     * This method is used to request information on a particular exchange.
+     *
+     * @param exchangeName The name of the exchange for which information is requested. If not specified explicitly
+     *                     the default exchange is implied.
+     * @result Information on the specified exchange.
+     */
+    public Future<ExchangeQueryResult> exchangeQuery(String exchangeName);
 
     /**
      * If the session receives a sessionClosed with an error code it
