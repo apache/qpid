@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/shared_ptr.h"
+#include <boost/type_traits/remove_reference.hpp>
 #include <assert.h>
 
 namespace qpid {
@@ -31,6 +32,7 @@ namespace framing {
 template <class T>
 struct Handler {
     typedef T HandledType;
+    typedef void handleFptr(T);
 
     Handler(Handler<T>* next_=0) : next(next_) {}
     virtual ~Handler() {}
@@ -74,37 +76,40 @@ struct Handler {
     };
 
     /** Adapt a member function of X as a Handler.
-     * MemFun<X, X::f> will copy x.
-     * MemFun<X&, X::f> will only take a reference to x.
+     * Only holds a reference to its target, not a copy.
      */
-    template <class X, void(*M)(T)>
-    class MemFun : public Handler<T> {
+    template <class X, void (X::*F)(T)>
+    class MemFunRef : public Handler<T> {
       public:
-        MemFun(X x, Handler<T>* next=0) : Handler(next), object(x) {}
-        void handle(T t) { object.*M(t); }
+        MemFunRef(X& x, Handler<T>* next=0) : Handler(next), target(x) {}
+        void handle(T t) { (target.*F)(t); }
+
+        /** Allow calling with -> syntax, compatible with Chains */
+        MemFunRef* operator->() { return this; }
+
       private:
-        X object;
+        X& target;
     };
 
+    /** Interface for a handler that implements a
+     * pair of in/out handle operations.
+     * @see InOutHandler
+     */
+    class InOutHandlerInterface {
+      public:
+        virtual ~InOutHandlerInterface() {}
+        virtual void handleIn(T) = 0;
+        virtual void handleOut(T) = 0;
+    };
+        
     /** Support for implementing an in-out handler pair as a single class.
      * Public interface is Handler<T>::Chains pair, but implementation
      * overrides handleIn, handleOut functions in a single class.
      */
-    class InOutHandler {
-      public:
-        virtual ~InOutHandler() {}
-
-        InOutHandler() :
-            in(*this, &InOutHandler::handleIn),
-            out(*this, &InOutHandler::handleOut) {}
-
-        MemFun<InOutHandler, &InOutHandler::handleIn> in;
-        MemFun<InOutHandler, &InOutHandler::handleOut> out;
-
-      protected:
-        virtual void handleIn(T) = 0;
-        virtual void handleOut(T) = 0;
-      private:
+    struct InOutHandler : protected InOutHandlerInterface {
+        InOutHandler(Handler<T>* nextIn=0, Handler<T>* nextOut=0) : in(*this, nextIn), out(*this, nextOut) {}
+        MemFunRef<InOutHandlerInterface, &InOutHandlerInterface::handleIn> in;
+        MemFunRef<InOutHandlerInterface, &InOutHandlerInterface::handleOut> out;
     };
 
 };
