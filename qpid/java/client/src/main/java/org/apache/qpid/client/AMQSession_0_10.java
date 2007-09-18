@@ -80,15 +80,15 @@ public class AMQSession_0_10 extends AMQSession
      * @param defaultPrefetchHighMark The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLowMark  The number of prefetched messages at which to resume the session.
      */
-    AMQSession_0_10( org.apache.qpidity.client.Connection qpidConnection, AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
-                    MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark,
-                    int defaultPrefetchLowMark)
+    AMQSession_0_10(org.apache.qpidity.client.Connection qpidConnection, AMQConnection con, int channelId,
+                    boolean transacted, int acknowledgeMode, MessageFactoryRegistry messageFactoryRegistry,
+                    int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
 
         super(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetchHighMark,
               defaultPrefetchLowMark);
         // create the qpid session with an expiry  <= 0 so that the session does not expire
-        _qpidSession =  qpidConnection.createSession(0);
+        _qpidSession = qpidConnection.createSession(0);
         // set the exception listnere for this session
         _qpidSession.setExceptionListener(new QpidSessionExceptionListener());
         // set transacted if required
@@ -108,8 +108,8 @@ public class AMQSession_0_10 extends AMQSession
      * @param defaultPrefetchHigh The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLow  The number of prefetched messages at which to resume the session.
      */
-    AMQSession_0_10(org.apache.qpidity.client.Connection qpidConnection, AMQConnection con, int channelId, boolean transacted, int acknowledgeMode, int defaultPrefetchHigh,
-                    int defaultPrefetchLow)
+    AMQSession_0_10(org.apache.qpidity.client.Connection qpidConnection, AMQConnection con, int channelId,
+                    boolean transacted, int acknowledgeMode, int defaultPrefetchHigh, int defaultPrefetchLow)
     {
 
         this(qpidConnection, con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(),

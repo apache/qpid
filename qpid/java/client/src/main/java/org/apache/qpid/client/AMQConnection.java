@@ -153,7 +153,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     protected final ExecutorService _taskPool = Executors.newCachedThreadPool();
     protected static final long DEFAULT_TIMEOUT = 1000 * 30;
 
-    private AMQConnectionDelegate _delegate;
+    protected AMQConnectionDelegate _delegate;
 
     /**
      * @param broker      brokerdetails
