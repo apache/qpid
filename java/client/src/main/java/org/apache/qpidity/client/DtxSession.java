@@ -45,6 +45,7 @@ public interface DtxSession extends Session
      *
      * @param xid     Specifies the xid of the transaction branch to be started.
      * @param options Possible options are: {@link Option#JOIN} and {@link Option#RESUME}.
+     * @return Confirms to the client that the transaction branch is started or specify the error condition.
      */
     public Future<DtxDemarcationStartResult> dtxDemarcationStart(String xid, Option... options);
 
@@ -62,6 +63,7 @@ public interface DtxSession extends Session
      *
      * @param xid     Specifies the xid of the transaction branch to be ended.
      * @param options Available options are: {@link Option#FAIL} and {@link Option#SUSPEND}.
+     * @return Confirms to the client that the transaction branch is ended or specify the error condition.
      */
     public Future<DtxDemarcationEndResult> dtxDemarcationEnd(String xid, Option... options);
 
@@ -75,6 +77,7 @@ public interface DtxSession extends Session
      *
      * @param xid     Specifies the xid of the transaction branch to be committed.
      * @param options Available option is: {@link Option#ONE_PHASE}
+     * @return Confirms to the client that the transaction branch is committed or specify the error condition.
      */
     public Future<DtxCoordinationCommitResult> dtxCoordinationCommit(String xid, Option... options);
 
@@ -114,16 +117,17 @@ public interface DtxSession extends Session
     /**
      * This method is called to obtain a list of transaction branches that are in a prepared or
      * heuristically completed state.
-     *
+     * Todo The options ahould be removed once the xml is updated
      * @return a array of xids to be recovered.
      */
-    public Future<DtxCoordinationRecoverResult> dtxCoordinationRecover();
+    public Future<DtxCoordinationRecoverResult> dtxCoordinationRecover(Option... options);
 
     /**
      * This method rolls back the work associated with xid. Any produced messages are discarded and
      * any consumed messages are re-enqueued.
      *
      * @param xid Specifies the xid of the transaction branch that can be rolled back.
+     * @return Confirms to the client that the transaction branch is rolled back or specify the error condition.
      */
     public Future<DtxCoordinationRollbackResult> dtxCoordinationRollback(String xid);
 
