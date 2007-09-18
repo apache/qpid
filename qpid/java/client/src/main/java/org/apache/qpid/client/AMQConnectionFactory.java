@@ -24,13 +24,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Hashtable;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.QueueConnection;
-import javax.jms.QueueConnectionFactory;
-import javax.jms.TopicConnection;
-import javax.jms.TopicConnectionFactory;
+import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NamingException;
@@ -45,7 +39,9 @@ import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
 
 
-public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory, ObjectFactory, Referenceable
+public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory,
+                                             ObjectFactory, Referenceable, XATopicConnectionFactory,
+                                             XAQueueConnectionFactory, XAConnectionFactory
 {
     private String _host;
     private int _port;
@@ -77,18 +73,17 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         _connectionDetails = url;
     }
 
-     /**
+    /**
      * This constructor is never used!
      */
-    public AMQConnectionFactory(String broker, String username, String password,
-                                String clientName, String virtualHost) throws URLSyntaxException
+    public AMQConnectionFactory(String broker, String username, String password, String clientName, String virtualHost)
+            throws URLSyntaxException
     {
-        this(new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + "://" +
-                                  username + ":" + password + "@" + clientName + "/" +
-                                  virtualHost + "?brokerlist='" + broker + "'"));
+        this(new AMQConnectionURL(
+                ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@" + clientName + "/" + virtualHost + "?brokerlist='" + broker + "'"));
     }
 
-     /**
+    /**
      * This constructor is never used!
      */
     public AMQConnectionFactory(String host, int port, String virtualPath)
@@ -96,7 +91,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         this(host, port, "guest", "guest", virtualPath);
     }
 
-     /**
+    /**
      * This constructor is never used!
      */
     public AMQConnectionFactory(String host, int port, String defaultUsername, String defaultPassword,
@@ -144,17 +139,21 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 
     /**
      * Getter for SSLConfiguration
+     *
      * @return SSLConfiguration if set, otherwise null
      */
-    public final SSLConfiguration getSSLConfiguration() {
+    public final SSLConfiguration getSSLConfiguration()
+    {
         return _sslConfig;
     }
 
     /**
      * Setter for SSLConfiguration
+     *
      * @param sslConfig config to store
      */
-    public final void setSSLConfiguration(SSLConfiguration sslConfig) {
+    public final void setSSLConfiguration(SSLConfiguration sslConfig)
+    {
         _sslConfig = sslConfig;
     }
 
@@ -355,8 +354,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @return AMQConnection,AMQTopic,AMQQueue, or AMQConnectionFactory.
      * @throws Exception
      */
-    public Object getObjectInstance(Object obj, Name name, Context ctx,
-                                    Hashtable env) throws Exception
+    public Object getObjectInstance(Object obj, Name name, Context ctx, Hashtable env) throws Exception
     {
         if (obj instanceof Reference)
         {
@@ -409,10 +407,140 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 
     public Reference getReference() throws NamingException
     {
-        return new Reference(
-                AMQConnectionFactory.class.getName(),
-                new StringRefAddr(AMQConnectionFactory.class.getName(), _connectionDetails.getURL()),
-                AMQConnectionFactory.class.getName(),
-                null);          // factory location
+        return new Reference(AMQConnectionFactory.class.getName(),
+                             new StringRefAddr(AMQConnectionFactory.class.getName(), _connectionDetails.getURL()),
+                             AMQConnectionFactory.class.getName(), null);          // factory location
+    }
+
+    // ---------------------------------------------------------------------------------------------------
+    // the following methods are provided for XA compatibility
+    // Those methods are only supported by 0_10 and above 
+    // ---------------------------------------------------------------------------------------------------
+
+    /**
+     * Creates a XAConnection with the default user identity.
+     * <p> The XAConnection is created in stopped mode. No messages
+     * will be delivered until the <code>Connection.start</code> method
+     * is explicitly called.
+     *
+     * @return A newly created XAConnection
+     * @throws JMSException         If creating the XAConnection fails due to some internal error.
+     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     */
+    public XAConnection createXAConnection() throws JMSException
+    {
+        if (_connectionDetails.getURLVersion() == ConnectionURL.URL_0_8)
+        {
+            throw new UnsupportedOperationException("This version does not support XA operations");
+        }
+        else
+        {
+            try
+            {
+                return new XAConnectionImpl(_connectionDetails, _sslConfig);
+            }
+            catch (Exception e)
+            {
+                JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
+                jmse.setLinkedException(e);
+                throw jmse;
+            }
+        }
+    }
+
+    /**
+     * Creates a XAConnection with the specified user identity.
+     * <p> The XAConnection is created in stopped mode. No messages
+     * will be delivered until the <code>Connection.start</code> method
+     * is explicitly called.
+     *
+     * @param username the caller's user name
+     * @param password the caller's password
+     * @return A newly created XAConnection.
+     * @throws JMSException         If creating the XAConnection fails due to some internal error.
+     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     */
+    public XAConnection createXAConnection(String username, String password) throws JMSException
+    {
+        if (_connectionDetails != null)
+        {
+            _connectionDetails.setUsername(username);
+            _connectionDetails.setPassword(password);
+
+            if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
+            {
+                _connectionDetails.setClientName(getUniqueClientID());
+            }
+        }
+        else
+        {
+            throw new JMSException("A URL must be specified to access XA connections");
+        }
+        return createXAConnection();
+    }
+
+
+    /**
+     * Creates a XATopicConnection with the default user identity.
+     * <p> The XATopicConnection is created in stopped mode. No messages
+     * will be delivered until the <code>Connection.start</code> method
+     * is explicitly called.
+     *
+     * @return A newly created XATopicConnection
+     * @throws JMSException         If creating the XATopicConnection fails due to some internal error.
+     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     */
+    public XATopicConnection createXATopicConnection() throws JMSException
+    {
+        return (XATopicConnection) createXAConnection();
+    }
+
+    /**
+     * Creates a XATopicConnection with the specified user identity.
+     * <p> The XATopicConnection is created in stopped mode. No messages
+     * will be delivered until the <code>Connection.start</code> method
+     * is explicitly called.
+     *
+     * @param username the caller's user name
+     * @param password the caller's password
+     * @return A newly created XATopicConnection.
+     * @throws JMSException         If creating the XATopicConnection fails due to some internal error.
+     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     */
+    public XATopicConnection createXATopicConnection(String username, String password) throws JMSException
+    {
+         return (XATopicConnection) createXAConnection(username, password);
+    }
+
+    /**
+     * Creates a XAQueueConnection with the default user identity.
+     * <p> The XAQueueConnection is created in stopped mode. No messages
+     * will be delivered until the <code>Connection.start</code> method
+     * is explicitly called.
+     *
+     * @return A newly created XAQueueConnection
+     * @throws JMSException         If creating the XAQueueConnection fails due to some internal error.
+     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     */
+    public XAQueueConnection createXAQueueConnection() throws JMSException
+    {
+       return (XAQueueConnection) createXAConnection();
+    }
+
+    /**
+     * Creates a XAQueueConnection with the specified user identity.
+     * <p> The XAQueueConnection is created in stopped mode. No messages
+     * will be delivered until the <code>Connection.start</code> method
+     * is explicitly called.
+     *
+     * @param username the caller's user name
+     * @param password the caller's password
+     * @return A newly created XAQueueConnection.
+     * @throws JMSException         If creating the XAQueueConnection fails due to some internal error.
+     * @throws JMSSecurityException If client authentication fails due to an invalid user name or password.
+     */
+    public XAQueueConnection createXAQueueConnection(String username, String password) throws JMSException
+    {
+        return (XAQueueConnection) createXAConnection(username, password);
     }
 }

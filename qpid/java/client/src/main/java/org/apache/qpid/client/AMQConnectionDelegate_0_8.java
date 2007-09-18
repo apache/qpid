@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import javax.jms.JMSException;
+import javax.jms.XASession;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -99,6 +100,11 @@ public class AMQConnectionDelegate_0_8 implements AMQConnectionDelegate
             throws JMSException
     {
         return createSession(transacted, acknowledgeMode, prefetch, prefetch);
+    }
+
+    public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException
+    {
+        throw new UnsupportedOperationException("0_8 version does not provide XA support");
     }
 
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
