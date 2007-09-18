@@ -82,22 +82,6 @@ public:
     void operator()(const AMQFrame& f) { content += f.castBody<AMQContentBody>()->getData(); }
 };
 
-class Relay
-{
-    FrameHandler& handler;
-    const uint16_t channel;
-
-public:
-    Relay(FrameHandler& h, uint16_t c) : handler(h), channel(c) {}
-
-    void operator()(AMQFrame& f)
-    {
-        AMQFrame copy(f);
-        copy.setChannel(channel);
-        handler.handle(copy);
-    }
-};
-
 class Print
 {
     std::ostream& out;

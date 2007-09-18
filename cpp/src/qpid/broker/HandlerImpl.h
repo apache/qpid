@@ -19,49 +19,47 @@
  *
  */
 
-#include "Broker.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/ChannelAdapter.h"
+#include "Session.h"
+#include "SessionHandler.h"
+#include "Connection.h"
 
 namespace qpid {
 namespace broker {
 
-class Connection;
-class Session;
-
-/**
- * A collection of references to the core objects required by an adapter,
- * and a client proxy.
- */
-struct CoreRefs
-{
-    CoreRefs(Session& ch, Connection& c, Broker& b, framing::ChannelAdapter& a)
-        : session(ch), connection(c), broker(b), adapter(a), proxy(a.getHandlers().out) {}
-
-    Session& session;
-    Connection& connection;
-    Broker& broker;
-    framing::ChannelAdapter& adapter;
-    framing::AMQP_ClientProxy proxy;
-};
-
+class Broker;
 
 /**
  * Base template for protocol handler implementations.
- * Provides the core references and appropriate AMQP class proxy.
+ * Provides convenience methods for getting common session objects.
  */
-template <class ProxyType>
-struct HandlerImpl : public CoreRefs {
-    typedef HandlerImpl<ProxyType> HandlerImplType;
-    HandlerImpl(CoreRefs& parent)
-        : CoreRefs(parent), client(ProxyType::get(proxy)) {}
-    ProxyType client;
+class HandlerImpl {
+  protected:
+    HandlerImpl(Session& s) : session(s) {}
+
+    Session& getSession() { return session; }
+    const Session& getSession() const { return session; }
+    
+    SessionHandler* getSessionHandler() { return session.getHandler(); }
+    const SessionHandler* getSessionHandler() const { return session.getHandler(); }
+
+    // Remaining functions may only be called if getSessionHandler() != 0
+    framing::AMQP_ClientProxy& getProxy() { return getSessionHandler()->getProxy(); }
+    const framing::AMQP_ClientProxy& getProxy() const { return getSessionHandler()->getProxy(); }
+
+    Connection& getConnection() { return getSessionHandler()->getConnection(); }
+    const Connection& getConnection() const { return getSessionHandler()->getConnection(); }
+    
+    Broker& getBroker() { return getConnection().broker; }
+    const Broker& getBroker() const { return getConnection().broker; }
+
+  private:
+    Session& session;
 };
-
-
 
 }} // namespace qpid::broker
 
 
 
 #endif  /*!_broker_HandlerImpl_h*/
+
+
