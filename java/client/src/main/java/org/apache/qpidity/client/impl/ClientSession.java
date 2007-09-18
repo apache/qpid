@@ -16,7 +16,7 @@ import org.apache.qpidity.client.MessagePartListener;
 /**
  * Implements a Qpid Sesion. 
  */
-public class ClientSession extends org.apache.qpidity.transport.Session implements org.apache.qpidity.client.Session
+public class ClientSession extends org.apache.qpidity.transport.Session implements  org.apache.qpidity.client.DtxSession
 {
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
     private ExceptionListener _exceptionListner;
