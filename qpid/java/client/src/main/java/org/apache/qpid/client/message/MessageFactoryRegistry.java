@@ -67,7 +67,6 @@ public class MessageFactoryRegistry
     }
 
 
-
     public void registerFactory(String mimeType, MessageFactory mf)
     {
         if (mf == null)
@@ -122,11 +121,11 @@ public class MessageFactoryRegistry
     }
 
     public AbstractJMSMessage createMessage(long deliveryTag, boolean redelivered, AMQShortString exchange,
-                                            AMQShortString routingKey, Struct[] contentHeader, List bodies)
-            throws AMQException, JMSException
+                                            AMQShortString routingKey, Struct[] contentHeader, List bodies,
+                                            String replyTo) throws AMQException, JMSException
     {
         MessageProperties mprop = (MessageProperties) contentHeader[0];
-        String messageType =  mprop.getContentType();
+        String messageType = mprop.getContentType();
         if (messageType == null)
         {
             _logger.debug("no message type specified, building a byte message");
@@ -139,7 +138,7 @@ public class MessageFactoryRegistry
         }
         else
         {
-            return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies);
+            return mf.createMessage(deliveryTag, redelivered, contentHeader, exchange, routingKey, bodies, replyTo);
         }
     }
 
