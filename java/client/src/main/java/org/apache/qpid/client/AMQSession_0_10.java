@@ -79,6 +79,7 @@ public class AMQSession_0_10 extends AMQSession
      * @param messageFactoryRegistry  The message factory factory for the session.
      * @param defaultPrefetchHighMark The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLowMark  The number of prefetched messages at which to resume the session.
+     * @param qpidConnection          The qpid connection
      */
     AMQSession_0_10(org.apache.qpidity.client.Connection qpidConnection, AMQConnection con, int channelId,
                     boolean transacted, int acknowledgeMode, MessageFactoryRegistry messageFactoryRegistry,
@@ -107,6 +108,7 @@ public class AMQSession_0_10 extends AMQSession
      * @param acknowledgeMode     The acknoledgement mode for the session.
      * @param defaultPrefetchHigh The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLow  The number of prefetched messages at which to resume the session.
+     * @param qpidConnection      The connection
      */
     AMQSession_0_10(org.apache.qpidity.client.Connection qpidConnection, AMQConnection con, int channelId,
                     boolean transacted, int acknowledgeMode, int defaultPrefetchHigh, int defaultPrefetchLow)
@@ -276,7 +278,7 @@ public class AMQSession_0_10 extends AMQSession
                                                       final int prefetchLow, final boolean noLocal,
                                                       final boolean exclusive, String messageSelector,
                                                       final FieldTable ft, final boolean noConsume,
-                                                      final boolean autoClose)
+                                                      final boolean autoClose) throws JMSException
     {
 
         final AMQProtocolHandler protocolHandler = getProtocolHandler();
@@ -304,8 +306,18 @@ public class AMQSession_0_10 extends AMQSession
                             boolean nowait, String messageSelector, AMQShortString tag)
             throws AMQException, FailoverException
     {
+        boolean preAcquire;
+        try
+        {
+            preAcquire = consumer.getMessageSelector() == null || !(consumer.getDestination() instanceof AMQQueue);
+        }
+        catch (JMSException e)
+        {
+           throw new AMQException(AMQConstant.INTERNAL_ERROR, "problem when registering consumer", e);
+        }
         getQpidSession().messageSubscribe(queueName.toString(), tag.toString(), Session.TRANSFER_CONFIRM_MODE_REQUIRED,
-                                          Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
+                                          preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE :
+                                                  Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
                                           new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
                                           consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
