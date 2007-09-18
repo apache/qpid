@@ -40,11 +40,7 @@ framing::AMQP_ClientProxy& SessionHandler::getProxy() {
 }
 
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
-    : connection(c), channel(ch), ignoring(false)
-{
-    in = this;
-    out = &c.getOutput();
-}
+    : InOutHandler(0, &c.getOutput()), connection(c), channel(ch), ignoring(false), channelHandler(*this) {}
 
 SessionHandler::~SessionHandler() {}
 
@@ -53,7 +49,7 @@ ClassId classId(AMQMethodBody* m) { return m ? m->amqpMethodId() : 0; }
 MethodId methodId(AMQMethodBody* m) { return m ? m->amqpClassId() : 0; }
 } // namespace
 
-void SessionHandler::handle(AMQFrame& f) {
+void SessionHandler::handleIn(AMQFrame& f) {
     // Note on channel states: a channel is open if session != 0.  A
     // channel that is closed (session == 0) can be in the "ignoring"
     // state. This is a temporary state after we have sent a channel
@@ -62,7 +58,7 @@ void SessionHandler::handle(AMQFrame& f) {
     // 
     AMQMethodBody* m=f.getMethod();
     try {
-        if (m && m->invoke(static_cast<Invocable*>(this)))
+        if (m && m->invoke(&channelHandler))
             return;
         else if (session)
             session->in(f);
@@ -82,6 +78,11 @@ void SessionHandler::handle(AMQFrame& f) {
     }
 }
 
+void SessionHandler::handleOut(AMQFrame& f) {
+    f.setChannel(getChannel());
+    out.next->handle(f);
+}
+
 void SessionHandler::assertOpen(const char* method) {
     if (!session)
         throw ChannelErrorException(
@@ -99,21 +100,21 @@ void SessionHandler::assertClosed(const char* method) {
                      << getChannel()));
 }
 
-void SessionHandler::open(const string& /*outOfBand*/){
-    assertClosed("open");
-    session.reset(new Session(*this, 0));
-    getProxy().getChannel().openOk();
+void SessionHandler::ChannelMethods::open(const string& /*outOfBand*/){
+    parent.assertClosed("open");
+    parent.session.reset(new Session(parent, 0));
+    parent.getProxy().getChannel().openOk();
 } 
 
 // FIXME aconway 2007-08-31: flow is no longer in the spec.
-void SessionHandler::flow(bool active){
-    session->flow(active);
-    getProxy().getChannel().flowOk(active);
+void SessionHandler::ChannelMethods::flow(bool active){
+    parent.session->flow(active);
+    parent.getProxy().getChannel().flowOk(active);
 }
 
-void SessionHandler::flowOk(bool /*active*/){}
+void SessionHandler::ChannelMethods::flowOk(bool /*active*/){}
         
-void SessionHandler::close(uint16_t replyCode,
+void SessionHandler::ChannelMethods::close(uint16_t replyCode,
                            const string& replyText,
                            uint16_t classId, uint16_t methodId)
 {
@@ -123,21 +124,21 @@ void SessionHandler::close(uint16_t replyCode,
              <<replyText << ","
              << "classid=" <<classId<< ","
              << "methodid=" <<methodId);
-    ignoring=false;
-    getProxy().getChannel().closeOk();
+    parent.ignoring=false;
+    parent.getProxy().getChannel().closeOk();
     // FIXME aconway 2007-08-31: sould reset session BEFORE
     // sending closeOK to avoid races. SessionHandler
     // needs its own private proxy, see getProxy() above.
-    session.reset();
+    parent.session.reset();
     // No need to remove from connection map, will be re-used
     // if channel is re-opened.
 } 
         
-void SessionHandler::closeOk(){
-    ignoring=false;
+void SessionHandler::ChannelMethods::closeOk(){
+    parent.ignoring=false;
 }
 
-void SessionHandler::ok() 
+void SessionHandler::ChannelMethods::ok() 
 {
     //no specific action required, generic response handling should be
     //sufficient
