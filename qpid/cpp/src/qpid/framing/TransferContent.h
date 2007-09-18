@@ -37,7 +37,7 @@ class TransferContent : public MethodContent
     AMQHeaderBody header;
     std::string data;
 public:
-    TransferContent(const std::string& data);
+    TransferContent(const std::string& data = "");
     AMQHeaderBody getHeader() const;
     void setData(const std::string&);
     void appendData(const std::string&);

@@ -18,27 +18,55 @@
  * under the License.
  *
  */
-#include <vector>
+#include <list>
 #include "qpid_test_plugin.h"
 #include "InProcessBroker.h"
+#include "qpid/client/Dispatcher.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/TransferContent.h"
 
 using namespace qpid::client;
 using namespace qpid::framing;
 
+struct DummyListener : public MessageListener
+{
+    std::list<Message> messages;
+    std::string name;
+    uint expected;
+    uint count;
+    Dispatcher dispatcher;
+
+    DummyListener(Session& session, const std::string& _name, uint _expected) : name(_name), expected(_expected), count(0), 
+                                                                                dispatcher(session) {}
+
+    void listen()
+    {
+        dispatcher.listen(name, this, true, 1);
+        dispatcher.run();
+    }
+
+    void received(Message& msg)
+    {
+        messages.push_back(msg);
+        if (++count == expected) {
+            dispatcher.stop();
+        }
+    }
+};
+
 class ClientSessionTest : public CppUnit::TestCase
 {
     CPPUNIT_TEST_SUITE(ClientSessionTest);
     CPPUNIT_TEST(testQueueQuery);
     CPPUNIT_TEST(testTransfer);
+    CPPUNIT_TEST(testDispatcher);
     CPPUNIT_TEST_SUITE_END();
 
     boost::shared_ptr<Connector> broker;
     Connection connection;
     Session session;
 
-  public:
+public:
 
     ClientSessionTest() : broker(new qpid::broker::InProcessBroker()), connection(broker) 
     {
@@ -77,6 +105,37 @@ class ClientSessionTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(data, msg->getContent());
         //confirm receipt:
         session.execution().completed(msg->getId(), true, true);
+    }
+
+    void testDispatcher()
+    {
+        session.queueDeclare_(queue="my-queue", exclusive=true, autoDelete=true);
+
+        TransferContent msg1("One");
+        msg1.getDeliveryProperties().setRoutingKey("my-queue");
+        session.messageTransfer_(content=msg1);
+
+        TransferContent msg2("Two");
+        msg2.getDeliveryProperties().setRoutingKey("my-queue");
+        session.messageTransfer_(content=msg2);
+
+        TransferContent msg3("Three");
+        msg3.getDeliveryProperties().setRoutingKey("my-queue");
+        session.messageTransfer_(content=msg3);
+                
+        session.messageSubscribe_(queue="my-queue", destination="my-dest", acquireMode=1);
+        session.messageFlow((destination="my-dest", unit=0, value=1));//messages
+        session.messageFlow((destination="my-dest", unit=1, value=0xFFFFFFFF));//bytes
+        DummyListener listener(session, "my-dest", 3);
+        listener.listen();
+        CPPUNIT_ASSERT_EQUAL((size_t) 3, listener.messages.size());        
+        CPPUNIT_ASSERT_EQUAL(std::string("One"), listener.messages.front().getData());
+        listener.messages.pop_front();
+        CPPUNIT_ASSERT_EQUAL(std::string("Two"), listener.messages.front().getData());
+        listener.messages.pop_front();
+        CPPUNIT_ASSERT_EQUAL(std::string("Three"), listener.messages.front().getData());
+        listener.messages.pop_front();
+
     }
 };
 
