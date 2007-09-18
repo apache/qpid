@@ -23,15 +23,9 @@
  */
 #include <boost/shared_ptr.hpp>
 #include "DeliveryId.h"
+#include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
-
-namespace framing {
-
-class ChannelAdapter;
-
-}
-
 namespace broker {
 
 class DeliveryToken;
@@ -49,7 +43,7 @@ public:
                                                                     u_int8_t confirmMode, 
                                                                     u_int8_t acquireMode);
 
-    static void deliver(boost::shared_ptr<Message> msg, framing::ChannelAdapter& channel, 
+    static void deliver(boost::shared_ptr<Message> msg, framing::FrameHandler& out, 
                         DeliveryId deliveryTag, boost::shared_ptr<DeliveryToken> token, uint16_t framesize);
 };
 

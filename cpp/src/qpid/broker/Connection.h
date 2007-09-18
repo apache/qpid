@@ -68,6 +68,7 @@ class Connection : public sys::ConnectionInputHandler,
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setStagingThreshold(uint64_t st) { stagingThreshold = st; }
     
+    Broker& getBroker() { return broker; }
 
     Broker& broker;
     std::vector<Queue::shared_ptr> exclusiveQueues;

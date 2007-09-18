@@ -37,7 +37,6 @@ namespace framing {
 class SendContent
 {
     mutable FrameHandler& handler;
-    const uint16_t channel;
     const uint16_t maxFrameSize;
     uint expectedFrameCount;
     uint frameCount;
@@ -45,7 +44,7 @@ class SendContent
     void sendFragment(const AMQContentBody& body, uint32_t offset, uint16_t size, bool first, bool last) const;
     void setFlags(AMQFrame& f, bool first, bool last) const;
 public:
-    SendContent(FrameHandler& _handler, uint16_t channel, uint16_t _maxFrameSize, uint frameCount);
+    SendContent(FrameHandler& _handler, uint16_t _maxFrameSize, uint frameCount);
     void operator()(const AMQFrame& f);
 };
 
