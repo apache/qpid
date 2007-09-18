@@ -26,7 +26,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
-#include "qpid/framing/ChannelAdapter.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
