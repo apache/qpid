@@ -3,6 +3,7 @@ package org.apache.qpid.client;
 import java.io.IOException;
 
 import javax.jms.JMSException;
+import javax.jms.XASession;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -11,8 +12,6 @@ import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
 import org.apache.qpidity.client.Client;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.jms.SessionImpl;
-import org.apache.qpidity.jms.ExceptionHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +63,31 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
         }
         return session;
     }
+
+    /**
+     * create an XA Session and start it if required.
+     */
+    public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException
+    {
+        _conn.checkNotClosed();
+        int channelId = _conn._idFactory.incrementAndGet();
+        XASessionImpl session;
+        try
+        {
+            session = new XASessionImpl(_qpidConnection, _conn, channelId, prefetchHigh, prefetchLow);
+            _conn.registerSession(channelId, session);
+            if (_conn._started)
+            {
+                session.start();
+            }
+        }
+        catch (Exception e)
+        {
+            throw new JMSAMQException("cannot create session", e);
+        }
+        return session;
+    }
+
 
     /**
      * Make a connection with the broker

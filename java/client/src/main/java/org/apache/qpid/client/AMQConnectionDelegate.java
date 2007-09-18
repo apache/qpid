@@ -23,17 +23,21 @@ package org.apache.qpid.client;
 import java.io.IOException;
 
 import javax.jms.JMSException;
+import javax.jms.XASession;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.Session;
 
 public interface AMQConnectionDelegate
 {
     public void makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException;
 
-    public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
+    public Session createSession(final boolean transacted, final int acknowledgeMode,
             final int prefetchHigh, final int prefetchLow) throws JMSException;
+
+    public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException;
 
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException;
 
