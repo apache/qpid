@@ -208,7 +208,11 @@ class TestBase(unittest.TestCase):
         self.exchanges = []
         self.client = self.connect()
         self.channel = self.client.channel(1)
-        self.channel.channel_open()
+        version = (self.client.spec.major, self.client.spec.minor)
+        if version == (8, 0) or "transitional" in self.client.spec.file:
+            self.channel.channel_open()
+        else:
+            self.channel.session_open()
 
     def tearDown(self):
         try:
