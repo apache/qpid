@@ -317,7 +317,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                     .messageAcquire(ranges, org.apache.qpidity.nclient.Session.MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE);
             _0_10session.getQpidSession().sync();
             RangeSet acquired = _0_10session.getQpidSession().getAccquiredMessages();
-            if (acquired.size() > 0)
+            if (acquired != null && acquired.size() > 0)
             {
                 result = true;
             }
