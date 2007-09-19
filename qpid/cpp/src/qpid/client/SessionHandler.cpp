@@ -74,7 +74,8 @@ void SessionHandler::open(uint16_t _id)
     id = _id;
 
     setState(OPENING);
-    AMQFrame f(id, SessionOpenBody(version));
+    // FIXME aconway 2007-09-19: Need to get this from API.
+    AMQFrame f(id, SessionOpenBody(version, 0));
     out(f);
 
     std::set<int> states;
