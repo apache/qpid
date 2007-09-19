@@ -747,7 +747,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             Subscription s = _subscriptions.nextSubscriber(msg);
 
-            if (s == null || hasQueuedMessages()) //no-one can take the message right now or we're queueing
+            if (s == null || (!s.filtersMessages() && hasQueuedMessages())) //no-one can take the message right now or we're queueing
             {
                 if (debugEnabled)
                 {
