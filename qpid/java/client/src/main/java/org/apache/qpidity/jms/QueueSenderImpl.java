@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import javax.jms.QueueSender;
 import javax.jms.JMSException;
@@ -23,7 +23,7 @@ import javax.jms.Queue;
 import javax.jms.Message;
 
 /**
- * Implements javax.jms.QueueSender
+ * Implements javax.njms.QueueSender
  */
 public class QueueSenderImpl extends MessageProducerImpl implements QueueSender
 {
@@ -40,7 +40,7 @@ public class QueueSenderImpl extends MessageProducerImpl implements QueueSender
         super(session, queue);
     }
 
-    //--- Interface javax.jms.QueueSender
+    //--- Interface javax.njms.QueueSender
     /**
      * Get the queue associated with this QueueSender.
      *

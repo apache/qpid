@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
 
@@ -24,7 +24,7 @@ import javax.jms.JMSException;
 import javax.jms.XAQueueSession;
 
 /**
- * Imeplements javax.jms.XAQueueSessionImpl
+ * Imeplements javax.njms.XAQueueSessionImpl
  */
 public class XAQueueSessionImpl extends XASessionImpl implements XAQueueSession
 {

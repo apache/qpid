@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms.message;
+package org.apache.qpidity.njms.message;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +28,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 
 /**
- * Implemetns javax.jms.ObjectMessage
+ * Implemetns javax.njms.ObjectMessage
  */
 public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
 {

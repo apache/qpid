@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import java.util.Vector;
 
@@ -35,13 +35,13 @@ import javax.jms.TopicSession;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.url.QpidURL;
-import org.apache.qpidity.client.Client;
+import org.apache.qpidity.nclient.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
 /**
- * Implements javax.jms.Connection, javax.jms.QueueConnection and javax.jms.TopicConnection
+ * Implements javax.njms.Connection, javax.njms.QueueConnection and javax.njms.TopicConnection
  */
 public class ConnectionImpl implements Connection
 {
@@ -75,7 +75,7 @@ public class ConnectionImpl implements Connection
      * set to true if this Connection has been closed.
      * <p/>
      * A closed Connection cannot accept invocations to any of its methods with the exception
-     * of close(). All other methods should throw javax.jms.IllegalStateExceptions if the
+     * of close(). All other methods should throw javax.njms.IllegalStateExceptions if the
      * Connection has been closed.
      * <p/>
      * A Connection is open after creation, but not started. Once it has been closed, a Connection
@@ -87,11 +87,11 @@ public class ConnectionImpl implements Connection
     /**
      * The QpidConeection instance that is mapped with thie JMS connection
      */
-    org.apache.qpidity.client.Connection _qpidConnection;
+    org.apache.qpidity.nclient.Connection _qpidConnection;
 
     /**
      * This is the exception listener for this qpid connection.
-     * The jms exception listener is registered with this listener.
+     * The njms exception listener is registered with this listener.
      */
     QpidExceptionListenerImpl _qpidExceptionListener;
 
@@ -125,7 +125,7 @@ public class ConnectionImpl implements Connection
         _qpidConnection.connect(qpidURL);
     }
 
-    //---- Interface javax.jms.Connection ---//
+    //---- Interface javax.njms.Connection ---//
     /**
      * Creates a Session
      *
@@ -496,7 +496,7 @@ public class ConnectionImpl implements Connection
      *
      * @return This JMS connection underlying Qpid Connection.
      */
-    protected org.apache.qpidity.client.Connection getQpidConnection()
+    protected org.apache.qpidity.nclient.Connection getQpidConnection()
     {
         return _qpidConnection;
     }

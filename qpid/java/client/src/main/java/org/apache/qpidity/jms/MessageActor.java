@@ -15,11 +15,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpidity.QpidException;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
@@ -75,7 +74,7 @@ public abstract class MessageActor
         _messageActorID = messageActorID;
     }
 
-    //--- public methods (part of the jms public API)
+    //--- public methods (part of the njms public API)
     /**
      * Closes the MessageActor and deregister it from its session.
      *
@@ -119,7 +118,7 @@ public abstract class MessageActor
 
     /**
      * Check if this MessageActor is not closed.
-     * <p> If the MessageActor is closed, throw a javax.jms.IllegalStateException.
+     * <p> If the MessageActor is closed, throw a javax.njms.IllegalStateException.
      * <p> The method is not synchronized, since MessageProducers can only be used by a single thread.
      *
      * @throws IllegalStateException if the MessageActor is closed

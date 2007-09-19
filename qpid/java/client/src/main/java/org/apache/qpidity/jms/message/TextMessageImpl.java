@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms.message;
+package org.apache.qpidity.njms.message;
 
 import org.apache.qpidity.QpidException;
 
@@ -27,7 +27,7 @@ import java.nio.charset.*;
 import java.io.UnsupportedEncodingException;
 
 /**
- * Implements the interface javax.jms.TextMessage
+ * Implements the interface javax.njms.TextMessage
  */
 public class TextMessageImpl extends MessageImpl implements TextMessage
 {
