@@ -39,7 +39,12 @@ public abstract class SessionDelegate
         if (method.getEncodedTrack() == Frame.L4)
         {
             method.setId(ssn.nextCommandId());
-            method.dispatch(ssn, this);
+        }
+
+        method.dispatch(ssn, this);
+
+        if (method.getEncodedTrack() == Frame.L4)
+        {
             if (!method.hasPayload())
             {
                 ssn.processed(method);
