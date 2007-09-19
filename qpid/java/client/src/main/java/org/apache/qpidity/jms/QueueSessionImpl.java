@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -23,7 +23,7 @@ import javax.jms.IllegalStateException;
 import org.apache.qpidity.QpidException;
 
 /**
- * Implementation of javax.jms.QueueSession
+ * Implementation of javax.njms.QueueSession
  */
 public class QueueSessionImpl extends SessionImpl implements QueueSession
 {
@@ -96,7 +96,7 @@ public class QueueSessionImpl extends SessionImpl implements QueueSession
         throw new IllegalStateException("Cannot invoke unsubscribe from QueueSession");
     }
 
-    //--- Interface javax.jms.QueueSession
+    //--- Interface javax.njms.QueueSession
     /**
      * Create a QueueReceiver to receive messages from the specified queue.
      *

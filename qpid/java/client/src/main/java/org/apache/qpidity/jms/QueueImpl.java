@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.Option;
@@ -93,7 +93,7 @@ public class QueueImpl extends DestinationImpl implements Queue
         _isExclusive = false;
     }
 
-    //---- Interface javax.jms.Queue
+    //---- Interface javax.njms.Queue
     /**
      * Gets the name of this queue.
      *

@@ -15,10 +15,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
-import org.apache.qpidity.jms.message.MessageHelper;
-import org.apache.qpidity.jms.message.MessageImpl;
+import org.apache.qpidity.njms.message.MessageHelper;
+import org.apache.qpidity.njms.message.MessageImpl;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
@@ -61,7 +61,7 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
         super(session, destination,"");
     }
 
-    //--- Interface javax.jms.MessageProducer
+    //--- Interface javax.njms.MessageProducer
     /**
      * Sets whether message IDs are disabled.
      *
@@ -153,7 +153,7 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
 
     /**
      * Sets the producer's message priority.
-     * <p> The jms spec says:
+     * <p> The njms spec says:
      * <p> The JMS API defines ten levels of priority value, with 0 as the
      * lowest priority and 9 as the highest. Clients should consider priorities
      * 0-4 as gradations of normal priority and priorities 5-9 as gradations
@@ -373,8 +373,8 @@ public class MessageProducerImpl extends MessageActor implements MessageProducer
         {
             getSession().getQpidSession().messageTransfer(qpidMessage.getExchangeName(),
                                                           qpidMessage.getQpidityMessage(),
-                                                          org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
-                                                          org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+                                                          org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                                          org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
         }
         catch (IOException e)
         {

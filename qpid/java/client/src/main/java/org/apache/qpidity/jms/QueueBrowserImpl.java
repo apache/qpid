@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
@@ -25,8 +25,8 @@ import javax.jms.Message;
 import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 
-import org.apache.qpidity.client.MessagePartListener;
-import org.apache.qpidity.client.util.MessagePartListenerAdapter;
+import org.apache.qpidity.nclient.MessagePartListener;
+import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 import org.apache.qpidity.filter.MessageFilter;
 
@@ -94,13 +94,13 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
         // this is a queue we expect that this queue exists
         getSession().getQpidSession()
                 .messageSubscribe(queue.getQueueName(), getMessageActorID(),
-                                  org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                  org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                   // We do not acquire those messages
-                                  org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE, messageAssembler, null);
+                                  org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE, messageAssembler, null);
 
     }
 
-    //--- javax.jms.QueueBrowser API
+    //--- javax.njms.QueueBrowser API
     /**
      * Get an enumeration for browsing the current queue messages in the order they would be received.
      *
@@ -169,7 +169,7 @@ public class QueueBrowserImpl extends MessageActor implements QueueBrowser
         // request messages
         int received = 0;
         getSession().getQpidSession()
-        .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+        .messageFlow(getMessageActorID(), org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
                      _maxbatchlength);
         _batchLength = 0; //getSession().getQpidSession().messageFlush(getMessageActorID());
     }

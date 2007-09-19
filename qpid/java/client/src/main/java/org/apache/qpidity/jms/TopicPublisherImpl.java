@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import javax.jms.*;
 
@@ -37,7 +37,7 @@ public class TopicPublisherImpl extends MessageProducerImpl implements TopicPubl
         super(session, (DestinationImpl) topic);
     }
 
-    //--- Interface javax.jms.TopicPublisher
+    //--- Interface javax.njms.TopicPublisher
     /**
      * Get the topic associated with this TopicPublisher.
      *
