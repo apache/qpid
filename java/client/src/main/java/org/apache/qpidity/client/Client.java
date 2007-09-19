@@ -1,4 +1,4 @@
-package org.apache.qpidity.client;
+package org.apache.qpidity.nclient;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -8,8 +8,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.qpidity.BrokerDetails;
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.client.impl.ClientSession;
-import org.apache.qpidity.client.impl.ClientSessionDelegate;
+import org.apache.qpidity.nclient.impl.ClientSession;
+import org.apache.qpidity.nclient.impl.ClientSessionDelegate;
 import org.apache.qpidity.transport.Channel;
 import org.apache.qpidity.transport.Connection;
 import org.apache.qpidity.transport.ConnectionClose;
@@ -21,7 +21,7 @@ import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.url.QpidURL;
 
 
-public class Client implements org.apache.qpidity.client.Connection
+public class Client implements org.apache.qpidity.nclient.Connection
 {
     private AtomicInteger _channelNo = new AtomicInteger();
     private Connection _conn;
@@ -32,7 +32,7 @@ public class Client implements org.apache.qpidity.client.Connection
      *
      * @return returns a new connection to the broker.
      */
-    public static org.apache.qpidity.client.Connection createConnection()
+    public static org.apache.qpidity.nclient.Connection createConnection()
     {
         return new Client();
     }

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.client;
+package org.apache.qpidity.nclient;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -118,8 +118,8 @@ public interface Session
      * <br><b><i>This method should only be used by large messages</b></i><br>
      * There are two convinience Message classes provided to facilitate this.
      * <ul>
-     * <li> <code>{@link org.apache.qpidity.client.util.FileMessage}</code>
-     * <li> <code>{@link org.apache.qpidity.client.util.StreamingMessage}</code>
+     * <li> <code>{@link org.apache.qpidity.nclient.util.FileMessage}</code>
+     * <li> <code>{@link org.apache.qpidity.nclient.util.StreamingMessage}</code>
      * </ul>
      * You could also implement a the <code>Message</code> interface to and wrap any
      * data stream you want.
@@ -253,7 +253,7 @@ public interface Session
      *                    acquired when the transfer starts
      *                    </ul>
      * @param listener    The listener for this destination. When big message are transfered then
-     *                    it is recommended to use a {@link org.apache.qpidity.client.MessagePartListener}.
+     *                    it is recommended to use a {@link org.apache.qpidity.nclient.MessagePartListener}.
      * @param options     Set of Options (valid options are {@link Option#NO_LOCAL}, {@link Option#EXCLUSIVE}
      *                    and {@link Option#NO_OPTION})
      * @param filter      A set of filters for the subscription. The syntax and semantics of these filters depends

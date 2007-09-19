@@ -1,4 +1,4 @@
-package org.apache.qpidity.client.util;
+package org.apache.qpidity.nclient.util;
 
 import java.io.EOFException;
 import java.io.IOException;
