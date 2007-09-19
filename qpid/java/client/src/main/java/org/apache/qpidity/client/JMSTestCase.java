@@ -1,7 +1,7 @@
-package org.apache.qpidity.client;
+package org.apache.qpidity.nclient;
 
-import org.apache.qpidity.jms.ConnectionFactoryImpl;
-import org.apache.qpidity.jms.TopicImpl;
+import org.apache.qpidity.njms.ConnectionFactoryImpl;
+import org.apache.qpidity.njms.TopicImpl;
 
 public class JMSTestCase
 {

@@ -1,4 +1,4 @@
-package org.apache.qpidity.client.util;
+package org.apache.qpidity.nclient.util;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -6,7 +6,7 @@ import java.nio.ByteBuffer;
 import org.apache.qpidity.transport.DeliveryProperties;
 import org.apache.qpidity.transport.MessageProperties;
 import org.apache.qpidity.transport.Header;
-import org.apache.qpidity.client.MessagePartListener;
+import org.apache.qpidity.nclient.MessagePartListener;
 
 /**
  * This is a simple message assembler.
