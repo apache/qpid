@@ -236,15 +236,17 @@
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-javadoc-plugin</artifactId>
                <configuration>
-                  <excludePackageNames>org.apache.qpid.*:org.apache.qpidity.jms:org.apache.qpidity.jms.*:org.apache.qpidity.client.impl</excludePackageNames>
+                  <excludePackageNames>
+                      org.apache.qpid.*:org.apache.qpidity.njms:org.apache.qpidity.njms.*:org.apache.qpidity.nclient.impl
+                  </excludePackageNames>
                   <groups>
                     <group>
                       <title>API</title>
-                      <packages>org.apache.qpidity.client</packages>
+                      <packages>org.apache.qpidity.nclient</packages>
                     </group>
                     <group>
                       <title>Utility Package</title>
-                       <packages>org.apache.qpidity.client.util</packages>
+                       <packages>org.apache.qpidity.nclient.util</packages>
                     </group>
                   </groups>
                </configuration>
