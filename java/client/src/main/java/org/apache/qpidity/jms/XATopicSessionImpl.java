@@ -15,14 +15,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
 
 /**
- * Implements javax.jms.XATopicSession and javax.jms.TopicSession
+ * Implements javax.njms.XATopicSession and javax.njms.TopicSession
  */
 public class XATopicSessionImpl extends XASessionImpl implements XATopicSession
 {

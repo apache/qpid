@@ -15,17 +15,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
-import org.apache.qpidity.jms.ConnectionImpl;
+import org.apache.qpidity.njms.ConnectionImpl;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.client.Client;
 
 import javax.jms.QueueConnection;
 
 /**
  *
- *  Implements javax.jms.QueueConnection
+ *  Implements javax.njms.QueueConnection
  */
 public class QueueConnectionImpl extends ConnectionImpl implements QueueConnection
 {

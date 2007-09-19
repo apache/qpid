@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
 
@@ -42,7 +42,7 @@ public class QpidExceptionListenerImpl //implements ExceptionListener
     {
         // convert this exception in a JMS exception
         JMSException jmsException = ExceptionHelper.convertQpidExceptionToJMSException(exception);
-        // propagate to the jms exception listener
+        // propagate to the njms exception listener
         if (_jmsExceptionListener != null)
         {
             _jmsExceptionListener.onException(jmsException);

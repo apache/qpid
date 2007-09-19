@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpid.common.QpidProperties;
 
@@ -24,7 +24,7 @@ import javax.jms.JMSException;
 import java.util.Enumeration;
 
 /**
- * Implements javax.jms.ConnectionMetaData
+ * Implements javax.njms.ConnectionMetaData
  * A ConnectionMetaDataImpl provides information describing the JMS <code>Connection</code>.
  */
 public class ConnectionMetaDataImpl implements ConnectionMetaData

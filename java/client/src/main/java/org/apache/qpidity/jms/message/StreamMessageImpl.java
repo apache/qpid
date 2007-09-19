@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms.message;
+package org.apache.qpidity.njms.message;
 
 import org.apache.qpidity.QpidException;
 

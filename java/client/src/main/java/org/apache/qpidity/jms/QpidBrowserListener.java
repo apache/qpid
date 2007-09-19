@@ -15,12 +15,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.client.util.MessageListener;
+import org.apache.qpidity.nclient.util.MessageListener;
 
 /**
  * This listener idspatches messaes to its browser.
