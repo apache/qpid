@@ -33,7 +33,7 @@ SessionCore::SessionCore(uint16_t _id, boost::shared_ptr<framing::FrameHandler> 
 {
     l2.out = boost::bind(&FrameHandler::handle, out, _1);
     l2.in = boost::bind(&ExecutionHandler::handle, &l3, _1);
-    l3.out = boost::bind(&ChannelHandler::outgoing, &l2, _1);
+    l3.out = boost::bind(&SessionHandler::outgoing, &l2, _1);
     l2.onClose = boost::bind(&SessionCore::closed, this, _1, _2);
 }
 
