@@ -18,8 +18,8 @@
  */
 package org.apache.qpidity.nclient;
 
+import org.apache.qpid.url.QpidURL;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.url.QpidURL;
 
 /**
  * This represents a physical connection to a broker.

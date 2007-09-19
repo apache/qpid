@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,10 +17,10 @@
  */
 package org.apache.qpidity.njms;
 
+import org.apache.qpid.url.QpidBindingURL;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 import org.apache.qpidity.transport.Option;
-import org.apache.qpidity.url.BindingURL;
 
 import javax.jms.Topic;
 import java.util.UUID;
@@ -78,7 +78,7 @@ public class TopicImpl extends DestinationImpl implements Topic
      * @param binding The URL
      * @throws QpidException If the URL is not valid
      */
-    protected TopicImpl(SessionImpl session, BindingURL binding) throws QpidException
+    protected TopicImpl(SessionImpl session, QpidBindingURL binding) throws QpidException
     {
         super(binding);
         checkTopicExists(session);
@@ -91,7 +91,7 @@ public class TopicImpl extends DestinationImpl implements Topic
      * @param binding The URL
      * @throws QpidException If the URL is not valid
      */
-    public TopicImpl(BindingURL binding) throws QpidException
+    public TopicImpl(QpidBindingURL binding) throws QpidException
     {
         super(binding);
     }
@@ -119,9 +119,9 @@ public class TopicImpl extends DestinationImpl implements Topic
         session.getQpidSession().exchangeDeclare(_exchangeName, _exchangeType, null, null, Option.PASSIVE);
         // wait for the broker response
         System.out.println("Checking for exchange");
-        
+
         session.getQpidSession().sync();
-        
+
         System.out.println("Calling sync()");
         // todo get the exception
     }
