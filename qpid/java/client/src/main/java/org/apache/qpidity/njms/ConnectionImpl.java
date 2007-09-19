@@ -33,8 +33,8 @@ import javax.jms.Session;
 import javax.jms.Topic;
 import javax.jms.TopicSession;
 
+import org.apache.qpid.url.QpidURL;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.url.QpidURL;
 import org.apache.qpidity.nclient.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,9 +18,9 @@
 package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.url.BindingURL;
-import org.apache.qpidity.url.BindingURLImpl;
-import org.apache.qpidity.url.URLSyntaxException;
+import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.url.QpidBindingURL;
+import org.apache.qpid.url.BindingURLImpl;
 import org.apache.qpid.url.URLHelper;
 
 import javax.jms.Destination;
@@ -68,13 +68,13 @@ public class DestinationImpl implements Destination, Referenceable
      * Indicates whether this destination is durable
      */
     protected boolean _isDurable;
-    
+
     protected String _routingKey;
 
     /**
      * The biding URL used to create this destiantion
      */
-    protected BindingURL _url;
+    protected QpidBindingURL _url;
 
     //--- Constructor
 
@@ -90,14 +90,14 @@ public class DestinationImpl implements Destination, Referenceable
      * @param binding The URL
      * @throws QpidException If the URL is not valid
      */
-    public DestinationImpl(BindingURL binding) throws QpidException
+    public DestinationImpl(QpidBindingURL binding) throws QpidException
     {
         _exchangeName = binding.getExchangeName();
         _exchangeType = binding.getExchangeClass();
         _destinationName = binding.getDestinationName();
-        _isExclusive = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_EXCLUSIVE));
-        _isAutoDelete = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_AUTODELETE));
-        _isDurable = Boolean.parseBoolean(binding.getOption(BindingURL.OPTION_DURABLE));
+        _isExclusive = Boolean.parseBoolean(binding.getOption(QpidBindingURL.OPTION_EXCLUSIVE));
+        _isAutoDelete = Boolean.parseBoolean(binding.getOption(QpidBindingURL.OPTION_AUTODELETE));
+        _isDurable = Boolean.parseBoolean(binding.getOption(QpidBindingURL.OPTION_DURABLE));
         _queueName = binding.getQueueName();
         _routingKey = binding.getQueueName();
         _url = binding;
@@ -179,7 +179,7 @@ public class DestinationImpl implements Destination, Referenceable
     {
         return _routingKey;
     }
-    
+
     /**
      * Indicates whether this destination is Durable.
      *
@@ -226,19 +226,19 @@ public class DestinationImpl implements Destination, Referenceable
             sb.append('?');
             if (_isDurable)
             {
-                sb.append(org.apache.qpid.url.BindingURL.OPTION_DURABLE);
+                sb.append(org.apache.qpid.url.QpidBindingURL.OPTION_DURABLE);
                 sb.append("='true'");
                 sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }
             if (_isExclusive)
             {
-                sb.append(org.apache.qpid.url.BindingURL.OPTION_EXCLUSIVE);
+                sb.append(org.apache.qpid.url.QpidBindingURL.OPTION_EXCLUSIVE);
                 sb.append("='true'");
                 sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }
             if (_isAutoDelete)
             {
-                sb.append(org.apache.qpid.url.BindingURL.OPTION_AUTODELETE);
+                sb.append(org.apache.qpid.url.QpidBindingURL.OPTION_AUTODELETE);
                 sb.append("='true'");
                 sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }

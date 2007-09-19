@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.url;
+package org.apache.qpid.url;
 
 import org.apache.qpid.framing.AMQShortString;
 
@@ -23,7 +23,7 @@ import org.apache.qpid.framing.AMQShortString;
     Binding URL format:
     <exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
 */
-public interface BindingURL
+public interface QpidBindingURL
 {
     public static final String OPTION_EXCLUSIVE = "exclusive";
     public static final String OPTION_AUTODELETE = "autodelete";
