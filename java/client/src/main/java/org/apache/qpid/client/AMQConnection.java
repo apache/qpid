@@ -64,8 +64,8 @@ import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.FailoverPolicy;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.url.QpidURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpidity.url.QpidURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

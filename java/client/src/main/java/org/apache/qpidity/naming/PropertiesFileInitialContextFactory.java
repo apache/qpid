@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,13 +19,13 @@ package org.apache.qpidity.naming;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.qpid.url.BindingURLImpl;
+import org.apache.qpid.url.QpidBindingURL;
 import org.apache.qpidity.njms.ConnectionFactoryImpl;
 import org.apache.qpidity.njms.DestinationImpl;
 import org.apache.qpidity.njms.QueueImpl;
 import org.apache.qpidity.njms.TopicImpl;
-import org.apache.qpidity.url.BindingURLImpl;
-import org.apache.qpidity.url.URLSyntaxException;
-import org.apache.qpidity.url.BindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpidity.QpidException;
 
 import javax.naming.spi.InitialContextFactory;
@@ -47,7 +47,7 @@ import java.net.MalformedURLException;
 
 /**
  * This is an implementation of InitialContextFactory that uses a default jndi.properties file.
- * 
+ *
  */
 public class PropertiesFileInitialContextFactory implements InitialContextFactory
 {
@@ -198,7 +198,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
      */
     protected Destination createDestination(String bindingURL)
     {
-        BindingURL binding;
+        QpidBindingURL binding;
         try
         {
             binding = new BindingURLImpl(bindingURL);
@@ -231,9 +231,9 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             {
                 result = new QueueImpl((String) value);
             }
-            else if (value instanceof BindingURL)
+            else if (value instanceof QpidBindingURL)
             {
-                result = new QueueImpl((BindingURL) value);
+                result = new QueueImpl((QpidBindingURL) value);
             }
         }
         catch (QpidException e)
@@ -255,9 +255,9 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
              {
                  return new TopicImpl((String) value);
              }
-             else if (value instanceof BindingURL)
+             else if (value instanceof QpidBindingURL)
              {
-                 return new TopicImpl((BindingURL) value);
+                 return new TopicImpl((QpidBindingURL) value);
              }
         }
         catch (QpidException e)

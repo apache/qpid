@@ -4,11 +4,11 @@ import javax.jms.*;
 import javax.naming.*;
 import javax.naming.spi.ObjectFactory;
 
+import org.apache.qpid.url.BindingURLImpl;
+import org.apache.qpid.url.QpidURL;
+import org.apache.qpid.url.QpidURLImpl;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.BrokerDetails;
-import org.apache.qpidity.url.QpidURLImpl;
-import org.apache.qpidity.url.QpidURL;
-import org.apache.qpidity.url.BindingURLImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

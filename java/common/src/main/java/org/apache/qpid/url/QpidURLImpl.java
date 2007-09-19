@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.url;
+package org.apache.qpid.url;
 
 import org.apache.qpidity.BrokerDetails;
 import org.apache.qpidity.BrokerDetailsImpl;
