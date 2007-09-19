@@ -56,6 +56,12 @@ class ToyBroker extends SessionDelegate
         this.exchange = exchange;
     }
 
+    public void messageAcquire(Session context, MessageAcquire struct)
+    {
+        System.out.println("\n==================> messageAcquire " );
+        context.messageAcquired(struct.getTransfers());
+    }
+
     @Override public void queueDeclare(Session ssn, QueueDeclare qd)
     {
         exchange.createQueue(qd.getQueue());
