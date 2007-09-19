@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.client.util;
+package org.apache.qpidity.nclient.util;
 
 import org.apache.qpidity.api.Message;
 
