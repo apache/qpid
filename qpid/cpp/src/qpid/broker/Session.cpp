@@ -60,6 +60,7 @@ Session::Session(SessionHandler& a, uint32_t t)
     : adapter(&a),
       broker(adapter->getConnection().broker),
       timeout(t),
+      id(true),
       prefetchSize(0),
       prefetchCount(0),
       tagGenerator("sgen"),

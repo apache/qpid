@@ -19,7 +19,7 @@
  *
  */
 
-#include "ChannelHandler.h"
+#include "SessionHandler.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/all_method_bodies.h"
 
@@ -27,14 +27,14 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace boost;
 
-ChannelHandler::ChannelHandler() : StateManager(CLOSED), id(0) {}
+SessionHandler::SessionHandler() : StateManager(CLOSED), id(0) {}
 
-void ChannelHandler::incoming(AMQFrame& frame)
+void SessionHandler::incoming(AMQFrame& frame)
 {
     AMQBody* body = frame.getBody();
     if (getState() == OPEN) {
-        ChannelCloseBody* closeBody=
-            dynamic_cast<ChannelCloseBody*>(body->getMethod());
+        SessionClosedBody* closeBody=
+            dynamic_cast<SessionClosedBody*>(body->getMethod());
         if (closeBody) {
             setState(CLOSED_BY_PEER);
             code = closeBody->getReplyCode();
@@ -46,12 +46,7 @@ void ChannelHandler::incoming(AMQFrame& frame)
             try {
                 in(frame);
             }catch(ChannelException& e){
-                AMQMethodBody* method=body->getMethod();
-                if (method)
-                    close(e.code, e.toString(),
-                          method->amqpClassId(), method->amqpMethodId());
-                else
-                    close(e.code, e.toString(), 0, 0);
+                closed(e.code, e.toString());
             }
         }
     } else {
@@ -62,7 +57,7 @@ void ChannelHandler::incoming(AMQFrame& frame)
     }
 }
 
-void ChannelHandler::outgoing(AMQFrame& frame)
+void SessionHandler::outgoing(AMQFrame& frame)
 {
     if (getState() == OPEN) {
         frame.setChannel(id);
@@ -74,12 +69,12 @@ void ChannelHandler::outgoing(AMQFrame& frame)
     }
 }
 
-void ChannelHandler::open(uint16_t _id)
+void SessionHandler::open(uint16_t _id)
 {
     id = _id;
 
     setState(OPENING);
-    AMQFrame f(id, ChannelOpenBody(version));
+    AMQFrame f(id, SessionOpenBody(version));
     out(f);
 
     std::set<int> states;
@@ -91,37 +86,39 @@ void ChannelHandler::open(uint16_t _id)
     }
 }
 
-void ChannelHandler::close(uint16_t code, const std::string& message, uint16_t classId, uint16_t methodId)
+void SessionHandler::close()
 {
     setState(CLOSING);
-    AMQFrame f(id, ChannelCloseBody(version, code, message, classId, methodId));
+    AMQFrame f(id, SessionCloseBody(version));
     out(f);
-}
-
-void ChannelHandler::close()
-{
-    close(200, "OK", 0, 0);
     waitFor(CLOSED);
 }
 
-void ChannelHandler::handleMethod(AMQMethodBody* method)
+void SessionHandler::closed(uint16_t code, const std::string& msg)
+{
+    setState(CLOSED);
+    AMQFrame f(id, SessionClosedBody(version, code, msg));
+    out(f);
+}
+
+void SessionHandler::handleMethod(AMQMethodBody* method)
 {
     switch (getState()) {
       case OPENING:
-        if (method->isA<ChannelOpenOkBody>()) {
+        if (method->isA<SessionAttachedBody>()) {
             setState(OPEN);
         } else {
             throw ConnectionException(504, "Channel not opened.");
         }
         break;
       case CLOSING:
-        if (method->isA<ChannelCloseOkBody>()) {
+        if (method->isA<SessionClosedBody>()) {
             setState(CLOSED);
         } //else just ignore it
         break;
       case CLOSED:
         throw ConnectionException(504, "Channel is closed.");
       default:
-        throw Exception("Unexpected state encountered in ChannelHandler!");
+        throw Exception("Unexpected state encountered in SessionHandler!");
     }
 }

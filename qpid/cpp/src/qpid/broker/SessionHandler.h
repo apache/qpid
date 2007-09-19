@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_SESSIONADAPTER_H
-#define QPID_BROKER_SESSIONADAPTER_H
+#ifndef QPID_BROKER_SESSIONHANDLER_H
+#define QPID_BROKER_SESSIONHANDLER_H
 
 /*
  *
@@ -40,7 +40,8 @@ class Session;
  *
  * SessionHandlers can be stored in a map by value.
  */
-class SessionHandler : public framing::FrameHandler::InOutHandler
+class SessionHandler : public framing::FrameHandler::InOutHandler,
+                       private framing::AMQP_ServerOperations::SessionHandler
 {
   public:
     SessionHandler(Connection&, framing::ChannelId);
@@ -63,7 +64,7 @@ class SessionHandler : public framing::FrameHandler::InOutHandler
     void handleOut(framing::AMQFrame&);
     
   private:
-    // FIXME aconway 2007-08-31: Move to session methods.
+    // FIXME aconway 2007-08-31: Drop channel.
     struct ChannelMethods : public framing::AMQP_ServerOperations::ChannelHandler {
         SessionHandler& parent;
 
@@ -81,7 +82,21 @@ class SessionHandler : public framing::FrameHandler::InOutHandler
         void closeOk(); 
     };
   friend class ChannelMethods;
-        
+
+    /// Session methods
+    void open(uint32_t detachedLifetime);
+    void flow(bool active);
+    void flowOk(bool active);
+    void close();
+    void closed(uint16_t replyCode, const std::string& replyText);
+    void resume(const framing::Uuid& sessionId);
+    void suspend();
+    void ack(uint32_t cumulativeSeenMark,
+             const framing::SequenceNumberSet& seenFrameSet);
+    void highWaterMark(uint32_t lastSentMark);
+    void solicitAck();
+
+
     void assertOpen(const char* method);
     void assertClosed(const char* method);
 
@@ -91,8 +106,11 @@ class SessionHandler : public framing::FrameHandler::InOutHandler
     shared_ptr<Session> session;
     bool ignoring;
     ChannelMethods channelHandler;
+    bool useChannelClose;       // FIXME aconway 2007-09-19: remove with channel.
 };
 
 }} // namespace qpid::broker
 
-#endif  /*!QPID_BROKER_SESSIONADAPTER_H*/
+
+
+#endif  /*!QPID_BROKER_SESSIONHANDLER_H*/

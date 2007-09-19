@@ -28,7 +28,7 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
-#include "ChannelHandler.h"
+#include "SessionHandler.h"
 #include "ExecutionHandler.h"
 
 namespace qpid {
@@ -45,7 +45,7 @@ class SessionCore : public framing::FrameHandler
     };
 
     ExecutionHandler l3;
-    ChannelHandler l2;
+    SessionHandler l2;
     const uint16_t id;
     bool sync;
     bool isClosed;
