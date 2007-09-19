@@ -187,6 +187,25 @@ public class AckTest extends TestCase
         UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
         assertTrue(map.size() == 0);
         assertTrue(_messageStore.getMessageMetaDataMap().size() == 0);
+        assertTrue(_messageStore.getContentBodyMap().size() == 0);
+
+    }
+
+    /**
+     * Tests that in no-ack mode no messages are retained
+     */
+    public void testPersistentNoAckMode() throws AMQException
+    {
+        // false arg means no acks expected
+        _subscription = new SubscriptionImpl(5, _protocolSession, DEFAULT_CONSUMER_TAG, false);
+        final int msgCount = 10;
+        publishMessages(msgCount, true);
+
+        UnacknowledgedMessageMap map = _channel.getUnacknowledgedMessageMap();
+        assertTrue(map.size() == 0);
+        assertTrue(_messageStore.getMessageMetaDataMap().size() == 0);
+        assertTrue(_messageStore.getContentBodyMap().size() == 0);
+
     }
 
     /**
