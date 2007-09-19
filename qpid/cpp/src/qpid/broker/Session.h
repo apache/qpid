@@ -34,6 +34,7 @@
 #include "TxBuffer.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/AccumulatedAck.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/shared_ptr.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
@@ -96,6 +97,7 @@ class Session : public framing::FrameHandler::Chains,
     SessionHandler* adapter;
     Broker& broker;
     uint32_t timeout;
+    framing::Uuid id;
     boost::ptr_vector<framing::FrameHandler>  handlers;
 
     DeliveryAdapter* deliveryAdapter;
@@ -135,8 +137,10 @@ class Session : public framing::FrameHandler::Chains,
 
     Broker& getBroker() const { return broker; }
     
-    /** Session timeout. */
+    /** Session timeout, aka detached-lifetime. */
     uint32_t getTimeout() const { return timeout; }
+    /** Session ID */
+    const framing::Uuid& getId() const { return id; }
     
     /**
      * Get named queue, never returns 0.

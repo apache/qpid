@@ -18,8 +18,8 @@
  * under the License.
  *
  */
-#ifndef _ChannelHandler_
-#define _ChannelHandler_
+#ifndef _SessionHandler_
+#define _SessionHandler_
 
 #include "StateManager.h"
 #include "ChainableFrameHandler.h"
@@ -28,7 +28,7 @@
 namespace qpid {
 namespace client {
 
-class ChannelHandler : private StateManager, public ChainableFrameHandler
+class SessionHandler : private StateManager, public ChainableFrameHandler
 {
     enum STATES {OPENING, OPEN, CLOSING, CLOSED, CLOSED_BY_PEER};
     framing::ProtocolVersion version;
@@ -38,21 +38,19 @@ class ChannelHandler : private StateManager, public ChainableFrameHandler
     std::string text;
 
     void handleMethod(framing::AMQMethodBody* method);
-
-    void close(uint16_t code, const std::string& message, uint16_t classId, uint16_t methodId);
-
+    void closed(uint16_t code, const std::string& msg);
 
 public:
     typedef boost::function<void(uint16_t, const std::string&)> CloseListener;    
 
-    ChannelHandler();
+    SessionHandler();
 
     void incoming(framing::AMQFrame& frame);
     void outgoing(framing::AMQFrame& frame);
 
     void open(uint16_t id);
     void close();
-
+    
     CloseListener onClose;
 };
 
