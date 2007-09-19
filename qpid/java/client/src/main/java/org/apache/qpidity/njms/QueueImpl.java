@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,9 +17,9 @@
  */
 package org.apache.qpidity.njms;
 
+import org.apache.qpid.url.QpidBindingURL;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.Option;
-import org.apache.qpidity.url.BindingURL;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 
 import javax.jms.Queue;
@@ -30,7 +30,7 @@ import javax.jms.JMSException;
  */
 public class QueueImpl extends DestinationImpl implements Queue
 {
-    //--- Constructor    
+    //--- Constructor
     /**
      * Create a new QueueImpl with a given name.
      *
@@ -58,7 +58,7 @@ public class QueueImpl extends DestinationImpl implements Queue
      * @param binding The URL
      * @throws QpidException If the URL is not valid
      */
-    protected QueueImpl(SessionImpl session, BindingURL binding) throws QpidException
+    protected QueueImpl(SessionImpl session, QpidBindingURL binding) throws QpidException
     {
         super(binding);
         registerQueue(session, false);
@@ -70,7 +70,7 @@ public class QueueImpl extends DestinationImpl implements Queue
      * @param binding The URL
      * @throws QpidException If the URL is not valid
      */
-    public QueueImpl(BindingURL binding) throws QpidException
+    public QueueImpl(QpidBindingURL binding) throws QpidException
     {
         super(binding);
     }

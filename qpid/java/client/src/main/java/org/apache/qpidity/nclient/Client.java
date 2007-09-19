@@ -5,6 +5,7 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.qpid.url.QpidURL;
 import org.apache.qpidity.BrokerDetails;
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
@@ -18,7 +19,6 @@ import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
-import org.apache.qpidity.url.QpidURL;
 
 
 public class Client implements org.apache.qpidity.nclient.Connection
