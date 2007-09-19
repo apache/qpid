@@ -17,14 +17,14 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpidity.client.DtxSession;
+import org.apache.qpidity.nclient.DtxSession;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 
 import javax.jms.*;
 import javax.transaction.xa.XAResource;
 
 /**
- * This is an implementation of the javax.jms.XASEssion interface.
+ * This is an implementation of the javax.njms.XASEssion interface.
  */
 public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopicSession, XAQueueSession
 {
@@ -48,7 +48,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     /**
      * Create a JMS XASession
      */
-    public XASessionImpl(org.apache.qpidity.client.Connection qpidConnection, AMQConnection con, int channelId,
+    public XASessionImpl(org.apache.qpidity.nclient.Connection qpidConnection, AMQConnection con, int channelId,
                          int defaultPrefetchHigh, int defaultPrefetchLow)
     {
         super(qpidConnection, con, channelId, false,  // this is not a transacted session
@@ -58,7 +58,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
         _xaResource = new XAResourceImpl(this);
     }
 
-    //--- javax.jms.XASEssion API
+    //--- javax.njms.XASEssion API
 
     /**
      * Gets the session associated with this XASession.
@@ -115,7 +115,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpidity.client.DtxSession getQpidSession()
+    protected org.apache.qpidity.nclient.DtxSession getQpidSession()
     {
         return _qpidDtxSession;
     }
