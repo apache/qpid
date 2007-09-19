@@ -1,4 +1,4 @@
-package org.apache.qpidity.client.impl;
+package org.apache.qpidity.nclient.impl;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -10,13 +10,13 @@ import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.Range;
 import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.client.ExceptionListener;
-import org.apache.qpidity.client.MessagePartListener;
+import org.apache.qpidity.nclient.ExceptionListener;
+import org.apache.qpidity.nclient.MessagePartListener;
 
 /**
  * Implements a Qpid Sesion. 
  */
-public class ClientSession extends org.apache.qpidity.transport.Session implements  org.apache.qpidity.client.DtxSession
+public class ClientSession extends org.apache.qpidity.transport.Session implements  org.apache.qpidity.nclient.DtxSession
 {
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
     private ExceptionListener _exceptionListner;

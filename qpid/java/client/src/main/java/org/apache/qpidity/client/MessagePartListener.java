@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.client;
+package org.apache.qpidity.nclient;
 
 import java.nio.ByteBuffer;
 

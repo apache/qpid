@@ -1,10 +1,10 @@
-package org.apache.qpidity.client.impl;
+package org.apache.qpidity.nclient.impl;
 
 import java.nio.ByteBuffer;
 
 import org.apache.qpidity.ErrorCode;
 
-import org.apache.qpidity.client.MessagePartListener;
+import org.apache.qpidity.nclient.MessagePartListener;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.Data;
@@ -16,7 +16,6 @@ import org.apache.qpidity.transport.Range;
 import org.apache.qpidity.transport.Session;
 import org.apache.qpidity.transport.SessionClosed;
 import org.apache.qpidity.transport.SessionDelegate;
-import org.apache.qpidity.transport.Struct;
 
 
 public class ClientSessionDelegate extends SessionDelegate
