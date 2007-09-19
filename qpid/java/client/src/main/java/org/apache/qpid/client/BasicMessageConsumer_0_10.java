@@ -45,7 +45,7 @@ import java.nio.ByteBuffer;
  * This is a 0.10 message consumer.
  */
 public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], ByteBuffer>
-        implements org.apache.qpidity.client.util.MessageListener
+        implements org.apache.qpidity.nclient.util.MessageListener
 {
     /**
      * This class logger
@@ -174,7 +174,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     }
 
     /**
-     * This is invoked just before a message is delivered to the jms consumer
+     * This is invoked just before a message is delivered to the njms consumer
      */
     void postDeliver(AbstractJMSMessage msg) throws JMSException
     {
@@ -302,7 +302,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             ranges.add(message.getMessageTransferId());
 
             _0_10session.getQpidSession()
-                    .messageAcquire(ranges, org.apache.qpidity.client.Session.MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE);
+                    .messageAcquire(ranges, org.apache.qpidity.nclient.Session.MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE);
             _0_10session.getQpidSession().sync();
             RangeSet acquired = _0_10session.getQpidSession().getAccquiredMessages();
             if (acquired.size() > 0)
