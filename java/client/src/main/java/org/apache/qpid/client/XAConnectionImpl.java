@@ -23,7 +23,7 @@ import org.apache.qpid.AMQException;
 import javax.jms.*;
 
 /**
- * This class implements the javax.jms.XAConnection interface
+ * This class implements the javax.njms.XAConnection interface
  */
 public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQueueConnection, XATopicConnection
 {

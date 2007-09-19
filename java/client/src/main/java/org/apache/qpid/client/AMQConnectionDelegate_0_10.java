@@ -10,7 +10,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
-import org.apache.qpidity.client.Client;
+import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.QpidException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +30,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
     /**
      * The QpidConeection instance that is mapped with thie JMS connection.
      */
-    org.apache.qpidity.client.Connection _qpidConnection;
+    org.apache.qpidity.nclient.Connection _qpidConnection;
 
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
