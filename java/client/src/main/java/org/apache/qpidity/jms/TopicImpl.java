@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.exchange.ExchangeDefaults;
@@ -26,7 +26,7 @@ import javax.jms.Topic;
 import java.util.UUID;
 
 /**
- * Implementation of the javax.jms.Topic interface.
+ * Implementation of the javax.njms.Topic interface.
  */
 public class TopicImpl extends DestinationImpl implements Topic
 {

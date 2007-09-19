@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import javax.jms.TopicSubscriber;
 import javax.jms.Topic;
@@ -44,7 +44,7 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
         super(session, (DestinationImpl) topic, messageSelector, noLocal, subscriptionName,consumerTag);
     }
 
-    //---  javax.jms.TopicSubscriber interface
+    //---  javax.njms.TopicSubscriber interface
     /**
      * Get the Topic associated with this subscriber.
      *

@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
 
@@ -24,7 +24,7 @@ import javax.jms.JMSException;
 import javax.jms.XASession;
 
 /**
- * This class implements the javax.jms.XAConnection interface
+ * This class implements the javax.njms.XAConnection interface
  */
 public class XAConnectionImpl extends ConnectionImpl implements XAConnection
 {

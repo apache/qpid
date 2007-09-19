@@ -15,23 +15,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms.message;
+package org.apache.qpidity.njms.message;
 
-import org.apache.qpidity.jms.ExceptionHelper;
-import org.apache.qpidity.jms.MessageConsumerImpl;
+import org.apache.qpidity.njms.ExceptionHelper;
+import org.apache.qpidity.njms.MessageConsumerImpl;
 import org.apache.qpidity.QpidException;
 
 import javax.jms.*;
 import java.util.Enumeration;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.CoderResult;
 
 /**
- * Implementation of javax.jms.Message
+ * Implementation of javax.njms.Message
  */
 public class MessageImpl extends QpidMessage implements Message
 {
@@ -90,7 +85,7 @@ public class MessageImpl extends QpidMessage implements Message
         super(message);
     }
 
-    //---- javax.jms.Message interface
+    //---- javax.njms.Message interface
     /**
      * Get the message ID.
      * <p> The JMS sprec says:

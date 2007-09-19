@@ -15,10 +15,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.client.DtxSession;
+import org.apache.qpidity.nclient.DtxSession;
 
 import javax.jms.XASession;
 import javax.jms.Session;
@@ -27,7 +27,7 @@ import javax.jms.TransactionInProgressException;
 import javax.transaction.xa.XAResource;
 
 /**
- * This is an implementation of the javax.jms.XASEssion interface.
+ * This is an implementation of the javax.njms.XASEssion interface.
  */
 public class XASessionImpl extends SessionImpl implements XASession
 {
@@ -62,7 +62,7 @@ public class XASessionImpl extends SessionImpl implements XASession
         _xaResource = new XAResourceImpl(this);
     }
 
-    //--- javax.jms.XASEssion API
+    //--- javax.njms.XASEssion API
 
     /**
      * Gets the session associated with this XASession.
@@ -119,7 +119,7 @@ public class XASessionImpl extends SessionImpl implements XASession
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpidity.client.DtxSession getQpidSession()
+    protected org.apache.qpidity.nclient.DtxSession getQpidSession()
     {
         return _qpidDtxSession;
     }

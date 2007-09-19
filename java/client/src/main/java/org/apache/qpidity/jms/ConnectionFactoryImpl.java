@@ -1,4 +1,4 @@
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import javax.jms.*;
 import javax.naming.*;
@@ -9,7 +9,6 @@ import org.apache.qpidity.BrokerDetails;
 import org.apache.qpidity.url.QpidURLImpl;
 import org.apache.qpidity.url.QpidURL;
 import org.apache.qpidity.url.BindingURLImpl;
-import org.apache.qpidity.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

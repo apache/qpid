@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -27,13 +27,13 @@ import javax.jms.MessageListener;
 import javax.jms.Queue;
 
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.client.MessagePartListener;
-import org.apache.qpidity.client.util.MessagePartListenerAdapter;
+import org.apache.qpidity.nclient.MessagePartListener;
+import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 import org.apache.qpidity.filter.MessageFilter;
-import org.apache.qpidity.jms.message.MessageFactory;
-import org.apache.qpidity.jms.message.QpidMessage;
+import org.apache.qpidity.njms.message.MessageFactory;
+import org.apache.qpidity.njms.message.QpidMessage;
 import org.apache.qpidity.transport.Option;
 import org.apache.qpidity.transport.RangeSet;
 
@@ -41,7 +41,7 @@ import org.apache.qpidity.transport.RangeSet;
  * Implementation of JMS message consumer
  */
 public class MessageConsumerImpl extends MessageActor
-        implements MessageConsumer, org.apache.qpidity.client.util.MessageListener
+        implements MessageConsumer, org.apache.qpidity.nclient.util.MessageListener
 {
     // we can receive up to 100 messages for an asynchronous listener
     public static final int MAX_MESSAGE_TRANSFERRED = 100;
@@ -127,9 +127,9 @@ public class MessageConsumerImpl extends MessageActor
             getSession().getQpidSession()
                     .messageSubscribe(destination.getQpidQueueName(), // queue
                                       getMessageActorID(), // destination
-                                      org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                      org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                       // When the message selctor is set we do not acquire the messages
-                                      _messageSelector != null ? org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE : org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
+                                      _messageSelector != null ? org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE : org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
                                       messageAssembler, null, _noLocal ? Option.NO_LOCAL : Option.NO_OPTION);
             if (_messageSelector != null)
             {
@@ -162,9 +162,9 @@ public class MessageConsumerImpl extends MessageActor
             // subscribe to this topic 
             getSession().getQpidSession()
                     .messageSubscribe(queueName, getMessageActorID(),
-                                      org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                      org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                       // We always acquire the messages
-                                      org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
+                                      org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE,
                                       messageAssembler, null, _noLocal ? Option.NO_LOCAL : Option.NO_OPTION,
                                       // Request exclusive subscription access, meaning only this subscription
                                       // can access the queue.
@@ -173,7 +173,7 @@ public class MessageConsumerImpl extends MessageActor
         }
         // set the flow mode
         getSession().getQpidSession()
-                .messageFlowMode(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_MODE_CREDIT);
+                .messageFlowMode(getMessageActorID(), org.apache.qpidity.nclient.Session.MESSAGE_FLOW_MODE_CREDIT);
 
         // this will prevent the broker from sending more than one message
         // When a messageListener is set the flow will be adjusted.
@@ -381,7 +381,7 @@ public class MessageConsumerImpl extends MessageActor
     private void requestCredit(int value)
     {
         getSession().getQpidSession()
-                .messageFlow(getMessageActorID(), org.apache.qpidity.client.Session.MESSAGE_FLOW_UNIT_MESSAGE, value);
+                .messageFlow(getMessageActorID(), org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE, value);
     }
 
     /**
@@ -631,7 +631,7 @@ public class MessageConsumerImpl extends MessageActor
             ranges.add(message.getMessageTransferId());
 
             getSession().getQpidSession()
-                    .messageAcquire(ranges, org.apache.qpidity.client.Session.MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE);
+                    .messageAcquire(ranges, org.apache.qpidity.nclient.Session.MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE);
             getSession().getQpidSession().sync();
             RangeSet acquired = getSession().getQpidSession().getAccquiredMessages();
             if (acquired.size() > 0)

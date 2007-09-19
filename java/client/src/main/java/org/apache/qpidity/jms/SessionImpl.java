@@ -15,11 +15,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpidity.jms.message.*;
+import org.apache.qpidity.njms.message.*;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.RangeSet;
 
@@ -106,7 +106,7 @@ public class SessionImpl implements Session
     /**
      * The underlying QpidSession
      */
-    private org.apache.qpidity.client.Session _qpidSession;
+    private org.apache.qpidity.nclient.Session _qpidSession;
 
     /**
      * The latest qpid Exception that has been reaised.
@@ -166,7 +166,7 @@ public class SessionImpl implements Session
         initMessageDispatcherThread();
     }
 
-    //--- javax.jms.Session API
+    //--- javax.njms.Session API
     /**
      * Creates a <CODE>BytesMessage</CODE> object used to send a message
      * containing a stream of uninterpreted bytes.
@@ -374,7 +374,7 @@ public class SessionImpl implements Session
      * <P>Closing a transacted session must roll back the transaction in progress.
      * <P>This method is the only <code>Session</code> method that can be called concurrently.
      * <P>Invoking any other <code>Session</code> method on a closed session
-     * must throw a <code>javax.jms.IllegalStateException</code>.
+     * must throw a <code>javax.njms.IllegalStateException</code>.
      * <p> Closing a closed session must <I>not</I> throw an exception.
      *
      * @throws JMSException If closing the session fails due to some internal error.
@@ -1100,7 +1100,7 @@ public class SessionImpl implements Session
      *
      * @return The associated Qpid Session.
      */
-    protected org.apache.qpidity.client.Session getQpidSession()
+    protected org.apache.qpidity.nclient.Session getQpidSession()
     {
         return _qpidSession;
     }
@@ -1160,7 +1160,7 @@ public class SessionImpl implements Session
     /**
      * Lstener for qpid protocol exceptions
      */
-    private class QpidSessionExceptionListener implements org.apache.qpidity.client.ExceptionListener
+    private class QpidSessionExceptionListener implements org.apache.qpidity.nclient.ExceptionListener
     {
         public void onException(QpidException exception)
         {

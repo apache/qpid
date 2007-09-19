@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpidity.jms.message;
+package org.apache.qpidity.njms.message;
 
 import java.nio.ByteBuffer;
 import java.util.Enumeration;
@@ -29,7 +29,7 @@ import java.io.IOException;
 
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.client.util.ByteBufferMessage;
+import org.apache.qpidity.nclient.util.ByteBufferMessage;
 import org.apache.qpidity.transport.ReplyTo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

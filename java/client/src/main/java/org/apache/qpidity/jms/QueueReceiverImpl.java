@@ -15,14 +15,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms;
+package org.apache.qpidity.njms;
 
 import javax.jms.QueueReceiver;
 import javax.jms.JMSException;
 import javax.jms.Queue;
 
 /**
- * Implements javax.jms.QueueReceiver
+ * Implements javax.njms.QueueReceiver
  */
 public class QueueReceiverImpl extends MessageConsumerImpl implements QueueReceiver
 {

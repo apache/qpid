@@ -15,7 +15,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.qpidity.jms.message;
+package org.apache.qpidity.njms.message;
 
 import org.apache.qpidity.QpidException;
 
@@ -30,7 +30,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 
 /**
- * Implements javax.jms.MapMessage
+ * Implements javax.njms.MapMessage
  */
 public class MapMessageImpl extends MessageImpl implements MapMessage
 {
