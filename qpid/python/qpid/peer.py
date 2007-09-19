@@ -434,8 +434,8 @@ class OutgoingCompletion:
       while not self.closed and point_of_interest > self.mark:
         #print "waiting for ", point_of_interest, " mark is currently at ", self.mark
         self.condition.wait(remaining)
-        if timeout:
-          if start_time + timeout > time(): break
+        if not self.closed and point_of_interest > self.mark and timeout:
+          if (start_time + timeout) < time(): break
           else: remaining = timeout - (time() - start_time)
     finally:
       self.condition.release()
