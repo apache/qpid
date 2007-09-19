@@ -19,14 +19,12 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpidity.jms.ExceptionHelper;
-import org.apache.qpidity.client.util.ByteBufferMessage;
+import org.apache.qpidity.njms.ExceptionHelper;
+import org.apache.qpidity.nclient.util.ByteBufferMessage;
 import org.apache.qpidity.transport.ReplyTo;
 
 import javax.jms.Message;
@@ -127,8 +125,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         {
             ((AMQSession_0_10) getSession()).getQpidSession().messageTransfer(destination.getExchangeName().toString(),
                                                                               qpidityMessage,
-                                                                              org.apache.qpidity.client.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
-                                                                              org.apache.qpidity.client.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
+                                                                              org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
+                                                                              org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
         }
         catch (IOException e)
         {

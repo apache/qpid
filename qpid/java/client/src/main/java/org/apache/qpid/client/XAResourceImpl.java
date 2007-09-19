@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This is an implementation of javax.jms.XAResource.
+ * This is an implementation of javax.njms.XAResource.
  */
 public class XAResourceImpl implements XAResource
 {

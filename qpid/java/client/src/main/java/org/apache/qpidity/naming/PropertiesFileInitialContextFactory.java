@@ -19,10 +19,10 @@ package org.apache.qpidity.naming;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.qpidity.jms.ConnectionFactoryImpl;
-import org.apache.qpidity.jms.DestinationImpl;
-import org.apache.qpidity.jms.QueueImpl;
-import org.apache.qpidity.jms.TopicImpl;
+import org.apache.qpidity.njms.ConnectionFactoryImpl;
+import org.apache.qpidity.njms.DestinationImpl;
+import org.apache.qpidity.njms.QueueImpl;
+import org.apache.qpidity.njms.TopicImpl;
 import org.apache.qpidity.url.BindingURLImpl;
 import org.apache.qpidity.url.URLSyntaxException;
 import org.apache.qpidity.url.BindingURL;

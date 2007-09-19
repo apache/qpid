@@ -1388,7 +1388,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         //
         // if (_dispatcher != null && !_dispatcher.connectionStopped())
         // {
-        // throw new javax.jms.IllegalStateException("Attempt to set listener while session is started.");
+        // throw new javax.njms.IllegalStateException("Attempt to set listener while session is started.");
         // }
         //
         // // We are stopped
@@ -1398,7 +1398,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         //
         // if (consumer.isReceiving())
         // {
-        // throw new javax.jms.IllegalStateException("Another thread is already receiving synchronously.");
+        // throw new javax.njms.IllegalStateException("Another thread is already receiving synchronously.");
         // }
         // }
         //
