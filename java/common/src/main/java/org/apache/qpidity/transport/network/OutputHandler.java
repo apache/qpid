@@ -22,6 +22,7 @@ package org.apache.qpidity.transport.network;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpidity.transport.Constant;
 import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.Sender;
@@ -88,6 +89,10 @@ public class OutputHandler implements Sender<NetworkEvent>, NetworkDelegate
             {
                 sender.send(buf);
             }
+            ByteBuffer end = ByteBuffer.allocate(1);
+            end.put((byte) Constant.FRAME_END);
+            end.flip();
+            sender.send(end);
         }
     }
 
