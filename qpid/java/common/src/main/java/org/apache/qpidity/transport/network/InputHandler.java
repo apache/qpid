@@ -22,6 +22,7 @@ package org.apache.qpidity.transport.network;
 
 import java.nio.ByteBuffer;
 
+import org.apache.qpidity.transport.Constant;
 import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.Receiver;
@@ -62,6 +63,7 @@ public class InputHandler implements Receiver<ByteBuffer>
         FRAME_HDR_RSVD5,
         FRAME_PAYLOAD,
         FRAME_FRAGMENT,
+        FRAME_END,
         ERROR;
     }
 
@@ -189,7 +191,7 @@ public class InputHandler implements Receiver<ByteBuffer>
                 buf.position(buf.position() + size);
                 frame.addFragment(payload);
                 frame();
-                return FRAME_HDR;
+                return FRAME_END;
             }
         case FRAME_FRAGMENT:
             int delta = size - frame.getSize();
@@ -203,8 +205,10 @@ public class InputHandler implements Receiver<ByteBuffer>
                 buf.position(buf.position() + delta);
                 frame.addFragment(fragment);
                 frame();
-                return FRAME_HDR;
+                return FRAME_END;
             }
+        case FRAME_END:
+            return expect(buf, Constant.FRAME_END, FRAME_HDR);
         default:
             throw new IllegalStateException();
         }
