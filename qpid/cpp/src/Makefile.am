@@ -14,13 +14,7 @@ force:
 # AMQP_XML is defined in ../configure.ac
 specs=@AMQP_XML@ $(top_srcdir)/xml/cluster.xml
 
-EXTRA_DIST += $(rgen_h) 
-
-
 if GENERATE
-
-maintainer-clean-local:
-	rm -rf gen
 
 # Ruby generator.
 rgen_dir=$(top_srcdir)/rubygen

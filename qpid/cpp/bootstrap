@@ -4,11 +4,6 @@ aclocal -I m4
 autoheader
 libtoolize --automake
 
-# These are needed only if you don't already have the gen/*.{h,cpp} files.
-: ${JAVA=java}
-: ${JAVAC=javac}
-export JAVA JAVAC
-
 # Generate (for automake) lots of repetitive parts of tests/Makefile.am.
 (cd src/tests && rm -f gen.mk
   perl -ne '/^(include |if |else|endif)/ or print' Makefile.am \
@@ -20,8 +15,6 @@ cat > src/rubygen.mk <<EOF
 \$(srcdir)/rubygen.mk: force
 	\$(rgen_cmd)
 EOF
-
-touch src/generate.mk 
 
 automake
 autoconf

@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -13,7 +13,6 @@ URL:            @URL@
 Source0:        @DOWNLOAD_URL@/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires: apr-devel
 BuildRequires: boost-devel
 BuildRequires: cppunit-devel
 BuildRequires: doxygen
@@ -23,7 +22,6 @@ BuildRequires: help2man
 BuildRequires: libtool
 BuildRequires: pkgconfig
 
-Requires: apr
 Requires: boost
 
 Requires(post):/sbin/chkconfig
@@ -40,7 +38,6 @@ the AMQP protocol.
 Summary: Header files and documentation for developing Qpid C++ clients
 Group: Development/System
 Requires: %name = %version-%release
-Requires: apr-devel
 Requires: boost-devel
 Requires: e2fsprogs-devel
 
@@ -151,6 +148,8 @@ fi
 
 %changelog
 
+* Thu Sep 20 2007 Alan Conway <aconway@redhat.com> - 0.2-7
+- Removed apr dependency.
 
 * Wed Aug 1 2007 Alan Conway <aconway@redhat.com> - 0.2-6
 - added --disable-cluster flag
@@ -188,3 +187,4 @@ fi
 * Fri Dec  8 2006 David Lutterkort <dlutter@redhat.com> - 0.1-1
 - Initial version based on Jim Meyering's sketch and discussions with Alan
   Conway
+
