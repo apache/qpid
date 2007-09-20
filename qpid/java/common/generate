@@ -96,7 +96,6 @@ const.write()
 
 DOMAINS = {}
 STRUCTS = {}
-EXCLUDE = {"access-ticket": True}
 
 for d in spec.query["amqp/domain"]:
   name = d["@name"]
@@ -131,6 +130,7 @@ class Struct:
     self.track = track
     self.content = content
     self.fields = []
+    self.ticket = False
 
   def result(self):
     r = self.node["result"]
@@ -143,7 +143,10 @@ class Struct:
     return name
 
   def field(self, type, name):
-    self.fields.append((type, name))
+    if name == "ticket":
+      self.ticket = True
+    else:
+      self.fields.append((type, name))
 
   def impl(self, out):
     out.line("public class %s extends %s {" % (self.name, self.base))
@@ -231,6 +234,8 @@ class Struct:
 
     out.line()
     out.line("    public void read(Decoder dec, byte major, byte minor) {")
+    if self.ticket:
+      out.line("        dec.readShort();")
     for type, name in self.fields:
       if TYPES.has_key(type):
         out.line("        %s = dec.read%s();" % (name, camel(0, type)))
@@ -243,6 +248,8 @@ class Struct:
 
     out.line()
     out.line("    public void write(Encoder enc, byte major, byte minor) {")
+    if self.ticket:
+      out.line("        enc.writeShort(0);")
     for type, name in self.fields:
       if TYPES.has_key(type):
         out.line("        enc.write%s(%s);" % (camel(0, type), name))
@@ -284,7 +291,6 @@ class Struct:
     return ", ".join(args)
 
 CLASSES = {"file": False, "basic": False, "stream": False, "tunnel": False}
-FIELDS = {"ticket": False}
 
 class Visitor(mllib.transforms.Visitor):
 
@@ -328,7 +334,7 @@ for name, base, typecode, m in v.structs:
   struct = Struct(m, name, base, typecode,
                   TRACKS.get(m.parent["@name"], "Frame.L4"),
                   m["@content"] == "1")
-  for f in m.query["field", lambda f: FIELDS.get(f["@name"], True)]:
+  for f in m.query["field"]:
     type = resolve(f["@domain"])
     name = camel(1, f["@name"])
     struct.field(type, name)
