@@ -2666,7 +2666,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 {
                     try
                     {
-                        _lock.wait();
+                        _lock.wait(2000);
                     }
                     catch (InterruptedException e)
                     {
@@ -2684,7 +2684,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                         while (connectionStopped())
                         {
-                            _lock.wait();
+                            _lock.wait(2000);
                         }
 
                         if (message.getDeliverBody().deliveryTag <= _rollbackMark.get())
