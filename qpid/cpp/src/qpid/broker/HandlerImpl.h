@@ -19,9 +19,8 @@
  *
  */
 
-#include "Session.h"
-#include "SessionHandler.h"
-#include "Connection.h"
+#include "SemanticState.h"
+#include "SessionState.h"
 
 namespace qpid {
 namespace broker {
@@ -34,26 +33,14 @@ class Broker;
  */
 class HandlerImpl {
   protected:
-    HandlerImpl(Session& s) : session(s) {}
+    SemanticState& state;
+    SessionState& session;
 
-    Session& getSession() { return session; }
-    const Session& getSession() const { return session; }
-    
-    SessionHandler* getSessionHandler() { return session.getHandler(); }
-    const SessionHandler* getSessionHandler() const { return session.getHandler(); }
+    HandlerImpl(SemanticState& s) : state(s), session(s.getSession()) {}
 
-    // Remaining functions may only be called if getSessionHandler() != 0
-    framing::AMQP_ClientProxy& getProxy() { return getSessionHandler()->getProxy(); }
-    const framing::AMQP_ClientProxy& getProxy() const { return getSessionHandler()->getProxy(); }
-
-    Connection& getConnection() { return getSessionHandler()->getConnection(); }
-    const Connection& getConnection() const { return getSessionHandler()->getConnection(); }
-    
-    Broker& getBroker() { return getConnection().broker; }
-    const Broker& getBroker() const { return getConnection().broker; }
-
-  private:
-    Session& session;
+    framing::AMQP_ClientProxy& getProxy() { return session.getProxy(); }
+    Connection& getConnection() { return session.getConnection(); }
+    Broker& getBroker() { return session.getBroker(); }
 };
 
 }} // namespace qpid::broker

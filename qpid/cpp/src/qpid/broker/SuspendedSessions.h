@@ -31,8 +31,10 @@
 namespace qpid {
 namespace broker {
 
-/** Collection of suspended sessions.
- * Thread safe.
+/**
+ * Thread safe collection of suspended sessions.
+ * Every session is owned either by a connection's SessionHandler
+ * or by the SuspendedSessions.
  */
 class SuspendedSessions {
     typedef std::multimap<sys::AbsTime,SessionState> Map;

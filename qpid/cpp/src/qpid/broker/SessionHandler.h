@@ -31,7 +31,7 @@ namespace qpid {
 namespace broker {
 
 class Connection;
-class Session;
+class SessionState;
 
 /**
  * A SessionHandler is associated with each active channel. It
@@ -48,8 +48,8 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     ~SessionHandler();
 
     /** Returns 0 if not attached to a session */
-    Session* getSession() { return session.get(); }
-    const Session* getSession() const { return session.get(); }
+    SessionState* getSession() { return session.get(); }
+    const SessionState* getSession() const { return session.get(); }
 
     framing::ChannelId getChannel() const { return channel; }
     
@@ -84,7 +84,7 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     Connection& connection;
     const framing::ChannelId channel;
     framing::AMQP_ClientProxy proxy;
-    shared_ptr<Session> session;
+    shared_ptr<SessionState> session;
     bool ignoring;
 };
 

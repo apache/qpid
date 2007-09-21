@@ -35,7 +35,6 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "Broker.h"
 #include "qpid/Exception.h"
-#include "Session.h"
 #include "ConnectionHandler.h"
 #include "SessionHandler.h"
 
@@ -51,7 +50,7 @@ class Connection : public sys::ConnectionInputHandler,
     Connection(sys::ConnectionOutputHandler* out, Broker& broker);
 
     /** Get the SessionHandler for channel. Create if it does not already exist */
-    SessionHandler getChannel(framing::ChannelId channel);
+    SessionHandler& getChannel(framing::ChannelId channel);
 
     /** Close the connection */
     void close(framing::ReplyCode code, const string& text, framing::ClassId classId, framing::MethodId methodId);

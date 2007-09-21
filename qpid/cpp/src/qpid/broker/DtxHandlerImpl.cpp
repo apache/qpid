@@ -19,21 +19,20 @@
 
 #include <boost/format.hpp>
 #include "Broker.h"
-#include "Session.h"
 #include "qpid/framing/constants.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
 using std::string;
 
-DtxHandlerImpl::DtxHandlerImpl(Session& s) : HandlerImpl(s) {}
+DtxHandlerImpl::DtxHandlerImpl(SemanticState& s) : HandlerImpl(s) {}
 
 // DtxDemarcationHandler:
 
 
 void DtxHandlerImpl::select()
 {
-    getSession().selectDtx();
+    state.selectDtx();
 }
 
 DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
@@ -43,7 +42,7 @@ DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
 {
     try {
         if (fail) {
-            getSession().endDtx(xid, true);
+            state.endDtx(xid, true);
             if (suspend) {
                 throw ConnectionException(503, "End and suspend cannot both be set.");
             } else {
@@ -51,9 +50,9 @@ DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
             }
         } else {
             if (suspend) {
-                getSession().suspendDtx(xid);
+                state.suspendDtx(xid);
             } else {
-                getSession().endDtx(xid, false);
+                state.endDtx(xid, false);
             }
             return DtxDemarcationEndResult(XA_OK);
         }
@@ -72,9 +71,9 @@ DtxDemarcationStartResult DtxHandlerImpl::start(u_int16_t /*ticket*/,
     }
     try {
         if (resume) {
-            getSession().resumeDtx(xid);
+            state.resumeDtx(xid);
         } else {
-            getSession().startDtx(xid, getBroker().getDtxManager(), join);
+            state.startDtx(xid, getBroker().getDtxManager(), join);
         }
         return DtxDemarcationStartResult(XA_OK);
     } catch (const DtxTimeoutException& e) {

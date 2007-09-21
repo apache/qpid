@@ -23,7 +23,7 @@
 #include <assert.h>
 
 #include "Connection.h"
-#include "Session.h"
+#include "SessionState.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "BrokerAdapter.h"
 #include "SemanticHandler.h"
@@ -52,8 +52,7 @@ void Connection::received(framing::AMQFrame& frame){
     if (frame.getChannel() == 0) {
         adapter.handle(frame);
     } else {
-        SessionHandler sa = getChannel(frame.getChannel());
-        sa.in(frame);
+        getChannel(frame.getChannel()).in(frame);
     }
 }
 
@@ -94,7 +93,7 @@ void Connection::closeChannel(uint16_t id) {
     if (i != channels.end()) channels.erase(i);
 }
 
-SessionHandler Connection::getChannel(ChannelId id) {
+SessionHandler& Connection::getChannel(ChannelId id) {
     boost::optional<SessionHandler>& ch = channels[id];
     if (!ch) {
         ch = boost::in_place(boost::ref(*this), id); 

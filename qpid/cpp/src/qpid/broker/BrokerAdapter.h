@@ -20,7 +20,7 @@
  */
 #include "DtxHandlerImpl.h"
 #include "MessageHandlerImpl.h"
-#include "NameGenerator.h"
+
 #include "qpid/Exception.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -44,6 +44,7 @@ class StreamHandler;
 class DtxHandler;
 class TunnelHandler;
 class MessageHandlerImpl;
+class Exchange;
 
 /**
  * Per-channel protocol adapter.
@@ -54,16 +55,10 @@ class MessageHandlerImpl;
  * peer.
  * 
  */
-
-// TODO aconway 2007-09-18: BrokerAdapter is no longer an appropriate way
-// to group methods as seen by the BADHANDLERs below.
-// Handlers should be grouped by layer, the BrokerAdapter stuff
-// belongs on the SemanticHandler.
-// 
 class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
 {
   public:
-    BrokerAdapter(Session& session);
+    BrokerAdapter(SemanticState& session);
 
     BasicHandler* getBasicHandler() { return &basicHandler; }
     ExchangeHandler* getExchangeHandler() { return &exchangeHandler; }
@@ -73,7 +68,8 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     MessageHandler* getMessageHandler() { return &messageHandler;  }
     DtxCoordinationHandler* getDtxCoordinationHandler() { return &dtxHandler; }
     DtxDemarcationHandler* getDtxDemarcationHandler() { return &dtxHandler; }
-    framing::ProtocolVersion getVersion() const { return getConnection().getVersion(); }
+
+    framing::ProtocolVersion getVersion() const { return session.getVersion();}
 
 
     AccessHandler* getAccessHandler() {
@@ -99,7 +95,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
         public HandlerImpl
     {
       public:
-        ExchangeHandlerImpl(Session& session) : HandlerImpl(session) {}
+        ExchangeHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
         
         void declare(uint16_t ticket,
                      const std::string& exchange, const std::string& type,
@@ -108,10 +104,13 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
                      const qpid::framing::FieldTable& arguments); 
         void delete_(uint16_t ticket,
                      const std::string& exchange, bool ifUnused); 
-        framing::ExchangeQueryResult query(u_int16_t ticket, const string& name);
+        framing::ExchangeQueryResult query(u_int16_t ticket,
+                                           const std::string& name);
       private:
-        void checkType(Exchange::shared_ptr exchange, const std::string& type);
-        void checkAlternate(Exchange::shared_ptr exchange, Exchange::shared_ptr alternate);
+        void checkType(shared_ptr<Exchange> exchange, const std::string& type);
+
+        void checkAlternate(shared_ptr<Exchange> exchange,
+                            shared_ptr<Exchange> alternate);
     };
 
     class BindingHandlerImpl : 
@@ -119,7 +118,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
             public HandlerImpl
     {
     public:
-        BindingHandlerImpl(Session& session) : HandlerImpl(session) {}
+        BindingHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
 
         framing::BindingQueryResult query(u_int16_t ticket,
                                           const std::string& exchange,
@@ -133,7 +132,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
         public HandlerImpl
     {
       public:
-        QueueHandlerImpl(Session& session) : HandlerImpl(session) {}
+        QueueHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
         
         void declare(uint16_t ticket, const std::string& queue,
                      const std::string& alternateExchange, 
@@ -148,7 +147,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
                     const std::string& exchange,
                     const std::string& routingKey,
                     const qpid::framing::FieldTable& arguments );
-        framing::QueueQueryResult query(const string& queue);
+        framing::QueueQueryResult query(const std::string& queue);
         void purge(uint16_t ticket, const std::string& queue); 
         void delete_(uint16_t ticket, const std::string& queue,
                      bool ifUnused, bool ifEmpty);
@@ -159,9 +158,8 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
         public HandlerImpl
     {
         NameGenerator tagGenerator;
-
       public:
-        BasicHandlerImpl(Session& session) : HandlerImpl(session), tagGenerator("sgen") {}
+        BasicHandlerImpl(SemanticState& session) : HandlerImpl(session), tagGenerator("sgen") {}
 
         void qos(uint32_t prefetchSize,
                  uint16_t prefetchCount, bool global); 
@@ -181,7 +179,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
         public HandlerImpl
     {
       public:
-        TxHandlerImpl(Session& session) : HandlerImpl(session) {}
+        TxHandlerImpl(SemanticState& session) : HandlerImpl(session) {}
         
         void select();
         void commit();

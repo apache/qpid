@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_SESSION_H
-#define QPID_BROKER_SESSION_H
+#ifndef QPID_BROKER_SEMANTICSTATE_H
+#define QPID_BROKER_SEMANTICSTATE_H
 
 /*
  *
@@ -37,7 +37,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/shared_ptr.h"
 
-#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 #include <list>
 #include <vector>
@@ -45,21 +45,19 @@
 namespace qpid {
 namespace broker {
 
-class SessionHandler;
-class Broker;
+class SessionState;
 
 /**
- * Session holds the state of an open session, whether attached to a
- * channel or suspended. It also holds the handler chains associated
- * with the session. 
+ * SemanticState holds the L3 and L4 state of an open session, whether
+ * attached to a channel or suspended. 
  */
-class Session : public framing::FrameHandler::Chains,
-                private boost::noncopyable
+class SemanticState : public framing::FrameHandler::Chains,
+                      private boost::noncopyable
 {
     class ConsumerImpl : public Consumer
     {
         sys::Mutex lock;
-        Session* const parent;
+        SemanticState* const parent;
         const DeliveryToken::shared_ptr token;
         const string name;
         const Queue::shared_ptr queue;
@@ -74,7 +72,7 @@ class Session : public framing::FrameHandler::Chains,
         bool checkCredit(Message::shared_ptr& msg);
 
       public:
-        ConsumerImpl(Session* parent, DeliveryToken::shared_ptr token, 
+        ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
                      const string& name, Queue::shared_ptr queue,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
@@ -94,13 +92,8 @@ class Session : public framing::FrameHandler::Chains,
 
     typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
 
-    SessionHandler* adapter;
-    Broker& broker;
-    uint32_t timeout;
-    framing::Uuid id;
-    boost::ptr_vector<framing::FrameHandler>  handlers;
-
-    DeliveryAdapter* deliveryAdapter;
+    SessionState& session;
+    DeliveryAdapter& deliveryAdapter;
     Queue::shared_ptr defaultQueue;
     ConsumerImplMap consumers;
     uint32_t prefetchSize;    
@@ -113,7 +106,6 @@ class Session : public framing::FrameHandler::Chains,
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
     framing::AccumulatedAck accumulatedAck;
-    bool opened;
     bool flowActive;
 
     boost::shared_ptr<Exchange> cacheExchange;
@@ -128,19 +120,10 @@ class Session : public framing::FrameHandler::Chains,
     AckRange findRange(DeliveryId first, DeliveryId last);
 
   public:
-    Session(SessionHandler&, uint32_t timeout);
-    ~Session();
+    SemanticState(DeliveryAdapter&, SessionState&);
+    ~SemanticState();
 
-    /** Returns 0 if this session is not currently attached */
-    SessionHandler* getHandler() { return adapter; }
-    const SessionHandler* getHandler() const { return adapter; }
-
-    Broker& getBroker() const { return broker; }
-    
-    /** Session timeout, aka detached-lifetime. */
-    uint32_t getTimeout() const { return timeout; }
-    /** Session ID */
-    const framing::Uuid& getId() const { return id; }
+    SessionState& getSession() { return session; }
     
     /**
      * Get named queue, never returns 0.
@@ -174,7 +157,6 @@ class Session : public framing::FrameHandler::Chains,
     void stop(const std::string& destination);
 
     bool get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected);
-    void close();
     void startTx();
     void commit(MessageStore* const store);
     void rollback();
@@ -198,4 +180,5 @@ class Session : public framing::FrameHandler::Chains,
 
 
 
-#endif  /*!QPID_BROKER_SESSION_H*/
+
+#endif  /*!QPID_BROKER_SEMANTICSTATE_H*/
