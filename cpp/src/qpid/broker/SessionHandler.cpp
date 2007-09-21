@@ -33,8 +33,7 @@ using namespace std;
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : InOutHandler(0, &c.getOutput()),
       connection(c), channel(ch), proxy(out),
-      ignoring(false), channelHandler(*this),
-      useChannelClose(false) {}
+      ignoring(false) {}
 
 SessionHandler::~SessionHandler() {}
 
@@ -52,7 +51,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
     // 
     AMQMethodBody* m=f.getMethod();
     try {
-        if (m && (m->invoke(this) || m->invoke(&channelHandler)))
+        if (m && m->invoke(this))
             return;
         else if (session)
             session->in(f);
@@ -62,12 +61,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
     } catch(const ChannelException& e) {
         ignoring=true;          // Ignore trailing frames sent by client.
         session.reset();
-        // FIXME aconway 2007-09-19: Dual-mode hack.
-        if (useChannelClose)
-            getProxy().getChannel().close(
-                e.code, e.toString(), classId(m), methodId(m));
-        else
-            getProxy().getSession().closed(e.code, e.toString());
+        getProxy().getSession().closed(e.code, e.toString());
     }catch(const ConnectionException& e){
         connection.close(e.code, e.what(), classId(m), methodId(m));
     }catch(const std::exception& e){
@@ -96,51 +90,6 @@ void SessionHandler::assertClosed(const char* method) {
             QPID_MSG(""<<method<<" failed: "
                      << channel << " already open on channel "
                      << getChannel()));
-}
-
-void SessionHandler::ChannelMethods::open(const string& /*outOfBand*/){
-    parent.useChannelClose=true;
-    parent.assertClosed("open");
-    parent.session.reset(new Session(parent, 0));
-    parent.getProxy().getChannel().openOk();
-} 
-
-// FIXME aconway 2007-08-31: flow is no longer in the spec.
-void SessionHandler::ChannelMethods::flow(bool active){
-    parent.session->flow(active);
-    parent.getProxy().getChannel().flowOk(active);
-}
-
-void SessionHandler::ChannelMethods::flowOk(bool /*active*/){}
-        
-void SessionHandler::ChannelMethods::close(uint16_t replyCode,
-                           const string& replyText,
-                           uint16_t classId, uint16_t methodId)
-{
-    // FIXME aconway 2007-08-31: Extend constants.h to map codes & ids
-    // to text names.
-    QPID_LOG(warning, "Received channel.close("<<replyCode<<","
-             <<replyText << ","
-             << "classid=" <<classId<< ","
-             << "methodid=" <<methodId);
-    parent.ignoring=false;
-    parent.getProxy().getChannel().closeOk();
-    // FIXME aconway 2007-08-31: sould reset session BEFORE
-    // sending closeOK to avoid races. SessionHandler
-    // needs its own private proxy, see getProxy() above.
-    parent.session.reset();
-    // No need to remove from connection map, will be re-used
-    // if channel is re-opened.
-} 
-        
-void SessionHandler::ChannelMethods::closeOk(){
-    parent.ignoring=false;
-}
-
-void SessionHandler::ChannelMethods::ok() 
-{
-    //no specific action required, generic response handling should be
-    //sufficient
 }
 
 void  SessionHandler::open(uint32_t detachedLifetime) {
