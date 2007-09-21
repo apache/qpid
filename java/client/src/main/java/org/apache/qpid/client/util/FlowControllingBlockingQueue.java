@@ -23,6 +23,7 @@ package org.apache.qpid.client.util;
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A blocking queue that emits events above a user specified threshold allowing the caller to take action (e.g. flow
@@ -69,10 +70,10 @@ public class FlowControllingBlockingQueue
         _listener = listener;
     }
 
-    public Object take() throws InterruptedException
+    public Object poll(long time, TimeUnit unit) throws InterruptedException
     {
-        Object o = _queue.take();
-        if (_listener != null)
+        Object o = _queue.poll(time, unit);
+        if (o != null && _listener != null)
         {
             synchronized (_listener)
             {

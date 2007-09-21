@@ -108,6 +108,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -2677,30 +2678,33 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
             try
             {
-                while (!_closed.get() && ((message = (UnprocessedMessage) _queue.take()) != null))
+                while (!_closed.get())
                 {
-                    synchronized (_lock)
+                    message = (UnprocessedMessage) _queue.poll(1000, TimeUnit.MILLISECONDS);
+                    if (message != null)
                     {
+                        synchronized (_lock)
+                        {
 
-                        while (connectionStopped())
-                        {
-                            _lock.wait(2000);
-                        }
-
-                        if (message.getDeliverBody().deliveryTag <= _rollbackMark.get())
-                        {
-                            rejectMessage(message, true);
-                        }
-                        else
-                        {
-                            synchronized (_messageDeliveryLock)
+                            while (connectionStopped())
                             {
-                                dispatchMessage(message);
+                                _lock.wait(2000);
                             }
+
+                            if (message.getDeliverBody().deliveryTag <= _rollbackMark.get())
+                            {
+                                rejectMessage(message, true);
+                            }
+                            else
+                            {
+                                synchronized (_messageDeliveryLock)
+                                {
+                                    dispatchMessage(message);
+                                }
+                            }
+
                         }
-
                     }
-
                 }
             }
             catch (InterruptedException e)
