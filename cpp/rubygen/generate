@@ -49,9 +49,9 @@ if makefile
 
 rgen_generator=#{make_continue rgen_generator}
 
-rgen_client_cpp=#{make_continue(rgen_srcs.grep %r|/qpid/client/.+\.cpp$|)}
+rgen_client_cpp=#{make_continue(rgen_srcs.grep(%r|/qpid/client/.+\.cpp$|))}
 
-rgen_common_cpp=#{make_continue(rgen_srcs.grep %r|qpid/framing/.+\.cpp$|)}
+rgen_common_cpp=#{make_continue(rgen_srcs.grep(%r|qpid/framing/.+\.cpp$|))}
 
 rgen_srcs=#{make_continue rgen_srcs}
 

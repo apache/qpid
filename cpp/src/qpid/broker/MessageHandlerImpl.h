@@ -37,7 +37,7 @@ class MessageHandlerImpl :
         public HandlerImpl
 {
   public:
-    MessageHandlerImpl(Session&);
+    MessageHandlerImpl(SemanticState&);
 
     void append(const std::string& reference, const std::string& bytes);
 
@@ -87,8 +87,8 @@ class MessageHandlerImpl :
     void release(const framing::SequenceNumberSet& transfers);
 
     void subscribe(u_int16_t ticket,
-                   const string& queue,
-                   const string& destination,
+                   const std::string& queue,
+                   const std::string& destination,
                    bool noLocal,
                    u_int8_t confirmMode,
                    u_int8_t acquireMode,

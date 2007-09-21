@@ -20,7 +20,7 @@
  */
 #include "DeliveryRecord.h"
 #include "DeliverableMessage.h"
-#include "Session.h"
+#include "SemanticState.h"
 #include "BrokerExchange.h"
 #include "qpid/log/Statement.h"
 
@@ -74,7 +74,7 @@ bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const
     return range->covers(id);
 }
 
-void DeliveryRecord::redeliver(Session* const session) const{
+void DeliveryRecord::redeliver(SemanticState* const session) const{
     if (!confirmed) {
         if(pull){
             //if message was originally sent as response to get, we must requeue it

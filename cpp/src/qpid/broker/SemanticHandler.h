@@ -44,13 +44,17 @@ class AMQHeaderBody;
 
 namespace broker {
 
-class Session;
+class SessionState;
 
 class SemanticHandler : public DeliveryAdapter,
-                        public framing::FrameHandler, 
-                        public framing::AMQP_ServerOperations::ExecutionHandler,
-                        private HandlerImpl
+                        public framing::FrameHandler,
+                        public framing::AMQP_ServerOperations::ExecutionHandler
+    
 {
+    SemanticState state;
+    SessionState& session;
+    // FIXME aconway 2007-09-20: Why are these on the handler rather than the
+    // state?
     IncomingExecutionContext incoming;
     framing::Window outgoing;
     sys::Mutex outLock;
@@ -69,8 +73,12 @@ class SemanticHandler : public DeliveryAdapter,
     DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token);
     void redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId tag);
 
+    framing::AMQP_ClientProxy& getProxy() { return session.getProxy(); }
+    Connection& getConnection() { return session.getConnection(); }
+    Broker& getBroker() { return session.getBroker(); }
+
 public:
-    SemanticHandler(Session& session);
+    SemanticHandler(SessionState& session);
 
     //frame handler:
     void handle(framing::AMQFrame& frame);

@@ -19,7 +19,7 @@
  */
 
 #include "SessionHandler.h"
-#include "Session.h"
+#include "SessionState.h"
 #include "Connection.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/constants.h"
@@ -94,7 +94,7 @@ void SessionHandler::assertClosed(const char* method) {
 
 void  SessionHandler::open(uint32_t detachedLifetime) {
     assertClosed("open");
-    session.reset(new Session(*this, detachedLifetime));
+    session.reset(new SessionState(*this, detachedLifetime));
     getProxy().getSession().attached(session->getId(), session->getTimeout());
 }
 
