@@ -41,14 +41,14 @@ const AMQMethodBody* MethodHolder::get() const {
 
 void MethodHolder::encode(Buffer& b) const {
     const AMQMethodBody* body = get();
-    b.putShort(body->amqpClassId());
-    b.putShort(body->amqpMethodId());
+    b.putOctet(body->amqpClassId());
+    b.putOctet(body->amqpMethodId());
     body->encode(b);
 }
 
 void MethodHolder::decode(Buffer& b) {
-    ClassId c=b.getShort();
-    MethodId m=b.getShort();
+    ClassId c=b.getOctet();
+    MethodId m=b.getOctet();
     construct(c,m);
     get()->decode(b);
 }

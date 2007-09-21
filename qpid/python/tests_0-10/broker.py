@@ -101,29 +101,11 @@ class BrokerTests(TestBase):
         
     def test_closed_channel(self):
         channel = self.client.channel(200)
-        channel.channel_open()
-        channel.channel_close()
+        channel.session_open()
+        channel.session_close()
         try:
             channel.queue_declare(exclusive=True)
             self.fail("Expected error on queue_declare for closed channel")
         except Closed, e:
             if isinstance(e.args[0], str): self.fail(e)
             self.assertConnectionException(504, e.args[0])
-
-    def test_channel_flow(self):
-        channel = self.channel
-        channel.queue_declare(queue="flow_test_queue", exclusive=True)
-        self.subscribe(destination="my-tag", queue="flow_test_queue")
-        incoming = self.client.queue("my-tag")
-        
-        channel.channel_flow(active=False)
-        c = Content("abcdefghijklmnopqrstuvwxyz", properties = {"routing_key" : "flow_test_queue"})
-        channel.message_transfer(content = c)
-        try:
-            incoming.get(timeout=1) 
-            self.fail("Received message when flow turned off.")
-        except Empty: None
-        
-        channel.channel_flow(active=True)
-        msg = incoming.get(timeout=1)
-        self.assertEqual("abcdefghijklmnopqrstuvwxyz", msg.content.body)

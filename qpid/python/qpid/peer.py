@@ -261,7 +261,7 @@ class Channel:
     self.responder.respond(method, batch, request)
 
   def invoke(self, type, args, kwargs):
-    if type.klass.name == "channel" and (type.name == "close" or type.name == "open"):
+    if (type.klass.name in ["channel", "session"]) and (type.name in ["close", "open", "closed"]):
       self.completion.reset()
       self.incoming_completion.reset()
     self.completion.next_command(type)
@@ -421,6 +421,7 @@ class OutgoingCompletion:
     self.condition.acquire()
     try:
       self.mark = mark
+      #print "set mark to %s [%s] " % (self.mark, self)
       self.condition.notifyAll()
     finally:
       self.condition.release()
@@ -432,7 +433,7 @@ class OutgoingCompletion:
     self.condition.acquire()
     try:
       while not self.closed and point_of_interest > self.mark:
-        #print "waiting for ", point_of_interest, " mark is currently at ", self.mark
+        #print "waiting for %s, mark = %s [%s]" % (point_of_interest, self.mark, self)
         self.condition.wait(remaining)
         if not self.closed and point_of_interest > self.mark and timeout:
           if (start_time + timeout) < time(): break
