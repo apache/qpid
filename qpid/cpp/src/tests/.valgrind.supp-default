@@ -24,33 +24,14 @@
    fun:_ZNSsC1EPKcRKSaIcE
    obj:/usr/lib/libboost_program_options.so.1.33.1
 }
+#
+# Bogus uninit bytes error: only occur on i386.
+#
 {
-   TODO: CONFIRM BENIGN - uninit params to epoll_ctl 
+   Syscall param epoll_ctl(event) points to uninitialised byte(s)
    Memcheck:Param
    epoll_ctl(event)
    fun:epoll_ctl
-   fun:_ZN4qpid3sys14DispatchHandle10startWatchEN5boost10shared_ptrINS0_6PollerEEE
-}
-{
-   TODO: CONFIRM BENIGN - uninit params to epoll_ctl 
-   Memcheck:Param
-   epoll_ctl(event)
-   fun:epoll_ctl
-   fun:_ZN4qpid3sys14DispatchHandle17dispatchCallbacksENS0_6Poller9EventTypeE
-}
-{
-  TODO: CONFIRM BENIGN - uninit params to epoll_ctl (on shutdown)
-   Memcheck:Param
-   epoll_ctl(event)
-   fun:epoll_ctl
-   fun:_ZN4qpid3sys16AsynchIOAcceptor8shutdownEv
-}
-{
-  TODO: CONFIRM BENIGN - uninit params to epoll_ctl (on shutdown)
-   Memcheck:Param
-   epoll_ctl(event)
-   fun:epoll_ctl
-   fun:_ZN4qpid3sys14DispatchHandle12rewatchWriteEv
 }
 {
    TODO: shutdown leak, not critical but better to fix it. Unjoined thread?
