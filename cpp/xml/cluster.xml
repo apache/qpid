@@ -22,7 +22,7 @@
 
 <amqp major="0" minor="10" port="5672">
 
-<class name = "cluster" index = "301">
+<class name = "cluster" index = "201">
 
 <doc>Qpid extension class to allow clustered brokers to communicate.</doc>
 

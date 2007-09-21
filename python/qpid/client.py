@@ -138,6 +138,9 @@ class ClientDelegate(Delegate):
   def channel_close(self, ch, msg):
     ch.close(msg)
 
+  def session_closed(self, ch, msg):
+    ch.close(msg)
+
   def connection_close(self, ch, msg):
     self.client.peer.close(msg)
 

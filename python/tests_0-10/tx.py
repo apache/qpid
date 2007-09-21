@@ -31,10 +31,10 @@ class TxTests(TestBase):
         Test that commited publishes are delivered and commited acks are not re-delivered
         """
         channel2 = self.client.channel(2)
-        channel2.channel_open()
+        channel2.session_open()
         self.perform_txn_work(channel2, "tx-commit-a", "tx-commit-b", "tx-commit-c")
         channel2.tx_commit()
-        channel2.channel_close()
+        channel2.session_close()
 
         #use a different channel with new subscriptions to ensure
         #there is no redelivery of acked messages:

@@ -56,7 +56,7 @@ class QueueTests(TestBase):
 
         #check error conditions (use new channels): 
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
         try:
             #queue specified but doesn't exist:
             channel.queue_purge(queue="invalid-queue")
@@ -65,7 +65,7 @@ class QueueTests(TestBase):
             self.assertChannelException(404, e.args[0])
 
         channel = self.client.channel(3)
-        channel.channel_open()
+        channel.session_open()
         try:
             #queue not specified and none previously declared for channel:
             channel.queue_purge()
@@ -76,7 +76,7 @@ class QueueTests(TestBase):
         #cleanup    
         other = self.connect()
         channel = other.channel(1)
-        channel.channel_open()
+        channel.session_open()
         channel.exchange_delete(exchange="test-exchange")
 
     def test_declare_exclusive(self):
@@ -88,7 +88,7 @@ class QueueTests(TestBase):
         # Here we open a second separate connection:
         other = self.connect()
         c2 = other.channel(1)
-        c2.channel_open()
+        c2.session_open()
 
         #declare an exclusive queue:
         c1.queue_declare(queue="exclusive-queue", exclusive="True")
@@ -141,7 +141,7 @@ class QueueTests(TestBase):
 
         #need to reopen a channel:    
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
 
         #try and bind non-existant queue:
         try:
@@ -225,7 +225,7 @@ class QueueTests(TestBase):
 
         #check attempted deletion of non-existant queue is handled correctly:    
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
         try:
             channel.queue_delete(queue="i-dont-exist", if_empty="True")
             self.fail("Expected delete of non-existant queue to fail")
@@ -254,7 +254,7 @@ class QueueTests(TestBase):
 
         #need new channel now:    
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
 
         #empty queue:
         self.subscribe(channel, destination="consumer_tag", queue="delete-me-2")
@@ -286,7 +286,7 @@ class QueueTests(TestBase):
 
         #need new channel now:    
         channel2 = self.client.channel(2)
-        channel2.channel_open()
+        channel2.session_open()
         #try to delete, but only if empty:
         try:
             channel2.queue_delete(queue="delete-me-3", if_unused="True")
@@ -312,7 +312,7 @@ class QueueTests(TestBase):
         channel = self.channel
         other = self.connect()
         channel2 = other.channel(1)
-        channel2.channel_open()
+        channel2.session_open()
 
         channel.queue_declare(queue="auto-delete-me", auto_delete=True)
 
@@ -321,7 +321,7 @@ class QueueTests(TestBase):
         channel2.basic_consume(queue="auto-delete-me")
 
         #implicit cancel
-        channel2.channel_close()
+        channel2.session_close()
 
         #check it is still there
         channel.queue_declare(queue="auto-delete-me", passive=True)
