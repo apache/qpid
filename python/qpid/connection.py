@@ -229,14 +229,24 @@ class Method(Frame):
     self.eof = not method.content
 
   def encode(self, c):
-    c.encode_short(self.method.klass.id)
-    c.encode_short(self.method.id)
+    version = (c.spec.major, c.spec.minor)
+    if version == (0, 10):
+      c.encode_octet(self.method.klass.id)
+      c.encode_octet(self.method.id)
+    else:  
+      c.encode_short(self.method.klass.id)
+      c.encode_short(self.method.id)
     for field, arg in zip(self.method.fields, self.args):
       c.encode(field.type, arg)
 
   def decode(spec, c, size):
-    klass = spec.classes.byid[c.decode_short()]
-    meth = klass.methods.byid[c.decode_short()]
+    version = (c.spec.major, c.spec.minor)
+    if version == (0, 10):
+      klass = spec.classes.byid[c.decode_octet()]
+      meth = klass.methods.byid[c.decode_octet()]
+    else:  
+      klass = spec.classes.byid[c.decode_short()]
+      meth = klass.methods.byid[c.decode_short()]
     args = tuple([c.decode(f.type) for f in meth.fields])
     return Method(meth, args)
 

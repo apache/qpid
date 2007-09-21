@@ -2064,7 +2064,9 @@
       <chassis name="client" implement="MUST" />
       <chassis name="server" implement="MUST" />
 
+      <!-- 
       <response name="closed" />
+      -->
     </method>
 
     <!-- - Method: session.closed  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -6923,7 +6925,7 @@
 
     <!-- - Method: message.empty - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
-    <method name="empty" index="510" label="empty queue">
+    <method name="empty" index="200" label="empty queue">
       <doc>
         Signals that a queue does not contain any messages; usually sent in response to the get
         method.
@@ -6935,7 +6937,7 @@
 
     <!-- - Method: message.offset  - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
 
-    <method name="offset" index="530" label="return an offset">
+    <method name="offset" index="210" label="return an offset">
       <doc>
         Returns the data offset into a reference body; usually sent in response to resume method.
       </doc>

@@ -43,8 +43,9 @@ class DtxTests(TestBase):
     tx_counter = 0
 
     def reset_channel(self):
-        self.channel.channel_close()
-        self.channel.channel_open()
+        self.channel.session_close()
+        self.channel = self.client.channel(self.channel.id + 1)
+        self.channel.session_open()
 
     def test_simple_commit(self):
         """        
@@ -171,7 +172,7 @@ class DtxTests(TestBase):
 
         other = self.connect()
         channel2 = other.channel(1)
-        channel2.channel_open()
+        channel2.session_open()
         channel2.dtx_demarcation_select()
 
         #create a xid
@@ -202,17 +203,16 @@ class DtxTests(TestBase):
         Verify that a xid is 'forgotten' - and can therefore be used
         again - once it is completed.
         """
-        channel = self.channel
         #do some transactional work & complete the transaction
         self.test_simple_commit()
         # channel has been reset, so reselect for use with dtx
-        channel.dtx_demarcation_select()        
+        self.channel.dtx_demarcation_select()        
         
         #start association for the same xid as the previously completed txn
         tx = self.xid("my-xid")
-        channel.dtx_demarcation_start(xid=tx)
-        channel.dtx_demarcation_end(xid=tx)
-        channel.dtx_coordination_rollback(xid=tx)
+        self.channel.dtx_demarcation_start(xid=tx)
+        self.channel.dtx_demarcation_end(xid=tx)
+        self.channel.dtx_coordination_rollback(xid=tx)
 
     def test_start_join_and_resume(self):
         """
@@ -242,7 +242,7 @@ class DtxTests(TestBase):
         channel1.dtx_demarcation_select()
 
         channel2 = self.client.channel(2)
-        channel2.channel_open()
+        channel2.session_open()
         channel2.dtx_demarcation_select()
 
         #setup
@@ -323,9 +323,9 @@ class DtxTests(TestBase):
         #cleanup    
         other = self.connect()
         channel = other.channel(1)
-        channel.channel_open()
+        channel.session_open()
         channel.dtx_coordination_rollback(xid=tx)
-        channel.channel_close()
+        channel.session_close()
         other.close()
     
 
@@ -351,7 +351,7 @@ class DtxTests(TestBase):
         operations are non-transactional        
         """
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
         channel.queue_declare(queue="tx-queue", exclusive=True)
 
         #publish a message under a transaction
@@ -372,7 +372,7 @@ class DtxTests(TestBase):
         channel.message_cancel(destination="results")
         #ack the message then close the channel
         msg.complete()
-        channel.channel_close()
+        channel.session_close()
 
         channel = self.channel        
         #commit the transaction and check that the first message (and
@@ -388,7 +388,7 @@ class DtxTests(TestBase):
         """
         other = self.connect()
         tester = other.channel(1)
-        tester.channel_open()
+        tester.session_open()
         tester.queue_declare(queue="dummy", exclusive=True)
         tester.dtx_demarcation_select()
         tx = self.xid("dummy")
@@ -407,7 +407,7 @@ class DtxTests(TestBase):
             self.channel.dtx_coordination_rollback(xid=tx)
             self.assertConnectionException(503, e.args[0])
         else:
-            tester.channel_close()
+            tester.session_close()
             other.close()
             self.fail("Invalid use of one_phase=True, expected exception!")
 
@@ -422,7 +422,7 @@ class DtxTests(TestBase):
         """
         other = self.connect()
         tester = other.channel(1)
-        tester.channel_open()
+        tester.session_open()
         tester.queue_declare(queue="dummy", exclusive=True)
         tester.dtx_demarcation_select()
         tx = self.xid("dummy")
@@ -440,7 +440,7 @@ class DtxTests(TestBase):
             self.channel.dtx_coordination_rollback(xid=tx)
             self.assertConnectionException(503, e.args[0])
         else:
-            tester.channel_close()
+            tester.session_close()
             other.close()
             self.fail("Invalid use of one_phase=False, expected exception!")
 
@@ -452,7 +452,7 @@ class DtxTests(TestBase):
         """
         channel1 = self.channel
         channel2 = self.client.channel(2)
-        channel2.channel_open()
+        channel2.session_open()
 
         #setup:
         channel2.queue_declare(queue="dummy", exclusive=True)
@@ -464,7 +464,7 @@ class DtxTests(TestBase):
         channel2.message_get(queue="dummy", destination="dummy")
         self.client.queue("dummy").get(timeout=1).complete()
         channel2.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="whatever"))
-        channel2.channel_close()
+        channel2.session_close()
 
         self.assertEqual(self.XA_RBROLLBACK, channel1.dtx_coordination_prepare(xid=tx).status)
         channel1.dtx_coordination_rollback(xid=tx)
@@ -492,7 +492,7 @@ class DtxTests(TestBase):
         """
         #open new channel to allow self.channel to be used in checking te queue
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
         #setup:
         tx = self.xid("dummy")
         channel.queue_declare(queue="queue-a", exclusive=True)
