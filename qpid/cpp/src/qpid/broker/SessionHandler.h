@@ -64,25 +64,6 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     void handleOut(framing::AMQFrame&);
     
   private:
-    // FIXME aconway 2007-08-31: Drop channel.
-    struct ChannelMethods : public framing::AMQP_ServerOperations::ChannelHandler {
-        SessionHandler& parent;
-
-        ChannelMethods(SessionHandler& p) : parent(p) {}
-        void open(const std::string& outOfBand); 
-        void flow(bool active); 
-        void flowOk(bool active); 
-        void ok(  );
-        void ping(  );
-        void pong(  );
-        void resume( const std::string& channelId );
-        void close(uint16_t replyCode,
-                   const std::string& replyText,
-                   uint16_t classId, uint16_t methodId); 
-        void closeOk(); 
-    };
-  friend class ChannelMethods;
-
     /// Session methods
     void open(uint32_t detachedLifetime);
     void flow(bool active);
@@ -105,8 +86,6 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     framing::AMQP_ClientProxy proxy;
     shared_ptr<Session> session;
     bool ignoring;
-    ChannelMethods channelHandler;
-    bool useChannelClose;       // FIXME aconway 2007-09-19: remove with channel.
 };
 
 }} // namespace qpid::broker

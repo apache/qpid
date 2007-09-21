@@ -70,7 +70,7 @@ class MessageTests(TestBase):
 
         #open new channel and cleanup last consumer:    
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
 
         #check that an exclusive consumer cannot be created if a consumer already exists:
         self.subscribe(channel, destination="first", queue="test-queue-2")
@@ -93,7 +93,7 @@ class MessageTests(TestBase):
             self.assertChannelException(404, e.args[0])
 
         channel = self.client.channel(2)
-        channel.channel_open()
+        channel.session_open()
         try:
             #queue not specified and none previously declared for channel:
             self.subscribe(channel, queue="", destination="")

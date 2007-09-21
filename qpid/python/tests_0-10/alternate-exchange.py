@@ -136,9 +136,9 @@ class AlternateExchangeTests(TestBase):
             #cleanup:
             other = self.connect()
             channel = other.channel(1)
-            channel.channel_open()
+            channel.session_open()
             channel.exchange_delete(exchange="alternate")
-            channel.channel_close(200, "ok")
+            channel.session_close()
             other.close()
             
             self.assertConnectionException(530, e.args[0])            
@@ -162,10 +162,10 @@ class AlternateExchangeTests(TestBase):
             #cleanup:
             other = self.connect()
             channel = other.channel(1)
-            channel.channel_open()
+            channel.session_open()
             channel.exchange_delete(exchange="e")
             channel.exchange_delete(exchange="alternate")
-            channel.channel_close(200, "ok")
+            channel.session_close()
             other.close()
 
             self.assertConnectionException(530, e.args[0])
