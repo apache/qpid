@@ -137,28 +137,31 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static IApplicationRegistry getInstance(int instanceID)
     {
-        IApplicationRegistry instance = _instanceMap.get(instanceID);
+        synchronized (IApplicationRegistry.class)
+        {
+            IApplicationRegistry instance = _instanceMap.get(instanceID);
 
-        if (instance == null)
-        {
-            try
+            if (instance == null)
             {
-                _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + _APPLICATION_REGISTRY + " : Instance:" + instanceID);
-                IApplicationRegistry registry = (IApplicationRegistry) Class.forName(_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
-                ApplicationRegistry.initialise(registry, instanceID);
-                _logger.info("Initialised Application Registry:" + instanceID);
-                return registry;
-            }
-            catch (Exception e)
-            {
-                _logger.error("Error configuring application: " + e, e);
+                try
+                {
+                    _logger.info("Creating DEFAULT_APPLICATION_REGISTRY: " + _APPLICATION_REGISTRY + " : Instance:" + instanceID);
+                    IApplicationRegistry registry = (IApplicationRegistry) Class.forName(_APPLICATION_REGISTRY).getConstructor((Class[]) null).newInstance((Object[]) null);
+                    ApplicationRegistry.initialise(registry, instanceID);
+                    _logger.info("Initialised Application Registry:" + instanceID);
+                    return registry;
+                }
+                catch (Exception e)
+                {
+                    _logger.error("Error configuring application: " + e, e);
                 //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
-                throw new RuntimeException("Unable to create Application Registry", e);
+                    throw new RuntimeException("Unable to create Application Registry", e);
+                }
             }
-        }
-        else
-        {
-            return instance;
+            else
+            {
+                return instance;
+            }
         }
     }
 
