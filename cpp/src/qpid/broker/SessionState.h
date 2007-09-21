@@ -23,44 +23,73 @@
  */
 
 #include "qpid/framing/Uuid.h"
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/ProtocolVersion.h"
+
+#include <boost/ptr_container/ptr_vector.hpp>
+#include <boost/noncopyable.hpp>
+
 
 namespace qpid {
+
+namespace framing {
+class AMQP_ClientProxy;
+}
+
 namespace broker {
+
+class SessionHandler;
+class Broker;
+class Connection;
 
 /**
  * State of a session.
+ *
+ * An attached session has a SessionHandler which is attached to a
+ * connection. A suspended session has no handler.
+ *
+ * A SessionState is always associated with an open session (attached or
+ * suspended) it is destroyed when the session is closed.
+ *
+ * The SessionState includes the sessions handler chains, which may
+ * themselves have state. The handlers will be preserved as long as
+ * the session is alive.
  */
-class SessionState
+class SessionState : public framing::FrameHandler::Chains,
+                     private boost::noncopyable
 {
   public:
-    enum State { CLOSED, ACTIVE, SUSPENDED };
+    /** SessionState for a newly opened connection. */
+    SessionState(SessionHandler& h, uint32_t timeout_);
 
-    /** Initially in CLOSED state */
-    SessionState() : id(false), state(CLOSED), timeout(0) {}
+    bool isAttached() { return handler; }
 
-    /** Make CLOSED session ACTIVE, assigns a new UUID.
-     * #@param timeout in seconds
-     */
-    void open(u_int32_t timeout_) {
-        state=ACTIVE;  id.generate(); timeout=timeout_;
-    }
+    /** @pre isAttached() */
+    SessionHandler& getHandler();
 
-    /** Close a session. */
-    void close() { state=CLOSED; id.clear(); timeout=0; }
+    /** @pre isAttached() */
+    framing::AMQP_ClientProxy& getProxy();
+    
+    /** @pre isAttached() */
+    Connection& getConnection();
 
-    State getState() const { return state; }
     const framing::Uuid& getId() const { return id; }
     uint32_t getTimeout() const { return timeout; }
-
-    bool isOpen() { return state == ACTIVE; }
-    bool isClosed() { return state == CLOSED; }
-    bool isSuspended() { return state == SUSPENDED; }
+    Broker& getBroker() { return broker; }
+    framing::ProtocolVersion getVersion() const { return version; }
     
+
   private:
-  friend class SuspendedSessions;
+  friend class SessionHandler;  // Only SessionHandler can attach/detach
+    void detach() { handler=0; }
+    void attach(SessionHandler& h) { handler = &h; }
+
+    SessionHandler* handler;    
     framing::Uuid id;
-    State state;
     uint32_t timeout;
+    Broker& broker;
+    boost::ptr_vector<framing::FrameHandler> chain;
+    framing::ProtocolVersion version;
 };
 
 }} // namespace qpid::broker

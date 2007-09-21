@@ -32,7 +32,7 @@ class DtxHandlerImpl
       public framing::AMQP_ServerOperations::DtxDemarcationHandler
 {    
 public:
-    DtxHandlerImpl(Session&);
+    DtxHandlerImpl(SemanticState&);
 
     // DtxCoordinationHandler:
 
@@ -57,8 +57,6 @@ public:
     void select();
     
     framing::DtxDemarcationStartResult start(u_int16_t ticket, const std::string& xid, bool join, bool resume);
-
-
 };
 
 
