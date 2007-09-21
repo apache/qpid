@@ -187,8 +187,10 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/RecoveryManagerImpl.cpp \
   qpid/broker/RecoveredEnqueue.cpp \
   qpid/broker/RecoveredDequeue.cpp \
-  qpid/broker/Session.h \
-  qpid/broker/Session.cpp \
+  qpid/broker/SemanticState.h \
+  qpid/broker/SemanticState.cpp \
+  qpid/broker/SessionState.h \
+  qpid/broker/SessionState.cpp \
   qpid/broker/SessionHandler.h \
   qpid/broker/SessionHandler.cpp \
   qpid/broker/SemanticHandler.cpp \

@@ -19,8 +19,7 @@
  *
  */
 
-#include "Session.h"
-
+#include "SessionState.h"
 #include "BrokerAdapter.h"
 #include "BrokerQueue.h"
 #include "Connection.h"
@@ -56,11 +55,9 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-Session::Session(SessionHandler& a, uint32_t t)
-    : adapter(&a),
-      broker(adapter->getConnection().broker),
-      timeout(t),
-      id(true),
+SemanticState::SemanticState(DeliveryAdapter& da, SessionState& ss)
+    : session(ss),
+      deliveryAdapter(da),
       prefetchSize(0),
       prefetchCount(0),
       tagGenerator("sgen"),
@@ -69,28 +66,21 @@ Session::Session(SessionHandler& a, uint32_t t)
       flowActive(true)
 {
     outstanding.reset();
-    std::auto_ptr<SemanticHandler> semantic(new SemanticHandler(*this));
-    // FIXME aconway 2007-08-29:  move deliveryAdapter to SemanticHandlerState. 
-    deliveryAdapter=semantic.get();
-    handlers.push_back(semantic.release());
-    in = &handlers[0];
-    out = &adapter->out;
-    // FIXME aconway 2007-08-31: handlerupdater->sessionupdater,
-    // create a SessionManager in the broker for all session related
-    // stuff: suspended sessions, handler updaters etc.
-    // FIXME aconway 2007-08-31: Shouldn't be passing channel ID
-    broker.update(a.getChannel(), *this);       
 }
 
-Session::~Session() {
-    close();
+SemanticState::~SemanticState() {
+    consumers.clear();
+    if (dtxBuffer.get()) {
+        dtxBuffer->fail();
+    }
+    recover(true);
 }
 
-bool Session::exists(const string& consumerTag){
+bool SemanticState::exists(const string& consumerTag){
     return consumers.find(consumerTag) != consumers.end();
 }
 
-void Session::consume(DeliveryToken::shared_ptr token, string& tagInOut, 
+void SemanticState::consume(DeliveryToken::shared_ptr token, string& tagInOut, 
                       Queue::shared_ptr queue, bool nolocal, bool acks, bool acquire,
                       bool exclusive, const FieldTable*)
 {
@@ -101,7 +91,7 @@ void Session::consume(DeliveryToken::shared_ptr token, string& tagInOut,
     consumers.insert(tagInOut, c.release());
 }
 
-void Session::cancel(const string& tag){
+void SemanticState::cancel(const string& tag){
     // consumers is a ptr_map so erase will delete the consumer
     // which will call cancel.
     ConsumerImplMap::iterator i = consumers.find(tag);
@@ -109,22 +99,13 @@ void Session::cancel(const string& tag){
         consumers.erase(i); 
 }
 
-void Session::close()
-{
-    opened = false;
-    consumers.clear();
-    if (dtxBuffer.get()) {
-        dtxBuffer->fail();
-    }
-    recover(true);
-}
 
-void Session::startTx()
+void SemanticState::startTx()
 {
     txBuffer = TxBuffer::shared_ptr(new TxBuffer());
 }
 
-void Session::commit(MessageStore* const store)
+void SemanticState::commit(MessageStore* const store)
 {
     if (!txBuffer) throw ConnectionException(503, "Session has not been selected for use with transactions");
 
@@ -135,7 +116,7 @@ void Session::commit(MessageStore* const store)
     }
 }
 
-void Session::rollback()
+void SemanticState::rollback()
 {
     if (!txBuffer) throw ConnectionException(503, "Session has not been selected for use with transactions");
 
@@ -143,12 +124,12 @@ void Session::rollback()
     accumulatedAck.clear();
 }
 
-void Session::selectDtx()
+void SemanticState::selectDtx()
 {
     dtxSelected = true;
 }
 
-void Session::startDtx(const std::string& xid, DtxManager& mgr, bool join)
+void SemanticState::startDtx(const std::string& xid, DtxManager& mgr, bool join)
 {
     if (!dtxSelected) {
         throw ConnectionException(503, "Session has not been selected for use with dtx");
@@ -162,7 +143,7 @@ void Session::startDtx(const std::string& xid, DtxManager& mgr, bool join)
     }
 }
 
-void Session::endDtx(const std::string& xid, bool fail)
+void SemanticState::endDtx(const std::string& xid, bool fail)
 {
     if (!dtxBuffer) {
         throw ConnectionException(503, boost::format("xid %1% not associated with this session") % xid);
@@ -183,7 +164,7 @@ void Session::endDtx(const std::string& xid, bool fail)
     dtxBuffer.reset();
 }
 
-void Session::suspendDtx(const std::string& xid)
+void SemanticState::suspendDtx(const std::string& xid)
 {
     if (dtxBuffer->getXid() != xid) {
         throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on suspend") 
@@ -195,7 +176,7 @@ void Session::suspendDtx(const std::string& xid)
     dtxBuffer->setSuspended(true);
 }
 
-void Session::resumeDtx(const std::string& xid)
+void SemanticState::resumeDtx(const std::string& xid)
 {
     if (dtxBuffer->getXid() != xid) {
         throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on resume") 
@@ -210,7 +191,7 @@ void Session::resumeDtx(const std::string& xid)
     txBuffer = static_pointer_cast<TxBuffer>(dtxBuffer);
 }
 
-void Session::checkDtxTimeout()
+void SemanticState::checkDtxTimeout()
 {
     if (dtxBuffer->isExpired()) {
         dtxBuffer.reset();
@@ -218,13 +199,13 @@ void Session::checkDtxTimeout()
     }
 }
 
-void Session::record(const DeliveryRecord& delivery)
+void SemanticState::record(const DeliveryRecord& delivery)
 {
     unacked.push_back(delivery);
     delivery.addTo(outstanding);
 }
 
-bool Session::checkPrefetch(Message::shared_ptr& msg)
+bool SemanticState::checkPrefetch(Message::shared_ptr& msg)
 {
     Mutex::ScopedLock locker(deliveryLock);
     bool countOk = !prefetchCount || prefetchCount > unacked.size();
@@ -232,7 +213,7 @@ bool Session::checkPrefetch(Message::shared_ptr& msg)
     return countOk && sizeOk;
 }
 
-Session::ConsumerImpl::ConsumerImpl(Session* _parent, 
+SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent, 
                                     DeliveryToken::shared_ptr _token,
                                     const string& _name, 
                                     Queue::shared_ptr _queue, 
@@ -253,9 +234,10 @@ Session::ConsumerImpl::ConsumerImpl(Session* _parent,
     msgCredit(0), 
     byteCredit(0) {}
 
-bool Session::ConsumerImpl::deliver(QueuedMessage& msg)
+bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
-    if (nolocal && &parent->getHandler()->getConnection() == msg.payload->getPublisher()) {
+    if (nolocal &&
+        &parent->getSession().getConnection() == msg.payload->getPublisher()) {
         return false;
     } else {
         if (!checkCredit(msg.payload) || !parent->flowActive || (ackExpected && !parent->checkPrefetch(msg.payload))) {
@@ -266,7 +248,7 @@ bool Session::ConsumerImpl::deliver(QueuedMessage& msg)
             Mutex::ScopedLock locker(parent->deliveryLock);
 
             DeliveryId deliveryTag =
-                parent->deliveryAdapter->deliver(msg.payload, token);
+                parent->deliveryAdapter.deliver(msg.payload, token);
             if (windowing || ackExpected) {
                 parent->record(DeliveryRecord(msg, queue, name, deliveryTag, acquire, !ackExpected));
             }
@@ -275,7 +257,7 @@ bool Session::ConsumerImpl::deliver(QueuedMessage& msg)
     }
 }
 
-bool Session::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
+bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
 {
     Mutex::ScopedLock l(lock);
     if (msgCredit == 0 || (byteCredit != 0xFFFFFFFF && byteCredit < msg->getRequiredCredit())) {
@@ -291,33 +273,34 @@ bool Session::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
     }
 }
 
-void Session::ConsumerImpl::redeliver(Message::shared_ptr& msg, DeliveryId deliveryTag) {
+void SemanticState::ConsumerImpl::redeliver(Message::shared_ptr& msg, DeliveryId deliveryTag) {
     Mutex::ScopedLock locker(parent->deliveryLock);
-    parent->deliveryAdapter->redeliver(msg, token, deliveryTag);
+    parent->deliveryAdapter.redeliver(msg, token, deliveryTag);
 }
 
-Session::ConsumerImpl::~ConsumerImpl() {
+SemanticState::ConsumerImpl::~ConsumerImpl() {
     cancel();
 }
 
-void Session::ConsumerImpl::cancel()
+void SemanticState::ConsumerImpl::cancel()
 {
     if(queue) {
         queue->cancel(this);
         if (queue->canAutoDelete()) {            
-            parent->getHandler()->getConnection().broker.getQueues().destroyIf(queue->getName(), 
-                                                                               boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue));
+            parent->getSession().getBroker().getQueues().destroyIf(
+                queue->getName(), 
+                boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue));
         }
     }
 }
 
-void Session::ConsumerImpl::requestDispatch()
+void SemanticState::ConsumerImpl::requestDispatch()
 {
     if(blocked)
         queue->requestDispatch(this);
 }
 
-void Session::handle(Message::shared_ptr msg) {
+void SemanticState::handle(Message::shared_ptr msg) {
     if (txBuffer.get()) {
         TxPublish* deliverable(new TxPublish(msg));
         TxOp::shared_ptr op(deliverable);
@@ -329,10 +312,10 @@ void Session::handle(Message::shared_ptr msg) {
     }
 }
 
-void Session::route(Message::shared_ptr msg, Deliverable& strategy) {
+void SemanticState::route(Message::shared_ptr msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();      
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
-        cacheExchange = getHandler()->getConnection().broker.getExchanges().get(exchangeName);
+        cacheExchange = session.getConnection().broker.getExchanges().get(exchangeName);
     }
 
     cacheExchange->route(strategy, msg->getRoutingKey(), msg->getApplicationHeaders());
@@ -347,17 +330,17 @@ void Session::route(Message::shared_ptr msg, Deliverable& strategy) {
 
 }
 
-void Session::ackCumulative(DeliveryId id)
+void SemanticState::ackCumulative(DeliveryId id)
 {
     ack(id, id, true);
 }
 
-void Session::ackRange(DeliveryId first, DeliveryId last)
+void SemanticState::ackRange(DeliveryId first, DeliveryId last)
 {
     ack(first, last, false);
 }
 
-void Session::ack(DeliveryId first, DeliveryId last, bool cumulative)
+void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
 {
     Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
     
@@ -373,7 +356,7 @@ void Session::ack(DeliveryId first, DeliveryId last, bool cumulative)
         ++end;
     }
 
-    for_each(start, end, boost::bind(&Session::acknowledged, this, _1));
+    for_each(start, end, boost::bind(&SemanticState::acknowledged, this, _1));
     
     if (txBuffer.get()) {
         //in transactional mode, don't dequeue or remove, just
@@ -398,7 +381,7 @@ void Session::ack(DeliveryId first, DeliveryId last, bool cumulative)
     for_each(consumers.begin(), consumers.end(), boost::bind(&ConsumerImpl::requestDispatch, _1));
 }
 
-void Session::acknowledged(const DeliveryRecord& delivery)
+void SemanticState::acknowledged(const DeliveryRecord& delivery)
 {
     delivery.subtractFrom(outstanding);
     ConsumerImplMap::iterator i = consumers.find(delivery.getConsumerTag());
@@ -407,7 +390,7 @@ void Session::acknowledged(const DeliveryRecord& delivery)
     }
 }
 
-void Session::ConsumerImpl::acknowledged(const DeliveryRecord& delivery)
+void SemanticState::ConsumerImpl::acknowledged(const DeliveryRecord& delivery)
 {
     if (windowing) {
         if (msgCredit != 0xFFFFFFFF) msgCredit++;
@@ -415,7 +398,7 @@ void Session::ConsumerImpl::acknowledged(const DeliveryRecord& delivery)
     }
 }
 
-void Session::recover(bool requeue)
+void SemanticState::recover(bool requeue)
 {
     Mutex::ScopedLock locker(deliveryLock);//need to synchronize with possible concurrent delivery
 
@@ -431,12 +414,12 @@ void Session::recover(bool requeue)
     }
 }
 
-bool Session::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected)
+bool SemanticState::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool ackExpected)
 {
     QueuedMessage msg = queue->dequeue();
     if(msg.payload){
         Mutex::ScopedLock locker(deliveryLock);
-        DeliveryId myDeliveryTag = deliveryAdapter->deliver(msg.payload, token);
+        DeliveryId myDeliveryTag = deliveryAdapter.deliver(msg.payload, token);
         if(ackExpected){
             unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
         }
@@ -446,7 +429,7 @@ bool Session::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue, bool
     }
 }
 
-void Session::deliver(Message::shared_ptr& msg, const string& consumerTag,
+void SemanticState::deliver(Message::shared_ptr& msg, const string& consumerTag,
                       DeliveryId deliveryTag)
 {
     ConsumerImplMap::iterator i = consumers.find(consumerTag);
@@ -455,7 +438,7 @@ void Session::deliver(Message::shared_ptr& msg, const string& consumerTag,
     }
 }
 
-void Session::flow(bool active)
+void SemanticState::flow(bool active)
 {
     Mutex::ScopedLock locker(deliveryLock);
     bool requestDelivery(!flowActive && active);
@@ -467,7 +450,7 @@ void Session::flow(bool active)
 }
 
 
-Session::ConsumerImpl& Session::find(const std::string& destination)
+SemanticState::ConsumerImpl& SemanticState::find(const std::string& destination)
 {
     ConsumerImplMap::iterator i = consumers.find(destination);
     if (i == consumers.end()) {
@@ -477,62 +460,62 @@ Session::ConsumerImpl& Session::find(const std::string& destination)
     }
 }
 
-void Session::setWindowMode(const std::string& destination)
+void SemanticState::setWindowMode(const std::string& destination)
 {
     find(destination).setWindowMode();
 }
 
-void Session::setCreditMode(const std::string& destination)
+void SemanticState::setCreditMode(const std::string& destination)
 {
     find(destination).setCreditMode();
 }
 
-void Session::addByteCredit(const std::string& destination, uint32_t value)
+void SemanticState::addByteCredit(const std::string& destination, uint32_t value)
 {
     find(destination).addByteCredit(value);
 }
 
 
-void Session::addMessageCredit(const std::string& destination, uint32_t value)
+void SemanticState::addMessageCredit(const std::string& destination, uint32_t value)
 {
     find(destination).addMessageCredit(value);
 }
 
-void Session::flush(const std::string& destination)
+void SemanticState::flush(const std::string& destination)
 {
     ConsumerImpl& c = find(destination);
     c.flush();
 }
 
 
-void Session::stop(const std::string& destination)
+void SemanticState::stop(const std::string& destination)
 {
     find(destination).stop();
 }
 
-void Session::ConsumerImpl::setWindowMode()
+void SemanticState::ConsumerImpl::setWindowMode()
 {
     windowing = true;
 }
 
-void Session::ConsumerImpl::setCreditMode()
+void SemanticState::ConsumerImpl::setCreditMode()
 {
     windowing = false;
 }
 
-void Session::ConsumerImpl::addByteCredit(uint32_t value)
+void SemanticState::ConsumerImpl::addByteCredit(uint32_t value)
 {
     byteCredit += value;
     requestDispatch();
 }
 
-void Session::ConsumerImpl::addMessageCredit(uint32_t value)
+void SemanticState::ConsumerImpl::addMessageCredit(uint32_t value)
 {
     msgCredit += value;
     requestDispatch();
 }
 
-void Session::ConsumerImpl::flush()
+void SemanticState::ConsumerImpl::flush()
 {
     //need to prevent delivery after requestDispatch returns but
     //before credit is reduced to zero; TODO: come up with better
@@ -543,13 +526,13 @@ void Session::ConsumerImpl::flush()
     msgCredit = 0;
 }
 
-void Session::ConsumerImpl::stop()
+void SemanticState::ConsumerImpl::stop()
 {
     msgCredit = 0;
     byteCredit = 0;
 }
 
-Queue::shared_ptr Session::getQueue(const string& name) const {
+Queue::shared_ptr SemanticState::getQueue(const string& name) const {
     //Note: this can be removed soon as the default queue for sessions is scrapped in 0-10
     Queue::shared_ptr queue;
     if (name.empty()) {
@@ -558,14 +541,14 @@ Queue::shared_ptr Session::getQueue(const string& name) const {
             throw NotAllowedException(QPID_MSG("No queue name specified."));
     }
     else {
-        queue = getBroker().getQueues().find(name);
+        queue = session.getBroker().getQueues().find(name);
         if (!queue)
             throw NotFoundException(QPID_MSG("Queue not found: "<<name));
     }
     return queue;
 }
 
-AckRange Session::findRange(DeliveryId first, DeliveryId last)
+AckRange SemanticState::findRange(DeliveryId first, DeliveryId last)
 {    
     ack_iterator start = find_if(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::matchOrAfter), first));
     ack_iterator end = start;
@@ -582,21 +565,21 @@ AckRange Session::findRange(DeliveryId first, DeliveryId last)
     return AckRange(start, end);
 }
 
-void Session::acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired)
+void SemanticState::acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired)
 {
     Mutex::ScopedLock locker(deliveryLock);
     AckRange range = findRange(first, last);
     for_each(range.start, range.end, AcquireFunctor(acquired));
 }
 
-void Session::release(DeliveryId first, DeliveryId last)
+void SemanticState::release(DeliveryId first, DeliveryId last)
 {
     Mutex::ScopedLock locker(deliveryLock);
     AckRange range = findRange(first, last);
     for_each(range.start, range.end, mem_fun_ref(&DeliveryRecord::release));
 }
 
-void Session::reject(DeliveryId first, DeliveryId last)
+void SemanticState::reject(DeliveryId first, DeliveryId last)
 {
     Mutex::ScopedLock locker(deliveryLock);
     AckRange range = findRange(first, last);

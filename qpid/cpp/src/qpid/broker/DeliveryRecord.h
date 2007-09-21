@@ -34,7 +34,7 @@
 
 namespace qpid {
 namespace broker {
-class Session;
+class SemanticState;
 
 /**
  * Record of a delivery for which an ack is outstanding.
@@ -61,7 +61,7 @@ class DeliveryRecord{
     void requeue() const;
     void release();
     void reject();
-    void redeliver(Session* const) const;
+    void redeliver(SemanticState* const) const;
     void updateByteCredit(uint32_t& credit) const;
     void addTo(Prefetch&) const;
     void subtractFrom(Prefetch&) const;
