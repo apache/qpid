@@ -461,8 +461,11 @@ class DtxTests(TestBase):
 
         channel2.dtx_demarcation_select()
         channel2.dtx_demarcation_start(xid=tx)
-        channel2.message_get(queue="dummy", destination="dummy")
+        channel2.message_subscribe(queue="dummy", destination="dummy", confirm_mode=1)
+        channel2.message_flow(destination="dummy", unit=0, value=1)
+        channel2.message_flow(destination="dummy", unit=1, value=0xFFFFFFFF)
         self.client.queue("dummy").get(timeout=1).complete()
+        channel2.message_cancel(destination="dummy")
         channel2.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="whatever"))
         channel2.session_close()
 
@@ -589,8 +592,11 @@ class DtxTests(TestBase):
 
     def swap(self, channel, src, dest):
         #consume from src:
-        channel.message_get(destination="temp-swap", queue=src)
+        channel.message_subscribe(destination="temp-swap", queue=src, confirm_mode=1)
+        channel.message_flow(destination="temp-swap", unit=0, value=1)
+        channel.message_flow(destination="temp-swap", unit=1, value=0xFFFFFFFF)
         msg = self.client.queue("temp-swap").get(timeout=1)
+        channel.message_cancel(destination="temp-swap")
         msg.complete();        
 
         #re-publish to dest
