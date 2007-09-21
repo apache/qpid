@@ -99,7 +99,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/AMQFrame.cpp \
   qpid/framing/AMQHeaderBody.cpp \
   qpid/framing/AMQHeartbeatBody.cpp \
-  qpid/framing/FrameHandler.h \
   qpid/framing/BasicHeaderProperties.cpp \
   qpid/framing/BodyHandler.cpp \
   qpid/framing/ChannelAdapter.cpp \
@@ -117,37 +116,24 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Value.cpp \
   qpid/framing/Proxy.cpp \
   qpid/framing/Uuid.cpp \
-  qpid/framing/Handler.h \
-  qpid/framing/FrameHandler.h \
-  qpid/framing/HandlerUpdater.h \
-  qpid/framing/Blob.h \
-  qpid/framing/variant.h \
   qpid/framing/AMQP_HighestVersion.h \
   qpid/framing/Blob.cpp \
-  qpid/framing/MethodHolder.h qpid/framing/MethodHolder.cpp \
+  qpid/framing/MethodHolder.cpp \
   qpid/framing/MethodHolderMaxSize.h \
   qpid/framing/TransferContent.cpp \
   qpid/Exception.cpp \
-  qpid/Plugin.h \
   qpid/Plugin.cpp \
-  qpid/Url.h \
   qpid/Url.cpp \
   qpid/QpidError.cpp \
   qpid/sys/AsynchIOAcceptor.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
   qpid/sys/Serializer.cpp \
-  qpid/sys/Shlib.h \
   qpid/sys/Shlib.cpp \
   qpid/Options.cpp \
-  qpid/Options.h \
   qpid/log/Options.cpp \
-  qpid/log/Options.h \
   qpid/log/Selector.cpp \
-  qpid/log/Selector.h \
-  qpid/log/Statement.cpp \
-  qpid/log/Statement.h \
-  qpid/memory.h 
+  qpid/log/Statement.cpp
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \
@@ -223,16 +209,34 @@ libqpidclient_la_SOURCES =			\
   qpid/client/SessionCore.cpp			\
   qpid/client/StateManager.cpp
 
-
 nobase_include_HEADERS = \
   $(platform_hdr) \
+  qpid/Exception.h \
+  qpid/ExceptionHolder.h \
+  qpid/Msg.h \
+  qpid/Options.h \
+  qpid/Plugin.h \
+  qpid/QpidError.h \
+  qpid/SharedObject.h \
+  qpid/Url.h \
+  qpid/memory.h \
+  qpid/shared_ptr.h \
+  qpid/broker/Broker.h \
+  qpid/broker/BrokerAdapter.h \
   qpid/broker/BrokerExchange.h \
   qpid/broker/BrokerQueue.h \
+  qpid/broker/BrokerSingleton.h \
+  qpid/broker/Connection.h \
+  qpid/broker/ConnectionFactory.h \
+  qpid/broker/ConnectionHandler.h \
+  qpid/broker/ConnectionToken.h \
   qpid/broker/Consumer.h \
+  qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
   qpid/broker/DeliverableMessage.h \
   qpid/broker/DeliveryAdapter.h \
   qpid/broker/DeliveryId.h \
+  qpid/broker/DeliveryRecord.h \
   qpid/broker/DeliveryToken.h \
   qpid/broker/DirectExchange.h \
   qpid/broker/DtxAck.h \
@@ -244,81 +248,71 @@ nobase_include_HEADERS = \
   qpid/broker/ExchangeRegistry.h \
   qpid/broker/FanOutExchange.h \
   qpid/broker/HandlerImpl.h \
+  qpid/broker/HeadersExchange.h \
+  qpid/broker/IncomingExecutionContext.h \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \
   qpid/broker/MessageDelivery.h \
   qpid/broker/MessageHandlerImpl.h \
+  qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.h \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.h \
   qpid/broker/Persistable.h \
+  qpid/broker/PersistableExchange.h \
+  qpid/broker/PersistableMessage.h \
+  qpid/broker/PersistableQueue.h \
   qpid/broker/Prefetch.h \
   qpid/broker/QueueBindings.h \
+  qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.h \
   qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \
   qpid/broker/RecoverableQueue.h \
   qpid/broker/RecoverableTransaction.h \
-  qpid/broker/RecoveryManager.h \
-  qpid/broker/RecoveredEnqueue.h \
   qpid/broker/RecoveredDequeue.h \
-  qpid/broker/TxBuffer.h \
-  qpid/broker/TxOp.h \
-  qpid/broker/TxPublish.h \
-  qpid/broker/Broker.h \
-  qpid/broker/BrokerAdapter.h \
-  qpid/broker/BrokerSingleton.h \
-  qpid/broker/Connection.h \
-  qpid/broker/ConnectionHandler.h \
-  qpid/broker/ConnectionFactory.h \
-  qpid/broker/ConnectionToken.h \
-  qpid/broker/Daemon.h \
-  qpid/broker/DeliveryRecord.h \
-  qpid/broker/HeadersExchange.h \
-  qpid/broker/IncomingExecutionContext.h \
-  qpid/broker/MessageStore.h \
-  qpid/broker/PersistableExchange.h \
-  qpid/broker/PersistableMessage.h \
-  qpid/broker/PersistableQueue.h \
-  qpid/broker/QueuePolicy.h \
+  qpid/broker/RecoveredEnqueue.h \
+  qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.h \
   qpid/broker/SemanticHandler.h \
   qpid/broker/Timer.h \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \
   qpid/broker/TxAck.h \
+  qpid/broker/TxBuffer.h \
+  qpid/broker/TxOp.h \
+  qpid/broker/TxPublish.h \
   qpid/client/AckMode.h \
+  qpid/client/BlockingQueue.h \
+  qpid/client/ChainableFrameHandler.h	\
   qpid/client/ClientChannel.h \
   qpid/client/ClientExchange.h \
   qpid/client/ClientMessage.h \
   qpid/client/ClientQueue.h \
+  qpid/client/Completion.h \
+  qpid/client/CompletionTracker.h \
   qpid/client/Connection.h \
+  qpid/client/ConnectionHandler.h \
   qpid/client/ConnectionImpl.h \
   qpid/client/Connector.h \
-  qpid/client/Completion.h \
+  qpid/client/Correlator.h \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
-  qpid/client/MessageListener.h \
-  qpid/client/MessageQueue.h \
-  qpid/client/BlockingQueue.h \
-  qpid/client/Correlator.h \
-  qpid/client/CompletionTracker.h \
-  qpid/client/SessionHandler.h \
-  qpid/client/ChainableFrameHandler.h	\
-  qpid/client/ConnectionHandler.h \
   qpid/client/Execution.h \
   qpid/client/ExecutionHandler.h \
   qpid/client/Future.h \
   qpid/client/FutureCompletion.h \
   qpid/client/FutureResponse.h \
   qpid/client/FutureResult.h \
+  qpid/client/MessageListener.h \
+  qpid/client/MessageQueue.h \
   qpid/client/Response.h \
   qpid/client/ScopedAssociation.h \
   qpid/client/SessionCore.h \
+  qpid/client/SessionHandler.h \
   qpid/client/StateManager.h \
   qpid/client/TypedResult.h \
-  qpid/framing/AccumulatedAck.h \
   qpid/framing/AMQBody.h \
   qpid/framing/AMQContentBody.h \
   qpid/framing/AMQDataBlock.h \
@@ -326,19 +320,26 @@ nobase_include_HEADERS = \
   qpid/framing/AMQHeaderBody.h \
   qpid/framing/AMQHeartbeatBody.h \
   qpid/framing/AMQMethodBody.h \
+  qpid/framing/AccumulatedAck.h \
   qpid/framing/BasicHeaderProperties.h \
+  qpid/framing/Blob.h \
   qpid/framing/BodyHandler.h \
   qpid/framing/Buffer.h \
   qpid/framing/ChannelAdapter.h \
   qpid/framing/FieldTable.h \
   qpid/framing/FrameDefaultVisitor.h \
-  qpid/framing/FramingContent.h \
+  qpid/framing/FrameHandler.h \
+  qpid/framing/FrameHandler.h \
   qpid/framing/FrameSet.h \
-  qpid/framing/frame_functors.h \
+  qpid/framing/FramingContent.h \
+  qpid/framing/Handler.h \
+  qpid/framing/HandlerUpdater.h \
   qpid/framing/HeaderProperties.h \
   qpid/framing/InitiationHandler.h \
   qpid/framing/InputHandler.h \
   qpid/framing/MethodContent.h \
+  qpid/framing/MethodHolder.h \
+  qpid/framing/MethodHolderMaxSize.h \
   qpid/framing/OutputHandler.h \
   qpid/framing/ProtocolInitiation.h \
   qpid/framing/ProtocolVersion.h \
@@ -351,39 +352,39 @@ nobase_include_HEADERS = \
   qpid/framing/StructHelper.h \
   qpid/framing/TransferContent.h \
   qpid/framing/TypeFilter.h \
+  qpid/framing/Uuid.h \
   qpid/framing/Value.h \
   qpid/framing/Visitor.h \
-  qpid/framing/Uuid.h \
   qpid/framing/amqp_framing.h \
   qpid/framing/amqp_types.h \
   qpid/framing/amqp_types_full.h \
+  qpid/framing/frame_functors.h \
+  qpid/framing/variant.h \
+  qpid/log/Options.h \
+  qpid/log/Selector.h \
+  qpid/log/Statement.h \
   qpid/sys/Acceptor.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AtomicCount.h \
-  qpid/sys/Dispatcher.h \
+  qpid/sys/ConcurrentQueue.h \
   qpid/sys/Condition.h \
   qpid/sys/ConnectionInputHandler.h \
   qpid/sys/ConnectionInputHandlerFactory.h \
   qpid/sys/ConnectionOutputHandler.h \
+  qpid/sys/Dispatcher.h \
   qpid/sys/Module.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \
   qpid/sys/ScopedIncrement.h \
+  qpid/sys/Serializer.h \
+  qpid/sys/Shlib.h \
   qpid/sys/ShutdownHandler.h \
   qpid/sys/Socket.h \
   qpid/sys/Thread.h \
-  qpid/sys/ConcurrentQueue.h \
-  qpid/sys/Serializer.h \
   qpid/sys/Time.h \
-  qpid/sys/TimeoutHandler.h \
-  qpid/Exception.h \
-  qpid/Msg.h \
-  qpid/ExceptionHolder.h \
-  qpid/QpidError.h \
-  qpid/SharedObject.h \
-  qpid/shared_ptr.h
+  qpid/sys/TimeoutHandler.h
 
 # Force build of qpidd during dist phase so help2man will work.
 dist-hook: $(BUILT_SOURCES)
