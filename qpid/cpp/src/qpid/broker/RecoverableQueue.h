@@ -40,6 +40,7 @@ public:
     typedef boost::shared_ptr<RecoverableQueue> shared_ptr;
 
     virtual void setPersistenceId(uint64_t id) = 0;
+    virtual uint64_t getPersistenceId() const = 0;
     /**
      * Used during recovery to add stored messages back to the queue
      */
@@ -48,7 +49,7 @@ public:
 
     virtual const std::string& getName() const = 0;
     virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
-
+	virtual ExternalQueueStore* getExternalQueueStore() const = 0;
 
 };
 

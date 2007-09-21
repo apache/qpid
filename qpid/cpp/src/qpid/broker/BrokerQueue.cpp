@@ -255,9 +255,7 @@ QueuedMessage Queue::dequeue(){
     QueuedMessage msg;
     if(!messages.empty()){
         msg = messages.front();
-	if (msg.payload->isEnqueueComplete()){
-           pop();
-	}
+        pop();
     }
     return msg;
 }
