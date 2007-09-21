@@ -61,9 +61,11 @@ class RecoverableQueueImpl : public RecoverableQueue
 public:
     RecoverableQueueImpl(Queue::shared_ptr& _queue) : queue(_queue) {}
     ~RecoverableQueueImpl() {};
-    void setPersistenceId(uint64_t id);
+    void setPersistenceId(uint64_t id);    
+	uint64_t getPersistenceId() const;
     const std::string& getName() const;
     void setExternalQueueStore(ExternalQueueStore* inst);
+    ExternalQueueStore* getExternalQueueStore() const;
     void recover(RecoverableMessage::shared_ptr msg);
     void enqueue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
     void dequeue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
@@ -156,6 +158,11 @@ void RecoverableQueueImpl::setPersistenceId(uint64_t id)
 {
     queue->setPersistenceId(id);
 }
+	
+uint64_t RecoverableQueueImpl::getPersistenceId() const
+{
+	return queue->getPersistenceId();
+}
 
 const std::string& RecoverableQueueImpl::getName() const
 {
@@ -165,6 +172,11 @@ const std::string& RecoverableQueueImpl::getName() const
 void RecoverableQueueImpl::setExternalQueueStore(ExternalQueueStore* inst)
 {
     queue->setExternalQueueStore(inst);
+}
+
+ExternalQueueStore* RecoverableQueueImpl::getExternalQueueStore() const
+{
+	return queue->getExternalQueueStore();
 }
 
 void RecoverableExchangeImpl::setPersistenceId(uint64_t id)
