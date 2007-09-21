@@ -208,8 +208,8 @@ class TestBase(unittest.TestCase):
         self.exchanges = []
         self.client = self.connect()
         self.channel = self.client.channel(1)
-        version = (self.client.spec.major, self.client.spec.minor)
-        if version == (8, 0) or "transitional" in self.client.spec.file:
+        self.version = (self.client.spec.major, self.client.spec.minor)
+        if self.version == (8, 0):
             self.channel.channel_open()
         else:
             self.channel.session_open()
@@ -313,9 +313,14 @@ class TestBase(unittest.TestCase):
         self.assertPublishGet(self.consume(queue), exchange, routing_key, properties)
 
     def assertChannelException(self, expectedCode, message):
-        if not isinstance(message, Message): self.fail("expected channel_close method, got %s" % (message))
-        self.assertEqual("channel", message.method.klass.name)
-        self.assertEqual("close", message.method.name)
+        if self.version == (8, 0): #or "transitional" in self.client.spec.file:
+            if not isinstance(message, Message): self.fail("expected channel_close method, got %s" % (message))
+            self.assertEqual("channel", message.method.klass.name)
+            self.assertEqual("close", message.method.name)
+        else:
+            if not isinstance(message, Message): self.fail("expected session_closed method, got %s" % (message))
+            self.assertEqual("session", message.method.klass.name)
+            self.assertEqual("closed", message.method.name)
         self.assertEqual(expectedCode, message.reply_code)
 
 

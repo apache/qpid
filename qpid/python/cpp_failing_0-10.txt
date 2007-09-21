@@ -1,2 +1,3 @@
 tests_0-10.alternate-exchange.AlternateExchangeTests.test_immediate
+tests_0-10.broker.BrokerTests.test_closed_channel
 

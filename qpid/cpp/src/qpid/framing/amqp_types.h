@@ -45,8 +45,8 @@ using std::string;
 typedef uint8_t FrameType;
 typedef uint16_t ChannelId;
 typedef uint32_t BatchOffset;
-typedef uint16_t ClassId;
-typedef uint16_t MethodId;
+typedef uint8_t ClassId;
+typedef uint8_t MethodId;
 typedef uint16_t ReplyCode;
 
 // Types represented by classes.

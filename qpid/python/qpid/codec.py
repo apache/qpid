@@ -346,23 +346,22 @@ class Codec:
     return self.decode_long()
 
   def encode_rfc1982_long_set(self, s):
-    self.encode_short(len(s))
+    self.encode_short(len(s) * 4)
     for i in s:
       self.encode_long(i)
 
   def decode_rfc1982_long_set(self):
-    count = self.decode_short()
+    count = self.decode_short() / 4
     set = []
     for i in range(0, count):
       set.append(self.decode_long())
     return set;
 
-  #not correct for 0-10 yet
   def encode_uuid(self, s):
-    self.encode_longstr(s)
+    self.pack("16s", s)
 
   def decode_uuid(self):
-    return self.decode_longstr()
+    return self.unpack("16s")
 
   def encode_struct(self, type, s):
     for f in type.fields:

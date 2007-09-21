@@ -322,6 +322,6 @@ class MiscellaneousErrorsTests(TestBase):
         #cleanup    
         other = self.connect()
         c2 = other.channel(1)
-        c2.channel_open()
+        c2.session_open()
         c2.exchange_delete(exchange="test_different_declared_type_exchange")
     

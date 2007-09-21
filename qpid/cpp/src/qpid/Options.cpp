@@ -98,7 +98,7 @@ CommonOptions::CommonOptions(const string& name) : Options(name) {
     addOptions()
         ("help,h", optValue(help), "Print help message.")
         ("version,v", optValue(version), "Print version information.")
-        ("config", optValue(config, "FILE"), "Configuation file.");
+        ("config", optValue(config, "FILE"), "Configuration file.");
 }
 
 } // namespace qpid
