@@ -28,7 +28,6 @@
 #include "Session.h"
 #include "qpid/framing/ExecutionCompleteBody.h"
 #include "qpid/framing/ExecutionResultBody.h"
-#include "qpid/framing/ChannelOpenBody.h"
 #include "qpid/framing/InvocationVisitor.h"
 
 #include <boost/format.hpp>

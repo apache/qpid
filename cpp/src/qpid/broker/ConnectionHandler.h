@@ -37,7 +37,7 @@ namespace broker {
 class Connection;
 
 // TODO aconway 2007-09-18: Rename to ConnectionHandler
-class ConnectionAdapter : public framing::FrameHandler, public framing::AMQP_ServerOperations
+class ConnectionHandler : public framing::FrameHandler
 {
     struct Handler : public framing::AMQP_ServerOperations::ConnectionHandler
     {
@@ -58,29 +58,10 @@ class ConnectionAdapter : public framing::FrameHandler, public framing::AMQP_Ser
     };
     std::auto_ptr<Handler> handler;
   public:
-    ConnectionAdapter(Connection& connection);
+    ConnectionHandler(Connection& connection);
     void init(const framing::ProtocolInitiation& header);
     void close(framing::ReplyCode code, const std::string& text, framing::ClassId classId, framing::MethodId methodId);
     void handle(framing::AMQFrame& frame);
-
-    //AMQP_ServerOperations:
-    ConnectionHandler* getConnectionHandler();
-    ChannelHandler* getChannelHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    BasicHandler* getBasicHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    ExchangeHandler* getExchangeHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    BindingHandler* getBindingHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    QueueHandler* getQueueHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    TxHandler* getTxHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    MessageHandler* getMessageHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    AccessHandler* getAccessHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    FileHandler* getFileHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    StreamHandler* getStreamHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    TunnelHandler* getTunnelHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    DtxCoordinationHandler* getDtxCoordinationHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    DtxDemarcationHandler* getDtxDemarcationHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    ExecutionHandler* getExecutionHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    SessionHandler* getSessionHandler() { throw ConnectionException(503, "Class can't be accessed over channel 0"); }
-    framing::ProtocolVersion getVersion() const;
 };
 
 

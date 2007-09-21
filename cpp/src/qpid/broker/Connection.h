@@ -36,7 +36,7 @@
 #include "Broker.h"
 #include "qpid/Exception.h"
 #include "Session.h"
-#include "ConnectionAdapter.h"
+#include "ConnectionHandler.h"
 #include "SessionHandler.h"
 
 #include <boost/optional.hpp>
@@ -95,7 +95,7 @@ class Connection : public sys::ConnectionInputHandler,
     uint16_t heartbeat;
     framing::AMQP_ClientProxy::Connection* client;
     uint64_t stagingThreshold;
-    ConnectionAdapter adapter;
+    ConnectionHandler adapter;
 };
 
 }}

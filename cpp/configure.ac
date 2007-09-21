@@ -120,7 +120,7 @@ test -n "$RUBY" && generate=yes
 test -z "$RUBY" && AC_MSG_ERROR([Missing ruby installation (try "yum install ruby").])
 
 specdir=`pwd`/$srcdir/../specs  
-AMQP_XML=$specdir/amqp-transitional.0-10.xml
+AMQP_XML=$specdir/amqp.0-10-preview.xml
 AC_SUBST(AMQP_XML)
 ls $AMQP_XML >/dev/null 2>&1 || generate=no
 
