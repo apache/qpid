@@ -1967,7 +1967,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             else
             {
-                con.close();
+                con.close(false);
             }
         }
         // at this point the _consumers map will be empty
