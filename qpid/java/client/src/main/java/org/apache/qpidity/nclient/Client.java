@@ -51,11 +51,16 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
             @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
             {
-                _exceptionListner.onException(
-                        new QpidException("Server closed the connection: Reason " +
-                                           connectionClose.getReplyText(),
-                                           ErrorCode.get(connectionClose.getReplyCode()),
-                                           null));
+                // XXX: replaced reference to _exceptionListner with
+                // throw new RuntimeException because
+                // _exceptionListner may be null. In general this
+                // needs to be reworked because not every connection
+                // close is an exception!
+                throw new RuntimeException
+                    (new QpidException("Server closed the connection: Reason " +
+                                       connectionClose.getReplyText(),
+                                       ErrorCode.get(connectionClose.getReplyCode()),
+                                       null));
             }
         };
 
@@ -102,7 +107,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
     {
         Channel ch = _conn.getChannel(0);
         ch.connectionClose(0, "client is closing", 0, 0);
-        //need to close the connection underneath as well
+        _conn.close();
     }
 
     public Session createSession(long expiryInSeconds)
