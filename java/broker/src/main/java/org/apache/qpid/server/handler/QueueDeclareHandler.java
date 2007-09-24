@@ -22,6 +22,7 @@ package org.apache.qpid.server.handler;
 
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
@@ -158,12 +159,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
     protected AMQShortString createName()
     {
-        return new AMQShortString("tmp_" + pad(_counter.incrementAndGet()));
-    }
-
-    protected static String pad(int value)
-    {
-        return MessageFormat.format("{0,number,0000000000000}", value);
+        return new AMQShortString("tmp_" + UUID.randomUUID());
     }
 
     protected AMQQueue createQueue(QueueDeclareBody body, VirtualHost virtualHost, final AMQProtocolSession session)

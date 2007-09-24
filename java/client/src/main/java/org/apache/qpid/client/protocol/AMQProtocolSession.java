@@ -53,6 +53,7 @@ import javax.security.sasl.SaslClient;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.UUID;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes. <p/> The underlying protocol
@@ -411,14 +412,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     protected AMQShortString generateQueueName()
     {
         int id;
-        synchronized (_queueIdLock)
-        {
-            id = _queueId++;
-        }
-        // get rid of / and : and ; from address for spec conformance
-        String localAddress = StringUtils.replaceChars(_minaProtocolSession.getLocalAddress().toString(), "/;:", "");
 
-        return new AMQShortString("tmp_" + localAddress + "_" + id);
+        return new AMQShortString("tmp_" + UUID.randomUUID());
     }
 
     /** @param delay delay in seconds (not ms) */
