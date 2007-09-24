@@ -320,6 +320,7 @@ nobase_include_HEADERS = \
   qpid/framing/AMQHeaderBody.h \
   qpid/framing/AMQHeartbeatBody.h \
   qpid/framing/AMQMethodBody.h \
+  qpid/framing/AMQP_HighestVersion.h \
   qpid/framing/AccumulatedAck.h \
   qpid/framing/BasicHeaderProperties.h \
   qpid/framing/Blob.h \
