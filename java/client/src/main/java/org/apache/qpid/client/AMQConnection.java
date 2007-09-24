@@ -70,11 +70,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -91,6 +87,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * held by any child objects of this connection such as the session, producers and consumers.
      */
     private final Object _failoverMutex = new Object();
+
+    private final Object _sessionCreationLock = new Object();
 
     /**
      * A channel is roughly analogous to a session. The server can negotiate the maximum number of channels per session
@@ -509,6 +507,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
                                                      final int prefetchHigh, final int prefetchLow) throws JMSException
     {
+        synchronized(_sessionCreationLock)
+        {
         checkNotClosed();
 
         if (channelLimitReached())
@@ -572,6 +572,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                         return session;
                     }
                 }, this).execute();
+        }
     }
 
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
@@ -760,44 +761,63 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close(long timeout) throws JMSException
     {
-        synchronized (getFailoverMutex())
+        close(new ArrayList<AMQSession>(_sessions.values()),timeout);
+    }
+
+    public void close(List<AMQSession> sessions, long timeout) throws JMSException
+    {
+        synchronized(_sessionCreationLock)
         {
-            if (!_closed.getAndSet(true))
+            if(!sessions.isEmpty())
             {
-                try
+                AMQSession session = sessions.remove(0);
+                synchronized(session.getMessageDeliveryLock())
                 {
-                    long startCloseTime = System.currentTimeMillis();
-
-                    _taskPool.shutdown();
-                    closeAllSessions(null, timeout, startCloseTime);
-
-                    if (!_taskPool.isTerminated())
+                    close(sessions, timeout);
+                }
+            }
+            else
+            {
+            synchronized (getFailoverMutex())
+            {
+                if (!_closed.getAndSet(true))
+                {
+                    try
                     {
-                        try
-                        {
-                            // adjust timeout
-                            long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
+                        long startCloseTime = System.currentTimeMillis();
 
-                            _taskPool.awaitTermination(taskPoolTimeout, TimeUnit.MILLISECONDS);
-                        }
-                        catch (InterruptedException e)
+                        _taskPool.shutdown();
+                        closeAllSessions(null, timeout, startCloseTime);
+
+                        if (!_taskPool.isTerminated())
                         {
-                            _logger.info("Interrupted while shutting down connection thread pool.");
+                            try
+                            {
+                                // adjust timeout
+                                long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
+
+                                _taskPool.awaitTermination(taskPoolTimeout, TimeUnit.MILLISECONDS);
+                            }
+                            catch (InterruptedException e)
+                            {
+                                _logger.info("Interrupted while shutting down connection thread pool.");
+                            }
                         }
+
+                        // adjust timeout
+                        timeout = adjustTimeout(timeout, startCloseTime);
+
+                        _protocolHandler.closeConnection(timeout);
+
                     }
-
-                    // adjust timeout
-                    timeout = adjustTimeout(timeout, startCloseTime);
-
-                    _protocolHandler.closeConnection(timeout);
-
+                    catch (AMQException e)
+                    {
+                        JMSException jmse = new JMSException("Error closing connection: " + e);
+                        jmse.setLinkedException(e);
+                        throw jmse;
+                    }
                 }
-                catch (AMQException e)
-                {
-                    JMSException jmse = new JMSException("Error closing connection: " + e);
-                    jmse.setLinkedException(e);
-                    throw jmse;
-                }
+            }
             }
         }
     }

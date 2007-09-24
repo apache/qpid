@@ -106,6 +106,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -519,7 +520,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         synchronized (_messageDeliveryLock)
         {
-
             // We must close down all producers and consumers in an orderly fashion. This is the only method
             // that can be called from a different thread of control from the one controlling the session.
             synchronized (_connection.getFailoverMutex())
@@ -666,11 +666,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                 else
                 {
                     _logger.info("Dispatcher is null so created stopped dispatcher");
-
                     startDistpatcherIfNecessary(true);
                 }
 
-                _dispatcher.rejectPending(consumer);
+                _dispatcher.rejectPending(consumer);                
             }
             else
             {
@@ -1954,11 +1953,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private void closeConsumers(Throwable error) throws JMSException
     {
-        if (_dispatcher != null)
-        {
-            _dispatcher.close();
-            _dispatcher = null;
-        }
         // we need to clone the list of consumers since the close() method updates the _consumers collection
         // which would result in a concurrent modification exception
         final ArrayList<BasicMessageConsumer> clonedConsumers = new ArrayList<BasicMessageConsumer>(_consumers.values());
@@ -1973,10 +1967,15 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             }
             else
             {
-                con.close();
+                con.close(false);
             }
         }
         // at this point the _consumers map will be empty
+        if (_dispatcher != null)
+        {
+            _dispatcher.close();
+            _dispatcher = null;
+        }
     }
 
     /**
@@ -2557,12 +2556,17 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         }
     }
 
+    Object getMessageDeliveryLock()
+    {
+        return _messageDeliveryLock;
+    }
+
     /** Responsible for decoding a message fragment and passing it to the appropriate message consumer. */
     private class Dispatcher extends Thread
     {
 
         /** Track the 'stopped' state of the dispatcher, a session starts in the stopped state. */
-        private final AtomicBoolean _closed = new AtomicBoolean(false);
+        private final AtomicBoolean _dispatcherClosed = new AtomicBoolean(false);
 
         private final Object _lock = new Object();
         private final AtomicLong _rollbackMark = new AtomicLong(-1);
@@ -2578,7 +2582,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
         public void close()
         {
-            _closed.set(true);
+            _dispatcherClosed.set(true);
             interrupt();
 
             // fixme awaitTermination
@@ -2673,30 +2677,33 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
             try
             {
-                while (!_closed.get() && ((message = (UnprocessedMessage) _queue.take()) != null))
+                while (!_dispatcherClosed.get())
                 {
-                    synchronized (_lock)
+                    message = (UnprocessedMessage) _queue.poll(1000, TimeUnit.MILLISECONDS);
+                    if (message != null)
                     {
+                        synchronized (_lock)
+                        {
 
-                        while (connectionStopped())
-                        {
-                            _lock.wait(2000);
-                        }
-
-                        if (message.getDeliverBody().deliveryTag <= _rollbackMark.get())
-                        {
-                            rejectMessage(message, true);
-                        }
-                        else
-                        {
-                            synchronized (_messageDeliveryLock)
+                            while (connectionStopped())
                             {
-                                dispatchMessage(message);
+                                _lock.wait(2000);
                             }
+
+                            if (message.getDeliverBody().deliveryTag <= _rollbackMark.get())
+                            {
+                                rejectMessage(message, true);
+                            }
+                            else
+                            {
+                                synchronized (_messageDeliveryLock)
+                                {
+                                    dispatchMessage(message);
+                                }
+                            }
+
                         }
-
                     }
-
                 }
             }
             catch (InterruptedException e)
@@ -2760,7 +2767,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                         }
                     }
                     // Don't reject if we're already closing
-                    if (!_closed.get())
+                    if (!_dispatcherClosed.get())
                     {
                         rejectMessage(message, true);
                     }
