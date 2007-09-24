@@ -231,6 +231,12 @@
     </doc>
   </constant>
 
+  <constant name="session-busy" value="407" class="soft-error">
+    <doc>
+      A session.resume was attempted for a session already attached to another channel.
+    </doc>
+  </constant>
+
   <constant name="frame-error" value="501" class="hard-error">
     <doc>
       The client sent a malformed frame that the server could not decode. This strongly implies a
@@ -291,6 +297,12 @@
   <constant name="invalid-argument" value="542" class="hard-error">
     <doc>
       An invalid or illegal argument was passed to a method, and the operation could not proceed.
+    </doc>
+  </constant>
+
+  <constant name="channel-busy" value="543" class="hard-error">
+    <doc>
+      A session.open was sent on a channel that was already attached to a session.
     </doc>
   </constant>
 

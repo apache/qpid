@@ -137,6 +137,9 @@ public:
         listener.messages.pop_front();
 
     }
+
+    void testSuspendResume() {
+    }
 };
 
 // Make this test suite a plugin.

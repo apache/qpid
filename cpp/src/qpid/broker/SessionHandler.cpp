@@ -35,7 +35,7 @@ SessionHandler::SessionHandler(Connection& c, ChannelId ch)
       connection(c), channel(ch), proxy(out),
       ignoring(false) {}
 
-SessionHandler::~SessionHandler() {}
+SessionHandler::~SessionHandler() { }
 
 namespace {
 ClassId classId(AMQMethodBody* m) { return m ? m->amqpMethodId() : 0; }
@@ -53,7 +53,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
     try {
         if (m && m->invoke(this))
             return;
-        else if (session)
+        else if (session.get())
             session->in(f);
         else if (!ignoring)
             throw ChannelErrorException(
@@ -76,7 +76,7 @@ void SessionHandler::handleOut(AMQFrame& f) {
 }
 
 void SessionHandler::assertOpen(const char* method) {
-    if (!session)
+     if (!session.get())
         throw ChannelErrorException(
             QPID_MSG(""<<method<<" failed: No session for channel "
                      << getChannel()));
@@ -85,7 +85,7 @@ void SessionHandler::assertOpen(const char* method) {
 void SessionHandler::assertClosed(const char* method) {
     // FIXME aconway 2007-08-31: Should raise channel-busy, need
     // to update spec.
-    if (session)
+    if (session.get())
         throw PreconditionFailedException(
             QPID_MSG(""<<method<<" failed: "
                      << channel << " already open on channel "
@@ -94,7 +94,9 @@ void SessionHandler::assertClosed(const char* method) {
 
 void  SessionHandler::open(uint32_t detachedLifetime) {
     assertClosed("open");
-    session.reset(new SessionState(*this, detachedLifetime));
+    std::auto_ptr<SessionState> state(
+        connection.broker.getSessionManager().open(*this, detachedLifetime));
+    session.reset(state.release());
     getProxy().getSession().attached(session->getId(), session->getTimeout());
 }
 
