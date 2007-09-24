@@ -20,6 +20,7 @@
  */
 package org.apache.qpidity.codec;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,6 +37,8 @@ import org.apache.qpidity.transport.Struct;
 public interface Encoder
 {
 
+    void flush();
+
     void writeBit(boolean b);
     void writeOctet(short b);
     void writeShort(int s);
@@ -47,14 +50,15 @@ public interface Encoder
     void writeShortstr(String s);
     void writeLongstr(String s);
 
-    void writeTable(Map<String,?> table);
     void writeRfc1982LongSet(RangeSet ranges);
     void writeUuid(UUID uuid);
 
     void writeContent(String c);
 
-    void flush();
-
     void writeLongStruct(Struct s);
+
+    void writeTable(Map<String,Object> table);
+    void writeSequence(List<Object> sequence);
+    void writeArray(List<Object> array);
 
 }

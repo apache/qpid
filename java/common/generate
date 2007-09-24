@@ -21,6 +21,7 @@ class Output:
 
     self.line("package %s;" % self.package)
     self.line()
+    self.line("import java.util.List;")
     self.line("import java.util.Map;")
     self.line("import java.util.UUID;")
     self.line()
@@ -54,12 +55,55 @@ TYPES = {
   "short": "int",
   "octet": "short",
   "bit": "boolean",
-  "table": "Map<String,?>",
+  "table": "Map<String,Object>",
   "timestamp": "long",
   "content": "String",
   "uuid": "UUID",
   "rfc1982-long-set": "RangeSet",
-  "long-struct": "Struct"
+  "long-struct": "Struct",
+  "signed-byte": "byte",
+  "unsigned-byte": "short",
+  "char": "char",
+  "boolean": "boolean",
+  "two-octets": "short",
+  "signed-short": "short",
+  "unsigned-short": "int",
+  "four-octets": "int",
+  "signed-int": "int",
+  "unsigned-int": "long",
+  "float": "float",
+  "utf32-char": "char",
+  "eight-octets": "long",
+  "signed-long": "long",
+  "unsigned-long": "long",
+  "double": "double",
+  "datetime": "long",
+  "sixteen-octets": "byte[]",
+  "thirty-two-octets": "byte[]",
+  "sixty-four-octets": "byte[]",
+  "_128-octets": "byte[]",
+  "short-binary": "byte[]",
+  "short-string": "String",
+  "short-utf8-string": "String",
+  "short-utf16-string": "String",
+  "short-utf32-string": "String",
+  "binary": "byte[]",
+  "string": "String",
+  "utf8-string": "String",
+  "utf16-string": "String",
+  "utf32-string": "String",
+  "long-binary": "byte[]",
+  "long-string": "String",
+  "long-utf8-string": "String",
+  "long-utf16-string": "String",
+  "long-utf32-string": "String",
+  "sequence": "List<Object>",
+  "array": "List<Object>",
+  "five-octets": "byte[]",
+  "decimal": "byte[]",
+  "nine-octets": "byte[]",
+  "long-decimal": "byte[]",
+  "void": "Void"
   }
 
 TRACKS = {
@@ -80,6 +124,54 @@ def dromedary(s):
 
 def scream(*args):
   return "_".join([a.replace("-", "_").upper() for a in args])
+
+
+types = Output(out_dir, out_pkg, "Type")
+types.line("public enum Type")
+types.line("{")
+codes = {}
+for c in spec.query["amqp/constant"]:
+  if c["@class"] == "field-table-type":
+    name = c["@name"]
+    if name.startswith("field-table-"):
+      name = name[12:]
+    if name[0].isdigit():
+      name = "_" + name
+    val = c["@value"]
+    codes[val] = name
+    if c["@width"] != None:
+      width = c["@width"]
+      fixed = "true"
+    if c["@lfwidth"] != None:
+      width = c["@lfwidth"]
+      fixed = "false"
+    types.line("    %s((byte) %s, %s, %s)," %
+               (scream(name), val, width, fixed))
+types.line("    ;")
+
+types.line("    public byte code;")
+types.line("    public int width;")
+types.line("    public boolean fixed;")
+
+types.line("    Type(byte code, int width, boolean fixed)")
+types.line("    {")
+for arg in ("code", "width", "fixed"):
+  types.line("        this.%s = %s;" % (arg, arg))
+types.line("    }")
+
+types.line("    public static Type get(byte code)")
+types.line("    {")
+types.line("        switch (code)")
+types.line("        {")
+for code, name in codes.items():
+  types.line("        case (byte) %s: return %s;" % (code, scream(name)))
+types.line("        default: return null;")
+types.line("        }")
+types.line("    }")
+
+types.line("}")
+types.write()
+
 
 const = Output(out_dir, out_pkg, "Constant")
 const.line("public interface Constant")

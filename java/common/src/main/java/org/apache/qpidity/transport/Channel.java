@@ -106,7 +106,7 @@ public class Channel extends Invoker
 
     public void error(Void v, ProtocolError error)
     {
-        error.delegate(session, sessionDelegate);
+        throw new RuntimeException(error.getMessage());
     }
 
     public void closed()

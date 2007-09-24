@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity;
 
+import java.util.*;
+
 import org.apache.qpidity.transport.*;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
 
@@ -78,9 +80,32 @@ class ToyClient extends SessionDelegate
         ssn.queueDeclare("asdf", null, null);
         ssn.sync();
 
+        Map<String,Object> nested = new LinkedHashMap<String,Object>();
+        nested.put("list", Arrays.asList("one", "two", "three"));
+        Map<String,Object> map = new LinkedHashMap<String,Object>();
+
+        map.put("str", "this is a string");
+
+        map.put("+int", 3);
+        map.put("-int", -3);
+        map.put("maxint", Integer.MAX_VALUE);
+        map.put("minint", Integer.MIN_VALUE);
+
+        map.put("+short", (short) 1);
+        map.put("-short", (short) -1);
+        map.put("maxshort", (short) Short.MAX_VALUE);
+        map.put("minshort", (short) Short.MIN_VALUE);
+
+        map.put("float", (float) 3.3);
+        map.put("double", 4.9);
+        map.put("char", 'c');
+
+        map.put("table", nested);
+        map.put("list", Arrays.asList(1, 2, 3));
+
         ssn.messageTransfer("asdf", (short) 0, (short) 1);
         ssn.header(new DeliveryProperties(),
-                   new MessageProperties());
+                   new MessageProperties().setApplicationHeaders(map));
         ssn.data("this is the data");
         ssn.endData();
 

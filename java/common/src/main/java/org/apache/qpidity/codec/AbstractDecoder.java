@@ -20,11 +20,15 @@
  */
 package org.apache.qpidity.codec;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.transport.Struct;
+import org.apache.qpidity.transport.Type;
 
 import static org.apache.qpidity.transport.util.Functions.*;
 
@@ -40,20 +44,37 @@ abstract class AbstractDecoder implements Decoder
 
     private final byte major;
     private final byte minor;
+    private int count;
 
     protected AbstractDecoder(byte major, byte minor)
     {
         this.major = major;
         this.minor = minor;
+        this.count = 0;
     }
 
-    protected abstract byte get();
+    protected abstract byte doGet();
 
-    protected abstract void get(byte[] bytes);
+    protected abstract void doGet(byte[] bytes);
+
+    protected byte get()
+    {
+        clearBits();
+        byte b = doGet();
+        count += 1;
+        return b;
+    }
+
+    protected void get(byte[] bytes)
+    {
+        clearBits();
+        doGet(bytes);
+        count += bytes.length;
+    }
 
     protected short uget()
     {
-        return unsigned(get());
+        return (short) (0xFF & get());
     }
 
     private byte bits = 0x0;
@@ -81,13 +102,11 @@ abstract class AbstractDecoder implements Decoder
 
     public short readOctet()
     {
-        clearBits();
         return uget();
     }
 
     public int readShort()
     {
-        clearBits();
         int i = uget() << 8;
         i |= uget();
         return i;
@@ -95,7 +114,6 @@ abstract class AbstractDecoder implements Decoder
 
     public long readLong()
     {
-        clearBits();
         long l = uget() << 24;
         l |= uget() << 16;
         l |= uget() << 8;
@@ -105,15 +123,11 @@ abstract class AbstractDecoder implements Decoder
 
     public long readLonglong()
     {
-        clearBits();
-        long l = uget() << 56;
-        l |= uget() << 48;
-        l |= uget() << 40;
-        l |= uget() << 32;
-        l |= uget() << 24;
-        l |= uget() << 16;
-        l |= uget() << 8;
-        l |= uget();
+        long l = 0;
+        for (int i = 0; i < 8; i++)
+        {
+            l |= ((long) (0xFF & get())) << (56 - i*8);
+        }
         return l;
     }
 
@@ -134,16 +148,9 @@ abstract class AbstractDecoder implements Decoder
     public String readLongstr()
     {
         long size = readLong();
-        assert size <= Integer.MAX_VALUE;
         byte[] bytes = new byte[(int) size];
         get(bytes);
         return new String(bytes);
-    }
-
-    public Map<String,?> readTable()
-    {
-        //throw new Error("TODO");
-        return null;
     }
 
     public RangeSet readRfc1982LongSet()
@@ -189,6 +196,175 @@ abstract class AbstractDecoder implements Decoder
             Struct result = Struct.create(type);
             result.read(this, major, minor);
             return result;
+        }
+    }
+
+    public Map<String,Object> readTable()
+    {
+        long size = readLong();
+        int start = count;
+        Map<String,Object> result = new LinkedHashMap();
+        while (count < start + size)
+        {
+            String key = readShortstr();
+            byte code = get();
+            Type t = Type.get(code);
+            Object value = read(t);
+            result.put(key, value);
+        }
+        return result;
+    }
+
+    public List<Object> readSequence()
+    {
+        long size = readLong();
+        int start = count;
+        List<Object> result = new ArrayList();
+        while (count < start + size)
+        {
+            byte code = get();
+            Type t = Type.get(code);
+            Object value = read(t);
+            result.add(value);
+        }
+        return result;
+    }
+
+    public List<Object> readArray()
+    {
+        long size = readLong();
+        byte code = get();
+        Type t = Type.get(code);
+        long count = readLong();
+
+        List<Object> result = new ArrayList<Object>();
+        for (int i = 0; i < count; i++)
+        {
+            Object value = read(t);
+            result.add(value);
+        }
+        return result;
+    }
+
+    private long readSize(Type t)
+    {
+        if (t.fixed)
+        {
+            return t.width;
+        }
+        else
+        {
+            switch (t.width)
+            {
+            case 1:
+                return readOctet();
+            case 2:
+                return readShort();
+            case 4:
+                return readLong();
+            default:
+                throw new IllegalStateException("irregular width: " + t);
+            }
+        }
+    }
+
+    private byte[] readBytes(Type t)
+    {
+        long size = readSize(t);
+        byte[] result = new byte[(int) size];
+        get(result);
+        return result;
+    }
+
+    private Object read(Type t)
+    {
+        switch (t)
+        {
+        case OCTET:
+        case UNSIGNED_BYTE:
+            return readOctet();
+        case SIGNED_BYTE:
+            return get();
+        case CHAR:
+            return (char) get();
+        case BOOLEAN:
+            return get() > 0;
+
+        case TWO_OCTETS:
+        case UNSIGNED_SHORT:
+            return readShort();
+
+        case SIGNED_SHORT:
+            return (short) readShort();
+
+        case FOUR_OCTETS:
+        case UNSIGNED_INT:
+            return readLong();
+
+        case UTF32_CHAR:
+        case SIGNED_INT:
+            return (int) readLong();
+
+        case FLOAT:
+            return Float.intBitsToFloat((int) readLong());
+
+        case EIGHT_OCTETS:
+        case SIGNED_LONG:
+        case UNSIGNED_LONG:
+        case DATETIME:
+            return readLonglong();
+
+        case DOUBLE:
+            long bits = readLonglong();
+            System.out.println("double in: " + bits);
+            return Double.longBitsToDouble(bits);
+
+        case SIXTEEN_OCTETS:
+        case THIRTY_TWO_OCTETS:
+        case SIXTY_FOUR_OCTETS:
+        case _128_OCTETS:
+        case SHORT_BINARY:
+        case BINARY:
+        case LONG_BINARY:
+            return readBytes(t);
+
+        case UUID:
+            return readUuid();
+
+        case SHORT_STRING:
+        case SHORT_UTF8_STRING:
+        case SHORT_UTF16_STRING:
+        case SHORT_UTF32_STRING:
+        case STRING:
+        case UTF8_STRING:
+        case UTF16_STRING:
+        case UTF32_STRING:
+        case LONG_STRING:
+        case LONG_UTF8_STRING:
+        case LONG_UTF16_STRING:
+        case LONG_UTF32_STRING:
+            // XXX: need to do character conversion
+            return new String(readBytes(t));
+
+        case TABLE:
+            return readTable();
+        case SEQUENCE:
+            return readSequence();
+        case ARRAY:
+            return readArray();
+
+        case FIVE_OCTETS:
+        case DECIMAL:
+        case NINE_OCTETS:
+        case LONG_DECIMAL:
+            // XXX: what types are we supposed to use here?
+            return readBytes(t);
+
+        case VOID:
+            return null;
+
+        default:
+            return readBytes(t);
         }
     }
 

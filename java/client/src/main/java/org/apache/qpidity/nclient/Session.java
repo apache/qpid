@@ -260,7 +260,7 @@ public interface Session
      *                    on the providers implementation.
      */
     public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode,
-                                 MessagePartListener listener, Map<String, ?> filter, Option... options);
+                                 MessagePartListener listener, Map<String, Object> filter, Option... options);
 
     /**
      * This method cancels a consumer. This does not affect already delivered messages, but it does
@@ -481,7 +481,7 @@ public interface Session
      *                          {@link Option#EXCLUSIVE}, {@link Option#PASSIVE} and  {@link Option#NO_OPTION})
      * @see Option
      */
-    public void queueDeclare(String queueName, String alternateExchange, Map<String, ?> arguments, Option... options);
+    public void queueDeclare(String queueName, String alternateExchange, Map<String, Object> arguments, Option... options);
 
     /**
      * Bind a queue with an exchange.
@@ -498,7 +498,7 @@ public interface Session
      *                     routing keys depends on the exchange implementation.
      * @param arguments    Used for backward compatibility
      */
-    public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments);
+    public void queueBind(String queueName, String exchangeName, String routingKey, Map<String, Object> arguments);
 
     /**
      * Unbind a queue from an exchange.
@@ -508,7 +508,7 @@ public interface Session
      * @param routingKey   Specifies the routing key of the binding to unbind.
      * @param arguments    Used for backward compatibility
      */
-    public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, ?> arguments);
+    public void queueUnbind(String queueName, String exchangeName, String routingKey, Map<String, Object> arguments);
 
     /**
      * This method removes all messages from a queue. It does not cancel consumers. Purged messages
@@ -573,7 +573,7 @@ public interface Session
      * @param arguments         Used for backward compatibility
      * @see Option
      */
-    public void exchangeDeclare(String exchangeName, String type, String alternateExchange, Map<String, ?> arguments,
+    public void exchangeDeclare(String exchangeName, String type, String alternateExchange, Map<String, Object> arguments,
                                 Option... options);
 
     /**

@@ -27,6 +27,8 @@ import org.apache.qpidity.transport.ProtocolError;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.Receiver;
 
+import static org.apache.qpidity.transport.util.Functions.*;
+
 import static org.apache.qpidity.transport.network.InputHandler.State.*;
 
 
@@ -147,12 +149,20 @@ public class InputHandler implements Receiver<ByteBuffer>
             type = buf.get();
             return FRAME_HDR_SIZE1;
         case FRAME_HDR_SIZE1:
-            size = buf.get() << 8;
+            size = (0xFF & buf.get()) << 8;
             return FRAME_HDR_SIZE2;
         case FRAME_HDR_SIZE2:
-            size += buf.get();
+            size += 0xFF & buf.get();
             size -= 12;
-            return FRAME_HDR_RSVD1;
+            if (size < 0 || size > (64*1024 - 12))
+            {
+                error("bad frame size: %d", size);
+                return ERROR;
+            }
+            else
+            {
+                return FRAME_HDR_RSVD1;
+            }
         case FRAME_HDR_RSVD1:
             return expect(buf, 0, FRAME_HDR_TRACK);
         case FRAME_HDR_TRACK:
@@ -166,10 +176,10 @@ public class InputHandler implements Receiver<ByteBuffer>
                 return FRAME_HDR_CH1;
             }
         case FRAME_HDR_CH1:
-            channel = buf.get() << 8;
+            channel = (0xFF & buf.get()) << 8;
             return FRAME_HDR_CH2;
         case FRAME_HDR_CH2:
-            channel += buf.get();
+            channel += 0xFF & buf.get();
             return FRAME_HDR_RSVD2;
         case FRAME_HDR_RSVD2:
             return expect(buf, 0, FRAME_HDR_RSVD3);
