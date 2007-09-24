@@ -52,7 +52,7 @@ public class JythonMojo extends AbstractMojo
      *
      * @parameter
      */
-    private File source;
+    private File[] sources;
 
     /**
      * Optional timestamp.
@@ -63,27 +63,37 @@ public class JythonMojo extends AbstractMojo
 
     public void execute() throws MojoExecutionException
     {
-        if (source != null && timestamp != null)
+        boolean stale = true;
+
+        if (sources != null && sources.length > 0 && timestamp != null)
         {
-            if (timestamp.lastModified() > source.lastModified())
+            stale = false;
+            for (File source : sources)
             {
-                return;
+                if (source.lastModified() > timestamp.lastModified())
+                {
+                    stale = true;
+                    break;
+                }
             }
         }
 
-        jython.main(params);
-
-        if (timestamp != null)
+        if (stale)
         {
-            try
+            jython.main(params);
+
+            if (timestamp != null)
             {
-                timestamp.createNewFile();
+                try
+                {
+                    timestamp.createNewFile();
+                }
+                catch (IOException e)
+                {
+                    throw new MojoExecutionException("cannot create timestamp", e);
+                }
+                timestamp.setLastModified(System.currentTimeMillis());
             }
-            catch (IOException e)
-            {
-                throw new MojoExecutionException("cannot create timestamp", e);
-            }
-            timestamp.setLastModified(System.currentTimeMillis());
         }
     }
 
