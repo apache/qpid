@@ -57,6 +57,7 @@ abstract class AbstractEncoder implements Encoder
         ENCODINGS.put(Float.class, Type.FLOAT);
         ENCODINGS.put(Double.class, Type.DOUBLE);
         ENCODINGS.put(Character.class, Type.CHAR);
+        ENCODINGS.put(byte[].class, Type.LONG_BINARY);
     }
 
     private final byte major;
