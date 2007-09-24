@@ -117,7 +117,7 @@ public abstract class ConnectionDelegate extends MethodDelegate<Channel>
           //  need error handling
         }
 
-        Map<String,?> props = new HashMap<String,String>();
+        Map<String,Object> props = new HashMap<String,Object>();
         context.connectionStartOk(props, mechanism, response, _locale);
     }
 

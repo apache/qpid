@@ -87,7 +87,7 @@ public class FragmentDecoder extends AbstractDecoder
         }
     }
 
-    @Override protected byte get()
+    protected byte doGet()
     {
         preRead();
         byte b = current.get();
@@ -95,7 +95,7 @@ public class FragmentDecoder extends AbstractDecoder
         return b;
     }
 
-    @Override protected void get(byte[] bytes)
+    protected void doGet(byte[] bytes)
     {
         int remaining = bytes.length;
         while (remaining > 0)
