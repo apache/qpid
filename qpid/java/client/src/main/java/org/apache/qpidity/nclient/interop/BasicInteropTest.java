@@ -25,6 +25,11 @@ public class BasicInteropTest implements ExceptionListener
         this.host = host;
     }
 
+    public void close() throws QpidException
+    {
+        conn.close();
+    }
+
     public void testCreateConnection(){
         System.out.println("------- Creating connection--------");
         conn = Client.createConnection();
@@ -46,7 +51,7 @@ public class BasicInteropTest implements ExceptionListener
 
     public void testExchange(){
         System.out.println("------- Creating an exchange --------");
-        session.exchangeDeclare("test", "amq.direct", "", null);
+        session.exchangeDeclare("test", "direct", "", null);
         session.sync();
         System.out.println("------- Exchange created --------");
     }
@@ -73,7 +78,8 @@ public class BasicInteropTest implements ExceptionListener
         System.out.println("------- Message sent --------");
     }
 
-    public void testSubscribe(){
+    public void testSubscribe()
+    {
         System.out.println("------- Sending a subscribe --------");
         session.messageSubscribe("testQueue", "myDest",
                                  Session.TRANSFER_CONFIRM_MODE_REQUIRED,
@@ -97,6 +103,13 @@ public class BasicInteropTest implements ExceptionListener
         session.messageFlowMode("myDest", Session.MESSAGE_FLOW_MODE_WINDOW);
         System.out.println("------- Setting Credit --------");
         session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+        session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_BYTE, -1);
+    }
+
+    public void testMessageFlush()
+    {
+        session.messageFlush("myDest");
+        session.sync();
     }
 
     public void onException(QpidException e)
@@ -107,7 +120,7 @@ public class BasicInteropTest implements ExceptionListener
         System.out.println("------- /Broker Notified an error --------");
     }
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws QpidException
     {
         String host = "0.0.0.0";
         if (args.length>0)
@@ -122,5 +135,7 @@ public class BasicInteropTest implements ExceptionListener
         t.testQueue();
         t.testSubscribe();
         t.testSendMessage();
+        t.testMessageFlush();
+        t.close();
     }
 }
