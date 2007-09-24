@@ -177,6 +177,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SemanticState.cpp \
   qpid/broker/SessionState.h \
   qpid/broker/SessionState.cpp \
+  qpid/broker/SessionManager.h \
+  qpid/broker/SessionManager.cpp \
   qpid/broker/SessionHandler.h \
   qpid/broker/SessionHandler.cpp \
   qpid/broker/SemanticHandler.cpp \

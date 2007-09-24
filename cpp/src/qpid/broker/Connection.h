@@ -38,7 +38,7 @@
 #include "ConnectionHandler.h"
 #include "SessionHandler.h"
 
-#include <boost/optional.hpp>
+#include <boost/ptr_container/ptr_map.hpp>
 
 namespace qpid {
 namespace broker {
@@ -82,9 +82,7 @@ class Connection : public sys::ConnectionInputHandler,
     void closeChannel(framing::ChannelId channel);
 
   private:
-
-    // Use boost::optional to allow default-constructed uninitialized entries in the map.
-    typedef std::map<framing::ChannelId, boost::optional<SessionHandler> >ChannelMap;
+    typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
 
     framing::ProtocolVersion version;

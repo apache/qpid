@@ -29,6 +29,7 @@
 #include "ExchangeRegistry.h"
 #include "MessageStore.h"
 #include "QueueRegistry.h"
+#include "SessionManager.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/Url.h"
@@ -103,6 +104,8 @@ class Broker : public sys::Runnable, public Plugin::Target
     uint64_t getStagingThreshold() { return stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
 
+    SessionManager& getSessionManager() { return sessionManager; }
+    
   private:
     sys::Acceptor& getAcceptor() const;
 
@@ -117,6 +120,7 @@ class Broker : public sys::Runnable, public Plugin::Target
     ConnectionFactory factory;
     DtxManager dtxManager;
     HandlerUpdaters handlerUpdaters;
+    SessionManager sessionManager;
 
     static MessageStore* createStore(const Options& config);
 };

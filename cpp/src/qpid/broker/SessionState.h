@@ -25,10 +25,13 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolVersion.h"
+#include "qpid/sys/Time.h"
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/noncopyable.hpp>
 
+#include <set>
+#include <vector>
 
 namespace qpid {
 
@@ -39,6 +42,7 @@ class AMQP_ClientProxy;
 namespace broker {
 
 class SessionHandler;
+class SessionManager;
 class Broker;
 class Connection;
 
@@ -59,9 +63,7 @@ class SessionState : public framing::FrameHandler::Chains,
                      private boost::noncopyable
 {
   public:
-    /** SessionState for a newly opened connection. */
-    SessionState(SessionHandler& h, uint32_t timeout_);
-
+    ~SessionState();
     bool isAttached() { return handler; }
 
     /** @pre isAttached() */
@@ -77,19 +79,21 @@ class SessionState : public framing::FrameHandler::Chains,
     uint32_t getTimeout() const { return timeout; }
     Broker& getBroker() { return broker; }
     framing::ProtocolVersion getVersion() const { return version; }
-    
 
   private:
-  friend class SessionHandler;  // Only SessionHandler can attach/detach
-    void detach() { handler=0; }
-    void attach(SessionHandler& h) { handler = &h; }
+    /** Only SessionManager can open sessions */
+    SessionState(SessionManager& f, SessionHandler& h, uint32_t timeout_);
 
+    SessionManager& factory;
     SessionHandler* handler;    
     framing::Uuid id;
     uint32_t timeout;
+    sys::AbsTime expiry;        // Used by SessionManager.
     Broker& broker;
     boost::ptr_vector<framing::FrameHandler> chain;
     framing::ProtocolVersion version;
+
+  friend class SessionManager;
 };
 
 }} // namespace qpid::broker

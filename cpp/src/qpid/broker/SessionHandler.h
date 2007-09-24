@@ -27,6 +27,8 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
 
+#include <boost/noncopyable.hpp>
+
 namespace qpid {
 namespace broker {
 
@@ -37,11 +39,10 @@ class SessionState;
  * A SessionHandler is associated with each active channel. It
  * receives incoming frames, handles session commands and manages the
  * association between the channel and a session.
- *
- * SessionHandlers can be stored in a map by value.
  */
 class SessionHandler : public framing::FrameHandler::InOutHandler,
-                       private framing::AMQP_ServerOperations::SessionHandler
+                       private framing::AMQP_ServerOperations::SessionHandler,
+                       private boost::noncopyable
 {
   public:
     SessionHandler(Connection&, framing::ChannelId);
@@ -84,8 +85,8 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     Connection& connection;
     const framing::ChannelId channel;
     framing::AMQP_ClientProxy proxy;
-    shared_ptr<SessionState> session;
     bool ignoring;
+    std::auto_ptr<SessionState> session;
 };
 
 }} // namespace qpid::broker
