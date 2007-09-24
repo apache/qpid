@@ -94,13 +94,12 @@ void Connection::closeChannel(uint16_t id) {
 }
 
 SessionHandler& Connection::getChannel(ChannelId id) {
-    boost::optional<SessionHandler>& ch = channels[id];
-    if (!ch) {
-        ch = boost::in_place(boost::ref(*this), id); 
+    ChannelMap::iterator i=channels.find(id);
+    if (i == channels.end()) {
+        i = channels.insert(id, new SessionHandler(*this, id)).first;
     }
-    return *ch;
+    return *i;
 }
-
 
 }}
 
