@@ -32,21 +32,6 @@ import java.nio.ByteBuffer;
 public class Functions
 {
 
-    public static final short unsigned(byte b)
-    {
-        return (short) ((0x100 + b) & 0xFF);
-    }
-
-    public static final int unsigned(short s)
-    {
-        return (0x10000 + s) & 0xFFFF;
-    }
-
-    public static final long unsigned(int i)
-    {
-        return (0x1000000000L + i) & 0xFFFFFFFFL;
-    }
-
     public static final byte lsb(int i)
     {
         return (byte) (0xFF & i);
@@ -65,13 +50,13 @@ public class Functions
     public static final String str(ByteBuffer buf, int limit)
     {
         StringBuilder str = new StringBuilder();
-        for (int i = 0; i < limit; i++)
+        for (int i = 0; i < buf.remaining(); i++)
         {
             if (i > 0 && i % 2 == 0)
             {
                 str.append(" ");
             }
-            str.append(String.format("%02x", buf.get(i)));
+            str.append(String.format("%02x", buf.get(buf.position() + i)));
         }
 
         return str.toString();

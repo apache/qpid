@@ -39,12 +39,12 @@ public class BBEncoder extends AbstractEncoder
         this.out = out;
     }
 
-    @Override protected void put(byte b)
+    protected void doPut(byte b)
     {
         out.put(b);
     }
 
-    @Override protected void put(ByteBuffer src)
+    protected void doPut(ByteBuffer src)
     {
         out.put(src);
     }

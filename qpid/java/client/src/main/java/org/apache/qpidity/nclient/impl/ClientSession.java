@@ -35,7 +35,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         }
     }
 
-    public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode, MessagePartListener listener, Map<String, ?> filter, Option... options)
+    public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode, MessagePartListener listener, Map<String, Object> filter, Option... options)
     {
         setMessageListener(destination,listener);
         super.messageSubscribe(queue, destination, confirmMode, acquireMode, filter, options);
