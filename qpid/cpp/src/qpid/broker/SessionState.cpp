@@ -19,18 +19,20 @@
  *
  */
 #include "SessionState.h"
+#include "SessionManager.h"
 #include "SessionHandler.h"
 #include "Connection.h"
 #include "Broker.h"
 #include "SemanticHandler.h"
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace broker {
 
 using namespace framing;
 
-SessionState::SessionState(SessionHandler& h, uint32_t timeout_) 
-    : handler(&h), id(true), timeout(timeout_),
+SessionState::SessionState(SessionManager& f, SessionHandler& h, uint32_t timeout_) 
+    : factory(f), handler(&h), id(true), timeout(timeout_),
       broker(h.getConnection().broker),
       version(h.getConnection().getVersion())
 {
@@ -45,6 +47,11 @@ SessionState::SessionState(SessionHandler& h, uint32_t timeout_)
     broker.update(handler->getChannel(), *this);       
 }
 
+SessionState::~SessionState() {
+    // Remove ID from active session list.
+    factory.active.erase(getId());
+}
+
 SessionHandler& SessionState::getHandler() {
     assert(isAttached());
     return *handler;
@@ -53,9 +60,7 @@ SessionHandler& SessionState::getHandler() {
 AMQP_ClientProxy& SessionState::getProxy() {
     return getHandler().getProxy();
 }
-    /** Convenience for: getHandler()->getConnection()
-     *@pre getHandler() != 0
-     */
+
 Connection& SessionState::getConnection() {
     return getHandler().getConnection();
 }

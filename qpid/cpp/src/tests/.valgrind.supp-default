@@ -42,4 +42,22 @@
    fun:pthread_create@GLIBC_2.0
    fun:_ZN4qpid3sys16AsynchIOAcceptor3runEPNS0_29ConnectionInputHandlerFactoryE
 }
+ 
+{
+   Bogus error appearing on Fedora 7.
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+   obj:/lib/ld-2.6.so
+}
 
+{
+   Bogus error appearing on Fedora 7.
+   Memcheck:Cond
+   fun:_dl_relocate_object
+   fun:dl_open_worker
+   fun:_dl_catch_error
+   fun:_dl_open
+}
