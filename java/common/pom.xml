@@ -90,7 +90,10 @@
                                 <param>org.apache.qpidity.transport</param>
                                 <param>${specs.dir}/amqp.0-10-preview.xml</param>
                             </params>
-                            <source>${specs.dir}/amqp.0-10-preview.xml</source>
+                            <sources>
+                              <source>${specs.dir}/amqp.0-10-preview.xml</source>
+                              <source>${basedir}/generate</source>
+                            </sources>
                             <timestamp>${generated.path}/generated.timestamp</timestamp>
                         </configuration>
                         <goals>
