@@ -165,7 +165,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         switch (type)
         {
         case Frame.METHOD:
-            int methodType = (int) dec.readLong();
+            int methodType = dec.readShort();
             Method method = Method.create(methodType);
             method.read(dec, major, minor);
             return method;
