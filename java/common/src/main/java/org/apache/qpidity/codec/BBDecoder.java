@@ -40,12 +40,12 @@ public class BBDecoder extends AbstractDecoder
         this.in = in;
     }
 
-    protected byte get()
+    protected byte doGet()
     {
         return in.get();
     }
 
-    protected void get(byte[] bytes)
+    protected void doGet(byte[] bytes)
     {
         in.get(bytes);
     }

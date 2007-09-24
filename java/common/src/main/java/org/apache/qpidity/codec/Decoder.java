@@ -20,6 +20,7 @@
  */
 package org.apache.qpidity.codec;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -47,12 +48,15 @@ public interface Decoder
     String readShortstr();
     String readLongstr();
 
-    Map<String,?> readTable();
     RangeSet readRfc1982LongSet();
     UUID readUuid();
 
     String readContent();
 
     Struct readLongStruct();
+
+    Map<String,Object> readTable();
+    List<Object> readSequence();
+    List<Object> readArray();
 
 }

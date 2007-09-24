@@ -41,7 +41,7 @@ public class SizeEncoder extends AbstractEncoder
     }
 
     public SizeEncoder(byte major, byte minor, int size) {
-        super(major, minor);
+        super(major, minor, false);
         this.size = size;
     }
 
@@ -53,31 +53,14 @@ public class SizeEncoder extends AbstractEncoder
         this.size = size;
     }
 
-    @Override protected void put(byte b)
+    protected void doPut(byte b)
     {
         size += 1;
     }
 
-    @Override protected void put(ByteBuffer src)
+    protected void doPut(ByteBuffer src)
     {
         size += src.remaining();
-    }
-
-    @Override public void writeShortstr(String s)
-    {
-        if (s == null) { s = ""; }
-        if (s.length() > 255) {
-            throw new IllegalArgumentException(s);
-        }
-        writeOctet((byte) s.length());
-        size += s.length();
-    }
-
-    @Override public void writeLongstr(String s)
-    {
-        if (s == null) { s = ""; }
-        writeLong(s.length());
-        size += s.length();
     }
 
 }

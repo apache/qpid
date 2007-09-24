@@ -122,6 +122,12 @@ class ToyBroker extends SessionDelegate
         {
             System.out.println("received headers routing_key " + props.getRoutingKey());
         }
+        MessageProperties mp = header.get(MessageProperties.class);
+        System.out.println("MP: " + mp);
+        if (mp != null)
+        {
+            System.out.println(mp.getApplicationHeaders());
+        }
 
         this.header = header;
     }
