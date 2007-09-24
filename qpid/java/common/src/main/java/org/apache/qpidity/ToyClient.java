@@ -102,6 +102,7 @@ class ToyClient extends SessionDelegate
 
         map.put("table", nested);
         map.put("list", Arrays.asList(1, 2, 3));
+        map.put("binary", new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
 
         ssn.messageTransfer("asdf", (short) 0, (short) 1);
         ssn.header(new DeliveryProperties(),
