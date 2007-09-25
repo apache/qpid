@@ -330,6 +330,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                                                                             deliveryTag, _queue.getMessageCount());
                     _totalMessageSize.addAndGet(-msg.getSize());
                 }
+
+                if (!acks)
+                {
+                   msg.decrementReference(channel.getStoreContext());
+                }
             }
             finally
             {

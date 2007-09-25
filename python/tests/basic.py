@@ -339,9 +339,11 @@ class BasicTests(TestBase):
         channel = self.channel
         channel.queue_declare(queue="test-get", exclusive=True)
         
-        #publish some messages (no_ack=True)
+        #publish some messages (no_ack=True) with persistent messaging
         for i in range(1, 11):
-            channel.basic_publish(routing_key="test-get", content=Content("Message %d" % i))
+            msg=Content("Message %d" % i)
+            msg["delivery mode"] = 2
+            channel.basic_publish(routing_key="test-get",content=msg )
 
         #use basic_get to read back the messages, and check that we get an empty at the end
         for i in range(1, 11):
@@ -354,18 +356,53 @@ class BasicTests(TestBase):
         self.assertEqual(reply.method.klass.name, "basic")
         self.assertEqual(reply.method.name, "get-empty")
 
-        #repeat for no_ack=False
+
+        #publish some messages (no_ack=True) transient messaging
         for i in range(11, 21):
             channel.basic_publish(routing_key="test-get", content=Content("Message %d" % i))
 
+        #use basic_get to read back the messages, and check that we get an empty at the end
         for i in range(11, 21):
+            reply = channel.basic_get(no_ack=True)
+            self.assertEqual(reply.method.klass.name, "basic")
+            self.assertEqual(reply.method.name, "get-ok")
+            self.assertEqual("Message %d" % i, reply.content.body)
+
+        reply = channel.basic_get(no_ack=True)
+        self.assertEqual(reply.method.klass.name, "basic")
+        self.assertEqual(reply.method.name, "get-empty")
+
+        #repeat for no_ack=False
+
+        #publish some messages (no_ack=False) with persistent messaging
+        for i in range(21, 31):
+            msg=Content("Message %d" % i)
+            msg["delivery mode"] = 2
+            channel.basic_publish(routing_key="test-get",content=msg )
+
+        #use basic_get to read back the messages, and check that we get an empty at the end
+        for i in range(21, 31):
             reply = channel.basic_get(no_ack=False)
             self.assertEqual(reply.method.klass.name, "basic")
             self.assertEqual(reply.method.name, "get-ok")
             self.assertEqual("Message %d" % i, reply.content.body)
-            if(i == 13):
+
+        reply = channel.basic_get(no_ack=True)
+        self.assertEqual(reply.method.klass.name, "basic")
+        self.assertEqual(reply.method.name, "get-empty")
+
+        #public some messages (no_ack=False) with transient messaging 
+        for i in range(31, 41):
+            channel.basic_publish(routing_key="test-get", content=Content("Message %d" % i))
+
+        for i in range(31, 41):
+            reply = channel.basic_get(no_ack=False)
+            self.assertEqual(reply.method.klass.name, "basic")
+            self.assertEqual(reply.method.name, "get-ok")
+            self.assertEqual("Message %d" % i, reply.content.body)
+            if(i == 33):
                 channel.basic_ack(delivery_tag=reply.delivery_tag, multiple=True)
-            if(i in [15, 17, 19]):
+            if(i in [35, 37, 39]):
                 channel.basic_ack(delivery_tag=reply.delivery_tag)
 
         reply = channel.basic_get(no_ack=True)
@@ -375,8 +412,8 @@ class BasicTests(TestBase):
         #recover(requeue=True)
         channel.basic_recover(requeue=True)
         
-        #get the unacked messages again (14, 16, 18, 20)
-        for i in [14, 16, 18, 20]:
+        #get the unacked messages again (34, 36, 38, 40)
+        for i in [34, 36, 38, 40]:
             reply = channel.basic_get(no_ack=False)
             self.assertEqual(reply.method.klass.name, "basic")
             self.assertEqual(reply.method.name, "get-ok")
