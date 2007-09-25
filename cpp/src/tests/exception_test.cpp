@@ -23,9 +23,9 @@
 
 #include "TestOptions.h"
 #include "qpid/QpidError.h"
-#include "qpid/client/ClientChannel.h"
+#include "qpid/client/Channel.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/ClientMessage.h"
+#include "qpid/client/Message.h"
 
 using namespace qpid::client;
 using namespace qpid::sys;

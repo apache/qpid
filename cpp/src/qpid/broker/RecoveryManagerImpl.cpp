@@ -21,7 +21,7 @@
 #include "RecoveryManagerImpl.h"
 
 #include "Message.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "RecoveredEnqueue.h"
 #include "RecoveredDequeue.h"
 

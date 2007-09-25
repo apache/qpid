@@ -22,10 +22,10 @@
 #define _HeadersExchange_
 
 #include <vector>
-#include "BrokerExchange.h"
+#include "Exchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 
 namespace qpid {
 namespace broker {

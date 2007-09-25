@@ -21,10 +21,10 @@
 #include <vector>
 #include "qpid_test_plugin.h"
 #include "InProcessBroker.h"
-#include "qpid/client/ClientChannel.h"
-#include "qpid/client/ClientMessage.h"
-#include "qpid/client/ClientQueue.h"
-#include "qpid/client/ClientExchange.h"
+#include "qpid/client/Channel.h"
+#include "qpid/client/Message.h"
+#include "qpid/client/Queue.h"
+#include "qpid/client/Exchange.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/BasicMessageChannel.h"
 #include "qpid/client/MessageMessageChannel.h"
@@ -44,7 +44,7 @@ const size_t FRAME_MAX = 256;
  * The test base defines the tests methods, derived classes
  * instantiate the channel in Basic or Message mode.
  */
-class ClientChannelTestBase : public CppUnit::TestCase  
+class ChannelTestBase : public CppUnit::TestCase  
 {
     struct Listener: public qpid::client::MessageListener {
         vector<Message> messages;
@@ -68,7 +68,7 @@ class ClientChannelTestBase : public CppUnit::TestCase
 
   public:
 
-    ClientChannelTestBase()
+    ChannelTestBase()
         : connection(FRAME_MAX),
           qname("testq"), data("hello"),
           queue(qname, true), exchange("", Exchange::DIRECT_EXCHANGE)
@@ -188,8 +188,8 @@ class ClientChannelTestBase : public CppUnit::TestCase
     }
 };
 
-class BasicClientChannelTest : public ClientChannelTestBase {
-    CPPUNIT_TEST_SUITE(BasicClientChannelTest);
+class BasicChannelTest : public ChannelTestBase {
+    CPPUNIT_TEST_SUITE(BasicChannelTest);
     CPPUNIT_TEST(testPublishGet);
     CPPUNIT_TEST(testGetNoContent);
     CPPUNIT_TEST(testConsumeCancel);
@@ -199,24 +199,24 @@ class BasicClientChannelTest : public ClientChannelTestBase {
     CPPUNIT_TEST_SUITE_END();
 
   public:
-    BasicClientChannelTest(){
+    BasicChannelTest(){
         channel.reset(new Channel(false, 500, Channel::AMQP_08));
     }
 };
 
-class MessageClientChannelTest : public ClientChannelTestBase {
-    CPPUNIT_TEST_SUITE(MessageClientChannelTest);
+class MessageChannelTest : public ChannelTestBase {
+    CPPUNIT_TEST_SUITE(MessageChannelTest);
     CPPUNIT_TEST(testPublishGet);
     CPPUNIT_TEST(testGetNoContent);
     CPPUNIT_TEST(testGetFragmentedMessage);
     CPPUNIT_TEST_SUITE_END();
   public:
-    MessageClientChannelTest() {
+    MessageChannelTest() {
         channel.reset(new Channel(false, 500, Channel::AMQP_09));
     }
 };
 
 // Make this test suite a plugin.
 CPPUNIT_PLUGIN_IMPLEMENT();
-CPPUNIT_TEST_SUITE_REGISTRATION(BasicClientChannelTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(MessageClientChannelTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(BasicChannelTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(MessageChannelTest);

@@ -25,7 +25,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "BlockingQueue.h"
-#include "ClientMessage.h"
+#include "Message.h"
 
 using qpid::framing::FrameSet;
 using qpid::framing::MessageTransferBody;
