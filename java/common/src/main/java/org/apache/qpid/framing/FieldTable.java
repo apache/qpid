@@ -711,7 +711,10 @@ public class FieldTable
         if (trace)
         {
             _logger.trace("FieldTable::writeToBuffer: Writing encoded length of " + getEncodedSize() + "...");
-            _logger.trace(_properties.toString());
+            if (_properties != null)
+            {
+                _logger.trace(_properties.toString());
+            }
         }
 
         EncodingUtils.writeUnsignedInteger(buffer, getEncodedSize());
