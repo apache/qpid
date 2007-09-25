@@ -10,7 +10,7 @@ import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.Range;
 import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.nclient.ExceptionListener;
+import org.apache.qpidity.nclient.ClosedListener;
 import org.apache.qpidity.nclient.MessagePartListener;
 
 /**
@@ -19,7 +19,7 @@ import org.apache.qpidity.nclient.MessagePartListener;
 public class ClientSession extends org.apache.qpidity.transport.Session implements  org.apache.qpidity.nclient.DtxSession
 {
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
-    private ExceptionListener _exceptionListner;
+    private ClosedListener _exceptionListner;
     private RangeSet _acquiredMessages;
     private RangeSet _rejectedMessages;
         
@@ -92,7 +92,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         _messageListeners.put(destination, listener);       
     }
     
-    public void setExceptionListener(ExceptionListener exceptionListner)
+    public void setClosedListener(ClosedListener exceptionListner)
     {
         _exceptionListner = exceptionListner;        
     }   
@@ -109,7 +109,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     
     void notifyException(QpidException ex)
     {
-        _exceptionListner.onException(ex);
+        _exceptionListner.onClosed(null, null);
     }
     
     Map<String,MessagePartListener> getMessageListerners()

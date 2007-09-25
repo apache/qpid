@@ -2,11 +2,11 @@ package org.apache.qpidity.nclient.impl;
 
 import java.io.FileInputStream;
 
-import org.apache.qpidity.QpidException;
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.ExceptionListener;
+import org.apache.qpidity.nclient.ClosedListener;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.FileMessage;
 import org.apache.qpidity.nclient.util.MessageListener;
@@ -27,7 +27,7 @@ public class LargeMsgDemoClient
                 System.out.println(m.toString());
                 System.out.println("================== End Msg ==================\n");
             }
-            
+
         });
     }
 
@@ -39,19 +39,19 @@ public class LargeMsgDemoClient
         }catch(Exception e){
             e.printStackTrace();
         }
-        
+
         Session ssn = conn.createSession(50000);
-        ssn.setExceptionListener(new ExceptionListener()
+        ssn.setClosedListener(new ClosedListener()
                 {
-                     public void onException(QpidException e)
+                     public void onClosed(ErrorCode errorCode, String reason)
                      {
-                         System.out.println(e);
+                         System.out.println("ErrorCode : " + errorCode + " reason : " + reason);
                      }
                 });
         ssn.queueDeclare("queue1", null, null);
         ssn.queueBind("queue1", "amq.direct", "queue1",null);
         ssn.sync();
-        
+
         ssn.messageSubscribe("queue1", "myDest", (short)0, (short)0,createAdapter(), null);
 
         try
@@ -60,7 +60,7 @@ public class LargeMsgDemoClient
                                              1024,
                                              new DeliveryProperties().setRoutingKey("queue1"),
                                              new MessageProperties().setMessageId("123"));
-        
+
            // queue
            ssn.messageStream("amq.direct",msg, (short) 0, (short) 1);
            ssn.sync();
@@ -70,5 +70,5 @@ public class LargeMsgDemoClient
             e.printStackTrace();
         }
     }
-    
+
 }

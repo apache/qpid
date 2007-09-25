@@ -1,10 +1,10 @@
 package org.apache.qpidity.nclient.impl;
 
-import org.apache.qpidity.QpidException;
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.ExceptionListener;
+import org.apache.qpidity.nclient.ClosedListener;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
@@ -24,7 +24,7 @@ public class DemoClient
                 System.out.println(m.toString());
                 System.out.println("================== End Msg ==================\n");
             }
-            
+
         });
     }
 
@@ -36,19 +36,19 @@ public class DemoClient
         }catch(Exception e){
             e.printStackTrace();
         }
-        
+
         Session ssn = conn.createSession(50000);
-        ssn.setExceptionListener(new ExceptionListener()
+        ssn.setClosedListener(new ClosedListener()
                 {
-                     public void onException(QpidException e)
+                     public void onClosed(ErrorCode errorCode, String reason)
                      {
-                         System.out.println(e);
+                         System.out.println("ErrorCode : " + errorCode + " reason : " + reason);
                      }
                 });
         ssn.queueDeclare("queue1", null, null);
         ssn.queueBind("queue1", "amq.direct", "queue1",null);
         ssn.sync();
-        
+
         ssn.messageSubscribe("queue1", "myDest", (short)0, (short)0,createAdapter(), null);
 
         // queue
@@ -63,21 +63,21 @@ public class DemoClient
         ssn.header(new DeliveryProperties().setRoutingKey("stocks"));
         ssn.endData();
         ssn.sync();
-        
+
         // topic subs
         ssn.messageSubscribe("topic1", "myDest2", (short)0, (short)0,createAdapter(), null);
         ssn.messageSubscribe("topic2", "myDest3", (short)0, (short)0,createAdapter(), null);
         ssn.messageSubscribe("topic3", "myDest4", (short)0, (short)0,createAdapter(), null);
         ssn.sync();
-        
+
         ssn.queueDeclare("topic1", null, null);
-        ssn.queueBind("topic1", "amq.topic", "stock.*",null);        
+        ssn.queueBind("topic1", "amq.topic", "stock.*",null);
         ssn.queueDeclare("topic2", null, null);
         ssn.queueBind("topic2", "amq.topic", "stock.us.*",null);
         ssn.queueDeclare("topic3", null, null);
         ssn.queueBind("topic3", "amq.topic", "stock.us.rh",null);
         ssn.sync();
-        
+
         // topic
         ssn.messageTransfer("amq.topic", (short) 0, (short) 1);
         ssn.data("Topic message");
@@ -85,5 +85,5 @@ public class DemoClient
         ssn.endData();
         ssn.sync();
     }
-    
+
 }

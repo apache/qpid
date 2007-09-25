@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,20 +18,22 @@
  */
 package org.apache.qpidity.nclient;
 
-import org.apache.qpidity.QpidException;
+import org.apache.qpidity.ErrorCode;
+
 
 /**
  * If the communication layer detects a serious problem with a <CODE>connection</CODE>, it
  * informs the connection's ExceptionListener
  */
-public interface ExceptionListener
+public interface ClosedListener
 {
     /**
      * If the communication layer detects a serious problem with a connection, it
      * informs the connection's ExceptionListener
+     * @param errorCode TODO
+     * @param reason TODO
      *
-     * @param exception The exception comming from the communication layer.
      * @see Connection
      */
-    public void onException(QpidException exception);
+    public void onClosed(ErrorCode errorCode, String reason);
 }
