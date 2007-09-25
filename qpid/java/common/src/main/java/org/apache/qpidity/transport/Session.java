@@ -52,6 +52,8 @@ public class Session extends Invoker
     private Map<Long,Method> commands = new HashMap<Long,Method>();
     private long mark = 0;
 
+    private boolean closed = false;
+
 
     public Map<Long,Method> getOutstandingCommands()
     {
@@ -232,7 +234,7 @@ public class Session extends Invoker
                 executionSync();
             }
 
-            while (!commands.isEmpty())
+            while (!closed && !commands.isEmpty())
             {
                 try {
                     System.out.println("\n============sync() waiting for commmands to be completed ==============\n");
@@ -243,6 +245,11 @@ public class Session extends Invoker
                 {
                     throw new RuntimeException(e);
                 }
+            }
+
+            if (!commands.isEmpty())
+            {
+                throw new RuntimeException("session closed");
             }
         }
     }
@@ -332,6 +339,15 @@ public class Session extends Invoker
     {
         sessionClose();
         channel.close();
+    }
+
+    public void closed()
+    {
+        synchronized (commands)
+        {
+            closed = true;
+            commands.notifyAll();
+        }
     }
 
 }

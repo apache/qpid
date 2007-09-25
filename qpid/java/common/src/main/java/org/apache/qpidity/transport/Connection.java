@@ -21,6 +21,7 @@
 package org.apache.qpidity.transport;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import java.nio.ByteBuffer;
@@ -94,6 +95,15 @@ public class Connection
     public void closed()
     {
         System.out.println("connection closed: " + this);
+        synchronized (channels)
+        {
+            for (Iterator<Channel> it = channels.values().iterator();
+                 it.hasNext(); )
+            {
+                it.next().closed();
+                it.remove();
+            }
+        }
     }
 
     public void close()
