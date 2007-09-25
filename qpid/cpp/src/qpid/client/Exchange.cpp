@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "ClientExchange.h"
+#include "Exchange.h"
 
 qpid::client::Exchange::Exchange(std::string _name, std::string _type) : name(_name), type(_type){}
 const std::string& qpid::client::Exchange::getName() const { return name; }

@@ -22,7 +22,7 @@
 
 #include "DeliveryToken.h"
 #include "Message.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/BasicDeliverBody.h"
 #include "qpid/framing/BasicGetOkBody.h"

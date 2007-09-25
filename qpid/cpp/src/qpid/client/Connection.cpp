@@ -23,8 +23,8 @@
 #include <boost/bind.hpp>
 
 #include "Connection.h"
-#include "ClientChannel.h"
-#include "ClientMessage.h"
+#include "Channel.h"
+#include "Message.h"
 #include "ScopedAssociation.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"

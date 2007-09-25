@@ -20,8 +20,8 @@
  */
 #include "InProcessBroker.h"
 #include "qpid/QpidError.h"
-#include "qpid/client/ClientExchange.h"
-#include "qpid/client/ClientQueue.h"
+#include "qpid/client/Exchange.h"
+#include "qpid/client/Queue.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/Connector.h"
 #include "qpid/framing/AMQP_HighestVersion.h"

@@ -26,7 +26,7 @@
 #include <vector>
 #include <ostream>
 #include "qpid/framing/AccumulatedAck.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "Consumer.h"
 #include "DeliveryId.h"
 #include "Message.h"
