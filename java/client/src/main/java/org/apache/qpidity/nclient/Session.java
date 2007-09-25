@@ -610,5 +610,5 @@ public interface Session
      *
      * @param exceptionListner The execptionListener
      */
-    public void setExceptionListener(ExceptionListener exceptionListner);
+    public void setClosedListener(ClosedListener exceptionListner);
 }

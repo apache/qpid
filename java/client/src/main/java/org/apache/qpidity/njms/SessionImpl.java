@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,6 +20,7 @@ package org.apache.qpidity.njms;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpidity.njms.message.*;
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.RangeSet;
 
@@ -155,7 +156,7 @@ public class SessionImpl implements Session
         // create the qpid session with an expiry  <= 0 so that the session does not expire
         _qpidSession = _connection.getQpidConnection().createSession(0);
         // set the exception listnere for this session
-        _qpidSession.setExceptionListener(new QpidSessionExceptionListener());
+        _qpidSession.setClosedListener(new QpidSessionExceptionListener());
         // set transacted if required
         if (_transacted && !isXA)
         {
@@ -468,7 +469,7 @@ public class SessionImpl implements Session
         RangeSet ranges = new RangeSet();
         for (QpidMessage message : _unacknowledgedMessages)
         {
-            // release this message           
+            // release this message
             ranges.add(message.getMessageTransferId());
         }
         getQpidSession().messageRelease(ranges);
@@ -1160,15 +1161,15 @@ public class SessionImpl implements Session
     /**
      * Lstener for qpid protocol exceptions
      */
-    private class QpidSessionExceptionListener implements org.apache.qpidity.nclient.ExceptionListener
+    private class QpidSessionExceptionListener implements org.apache.qpidity.nclient.ClosedListener
     {
-        public void onException(QpidException exception)
+        public void onClosed(ErrorCode errorCode, String reason)
         {
             synchronized (this)
             {
                 //todo check the error code for finding out if we need to notify the
                 // JMS connection exception listener
-                _currentException = exception;
+                _currentException = new QpidException(reason,errorCode,null);
             }
         }
     }

@@ -1,19 +1,18 @@
 package org.apache.qpidity.nclient.interop;
 
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.nclient.Connection;
-import org.apache.qpidity.nclient.ExceptionListener;
+import org.apache.qpidity.nclient.ClosedListener;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.transport.DeliveryProperties;
-import org.apache.qpidity.transport.ExchangeQueryResult;
-import org.apache.qpidity.transport.Future;
 import org.apache.qpidity.transport.RangeSet;
 
-public class BasicInteropTest implements ExceptionListener
+public class BasicInteropTest implements ClosedListener
 {
 
     private Session session;
@@ -103,6 +102,7 @@ public class BasicInteropTest implements ExceptionListener
         session.messageFlowMode("myDest", Session.MESSAGE_FLOW_MODE_WINDOW);
         System.out.println("------- Setting Credit --------");
         session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_MESSAGE, 1);
+        //session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
         session.messageFlow("myDest", Session.MESSAGE_FLOW_UNIT_BYTE, -1);
     }
 
@@ -112,17 +112,17 @@ public class BasicInteropTest implements ExceptionListener
         session.sync();
     }
 
-    public void onException(QpidException e)
+    public void onClosed(ErrorCode errorCode, String reason)
     {
         System.out.println("------- Broker Notified an error --------");
-        System.out.println("------- " + e.getErrorCode() + " --------");
-        System.out.println("------- " + e.getMessage() + " --------");
+        System.out.println("------- " + errorCode + " --------");
+        System.out.println("------- " + reason + " --------");
         System.out.println("------- /Broker Notified an error --------");
     }
 
     public static void main(String[] args) throws QpidException
     {
-        String host = "0.0.0.0";
+        /*String host = "0.0.0.0";
         if (args.length>0)
         {
             host = args[0];
@@ -137,5 +137,8 @@ public class BasicInteropTest implements ExceptionListener
         t.testSendMessage();
         t.testMessageFlush();
         t.close();
+        */
+
+        System.out.print(Integer.toHexString(-1));
     }
 }
