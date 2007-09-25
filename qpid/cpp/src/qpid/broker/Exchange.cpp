@@ -19,7 +19,7 @@
  *
  */
 
-#include "BrokerExchange.h"
+#include "Exchange.h"
 #include "ExchangeRegistry.h"
 
 using namespace qpid::broker;

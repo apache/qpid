@@ -1,5 +1,5 @@
-#ifndef _broker_BrokerQueue_h
-#define _broker_BrokerQueue_h
+#ifndef _broker_Queue_h
+#define _broker_Queue_h
 
 /*
  *
@@ -189,4 +189,4 @@ namespace qpid {
 }
 
 
-#endif  /*!_broker_BrokerQueue_h*/
+#endif  /*!_broker_Queue_h*/

@@ -1,5 +1,5 @@
-#ifndef _client_ClientChannel_h
-#define _client_ClientChannel_h
+#ifndef _client_Channel_h
+#define _client_Channel_h
 
 /*
  *
@@ -25,9 +25,9 @@
 #include <boost/scoped_ptr.hpp>
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/Uuid.h"
-#include "ClientExchange.h"
-#include "ClientMessage.h"
-#include "ClientQueue.h"
+#include "Exchange.h"
+#include "Message.h"
+#include "Queue.h"
 #include "ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/Exception.h"
@@ -313,4 +313,4 @@ class Channel : private sys::Runnable
 
 }}
 
-#endif  /*!_client_ClientChannel_h*/
+#endif  /*!_client_Channel_h*/

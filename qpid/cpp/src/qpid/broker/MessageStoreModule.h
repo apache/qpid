@@ -22,7 +22,7 @@
 #define _MessageStoreModule_
 
 #include "MessageStore.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "RecoveryManager.h"
 #include "qpid/sys/Module.h"
 

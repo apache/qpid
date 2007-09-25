@@ -24,7 +24,7 @@
 // which is no longer exposed on Session (part of SemanticHandler.)
 // 
 #include "qpid/broker/BrokerChannel.h"
-#include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/MessageDelivery.h"

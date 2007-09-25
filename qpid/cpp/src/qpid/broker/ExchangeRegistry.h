@@ -23,7 +23,7 @@
  */
 
 #include <map>
-#include "BrokerExchange.h"
+#include "Exchange.h"
 #include "MessageStore.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"

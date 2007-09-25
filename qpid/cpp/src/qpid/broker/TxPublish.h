@@ -24,7 +24,7 @@
 #include <algorithm>
 #include <functional>
 #include <list>
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "Deliverable.h"
 #include "Message.h"
 #include "MessageStore.h"

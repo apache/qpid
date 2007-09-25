@@ -23,7 +23,7 @@
 
 #include <map>
 #include "qpid/sys/Mutex.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 
 namespace qpid {
 namespace broker {

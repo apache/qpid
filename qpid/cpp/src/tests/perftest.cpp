@@ -21,9 +21,9 @@
 
 #include "TestOptions.h"
 
-#include "qpid/client/ClientChannel.h"
-#include "qpid/client/ClientExchange.h"
-#include "qpid/client/ClientQueue.h"
+#include "qpid/client/Channel.h"
+#include "qpid/client/Exchange.h"
+#include "qpid/client/Queue.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/MessageListener.h"
 #include "qpid/QpidError.h"
