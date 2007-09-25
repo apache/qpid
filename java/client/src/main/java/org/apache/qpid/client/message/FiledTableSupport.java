@@ -1,0 +1,34 @@
+package org.apache.qpid.client.message;
+
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+
+public class FiledTableSupport
+{
+  public static FieldTable convertToFieldTable(Map<String,?> props)
+  {
+      FieldTable ft = new FieldTable();
+      for (String key : props.keySet())
+      {
+          ft.setObject(key, props.get(key));
+      }
+
+      return ft;
+  }
+
+  public static Map<String,Object> convertToMap(FieldTable ft)
+  {
+     Map<String,Object> map = new HashMap<String,Object>();
+     for (Enumeration keys = ft.getPropertyNames(); keys.hasMoreElements();)
+     {
+         AMQShortString key = (AMQShortString)keys.nextElement();
+         map.put(key.asString(), ft.getObject(key));
+     }
+
+     return map;
+  }
+}
