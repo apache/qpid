@@ -76,6 +76,7 @@
     <category name="Qpid.Broker">
         <priority value="debug"/>
         <appender-ref ref="AlertFile"/>
+        <appender-ref ref="STDOUT"/>
     </category>
 
     <category name="org.apache.qpid.server.queue.AMQQueueMBean">
