@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,6 +19,7 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.FiledTableSupport;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.AMQBindingURL;
@@ -115,12 +116,18 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             qpidityMessage.getMessageProperties()
                     .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
         }
+
         if (contentHeaderProperties.getHeaders() != null)
         {
             // todo use the new fieldTable
-            qpidityMessage.getMessageProperties().setApplicationHeaders(null);
+            qpidityMessage.getMessageProperties().setApplicationHeaders(FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders()));
+
+            for(String key:qpidityMessage.getMessageProperties().getApplicationHeaders().keySet())
+            {
+                System.out.println(key + "=" + qpidityMessage.getMessageProperties().getApplicationHeaders().get(key));
+            }
         }
-        // send the message 
+        // send the message
         try
         {
             ((AMQSession_0_10) getSession()).getQpidSession().messageTransfer(destination.getExchangeName().toString(),

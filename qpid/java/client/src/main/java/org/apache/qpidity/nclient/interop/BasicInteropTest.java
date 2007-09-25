@@ -1,5 +1,8 @@
 package org.apache.qpidity.nclient.interop;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.api.Message;
@@ -10,6 +13,7 @@ import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.MessageProperties;
 import org.apache.qpidity.transport.RangeSet;
 
 public class BasicInteropTest implements ClosedListener
@@ -70,7 +74,13 @@ public class BasicInteropTest implements ClosedListener
     public void testSendMessage(){
         System.out.println("------- Sending a message --------");
         session.messageTransfer("test", Session.TRANSFER_CONFIRM_MODE_REQUIRED, Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
-        session.header(new DeliveryProperties().setRoutingKey("testKey"));
+
+        Map<String,Object> props = new HashMap<String,Object>();
+        props.put("name", "rajith");
+        props.put("age", 10);
+        props.put("spf", 8.5);
+        session.header(new DeliveryProperties().setRoutingKey("testKey"),new MessageProperties().setApplicationHeaders(props));
+
         session.data("TestMessage");
         session.endData();
         session.sync();
@@ -122,7 +132,7 @@ public class BasicInteropTest implements ClosedListener
 
     public static void main(String[] args) throws QpidException
     {
-        /*String host = "0.0.0.0";
+        String host = "0.0.0.0";
         if (args.length>0)
         {
             host = args[0];
@@ -137,8 +147,6 @@ public class BasicInteropTest implements ClosedListener
         t.testSendMessage();
         t.testMessageFlush();
         t.close();
-        */
 
-        System.out.print(Integer.toHexString(-1));
     }
 }
