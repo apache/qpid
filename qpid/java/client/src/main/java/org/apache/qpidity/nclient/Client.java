@@ -25,7 +25,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
 {
     private AtomicInteger _channelNo = new AtomicInteger();
     private Connection _conn;
-    private ExceptionListener _exceptionListner;
+    private ClosedListener _closedListner;
     private final Lock _lock = new ReentrantLock();
 
     /**
@@ -51,16 +51,19 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
             @Override public void connectionClose(Channel context, ConnectionClose connectionClose)
             {
-                // XXX: replaced reference to _exceptionListner with
-                // throw new RuntimeException because
-                // _exceptionListner may be null. In general this
-                // needs to be reworked because not every connection
-                // close is an exception!
-                throw new RuntimeException
-                    (new QpidException("Server closed the connection: Reason " +
-                                       connectionClose.getReplyText(),
-                                       ErrorCode.get(connectionClose.getReplyCode()),
-                                       null));
+                ErrorCode errorCode = ErrorCode.get(connectionClose.getReplyCode());
+                if (_closedListner == null && errorCode != ErrorCode.NO_ERROR)
+                {
+                    throw new RuntimeException
+                        (new QpidException("Server closed the connection: Reason " +
+                                           connectionClose.getReplyText(),
+                                           errorCode,
+                                           null));
+                }
+                else
+                {
+                    _closedListner.onClosed(errorCode, connectionClose.getReplyText());
+                }
             }
         };
 
@@ -125,9 +128,9 @@ public class Client implements org.apache.qpidity.nclient.Connection
         return null;
     }
 
-    public void setExceptionListener(ExceptionListener exceptionListner)
+    public void setClosedListener(ClosedListener closedListner)
     {
-        _exceptionListner = exceptionListner;
+        _closedListner = closedListner;
     }
 
 }
