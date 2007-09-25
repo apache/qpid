@@ -140,8 +140,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/BrokerAdapter.cpp \
   qpid/broker/BrokerSingleton.cpp \
-  qpid/broker/BrokerExchange.cpp \
-  qpid/broker/BrokerQueue.cpp \
+  qpid/broker/Exchange.cpp \
+  qpid/broker/Queue.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionFactory.cpp \
@@ -191,10 +191,10 @@ libqpidbroker_la_SOURCES = \
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
   $(rgen_client_cpp) 				\
-  qpid/client/ClientConnection.cpp		\
-  qpid/client/ClientChannel.cpp			\
-  qpid/client/ClientExchange.cpp		\
-  qpid/client/ClientQueue.cpp			\
+  qpid/client/Connection.cpp		\
+  qpid/client/Channel.cpp			\
+  qpid/client/Exchange.cpp		\
+  qpid/client/Queue.cpp			\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/Demux.cpp				\
@@ -225,8 +225,8 @@ nobase_include_HEADERS = \
   qpid/shared_ptr.h \
   qpid/broker/Broker.h \
   qpid/broker/BrokerAdapter.h \
-  qpid/broker/BrokerExchange.h \
-  qpid/broker/BrokerQueue.h \
+  qpid/broker/Exchange.h \
+  qpid/broker/Queue.h \
   qpid/broker/BrokerSingleton.h \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionFactory.h \
@@ -288,10 +288,10 @@ nobase_include_HEADERS = \
   qpid/client/AckMode.h \
   qpid/client/BlockingQueue.h \
   qpid/client/ChainableFrameHandler.h	\
-  qpid/client/ClientChannel.h \
-  qpid/client/ClientExchange.h \
-  qpid/client/ClientMessage.h \
-  qpid/client/ClientQueue.h \
+  qpid/client/Channel.h \
+  qpid/client/Exchange.h \
+  qpid/client/Message.h \
+  qpid/client/Queue.h \
   qpid/client/Completion.h \
   qpid/client/CompletionTracker.h \
   qpid/client/Connection.h \

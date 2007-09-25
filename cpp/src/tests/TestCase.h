@@ -21,7 +21,7 @@
  *
  */
 
-#include "qpid/client/ClientMessage.h"
+#include "qpid/client/Message.h"
 #include "TestOptions.h"
 
 

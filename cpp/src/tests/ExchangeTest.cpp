@@ -20,8 +20,8 @@
  */
 
 #include "qpid/Exception.h"
-#include "qpid/broker/BrokerExchange.h"
-#include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/ExchangeRegistry.h"

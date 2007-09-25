@@ -1,5 +1,5 @@
-#ifndef _broker_BrokerExchange_h
-#define _broker_BrokerExchange_h
+#ifndef _broker_Exchange_h
+#define _broker_Exchange_h
 
 /*
  *
@@ -24,7 +24,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include "Deliverable.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "MessageStore.h"
 #include "PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
@@ -80,4 +80,4 @@ namespace qpid {
 }
 
 
-#endif  /*!_broker_BrokerExchange_h*/
+#endif  /*!_broker_Exchange.cpp_h*/

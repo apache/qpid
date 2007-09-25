@@ -1,5 +1,5 @@
-#ifndef _client_ClientMessage_h
-#define _client_ClientMessage_h
+#ifndef _client_Message_h
+#define _client_Message_h
 
 /*
  *
@@ -83,4 +83,4 @@ private:
 
 }}
 
-#endif  /*!_client_ClientMessage_h*/
+#endif  /*!_client_Message_h*/

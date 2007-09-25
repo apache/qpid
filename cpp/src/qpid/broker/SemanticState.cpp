@@ -21,7 +21,7 @@
 
 #include "SessionState.h"
 #include "BrokerAdapter.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "Connection.h"
 #include "DeliverableMessage.h"
 #include "DtxAck.h"

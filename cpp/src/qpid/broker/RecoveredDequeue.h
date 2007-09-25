@@ -27,7 +27,7 @@
 #include "Deliverable.h"
 #include "Message.h"
 #include "MessageStore.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 #include "TxOp.h"
 
 namespace qpid {

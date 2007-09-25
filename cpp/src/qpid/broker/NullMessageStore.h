@@ -23,7 +23,7 @@
 
 #include <set>
 #include "MessageStore.h"
-#include "BrokerQueue.h"
+#include "Queue.h"
 
 namespace qpid {
 namespace broker {

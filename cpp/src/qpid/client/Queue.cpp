@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "ClientQueue.h"
+#include "Queue.h"
 
 qpid::client::Queue::Queue() : name(""), autodelete(true), exclusive(true), durable(false){}
 

@@ -19,7 +19,7 @@
  *
  */
 #include "qpid/Exception.h"
-#include "qpid/broker/BrokerQueue.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/QueueRegistry.h"

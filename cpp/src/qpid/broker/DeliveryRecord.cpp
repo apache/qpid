@@ -21,7 +21,7 @@
 #include "DeliveryRecord.h"
 #include "DeliverableMessage.h"
 #include "SemanticState.h"
-#include "BrokerExchange.h"
+#include "Exchange.h"
 #include "qpid/log/Statement.h"
 
 using namespace qpid::broker;

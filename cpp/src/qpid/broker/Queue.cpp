@@ -22,8 +22,8 @@
 #include <boost/format.hpp>
 
 #include "qpid/log/Statement.h"
-#include "BrokerQueue.h"
-#include "BrokerExchange.h"
+#include "Queue.h"
+#include "Exchange.h"
 #include "DeliverableMessage.h"
 #include "MessageStore.h"
 #include "qpid/sys/Monitor.h"

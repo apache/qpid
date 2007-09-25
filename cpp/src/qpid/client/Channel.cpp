@@ -21,9 +21,9 @@
 #include "qpid/log/Statement.h"
 #include <iostream>
 #include <sstream>
-#include "ClientChannel.h"
+#include "Channel.h"
 #include "qpid/sys/Monitor.h"
-#include "ClientMessage.h"
+#include "Message.h"
 #include "qpid/QpidError.h"
 #include "Connection.h"
 #include "Demux.h"

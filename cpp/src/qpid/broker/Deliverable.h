@@ -21,7 +21,7 @@
 #ifndef _Deliverable_
 #define _Deliverable_
 
-#include "BrokerQueue.h"
+#include "Queue.h"
 
 namespace qpid {
     namespace broker {

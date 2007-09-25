@@ -1,5 +1,5 @@
-#ifndef _client_ClientQueue_h
-#define _client_ClientQueue_h
+#ifndef _client_Queue_h
+#define _client_Queue_h
 
 /*
  *
@@ -100,4 +100,4 @@ namespace client {
 }
 }
 
-#endif  /*!_client_ClientQueue_h*/
+#endif  /*!_client_Queue_h*/
