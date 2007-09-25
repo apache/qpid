@@ -112,6 +112,10 @@ public class Channel extends Invoker
     public void closed()
     {
         System.out.println("channel closed: " + this);
+        if (session != null)
+        {
+            session.closed();
+        }
     }
 
     public void close()
