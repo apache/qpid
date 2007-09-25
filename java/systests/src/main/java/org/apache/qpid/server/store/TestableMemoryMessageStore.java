@@ -33,6 +33,14 @@ import java.util.List;
  */
 public class TestableMemoryMessageStore extends MemoryMessageStore
 {
+
+    MemoryMessageStore _mms = null;
+
+    public TestableMemoryMessageStore(MemoryMessageStore mms)
+    {
+        _mms = mms;
+    }
+
     public TestableMemoryMessageStore()
     {
         _metaDataMap = new ConcurrentHashMap<Long, MessageMetaData>();
@@ -41,11 +49,25 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
 
     public ConcurrentMap<Long, MessageMetaData> getMessageMetaDataMap()
     {
-        return _metaDataMap;
+        if (_mms != null)
+        {
+            return _mms._metaDataMap;
+        }
+        else
+        {
+            return _metaDataMap;
+        }
     }
 
     public ConcurrentMap<Long, List<ContentChunk>> getContentBodyMap()
     {
-        return _contentBodyMap;
+        if (_mms != null)
+        {
+            return _mms._contentBodyMap;
+        }
+        else
+        {
+            return _contentBodyMap;
+        }
     }
 }
