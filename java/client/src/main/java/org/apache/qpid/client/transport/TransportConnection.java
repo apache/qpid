@@ -149,19 +149,21 @@ public class TransportConnection
     {
         int port = details.getPort();
 
-        if (!_inVmPipeAddress.containsKey(port))
+        synchronized (_inVmPipeAddress)
         {
-            if (AutoCreate)
+            if (!_inVmPipeAddress.containsKey(port))
             {
-                createVMBroker(port);
-            }
-            else
-            {
-                throw new AMQVMBrokerCreationException(null, port, "VM Broker on port " + port
-                    + " does not exist. Auto create disabled.", null);
+                if (AutoCreate)
+                {
+                    createVMBroker(port);
+                }
+                else
+                {
+                    throw new AMQVMBrokerCreationException(null, port, "VM Broker on port " + port
+                        + " does not exist. Auto create disabled.", null);
+                }
             }
         }
-
         return new VmPipeTransportConnection(port);
     }
 
@@ -176,69 +178,71 @@ public class TransportConnection
             config.setThreadModel(ReadWriteThreadModel.getInstance());
         }
 
-        if (!_inVmPipeAddress.containsKey(port))
+        synchronized (_inVmPipeAddress)
         {
-            _logger.info("Creating InVM Qpid.AMQP listening on port " + port);
-            IoHandlerAdapter provider = null;
-            try
+            if (!_inVmPipeAddress.containsKey(port))
             {
-                VmPipeAddress pipe = new VmPipeAddress(port);
-
-                provider = createBrokerInstance(port);
-
-                _acceptor.bind(pipe, provider);
-
-                _inVmPipeAddress.put(port, pipe);
-                _logger.info("Created InVM Qpid.AMQP listening on port " + port);
-            }
-            catch (IOException e)
-            {
-                _logger.error("Got IOException.", e);
-
-                // Try and unbind provider
+                _logger.info("Creating InVM Qpid.AMQP listening on port " + port);
+                IoHandlerAdapter provider = null;
                 try
                 {
                     VmPipeAddress pipe = new VmPipeAddress(port);
 
-                    try
-                    {
-                        _acceptor.unbind(pipe);
-                    }
-                    catch (Exception ignore)
-                    {
-                        // ignore
-                    }
-
-                    if (provider == null)
-                    {
-                        provider = createBrokerInstance(port);
-                    }
+                    provider = createBrokerInstance(port);
 
                     _acceptor.bind(pipe, provider);
+
                     _inVmPipeAddress.put(port, pipe);
                     _logger.info("Created InVM Qpid.AMQP listening on port " + port);
                 }
-                catch (IOException justUseFirstException)
+                catch (IOException e)
                 {
-                    String because;
-                    if (e.getCause() == null)
-                    {
-                        because = e.toString();
-                    }
-                    else
-                    {
-                        because = e.getCause().toString();
-                    }
+                    _logger.error("Got IOException.", e);
 
-                    throw new AMQVMBrokerCreationException(null, port, because + " Stopped binding of InVM Qpid.AMQP", e);
+                    // Try and unbind provider
+                    try
+                    {
+                        VmPipeAddress pipe = new VmPipeAddress(port);
+
+                        try
+                        {
+                            _acceptor.unbind(pipe);
+                        }
+                        catch (Exception ignore)
+                        {
+                            // ignore
+                        }
+
+                        if (provider == null)
+                        {
+                            provider = createBrokerInstance(port);
+                        }
+
+                        _acceptor.bind(pipe, provider);
+                        _inVmPipeAddress.put(port, pipe);
+                        _logger.info("Created InVM Qpid.AMQP listening on port " + port);
+                    }
+                    catch (IOException justUseFirstException)
+                    {
+                        String because;
+                        if (e.getCause() == null)
+                        {
+                            because = e.toString();
+                        }
+                        else
+                        {
+                            because = e.getCause().toString();
+                        }
+
+                        throw new AMQVMBrokerCreationException(null, port, because + " Stopped binding of InVM Qpid.AMQP", e);
+                    }
                 }
             }
+            else
+            {
+                _logger.info("InVM Qpid.AMQP on port " + port + " already exits.");
+            }
         }
-        else
-        {
-            _logger.info("InVM Qpid.AMQP on port " + port + " already exits.");
-        }
-
     }
 
     private static IoHandlerAdapter createBrokerInstance(int port) throws AMQVMBrokerCreationException
@@ -285,25 +289,29 @@ public class TransportConnection
     {
         _logger.info("Killing all VM Brokers");
         _acceptor.unbindAll();
-
-        Iterator keys = _inVmPipeAddress.keySet().iterator();
-
-        while (keys.hasNext())
+        synchronized (_inVmPipeAddress)
         {
-            int id = (Integer) keys.next();
-            _inVmPipeAddress.remove(id);
-        }
+            Iterator keys = _inVmPipeAddress.keySet().iterator();
 
+            while (keys.hasNext())
+            {
+                int id = (Integer) keys.next();
+                _inVmPipeAddress.remove(id);
+            }
+        }
     }
 
     public static void killVMBroker(int port)
     {
-        VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
-        if (pipe != null)
+        synchronized (_inVmPipeAddress)
         {
-            _logger.info("Killing VM Broker:" + port);
-            _inVmPipeAddress.remove(port);
-            _acceptor.unbind(pipe);
+            VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
+            if (pipe != null)
+            {
+                _logger.info("Killing VM Broker:" + port);
+                _inVmPipeAddress.remove(port);
+                _acceptor.unbind(pipe);
+            }
         }
     }
 
