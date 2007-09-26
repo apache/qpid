@@ -102,6 +102,9 @@ void ConnectionHandler::waitForOpen()
 
 void ConnectionHandler::close()
 {
+    if (getState() != OPEN) {
+        throw Exception("Connection not open");
+    }
     setState(CLOSING);
     send(ConnectionCloseBody(version, 200, OK, 0, 0));
     waitFor(CLOSED);

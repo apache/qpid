@@ -46,6 +46,7 @@ class ConnectionImpl : public framing::FrameHandler,
     boost::shared_ptr<Connector> connector;
     framing::ProtocolVersion version;
     sys::Mutex lock;
+    bool isClosed;
 
     void incoming(framing::AMQFrame& frame);    
     void closed();
@@ -54,6 +55,7 @@ class ConnectionImpl : public framing::FrameHandler,
     void idleIn();
     void shutdown();
     void signalClose(uint16_t, const std::string&);
+    void assertNotClosed();
     SessionCore::shared_ptr find(uint16_t);
 
 public:
