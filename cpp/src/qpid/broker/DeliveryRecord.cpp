@@ -143,6 +143,8 @@ void DeliveryRecord::acquire(std::vector<DeliveryId>& results) {
     if (queue->acquire(msg)) {
         acquired = true;
         results.push_back(id);
+    } else {
+        QPID_LOG(info, "Message already acquired " << id.getValue());
     }
 }
 

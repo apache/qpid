@@ -131,6 +131,7 @@ class SessionGen < CppGen
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/MethodContent.h"
 #include "qpid/framing/TransferContent.h"
+#include "qpid/client/Completion.h"
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Response.h"
 #include "qpid/client/ScopedAssociation.h"

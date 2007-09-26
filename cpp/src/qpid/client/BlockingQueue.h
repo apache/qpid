@@ -36,7 +36,7 @@ class BlockingQueue
     sys::Monitor lock;
     std::queue<T> queue;
     bool closed;
- 
+
 public:
 
     BlockingQueue() : closed(false) {}
