@@ -92,6 +92,7 @@ void SessionCore::closed(uint16_t code, const std::string& text)
 void SessionCore::checkClosed()
 {
     if (isClosed) {
+        //TODO: could actually have been a connection exception
         throw ChannelException(reason.code, reason.text);
     }
 }
