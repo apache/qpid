@@ -23,7 +23,7 @@
 
 using qpid::framing::SequenceNumber;
 
-SequenceNumber::SequenceNumber() : value(0) {}
+SequenceNumber::SequenceNumber() : value(0 - 1) {}
 
 SequenceNumber::SequenceNumber(uint32_t v) : value((int32_t) v) {}
 
