@@ -395,9 +395,10 @@ class OutgoingCompletion:
   def __init__(self):
     self.condition = threading.Condition()
 
-    self.sequence = Sequence(1) #issues ids for outgoing commands
-    self.command_id = 0         #last issued id
-    self.mark = 0               #commands up to this mark are known to be complete
+    #todo, implement proper wraparound
+    self.sequence = Sequence(0) #issues ids for outgoing commands
+    self.command_id = -1        #last issued id
+    self.mark = -1              #commands up to this mark are known to be complete
     self.closed = False
 
   def next_command(self, method):
@@ -406,7 +407,7 @@ class OutgoingCompletion:
       self.command_id = self.sequence.next()
 
   def reset(self):
-    self.sequence = Sequence(1) #reset counter
+    self.sequence = Sequence(0) #reset counter
 
   def close(self):
     self.reset()
@@ -448,12 +449,12 @@ class IncomingCompletion:
   """
 
   def __init__(self, channel):
-    self.sequence = Sequence(1) #issues ids for incoming commands
-    self.mark = 0               #id of last command of whose completion notification was sent to the other peer
+    self.sequence = Sequence(0) #issues ids for incoming commands
+    self.mark = -1               #id of last command of whose completion notification was sent to the other peer
     self.channel = channel
 
   def reset(self):
-    self.sequence = Sequence(1) #reset counter
+    self.sequence = Sequence(0) #reset counter
 
   def complete(self, mark, cumulative=True):
     if cumulative:
@@ -463,4 +464,7 @@ class IncomingCompletion:
     else:
       #TODO: record and manage the ranges properly
       range = [mark, mark]
-      self.channel.execution_complete(cumulative_execution_mark=self.mark, ranged_execution_set=range)
+      if (self.mark == -1):#hack until wraparound is implemented        
+        self.channel.execution_complete(cumulative_execution_mark=0xFFFFFFFF, ranged_execution_set=range)
+      else:
+        self.channel.execution_complete(cumulative_execution_mark=self.mark, ranged_execution_set=range)
