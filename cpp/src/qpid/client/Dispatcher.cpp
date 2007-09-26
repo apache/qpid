@@ -36,14 +36,14 @@ using qpid::sys::Thread;
 namespace qpid {
 namespace client {
 
-    Subscriber::Subscriber(Session& s, MessageListener* l, bool a, uint f) : session(s), listener(l), autoAck(a), ackFrequency(f), count(0) {}
+    Subscriber::Subscriber(Session& s, MessageListener* l, bool a, uint f) : session(s), listener(l), autoAck(a), ackBatchSize(f), count(0) {}
 
 void Subscriber::received(Message& msg)
 {
     if (listener) {
         listener->received(msg);
         if (autoAck) {
-            bool send = (++count >= ackFrequency);
+            bool send = (++count >= ackBatchSize);
             msg.acknowledge(session, true, send);
             if (send) count = 0;
         }
@@ -129,16 +129,16 @@ Subscriber::shared_ptr Dispatcher::find(const std::string& name)
     return i->second;
 }
 
-void Dispatcher::listen(MessageListener* listener, bool autoAck, uint ackFrequency)
+void Dispatcher::listen(MessageListener* listener, bool autoAck, uint ackBatchSize)
 {
     ScopedLock<Mutex> l(lock);
-    defaultListener = Subscriber::shared_ptr(new Subscriber(session, listener, autoAck, ackFrequency));
+    defaultListener = Subscriber::shared_ptr(new Subscriber(session, listener, autoAck, ackBatchSize));
 }
 
-void Dispatcher::listen(const std::string& destination, MessageListener* listener, bool autoAck, uint ackFrequency)
+void Dispatcher::listen(const std::string& destination, MessageListener* listener, bool autoAck, uint ackBatchSize)
 {
     ScopedLock<Mutex> l(lock);
-    listeners[destination] = Subscriber::shared_ptr(new Subscriber(session, listener, autoAck, ackFrequency));
+    listeners[destination] = Subscriber::shared_ptr(new Subscriber(session, listener, autoAck, ackBatchSize));
 }
 
 void Dispatcher::cancel(const std::string& destination)

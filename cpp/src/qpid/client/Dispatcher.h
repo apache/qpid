@@ -40,12 +40,12 @@ class Subscriber : public MessageListener
     Session& session;
     MessageListener* const listener;
     const bool autoAck;
-    const uint ackFrequency;
+    const uint ackBatchSize;
     uint count;
 
 public:
     typedef boost::shared_ptr<Subscriber> shared_ptr;
-    Subscriber(Session& session, MessageListener* listener, bool autoAck = true, uint ackFrequency = 1);
+    Subscriber(Session& session, MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
     void received(Message& msg);
     
 };
@@ -77,8 +77,8 @@ public:
     void run();
     void stop();
 
-    void listen(MessageListener* listener, bool autoAck = true, uint ackFrequency = 1);
-    void listen(const std::string& destination, MessageListener* listener, bool autoAck = true, uint ackFrequency = 1);
+    void listen(MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
+    void listen(const std::string& destination, MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
     void cancel(const std::string& destination);
 };
 
