@@ -1148,7 +1148,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
             // The maximum number of waits before the test gives up and fails. This has been chosen to correspond with
             // the test timeout.
-            int waitLimit = (int) (TIMEOUT_DEFAULT / 100);
+            int waitLimit = (int) (TIMEOUT_DEFAULT / 10000);
 
             while ((_maxPendingSize > 0))
             {
@@ -1167,7 +1167,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                     // Wait on the send pause barrier for the limit to be re-established.
                     try
                     {
-                        _sendPauseMonitor.wait(100);
+                        _sendPauseMonitor.wait(10000);
                         numWaits++;
                     }
                     catch (InterruptedException e)
