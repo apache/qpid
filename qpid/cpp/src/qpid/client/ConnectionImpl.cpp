@@ -26,7 +26,7 @@ using namespace qpid::client;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c) : connector(c)
+ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c) : connector(c), isClosed(false)
 {
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
     handler.out = boost::bind(&Connector::send, connector, _1);
@@ -81,6 +81,7 @@ void ConnectionImpl::open(const std::string& host, int port,
 
 void ConnectionImpl::close()
 {
+    assertNotClosed();
     handler.close();
 }
 
@@ -120,6 +121,7 @@ void ConnectionImpl::signalClose(uint16_t code, const std::string& text)
         i->second->closed(code, text);
     }
     sessions.clear();
+    isClosed = true;
 }
 
 SessionCore::shared_ptr ConnectionImpl::find(uint16_t id)
@@ -130,4 +132,10 @@ SessionCore::shared_ptr ConnectionImpl::find(uint16_t id)
         throw ConnectionException(504, (boost::format("Invalid channel number %g") % id).str());
     }
     return i->second;
+}
+
+void ConnectionImpl::assertNotClosed()
+{
+    Mutex::ScopedLock l(lock);
+    if (isClosed) throw Exception("Connection has been closed");
 }
