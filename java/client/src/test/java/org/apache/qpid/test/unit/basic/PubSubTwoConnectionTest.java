@@ -48,6 +48,7 @@ public class PubSubTwoConnectionTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        TransportConnection.killAllVMBrokers();
     }
 
     /**

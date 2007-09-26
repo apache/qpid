@@ -125,6 +125,7 @@ public class ChannelCloseOkTest extends TestCase
     protected void tearDown() throws Exception
     {
         closeConnection();
+        TransportConnection.killAllVMBrokers();
         super.tearDown();
     }
 
