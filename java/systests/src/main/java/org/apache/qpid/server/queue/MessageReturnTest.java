@@ -78,6 +78,8 @@ public class MessageReturnTest extends TestCase implements ExceptionListener
 
     private CountDownLatch _returns = new CountDownLatch(1);
     private int _receivedCount = 0;
+    private int _initialContentBodyMapSize;
+    private int _initilaMessageMetaDataMapSize;
 
     protected void setUp() throws Exception
     {
@@ -94,13 +96,19 @@ public class MessageReturnTest extends TestCase implements ExceptionListener
         env.put("queue.badQueue", QUEUE);
 
         _context = factory.getInitialContext(env);
+
+        getBrokerInitialState();
     }
 
     protected void tearDown() throws Exception
     {
-        _producerConnection.close();
         super.tearDown();
 
+        if (_producerConnection != null)
+        {
+            _producerConnection.close();
+        }
+        
         if (BROKER.startsWith("vm://"))
         {
             TransportConnection.killAllVMBrokers();
@@ -130,7 +138,7 @@ public class MessageReturnTest extends TestCase implements ExceptionListener
         _producerConnection.close();
 
         //Verify we get all the messages.
-        verifyAllMessagesRecevied();        
+        verifyAllMessagesRecevied();
         //Verify Broker state
         verifyBrokerState();
     }
@@ -153,6 +161,34 @@ public class MessageReturnTest extends TestCase implements ExceptionListener
         _producer = _producerSession.createProducer((Queue) _context.lookup("badQueue"));
     }
 
+    // todo: collect to a general testing class - duplicated in AMQQueueMBeanTest
+    private void getBrokerInitialState()
+    {
+        IApplicationRegistry registry = ApplicationRegistry.getInstance();
+
+        VirtualHost testVhost = registry.getVirtualHostRegistry().getVirtualHost(VHOST);
+
+        assertNotNull("Unable to get test Vhost", testVhost.getMessageStore());
+
+        TestableMemoryMessageStore store = new TestableMemoryMessageStore((MemoryMessageStore) testVhost.getMessageStore());
+
+        _initialContentBodyMapSize = store.getContentBodyMap() == null ? 0 : store.getContentBodyMap().size();
+        _initilaMessageMetaDataMapSize = store.getMessageMetaDataMap() == null ? 0 : store.getMessageMetaDataMap().size();
+
+        if (_initialContentBodyMapSize != 0)
+        {
+            _logger.warn("Store is dirty: ContentBodyMap has Size:" + _initialContentBodyMapSize);
+            System.out.println("Store is dirty: ContentBodyMap has Size:" + _initialContentBodyMapSize);
+        }
+
+        if (_initilaMessageMetaDataMapSize != 0)
+        {
+            _logger.warn("Store is dirty: MessageMetaDataMap has Size:" + _initilaMessageMetaDataMapSize);
+            System.out.println("Store is dirty: MessageMetaDataMap has Size:" + _initilaMessageMetaDataMapSize);
+        }
+
+    }
+
     private void verifyBrokerState()
     {
         IApplicationRegistry registry = ApplicationRegistry.getInstance();
@@ -169,7 +205,7 @@ public class MessageReturnTest extends TestCase implements ExceptionListener
         // If the CBM has content it may be due to the broker not yet purging.
         // Closing the producer connection before testing should give the store time to clean up.
         // Perform a quick sleep just in case
-        if (store.getContentBodyMap().size() != 0)
+        while (store.getContentBodyMap().size() > _initialContentBodyMapSize)
         {
             try
             {
@@ -179,21 +215,9 @@ public class MessageReturnTest extends TestCase implements ExceptionListener
             {
             }
         }
-        assertEquals("Expected the store to have no content:" + store.getContentBodyMap(), 0, store.getContentBodyMap().size());
+        assertTrue("Expected the store content size not reached at test start it was :" + _initialContentBodyMapSize + " Now it is :" + store.getContentBodyMap().size(), _initialContentBodyMapSize >= store.getContentBodyMap().size());
         assertNotNull("MessageMetaDataMap should not be null", store.getMessageMetaDataMap());
-
-        if (store.getMessageMetaDataMap().size() != 0)
-        {
-            try
-            {
-                Thread.sleep(500);
-            }
-            catch (InterruptedException e)
-            {
-            }
-        }
-
-        assertEquals("Expected the store to have no metadata:" + store.getMessageMetaDataMap(), 0, store.getMessageMetaDataMap().size());
+        assertTrue("Expected the store MessageMetaData size not reached at test start it was :" + _initilaMessageMetaDataMapSize + " Now it is :" + store.getMessageMetaDataMap().size(), _initialContentBodyMapSize >= store.getMessageMetaDataMap().size());
     }
 
     private void verifyAllMessagesRecevied()
@@ -221,7 +245,7 @@ public class MessageReturnTest extends TestCase implements ExceptionListener
 
     /**
      * We can't verify messageOrder here as the return threads are not synchronized so we have no way of
-     * guarranting the order. 
+     * guarranting the order.
      */
     private void verifyMessageOrder()
     {

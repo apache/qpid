@@ -72,7 +72,7 @@ interface DeliveryManager
      */
     void deliver(StoreContext storeContext, AMQShortString name, AMQMessage msg, boolean deliverFirst) throws FailedDequeueException, AMQException;
 
-    void removeAMessageFromTop(StoreContext storeContext) throws AMQException;
+    void removeAMessageFromTop(StoreContext storeContext, AMQQueue queue) throws AMQException;
 
     long clearAllMessages(StoreContext storeContext) throws AMQException;
 

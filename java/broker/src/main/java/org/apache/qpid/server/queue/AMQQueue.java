@@ -581,7 +581,7 @@ public class AMQQueue implements Managable, Comparable
     /** Removes the AMQMessage from the top of the queue. */
     public synchronized void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.removeAMessageFromTop(storeContext);
+        _deliveryMgr.removeAMessageFromTop(storeContext, this);
     }
 
     /** removes all the messages from the queue. */
