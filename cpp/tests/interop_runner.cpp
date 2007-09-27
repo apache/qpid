@@ -94,6 +94,7 @@ public:
 };
 
 /**
+ * TODO: Add clock synching. CLOCK_SYNCH command is currently ignored.
  */
 int main(int argc, char** argv){
     TestOptions options;
@@ -113,8 +114,8 @@ int main(int argc, char** argv){
             listener.registerTest("TC1_DummyRun", new DummyRun());
             listener.registerTest("TC2_BasicP2P", new qpid::BasicP2PTest());
             listener.registerTest("TC3_BasicPubSub", new qpid::BasicPubSubTest());
-            listener.registerTest("TC4_P2PMessageSizeTest", new qpid::P2PMessageSizeTest());
-            listener.registerTest("TC5_PubSubMessageSizeTest", new qpid::PubSubMessageSizeTest());
+            listener.registerTest("TC4_P2PMessageSize", new qpid::P2PMessageSizeTest());
+            listener.registerTest("TC5_PubSubMessageSize", new qpid::PubSubMessageSizeTest());
 
             listener.bindAndConsume();
             
@@ -188,10 +189,12 @@ void Listener::received(Message& message)
         std::string name(message.getHeaders().getString("TEST_NAME"));
         if (name.empty() || invite(name)) {
             sendSimpleResponse("ENLIST", message);
+  	    //std::cout << "Enlisting in test '" << name << "'" << std::endl;
         } else {
             std::cout << "Can't take part in '" << name << "'" << std::endl;
         }
     } else if (type == "ASSIGN_ROLE") {        
+        //std::cout << "Got role assignment request for '" << name << "'" << std::endl;
         test->assign(message.getHeaders().getString("ROLE"), message.getHeaders(), options);
         sendSimpleResponse("ACCEPT_ROLE", message);
     } else if (type == "START") {        
@@ -206,6 +209,8 @@ void Listener::received(Message& message)
     } else if (type == "TERMINATE") {
         if (test != tests.end()) test->stop();
         shutdown();
+    } else if (type == "CLOCK_SYNCH") {
+        // Just ignore for now.
     } else {        
         std::cerr <<"ERROR!: Received unknown control message: " << type << std::endl;
         shutdown();

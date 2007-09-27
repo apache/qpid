@@ -78,7 +78,7 @@ public class TestCase5PubSubMessageSize implements TestClientControlledTest, Mes
     {
         log.debug("public String getName(): called");
 
-        return "TC5_BasicPubSub";
+        return "TC5_PubSubMessageSize";
     }
 
     /**

@@ -106,6 +106,8 @@ public:
 
 void PubSubMessageSizeTest::assign(const std::string& role, framing::FieldTable& params, TestOptions& options)
 {
+    //std::cout << "void PubSubMessageSizeTest::assign(const std::string& role, framing::FieldTable& params, TestOptions& options): called";
+
     std::string key = params.getString("PUBSUB_KEY");
     int messages = params.getInt("PUBSUB_NUM_MESSAGES");
     int receivers = params.getInt("PUBSUB_NUM_RECEIVERS");
