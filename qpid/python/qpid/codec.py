@@ -34,6 +34,11 @@ from reference import ReferenceId
 class EOF(Exception):
   pass
 
+TYPE_ALIASES = {
+  "long_string": "longstr",
+  "unsigned_int": "long"
+  }
+
 class Codec:
 
   """
@@ -50,6 +55,40 @@ class Codec:
     self.nread = 0
     self.incoming_bits = []
     self.outgoing_bits = []
+
+    self.types = {}
+    self.codes = {}
+    self.encodings = {
+      basestring: "longstr",
+      int: "long",
+      long: "long",
+      None.__class__:"void",
+      list: "sequence",
+      tuple: "sequence",
+      dict: "table"
+      }
+
+    if False:
+      for constant in self.spec.constants:
+        if constant.klass == "field-table-type":
+          type = constant.name.replace("field_table_", "")
+          self.typecode(constant.id, TYPE_ALIASES.get(type, type))
+
+    if not self.types:
+      self.typecode(ord('S'), "longstr")
+      self.typecode(ord('I'), "long")
+
+  def typecode(self, code, type):
+    self.types[code] = type
+    self.codes[type] = code
+
+  def resolve(self, klass):
+    if self.encodings.has_key(klass):
+      return self.encodings[klass]
+    for base in klass.__bases__:
+      result = self.resolve(base)
+      if result != None:
+        return result
 
   def read(self, n):
     """
@@ -265,15 +304,14 @@ class Codec:
     codec = Codec(enc, self.spec)
     if tbl:
       for key, value in tbl.items():
-        if len(key) > 128:
+        if self.spec.major == 8 and self.spec.minor == 0 and len(key) > 128:
           raise ValueError("field table key too long: '%s'" % key)
+        type = self.resolve(value.__class__)
+        if type == None:
+          raise ValueError("no encoding for: " + value.__class__)
         codec.encode_shortstr(key)
-        if isinstance(value, basestring):
-          codec.write("S")
-          codec.encode_longstr(value)
-        else:
-          codec.write("I")
-          codec.encode_long(value)
+        codec.encode_octet(self.codes[type])
+        codec.encode(type, value)
     s = enc.getvalue()
     self.encode_long(len(s))
     self.write(s)
@@ -287,13 +325,21 @@ class Codec:
     result = {}
     while self.nread - start < size:
       key = self.decode_shortstr()
-      type = self.read(1)
-      if type == "S":
-        value = self.decode_longstr()
-      elif type == "I":
-        value = self.decode_long()
+      code = self.decode_octet()
+      if self.types.has_key(code):
+        value = self.decode(self.types[code])
       else:
-        raise ValueError(repr(type))
+        w = width(code)
+        if fixed(code):
+          value = self.read(w)
+        elif w == 1:
+          value = self.decode_shortstr()
+        elif w == 2:
+          value = self.dec_str("!H")
+        elif w == 4:
+          value = self.decode_longstr()
+        else:
+          raise ValueError("illegal width: " + w)
       result[key] = value
     return result
 
@@ -390,3 +436,27 @@ class Codec:
     codec = Codec(StringIO(self.decode_longstr()), self.spec)
     type = self.spec.structs[codec.decode_short()]
     return codec.decode_struct(type)
+
+def fixed(code):
+  return (code >> 6) != 2
+
+def width(code):
+  # decimal
+  if code >= 192:
+    decsel = (code >> 4) & 3
+    if decsel == 0:
+      return 5
+    elif decsel == 1:
+      return 9
+    elif decsel == 3:
+      return 0
+    else:
+      raise ValueError(code)
+  # variable width
+  elif code < 192 and code >= 128:
+    lenlen = (self.code >> 4) & 3
+    if lenlen == 3: raise ValueError(code)
+    return 2 ** lenlen
+  # fixed width
+  else:
+    return (self.code >> 4) & 7
