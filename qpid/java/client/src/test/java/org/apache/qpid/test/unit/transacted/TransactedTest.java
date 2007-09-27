@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
-import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,10 +37,9 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
-public class TransactedTest extends TestCase
+public class TransactedTest extends QpidTestCase
 {
     private AMQQueue queue1;
-    private AMQQueue queue2;
 
     private AMQConnection con;
     private Session session;
@@ -61,10 +59,8 @@ public class TransactedTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
         _logger.info("Create Connection");
-        con = new AMQConnection("vm://:1", "guest", "guest", "TransactedTest", "test");
-
+        con = (AMQConnection) getConnection("guest", "guest");
         _logger.info("Create Session");
         session = con.createSession(true, Session.SESSION_TRANSACTED);
         _logger.info("Create Q1");
@@ -72,7 +68,7 @@ public class TransactedTest extends TestCase
             new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q1"), new AMQShortString("Q1"), false,
                 true);
         _logger.info("Create Q2");
-        queue2 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q2"), false);
+        AMQQueue queue2 = new AMQQueue(session.getDefaultQueueExchangeName(), new AMQShortString("Q2"), false);
 
         _logger.info("Create Consumer of Q1");
         consumer1 = session.createConsumer(queue1);
@@ -101,7 +97,7 @@ public class TransactedTest extends TestCase
         prepCon.start();
 
         _logger.info("Create test connection");
-        testCon = new AMQConnection("vm://:1", "guest", "guest", "TestConnection", "test");
+        testCon = (AMQConnection) getConnection("guest", "guest");
         _logger.info("Create test session");
         testSession = testCon.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         _logger.info("Create test consumer of q2");
@@ -116,8 +112,6 @@ public class TransactedTest extends TestCase
         testCon.close();
         _logger.info("Close prep connection");
         prepCon.close();
-        _logger.info("Kill broker");
-        TransportConnection.killAllVMBrokers();
         super.tearDown();
     }
 
