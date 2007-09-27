@@ -135,6 +135,10 @@ class AmqpDomain
       CppType.new(d.cppname).passcref.retcref or
       raise "Invalid type #{self}"
   end
+
+  def AmqpDomain.lookup_type(t)
+    @@typemap[t]
+  end
 end
 
 class AmqpResult
@@ -144,6 +148,7 @@ class AmqpResult
 end
 
 class AmqpStruct
+  def cpp_pack_type() AmqpDomain.lookup_type(pack()) or CppType.new("uint16_t"); end
   def cpptype() parent.cpptype; end
   def cppname() cpptype.name;  end
 end

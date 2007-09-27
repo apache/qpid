@@ -343,6 +343,7 @@ nobase_include_HEADERS = \
   qpid/framing/MethodContent.h \
   qpid/framing/MethodHolder.h \
   qpid/framing/MethodHolderMaxSize.h \
+  qpid/framing/ModelMethod.h \
   qpid/framing/OutputHandler.h \
   qpid/framing/ProtocolInitiation.h \
   qpid/framing/ProtocolVersion.h \
