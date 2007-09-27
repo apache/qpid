@@ -442,13 +442,6 @@ class FieldTableTestCase(BaseDataTypes):
         """
         self.failUnlessEqual(self.callFunc('encode_table', {'$key1':'value1'}), '\x00\x00\x00\x11\x05$key1S\x00\x00\x00\x06value1', 'valid name value pair encoding FAILED...')
 
-    # ----------------------------------------------------
-    def test_field_table_invalid_field_name_length(self):
-        """
-        field names can have a maximum length of 128 chars
-        """
-        self.failUnlessRaises(Exception, self.codec.encode_table, {'x'*129:'value1'})
-
     # ---------------------------------------------------
     def test_field_table_multiple_name_value_pair(self):
         """
