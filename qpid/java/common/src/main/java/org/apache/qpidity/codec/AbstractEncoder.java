@@ -214,8 +214,8 @@ abstract class AbstractEncoder implements Encoder
             msb = uuid.getMostSignificantBits();
             uuid.getLeastSignificantBits();
         }
-        writeLong(msb);
-        writeLong(lsb);
+        writeLonglong(msb);
+        writeLonglong(lsb);
     }
 
     public void writeContent(String c)
