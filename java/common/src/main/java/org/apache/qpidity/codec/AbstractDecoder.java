@@ -173,8 +173,8 @@ abstract class AbstractDecoder implements Decoder
 
     public UUID readUuid()
     {
-        long msb = readLong();
-        long lsb = readLong();
+        long msb = readLonglong();
+        long lsb = readLonglong();
         return new UUID(msb, lsb);
     }
 
