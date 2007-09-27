@@ -1,5 +1,5 @@
-#ifndef _TestCase_
-#define _TestCase_
+#ifndef _P2PMessageSizeTest_
+#define _P2PMessageSizeTest_
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,22 +21,26 @@
  *
  */
 
-#include <ClientMessage.h>
-#include "TestOptions.h"
+#include <memory>
+#include <sstream>
 
+#include <ClientChannel.h>
+#include <ClientMessage.h>
+#include <Connection.h>
+#include <Exception.h>
+#include <MessageListener.h>
+#include "SimpleTestCaseBase.h"
 
 namespace qpid {
 
 /**
- * TestCase provides an interface that classes implementing tests to be run using a distributed test client
- * must implement. The interop test spec, defines a life-cycle for interop tests. This consists of, inviting
- * a test to participate in a test, assigning a role, starting the test, and extracting a report on the
- * outcome of the test.
- * 
- * TODO: There is not method to process the test invitation. Add one.
- */
-class TestCase
+ * P2PMessageSizeTest implements test case 4, P2P messages with message size. Sends/received a specified number of messages to a 
+ * specified route on the default exchange, of a specified size. Produces reports on the actual number of messages sent/received.
+ */    
+class P2PMessageSizeTest : public SimpleTestCaseBase
 {
+    class Receiver;
+
 public:
 
     /**
@@ -47,29 +51,8 @@ public:
      * @param assignRoleMessage The role assingment messages field table, contains the full test parameters.
      * @param options           Additional test options.
      */
-    virtual void assign(const std::string& role, framing::FieldTable& params, TestOptions& options) = 0;
-
-    /**
-     * Each test will be started on its own thread, which should block
-     * until the test completes (this may or may not require an
-     * explicit stop() request).
-     */
-    virtual void start() = 0;
-
-    /**
-     * Requests that the test be stopped if still running.
-     */
-    virtual void stop() = 0;
-
-    /**
-     * Allows the test to fill in details on the final report
-     * message. Will be called only after start has returned.
-     */
-    virtual void report(client::Message& report) = 0;
-
-    virtual ~TestCase() {}
+    void assign(const std::string& role, framing::FieldTable& params, TestOptions& options);
 };
-
 }
 
 #endif

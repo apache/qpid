@@ -33,6 +33,8 @@
 #include <memory>
 #include "BasicP2PTest.h"
 #include "BasicPubSubTest.h"
+#include "P2PMessageSizeTest.h"
+#include "PubSubMessageSizeTest.h"
 #include "TestCase.h"
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -111,6 +113,8 @@ int main(int argc, char** argv){
             listener.registerTest("TC1_DummyRun", new DummyRun());
             listener.registerTest("TC2_BasicP2P", new qpid::BasicP2PTest());
             listener.registerTest("TC3_BasicPubSub", new qpid::BasicPubSubTest());
+            listener.registerTest("TC4_P2PMessageSizeTest", new qpid::P2PMessageSizeTest());
+            listener.registerTest("TC5_PubSubMessageSizeTest", new qpid::PubSubMessageSizeTest());
 
             listener.bindAndConsume();
             
