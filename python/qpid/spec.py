@@ -348,9 +348,10 @@ def load(specfile, *errata):
     # constants
     for nd in root.query["constant"]:
       val = nd["@value"]
-      if val.startswith("0x"): continue
-      const = Constant(spec, pythonize(nd["@name"]), int(val),
-                       nd["@class"], get_docs(nd))
+      if val.startswith("0x"): val = int(val, 16)
+      else: val = int(val)
+      const = Constant(spec, pythonize(nd["@name"]), val, nd["@class"],
+                       get_docs(nd))
       try:
         spec.constants.add(const)
       except ValueError, e:
