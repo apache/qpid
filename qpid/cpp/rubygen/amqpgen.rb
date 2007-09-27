@@ -151,7 +151,7 @@ end
 
 class AmqpStruct < AmqpElement
   def initialize(xml, parent) super; end
-  amqp_attr_reader :size, :type
+  amqp_attr_reader :size, :type, :pack
   amqp_child_reader :field
   
   def result?() parent.xml.name == "result"; end
@@ -180,6 +180,10 @@ class AmqpClass < AmqpElement
   def methods_on(chassis)
     @methods_on ||= { }
     @methods_on[chassis] ||= methods_.select { |m| m.on_chassis? chassis }
+  end
+
+  def l4?()
+    !["connection", "session", "execution"].include?(name)
   end
 end
 
