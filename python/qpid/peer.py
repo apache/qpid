@@ -281,7 +281,7 @@ class Channel:
     self.request(frame, self.queue_response, content)
     if not frame.method.responses:
       if self.use_execution_layer and frame.method_type.is_l4_command():
-        self.execution_flush()
+        self.execution_sync()
         self.completion.wait()
         if self.closed:
           raise Closed(self.reason)
@@ -335,12 +335,12 @@ class Channel:
           return future
       elif self.synchronous and not frame.method.response \
                and self.use_execution_layer and frame.method.is_l4_command():
-        self.execution_flush()
+        self.execution_sync()
         completed = self.completion.wait(timeout=10)
         if self.closed:
           raise Closed(self.reason)
         if not completed:
-          self.close("Timed-out waiting for completion")
+          self.close("Timed-out waiting for completion of %s" % frame)
     except QueueClosed, e:
       if self.closed:
         raise Closed(self.reason)
