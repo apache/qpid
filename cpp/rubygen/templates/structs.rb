@@ -32,6 +32,18 @@ class StructGen < CppGen
 
   ValueTypes=["octet", "short", "long", "longlong", "timestamp"]
 
+  def is_packed(s)
+    false and s.kind_of? AmqpStruct and s.pack
+  end
+
+  def execution_header?(s)
+    false and s.kind_of? AmqpMethod and s.parent.l4?
+  end
+
+  def has_bitfields_only(s)
+    s.fields.select {|f| f.domain.type_ != "bit"}.empty?
+  end
+
   def default_initialisation(s)
     params = s.fields.select {|f| ValueTypes.include?(f.domain.type_) || f.domain.type_ == "bit"}
     strings = params.collect {|f| "#{f.cppname}(0)"}   
@@ -48,6 +60,57 @@ class StructGen < CppGen
     else
       return f.cppname
     end
+  end
+
+  def get_flags_impl(s)
+    genl "#{s.cpp_pack_type.name} flags = 0;"
+    process_packed_fields(s) { |f, i| set_field_flag(f, i) }
+    genl "return flags;"
+  end
+
+  def set_field_flag(f, i)
+    if (ValueTypes.include?(f.domain.type_) || f.domain.type_ == "bit")
+      genl "if (#{f.cppname}) flags |= (1 << #{i});"
+    else
+      genl "if (#{f.cppname}.size()) flags |= (1 << #{i});"
+    end
+  end
+
+  def encode_packed_struct(s)
+    genl "#{s.cpp_pack_type.name} flags = getFlags();"
+    genl s.cpp_pack_type.encode('flags', 'buffer')
+    process_packed_fields(s) { |f, i| encode_packed_field(f, i) unless f.domain.type_ == "bit" }
+  end
+
+  def decode_packed_struct(s)
+    genl "#{s.cpp_pack_type.name} #{s.cpp_pack_type.decode('flags', 'buffer')}"
+    process_packed_fields(s) { |f, i| decode_packed_field(f, i) unless f.domain.type_ == "bit" }
+    process_packed_fields(s) { |f, i| set_bitfield(f, i) if f.domain.type_ == "bit" }
+  end
+
+  def size_packed_struct(s)
+    genl "#{s.cpp_pack_type.name} flags = getFlags();" unless has_bitfields_only(s)
+    genl "total += #{SizeMap[s.pack]};"
+    process_packed_fields(s) { |f, i| size_packed_field(f, i) unless f.domain.type_ == "bit" }
+  end
+
+  def encode_packed_field(f, i)
+    genl "if (flags & (1 << #{i}))"
+    indent { genl f.domain.cpptype.encode(f.cppname,"buffer") }
+  end
+
+  def decode_packed_field(f, i)
+    genl "if (flags & (1 << #{i}))"
+    indent { genl f.domain.cpptype.decode(f.cppname,"buffer") }
+  end
+
+  def size_packed_field(f, i)
+      genl "if (flags & (1 << #{i}))"
+      indent { generate_size(f, []) }
+  end
+
+  def set_bitfield(f, i)
+    genl "#{f.cppname} = (flags & (1 << #{i}));"
   end
 
   def generate_encode(f, combined)
@@ -75,20 +138,25 @@ class StructGen < CppGen
   def generate_size(f, combined)
     if (f.domain.type_ == "bit")
       names = ([f] + combined).collect {|g| g.cppname}
-      genl "+ 1 //#{names.join(", ")}"
+      genl "total += 1;//#{names.join(", ")}"
     else
       size = SizeMap[f.domain.type_]
       if (size)
-        genl "+ #{size} //#{f.cppname}"
+        genl "total += #{size};//#{f.cppname}"
       elsif (f.cpptype.name == "SequenceNumberSet")
-        genl "+ #{f.cppname}.encodedSize()"
+        genl "total += #{f.cppname}.encodedSize();"
       else 
         encoded = EncodingMap[f.domain.type_]        
-        gen "+ 4 " if encoded == "LongString"
-        gen "+ 1 " if encoded == "ShortString"
-        genl "+ #{f.cppname}.size()"
+        gen "total += ("
+        gen "4 " if encoded == "LongString"
+        gen "1 " if encoded == "ShortString"
+        genl "+ #{f.cppname}.size());"
       end
     end
+  end
+
+  def process_packed_fields(s)
+    s.fields.each { |f| yield f, s.fields.index(f) }
   end
 
   def process_fields(s)
@@ -162,7 +230,11 @@ EOS
     inheritance = ""
     if (s.kind_of? AmqpMethod)
       classname = s.body_name
-      inheritance = ": public AMQMethodBody"
+      if (execution_header?(s))
+        inheritance = ": public ModelMethod"
+      else
+        inheritance = ": public AMQMethodBody"
+      end
     end
 
     h_file("qpid/framing/#{classname}.h") { 
@@ -173,6 +245,7 @@ EOS
 #include "qpid/framing/MethodBodyConstVisitor.h"
 EOS
       end
+      include "qpid/framing/ModelMethod.h" if (execution_header?(s))
 
       #need to include any nested struct definitions
       s.fields.each { |f| include f.cpptype.name if f.domain.struct }
@@ -188,6 +261,9 @@ namespace framing {
 class #{classname} #{inheritance} {
 EOS
   indent { s.fields.each { |f| genl "#{f.cpptype.name} #{f.cppname};" } }
+  if (is_packed(s))
+    indent { genl "#{s.cpp_pack_type.name} getFlags() const;"}
+  end
   genl "public:"
   if (s.kind_of? AmqpMethod)
     indent { genl "static const ClassId CLASS_ID = #{s.parent.index};" }
@@ -231,7 +307,7 @@ EOS
 EOS
     }
     cpp_file("qpid/framing/#{classname}.cpp") { 
-      if (s.fields.size > 0)
+      if (s.fields.size > 0 || execution_header?(s))
         buffer = "buffer"
       else
         buffer = "/*buffer*/"
@@ -241,46 +317,79 @@ EOS
 
 using namespace qpid::framing;
 
+EOS
+    
+      if (is_packed(s))
+        genl "#{s.cpp_pack_type.name} #{classname}::getFlags() const"
+        genl "{"
+        indent { get_flags_impl(s) }
+        genl "}"
+      end
+      gen <<EOS
 void #{classname}::encode(Buffer& #{buffer}) const
 {
 EOS
-  indent { process_fields(s) { |f, combined| generate_encode(f, combined) } } 
-  gen <<EOS
+      if (execution_header?(s))
+        genl "ModelMethod::encode(buffer);"
+      end
+
+      if (is_packed(s))
+        indent {encode_packed_struct(s)}
+      else 
+        indent { process_fields(s) { |f, combined| generate_encode(f, combined) } } 
+      end
+      gen <<EOS
 }
 
 void #{classname}::decode(Buffer& #{buffer}, uint32_t /*size*/)
 {
 EOS
-  indent { process_fields(s) { |f, combined| generate_decode(f, combined) } } 
-  gen <<EOS
+      if (execution_header?(s))
+        genl "ModelMethod::decode(buffer);"
+      end
+
+      if (is_packed(s))
+        indent {decode_packed_struct(s)}
+      else 
+        indent { process_fields(s) { |f, combined| generate_decode(f, combined) } } 
+      end
+      gen <<EOS
 }
 
 uint32_t #{classname}::size() const
 {
-    return 0
+    uint32_t total = 0;
 EOS
-  indent { process_fields(s) { |f, combined| generate_size(f, combined) } } 
-  gen <<EOS
-        ;
+      if (execution_header?(s))
+        genl "total += ModelMethod::size();"
+      end
+
+      if (is_packed(s))
+        indent {size_packed_struct(s)}
+      else 
+        indent { process_fields(s) { |f, combined| generate_size(f, combined) } } 
+      end
+      gen <<EOS
+    return total;
 }
 
 void #{classname}::print(std::ostream& out) const
 {
     out << "#{classname}: ";
 EOS
-  copy = Array.new(s.fields)
-  f = copy.shift
+      copy = Array.new(s.fields)
+      f = copy.shift
   
-  indent { 
-    genl "out << \"#{f.name}=\" << #{printable_form(f)};" if f
-    copy.each { |f| genl "out << \"; #{f.name}=\" << #{printable_form(f)};" } 
-  } 
-  gen <<EOS
+      indent { 
+        genl "out << \"#{f.name}=\" << #{printable_form(f)};" if f
+        copy.each { |f| genl "out << \"; #{f.name}=\" << #{printable_form(f)};" } 
+      } 
+      gen <<EOS
 }
 EOS
 
-  if (s.kind_of? AmqpStruct)
-    gen <<EOS
+      if (s.kind_of? AmqpStruct)
+        gen <<EOS
 namespace qpid{
 namespace framing{
 
@@ -293,8 +402,7 @@ namespace framing{
 }
 }
 EOS
-  end 
-
+      end 
 }
   end
 
