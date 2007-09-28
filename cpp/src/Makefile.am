@@ -310,7 +310,6 @@ nobase_include_HEADERS = \
   qpid/client/MessageListener.h \
   qpid/client/MessageQueue.h \
   qpid/client/Response.h \
-  qpid/client/ScopedAssociation.h \
   qpid/client/SessionCore.h \
   qpid/client/SessionHandler.h \
   qpid/client/StateManager.h \

@@ -32,6 +32,7 @@
 
 #include <set>
 #include <vector>
+#include <ostream>
 
 namespace qpid {
 
@@ -79,7 +80,7 @@ class SessionState : public framing::FrameHandler::Chains,
     uint32_t getTimeout() const { return timeout; }
     Broker& getBroker() { return broker; }
     framing::ProtocolVersion getVersion() const { return version; }
-
+    
   private:
     /** Only SessionManager can open sessions */
     SessionState(SessionManager& f, SessionHandler& h, uint32_t timeout_);
@@ -95,6 +96,11 @@ class SessionState : public framing::FrameHandler::Chains,
 
   friend class SessionManager;
 };
+
+
+inline std::ostream& operator<<(std::ostream& out, const SessionState& session) {
+    return out << session.getId();
+}
 
 }} // namespace qpid::broker
 

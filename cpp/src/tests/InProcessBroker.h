@@ -24,6 +24,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/client/Connector.h"
 #include "qpid/client/Connection.h"
+#include "qpid/log/Statement.h"
 
 #include <vector>
 #include <iostream>
@@ -101,7 +102,8 @@ class InProcessBroker : public client::Connector {
         ) : sender(sender_), conversation(conversation_), in(ih) {}
 
         void send(framing::AMQFrame& frame) {
-            //std::cout << (sender == CLIENT ? "C->S: " : "S->C: ") << frame << std::endl;
+            QPID_LOG(debug,
+                     (sender==CLIENT ? "CLIENT: " : "BROKER: ") << frame);
             conversation.push_back(TaggedFrame(sender, frame));
             in->received(frame);
         }
