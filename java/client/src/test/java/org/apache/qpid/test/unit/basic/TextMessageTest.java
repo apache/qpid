@@ -21,7 +21,6 @@
 package org.apache.qpid.test.unit.basic;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
@@ -29,6 +28,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class TextMessageTest extends TestCase implements MessageListener
+public class TextMessageTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(TextMessageTest.class);
 
@@ -62,7 +62,7 @@ public class TextMessageTest extends TestCase implements MessageListener
         super.setUp();
         try
         {
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+            init((AMQConnection) getConnection("guest", "guest"));
         }
         catch (Exception e)
         {
@@ -89,7 +89,15 @@ public class TextMessageTest extends TestCase implements MessageListener
         _session = (AMQSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // set up a slow consumer
-        _session.createConsumer(destination).setMessageListener(this);
+        try
+        {
+            _session.createConsumer(destination).setMessageListener(this);
+        }
+        catch (Throwable  e)
+        {
+// TODO
+            e.printStackTrace();
+        }
         connection.start();
     }
 
@@ -117,6 +125,7 @@ public class TextMessageTest extends TestCase implements MessageListener
             _logger.info("Sending Msg:" + m);
             producer.send(m);
         }
+        _logger.info("sent " + count  + " mesages");
     }
 
     void waitFor(int count) throws InterruptedException
@@ -227,6 +236,7 @@ public class TextMessageTest extends TestCase implements MessageListener
     {
         synchronized (received)
         {
+            _logger.info("===== received one message");
             received.add((JMSTextMessage) message);
             received.notify();
         }
@@ -237,21 +247,10 @@ public class TextMessageTest extends TestCase implements MessageListener
         return in + System.currentTimeMillis();
     }
 
-    public static void main(String[] argv) throws Exception
-    {
-        TextMessageTest test = new TextMessageTest();
-        test._connectionString = (argv.length == 0) ? "vm://:1" : argv[0];
-        test.setUp();
-        if (argv.length > 1)
-        {
-            test._count = Integer.parseInt(argv[1]);
-        }
 
-        test.test();
-    }
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(TextMessageTest.class));
+         return new junit.framework.TestSuite(TextMessageTest.class);
     }
 }

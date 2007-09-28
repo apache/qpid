@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 public class QpidTestCase extends TestCase
 {
+   
     /* this clas logger */
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
@@ -46,6 +47,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER_PATH = "broker_path";
     private static final String BROKER_PARAM = "broker_param";
     private static final String BROKER_VM = "vm";
+    private static final String EXT_BROKER = "ext" ;
     /**
      * The process where the remote broker is running.
      */
@@ -79,18 +81,18 @@ public class QpidTestCase extends TestCase
         {
             _brokerParams = System.getProperties().getProperty(BROKER_PARAM);
         }
-        if (!_shel.equals(BROKER_VM))
+        if (!_shel.equals(BROKER_VM) && ! _shel.equals(EXT_BROKER) )
         {
             // start a new broker
             startBroker();
         }
-        else
+        else if ( ! _shel.equals(EXT_BROKER) )
         {
             // create an in_VM broker
             TransportConnection.createVMBroker(1);
         }
-        System.out.println("=========================================");
-        System.out.println("= " + _shel + " " + _brokerPath + " " + _brokerParams);
+       _logger.info("=========================================");
+        _logger.info("= " + _shel + " " + _brokerPath + " " + _brokerParams);
     }
 
     /**
@@ -100,17 +102,18 @@ public class QpidTestCase extends TestCase
      */
     protected void tearDown() throws Exception
     {
-        super.tearDown();
         _logger.info("Kill broker");
         if (_brokerProcess != null)
         {
             // destroy the currently running broker
             _brokerProcess.destroy();
+            _brokerProcess = null;
         }
         else
         {
             TransportConnection.killAllVMBrokers();
         }
+         super.tearDown();
     }
 
     //--------- Util method 
@@ -130,6 +133,11 @@ public class QpidTestCase extends TestCase
         {
             //bad, we had an error starting the broker
             throw new Exception("Problem when starting the broker: " + reader.readLine());
+        }
+        // We need to wait for th ebroker to start ideally we would need to ping it 
+        synchronized(this)
+        {
+            this.wait(1000);
         }
     }
 
