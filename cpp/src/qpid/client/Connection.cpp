@@ -72,7 +72,7 @@ void Connection::openChannel(Channel& channel) {
 
 Session Connection::newSession(uint32_t detachedLifetime) {
     shared_ptr<SessionCore> core(
-        new SessionCore(*impl, ++channelIdCounter, max_frame_size));
+        new SessionCore(impl, ++channelIdCounter, max_frame_size));
     impl->addSession(core);
     core->open(detachedLifetime);
     return Session(core);
@@ -82,7 +82,7 @@ void Connection::resume(Session& session) {
     shared_ptr<SessionCore> core=session.impl;
     core->setChannel(++channelIdCounter);
     impl->addSession(core);
-    core->resume(*impl);
+    core->resume(impl);
 }
 
 void Connection::close() {

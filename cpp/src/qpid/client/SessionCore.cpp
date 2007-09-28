@@ -20,22 +20,25 @@
  */
 
 #include "SessionCore.h"
-#include "qpid/framing/constants.h"
 #include "Future.h"
 #include "FutureResponse.h"
 #include "FutureResult.h"
+#include "ConnectionImpl.h"
+
+#include "qpid/framing/constants.h"
 
 #include <boost/bind.hpp>
 
 using namespace qpid::client;
 using namespace qpid::framing;
 
-SessionCore::SessionCore(FrameHandler& out_, uint16_t ch, uint64_t maxFrameSize)
-    : channel(ch), l2(*this), l3(maxFrameSize), uuid(false), sync(false)
+SessionCore::SessionCore(shared_ptr<ConnectionImpl> conn, uint16_t ch, uint64_t maxFrameSize)
+    : connection(conn), channel(ch), l2(*this), l3(maxFrameSize),
+      uuid(false), sync(false)
 {
     l2.next = &l3;
     l3.out = &out;
-    out.next = &out_;
+    out.next = connection.get();
 }
 
 SessionCore::~SessionCore() {}
@@ -108,8 +111,9 @@ void SessionCore::open(uint32_t detachedLifetime) {
     l2.open(detachedLifetime);
 }
 
-void SessionCore::resume(FrameHandler& out_) {
-    out.next = &out_;
+void SessionCore::resume(shared_ptr<ConnectionImpl> conn) {
+    connection = conn;
+    out.next = connection.get();
     l2.resume();
 }
 

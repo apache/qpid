@@ -24,6 +24,7 @@
 
 #include <map>
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/ShutdownHandler.h"
@@ -41,7 +42,7 @@ class ConnectionImpl : public framing::FrameHandler,
                        public sys::ShutdownHandler
 
 {
-    typedef std::map<uint16_t, boost::shared_ptr<SessionCore> > SessionMap;
+    typedef std::map<uint16_t, boost::weak_ptr<SessionCore> > SessionMap;
     SessionMap sessions; 
     ConnectionHandler handler;
     boost::shared_ptr<Connector> connector;
