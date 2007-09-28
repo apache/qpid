@@ -72,11 +72,14 @@ public class ResetMessageListenerTest extends TestCase
     private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(2); // all messages Sent Lock
     private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(2); // all messages Sent Lock
 
+    private String oldImmediatePrefetch;
+
     protected void setUp() throws Exception
     {
         super.setUp();
         TransportConnection.createVMBroker(1);
 
+        oldImmediatePrefetch = System.getProperty(AMQSession.IMMEDIATE_PREFETCH);
         System.setProperty(AMQSession.IMMEDIATE_PREFETCH, "true");
 
         InitialContextFactory factory = new PropertiesFileInitialContextFactory();
@@ -117,17 +120,16 @@ public class ResetMessageListenerTest extends TestCase
     }
 
     protected void tearDown() throws Exception
-    {
-        assertEquals("First batch of messages not received correctly", 0, _allFirstMessagesSent.getCount());
-        assertEquals("Second batch of messages not received correctly", 0, _allSecondMessagesSent.getCount());
-        assertEquals("Client 1 ML1 didn't get all messages", MSG_COUNT / 2, receivedCount1ML1);
-        assertEquals("Client 2 didn't get all messages", MSG_COUNT, receivedCount2);
-        assertEquals("Client 1 ML2 didn't get all messages", MSG_COUNT / 2, receivedCount1ML2);
-
+    {       
         _clientConnection.close();
-
         _producerConnection.close();
+
         super.tearDown();
+        if (oldImmediatePrefetch == null)
+        {
+            oldImmediatePrefetch = AMQSession.IMMEDIATE_PREFETCH_DEFAULT;
+        }
+        System.setProperty(AMQSession.IMMEDIATE_PREFETCH, oldImmediatePrefetch);
         TransportConnection.killAllVMBrokers();
     }
 
@@ -261,6 +263,11 @@ public class ResetMessageListenerTest extends TestCase
         {
             // do nothing
         }
+        assertEquals("First batch of messages not received correctly", 0, _allFirstMessagesSent.getCount());
+        assertEquals("Second batch of messages not received correctly", 0, _allSecondMessagesSent.getCount());
+        assertEquals("Client 1 ML1 didn't get all messages", MSG_COUNT / 2, receivedCount1ML1);
+        assertEquals("Client 2 didn't get all messages", MSG_COUNT, receivedCount2);
+        assertEquals("Client 1 ML2 didn't get all messages", MSG_COUNT / 2, receivedCount1ML2);
     }
 
     public static junit.framework.Test suite()
