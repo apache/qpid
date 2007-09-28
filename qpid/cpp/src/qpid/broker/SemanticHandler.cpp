@@ -132,7 +132,10 @@ void SemanticHandler::handleCommand(framing::AMQMethodBody* method)
     } else if (v.hasResult()) {
         session.getProxy().getExecution().result(id.getValue(), v.getResult());
     }
-    //TODO: if (method->isSync()) { incoming.synch(id); sendCompletion(); }
+    if (method->isSync()) { 
+        incoming.sync(id); 
+        sendCompletion(); 
+    }
     //TODO: if window gets too large send unsolicited completion
 }
 
@@ -156,7 +159,10 @@ void SemanticHandler::handleContent(AMQFrame& frame)
         state.handle(msg);        
         msgBuilder.end();
         incoming.track(msg);
-        //TODO: if (msg.getMethod().isSync()) { incoming.synch(msg.getCommandId()); sendCompletion(); }
+        if (msg->getFrames().getMethod()->isSync()) { 
+            incoming.sync(msg->getCommandId()); 
+            sendCompletion(); 
+        }
     }
 }
 
