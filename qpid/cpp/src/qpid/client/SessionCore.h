@@ -36,6 +36,7 @@ namespace qpid {
 namespace client {
 
 class Future;
+class ConnectionImpl;
 
 /**
  * Session implementation, sets up handler chains.
@@ -50,6 +51,7 @@ class SessionCore : public framing::FrameHandler::InOutHandler
         std::string text;
     };
 
+    shared_ptr<ConnectionImpl> connection;
     uint16_t channel;
     SessionHandler l2;
     ExecutionHandler l3;
@@ -62,9 +64,7 @@ class SessionCore : public framing::FrameHandler::InOutHandler
     void handleOut(framing::AMQFrame& frame);
 
   public:
-    typedef shared_ptr<SessionCore> shared_ptr;
-    
-    SessionCore(framing::FrameHandler& out, uint16_t channel, uint64_t maxFrameSize);
+    SessionCore(shared_ptr<ConnectionImpl>, uint16_t channel, uint64_t maxFrameSize);
     ~SessionCore();
 
     framing::FrameSet::shared_ptr get();
@@ -83,7 +83,7 @@ class SessionCore : public framing::FrameHandler::InOutHandler
     /** Closed by peer */
     void closed(uint16_t code, const std::string& text);
 
-    void resume(framing::FrameHandler& out);
+    void resume(shared_ptr<ConnectionImpl>);
     void suspend();
 
     void setSync(bool);

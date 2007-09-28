@@ -32,7 +32,7 @@ namespace client {
 class Response : public Completion
 {
 public:
-    Response(Future f, SessionCore::shared_ptr s) : Completion(f, s) {}
+    Response(Future f, shared_ptr<SessionCore> s) : Completion(f, s) {}
 
     template <class T> T& as() 
     {
