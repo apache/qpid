@@ -63,6 +63,8 @@ class AMQMethodBody : public AMQBody {
     virtual uint32_t size() const = 0;
     virtual uint8_t type() const { return METHOD_BODY; }
 
+    virtual bool isSync() const { return false; /*only ModelMethods can have the sync flag set*/ }
+
     AMQMethodBody* getMethod() { return this; }
     const AMQMethodBody* getMethod() const { return this; }
     void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
