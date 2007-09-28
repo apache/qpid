@@ -101,6 +101,8 @@ Future SessionCore::send(const AMQBody& command)
 { 
     checkClosed();
 
+    command.getMethod()->setSync(sync);
+
     Future f;
     //any result/response listeners must be set before the command is sent
     if (command.getMethod()->resultExpected()) {

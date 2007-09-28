@@ -48,9 +48,16 @@ public:
 
     void sync(SessionCore& session)
     {
-        if (!complete) {
+        if (!isComplete(session)) {
+            session.getExecution().syncTo(command);
+            wait(session);
+        }
+    }
+
+    void wait(SessionCore& session)
+    {
+        if (!isComplete(session)) {
             FutureCompletion callback;
-            session.getExecution().flushTo(command);
             session.getExecution().getCompletionTracker().listenForCompletion(
                 command,                                                     
                 boost::bind(&FutureCompletion::completed, &callback)
@@ -83,8 +90,12 @@ public:
         }
     }
 
-    bool isComplete() {
-        return complete;
+    bool isComplete(SessionCore& session) {
+        return complete || session.getExecution().isComplete(command);
+    }
+
+    bool isCompleteUpTo(SessionCore& session) {
+        return complete || session.getExecution().isCompleteUpTo(command);
     }
 
     void setCommandId(const framing::SequenceNumber& id) { command = id; }
