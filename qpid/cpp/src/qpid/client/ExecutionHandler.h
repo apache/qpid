@@ -41,15 +41,16 @@ class ExecutionHandler :
     public ChainableFrameHandler,
     public Execution
 {
-    framing::Window incoming;
-    framing::Window outgoing;
+    framing::SequenceNumber incomingCounter;
+    framing::AccumulatedAck incomingCompletionStatus;
+    framing::SequenceNumber outgoingCounter;
+    framing::AccumulatedAck outgoingCompletionStatus;
     framing::FrameSet::shared_ptr arriving;
     Correlator correlation;
     CompletionTracker completion;
     Demux demux;
     framing::ProtocolVersion version;
     uint64_t maxFrameSize;
-    framing::AccumulatedAck completionStatus;
 
     void complete(uint32_t mark, const framing::SequenceNumberSet& range);    
     void flush();
@@ -76,6 +77,9 @@ public:
     void completed(const framing::SequenceNumber& id, bool cumulative, bool send);
     void syncTo(const framing::SequenceNumber& point);
     void flushTo(const framing::SequenceNumber& point);
+
+    bool isComplete(const framing::SequenceNumber& id);
+    bool isCompleteUpTo(const framing::SequenceNumber& id);
 
     void setMaxFrameSize(uint64_t size) { maxFrameSize = size; }
     Correlator& getCorrelator() { return correlation; }

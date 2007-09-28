@@ -100,6 +100,15 @@ void AccumulatedAck::collectRanges(SequenceNumberSet& set) const
     }
 }
 
+void AccumulatedAck::update(const SequenceNumber cumulative, const SequenceNumberSet& range)
+{
+    update(mark, cumulative);
+    for (SequenceNumberSet::const_iterator i = range.begin(); i != range.end(); i++) {
+        update(*i, *(++i));
+    }
+}
+
+
 bool Range::contains(SequenceNumber i) const 
 { 
     return i >= start && i <= end; 

@@ -85,7 +85,7 @@ void SemanticHandler::complete(uint32_t cumulative, const SequenceNumberSet& ran
         throw ConnectionException(530, "Received odd number of elements in ranged mark");
     } else {
         for (SequenceNumberSet::const_iterator i = range.begin(); i != range.end(); i++) {
-            state.ackRange((uint64_t) i->getValue(), (uint64_t) (++i)->getValue());
+            state.ackRange(*i, *(++i));
         }
     }
 }

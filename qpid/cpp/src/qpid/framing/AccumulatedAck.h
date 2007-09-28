@@ -64,6 +64,7 @@ namespace qpid {
             void clear();
             bool covers(SequenceNumber tag) const;
             void collectRanges(SequenceNumberSet& set) const;
+            void update(const SequenceNumber cumulative, const SequenceNumberSet& range);
         };
         std::ostream& operator<<(std::ostream&, const Range&);
         std::ostream& operator<<(std::ostream&, const AccumulatedAck&);
