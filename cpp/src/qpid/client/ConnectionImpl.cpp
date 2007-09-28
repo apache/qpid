@@ -45,8 +45,8 @@ ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c)
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionCore>& session)
 {
     Mutex::ScopedLock l(lock);
-    boost::shared_ptr<SessionCore>& s = sessions[session->getChannel()];
-    if (s)
+    boost::weak_ptr<SessionCore>& s = sessions[session->getChannel()];
+    if (s.lock())
         throw ChannelBusyException();
     s = session;
 }
@@ -61,7 +61,7 @@ void ConnectionImpl::incoming(framing::AMQFrame& frame)
     boost::shared_ptr<SessionCore> s;
     {
         Mutex::ScopedLock l(lock);
-        s = sessions[frame.getChannel()];
+        s = sessions[frame.getChannel()].lock();
     }
     if (!s)
         throw ChannelErrorException();
@@ -120,7 +120,9 @@ void ConnectionImpl::signalClose(uint16_t code, const std::string& text)
 {
     Mutex::ScopedLock l(lock);
     for (SessionMap::iterator i = sessions.begin(); i != sessions.end(); i++) {
-        i->second->closed(code, text);
+        boost::shared_ptr<SessionCore> s = i->second.lock();
+        if (s)
+            s->closed(code, text);
     }
     sessions.clear();
     isClosed = true;

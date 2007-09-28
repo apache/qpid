@@ -33,10 +33,10 @@ class Completion
 {
 protected:
     Future future;
-    SessionCore::shared_ptr session;
+    shared_ptr<SessionCore> session;
 
 public:
-    Completion(Future f, SessionCore::shared_ptr s) : future(f), session(s) {}
+    Completion(Future f, shared_ptr<SessionCore> s) : future(f), session(s) {}
 
     void sync()
     {
