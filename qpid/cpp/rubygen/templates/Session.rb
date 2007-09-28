@@ -156,11 +156,10 @@ EOS
 class #{@classname} {
   shared_ptr<SessionCore> impl;
   framing::ProtocolVersion version;
+public:
     #{@classname}();
     #{@classname}(shared_ptr<SessionCore>);
 
-  friend class Connection;
-public:
     framing::FrameSet::shared_ptr get() { return impl->get(); }
     Uuid getId() const { return impl->getId(); }
     void setSynchronous(bool sync) { impl->setSync(sync); } 
