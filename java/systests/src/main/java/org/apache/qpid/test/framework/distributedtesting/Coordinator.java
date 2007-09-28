@@ -32,14 +32,11 @@ import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestClientDetails;
 import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.clocksynch.UDPClockReference;
-import org.apache.qpid.test.framework.listeners.XMLTestListener;
 import org.apache.qpid.util.ConversationFactory;
 import org.apache.qpid.util.PrettyPrintingUtils;
 
-import uk.co.thebadgerset.junit.extensions.TKTestResult;
 import uk.co.thebadgerset.junit.extensions.TKTestRunner;
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
-import uk.co.thebadgerset.junit.extensions.listeners.CSVTestListener;
 import uk.co.thebadgerset.junit.extensions.util.CommandLineParser;
 import uk.co.thebadgerset.junit.extensions.util.MathUtils;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
@@ -47,7 +44,6 @@ import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
 import javax.jms.*;
 
-import java.io.*;
 import java.net.InetAddress;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -111,12 +107,6 @@ public class Coordinator extends TKTestRunner
     /** Holds the connection that the coordinating messages are sent over. */
     protected Connection connection;
 
-    /**
-     * Holds the name of the class of the test currently being run. Ideally passed into the {@link #createTestResult}
-     * method, but as the signature is already fixed for this, the current value gets pushed here as a member variable.
-     */
-    protected String currentTestClassName;
-
     /** Holds the path of the directory to output test results too, if one is defined. */
     protected String reportDir;
 
@@ -125,12 +115,6 @@ public class Coordinator extends TKTestRunner
 
     /** Flag that indicates that all test clients should be terminated upon completion of the test cases. */
     protected boolean terminate;
-
-    /** Flag that indicates the CSV results listener should be used to output results. */
-    protected boolean csvResults;
-
-    /** Flag that indiciates the XML results listener should be used to output results. */
-    protected boolean xmlResults;
 
     /**
      * Creates an interop test coordinator on the specified broker and virtual host.
@@ -155,7 +139,7 @@ public class Coordinator extends TKTestRunner
         String reportDir, String runName, boolean verbose, String brokerUrl, String virtualHost, TestEngine engine,
         boolean terminate, boolean csv, boolean xml)
     {
-        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, verbose);
+        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, csv, xml, verbose);
 
         log.debug("public Coordinator(Integer repetitions = " + repetitions + " , Long duration = " + duration
             + ", int[] threads = " + Arrays.toString(threads) + ", int delay = " + delay + ", int[] params = "
@@ -170,8 +154,6 @@ public class Coordinator extends TKTestRunner
         this.reportDir = reportDir;
         this.engine = engine;
         this.terminate = terminate;
-        this.csvResults = csv;
-        this.xmlResults = xml;
     }
 
     /**
@@ -546,88 +528,5 @@ public class Coordinator extends TKTestRunner
         default:
             return new InteropTestDecorator(targetTest, enlistedClients, conversationFactory, connection);
         }
-    }
-
-    /**
-     * Creates the TestResult object to be used for test runs.
-     *
-     * @return An instance of the test result object.
-     */
-    protected TestResult createTestResult()
-    {
-        log.debug("protected TestResult createTestResult(): called");
-
-        TKTestResult result = new TKTestResult(fPrinter.getWriter(), delay, verbose, testCaseName);
-
-        // Check if a directory to output reports to has been specified and attach test listeners if so.
-        if (reportDir != null)
-        {
-            // Create the report directory if it does not already exist.
-            File reportDirFile = new File(reportDir);
-
-            if (!reportDirFile.exists())
-            {
-                reportDirFile.mkdir();
-            }
-
-            // Create the results file (make the name of this configurable as a command line parameter).
-            Writer timingsWriter;
-
-            // Set up an XML results listener to output the timings to the results file, if requested on the command line.
-            if (xmlResults)
-            {
-                try
-                {
-                    File timingsFile = new File(reportDirFile, "TEST." + currentTestClassName + ".xml");
-                    timingsWriter = new BufferedWriter(new FileWriter(timingsFile), 20000);
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException("Unable to create the log file to write test results to: " + e, e);
-                }
-
-                XMLTestListener listener = new XMLTestListener(timingsWriter, currentTestClassName);
-                result.addListener(listener);
-                result.addTKTestListener(listener);
-
-                registerShutdownHook(listener);
-            }
-
-            // Set up an CSV results listener to output the timings to the results file, if requested on the command line.
-            if (csvResults)
-            {
-                try
-                {
-                    File timingsFile =
-                        new File(reportDirFile, testRunName + "-" + TIME_STAMP_FORMAT.format(new Date()) + "-timings.csv");
-                    timingsWriter = new BufferedWriter(new FileWriter(timingsFile), 20000);
-                }
-                catch (IOException e)
-                {
-                    throw new RuntimeException("Unable to create the log file to write test results to: " + e, e);
-                }
-
-                CSVTestListener listener = new CSVTestListener(timingsWriter);
-                result.addListener(listener);
-                result.addTKTestListener(listener);
-
-                // Register the results listeners shutdown hook to flush its data if the test framework is shutdown
-                // prematurely.
-                registerShutdownHook(listener);
-            }
-
-            // Register the results listeners shutdown hook to flush its data if the test framework is shutdown
-            // prematurely.
-            // registerShutdownHook(listener);
-
-            // Record the start time of the batch.
-            // result.notifyStartBatch();
-
-            // At this point in time the test class has been instantiated, giving it an opportunity to read its parameters.
-            // Inform any test listers of the test properties.
-            result.notifyTestProperties(TestContextProperties.getAccessedProps());
-        }
-
-        return result;
     }
 }
