@@ -22,6 +22,8 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.failover.FailoverNoopSupport;
+import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpidity.nclient.Session;
@@ -403,6 +405,9 @@ public class AMQSession_0_10 extends AMQSession
             {
                 getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
                                              MAX_PREFETCH);
+                // todo this 
+                getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE,
+                                             0xFFFFFFFF);
             }
         }
         // We need to sync so that we get notify of an error.
@@ -456,4 +461,41 @@ public class AMQSession_0_10 extends AMQSession
         }
     }
 
+    protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+              throws AMQException
+      {
+          /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
+          return new FailoverNoopSupport<AMQShortString, AMQException>(
+                  new FailoverProtectedOperation<AMQShortString, AMQException>()
+                  {
+                      public AMQShortString execute() throws AMQException, FailoverException
+                      {
+                          // Generate the queue name if the destination indicates that a client generated name is to be used.
+                          if (amqd.isNameRequired())
+                          {
+
+                                   //TODO this is for 0_10 only to be changed
+                                   amqd.setQueueName(new AMQShortString("tmp_" +System.currentTimeMillis()));
+
+                          }
+
+                          sendQueueDeclare(amqd,protocolHandler);
+
+                          return amqd.getAMQQueueName();
+                      }
+                  }, _connection).execute();
+      }
+
+
+      void start() throws AMQException
+    {
+
+           super.suspendChannel(false);
+
+        // If the event dispatcher is not running then start it too.
+        if (hasMessageListeners())
+        {
+            startDistpatcherIfNecessary();
+        }
+    }
 }
