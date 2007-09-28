@@ -22,6 +22,7 @@ package org.apache.qpid.test.unit.transacted;
 
 import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.url.URLSyntaxException;
@@ -41,7 +42,7 @@ import javax.jms.TextMessage;
  *
  * Assumptions; - Assumes empty Queue
  */
-public class CommitRollbackTest extends TestCase
+public class CommitRollbackTest extends QpidTestCase
 {
     protected AMQConnection conn;
     protected String queue = "direct://amq.direct//Qpid.Client.Transacted.CommitRollback.queue";
@@ -54,7 +55,6 @@ public class CommitRollbackTest extends TestCase
     Queue _jmsQueue;
 
     private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
-    private static final String BROKER = "vm://:1";
     private boolean _gotone = false;
     private boolean _gottwo = false;
     private boolean _gottwoRedelivered = false;
@@ -62,20 +62,14 @@ public class CommitRollbackTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        if (BROKER.startsWith("vm"))
-        {
-            TransportConnection.createVMBroker(1);
-        }
-
         testMethod++;
         queue += testMethod;
-
         newConnection();
     }
 
-    private void newConnection() throws AMQException, URLSyntaxException, JMSException
+    private void newConnection() throws Exception
     {
-        conn = new AMQConnection("amqp://guest:guest@client/test?brokerlist='" + BROKER + "'");
+        conn = (AMQConnection) getConnection("guest", "guest");
 
         _session = conn.createSession(true, Session.CLIENT_ACKNOWLEDGE);
 
@@ -92,12 +86,7 @@ public class CommitRollbackTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
-
         conn.close();
-        if (BROKER.startsWith("vm"))
-        {
-            TransportConnection.killVMBroker(1);
-        }
     }
 
     /**

@@ -36,30 +36,29 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 
 /** @author Apache Software Foundation */
-public class TopicSessionTest extends TestCase
+public class TopicSessionTest extends QpidTestCase
 {
     private static final String BROKER = "vm://:1";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
 
     public void testTopicSubscriptionUnsubscription() throws Exception
     {
 
-        AMQConnection con = new AMQConnection(BROKER+"?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con.getDefaultTopicExchangeName(), "MyTopic");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session1.createDurableSubscriber(topic, "subscription0");
@@ -104,7 +103,7 @@ public class TopicSessionTest extends TestCase
 
     private void subscriptionNameReuseForDifferentTopic(boolean shutdown) throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con, "MyTopic1" + String.valueOf(shutdown));
         AMQTopic topic2 = new AMQTopic(con, "MyOtherTopic1" + String.valueOf(shutdown));
 
@@ -143,13 +142,13 @@ public class TopicSessionTest extends TestCase
 
     public void testUnsubscriptionAfterConnectionClose() throws Exception
     {
-        AMQConnection con1 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection con1 = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con1, "MyTopic3");
 
         TopicSession session1 = con1.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
 
-        AMQConnection con2 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test2", "test");
+        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
         TopicSession session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicSubscriber sub = session2.createDurableSubscriber(topic, "subscription0");
 
@@ -174,7 +173,7 @@ public class TopicSessionTest extends TestCase
     public void testTextMessageCreation() throws Exception
     {
 
-        AMQConnection con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con, "MyTopic4");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(topic);
@@ -214,7 +213,7 @@ public class TopicSessionTest extends TestCase
 
     public void testSendingSameMessage() throws Exception
     {
-        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection conn = (AMQConnection) getConnection("guest", "guest");
         TopicSession session = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         TemporaryTopic topic = session.createTemporaryTopic();
         assertNotNull(topic);
@@ -237,7 +236,7 @@ public class TopicSessionTest extends TestCase
 
     public void testTemporaryTopic() throws Exception
     {
-        AMQConnection conn = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection conn = (AMQConnection) getConnection("guest", "guest");
         TopicSession session = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
         TemporaryTopic topic = session.createTemporaryTopic();
         assertNotNull(topic);
@@ -289,7 +288,7 @@ public class TopicSessionTest extends TestCase
     public void testNoLocal() throws Exception
     {
 
-        AMQConnection con = new AMQConnection(BROKER + "?retries='0'", "guest", "guest", "test", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
 
         AMQTopic topic = new AMQTopic(con, "testNoLocal");
 
@@ -341,7 +340,7 @@ public class TopicSessionTest extends TestCase
         m = (TextMessage) noLocal.receive(100);
         assertNull(m);
 
-        AMQConnection con2 = new AMQConnection(BROKER + "?retries='0'", "guest", "guest", "test2", "test");
+        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
         TopicSession session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher2 = session2.createPublisher(topic);
 
