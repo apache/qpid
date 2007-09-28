@@ -2101,7 +2101,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         return getProtocolHandler().getProtocolMinorVersion();
     }
 
-    private boolean hasMessageListeners()
+    protected boolean hasMessageListeners()
     {
         return _hasMessageListeners;
     }
@@ -2342,7 +2342,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo Be aware of possible changes to parameter order as versions change.
      */
-    private void suspendChannel(boolean suspend) throws AMQException // , FailoverException
+    protected  void suspendChannel(boolean suspend) throws AMQException // , FailoverException
     {
         synchronized (_suspensionLock)
         {

@@ -23,9 +23,8 @@ public class FiledTableSupport
   public static Map<String,Object> convertToMap(FieldTable ft)
   {
      Map<String,Object> map = new HashMap<String,Object>();
-     for (Enumeration keys = ft.getPropertyNames(); keys.hasMoreElements();)
+     for (AMQShortString key: ft.keySet() )
      {
-         AMQShortString key = (AMQShortString)keys.nextElement();
          map.put(key.asString(), ft.getObject(key));
      }
 
