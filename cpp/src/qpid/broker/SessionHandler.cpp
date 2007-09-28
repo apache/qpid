@@ -35,7 +35,7 @@ SessionHandler::SessionHandler(Connection& c, ChannelId ch)
       connection(c), channel(ch), proxy(out),
       ignoring(false) {}
 
-SessionHandler::~SessionHandler() { }
+SessionHandler::~SessionHandler() {}
 
 namespace {
 ClassId classId(AMQMethodBody* m) { return m ? m->amqpMethodId() : 0; }
@@ -78,18 +78,15 @@ void SessionHandler::handleOut(AMQFrame& f) {
 void SessionHandler::assertOpen(const char* method) {
      if (!session.get())
         throw ChannelErrorException(
-            QPID_MSG(""<<method<<" failed: No session for channel "
+            QPID_MSG(method << " failed: No session for channel "
                      << getChannel()));
 }
 
 void SessionHandler::assertClosed(const char* method) {
-    // FIXME aconway 2007-08-31: Should raise channel-busy, need
-    // to update spec.
     if (session.get())
-        throw PreconditionFailedException(
-            QPID_MSG(""<<method<<" failed: "
-                     << channel << " already open on channel "
-                     << getChannel()));
+        throw ChannelBusyException(
+            QPID_MSG(method << " failed: channel " << channel
+                     << " is already open."));
 }
 
 void  SessionHandler::open(uint32_t detachedLifetime) {
@@ -97,6 +94,12 @@ void  SessionHandler::open(uint32_t detachedLifetime) {
     std::auto_ptr<SessionState> state(
         connection.broker.getSessionManager().open(*this, detachedLifetime));
     session.reset(state.release());
+    getProxy().getSession().attached(session->getId(), session->getTimeout());
+}
+
+void  SessionHandler::resume(const Uuid& id) {
+    assertClosed("resume");
+    session = connection.broker.getSessionManager().resume(*this, id);
     getProxy().getSession().attached(session->getId(), session->getTimeout());
 }
 
@@ -115,26 +118,23 @@ void  SessionHandler::close() {
     ignoring=false;
     session.reset();
     getProxy().getSession().closed(REPLY_SUCCESS, "ok");
-    // No need to remove from connection map, will be re-used
-    // if channel is re-opened.
+    assert(&connection.getChannel(channel) == this);
+    connection.closeChannel(channel); 
 }
 
 void  SessionHandler::closed(uint16_t replyCode, const string& replyText) {
-    // FIXME aconway 2007-08-31: Extend constants.h to map codes & ids
-    // to text names.
     QPID_LOG(warning, "Received session.closed: "<<replyCode<<" "<<replyText);
     ignoring=false;
     session.reset();
-    // No need to remove from connection map, will be re-used
-    // if channel is re-opened.
-}
-
-void  SessionHandler::resume(const Uuid& /*sessionId*/) {
-    assert(0); throw NotImplementedException();
 }
 
 void  SessionHandler::suspend() {
-    assert(0); throw NotImplementedException();
+    assertOpen("suspend");
+    connection.broker.getSessionManager().suspend(session);
+    assert(!session.get());
+    getProxy().getSession().detached();
+    assert(&connection.getChannel(channel) == this);
+    connection.closeChannel(channel); 
 }
 
 void  SessionHandler::ack(uint32_t     /*cumulativeSeenMark*/,

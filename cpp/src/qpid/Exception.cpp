@@ -32,7 +32,7 @@ std::string strError(int err) {
 }
 
 static void ctorLog(const std::exception* e) {
-    QPID_LOG(trace, "Exception constructor " << typeid(e).name() << ": " << e->what());
+    QPID_LOG(trace, "Exception: " << e->what());
 }
     
 Exception::Exception() throw() { ctorLog(this); }

@@ -60,6 +60,8 @@ class ClientSessionTest : public CppUnit::TestCase
     CPPUNIT_TEST(testQueueQuery);
     CPPUNIT_TEST(testTransfer);
     CPPUNIT_TEST(testDispatcher);
+    CPPUNIT_TEST(testSuspendResume);
+    CPPUNIT_TEST(testSuspendResumeErrors);
     CPPUNIT_TEST_SUITE_END();
 
     boost::shared_ptr<Connector> broker;
@@ -139,6 +141,28 @@ public:
     }
 
     void testSuspendResume() {
+        session = connection.newSession(60);
+        session.suspend();
+        try {
+            session.exchangeQuery_(name="amq.fanout");
+            CPPUNIT_FAIL("Expected session suspended exception");
+        } catch(...) {}
+        connection.resume(session);
+        session.exchangeQuery_(name="amq.fanout");
+        // FIXME aconway 2007-09-25: build up session state and confirm
+        //it survives the resume
+    }
+
+    void testSuspendResumeErrors() {
+        session.suspend();  // session has 0 timeout.
+        try {
+            session.exchangeQuery_(name="amq.fanout");
+            CPPUNIT_FAIL("Expected suspended session exception");
+        } catch(...) {}
+        try {
+            connection.resume(session);
+            CPPUNIT_FAIL("Expected no such session exception.");
+        } catch(...) {}
     }
 };
 

@@ -25,7 +25,7 @@
 #include "Connection.h"
 #include "Channel.h"
 #include "Message.h"
-#include "ScopedAssociation.h"
+#include "SessionCore.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
@@ -70,16 +70,22 @@ void Connection::openChannel(Channel& channel) {
     channel.open(newSession());
 }
 
-Session Connection::newSession() {
-    ChannelId id = ++channelIdCounter;
-    SessionCore::shared_ptr session(new SessionCore(id, impl, max_frame_size));
-    ScopedAssociation::shared_ptr assoc(new ScopedAssociation(session, impl));
-    session->open();
-    return Session(assoc);
+Session Connection::newSession(uint32_t detachedLifetime) {
+    shared_ptr<SessionCore> core(
+        new SessionCore(*impl, ++channelIdCounter, max_frame_size));
+    impl->addSession(core);
+    core->open(detachedLifetime);
+    return Session(core);
 }
 
-void Connection::close()
-{
+void Connection::resume(Session& session) {
+    shared_ptr<SessionCore> core=session.impl;
+    core->setChannel(++channelIdCounter);
+    impl->addSession(core);
+    core->resume(*impl);
+}
+
+void Connection::close() {
     impl->close();
 }
 

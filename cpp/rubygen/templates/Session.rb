@@ -23,7 +23,7 @@ class SessionGen < CppGen
   end
 
   def declare_method (m)
-    param_unpackers = m.fields.collect { |f| "args[#{f.cppname}|#{f.cpptype.default_value}]" }
+    param_unpackers = m.fields.collect { |f| "args[::qpid::client::#{f.cppname}|#{f.cpptype.default_value}]" }
     if (m.content())
       param_names = m.param_names + ["content"]
       param_unpackers << "args[content|DefaultContent(\"\")]"
@@ -89,14 +89,14 @@ class SessionGen < CppGen
       gen "){\n\n"
     end
     indent (2) { 
-      gen "return #{return_type(m)}(impl()->send(#{m.body_name}(" 
+      gen "return #{return_type(m)}(impl->send(#{m.body_name}(" 
       params = ["version"] + m.param_names
       gen params.join(", ")
       other_params=[]
       if (m.content())
-        gen "), content), impl());\n"
+        gen "), content), impl);\n"
       else
-        gen ")), impl());\n"
+        gen ")), impl);\n"
       end
     }
     gen "}\n\n"
@@ -127,6 +127,7 @@ class SessionGen < CppGen
 #include <sstream> 
 #include <boost/parameter.hpp>
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/Uuid.h"
 #include "qpid/framing/amqp_structs.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/MethodContent.h"
@@ -134,8 +135,9 @@ class SessionGen < CppGen
 #include "qpid/client/Completion.h"
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Response.h"
-#include "qpid/client/ScopedAssociation.h"
+#include "qpid/client/SessionCore.h"
 #include "qpid/client/TypedResult.h"
+#include "qpid/shared_ptr.h"
 
 namespace qpid {
 namespace client {
@@ -145,25 +147,26 @@ using framing::Content;
 using framing::FieldTable;
 using framing::MethodContent;
 using framing::SequenceNumberSet;
+using framing::Uuid;
 
 EOS
       declare_keywords(@amqp.classes.select { |c| !excludes.include?(c.name)  })
       genl 
       gen <<EOS
 class #{@classname} {
-  ScopedAssociation::shared_ptr assoc;
+  shared_ptr<SessionCore> impl;
   framing::ProtocolVersion version;
-  
-  SessionCore::shared_ptr impl();
-
-public:
     #{@classname}();
-    #{@classname}(ScopedAssociation::shared_ptr);
+    #{@classname}(shared_ptr<SessionCore>);
 
-    framing::FrameSet::shared_ptr get() { return impl()->get(); }
-    void setSynchronous(bool sync) { impl()->setSync(sync); } 
+  friend class Connection;
+public:
+    framing::FrameSet::shared_ptr get() { return impl->get(); }
+    Uuid getId() const { return impl->getId(); }
+    void setSynchronous(bool sync) { impl->setSync(sync); } 
+    void suspend();
     void close();
-    Execution& execution() { return impl()->getExecution(); }
+    Execution& execution() { return impl->getExecution(); }
 
     typedef framing::TransferContent DefaultContent;
 EOS
@@ -188,18 +191,10 @@ namespace qpid {
 namespace client {
 
 #{@classname}::#{@classname}() {}
-#{@classname}::#{@classname}(ScopedAssociation::shared_ptr _assoc) : assoc(_assoc) {}
+#{@classname}::#{@classname}(shared_ptr<SessionCore> core) : impl(core) {}
 
-SessionCore::shared_ptr #{@classname}::impl()
-{
-    if (!assoc) throw Exception("Uninitialised session");
-    return assoc->session;
-}
-
-void #{@classname}::close()
-{
-    impl()->close(); 
-}
+void #{@classname}::suspend() { impl->suspend(); }
+void #{@classname}::close() { impl->close(); }
 
 EOS
 

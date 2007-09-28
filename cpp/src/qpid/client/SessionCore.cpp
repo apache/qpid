@@ -20,27 +20,25 @@
  */
 
 #include "SessionCore.h"
-#include <boost/bind.hpp>
+#include "qpid/framing/constants.h"
 #include "Future.h"
 #include "FutureResponse.h"
 #include "FutureResult.h"
 
+#include <boost/bind.hpp>
+
 using namespace qpid::client;
 using namespace qpid::framing;
 
-SessionCore::SessionCore(uint16_t _id, boost::shared_ptr<framing::FrameHandler> out, 
-                         uint64_t maxFrameSize) : l3(maxFrameSize), id(_id), sync(false), isClosed(false)
+SessionCore::SessionCore(FrameHandler& out_, uint16_t ch, uint64_t maxFrameSize)
+    : channel(ch), l2(*this), l3(maxFrameSize), uuid(false), sync(false)
 {
-    l2.out = boost::bind(&FrameHandler::handle, out, _1);
-    l2.in = boost::bind(&ExecutionHandler::handle, &l3, _1);
-    l3.out = boost::bind(&SessionHandler::outgoing, &l2, _1);
-    l2.onClose = boost::bind(&SessionCore::closed, this, _1, _2);
+    l2.next = &l3;
+    l3.out = &out;
+    out.next = &out_;
 }
 
-void SessionCore::open()
-{
-    l2.open(id);
-}
+SessionCore::~SessionCore() {}
 
 ExecutionHandler& SessionCore::getExecution()
 {
@@ -50,6 +48,7 @@ ExecutionHandler& SessionCore::getExecution()
 
 FrameSet::shared_ptr SessionCore::get()
 {
+    checkClosed();
     return l3.getDemux().getDefault().pop();
 }
 
@@ -63,38 +62,55 @@ bool SessionCore::isSync()
     return sync;
 }
 
+namespace {
+struct ClosedOnExit {
+    SessionCore& core;
+    int code;
+    std::string text;
+    ClosedOnExit(SessionCore& s, int c, const std::string& t)
+        : core(s), code(c), text(t) {}
+    ~ClosedOnExit() { core.closed(code, text); }
+};
+}
+
 void SessionCore::close()
 {
+    checkClosed();
+    ClosedOnExit closer(*this, CHANNEL_ERROR, "Session closed by user.");
     l2.close();
-    stop();
 }
 
-void SessionCore::stop()
-{
-    l3.getDemux().close();
-    l3.getCompletionTracker().close();
-}
-
-void SessionCore::handle(AMQFrame& frame)
-{
-    l2.incoming(frame);
+void SessionCore::suspend() {
+    checkClosed();
+    ClosedOnExit closer(*this, CHANNEL_ERROR, "Client session is suspended");
+    l2.suspend();
 }
 
 void SessionCore::closed(uint16_t code, const std::string& text)
 {
-    stop();
-
-    isClosed = true;
+    out.next = 0;
     reason.code = code;
     reason.text = text;
+    l2.closed();
+    l3.getDemux().close();
+    l3.getCompletionTracker().close();
 }
 
-void SessionCore::checkClosed()
+void SessionCore::checkClosed() const
 {
-    if (isClosed) {
-        //TODO: could actually have been a connection exception
+    // TODO: could have been a connection exception
+    if(out.next == 0)
         throw ChannelException(reason.code, reason.text);
-    }
+}
+
+void SessionCore::open(uint32_t detachedLifetime) {
+    assert(out.next);
+    l2.open(detachedLifetime);
+}
+
+void SessionCore::resume(FrameHandler& out_) {
+    out.next = &out_;
+    l2.resume();
 }
 
 Future SessionCore::send(const AMQBody& command)
@@ -131,3 +147,15 @@ Future SessionCore::send(const AMQBody& command, const MethodContent& content)
     //send method impl:
     return Future(l3.send(command, content));
 }
+
+void SessionCore::handleIn(AMQFrame& frame) {
+    l2.handle(frame);
+}
+
+void SessionCore::handleOut(AMQFrame& frame)
+{
+    checkClosed();
+    frame.setChannel(channel);
+    out.next->handle(frame);
+}
+
