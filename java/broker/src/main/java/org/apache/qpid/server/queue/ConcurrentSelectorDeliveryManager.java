@@ -480,7 +480,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             assert removed == message;
 
             // if the message expired then the _totalMessageSize needs adjusting
-            if (message.expired(_queue))
+            if (message.expired(_queue) && !message.getDeliveredToConsumer())
             {
                 _totalMessageSize.addAndGet(-message.getSize());
 
