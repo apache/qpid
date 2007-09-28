@@ -79,7 +79,7 @@ include cluster.mk
 # in a convenience library to link into libqpid_common.
 # 
 noinst_LTLIBRARIES=libLogger.la
-libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h  
+libLogger_la_SOURCES=qpid/log/Logger.cpp qpid/log/Logger.h
 libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
 libqpidcommon_la_LIBADD = \
@@ -363,6 +363,7 @@ nobase_include_HEADERS = \
   qpid/framing/amqp_types_full.h \
   qpid/framing/frame_functors.h \
   qpid/framing/variant.h \
+  qpid/log/Helpers.h \
   qpid/log/Options.h \
   qpid/log/Selector.h \
   qpid/log/Statement.h \
