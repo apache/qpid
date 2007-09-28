@@ -22,36 +22,40 @@
 #define _SessionHandler_
 
 #include "StateManager.h"
-#include "ChainableFrameHandler.h"
+#include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/Uuid.h"
+#include "qpid/shared_ptr.h"
 
 namespace qpid {
 namespace client {
+class SessionCore;
 
-class SessionHandler : private StateManager, public ChainableFrameHandler
+/**
+ * Handles incoming session (L2) commands.
+ */
+class SessionHandler : public framing::FrameHandler,
+                       private StateManager
 {
-    enum STATES {OPENING, OPEN, CLOSING, CLOSED, CLOSED_BY_PEER};
-    framing::ProtocolVersion version;
-    uint16_t id;
+    enum STATES {OPENING, OPEN, CLOSING, CLOSED};
+    SessionCore& core;
     
-    uint16_t code;
-    std::string text;
-
     void handleMethod(framing::AMQMethodBody* method);
-    void closed(uint16_t code, const std::string& msg);
-
-public:
-    typedef boost::function<void(uint16_t, const std::string&)> CloseListener;    
-
-    SessionHandler();
-
-    void incoming(framing::AMQFrame& frame);
-    void outgoing(framing::AMQFrame& frame);
-
-    void open(uint16_t id);
-    void close();
+    void attach(const framing::AMQMethodBody&);
+    void detach(const framing::AMQMethodBody&);
     
-    CloseListener onClose;
+  public:
+    SessionHandler(SessionCore& parent);
+    ~SessionHandler();
+
+    /** Incoming from broker */
+    void handle(framing::AMQFrame&);
+
+    void open(uint32_t detachedLifetime);
+    void resume();
+    void close();
+    void closed();              
+    void suspend();
 };
 
 }}

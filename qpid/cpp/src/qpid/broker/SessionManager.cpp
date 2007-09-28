@@ -22,19 +22,22 @@
 #include "SessionManager.h"
 #include "SessionState.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/log/Statement.h"
+#include "qpid/log/Helpers.h"
 #include "qpid/memory.h"
 
 #include <boost/bind.hpp>
+#include <boost/range.hpp>
 
 #include <algorithm>
 #include <functional>
+#include <ostream>
 
 namespace qpid {
 namespace broker {
 
 using namespace sys;
 using namespace framing;
-using std::make_pair;
 
 SessionManager::SessionManager() {}
 
@@ -51,12 +54,16 @@ std::auto_ptr<SessionState>  SessionManager::open(
 
 void  SessionManager::suspend(std::auto_ptr<SessionState> session) {
     Mutex::ScopedLock l(lock);
-    session->expiry = AbsTime(now(),session->getTimeout());
+    active.erase(session->getId());
+    session->expiry = AbsTime(now(),session->getTimeout()*TIME_SEC);
+    session->handler = 0;
     suspended.push_back(session.release()); // In expiry order
     eraseExpired();
 }
 
-std::auto_ptr<SessionState>  SessionManager::resume(const Uuid& id) {
+std::auto_ptr<SessionState>  SessionManager::resume(
+    SessionHandler& sh, const Uuid& id)
+{
     Mutex::ScopedLock l(lock);
     eraseExpired();
     if (active.find(id) != active.end()) 
@@ -70,15 +77,20 @@ std::auto_ptr<SessionState>  SessionManager::resume(const Uuid& id) {
         throw InvalidArgumentException(
             QPID_MSG("No suspended session with id=" << id));
     active.insert(id);
-    return make_auto_ptr(suspended.release(i).release());
+    std::auto_ptr<SessionState> state(suspended.release(i).release());
+    state->handler = &sh;
+    return state;
 }
 
 void SessionManager::eraseExpired() {
     // Called with lock held.
-    Suspended::iterator i = std::lower_bound(
-        suspended.begin(), suspended.end(), now(), 
-        boost::bind(std::less<AbsTime>(), boost::bind(&SessionState::expiry, _1), _2));
-    suspended.erase(suspended.begin(), i);
+    if (!suspended.empty()) {
+        Suspended::iterator keep = std::lower_bound(
+            suspended.begin(), suspended.end(), now(),
+            boost::bind(std::less<AbsTime>(), boost::bind(&SessionState::expiry, _1), _2));
+        QPID_LOG(debug, "Expiring sessions: " << log::formatList(suspended.begin(), keep));
+        suspended.erase(suspended.begin(), keep);
+    }
 }
 
 }} // namespace qpid::broker

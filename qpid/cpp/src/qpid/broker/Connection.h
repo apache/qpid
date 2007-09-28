@@ -78,7 +78,6 @@ class Connection : public sys::ConnectionInputHandler,
     void idleIn();
     void closed();
 
-    // FIXME aconway 2007-08-30: When does closeChannel close the session?
     void closeChannel(framing::ChannelId channel);
 
   private:

@@ -28,7 +28,7 @@
 #include "ConnectionImpl.h"
 #include "qpid/client/Session.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
-
+#include "qpid/framing/Uuid.h"
 
 namespace qpid {
 
@@ -122,7 +122,25 @@ class Connection
      */
     void openChannel(Channel&);
 
-    Session newSession();
+    /**
+     * Create a new session on this connection.  Sessions allow
+     * multiple streams of work to be multiplexed over the same
+     * connection.
+     *
+     *@param detachedLifetime: A session may be detached from its
+     * channel, either by calling Session::suspend() or because of a
+     * network failure. The session state is perserved for
+     * detachedLifetime seconds to allow a call to resume(). After
+     * that the broker may discard the session state. Default is 0,
+     * meaning the session cannot be resumed.
+     */
+    Session newSession(uint32_t detachedLifetime=0);
+
+    /**
+     * Resume a suspendded session. A session may be resumed
+     * on a different connection to the one that created it.
+     */
+    void resume(Session& session);
 };
 
 }} // namespace qpid::client

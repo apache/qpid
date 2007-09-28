@@ -113,7 +113,16 @@ inline std::ostream& noop(std::ostream& s) { return s; }
             stmt_.log(QPID_LOG_STRINGSTREAM(message));                \
     } while(0)
 
-
+/**
+ * Macro for complicated logging logic that can't fit in a simple QPID_LOG
+ * statement. For example:
+ * @code
+ * QPID_IF_LOG(debug) {
+ *   message = do_complicated_stuff;
+ *   QPID_LOG(debug, message);
+ * }
+ */
+#define QPID_IF_LOG(level)
 }} // namespace qpid::log
 
 

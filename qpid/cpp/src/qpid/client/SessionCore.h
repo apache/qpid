@@ -28,6 +28,7 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
+#include "qpid/framing/Uuid.h"
 #include "SessionHandler.h"
 #include "ExecutionHandler.h"
 
@@ -36,7 +37,12 @@ namespace client {
 
 class Future;
 
-class SessionCore : public framing::FrameHandler
+/**
+ * Session implementation, sets up handler chains.
+ * Attaches to a SessionHandler when active, detaches
+ * when closed.
+ */
+class SessionCore : public framing::FrameHandler::InOutHandler
 {
     struct Reason
     {
@@ -44,33 +50,49 @@ class SessionCore : public framing::FrameHandler
         std::string text;
     };
 
-    ExecutionHandler l3;
+    uint16_t channel;
     SessionHandler l2;
-    const uint16_t id;
+    ExecutionHandler l3;
+    framing::Uuid uuid;
     bool sync;
-    bool isClosed;
     Reason reason;
-    
-public:    
-    typedef boost::shared_ptr<SessionCore> shared_ptr;
 
-    SessionCore(uint16_t id, boost::shared_ptr<framing::FrameHandler> out, uint64_t maxFrameSize);
+  protected:
+    void handleIn(framing::AMQFrame& frame);
+    void handleOut(framing::AMQFrame& frame);
+
+  public:
+    typedef shared_ptr<SessionCore> shared_ptr;
+    
+    SessionCore(framing::FrameHandler& out, uint16_t channel, uint64_t maxFrameSize);
+    ~SessionCore();
+
     framing::FrameSet::shared_ptr get();
-    uint16_t getId() const { return id; } 
+
+    framing::Uuid getId() const { return uuid; } 
+    void setId(const framing::Uuid& id)  { uuid= id; }
+        
+    uint16_t getChannel() const { assert(channel); return channel; }
+    void setChannel(uint16_t ch) { assert(ch); channel=ch; }
+
+    void open(uint32_t detachedLifetime);
+
+    /** Closed by client code */
+    void close();
+
+    /** Closed by peer */
+    void closed(uint16_t code, const std::string& text);
+
+    void resume(framing::FrameHandler& out);
+    void suspend();
+
     void setSync(bool);
     bool isSync();
-    void open();
-    void close();
-    void stop();
-    void closed(uint16_t code, const std::string& text);
-    void checkClosed();
     ExecutionHandler& getExecution();
+    void checkClosed() const;
 
     Future send(const framing::AMQBody& command);
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);
-    
-    //for incoming frames:
-    void handle(framing::AMQFrame& frame);    
 };
 
 }
