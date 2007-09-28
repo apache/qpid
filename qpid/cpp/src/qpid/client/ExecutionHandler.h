@@ -38,7 +38,7 @@ namespace client {
 
 class ExecutionHandler : 
     private framing::AMQP_ServerOperations::ExecutionHandler,
-    public ChainableFrameHandler,
+    public framing::FrameHandler,
     public Execution
 {
     framing::SequenceNumber incomingCounter;
@@ -66,9 +66,14 @@ class ExecutionHandler :
 public:
     typedef CompletionTracker::ResultListener ResultListener;
 
+    // Allow other classes to set the out handler.
+    framing::FrameHandler::Chain out;
+
     ExecutionHandler(uint64_t maxFrameSize = 65536);
 
+    // Incoming handler. 
     void handle(framing::AMQFrame& frame);
+    
     framing::SequenceNumber send(const framing::AMQBody& command, ResultListener=ResultListener());
     framing::SequenceNumber send(const framing::AMQBody& command, const framing::MethodContent& content, 
                                  ResultListener=ResultListener());

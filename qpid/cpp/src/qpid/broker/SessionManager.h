@@ -47,8 +47,7 @@ class SessionManager : private boost::noncopyable {
     SessionManager();
     ~SessionManager();
     /** Open a new active session, caller takes ownership */
-    std::auto_ptr<SessionState> open(
-        SessionHandler& h, uint32_t timeout_);
+    std::auto_ptr<SessionState> open(SessionHandler& h, uint32_t timeout_);
     
     /** Suspend a session, start it's timeout counter.
      * The factory takes ownership.
@@ -58,7 +57,7 @@ class SessionManager : private boost::noncopyable {
     /** Resume a suspended session.
      *@throw Exception if timed out or non-existant.
      */
-    std::auto_ptr<SessionState> resume(const framing::Uuid& id);
+    std::auto_ptr<SessionState> resume(SessionHandler&, const framing::Uuid&);
 
   private:
     typedef boost::ptr_vector<SessionState> Suspended;
@@ -69,7 +68,7 @@ class SessionManager : private boost::noncopyable {
     Active active;
 
     void eraseExpired();             
-  friend class SessionState; // removes deleted sessions from active set. 
+  friend class SessionState; // removes deleted sessions from active set.
 };
 
 

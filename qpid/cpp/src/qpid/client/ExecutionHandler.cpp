@@ -170,7 +170,7 @@ SequenceNumber ExecutionHandler::send(const AMQBody& command, CompletionTracker:
     if(l) {
         completion.listenForResult(id, l);
     }
-    AMQFrame frame(0/*channel will be filled in be channel handler*/, command);
+    AMQFrame frame(0/*channel will be filled in by channel handler*/, command);
     if (hasContent) {
         frame.setEof(false);
     }

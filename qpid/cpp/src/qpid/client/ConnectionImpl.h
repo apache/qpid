@@ -30,17 +30,18 @@
 #include "qpid/sys/TimeoutHandler.h"
 #include "ConnectionHandler.h"
 #include "Connector.h"
-#include "SessionCore.h"
 
 namespace qpid {
 namespace client {
 
+class SessionCore;
+
 class ConnectionImpl : public framing::FrameHandler,
-        public sys::TimeoutHandler, 
-        public sys::ShutdownHandler
+                       public sys::TimeoutHandler, 
+                       public sys::ShutdownHandler
 
 {
-    typedef std::map<uint16_t, SessionCore::shared_ptr> SessionMap;
+    typedef std::map<uint16_t, boost::shared_ptr<SessionCore> > SessionMap;
     SessionMap sessions; 
     ConnectionHandler handler;
     boost::shared_ptr<Connector> connector;
@@ -56,14 +57,12 @@ class ConnectionImpl : public framing::FrameHandler,
     void shutdown();
     void signalClose(uint16_t, const std::string&);
     void assertNotClosed();
-    SessionCore::shared_ptr find(uint16_t);
-
 public:
     typedef boost::shared_ptr<ConnectionImpl> shared_ptr;
 
     ConnectionImpl(boost::shared_ptr<Connector> c);
-    void allocated(SessionCore::shared_ptr);
-    void released(SessionCore::shared_ptr);
+    void addSession(const boost::shared_ptr<SessionCore>&);
+        
     void open(const std::string& host, int port = 5672, 
               const std::string& uid = "guest",
               const std::string& pwd = "guest", 
