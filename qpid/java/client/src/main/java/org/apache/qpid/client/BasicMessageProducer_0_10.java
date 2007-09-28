@@ -116,10 +116,10 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             qpidityMessage.getMessageProperties()
                     .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
         }
-
-        if (contentHeaderProperties.getHeaders() != null)
+         //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
+        // TODO remove second test
+        if (contentHeaderProperties.getHeaders() != null && contentHeaderProperties.getHeaders().size() > 1)
         {
-            // todo use the new fieldTable
             qpidityMessage.getMessageProperties().setApplicationHeaders(FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders()));
 
             for(String key:qpidityMessage.getMessageProperties().getApplicationHeaders().keySet())
