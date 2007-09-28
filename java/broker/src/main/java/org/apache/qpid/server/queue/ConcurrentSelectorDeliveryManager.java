@@ -330,6 +330,11 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                                                                             deliveryTag, _queue.getMessageCount());
                     _totalMessageSize.addAndGet(-msg.getSize());
                 }
+
+                if (!acks)
+                {
+                    msg.decrementReference(channel.getStoreContext());
+                }
             }
             finally
             {
@@ -402,11 +407,16 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      *
      * @throws AMQException
      */
-    public void removeAMessageFromTop(StoreContext storeContext) throws AMQException
+    public void removeAMessageFromTop(StoreContext storeContext, AMQQueue queue) throws AMQException
     {
         _lock.lock();
 
         AMQMessage message = _messages.poll();
+
+        message.dequeue(storeContext, queue);
+
+        message.decrementReference(storeContext);
+
         if (message != null)
         {
             _totalMessageSize.addAndGet(-message.getSize());
@@ -429,6 +439,9 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 _messages.poll();
 
                 _queue.dequeue(storeContext, msg);
+
+                msg.decrementReference(_reapingStoreContext);
+
                 msg = getNextMessage();
                 count++;
             }
@@ -473,6 +486,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
                 // Use the reapingStoreContext as any sub(if we have one) may be in a tx.
                 message.dequeue(_reapingStoreContext, _queue);
+
+                message.decrementReference(_reapingStoreContext);
 
                 if (_log.isInfoEnabled())
                 {

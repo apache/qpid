@@ -28,7 +28,9 @@ under the License.
       <echo message="Used via maven to run python tests."/>
   </target>
 
-  <property name="pythondir" value="../../python"/>
+  <dirname property="broker.dir" file="${ant.file.python-test}"/>
+
+  <property name="pythondir" value="${broker.dir}/../../python"/>
 
   <target name="run-tests" unless="skip-python-tests">
 
@@ -40,8 +42,12 @@ under the License.
 			failonerror="true"
 			>
 		<arg value="${command}"/>
-		
-		<classpath refid="maven.test.classpath"/>
+        <arg value="-p"/>
+        <arg value="2000"/>
+        <arg value="-m"/>
+        <arg value="2001"/>
+
+        <classpath refid="maven.test.classpath"/>
 		<sysproperty key="QPID_HOME" value="${broker.dir}"/>
 		<sysproperty key="QPID_WORK" value="${broker.dir}${file.separator}target"/>
 	</java>

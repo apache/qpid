@@ -33,11 +33,11 @@ public class RunBrokerWithCommand
     public static void main(String[] args)
     {
         //Start broker
-
         try
         {
+            String[] fudge = args.clone();
 
-            String[] fudge = new String[1];
+            // Override the first value which is the command we are going to run later.
             fudge[0] = "-v";
             new Main(fudge).startup();
         }

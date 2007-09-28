@@ -68,6 +68,7 @@ public class LargeMessageTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception

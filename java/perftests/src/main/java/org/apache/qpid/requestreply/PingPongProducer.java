@@ -885,24 +885,8 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                         synchronized (_sendPauseMonitor)
                         {
                             if ((_maxPendingSize > 0) && (unreceivedSize < _maxPendingSize))
-                            // && (_sendPauseBarrier.getNumberWaiting() == 1))
                             {
-                                // log.debug("unreceived size estimate under limit = " + unreceivedSize);
-
-                                // Wait on the send pause barrier for the limit to be re-established.
-                                /*try
-                                {*/
-                                // _sendPauseBarrier.await();
                                 _sendPauseMonitor.notify();
-                                /*}
-                                catch (InterruptedException e)
-                                {
-                                    throw new RuntimeException(e);
-                                }
-                                catch (BrokenBarrierException e)
-                                {
-                                    throw new RuntimeException(e);
-                                }*/
                             }
                         }
 
@@ -1159,11 +1143,22 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         // If necessary, wait until the max pending message size comes within its limit.
         synchronized (_sendPauseMonitor)
         {
+            // Used to keep track of the number of times that send has to wait.
+            int numWaits = 0;
+
+            // The maximum number of waits before the test gives up and fails. This has been chosen to correspond with
+            // the test timeout.
+            int waitLimit = (int) (TIMEOUT_DEFAULT / 10000);
+
             while ((_maxPendingSize > 0))
             {
                 // Get the size estimate of sent but not yet received messages.
                 int unreceived = _unreceived.get();
                 int unreceivedSize = (unreceived * ((_messageSize == 0) ? 1 : _messageSize));
+
+                // log.debug("unreceived = " + unreceived);
+                // log.debug("unreceivedSize = " + unreceivedSize);
+                // log.debug("_maxPendingSize = " + _maxPendingSize);
 
                 if (unreceivedSize > _maxPendingSize)
                 {
@@ -1172,8 +1167,8 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                     // Wait on the send pause barrier for the limit to be re-established.
                     try
                     {
-                        // _sendPauseBarrier.await();
-                        _sendPauseMonitor.wait(1000);
+                        _sendPauseMonitor.wait(10000);
+                        numWaits++;
                     }
                     catch (InterruptedException e)
                     {
@@ -1181,10 +1176,17 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                         Thread.currentThread().interrupt();
                         throw new RuntimeException(e);
                     }
-                    /*catch (BrokenBarrierException e)
+
+                    // Fail the test if the send has had to wait more than the maximum allowed number of times.
+                    if (numWaits >= waitLimit)
                     {
-                        throw new RuntimeException(e);
-                    }*/
+                        String errorMessage =
+                            "Send has had to wait for the unreceivedSize (" + unreceivedSize
+                            + ") to come below the maxPendingSize (" + _maxPendingSize + ") more that " + waitLimit
+                            + " times.";
+                        log.warn(errorMessage);
+                        throw new RuntimeException(errorMessage);
+                    }
                 }
                 else
                 {
