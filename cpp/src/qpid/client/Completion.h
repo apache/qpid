@@ -43,8 +43,17 @@ public:
         future.sync(*session);
     }
 
+    void wait()
+    {
+        future.wait(*session);
+    }
+
     bool isComplete() {
-        return future.isComplete();
+        return future.isComplete(*session);
+    }
+
+    bool isCompleteUpTo() {
+        return future.isCompleteUpTo(*session);
     }
 };
 

@@ -35,6 +35,8 @@ public:
     virtual void sendFlushRequest() = 0;
     virtual void completed(const framing::SequenceNumber& id, bool cumulative, bool send) = 0;
     virtual Demux& getDemux() = 0;
+    virtual bool isComplete(const framing::SequenceNumber& id) = 0;
+    virtual bool isCompleteUpTo(const framing::SequenceNumber& id) = 0;
 };
 
 }}
