@@ -57,7 +57,7 @@ class Connection
     framing::ChannelId channelIdCounter;
     framing::ProtocolVersion version;
     const uint32_t max_frame_size;
-    ConnectionImpl::shared_ptr impl;
+    shared_ptr<ConnectionImpl> impl;
     bool isOpen;
     bool debug;
     
