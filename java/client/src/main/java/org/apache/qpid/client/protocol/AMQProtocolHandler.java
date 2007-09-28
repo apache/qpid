@@ -24,6 +24,7 @@ import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.filter.SSLFilter;
+import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 
 import org.apache.qpid.AMQConnectionClosedException;
@@ -335,6 +336,20 @@ public class AMQProtocolHandler extends IoHandlerAdapter
                 // this will attemp failover
 
                 sessionClosed(session);
+            }
+            else
+            {
+
+                if (cause instanceof ProtocolCodecException)
+                {
+                    _logger.info("Protocol Exception caught NOT going to attempt failover as " +
+                                 "cause isn't AMQConnectionClosedException: " + cause, cause);
+
+                    AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
+                    propagateExceptionToWaiters(amqe);
+                }
+
+                _connection.exceptionReceived(cause);
             }
 
             // FIXME Need to correctly handle other exceptions. Things like ...
@@ -684,7 +699,10 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public void setStateManager(AMQStateManager stateManager)
     {
         _stateManager = stateManager;
-        _protocolSession.setStateManager(stateManager);
+        if (_protocolSession != null)
+        {
+            _protocolSession.setStateManager(stateManager);
+        }
     }
 
     public AMQProtocolSession getProtocolSession()

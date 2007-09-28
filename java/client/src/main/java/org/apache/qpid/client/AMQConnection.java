@@ -29,6 +29,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -295,6 +296,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             catch (Exception e)
             {
                 lastException = e;
+
+                //We need to change protocol handler here as an error during the connect will not
+                // cause the StateManager to be replaced. So the state is out of sync on reconnect
+                // This can be seen when a exception occurs during connection. i.e. log4j NoSuchMethod. (using < 1.2.12)
+                _protocolHandler.setStateManager(new AMQStateManager());                
 
                 if (_logger.isInfoEnabled())
                 {
@@ -1127,6 +1133,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (_exceptionListener != null)
         {
             _exceptionListener.onException(je);
+        }
+        else
+        {
+            _logger.error("Throwable Received but no listener set: " + cause.getMessage());
         }
 
         if (!(cause instanceof AMQUndeliveredException) && !(cause instanceof AMQAuthenticationException))
