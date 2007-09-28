@@ -36,7 +36,7 @@ public:
     virtual void encode(Buffer& buffer) const { header.encode(buffer); }
     virtual void decode(Buffer& buffer, uint32_t size=0) { header.decode(buffer, size); }
     virtual uint32_t size() const { return header.size(); } 
-
+    virtual bool isSync() const { return header.getSync(); }
     ExecutionHeader& getHeader() { return header; } 
     const ExecutionHeader& getHeader()  const { return header; } 
 };
