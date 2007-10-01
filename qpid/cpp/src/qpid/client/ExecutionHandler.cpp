@@ -29,6 +29,7 @@
 using namespace qpid::client;
 using namespace qpid::framing;
 using namespace boost;
+using qpid::sys::Mutex;
 
 bool isMessageMethod(AMQMethodBody* method)
 {
@@ -81,9 +82,12 @@ void ExecutionHandler::complete(uint32_t cumulative, const SequenceNumberSet& ra
         throw ConnectionException(530, "Received odd number of elements in ranged mark");
     } else {
         SequenceNumber mark(cumulative);        
-        outgoingCompletionStatus.update(mark, range);
+        {
+            Mutex::ScopedLock l(lock);
+            outgoingCompletionStatus.update(mark, range);
+        }
+        if (completionListener) completionListener();
         completion.completed(outgoingCompletionStatus.mark);
-
         //TODO: signal listeners of early notification?         
     }
 }
@@ -111,6 +115,7 @@ void ExecutionHandler::sync()
 
 void ExecutionHandler::flushTo(const framing::SequenceNumber& point)
 {
+    Mutex::ScopedLock l(lock);
     if (point > outgoingCompletionStatus.mark) {
         sendFlushRequest();
     }        
@@ -118,12 +123,14 @@ void ExecutionHandler::flushTo(const framing::SequenceNumber& point)
 
 void ExecutionHandler::sendFlushRequest()
 {
+    Mutex::ScopedLock l(lock);
     AMQFrame frame(0, ExecutionFlushBody());
     out(frame);
 }
 
 void ExecutionHandler::syncTo(const framing::SequenceNumber& point)
 {
+    Mutex::ScopedLock l(lock);
     if (point > outgoingCompletionStatus.mark) {
         sendSyncRequest();
     }        
@@ -132,17 +139,21 @@ void ExecutionHandler::syncTo(const framing::SequenceNumber& point)
 
 void ExecutionHandler::sendSyncRequest()
 {
+    Mutex::ScopedLock l(lock);
     AMQFrame frame(0, ExecutionSyncBody());
     out(frame);
 }
 
 void ExecutionHandler::completed(const SequenceNumber& id, bool cumulative, bool send)
 {
-    if (id > incomingCompletionStatus.mark) {
-        if (cumulative) {
-            incomingCompletionStatus.update(incomingCompletionStatus.mark, id);
-        } else {
-            incomingCompletionStatus.update(id, id);            
+    {
+        Mutex::ScopedLock l(lock);
+        if (id > incomingCompletionStatus.mark) {
+            if (cumulative) {
+                incomingCompletionStatus.update(incomingCompletionStatus.mark, id);
+            } else {
+                incomingCompletionStatus.update(id, id);            
+            }
         }
     }
     if (send) {
@@ -153,15 +164,17 @@ void ExecutionHandler::completed(const SequenceNumber& id, bool cumulative, bool
 
 void ExecutionHandler::sendCompletion()
 {
+    Mutex::ScopedLock l(lock);
     SequenceNumberSet range;
     incomingCompletionStatus.collectRanges(range);
     AMQFrame frame(0, ExecutionCompleteBody(version, incomingCompletionStatus.mark.getValue(), range));
     out(frame);    
 }
 
-SequenceNumber ExecutionHandler::send(const AMQBody& command, CompletionTracker::ResultListener l)
+SequenceNumber ExecutionHandler::send(const AMQBody& command, CompletionTracker::ResultListener listener)
 {
-    return send(command, l, false);
+    Mutex::ScopedLock l(lock);
+    return send(command, listener, false);
 }
 
 SequenceNumber ExecutionHandler::send(const AMQBody& command, CompletionTracker::ResultListener l, bool hasContent)
@@ -179,9 +192,10 @@ SequenceNumber ExecutionHandler::send(const AMQBody& command, CompletionTracker:
 }
 
 SequenceNumber ExecutionHandler::send(const AMQBody& command, const MethodContent& content, 
-                                      CompletionTracker::ResultListener l)
+                                      CompletionTracker::ResultListener listener)
 {
-    SequenceNumber id = send(command, l, true);
+    Mutex::ScopedLock l(lock);
+    SequenceNumber id = send(command, listener, true);
     sendContent(content);
     return id;
 }
@@ -227,10 +241,17 @@ void ExecutionHandler::sendContent(const MethodContent& content)
 
 bool ExecutionHandler::isComplete(const SequenceNumber& id)
 {
+    Mutex::ScopedLock l(lock);
     return outgoingCompletionStatus.covers(id);
 }
 
 bool ExecutionHandler::isCompleteUpTo(const SequenceNumber& id)
 {
+    Mutex::ScopedLock l(lock);
     return outgoingCompletionStatus.mark >= id;
+}
+
+void ExecutionHandler::setCompletionListener(boost::function<void()> l)
+{
+    completionListener = l;
 }
