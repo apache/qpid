@@ -28,6 +28,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 
-public class SessionStartTest extends TestCase implements MessageListener
+public class SessionStartTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(SessionStartTest.class);
 
@@ -49,7 +50,7 @@ public class SessionStartTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+        init((AMQConnection) getConnection("guest", "guest"));
     }
 
     protected void tearDown() throws Exception
