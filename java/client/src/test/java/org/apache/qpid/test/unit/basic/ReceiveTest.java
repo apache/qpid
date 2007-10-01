@@ -21,6 +21,7 @@
 package org.apache.qpid.test.unit.basic;
 
 import javax.jms.MessageConsumer;
+import javax.jms.Message;
 
 import junit.framework.TestCase;
 
@@ -30,46 +31,23 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class ReceiveTest extends TestCase
+public class ReceiveTest extends QpidTestCase
 {
     private AMQConnection _connection;
     private AMQDestination _destination;
     private AMQSession _session;
     private MessageConsumer _consumer;
 
-    private static final String VM_BROKER = "vm://:1";
-    public String _connectionString = VM_BROKER;
-
     protected void setUp() throws Exception
     {
         super.setUp();
-        if (_connectionString.equals(VM_BROKER))
-        {
-            createVMBroker();
-            String broker = _connectionString;
-            init(new AMQConnection(broker, "guest", "guest", "ReceiveTestClient", "test"));
-        }
+       init((AMQConnection) getConnection("guest", "guest"));
     }
 
-    public void createVMBroker()
+   protected void tearDown() throws Exception
     {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            fail("Unable to create broker: " + e);
-        }
-    }
-
-    protected void tearDown() throws Exception
-    {
-        if (_connectionString.equals(VM_BROKER))
-        {
-            TransportConnection.killVMBroker(1);
-        }
         super.tearDown();
     }
 
@@ -89,18 +67,11 @@ public class ReceiveTest extends TestCase
 
     public void test() throws Exception
     {
-        _consumer.receive(5000);
+        Message m = _consumer.receive(5000);
+        assertNull("should not have received a message", m);
         _connection.close();
     }
 
-    public static void main(String[] argv) throws Exception
-    {
-        ReceiveTest test = new ReceiveTest();
-        test._connectionString = argv.length == 0 ? VM_BROKER : argv[0];
-        test.setUp();
-        test.test();
-        test.tearDown();
-    }
 
     public static junit.framework.Test suite()
     {

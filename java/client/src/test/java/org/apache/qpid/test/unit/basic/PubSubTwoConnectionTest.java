@@ -33,16 +33,16 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 /**
  * @author Apache Software Foundation
  */
-public class PubSubTwoConnectionTest extends TestCase
+public class PubSubTwoConnectionTest extends QpidTestCase
 {
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
@@ -57,14 +57,14 @@ public class PubSubTwoConnectionTest extends TestCase
     public void testTwoConnections() throws Exception
     {
 
-        AMQConnection con1 = new AMQConnection("vm://:1", "guest", "guest", "Client1", "test");
+        AMQConnection con1 = (AMQConnection) getConnection("guest", "guest");
 
         Topic topic = new AMQTopic(con1, "MyTopic");
 
         Session session1 = con1.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageProducer producer = session1.createProducer(topic);
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "Client2", "test");
+        Connection con2 = (AMQConnection) getConnection("guest", "guest") ;
         Session session2 = con2.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer = session2.createConsumer(topic);
         con2.start();        

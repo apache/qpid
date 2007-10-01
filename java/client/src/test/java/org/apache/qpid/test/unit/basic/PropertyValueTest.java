@@ -30,6 +30,7 @@ import org.apache.qpid.client.message.AMQMessage;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +48,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class PropertyValueTest extends TestCase implements MessageListener
+public class PropertyValueTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(PropertyValueTest.class);
 
@@ -63,13 +64,11 @@ public class PropertyValueTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killVMBroker(1);
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -109,7 +108,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
                 _logger.error("Run Number:" + run++);
                 try
                 {
-                    init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+                    init( (AMQConnection) getConnection("guest", "guest"));
                 }
                 catch (Exception e)
                 {
