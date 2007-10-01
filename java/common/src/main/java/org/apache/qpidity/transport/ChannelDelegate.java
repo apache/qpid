@@ -48,4 +48,14 @@ class ChannelDelegate extends MethodDelegate<Channel>
                            attached.getDetachedLifetime());
     }
 
+    public @Override void sessionClosed(Channel channel, SessionClosed closed)
+    {
+        System.out.println("Session closed: [" + closed.getReplyCode() + "]" +
+                           closed.getReplyText());
+        channel.getSession().closed();
+        // XXX: should we remove the channel from the connection? It
+        // could have an external reference to it. Maybe we need a
+        // weak hash map in connection.
+    }
+
 }
