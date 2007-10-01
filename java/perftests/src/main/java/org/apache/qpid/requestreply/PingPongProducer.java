@@ -1213,7 +1213,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
             // log.info("Message " + num + " sent.");
         }
 
-        // Increase the unreceived size, this may actually happen aftern the message is recevied.
+        // Increase the unreceived size, this may actually happen aftern the message is received.
         _unreceived.getAndIncrement();
 
         // Apply message rate throttling if a rate limit has been set up.

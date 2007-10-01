@@ -23,9 +23,7 @@ package org.apache.qpid.test.framework.distributedtesting;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import org.apache.qpid.interop.clienttestcases.TestCase1DummyRun;
-import org.apache.qpid.interop.clienttestcases.TestCase2BasicP2P;
-import org.apache.qpid.interop.clienttestcases.TestCase3BasicPubSub;
+import org.apache.qpid.interop.clienttestcases.*;
 import org.apache.qpid.sustained.SustainedClientTestCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
@@ -189,7 +187,8 @@ public class TestClient implements MessageListener
             new ArrayList<Class<? extends TestClientControlledTest>>();
         // ClasspathScanner.getMatches(TestClientControlledTest.class, "^TestCase.*", true);
         Collections.addAll(testCaseClasses, TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class,
-            SustainedClientTestCase.class, TestClientCircuitEnd.class);
+            TestCase4P2PMessageSize.class, TestCase5PubSubMessageSize.class, SustainedClientTestCase.class,
+            TestClientCircuitEnd.class);
 
         try
         {
