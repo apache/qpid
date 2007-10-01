@@ -26,6 +26,11 @@ CLEANFILES=
 # Session_SOURCES=Session.cpp
 # Session_LDADD=-lboost_unit_test_framework $(lib_broker)
 
+TESTS+=ResumeHandler
+check_PROGRAMS+=ResumeHandler
+ResumeHandler_SOURCES=ResumeHandler.cpp 
+ResumeHandler_LDADD=-lboost_unit_test_framework $(lib_common)
+
 TESTS+=Blob
 check_PROGRAMS+=Blob
 Blob_SOURCES=Blob.cpp 
