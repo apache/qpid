@@ -110,6 +110,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
   qpid/framing/ProtocolVersionException.cpp \
+  qpid/framing/ResumeHandler.cpp qpid/framing/ResumeHandler.h \
   qpid/framing/SendContent.cpp \
   qpid/framing/SequenceNumber.cpp \
   qpid/framing/SequenceNumberSet.cpp \
