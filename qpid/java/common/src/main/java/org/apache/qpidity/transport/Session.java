@@ -82,6 +82,7 @@ public class Session extends Invoker
 
     public void processed(Method command)
     {
+        System.out.printf("processed[%d]: %s\n", command.getId(), command.getClass());
         processed(command.getId());
     }
 
@@ -92,6 +93,7 @@ public class Session extends Invoker
 
     public void processed(long lower, long upper)
     {
+
         processed(new Range(lower, upper));
     }
 
@@ -111,12 +113,24 @@ public class Session extends Invoker
 
     void flushProcessed()
     {
+        long mark = -1;
+        boolean first = true;
+        RangeSet rest = new RangeSet();
         for (Range r: processed)
         {
             System.out.println("Completed Range [" + r.getLower() + "," + r.getUpper() +"]" );
+            if (first)
+            {
+                first = false;
+                mark = r.getUpper();
+            }
+            else
+            {
+                rest.add(r);
+            }
         }
         System.out.println("Notifying peer with execution complete");
-        executionComplete(0, processed);
+        executionComplete(mark, rest);
     }
 
     void syncPoint()
