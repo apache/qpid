@@ -53,7 +53,7 @@ public class AMQSession_0_10 extends AMQSession
     /**
      * The maximum number of pre-fetched messages per destination
      */
-    private static final long MAX_PREFETCH = 100;
+    public static final long MAX_PREFETCH = 100;
 
     /**
      * The underlying QpidSession

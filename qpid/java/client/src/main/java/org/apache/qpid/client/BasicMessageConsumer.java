@@ -51,7 +51,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     /**
      * The connection being used by this consumer
      */
-    private AMQConnection _connection;
+    protected AMQConnection _connection;
 
     private String _messageSelector;
 
@@ -86,7 +86,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
 
     protected MessageFactoryRegistry _messageFactory;
 
-    private final AMQSession _session;
+    protected final AMQSession _session;
 
     protected AMQProtocolHandler _protocolHandler;
 
@@ -354,7 +354,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 return null;
             }
 
-            Object o = null;
+            Object o ;
             if (l > 0)
             {
                 o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
