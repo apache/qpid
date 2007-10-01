@@ -35,6 +35,7 @@ import org.apache.qpidity.filter.MessageFilter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 
 import javax.jms.JMSException;
+import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
@@ -139,7 +140,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         try
         {
             ByteBuffer buff = message.readData();
-            ByteBuffer newBuf = ByteBuffer.allocate(buff.remaining()) ;
+            ByteBuffer newBuf = ByteBuffer.allocate(buff.remaining());
             newBuf.put(buff);
             newMessage.receiveBody(newBuf);
         }
@@ -324,5 +325,21 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             _0_10session.getCurrentException();
         }
         return result;
+    }
+
+
+    public void setMessageListener(final MessageListener messageListener) throws JMSException
+    {
+        super.setMessageListener(messageListener);
+        if (_connection.started())
+        {
+            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                                                      org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                                                      AMQSession_0_10.MAX_PREFETCH);
+            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                                                      org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
+                                                      0xFFFFFFFF);
+            _0_10session.getQpidSession().sync();
+        }
     }
 }
