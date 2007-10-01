@@ -317,11 +317,10 @@ public class AMQSession_0_10 extends AMQSession
         }
         catch (JMSException e)
         {
-           throw new AMQException(AMQConstant.INTERNAL_ERROR, "problem when registering consumer", e);
+            throw new AMQException(AMQConstant.INTERNAL_ERROR, "problem when registering consumer", e);
         }
         getQpidSession().messageSubscribe(queueName.toString(), tag.toString(), Session.TRANSFER_CONFIRM_MODE_REQUIRED,
-                                          preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE :
-                                                  Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
+                                          preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE : Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
                                           new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
                                           consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
@@ -365,12 +364,26 @@ public class AMQSession_0_10 extends AMQSession
     public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
             throws AMQException, FailoverException
     {
-        if( amqd.getAMQQueueName() == null )
+        // do nothing this is only used by 0_8
+    }
+
+    /**
+     * Declare a queue with the given queueName
+     */
+    public AMQShortString send0_10QueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
+            throws AMQException, FailoverException
+    {
+        AMQShortString res;
+        if (amqd.getAMQQueueName() == null)
         {
             // generate a name for this queue
-            amqd.setQueueName(new AMQShortString("TempQueue" + UUID.randomUUID()));
+            res = new AMQShortString("TempQueue" + UUID.randomUUID());
         }
-        getQpidSession().queueDeclare(amqd.getAMQQueueName().toString(), null, null,
+        else
+        {
+            res = amqd.getAMQQueueName();
+        }
+        getQpidSession().queueDeclare(res.toString(), null, null,
                                       amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NO_OPTION,
                                       amqd.isDurable() ? Option.DURABLE : Option.NO_OPTION,
                                       amqd.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
@@ -378,6 +391,7 @@ public class AMQSession_0_10 extends AMQSession
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
+        return res;
     }
 
     /**
@@ -412,8 +426,8 @@ public class AMQSession_0_10 extends AMQSession
                 getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
                                              MAX_PREFETCH);
                 // todo this 
-                getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE,
-                                             0xFFFFFFFF);
+                getQpidSession()
+                        .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
             }
         }
         // We need to sync so that we get notify of an error.
@@ -462,36 +476,35 @@ public class AMQSession_0_10 extends AMQSession
             {
                 //todo check the error code for finding out if we need to notify the
                 // JMS connection exception listener
-                _currentException = new QpidException(reason,errorCode,null);
+                _currentException = new QpidException(reason, errorCode, null);
             }
         }
     }
 
     protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
-              throws AMQException
-      {
-          /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
-          return new FailoverNoopSupport<AMQShortString, AMQException>(
-                  new FailoverProtectedOperation<AMQShortString, AMQException>()
-                  {
-                      public AMQShortString execute() throws AMQException, FailoverException
-                      {
-                          // Generate the queue name if the destination indicates that a client generated name is to be used.
-                          if (amqd.isNameRequired())
-                          {
-                                 amqd.setQueueName(new AMQShortString("TempQueue" + UUID.randomUUID()));
-                          }
-                          sendQueueDeclare(amqd,protocolHandler);
-                          return amqd.getAMQQueueName();
-                      }
-                  }, _connection).execute();
-      }
+            throws AMQException
+    {
+        /*return new FailoverRetrySupport<AMQShortString, AMQException>(*/
+        return new FailoverNoopSupport<AMQShortString, AMQException>(
+                new FailoverProtectedOperation<AMQShortString, AMQException>()
+                {
+                    public AMQShortString execute() throws AMQException, FailoverException
+                    {
+                        // Generate the queue name if the destination indicates that a client generated name is to be used.
+                        if (amqd.isNameRequired())
+                        {
+                            amqd.setQueueName(new AMQShortString("TempQueue" + UUID.randomUUID()));
+                        }
+                        return send0_10QueueDeclare(amqd, protocolHandler);
+                    }
+                }, _connection).execute();
+    }
 
 
-      void start() throws AMQException
+    void start() throws AMQException
     {
 
-           super.suspendChannel(false);
+        super.suspendChannel(false);
 
         // If the event dispatcher is not running then start it too.
         if (hasMessageListeners())
