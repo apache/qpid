@@ -401,7 +401,7 @@ public class LocalCircuitImpl implements Circuit
         }
 
         // Inject a short pause to allow time for exceptions to come back asynchronously.
-        TestUtils.pause(100L);
+        TestUtils.pause(500L);
 
         // Request a status report.
         check();
