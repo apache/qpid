@@ -27,7 +27,6 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.testutil.VMBrokerSetup;
 import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
@@ -95,7 +94,6 @@ public class TextMessageTest extends QpidTestCase implements MessageListener
         }
         catch (Throwable  e)
         {
-// TODO
             e.printStackTrace();
         }
         connection.start();
@@ -120,7 +118,7 @@ public class TextMessageTest extends QpidTestCase implements MessageListener
             String text = "Message " + i;
             messages.add(text);
             Message m = _session.createTextMessage(text);
-            m.setStringProperty("String", "hello");
+            //m.setStringProperty("String", "hello");
 
             _logger.info("Sending Msg:" + m);
             producer.send(m);
