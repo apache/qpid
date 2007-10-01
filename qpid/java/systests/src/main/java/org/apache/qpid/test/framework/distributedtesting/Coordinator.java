@@ -155,7 +155,7 @@ public class Coordinator extends TKTestRunner
         String reportDir, String runName, boolean verbose, String brokerUrl, String virtualHost, TestEngine engine,
         boolean terminate, boolean csv, boolean xml)
     {
-        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, verbose);
+        super(repetitions, duration, threads, delay, params, testCaseName, reportDir, runName, csv, xml, verbose);
 
         log.debug("public Coordinator(Integer repetitions = " + repetitions + " , Long duration = " + duration
             + ", int[] threads = " + Arrays.toString(threads) + ", int delay = " + delay + ", int[] params = "
