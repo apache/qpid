@@ -26,6 +26,7 @@
 #include "qpid/client/Queue.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/MessageListener.h"
+#include <qpid/client/Message.h>
 #include "qpid/QpidError.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
@@ -47,12 +48,14 @@ struct Opts : public TestOptions {
     bool listen;
     bool publish;
     int count;
+	bool durable;
     
     Opts() : listen(false), publish(false), count(500000) {
         addOptions() 
             ("listen", optValue(listen), "Consume messages.")
             ("publish", optValue(publish), "Produce messages.")
-            ("count", optValue(count, "N"), "Messages to send/receive.");
+            ("count", optValue(count, "N"), "Messages to send/receive.")
+            ("durable", optValue(durable, "N"), "Publish messages as durable.");
     }
 };
 
@@ -195,6 +198,10 @@ void PublishThread::run() {
     if (::clock_gettime(CLOCK_REALTIME, &startTime))
         throw Exception(QPID_MSG("clock_gettime failed: " << strError(errno)));
 
+	bool durable = opts.durable;
+	if (durable)
+	    msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
+		
     for (int i=0; i<count; i++) {
         msg.setData("Message 0123456789 ");
         channel.publish(msg, Exchange::STANDARD_TOPIC_EXCHANGE, queueName);
