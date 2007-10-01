@@ -208,7 +208,7 @@ abstract class AbstractDecoder implements Decoder
         {
             String key = readShortstr();
             byte code = get();
-            Type t = Type.get(code);
+            Type t = getType(code);
             Object value = read(t);
             result.put(key, value);
         }
@@ -223,7 +223,7 @@ abstract class AbstractDecoder implements Decoder
         while (count < start + size)
         {
             byte code = get();
-            Type t = Type.get(code);
+            Type t = getType(code);
             Object value = read(t);
             result.add(value);
         }
@@ -234,7 +234,7 @@ abstract class AbstractDecoder implements Decoder
     {
         long size = readLong();
         byte code = get();
-        Type t = Type.get(code);
+        Type t = getType(code);
         long count = readLong();
 
         List<Object> result = new ArrayList<Object>();
@@ -244,6 +244,19 @@ abstract class AbstractDecoder implements Decoder
             result.add(value);
         }
         return result;
+    }
+
+    private Type getType(byte code)
+    {
+        Type type = Type.get(code);
+        if (type == null)
+        {
+            throw new IllegalArgumentException("unknown code: " + code);
+        }
+        else
+        {
+            return type;
+        }
     }
 
     private long readSize(Type t)
