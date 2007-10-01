@@ -407,7 +407,6 @@ public class CommitRollbackTest extends TestCase
         {
             _logger.info("Got 1 redelivered");
             assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
-            assertFalse("Already received message one", _gotone);
             _gotone = true;
 
         }
@@ -418,15 +417,15 @@ public class CommitRollbackTest extends TestCase
             if (result.getJMSRedelivered())
             {
                 _logger.info("Got 2 redelivered, message was prefetched");
-                assertFalse("Already received message redelivered two", _gottwoRedelivered);
-
                 _gottwoRedelivered = true;
+                
             }
             else
             {
                 _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");                
                 assertFalse("Already received message two", _gottwo);
-
+                assertFalse("Already received message redelivered two", _gottwoRedelivered);
+                
                 _gottwo = true;
             }
         }
