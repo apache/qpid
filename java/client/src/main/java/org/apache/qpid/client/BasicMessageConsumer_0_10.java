@@ -29,10 +29,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpidity.api.Message;
-import org.apache.qpidity.transport.Struct;
-import org.apache.qpidity.transport.ExchangeQueryResult;
-import org.apache.qpidity.transport.Future;
-import org.apache.qpidity.transport.RangeSet;
+import org.apache.qpidity.transport.*;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.filter.MessageFilter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
@@ -141,7 +138,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 new UnprocessedMessage_0_10(channelId, deliveryId, consumerTag, exchange, routingKey, redelivered);
         try
         {
-            newMessage.receiveBody(message.readData());
+            ByteBuffer buff = message.readData();
+            ByteBuffer newBuf = ByteBuffer.allocate(buff.remaining()) ;
+            newBuf.put(buff);
+            newMessage.receiveBody(newBuf);
         }
         catch (IOException e)
         {
