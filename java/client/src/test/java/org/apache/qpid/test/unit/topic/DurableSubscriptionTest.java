@@ -114,18 +114,28 @@ public class DurableSubscriptionTest extends TestCase
         con.close();
     }
 
-    public void testDurability() throws AMQException, JMSException, URLSyntaxException
+    public void testDurabilityNOACK() throws AMQException, JMSException, URLSyntaxException
+    {
+        durabilityImpl(AMQSession.NO_ACKNOWLEDGE);
+    }
+
+    public void testDurabilityAUTOACK() throws AMQException, JMSException, URLSyntaxException
+    {
+        durabilityImpl(Session.AUTO_ACKNOWLEDGE);
+    }
+
+    private void durabilityImpl(int ackMode) throws AMQException, JMSException, URLSyntaxException
     {
 
         AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
         AMQTopic topic = new AMQTopic(con, "MyTopic");
-        Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        Session session1 = con.createSession(false, ackMode);
         MessageConsumer consumer1 = session1.createConsumer(topic);
 
-        Session sessionProd = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        Session sessionProd = con.createSession(false, ackMode);
         MessageProducer producer = sessionProd.createProducer(topic);
 
-        Session session2 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        Session session2 = con.createSession(false, ackMode);
         TopicSubscriber consumer2 = session2.createDurableSubscriber(topic, "MySubscription");
 
         con.start();
@@ -133,36 +143,41 @@ public class DurableSubscriptionTest extends TestCase
         producer.send(session1.createTextMessage("A"));
 
         Message msg;
-        msg = consumer1.receive();
-        assertEquals("A", ((TextMessage) msg).getText());
         msg = consumer1.receive(100);
-        assertEquals(null, msg);
+        assertNotNull("Message should be available", msg);
+        assertEquals("Message Text doesn't match", "A", ((TextMessage) msg).getText());
+
+        msg = consumer1.receive(100);
+        assertNull("There should be no more messages for consumption on consumer1.", msg);
 
         msg = consumer2.receive();
-        assertEquals("A", ((TextMessage) msg).getText());
+        assertNotNull(msg);
+        assertEquals("Consumer 2 should also received the first msg.", "A", ((TextMessage) msg).getText());
         msg = consumer2.receive(100);
-        assertEquals(null, msg);
+        assertNull("There should be no more messages for consumption on consumer2.", msg);
 
         consumer2.close();
 
-        Session session3 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+        Session session3 = con.createSession(false, ackMode);
         MessageConsumer consumer3 = session3.createDurableSubscriber(topic, "MySubscription");
 
         producer.send(session1.createTextMessage("B"));
 
         _logger.info("Receive message on consumer 1 :expecting B");
         msg = consumer1.receive(100);
-        assertEquals("B", ((TextMessage) msg).getText());
+        assertNotNull("Consumer 1 should get message 'B'.", msg);
+        assertEquals("Incorrect Message recevied on consumer1.", "B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(100);
-        assertEquals(null, msg);
+        assertNull("There should be no more messages for consumption on consumer1.", msg);
 
         _logger.info("Receive message on consumer 3 :expecting B");
         msg = consumer3.receive(100);
-        assertEquals("B", ((TextMessage) msg).getText());
+        assertNotNull("Consumer 3 should get message 'B'.", msg);
+        assertEquals("Incorrect Message recevied on consumer4.", "B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 3 :expecting null");
         msg = consumer3.receive(100);
-        assertEquals(null, msg);
+        assertNull("There should be no more messages for consumption on consumer3.", msg);
 
         con.close();
     }

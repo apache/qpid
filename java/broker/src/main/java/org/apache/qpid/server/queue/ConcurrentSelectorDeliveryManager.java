@@ -413,14 +413,16 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
 
         AMQMessage message = _messages.poll();
 
-        message.dequeue(storeContext, queue);
-
-        message.decrementReference(storeContext);
-
         if (message != null)
         {
+            queue.dequeue(storeContext, message);
+
             _totalMessageSize.addAndGet(-message.getSize());
-        }
+
+            //If this causes ref count to hit zero then data will be purged so message.getSize() will NPE.
+            message.decrementReference(storeContext);
+
+        }        
 
         _lock.unlock();
     }
@@ -485,7 +487,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 _totalMessageSize.addAndGet(-message.getSize());
 
                 // Use the reapingStoreContext as any sub(if we have one) may be in a tx.
-                message.dequeue(_reapingStoreContext, _queue);
+                _queue.dequeue(_reapingStoreContext, message);
 
                 message.decrementReference(_reapingStoreContext);
 
@@ -511,13 +513,16 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
     }
 
     /**
-     *  This method will return true if the message is to be purged from the queue.
+     * This method will return true if the message is to be purged from the queue.
      *
      *
-     *  SIDE-EFFECT: The message will be taken by the Subscription(sub) for the current Queue(_queue)
+     * SIDE-EFFECT: The message will be taken by the Subscription(sub) for the current Queue(_queue)
+     *
      * @param message
      * @param sub
+     *
      * @return
+     *
      * @throws AMQException
      */
     private boolean purgeMessage(AMQMessage message, Subscription sub) throws AMQException
@@ -607,6 +612,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                                ") to :" + System.identityHashCode(sub));
                 }
 
+
+                if (messageQueue == _messages)
+                {
+                    _totalMessageSize.addAndGet(-message.getSize());
+                }
+
                 sub.send(message, _queue);
 
                 //remove sent message from our queue.
@@ -654,10 +665,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 }
             }
 
-            if ((message != null) && (messageQueue == _messages))
-            {
-                _totalMessageSize.addAndGet(-message.getSize());
-            }
         }
         catch (AMQException e)
         {

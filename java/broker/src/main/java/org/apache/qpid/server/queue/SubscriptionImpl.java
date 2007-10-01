@@ -307,12 +307,11 @@ public class SubscriptionImpl implements Subscription
                 }
 
                 protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
-				
+
                 if (!_acks)
                 {
                     msg.decrementReference(storeContext);
                 }
-				
             }
         }
         finally
