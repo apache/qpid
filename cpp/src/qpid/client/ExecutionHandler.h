@@ -27,6 +27,7 @@
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MethodContent.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/sys/Mutex.h"
 #include "ChainableFrameHandler.h"
 #include "CompletionTracker.h"
 #include "Correlator.h"
@@ -49,8 +50,10 @@ class ExecutionHandler :
     Correlator correlation;
     CompletionTracker completion;
     Demux demux;
+    sys::Mutex lock;
     framing::ProtocolVersion version;
     uint64_t maxFrameSize;
+    boost::function<void()> completionListener;
 
     void complete(uint32_t mark, const framing::SequenceNumberSet& range);    
     void flush();
@@ -90,6 +93,8 @@ public:
     Correlator& getCorrelator() { return correlation; }
     CompletionTracker& getCompletionTracker() { return completion; }
     Demux& getDemux() { return demux; }
+
+    void setCompletionListener(boost::function<void()>);
 };
 
 }}

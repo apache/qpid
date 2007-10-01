@@ -37,6 +37,7 @@ public:
     virtual Demux& getDemux() = 0;
     virtual bool isComplete(const framing::SequenceNumber& id) = 0;
     virtual bool isCompleteUpTo(const framing::SequenceNumber& id) = 0;
+    virtual void setCompletionListener(boost::function<void()>) = 0;
 };
 
 }}
