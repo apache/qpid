@@ -28,6 +28,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSObjectMessage;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class ObjectMessageTest extends TestCase implements MessageListener
+public class ObjectMessageTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(ObjectMessageTest.class);
 
@@ -58,10 +59,9 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
         try
         {
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+            init( (AMQConnection) getConnection("guest", "guest"));
         }
         catch (Exception e)
         {
@@ -72,7 +72,6 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception
