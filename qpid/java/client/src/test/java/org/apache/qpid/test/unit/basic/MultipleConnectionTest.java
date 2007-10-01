@@ -27,6 +27,7 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,14 +38,14 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-public class MultipleConnectionTest extends TestCase
+public class MultipleConnectionTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(MultipleConnectionTest.class);
 
     public static final String _defaultBroker = "vm://:1";
     public String _connectionString = _defaultBroker;
 
-    private static class Receiver
+    private class Receiver
     {
         private AMQConnection _connection;
         private Session[] _sessions;
@@ -52,7 +53,7 @@ public class MultipleConnectionTest extends TestCase
 
         Receiver(String broker, AMQDestination dest, int sessions) throws Exception
         {
-            this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "test"), dest, sessions);
+            this((AMQConnection) getConnection("guest", "guest"), dest, sessions);
         }
 
         Receiver(AMQConnection connection, AMQDestination dest, int sessions) throws Exception
@@ -76,7 +77,7 @@ public class MultipleConnectionTest extends TestCase
         }
     }
 
-    private static class Publisher
+    private class Publisher
     {
         private AMQConnection _connection;
         private Session _session;
@@ -84,7 +85,7 @@ public class MultipleConnectionTest extends TestCase
 
         Publisher(String broker, AMQDestination dest) throws Exception
         {
-            this(new AMQConnection(broker, "guest", "guest", randomize("Client"), "test"), dest);
+            this((AMQConnection) getConnection("guest", "guest"), dest);
         }
 
         Publisher(AMQConnection connection, AMQDestination dest) throws Exception
