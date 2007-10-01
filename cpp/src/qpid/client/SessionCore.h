@@ -56,7 +56,7 @@ class SessionCore : public framing::FrameHandler::InOutHandler
     SessionHandler l2;
     ExecutionHandler l3;
     framing::Uuid uuid;
-    bool sync;
+    volatile bool sync;
     Reason reason;
 
   protected:
