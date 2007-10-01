@@ -364,6 +364,11 @@ public class AMQSession_0_10 extends AMQSession
     public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler)
             throws AMQException, FailoverException
     {
+        if( amqd.getAMQQueueName() == null )
+        {
+            // generate a name for this queue
+            amqd.setQueueName(new AMQShortString("tmp_" +System.currentTimeMillis()));
+        }
         getQpidSession().queueDeclare(amqd.getAMQQueueName().toString(), null, null,
                                       amqd.isAutoDelete() ? Option.AUTO_DELETE : Option.NO_OPTION,
                                       amqd.isDurable() ? Option.DURABLE : Option.NO_OPTION,
