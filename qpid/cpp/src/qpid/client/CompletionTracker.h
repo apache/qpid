@@ -34,8 +34,7 @@ namespace client {
 class CompletionTracker
 {
 public:
-    //typedef boost::function<void()> CompletionListener;    
-    typedef boost::function0<void> CompletionListener;    
+    typedef boost::function<void()> CompletionListener;    
     typedef boost::function<void(const std::string&)> ResultListener;
 
     CompletionTracker();
