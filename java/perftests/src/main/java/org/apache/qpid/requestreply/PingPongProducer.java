@@ -119,21 +119,11 @@ import java.util.concurrent.atomic.AtomicLong;
  * <tr><td> Provide command line invocation to loop the ping cycle on a configurable broker url.
  * </table>
  *
- * @todo Make the message listener a static for all replies to be sent to? It won't be any more of a bottle neck than having
- *       one per PingPongProducer, as will synchronize on message correlation id, allowing threads to process messages
- *       concurrently for different ids. Needs to be static so that when using a chained message listener and shared
- *       destinations between multiple PPPs, it gets notified about all replies, not just those that happen to be picked up
- *       by the PPP that it is atteched to.
- *
  * @todo Use read/write lock in the onmessage, not for reading writing but to make use of a shared and exlcusive lock pair.
  *       Obtain read lock on all messages, before decrementing the message count. At the end of the on message method add a
  *       block that obtains the write lock for the very last message, releases any waiting producer. Means that the last
  *       message waits until all other messages have been handled before releasing producers but allows messages to be
  *       processed concurrently, unlike the current synchronized block.
- *
- * @todo Get rid of pauses between batches, it will impact the timing statistics, and generate meanigless timings.
- *       Instead make mina use a bounded blocking buffer, or other form of back pressure, to stop data being written
- *       faster than it can be sent.
  */
 public class PingPongProducer implements Runnable /*, MessageListener*/, ExceptionListener
 {
