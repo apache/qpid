@@ -71,10 +71,10 @@ class MessageBuilderTest : public CppUnit::TestCase
             msg.setPersistenceId(++id);
         }
 
-        void appendContent(PersistableMessage& msg, const string& data)
+        void appendContent(const PersistableMessage& msg, const string& data)
         {
             checkExpectation(APPEND);
-            CPPUNIT_ASSERT_EQUAL(expectedMsg, &msg);
+            CPPUNIT_ASSERT_EQUAL((const PersistableMessage*) expectedMsg, &msg);
             CPPUNIT_ASSERT_EQUAL(expectedData, data);            
         }
 
