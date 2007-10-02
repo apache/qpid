@@ -39,8 +39,8 @@ import org.apache.qpidity.api.Message;
  */
 public interface Session
 {
-    public static final short TRANSFER_ACQUIRE_MODE_NO_ACQUIRE = 0;
-    public static final short TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE = 1;
+    public static final short TRANSFER_ACQUIRE_MODE_NO_ACQUIRE = 1;
+    public static final short TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE = 0;
     public static final short TRANSFER_CONFIRM_MODE_REQUIRED = 1;
     public static final short TRANSFER_CONFIRM_MODE_NOT_REQUIRED = 0;
     public static final short MESSAGE_FLOW_MODE_CREDIT = 0;
