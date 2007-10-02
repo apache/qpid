@@ -154,12 +154,12 @@ void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize) con
             store->loadContent(*this, data, offset,
                                remaining > maxContentSize ? maxContentSize : remaining);
             frame.setBof(false);
+            frame.setEof(true);
             if (offset > 0) {
                 frame.setBos(false);
             }
             if (remaining) {
                 frame.setEos(false);
-                frame.setEof(false);
             }
             out.handle(frame);
         }
