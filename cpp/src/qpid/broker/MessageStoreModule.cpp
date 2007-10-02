@@ -75,12 +75,12 @@ void MessageStoreModule::destroy(PersistableMessage& msg)
     store->destroy(msg);
 }
 
-void MessageStoreModule::appendContent(PersistableMessage& msg, const std::string& data)
+void MessageStoreModule::appendContent(const PersistableMessage& msg, const std::string& data)
 {
     store->appendContent(msg, data);
 }
 
-void MessageStoreModule::loadContent(PersistableMessage& msg, string& data, uint64_t offset, uint32_t length)
+void MessageStoreModule::loadContent(const PersistableMessage& msg, string& data, uint64_t offset, uint32_t length)
 {
     store->loadContent(msg, data, offset, length);
 }
