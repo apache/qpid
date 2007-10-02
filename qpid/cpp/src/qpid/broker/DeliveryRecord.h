@@ -29,6 +29,7 @@
 #include "Queue.h"
 #include "Consumer.h"
 #include "DeliveryId.h"
+#include "DeliveryToken.h"
 #include "Message.h"
 #include "Prefetch.h"
 
@@ -42,16 +43,17 @@ class SemanticState;
 class DeliveryRecord{
     mutable QueuedMessage msg;
     mutable Queue::shared_ptr queue;
-    const std::string consumerTag;
-    const DeliveryId id;
+    const std::string tag;
+    DeliveryToken::shared_ptr token;
+    DeliveryId id;
     bool acquired;
     const bool confirmed;
     const bool pull;
 
   public:
-    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const std::string consumerTag, 
+    DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const std::string tag, DeliveryToken::shared_ptr token, 
                    const DeliveryId id, bool acquired, bool confirmed = false);
-    DeliveryRecord(QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId id);
+    DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const DeliveryId id);
             
     void dequeue(TransactionContext* ctxt = 0) const;
     bool matches(DeliveryId tag) const;
@@ -61,17 +63,16 @@ class DeliveryRecord{
     void requeue() const;
     void release();
     void reject();
-    void redeliver(SemanticState* const) const;
+    void redeliver(SemanticState* const);
     void updateByteCredit(uint32_t& credit) const;
     void addTo(Prefetch&) const;
     void subtractFrom(Prefetch&) const;
-    const std::string& getConsumerTag() const { return consumerTag; } 
+    const std::string& getTag() const { return tag; } 
     bool isPull() const { return pull; }
     bool isAcquired() const { return acquired; }
-    //void setAcquired(bool isAcquired) { acquired = isAcquired; }
     void acquire(std::vector<DeliveryId>& results);
-            
-  friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
+    friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
+    friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };
 
 typedef std::list<DeliveryRecord>::iterator ack_iterator; 

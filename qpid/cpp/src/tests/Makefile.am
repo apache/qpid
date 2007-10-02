@@ -86,6 +86,7 @@ perftest_LDADD=$(lib_client)
 broker_unit_tests =	\
   AccumulatedAckTest	\
   DtxWorkRecordTest     \
+  DeliveryRecordTest    \
   ExchangeTest		\
   HeadersExchangeTest	\
   MessageTest		\
