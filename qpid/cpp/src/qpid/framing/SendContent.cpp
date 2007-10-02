@@ -60,7 +60,7 @@ void qpid::framing::SendContent::setFlags(AMQFrame& f, bool first, bool last) co
 {
     f.setBof(false);
     f.setBos(first);
-    f.setEof(last);
+    f.setEof(true);//content is always the last segment
     f.setEos(last);
 }
 
