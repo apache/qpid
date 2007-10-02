@@ -24,18 +24,17 @@ import javax.jms.JMSException;
 import javax.jms.QueueReceiver;
 import javax.jms.TopicSubscriber;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.testutil.QpidTestCase;
 
 /**
  * Tests for QueueReceiver and TopicSubscriber creation methods on AMQSession
  */
-public class AMQSessionTest extends TestCase
+public class AMQSessionTest extends QpidTestCase
 {
 
     private static AMQSession _session;
@@ -46,7 +45,7 @@ public class AMQSessionTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "test");
+        _connection = (AMQConnection) getConnection("guest", "guest");
         _topic = new AMQTopic(_connection,"mytopic");
         _queue = new AMQQueue(_connection,"myqueue");
         _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
@@ -76,11 +75,18 @@ public class AMQSessionTest extends TestCase
 
     public void testCreateDurableSubscriber() throws JMSException
     {
-        TopicSubscriber subscriber = _session.createDurableSubscriber(_topic, "mysubname");
-        assertEquals("Topic names should match from durable TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        try
+        {
+            TopicSubscriber subscriber = _session.createDurableSubscriber(_topic, "mysubname");
+            assertEquals("Topic names should match from durable TopicSubscriber", _topic.getTopicName(), subscriber.getTopic().getTopicName());
 
-        subscriber = _session.createDurableSubscriber(_topic, "mysubname", "abc", false);
-        assertEquals("Topic names should match from durable TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+            subscriber = _session.createDurableSubscriber(_topic, "mysubname", "abc", false);
+            assertEquals("Topic names should match from durable TopicSubscriber with selector", _topic.getTopicName(), subscriber.getTopic().getTopicName());
+        }
+        catch (Throwable e)
+        {
+            e.printStackTrace();         
+        }
     }
 
     public void testCreateQueueReceiver() throws JMSException

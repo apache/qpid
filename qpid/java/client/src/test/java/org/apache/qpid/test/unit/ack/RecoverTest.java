@@ -19,13 +19,11 @@
  */
 package org.apache.qpid.test.unit.ack;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +38,7 @@ import javax.jms.TextMessage;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RecoverTest extends TestCase
+public class RecoverTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(RecoverTest.class);
 
@@ -50,7 +48,6 @@ public class RecoverTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
         _error = null;
         count = new AtomicInteger();
     }
@@ -58,13 +55,12 @@ public class RecoverTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
         count = null;
     }
 
     public void testRecoverResendsMsgs() throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue =
@@ -75,7 +71,7 @@ public class RecoverTest extends TestCase
         // ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
         // This is the default now
 
-        AMQConnection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
+        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -123,7 +119,7 @@ public class RecoverTest extends TestCase
 
     public void testRecoverResendsMsgsAckOnEarlier() throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue =
@@ -134,7 +130,7 @@ public class RecoverTest extends TestCase
         // ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.DIRECT_EXCHANGE_NAME, ExchangeDefaults.DIRECT_EXCHANGE_CLASS);
         // This is the default now
 
-        AMQConnection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
+        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
 
@@ -188,7 +184,7 @@ public class RecoverTest extends TestCase
 
     public void testAcknowledgePerConsumer() throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
 
         Session consumerSession = con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         Queue queue =
@@ -200,7 +196,7 @@ public class RecoverTest extends TestCase
         MessageConsumer consumer = consumerSession.createConsumer(queue);
         MessageConsumer consumer2 = consumerSession.createConsumer(queue2);
 
-        AMQConnection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
+        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
         Session producerSession = con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer producer = producerSession.createProducer(queue);
         MessageProducer producer2 = producerSession.createProducer(queue2);
@@ -231,7 +227,7 @@ public class RecoverTest extends TestCase
 
     public void testRecoverInAutoAckListener() throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
 
         final Session consumerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Queue queue =
