@@ -176,12 +176,6 @@ DeliveryId SemanticHandler::deliver(Message::shared_ptr& msg, DeliveryToken::sha
     return outgoing.hwm;
 }
 
-void SemanticHandler::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId tag)
-{
-    MessageDelivery::deliver(msg, session.getHandler().out, tag, token,
-                             session.getConnection().getFrameMax());
-}
-
 SemanticHandler::TrackId SemanticHandler::getTrack(const AMQFrame& frame)
 {
     //will be replaced by field in 0-10 frame header

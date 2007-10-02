@@ -250,7 +250,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
             DeliveryId deliveryTag =
                 parent->deliveryAdapter.deliver(msg.payload, token);
             if (windowing || ackExpected) {
-                parent->record(DeliveryRecord(msg, queue, name, deliveryTag, acquire, !ackExpected));
+                parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
             }
         }
         return !blocked;
@@ -271,11 +271,6 @@ bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
         }
         return true;
     }
-}
-
-void SemanticState::ConsumerImpl::redeliver(Message::shared_ptr& msg, DeliveryId deliveryTag) {
-    Mutex::ScopedLock locker(parent->deliveryLock);
-    parent->deliveryAdapter.redeliver(msg, token, deliveryTag);
 }
 
 SemanticState::ConsumerImpl::~ConsumerImpl() {
@@ -384,7 +379,7 @@ void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
 void SemanticState::acknowledged(const DeliveryRecord& delivery)
 {
     delivery.subtractFrom(outstanding);
-    ConsumerImplMap::iterator i = consumers.find(delivery.getConsumerTag());
+    ConsumerImplMap::iterator i = consumers.find(delivery.getTag());
     if (i != consumers.end()) {
         i->acknowledged(delivery);
     }
@@ -411,6 +406,10 @@ void SemanticState::recover(bool requeue)
         for_each(copy.rbegin(), copy.rend(), mem_fun_ref(&DeliveryRecord::requeue));
     }else{
         for_each(unacked.begin(), unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::redeliver), this));        
+        //unconfirmed messages re redelivered and therefore have their
+        //id adjusted, confirmed messages are not and so the ordering
+        //w.r.t id is lost
+        unacked.sort();
     }
 }
 
@@ -429,13 +428,10 @@ bool SemanticState::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue
     }
 }
 
-void SemanticState::deliver(Message::shared_ptr& msg, const string& consumerTag,
-                      DeliveryId deliveryTag)
+DeliveryId SemanticState::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token)
 {
-    ConsumerImplMap::iterator i = consumers.find(consumerTag);
-    if (i != consumers.end()){
-        i->redeliver(msg, deliveryTag);
-    }
+    Mutex::ScopedLock locker(deliveryLock);
+    return deliveryAdapter.deliver(msg, token);
 }
 
 void SemanticState::flow(bool active)
