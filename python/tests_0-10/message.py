@@ -187,6 +187,46 @@ class MessageTests(TestBase):
             self.fail("Got unexpected message: " + extra.content.body)
         except Empty: None
 
+
+    def test_recover(self):
+        """
+        Test recover behaviour
+        """
+        channel = self.channel
+        channel.queue_declare(queue="queue-a", exclusive=True)
+        channel.queue_bind(exchange="amq.fanout", queue="queue-a")
+        channel.queue_declare(queue="queue-b", exclusive=True)
+        channel.queue_bind(exchange="amq.fanout", queue="queue-b")
+        
+        self.subscribe(queue="queue-a", destination="unconfirmed", confirm_mode=1)
+        self.subscribe(queue="queue-b", destination="confirmed", confirm_mode=0)
+        confirmed = self.client.queue("confirmed")
+        unconfirmed = self.client.queue("unconfirmed")
+
+        data = ["One", "Two", "Three", "Four", "Five"]
+        for d in data:
+            channel.message_transfer(destination="amq.fanout", content=Content(body=d))
+
+        for q in [confirmed, unconfirmed]:    
+            for d in data:
+                self.assertEqual(d, q.get(timeout=1).content.body)
+            self.assertEmpty(q)        
+
+        channel.message_recover(requeue=False)
+
+        self.assertEmpty(confirmed)
+
+        while len(data):
+            msg = None
+            for d in data:
+                msg = unconfirmed.get(timeout=1)
+                self.assertEqual(d, msg.content.body)
+            self.assertEmpty(unconfirmed)
+            data.remove(msg.content.body)
+            msg.complete(cumulative=False)
+            channel.message_recover(requeue=False)
+        
+
     def test_recover_requeue(self):
         """
         Test requeing on recovery
@@ -551,3 +591,9 @@ class MessageTests(TestBase):
 
     def assertDataEquals(self, channel, msg, expected):
         self.assertEquals(expected, msg.content.body)
+
+    def assertEmpty(self, queue):
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Queue not empty, contains: " + extra.content.body)
+        except Empty: None
