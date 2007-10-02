@@ -21,13 +21,12 @@
 package org.apache.qpid.test.unit.basic;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSMapMessage;
-import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +45,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MapMessageTest extends TestCase implements MessageListener
+public class MapMessageTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(MapMessageTest.class);
 
@@ -66,8 +65,7 @@ public class MapMessageTest extends TestCase implements MessageListener
         super.setUp();
         try
         {
-            TransportConnection.createVMBroker(1);
-            init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+            init((AMQConnection) getConnection("guest", "guest"));
         }
         catch (Exception e)
         {
@@ -79,7 +77,6 @@ public class MapMessageTest extends TestCase implements MessageListener
     {
         _logger.info("Tearing Down unit.basic.MapMessageTest");
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -125,16 +122,16 @@ public class MapMessageTest extends TestCase implements MessageListener
     private void setMapValues(MapMessage message, int i) throws JMSException
     {
         message.setBoolean("odd", (i / 2) == 0);
-        message.setByte("byte", (byte) Byte.MAX_VALUE);
+        message.setByte("byte",Byte.MAX_VALUE);
         message.setBytes("bytes", _bytes);
-        message.setChar("char", (char) 'c');
-        message.setDouble("double", (double) Double.MAX_VALUE);
-        message.setFloat("float", (float) Float.MAX_VALUE);
+        message.setChar("char",'c');
+        message.setDouble("double", Double.MAX_VALUE);
+        message.setFloat("float", Float.MAX_VALUE);
         message.setFloat("smallfloat", 100);
         message.setInt("messageNumber", i);
-        message.setInt("int", (int) Integer.MAX_VALUE);
-        message.setLong("long", (long) Long.MAX_VALUE);
-        message.setShort("short", (short) Short.MAX_VALUE);
+        message.setInt("int",  Integer.MAX_VALUE);
+        message.setLong("long",  Long.MAX_VALUE);
+        message.setShort("short", Short.MAX_VALUE);
         message.setString("message", MESSAGE + i);
 
         // Test Setting Object Values
@@ -184,13 +181,10 @@ public class MapMessageTest extends TestCase implements MessageListener
 
     void check() throws JMSException
     {
-        List<String> actual = new ArrayList<String>();
-        int count = 0;
+         int count = 0;
         for (JMSMapMessage m : received)
         {
-            actual.add(m.getString("message"));
-
-            testMapValues(m, count);
+             testMapValues(m, count);
 
             testCorrectExceptions(m);
 
@@ -1246,7 +1240,7 @@ public class MapMessageTest extends TestCase implements MessageListener
     {
         synchronized (received)
         {
-            _logger.info("****************** Recevied Messgage:" + (JMSMapMessage) message);
+            _logger.info("****************** Recevied Messgage:" + message);
             received.add((JMSMapMessage) message);
             received.notify();
         }
