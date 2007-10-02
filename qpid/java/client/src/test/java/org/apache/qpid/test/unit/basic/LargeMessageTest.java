@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.JMSTextMessage;
-import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,26 +36,20 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import java.util.ArrayList;
-import java.util.List;
-
-public class LargeMessageTest extends TestCase
+public class LargeMessageTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(LargeMessageTest.class);
 
-    private AMQConnection _connection;
     private Destination _destination;
     private AMQSession _session;
-    private final List<JMSTextMessage> received = new ArrayList<JMSTextMessage>();
     public String _broker = "vm://:1";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
         try
         {
-            init(new AMQConnection(_broker, "guest", "guest", "LargeMessageTest", "test"));
+            init((AMQConnection) getConnection("guest", "guest"));
         }
         catch (Exception e)
         {
@@ -78,8 +70,7 @@ public class LargeMessageTest extends TestCase
 
     private void init(AMQConnection connection, Destination destination) throws Exception
     {
-        _connection = connection;
-        _destination = destination;
+         _destination = destination;
         _session = (AMQSession) connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         connection.start();

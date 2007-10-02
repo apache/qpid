@@ -19,8 +19,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
