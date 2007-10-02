@@ -481,7 +481,8 @@ public interface Session
      *                          {@link Option#EXCLUSIVE}, {@link Option#PASSIVE} and  {@link Option#NO_OPTION})
      * @see Option
      */
-    public void queueDeclare(String queueName, String alternateExchange, Map<String, Object> arguments, Option... options);
+    public void queueDeclare(String queueName, String alternateExchange, Map<String, Object> arguments,
+                             Option... options);
 
     /**
      * Bind a queue with an exchange.
@@ -542,6 +543,28 @@ public interface Session
      */
     public void queueDelete(String queueName, Option... options);
 
+
+    /**
+     * This method is used to request information on a particular queue.
+     *
+     * @param queueName The name of the queue for which information is requested.
+     * @return Information on the specified queue.
+     */
+    public Future<QueueQueryResult> queueQuery(String queueName);
+
+
+    /**
+     * This method is used to request information on a particular binding.
+     *
+     * @param exchange   The exchange name.
+     * @param queue      The queue name.
+     * @param routingKey The routing key
+     * @param arguments  bacward compatibilties params.
+     * @return Information on the specified binding.
+     */
+    public Future<BindingQueryResult> bindingQuery(String exchange, String queue, String routingKey,
+                                                   Map<String, Object> arguments);
+
     // --------------------------------------
     //              exhcange methods 
     // --------------------------------------
@@ -573,8 +596,8 @@ public interface Session
      * @param arguments         Used for backward compatibility
      * @see Option
      */
-    public void exchangeDeclare(String exchangeName, String type, String alternateExchange, Map<String, Object> arguments,
-                                Option... options);
+    public void exchangeDeclare(String exchangeName, String type, String alternateExchange,
+                                Map<String, Object> arguments, Option... options);
 
     /**
      * This method deletes an exchange. When an exchange is deleted all queue bindings on the
@@ -600,7 +623,7 @@ public interface Session
      *
      * @param exchangeName The name of the exchange for which information is requested. If not specified explicitly
      *                     the default exchange is implied.
-     * @result Information on the specified exchange.
+     * @return Information on the specified exchange.
      */
     public Future<ExchangeQueryResult> exchangeQuery(String exchangeName);
 
