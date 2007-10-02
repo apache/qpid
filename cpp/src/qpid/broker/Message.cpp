@@ -139,7 +139,7 @@ void Message::releaseContent(MessageStore* _store)
     frames.remove(TypeFilter(CONTENT_BODY));
 }
 
-void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize)
+void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize) const
 {
     if (isContentReleased()) {
         //load content from store in chunks of maxContentSize

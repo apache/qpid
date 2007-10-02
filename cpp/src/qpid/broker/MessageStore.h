@@ -89,7 +89,7 @@ public:
     /**
      * Appends content to a previously staged message
      */
-    virtual void appendContent(PersistableMessage& msg, const std::string& data) = 0;
+    virtual void appendContent(const PersistableMessage& msg, const std::string& data) = 0;
     
     /**
      * Loads (a section) of content data for the specified
@@ -99,7 +99,7 @@ public:
      * content should be loaded, not the headers or related
      * meta-data).
      */
-    virtual void loadContent(PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length) = 0;
+    virtual void loadContent(const PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length) = 0;
     
     /**
      * Enqueues a message, storing the message if it has not
