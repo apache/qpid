@@ -56,13 +56,13 @@
         <dependency>
             <groupId>uk.co.thebadgerset</groupId>
             <artifactId>junit-toolkit</artifactId>
-            <version>0.5</version>
+            <version>0.6-SNAPSHOT</version>
             <scope>runtime</scope>
             </dependency>
         <dependency>
             <groupId>uk.co.thebadgerset</groupId>
             <artifactId>junit-toolkit-maven-plugin</artifactId>
-            <version>0.5</version>
+            <version>0.6-SNAPSHOT</version>
             <scope>runtime</scope>
         </dependency>
     </dependencies>
