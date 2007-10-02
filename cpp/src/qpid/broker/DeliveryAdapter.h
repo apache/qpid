@@ -43,7 +43,6 @@ namespace broker {
     {
     public:
         virtual DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token) = 0;
-        virtual void redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId tag) = 0;
         virtual ~DeliveryAdapter(){}
     };
 

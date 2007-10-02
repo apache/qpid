@@ -78,7 +78,7 @@ public:
             messages.push_back(msg);
             QueuedMessage qm;
             qm.payload = msg;
-            deliveries.push_back(DeliveryRecord(qm, queue, "xyz", (i+1), true));
+            deliveries.push_back(DeliveryRecord(qm, queue, "xyz", DeliveryToken::shared_ptr(), (i+1), true));
         }
 
         //assume msgs 1-5, 7 and 9 are all acked (i.e. 6, 8 & 10 are not)

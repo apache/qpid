@@ -27,13 +27,15 @@
 using namespace qpid::broker;
 using std::string;
 
-DeliveryRecord::DeliveryRecord(QueuedMessage& _msg, 
+DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
-                               const string _consumerTag, 
+                               const std::string _tag,
+                               DeliveryToken::shared_ptr _token, 
                                const DeliveryId _id,
                                bool _acquired, bool _confirmed) : msg(_msg), 
                                                                   queue(_queue), 
-                                                                  consumerTag(_consumerTag),
+                                                                  tag(_tag),
+                                                                  token(_token),
                                                                   id(_id),
                                                                   acquired(_acquired),
                                                                   confirmed(_confirmed),
@@ -41,11 +43,10 @@ DeliveryRecord::DeliveryRecord(QueuedMessage& _msg,
 {
 }
 
-DeliveryRecord::DeliveryRecord(QueuedMessage& _msg, 
+DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
                                const DeliveryId _id) : msg(_msg), 
                                                                 queue(_queue), 
-                                                                consumerTag(""),
                                                                 id(_id),
                                                                 acquired(true),
                                                                 confirmed(false),
@@ -74,13 +75,13 @@ bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const
     return range->covers(id);
 }
 
-void DeliveryRecord::redeliver(SemanticState* const session) const{
+void DeliveryRecord::redeliver(SemanticState* const session) {
     if (!confirmed) {
         if(pull){
             //if message was originally sent as response to get, we must requeue it
             requeue();
         }else{
-            session->deliver(msg.payload, consumerTag, id);
+            id = session->redeliver(msg.payload, token);
         }
     }
 }
@@ -151,11 +152,17 @@ void DeliveryRecord::acquire(std::vector<DeliveryId>& results) {
 namespace qpid {
 namespace broker {
 
-std::ostream& operator<<(std::ostream& out, const DeliveryRecord& r) {
+std::ostream& operator<<(std::ostream& out, const DeliveryRecord& r) 
+{
     out << "{" << "id=" << r.id.getValue();
-    out << ", consumer=" << r.consumerTag;
+    out << ", tag=" << r.tag << "}";
     out << ", queue=" << r.queue->getName() << "}";
     return out;
+}
+
+bool operator<(const DeliveryRecord& a, const DeliveryRecord& b)
+{
+    return a.id < b.id;
 }
 
 }}

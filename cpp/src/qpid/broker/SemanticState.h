@@ -77,7 +77,6 @@ class SemanticState : public framing::FrameHandler::Chains,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
         bool deliver(QueuedMessage& msg);            
-        void redeliver(Message::shared_ptr& msg, DeliveryId deliveryTag);
         void cancel();
         void requestDispatch();
 
@@ -169,7 +168,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void ackRange(DeliveryId deliveryTag, DeliveryId endTag);
     void recover(bool requeue);
     void flow(bool active);
-    void deliver(Message::shared_ptr& msg, const string& consumerTag, DeliveryId deliveryTag);            
+    DeliveryId redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token);            
     void acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired);
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);
