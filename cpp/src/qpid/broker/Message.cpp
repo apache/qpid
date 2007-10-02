@@ -173,9 +173,10 @@ void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize)
     }
 }
 
-void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/)
+void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) const
 {
-    frames.map_if(out, TypeFilter(HEADER_BODY));    
+    Relay f(out);
+    frames.map_if(f, TypeFilter(HEADER_BODY));    
 }
 
 MessageAdapter& Message::getAdapter() const
