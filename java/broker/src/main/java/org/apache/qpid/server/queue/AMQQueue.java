@@ -809,7 +809,7 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
-    void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
+    public void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
     {
         try
         {

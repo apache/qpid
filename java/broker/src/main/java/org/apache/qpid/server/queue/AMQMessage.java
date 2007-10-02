@@ -592,7 +592,19 @@ public class AMQMessage
         _transientMessageData.addDestinationQueue(queue);
     }
 
-    public void dequeue(StoreContext storeContext, AMQQueue queue) throws AMQException
+    /**
+     * NOTE: Think about why you are using this method. Normal usages would want to do
+     * AMQQueue.dequeue(StoreContext, AMQMessage)
+     * This will keep the queue statistics up-to-date.
+     * Currently this method is only called _correctly_ from AMQQueue dequeue.
+     * Ideally we would have a better way for the queue to dequeue the message.
+     * Especially since enqueue isn't the recipriocal of this method.
+     * @deprecated
+     * @param storeContext
+     * @param queue
+     * @throws AMQException
+     */
+    void dequeue(StoreContext storeContext, AMQQueue queue) throws AMQException
     {
         _messageHandle.dequeue(storeContext, _messageId, queue);
     }
