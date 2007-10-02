@@ -19,10 +19,8 @@
  *
  */
 package org.apache.qpid.test.unit.basic.close;
-
-import junit.framework.TestCase;
-
 import org.apache.qpid.AMQException;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
@@ -37,7 +35,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-public class CloseTests extends TestCase
+public class CloseTests extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CloseTests.class);
 
@@ -46,20 +44,16 @@ public class CloseTests extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.setUp();
-
-        TransportConnection.killVMBroker(1);
     }
 
-    public void testCloseQueueReceiver() throws AMQException, URLSyntaxException, JMSException
+    public void testCloseQueueReceiver() throws  Exception
     {
-        AMQConnection connection = new AMQConnection(BROKER, "guest", "guest", this.getName(), "test");
+        AMQConnection connection = (AMQConnection) getConnection("guest", "guest");
 
         Session session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 

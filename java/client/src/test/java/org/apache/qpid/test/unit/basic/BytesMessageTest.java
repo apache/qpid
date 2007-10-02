@@ -20,7 +20,6 @@
 package org.apache.qpid.test.unit.basic;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
 import org.apache.mina.common.ByteBuffer;
 
@@ -30,6 +29,7 @@ import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSBytesMessage;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class BytesMessageTest extends TestCase implements MessageListener
+public class BytesMessageTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(BytesMessageTest.class);
 
@@ -64,7 +64,7 @@ public class BytesMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+        init((AMQConnection) getConnection("guest", "guest"));
     }
 
     protected void tearDown() throws Exception
