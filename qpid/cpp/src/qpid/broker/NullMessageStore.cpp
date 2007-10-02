@@ -87,12 +87,12 @@ void NullMessageStore::destroy(PersistableMessage&)
     QPID_LOG(info, "No need to destroy staged message. Persistence not enabled.");
 }
 
-void NullMessageStore::appendContent(PersistableMessage&, const string&)
+void NullMessageStore::appendContent(const PersistableMessage&, const string&)
 {
     QPID_LOG(info, "Can't load content. Persistence not enabled.");
 }
 
-void NullMessageStore::loadContent(PersistableMessage&, string&, uint64_t, uint32_t)
+void NullMessageStore::loadContent(const PersistableMessage&, string&, uint64_t, uint32_t)
 {
     QPID_LOG(info, "Can't load content. Persistence not enabled.");
 }
