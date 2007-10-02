@@ -38,7 +38,7 @@ void FrameSet::append(AMQFrame& part)
 
 bool FrameSet::isComplete() const
 {
-    return !parts.empty() && parts.back().getEof();
+    return !parts.empty() && parts.back().getEof() && parts.back().getEos();
 }
 
 bool FrameSet::isContentBearing() const
