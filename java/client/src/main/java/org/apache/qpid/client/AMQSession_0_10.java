@@ -32,6 +32,8 @@ import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.transport.Option;
+import org.apache.qpidity.transport.BindingQueryResult;
+import org.apache.qpidity.transport.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -295,9 +297,13 @@ public class AMQSession_0_10 extends AMQSession
     public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName,
                                 final AMQShortString routingKey) throws JMSException
     {
-        getQpidSession().queueBind(queueName.toString(), exchangeName.toString(), routingKey.toString(), null);
-        // we asume that a binding is always successful
-        return true;
+        Future<BindingQueryResult> result =  getQpidSession().bindingQuery(exchangeName.toString(), queueName.toString(), routingKey.toString(), null);
+        BindingQueryResult bindingQueryResult = result.get();
+        return ! (bindingQueryResult.getArgsNotMatched() ||
+                bindingQueryResult.getExchangeNotFound() ||
+                bindingQueryResult.getKeyNotMatched() ||
+                bindingQueryResult.getQueueNotFound() ||
+                bindingQueryResult.getQueueNotMatched());
     }
 
     /**

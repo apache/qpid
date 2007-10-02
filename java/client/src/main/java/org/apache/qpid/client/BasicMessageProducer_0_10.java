@@ -142,5 +142,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
 
     }
+
+
+    public boolean isBound(AMQDestination destination) throws JMSException
+    {
+        return _session.isQueueBound(destination.getExchangeName(), destination.getAMQQueueName(), destination.getRoutingKey());
+    }
 }
 
