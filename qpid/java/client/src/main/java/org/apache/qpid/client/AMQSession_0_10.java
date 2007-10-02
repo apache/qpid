@@ -297,13 +297,25 @@ public class AMQSession_0_10 extends AMQSession
     public boolean isQueueBound(final AMQShortString exchangeName, final AMQShortString queueName,
                                 final AMQShortString routingKey) throws JMSException
     {
-        Future<BindingQueryResult> result =  getQpidSession().bindingQuery(exchangeName.toString(), queueName.toString(), routingKey.toString(), null);
+        String rk = "";
+        boolean res;
+        if (routingKey != null)
+        {
+            rk = routingKey.toString();
+        }
+        Future<BindingQueryResult> result =
+                getQpidSession().bindingQuery(exchangeName.toString(), queueName.toString(), rk, null);
         BindingQueryResult bindingQueryResult = result.get();
-        return ! (bindingQueryResult.getArgsNotMatched() ||
-                bindingQueryResult.getExchangeNotFound() ||
-                bindingQueryResult.getKeyNotMatched() ||
-                bindingQueryResult.getQueueNotFound() ||
-                bindingQueryResult.getQueueNotMatched());
+        if (routingKey == null)
+        {
+            res = !(bindingQueryResult.getExchangeNotFound() || bindingQueryResult.getQueueNotFound());
+        }
+        else
+        {
+            res = !(bindingQueryResult.getKeyNotMatched() || bindingQueryResult.getQueueNotFound() || bindingQueryResult
+                    .getQueueNotMatched());
+        }
+        return res;
     }
 
     /**
