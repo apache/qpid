@@ -24,16 +24,14 @@ import javax.jms.JMSException;
 import javax.jms.QueueSession;
 import javax.jms.TopicSession;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class AMQConnectionTest extends TestCase
+public class AMQConnectionTest extends QpidTestCase
 {
     private static AMQConnection _connection;
     private static AMQTopic _topic;
@@ -44,8 +42,7 @@ public class AMQConnectionTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
-        _connection = new AMQConnection("vm://:1", "guest", "guest", "fred", "test");
+        _connection = (AMQConnection) getConnection("guest", "guest");
         _topic = new AMQTopic(_connection.getDefaultTopicExchangeName(), new AMQShortString("mytopic"));
         _queue = new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("myqueue"));
     }
@@ -53,15 +50,6 @@ public class AMQConnectionTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        try
-        {
-            _connection.close();
-        }
-        catch (JMSException e)
-        {
-            //ignore 
-        }        
-        TransportConnection.killAllVMBrokers();
     }
 
     /**

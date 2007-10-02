@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import junit.framework.TestCase;
-
 import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.client.AMQConnection;
@@ -33,6 +31,7 @@ import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +45,7 @@ import javax.jms.MessageProducer;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class FieldTableMessageTest extends TestCase implements MessageListener
+public class FieldTableMessageTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(FieldTableMessageTest.class);
 
@@ -61,7 +60,7 @@ public class FieldTableMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+        init( (AMQConnection) getConnection("guest", "guest"));
     }
 
     protected void tearDown() throws Exception
