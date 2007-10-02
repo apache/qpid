@@ -22,15 +22,9 @@
 package org.apache.qpid.test.unit.basic;
 
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
-import junit.framework.TestCase;
-
-import javax.jms.MessageConsumer;
 import javax.jms.Session;
 import javax.jms.QueueSession;
 import javax.jms.Queue;
@@ -38,39 +32,18 @@ import javax.jms.QueueSender;
 import javax.jms.TextMessage;
 import javax.jms.InvalidDestinationException;
 
-public class InvalidDestinationTest extends TestCase
+public class InvalidDestinationTest extends QpidTestCase
 {
     private AMQConnection _connection;
-    private AMQDestination _destination;
-    private AMQSession _session;
-    private MessageConsumer _consumer;
-
-    private static final String VM_BROKER = "vm://:1";
-
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        createVMBroker();
-        _connection = new AMQConnection(VM_BROKER, "guest", "guest", "ReceiveTestClient", "test");
-    }
-
-    public void createVMBroker()
-    {
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            fail("Unable to create broker: " + e);
-        }
+        _connection = (AMQConnection) getConnection("guest", "guest");
     }
 
     protected void tearDown() throws Exception
     {
-        _connection.close();
-        TransportConnection.killVMBroker(1);
         super.tearDown();
     }
 
@@ -83,7 +56,7 @@ public class InvalidDestinationTest extends TestCase
         QueueSession queueSession = _connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
         // This is the only easy way to create and bind a queue from the API :-(
-        MessageConsumer consumer = queueSession.createConsumer(validDestination);
+        queueSession.createConsumer(validDestination);
 
         QueueSender sender = queueSession.createSender(invalidDestination);
         TextMessage msg = queueSession.createTextMessage("Hello");
