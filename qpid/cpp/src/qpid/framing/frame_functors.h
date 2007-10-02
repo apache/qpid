@@ -82,6 +82,23 @@ public:
     void operator()(const AMQFrame& f) { content += f.castBody<AMQContentBody>()->getData(); }
 };
 
+/**
+ * Sends a copy of the frame its applied to to the specified handler
+ */
+class Relay
+{
+    FrameHandler& handler;
+
+public:
+    Relay(FrameHandler& h) : handler(h) {}
+
+    void operator()(const AMQFrame& f)
+    {
+        AMQFrame copy(f);
+        handler.handle(copy);
+    }
+};
+
 class Print
 {
     std::ostream& out;

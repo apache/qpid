@@ -115,7 +115,7 @@ public:
     void releaseContent(MessageStore* store);
 
     void sendContent(framing::FrameHandler& out, uint16_t maxFrameSize);
-    void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize);
+    void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize) const;
 
     bool isContentLoaded() const;
 
@@ -132,7 +132,7 @@ public:
     static PublishAdapter PUBLISH;
 
     MessageAdapter& getAdapter() const;
-    bool isContentReleased() { return store; } 
+    bool isContentReleased() const { return store; } 
 };
 
 }}
