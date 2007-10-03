@@ -250,12 +250,28 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    private void preApplicationProcessing(AbstractJMSMessage msg) throws JMSException
     {
 
-        if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        switch (_acknowledgeMode)
         {
-            _unacknowledgedDeliveryTags.add(jmsMsg.getDeliveryTag());
+
+            case Session.CLIENT_ACKNOWLEDGE:
+                _unacknowledgedDeliveryTags.add(msg.getDeliveryTag());
+                break;
+
+            case Session.SESSION_TRANSACTED:
+                if (isNoConsume())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                else
+                {
+                    _logger.info("Recording tag for commit:" + msg.getDeliveryTag());
+                    _receivedDeliveryTags.add(msg.getDeliveryTag());
+                }
+
+                break;
         }
 
         _session.setInRecovery(false);
@@ -711,18 +727,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             if (!_session.isInRecovery())
             {
                 _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-            }
-
-            break;
-
-        case Session.SESSION_TRANSACTED:
-            if (isNoConsume())
-            {
-                _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-            }
-            else
-            {
-                _receivedDeliveryTags.add(msg.getDeliveryTag());
             }
 
             break;
