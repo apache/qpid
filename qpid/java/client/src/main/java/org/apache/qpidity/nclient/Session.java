@@ -79,7 +79,9 @@ public interface Session
     //                   Producer           
     //------------------------------------------------------
     /**
-     * Transfer the given message to a specified exchange.
+     * Transfer the given
+     *
+     *  to a specified exchange.
      * <p/>
      * <p>This is a convinience method for providing a complete message
      * using a single method which internaly is mapped to messageTransfer(), headers() followed
@@ -362,6 +364,23 @@ public interface Session
      * @param text   String describing the reason for a message transfer rejection.
      */
     public void messageReject(RangeSet ranges, int code, String text);
+
+    /**
+     * This method asks the broker to redeliver all unacknowledged messages on a specified session.
+     * Zero or more messages may be redelivered. This method is only allowed on non-transacted
+     * sessions.
+     * <p> Following are valid options:
+     * <ul>
+     * <li>{@link Option#REQUEUE}: <p>IIf this field is not set, the message will be redelivered to the original recipient.
+     * If this option is ser, the server will attempt to requeue the message, potentially then delivering it
+     * to an alternative subscriber.
+     * <p/>
+     * </ul>
+     *
+     * @param _options see available options
+     */
+    public void messageRecover(Option... _options);
+
 
     /**
      * As it is possible that the broker does not manage to reject some messages, after completion of
