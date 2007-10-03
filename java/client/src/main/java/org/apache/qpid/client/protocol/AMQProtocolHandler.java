@@ -347,9 +347,9 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
                     AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
                     propagateExceptionToWaiters(amqe);
+                    _connection.exceptionReceived(cause);
                 }
 
-                _connection.exceptionReceived(cause);
             }
 
             // FIXME Need to correctly handle other exceptions. Things like ...
