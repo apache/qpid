@@ -42,7 +42,6 @@ import org.apache.qpid.testutil.QpidTestCase;
 /** @author Apache Software Foundation */
 public class TopicSessionTest extends QpidTestCase
 {
-    private static final String BROKER = "vm://:1";
 
     protected void setUp() throws Exception
     {

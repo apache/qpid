@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import junit.framework.TestCase;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
  * Runs the Service's and Client parts of the test in the same process
  * as the broker
  */
-public class CombinedTest extends TestCase
+public class CombinedTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(CombinedTest.class);
     private int run = 0;
@@ -37,6 +37,8 @@ public class CombinedTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        Service.setQTC(this);
+        Client.setQTC(this);
     }
 
     protected void tearDown() throws Exception
