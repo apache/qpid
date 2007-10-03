@@ -85,12 +85,9 @@ abstract class AbstractDecoder implements Decoder
         if (nbits == 0)
         {
             bits = get();
-            nbits = 8;
         }
 
-        nbits -= 1;
-
-        boolean result = ((bits >>> nbits) & 0x01) != 0;
+        boolean result = (bits & (1 << nbits++)) != 0;
         return result;
     }
 
