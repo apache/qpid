@@ -23,7 +23,6 @@ lockfile=/var/lock/subsys/$prog
 # Source function library.
 . /etc/rc.d/init.d/functions
 
-QPIDD_OPTIONS=
 if [ -f /etc/sysconfig/$prog ] ; then
 	. /etc/sysconfig/$prog
 fi
