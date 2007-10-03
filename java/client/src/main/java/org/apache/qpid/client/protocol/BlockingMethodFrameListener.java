@@ -180,30 +180,32 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
         {
             while (!_ready)
             {
-                if (timeout == -1)
-                {
-                    _receivedCondition.await();
-                }
-                else
-                {
-                    nanoTimeout = _receivedCondition.awaitNanos(nanoTimeout);
-
-                    if (nanoTimeout <= 0 && !_ready && _error == null)
+                try {
+                    if (timeout == -1)
                     {
-                        _error = new AMQTimeoutException("Server did not respond in a timely fashion");
-                        _ready = true;
+                        _receivedCondition.await();
                     }
+                    else
+                    {
+                        nanoTimeout = _receivedCondition.awaitNanos(nanoTimeout);
+
+                        if (nanoTimeout <= 0 && !_ready && _error == null)
+                        {
+                            _error = new AMQTimeoutException("Server did not respond in a timely fashion");
+                            _ready = true;
+                        }
+                    }
+                } 
+                catch (InterruptedException e)
+                {
+                    // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
+                    // if (!_ready && timeout != -1)
+                    // {
+                    // _error = new AMQException("Server did not respond timely");
+                    // _ready = true;
+                    // }
                 }
             }
-        }
-        catch (InterruptedException e)
-        {
-            // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
-            // if (!_ready && timeout != -1)
-            // {
-            // _error = new AMQException("Server did not respond timely");
-            // _ready = true;
-            // }
         }
         finally
         {
