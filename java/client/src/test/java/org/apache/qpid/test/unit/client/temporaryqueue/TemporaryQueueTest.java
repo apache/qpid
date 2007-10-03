@@ -28,26 +28,17 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
 import javax.jms.TextMessage;
-import javax.jms.Queue;
-
-import junit.framework.TestCase;
 import junit.framework.Assert;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.url.URLSyntaxException;
 
 import java.util.List;
 import java.util.LinkedList;
 
-public class TemporaryQueueTest extends TestCase
+public class TemporaryQueueTest extends QpidTestCase
 {
-
-    String _broker = "vm://:1";
-
-
     protected void setUp() throws Exception
     {
         super.setUp();
@@ -59,10 +50,9 @@ public class TemporaryQueueTest extends TestCase
         TransportConnection.killAllVMBrokers();
     }
 
-    protected Connection createConnection() throws AMQException, URLSyntaxException
+    protected Connection createConnection() throws Exception
     {
-        return new AMQConnection(_broker, "guest", "guest",
-                                 "fred", "test");
+        return  getConnection("guest", "guest");
     }
 
     public void testTempoaryQueue() throws Exception
@@ -103,7 +93,7 @@ public class TemporaryQueueTest extends TestCase
         conn.close();
     }
 
-    public void tUniqueness() throws JMSException, AMQException, URLSyntaxException
+    public void tUniqueness() throws Exception
     {
         int numProcs = Runtime.getRuntime().availableProcessors();
         final int threadsProc = 5;
@@ -114,7 +104,7 @@ public class TemporaryQueueTest extends TestCase
         runUniqueness(numProcs * threadsProc, 500);
     }
 
-    void runUniqueness(int makers, int queues) throws JMSException, AMQException, URLSyntaxException
+    void runUniqueness(int makers, int queues) throws Exception
     {
         Connection connection = createConnection();
 
