@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.testutil.VMBrokerSetup;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-public class ObjectMessageTest extends TestCase implements MessageListener
+public class ObjectMessageTest extends QpidTestCase implements MessageListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(ObjectMessageTest.class);
 
@@ -60,7 +59,7 @@ public class ObjectMessageTest extends TestCase implements MessageListener
     protected void setUp() throws Exception
     {
         super.setUp();
-        connection = new AMQConnection(_broker, "guest", "guest", randomize("Client"), "test");
+        connection =  (AMQConnection) getConnection("guest", "guest");
         destination = new AMQQueue(connection, randomize("LatencyTest"), true);
         session = (AMQSession) connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
 

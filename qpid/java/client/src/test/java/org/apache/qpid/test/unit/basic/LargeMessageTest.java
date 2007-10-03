@@ -42,7 +42,6 @@ public class LargeMessageTest extends QpidTestCase
 
     private Destination _destination;
     private AMQSession _session;
-    public String _broker = "vm://:1";
 
     protected void setUp() throws Exception
     {

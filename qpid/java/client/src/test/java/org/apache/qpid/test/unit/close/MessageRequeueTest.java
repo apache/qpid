@@ -91,7 +91,6 @@ public class MessageRequeueTest extends TestCase
             conn.disconnect();
         }
 
-        TransportConnection.killVMBroker(1);
     }
 
     /**
@@ -100,7 +99,7 @@ public class MessageRequeueTest extends TestCase
      * @throws javax.jms.JMSException if a JMS problem occurs
      * @throws InterruptedException   on timeout
      */
-    public void testDrain() throws JMSException, InterruptedException
+    public void testDrain() throws Exception
     {
         QpidClientConnection conn = new QpidClientConnection(BROKER);
 
@@ -337,8 +336,10 @@ public class MessageRequeueTest extends TestCase
             String virtualHost = "/test";
             String brokerlist = BROKER;
             String brokerUrl = "amqp://guest:guest@" + virtualHost + "?brokerlist='" + brokerlist + "'";
+            QpidClientConnection qpc =      new QpidClientConnection(BROKER);
+            qpc.connect();
+            Connection conn = qpc. getConnection();
 
-            Connection conn = new AMQConnection(brokerUrl);
             Session session = conn.createSession(false, Session.CLIENT_ACKNOWLEDGE);
             Queue q = session.createQueue(queue);
 

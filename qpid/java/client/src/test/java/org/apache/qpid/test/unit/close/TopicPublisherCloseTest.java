@@ -29,31 +29,28 @@ import junit.framework.TestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 /**
  * @author Apache Software Foundation
  */
-public class TopicPublisherCloseTest extends TestCase
+public class TopicPublisherCloseTest extends QpidTestCase
 {
-
-    public String _connectionString = "vm://:1";
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     public void testAllMethodsThrowAfterConnectionClose() throws Exception
     {
-        AMQConnection connection = new AMQConnection(_connectionString, "guest", "guest", "Client", "test");
+        AMQConnection connection =   (AMQConnection) getConnection("guest", "guest");
 
         Topic destination1 = new AMQTopic(connection, "t1");
         TopicSession session1 = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);

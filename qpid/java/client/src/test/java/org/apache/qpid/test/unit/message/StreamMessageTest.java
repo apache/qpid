@@ -20,18 +20,16 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQHeadersExchange;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +47,7 @@ import javax.jms.StreamMessage;
 /**
  * @author Apache Software Foundation
  */
-public class StreamMessageTest extends TestCase
+public class StreamMessageTest extends QpidTestCase
 {
 
     private static final Logger _logger = LoggerFactory.getLogger(StreamMessageTest.class);
@@ -59,18 +57,16 @@ public class StreamMessageTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     public void testStreamMessageEOF() throws Exception
     {
-        Connection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        Connection con = (AMQConnection) getConnection("guest", "guest");
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
         AMQHeadersExchange queue =
@@ -87,7 +83,7 @@ public class StreamMessageTest extends TestCase
         // ((AMQSession) consumerSession).declareExchangeSynch(ExchangeDefaults.HEADERS_EXCHANGE_NAME, ExchangeDefaults.HEADERS_EXCHANGE_CLASS);
         // This is the default now
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
+        Connection con2 = (AMQConnection) getConnection("guest", "guest");
 
         AMQSession producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
@@ -125,7 +121,7 @@ public class StreamMessageTest extends TestCase
 
     public void testModifyReceivedMessageExpandsBuffer() throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQSession consumerSession = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         AMQQueue queue = new AMQQueue(con.getDefaultQueueExchangeName(), new AMQShortString("testQ"));
         MessageConsumer consumer = consumerSession.createConsumer(queue);
@@ -148,7 +144,7 @@ public class StreamMessageTest extends TestCase
                 }
             });
 
-        Connection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
+        Connection con2 = (AMQConnection) getConnection("guest", "guest");
         AMQSession producerSession = (AMQSession) con2.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         MessageProducer mandatoryProducer = producerSession.createProducer(queue);
         con.start();
