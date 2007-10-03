@@ -248,13 +248,13 @@ public class AMQSession_0_10 extends AMQSession
     public void sendRecover() throws AMQException, FailoverException
     {
         // release all unack messages
-        RangeSet ranges = new RangeSet();
+        /*RangeSet ranges = new RangeSet();
         for (long messageTag : _unacknowledgedMessageTags)
         {
             // release this message
             ranges.add(messageTag);
-        }
-        getQpidSession().messageRelease(ranges);
+        }*/
+        getQpidSession().messageRecover(Option.REQUEUE);
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
