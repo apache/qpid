@@ -31,14 +31,12 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
-public class ConnectionStartTest extends TestCase
+public class ConnectionStartTest extends QpidTestCase
 {
 
     String _broker = "vm://:1";
@@ -50,13 +48,11 @@ public class ConnectionStartTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
-
         try
         {
 
 
-            AMQConnection pubCon = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+            AMQConnection pubCon = (AMQConnection) getConnection("guest", "guest");
 
             AMQQueue queue = new AMQQueue(pubCon,"ConnectionStartTest");
 
@@ -66,7 +62,7 @@ public class ConnectionStartTest extends TestCase
 
             pub.send(pubSess.createTextMessage("Initial Message"));
 
-            _connection = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+            _connection = (AMQConnection) getConnection("guest", "guest");
 
             _consumerSess = _connection.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
 
@@ -77,6 +73,7 @@ public class ConnectionStartTest extends TestCase
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             fail("Connection to " + _broker + " should succeed. Reason: " + e);
         }
     }
@@ -84,7 +81,6 @@ public class ConnectionStartTest extends TestCase
     protected void tearDown() throws Exception
     {
         _connection.close();
-        TransportConnection.killVMBroker(1);
     }
 
     public void testSimpleReceiveConnection()

@@ -25,34 +25,30 @@ import javax.jms.TextMessage;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.testutil.QpidTestCase;
 
 /**
  * @author Apache Software Foundation
  */
-public class TopicPublisherTest extends TestCase
+public class TopicPublisherTest extends QpidTestCase
 {
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     public void testUnidentifiedProducer() throws Exception
     {
 
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con =  (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con,"MyTopic");
         TopicSession session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher = session1.createPublisher(null);

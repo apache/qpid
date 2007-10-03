@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.test.unit.transacted;
 
-import junit.framework.TestCase;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +51,6 @@ public class CommitRollbackTest extends QpidTestCase
     Queue _jmsQueue;
 
     private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
-    private static final String BROKER = "vm://:1";
     private boolean _gotone = false;
     private boolean _gottwo = false;
     private boolean _gottwoRedelivered = false;

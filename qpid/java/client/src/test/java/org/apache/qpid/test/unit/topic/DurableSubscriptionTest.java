@@ -23,6 +23,7 @@ package org.apache.qpid.test.unit.topic;
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.testutil.QpidTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
@@ -40,25 +41,23 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.TopicSubscriber;
 
-public class DurableSubscriptionTest extends TestCase
+public class DurableSubscriptionTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(DurableSubscriptionTest.class);
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
-    public void testUnsubscribe() throws AMQException, JMSException, URLSyntaxException
+    public void testUnsubscribe() throws Exception
     {
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con, "MyTopic");
         _logger.info("Create Session 1");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
@@ -114,10 +113,10 @@ public class DurableSubscriptionTest extends TestCase
         con.close();
     }
 
-    public void testDurability() throws AMQException, JMSException, URLSyntaxException
+    public void testDurability() throws Exception
     {
 
-        AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "test", "test");
+        AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQTopic topic = new AMQTopic(con, "MyTopic");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);

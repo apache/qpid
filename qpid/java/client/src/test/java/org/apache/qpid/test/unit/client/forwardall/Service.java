@@ -28,6 +28,7 @@ import javax.jms.MessageListener;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.testutil.QpidTestCase;
 
 /**
  * Declare a queue and bind it to amq.direct with a 'well known' routing key,
@@ -38,6 +39,13 @@ public class Service implements MessageListener
     private final AMQConnection _connection;
     private final AMQSession _session;
 
+    private static QpidTestCase _qct;
+     
+
+    public static void setQTC(QpidTestCase qtc)
+    {
+        _qct = qtc;
+    }
     Service(String broker) throws Exception
     {
         this(connect(broker));
@@ -73,7 +81,8 @@ public class Service implements MessageListener
 
     static AMQConnection connect(String broker) throws Exception
     {
-        return new AMQConnection(broker, "guest", "guest", "Client" + System.currentTimeMillis(), "test");
+        //return new AMQConnection(broker, "guest", "guest", "Client" + System.currentTimeMillis(), "test");
+          return (AMQConnection) _qct.getConnection("guest", "guest") ;
     }
 
 //    public static void main(String[] argv) throws Exception
