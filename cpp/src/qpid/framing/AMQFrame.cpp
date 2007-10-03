@@ -107,7 +107,7 @@ bool AMQFrame::decode(Buffer& buffer)
     bof = flags & 0x08;
     eof = flags & 0x04;
     bos = flags & 0x02;
-    bos = flags & 0x01;
+    eos = flags & 0x01;
     uint8_t  type = buffer.getOctet();
     uint16_t frame_size =  buffer.getShort();
     if (frame_size < frameOverhead()-1)
