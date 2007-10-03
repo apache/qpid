@@ -145,11 +145,6 @@ public class Channel extends Invoker
     public void method(Method m)
     {
         emit(m);
-
-        if (m.getEncodedTrack() != L4)
-        {
-            System.out.println("sent control " + m.getClass().getName());
-        }
     }
 
     public void header(Header header)

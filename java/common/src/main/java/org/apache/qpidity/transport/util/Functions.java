@@ -22,6 +22,8 @@ package org.apache.qpidity.transport.util;
 
 import java.nio.ByteBuffer;
 
+import static java.lang.Math.*;
+
 
 /**
  * Functions
@@ -44,13 +46,13 @@ public class Functions
 
     public static final String str(ByteBuffer buf)
     {
-        return str(buf, buf.limit());
+        return str(buf, buf.remaining());
     }
 
     public static final String str(ByteBuffer buf, int limit)
     {
         StringBuilder str = new StringBuilder();
-        for (int i = 0; i < buf.remaining(); i++)
+        for (int i = 0; i < min(buf.remaining(), limit); i++)
         {
             if (i > 0 && i % 2 == 0)
             {
