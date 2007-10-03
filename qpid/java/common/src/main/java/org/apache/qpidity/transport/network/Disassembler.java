@@ -35,6 +35,7 @@ import org.apache.qpidity.transport.Sender;
 import org.apache.qpidity.transport.Struct;
 
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 
 import static org.apache.qpidity.transport.network.Frame.*;
 
@@ -51,17 +52,23 @@ public class Disassembler implements Sender<ConnectionEvent>,
 {
 
     private final Sender<NetworkEvent> sender;
-    private final int maxFrame;
+    private final int maxPayload;
     private final byte major;
     private final byte minor;
 
     public Disassembler(Sender<NetworkEvent> sender, byte major, byte minor,
                         int maxFrame)
     {
+        if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
+        {
+            throw new IllegalArgumentException
+                ("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
+        }
         this.sender = sender;
         this.major = major;
         this.minor = minor;
-        this.maxFrame = maxFrame;
+        this.maxPayload  = maxFrame - HEADER_SIZE;
+
     }
 
     public void send(ConnectionEvent event)
@@ -80,7 +87,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
         while (buf.hasRemaining())
         {
             ByteBuffer slice = buf.slice();
-            slice.limit(min(maxFrame, slice.remaining()));
+            slice.limit(min(maxPayload, slice.remaining()));
             buf.position(buf.position() + slice.remaining());
 
             byte newflags = flags;
@@ -154,10 +161,14 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     public void data(ConnectionEvent event, Data data)
     {
-        for (ByteBuffer buf : data.getFragments())
+        boolean first = data.isFirst();
+        for (Iterator<ByteBuffer> it = data.getFragments().iterator();
+             it.hasNext(); )
         {
-            fragment(LAST_SEG, BODY, event, buf, data.isFirst(),
-                     data.isLast());
+            ByteBuffer buf = it.next();
+            boolean last = data.isLast() && !it.hasNext();
+            fragment(LAST_SEG, BODY, event, buf, first, last);
+            first = false;
         }
     }
 

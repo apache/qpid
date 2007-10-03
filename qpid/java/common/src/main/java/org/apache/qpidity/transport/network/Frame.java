@@ -170,7 +170,7 @@ public class Frame implements NetworkEvent, Iterable<ByteBuffer>
                 str.append(" | ");
             }
 
-            str.append(str(buf));
+            str.append(str(buf, 20));
         }
 
         return str.toString();

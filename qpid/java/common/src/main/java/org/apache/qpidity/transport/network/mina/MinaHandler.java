@@ -92,7 +92,7 @@ public class MinaHandler implements IoHandler
         // XXX: hardcoded version + max-frame
         Connection conn = new Connection
             (new Disassembler(new OutputHandler(new MinaSender(ssn)),
-                              (byte)0, (byte)10, 64*1024),
+                              (byte)0, (byte)10, 64*1024 - 1),
              delegate);
         // XXX: hardcoded version
         Receiver<java.nio.ByteBuffer> receiver =
