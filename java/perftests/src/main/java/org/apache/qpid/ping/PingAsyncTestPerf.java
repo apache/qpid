@@ -29,11 +29,9 @@ import org.apache.qpid.requestreply.PingPongProducer;
 
 import uk.co.thebadgerset.junit.extensions.TimingController;
 import uk.co.thebadgerset.junit.extensions.TimingControllerAware;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.ObjectMessage;
 
 import java.util.Collections;
 import java.util.HashMap;
