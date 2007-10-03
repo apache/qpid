@@ -40,7 +40,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-public class QpidClientConnection implements ExceptionListener
+public class QpidClientConnection extends QpidTestCase implements ExceptionListener
 {
     private static final Logger _logger = LoggerFactory.getLogger(QpidClientConnection.class);
 
@@ -62,6 +62,12 @@ public class QpidClientConnection implements ExceptionListener
         setPrefetch(5000);
     }
 
+
+    public Connection getConnection()
+    {
+        return connection;
+    }
+
     public void connect() throws JMSException
     {
         if (!connected)
@@ -77,8 +83,9 @@ public class QpidClientConnection implements ExceptionListener
             {
                 AMQConnectionFactory factory = new AMQConnectionFactory(brokerUrl);
                 _logger.info("connecting to Qpid :" + brokerUrl);
-                connection = factory.createConnection();
-
+                //connection = factory.createConnection();
+                setUp();
+                 connection = getConnection("guest", "guest") ;
                 // register exception listener
                 connection.setExceptionListener(this);
 
@@ -89,14 +96,14 @@ public class QpidClientConnection implements ExceptionListener
 
                 connected = true;
             }
-            catch (URLSyntaxException e)
+            catch (Exception e)
             {
                 throw new JMSAMQException("URL syntax error in [" + brokerUrl + "]: " + e.getMessage(), e);
             }
         }
     }
 
-    public void disconnect() throws JMSException
+    public void disconnect() throws Exception
     {
         if (connected)
         {
@@ -105,6 +112,7 @@ public class QpidClientConnection implements ExceptionListener
             connection.close();
             connected = false;
             _logger.info("disconnected");
+            tearDown();
         }
     }
 
