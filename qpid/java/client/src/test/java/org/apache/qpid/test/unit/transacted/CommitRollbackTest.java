@@ -55,6 +55,7 @@ public class CommitRollbackTest extends QpidTestCase
     Queue _jmsQueue;
 
     private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
+    private static final String BROKER = "vm://:1";
     private boolean _gotone = false;
     private boolean _gottwo = false;
     private boolean _gottwoRedelivered = false;
@@ -64,7 +65,7 @@ public class CommitRollbackTest extends QpidTestCase
         super.setUp();
         testMethod++;
         queue += testMethod;
-        newConnection();
+       newConnection();
     }
 
     private void newConnection() throws Exception
@@ -86,7 +87,6 @@ public class CommitRollbackTest extends QpidTestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
-        conn.close();
     }
 
     /**
