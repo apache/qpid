@@ -75,6 +75,7 @@ class DeliveryRecord{
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };
 
+typedef std::list<DeliveryRecord> DeliveryRecords; 
 typedef std::list<DeliveryRecord>::iterator ack_iterator; 
 
 struct AckRange
