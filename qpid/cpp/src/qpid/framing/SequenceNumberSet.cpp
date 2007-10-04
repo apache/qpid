@@ -60,6 +60,12 @@ SequenceNumberSet SequenceNumberSet::condense() const
     return result;
 }
 
+void SequenceNumberSet::addRange(const SequenceNumber& start, const SequenceNumber& end)
+{
+    push_back(start);
+    push_back(end);
+}
+
 namespace qpid{
 namespace framing{
 

@@ -41,17 +41,18 @@ public:
     void decode(Buffer& buffer);
     uint32_t encodedSize() const;   
     SequenceNumberSet condense() const;
+    void addRange(const SequenceNumber& start, const SequenceNumber& end);
 
     template <class T>
-    void processRanges(T t) const
+    void processRanges(T& t) const
     {
         if (size() % 2) { //must be even number        
             throw InvalidArgumentException("SequenceNumberSet contains odd number of elements");
         }
     
         for (SequenceNumberSet::const_iterator i = begin(); i != end(); i++) {
-            SequenceNumber first = i->getValue();
-            SequenceNumber last = (++i)->getValue();
+            SequenceNumber first = *(i);
+            SequenceNumber last = *(++i);
             t(first, last);
         }
     }

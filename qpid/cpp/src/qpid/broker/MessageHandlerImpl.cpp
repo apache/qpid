@@ -198,7 +198,8 @@ void MessageHandlerImpl::acquire(const SequenceNumberSet& transfers, u_int8_t /*
     //TODO: implement mode
 
     SequenceNumberSet results;
-    transfers.processRanges(boost::bind(&SemanticState::acquire, &state, _1, _2, results));
+    RangedOperation op = boost::bind(&SemanticState::acquire, &state, _1, _2, results);
+    transfers.processRanges(op);
     results = results.condense();
     getProxy().getMessage().acquired(results);
 }
