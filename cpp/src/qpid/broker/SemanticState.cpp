@@ -572,7 +572,11 @@ void SemanticState::release(DeliveryId first, DeliveryId last)
 {
     Mutex::ScopedLock locker(deliveryLock);
     AckRange range = findRange(first, last);
-    for_each(range.start, range.end, mem_fun_ref(&DeliveryRecord::release));
+    //release results in the message being added to the head so want
+    //to release in reverse order to keep the original transfer order
+    DeliveryRecords::reverse_iterator start(range.end);
+    DeliveryRecords::reverse_iterator end(range.start);
+    for_each(start, end, mem_fun_ref(&DeliveryRecord::release));
 }
 
 void SemanticState::reject(DeliveryId first, DeliveryId last)

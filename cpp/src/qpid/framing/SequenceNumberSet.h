@@ -26,6 +26,7 @@
 #include "amqp_types.h"
 #include "Buffer.h"
 #include "SequenceNumber.h"
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace framing {
@@ -41,8 +42,23 @@ public:
     uint32_t encodedSize() const;   
     SequenceNumberSet condense() const;
 
+    template <class T>
+    void processRanges(T t) const
+    {
+        if (size() % 2) { //must be even number        
+            throw InvalidArgumentException("SequenceNumberSet contains odd number of elements");
+        }
+    
+        for (SequenceNumberSet::const_iterator i = begin(); i != end(); i++) {
+            SequenceNumber first = i->getValue();
+            SequenceNumber last = (++i)->getValue();
+            t(first, last);
+        }
+    }
+
     friend std::ostream& operator<<(std::ostream&, const SequenceNumberSet&);
 };    
+
 
 }} // namespace qpid::framing
 
