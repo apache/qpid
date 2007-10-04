@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -95,6 +95,7 @@ make check
 %_libdir/libqpidcommon.so.0.1.0
 %_libdir/libqpidclient.so.0
 %_libdir/libqpidclient.so.0.1.0
+%_sysconfdir/qpidd.conf
 
 %files devel
 %defattr(-,root,root,-)
@@ -148,6 +149,10 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Thu Oct 4 2007 Alan Conway <aconway@redhat.com> - 0.2-8
+- Added qpidd.conf configuration file.
+- Updated man page to detail configuration options.
 
 * Thu Sep 20 2007 Alan Conway <aconway@redhat.com> - 0.2-7
 - Removed apr dependency.

@@ -59,13 +59,14 @@ struct EnvOptMapper {
 
 }
 std::string prettyArg(const std::string& name, const std::string& value) {
-    return value.empty() ? name : name+" (="+value+")";
+    return value.empty() ? name+" " : name+" (="+value+") ";
 }
 
 Options::Options(const string& name) : po::options_description(name) {}
 
 void Options::parse(int argc, char** argv, const std::string& configFile)
 {
+    string defaultConfigFile = configFile; // May be changed by env/cmdline
     string parsing;
     try {
         po::variables_map vm;
@@ -78,9 +79,14 @@ void Options::parse(int argc, char** argv, const std::string& configFile)
         if (!configFile.empty()) {
             parsing="configuration file "+configFile;
             ifstream conf(configFile.c_str());
-            if (conf.good()) {
-                conf.exceptions(ifstream::failbit|ifstream::badbit);
+            if (conf.good())
                 po::store(po::parse_config_file(conf, *this), vm);
+            else {
+                // No error if default configfile is missing/unreadable
+                // but complain for non-default config file.
+                if (configFile != defaultConfigFile)
+                    throw Exception("cannot read configuration file "
+                                    +configFile);
             }
         }
         po::notify(vm);
@@ -94,7 +100,9 @@ void Options::parse(int argc, char** argv, const std::string& configFile)
     }
 }
 
-CommonOptions::CommonOptions(const string& name) : Options(name) {
+CommonOptions::CommonOptions(const string& name, const string& configfile)
+    : Options(name), config(configfile)
+{
     addOptions()
         ("help,h", optValue(help), "Print help message.")
         ("version,v", optValue(version), "Print version information.")

@@ -61,8 +61,7 @@ struct QpiddOptions : public qpid::Options {
     DaemonOptions daemon;
     qpid::log::Options log;
     
-    QpiddOptions() : qpid::Options("Options") {
-        common.config = "/etc/qpidd.conf";
+    QpiddOptions() : qpid::Options("Options"), common("", "/etc/qpidd.conf") {
         add(common);
         add(broker);
         add(daemon);
