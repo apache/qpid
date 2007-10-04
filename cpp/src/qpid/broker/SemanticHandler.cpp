@@ -31,12 +31,16 @@
 #include "qpid/framing/InvocationVisitor.h"
 
 #include <boost/format.hpp>
+#include <boost/bind.hpp>
 
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-SemanticHandler::SemanticHandler(SessionState& s) : state(*this,s), session(s) {}
+SemanticHandler::SemanticHandler(SessionState& s) : 
+    state(*this,s), session(s),
+    ackOp(boost::bind(&SemanticState::ackRange, &state, _1, _2))
+ {}
 
 void SemanticHandler::handle(framing::AMQFrame& frame) 
 {    
@@ -81,13 +85,7 @@ void SemanticHandler::complete(uint32_t cumulative, const SequenceNumberSet& ran
         //ack messages:
         state.ackCumulative(mark.getValue());
     }
-    if (range.size() % 2) { //must be even number        
-        throw ConnectionException(530, "Received odd number of elements in ranged mark");
-    } else {
-        for (SequenceNumberSet::const_iterator i = range.begin(); i != range.end(); i++) {
-            state.ackRange(*i, *(++i));
-        }
-    }
+    range.processRanges(ackOp);
 }
 
 void SemanticHandler::sendCompletion()
