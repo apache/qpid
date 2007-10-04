@@ -25,6 +25,8 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "HandlerImpl.h"
 
+#include <boost/function.hpp>
+
 namespace qpid {
 namespace broker {
 
@@ -36,6 +38,10 @@ class MessageHandlerImpl :
         public framing::AMQP_ServerOperations::MessageHandler,
         public HandlerImpl
 {
+    typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
+    RangedOperation releaseOp;
+    RangedOperation rejectOp;
+
   public:
     MessageHandlerImpl(SemanticState&);
 
