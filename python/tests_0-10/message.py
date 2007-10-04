@@ -612,6 +612,29 @@ class MessageTests(TestBase):
         for i in range (1, 11):
             self.assertEquals("released message %s" % (i), queue.get(timeout = 1).content.body)
 
+    def test_ranged_ack(self):
+        """
+        Test acking of messages ranges
+        """
+        channel = self.channel
+        channel.queue_declare(queue = "q", exclusive=True)
+        for i in range (1, 11):
+            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message %s" % (i)))
+
+        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1)
+        channel.message_flow(unit = 0, value = 10, destination = "a")
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        queue = self.client.queue("a")
+        for i in range (1, 11):        
+            self.assertEquals("message %s" % (i), queue.get(timeout = 1).content.body)
+        self.assertEmpty(queue)
+
+        #ack all but the third message (command id 2)
+        channel.execution_complete(cumulative_execution_mark=0xFFFFFFFF, ranged_execution_set=[0,1,3,6,7,7,8,9])
+        channel.message_recover()
+        self.assertEquals("message 3", queue.get(timeout = 1).content.body)
+        self.assertEmpty(queue)
+
 
     def assertDataEquals(self, channel, msg, expected):
         self.assertEquals(expected, msg.content.body)

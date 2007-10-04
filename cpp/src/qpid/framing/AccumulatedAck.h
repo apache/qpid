@@ -58,13 +58,14 @@ namespace qpid {
              */
             std::list<Range> ranges;
 
-            explicit AccumulatedAck(SequenceNumber r = SequenceNumber()) : mark(r) {}
+            explicit AccumulatedAck(SequenceNumber r = SequenceNumber());
             void update(SequenceNumber firstTag, SequenceNumber lastTag);
             void consolidate();
             void clear();
             bool covers(SequenceNumber tag) const;
             void collectRanges(SequenceNumberSet& set) const;
             void update(const SequenceNumber cumulative, const SequenceNumberSet& range);
+            void operator()(SequenceNumber first, SequenceNumber last) { update(first, last); }
         };
         std::ostream& operator<<(std::ostream&, const Range&);
         std::ostream& operator<<(std::ostream&, const AccumulatedAck&);
