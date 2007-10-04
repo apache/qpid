@@ -18,36 +18,45 @@
  * under the License.
  *
  */
-package org.apache.qpidity.codec;
+package org.apache.qpidity.transport.codec;
 
-import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.qpidity.transport.RangeSet;
+import org.apache.qpidity.transport.Struct;
 
 
 /**
- * BBDecoder
+ * Decoder
  *
  * @author Rafael H. Schloming
  */
 
-public class BBDecoder extends AbstractDecoder
+public interface Decoder
 {
 
-    private final ByteBuffer in;
+    boolean readBit();
+    short readOctet();
+    int readShort();
+    long readLong();
+    long readLonglong();
 
-    public BBDecoder(byte major, byte minor, ByteBuffer in)
-    {
-        super(major, minor);
-        this.in = in;
-    }
+    long readTimestamp();
 
-    protected byte doGet()
-    {
-        return in.get();
-    }
+    String readShortstr();
+    String readLongstr();
 
-    protected void doGet(byte[] bytes)
-    {
-        in.get(bytes);
-    }
+    RangeSet readRfc1982LongSet();
+    UUID readUuid();
+
+    String readContent();
+
+    Struct readLongStruct();
+
+    Map<String,Object> readTable();
+    List<Object> readSequence();
+    List<Object> readArray();
 
 }

@@ -27,7 +27,7 @@ import java.util.Map;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpidity.codec.FragmentDecoder;
+import org.apache.qpidity.transport.codec.FragmentDecoder;
 
 import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.Data;
