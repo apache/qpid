@@ -265,10 +265,10 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
      *
      * @todo This is accessed only within a synchronized method, so does not need to be atomic.
      */
-    private final AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
+    protected final AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
 
     /** Used to indicate that the session should start pre-fetching messages as soon as it is started. */
-    private final boolean _immediatePrefetch;
+    protected final boolean _immediatePrefetch;
 
     /** Indicates that warnings should be generated on violations of the strict AMQP. */
     private final boolean _strictAMQP;

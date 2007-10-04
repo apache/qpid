@@ -528,4 +528,26 @@ public class AMQSession_0_10 extends AMQSession
             startDistpatcherIfNecessary();
         }
     }
+
+      synchronized void startDistpatcherIfNecessary()
+    {
+        // If IMMEDIATE_PREFETCH is not set then we need to start fetching
+        if (!_immediatePrefetch)
+        {
+            // We do this now if this is the first call on a started connection
+            if (isSuspended() &&  _firstDispatcher.getAndSet(false))
+            {
+                try
+                {
+                    suspendChannel(false);
+                }
+                catch (AMQException e)
+                {
+                    _logger.info("Unsuspending channel threw an exception:" + e);
+                }
+            }
+        }
+
+        startDistpatcherIfNecessary(false);
+    }
 }
