@@ -27,12 +27,9 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     {
         for (Range range : ranges)
         {
-            for (long l = range.getLower(); l <= range.getUpper(); l++)
-            {
-                System.out.println("Acknowleding transfer id : " + l);
-                super.processed(l);
-            }
+            super.processed(range);
         }
+        super.flushProcessed();
     }
 
     public void messageSubscribe(String queue, String destination, short confirmMode, short acquireMode, MessagePartListener listener, Map<String, Object> filter, Option... options)
