@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpidity.codec;
+package org.apache.qpidity.transport.codec;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

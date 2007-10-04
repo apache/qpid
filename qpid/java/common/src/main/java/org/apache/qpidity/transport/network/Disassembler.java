@@ -20,8 +20,8 @@
  */
 package org.apache.qpidity.transport.network;
 
-import org.apache.qpidity.codec.BBEncoder;
-import org.apache.qpidity.codec.SizeEncoder;
+import org.apache.qpidity.transport.codec.BBEncoder;
+import org.apache.qpidity.transport.codec.SizeEncoder;
 
 import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.Data;

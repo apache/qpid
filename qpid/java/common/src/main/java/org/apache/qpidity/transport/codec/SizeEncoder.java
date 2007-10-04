@@ -18,47 +18,49 @@
  * under the License.
  *
  */
-package org.apache.qpidity.codec;
+package org.apache.qpidity.transport.codec;
 
-import java.util.List;
+import java.nio.ByteBuffer;
+
 import java.util.Map;
-import java.util.UUID;
-
-import org.apache.qpidity.transport.RangeSet;
-import org.apache.qpidity.transport.Struct;
 
 
 /**
- * Encoder
+ * SizeEncoder
  *
  * @author Rafael H. Schloming
  */
 
-public interface Encoder
+public class SizeEncoder extends AbstractEncoder
 {
 
-    void flush();
+    private int size;
 
-    void writeBit(boolean b);
-    void writeOctet(short b);
-    void writeShort(int s);
-    void writeLong(long i);
-    void writeLonglong(long l);
+    public SizeEncoder(byte major, byte minor) {
+        this(major, minor, 0);
+    }
 
-    void writeTimestamp(long l);
+    public SizeEncoder(byte major, byte minor, int size) {
+        super(major, minor, false);
+        this.size = size;
+    }
 
-    void writeShortstr(String s);
-    void writeLongstr(String s);
+    public int getSize() {
+        return size;
+    }
 
-    void writeRfc1982LongSet(RangeSet ranges);
-    void writeUuid(UUID uuid);
+    public void setSize(int size) {
+        this.size = size;
+    }
 
-    void writeContent(String c);
+    protected void doPut(byte b)
+    {
+        size += 1;
+    }
 
-    void writeLongStruct(Struct s);
-
-    void writeTable(Map<String,Object> table);
-    void writeSequence(List<Object> sequence);
-    void writeArray(List<Object> array);
+    protected void doPut(ByteBuffer src)
+    {
+        size += src.remaining();
+    }
 
 }
