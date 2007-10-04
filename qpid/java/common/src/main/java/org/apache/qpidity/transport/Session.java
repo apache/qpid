@@ -111,7 +111,7 @@ public class Session extends Invoker
         }
     }
 
-    void flushProcessed()
+   public void flushProcessed()
     {
         long mark = -1;
         boolean first = true;
