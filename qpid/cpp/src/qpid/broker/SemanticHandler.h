@@ -33,6 +33,8 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceNumber.h"
 
+#include <boost/function.hpp>
+
 namespace qpid {
 
 namespace framing {
@@ -51,6 +53,8 @@ class SemanticHandler : public DeliveryAdapter,
                         public framing::AMQP_ServerOperations::ExecutionHandler
     
 {
+    typedef boost::function<void(DeliveryId, DeliveryId)> RangedOperation;    
+
     SemanticState state;
     SessionState& session;
     // FIXME aconway 2007-09-20: Why are these on the handler rather than the
@@ -59,6 +63,7 @@ class SemanticHandler : public DeliveryAdapter,
     framing::Window outgoing;
     sys::Mutex outLock;
     MessageBuilder msgBuilder;
+    RangedOperation ackOp;
 
     enum TrackId {EXECUTION_CONTROL_TRACK, MODEL_COMMAND_TRACK, MODEL_CONTENT_TRACK};
     TrackId getTrack(const framing::AMQFrame& frame);

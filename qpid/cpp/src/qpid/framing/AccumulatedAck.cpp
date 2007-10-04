@@ -22,11 +22,14 @@
 
 #include <assert.h>
 #include <iostream>
+#include <boost/bind.hpp>
 
 using std::list;
 using std::max;
 using std::min;
 using namespace qpid::framing;
+
+AccumulatedAck::AccumulatedAck(SequenceNumber r) : mark(r) {}
 
 void AccumulatedAck::update(SequenceNumber first, SequenceNumber last){
     assert(first <= last);
@@ -103,9 +106,7 @@ void AccumulatedAck::collectRanges(SequenceNumberSet& set) const
 void AccumulatedAck::update(const SequenceNumber cumulative, const SequenceNumberSet& range)
 {
     update(mark, cumulative);
-    for (SequenceNumberSet::const_iterator i = range.begin(); i != range.end(); i++) {
-        update(*i, *(++i));
-    }
+    range.processRanges(*this);
 }
 
 

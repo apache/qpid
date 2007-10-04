@@ -32,6 +32,7 @@ class AccumulatedAckTest : public CppUnit::TestCase
     CPPUNIT_TEST_SUITE(AccumulatedAckTest);
     CPPUNIT_TEST(testGeneral);
     CPPUNIT_TEST(testCovers);
+    CPPUNIT_TEST(testUpdateFromCompletionData);
     CPPUNIT_TEST(testCase1);
     CPPUNIT_TEST(testCase2);
     CPPUNIT_TEST(testCase3);
@@ -39,6 +40,7 @@ class AccumulatedAckTest : public CppUnit::TestCase
     CPPUNIT_TEST(testConsolidation1);
     CPPUNIT_TEST(testConsolidation2);
     CPPUNIT_TEST(testConsolidation3);
+    CPPUNIT_TEST(testConsolidation4);
     CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -95,6 +97,25 @@ public:
         CPPUNIT_ASSERT(!covers(ack, 6));
         CPPUNIT_ASSERT(!covers(ack, 8));
         CPPUNIT_ASSERT(!covers(ack, 10));
+    }
+
+    void testUpdateFromCompletionData()
+    {
+        AccumulatedAck ack(0);
+        SequenceNumber mark(2);
+        SequenceNumberSet ranges;
+        ranges.addRange(SequenceNumber(5), SequenceNumber(8));
+        ranges.addRange(SequenceNumber(10), SequenceNumber(15));
+        ranges.addRange(SequenceNumber(9), SequenceNumber(9));
+        ranges.addRange(SequenceNumber(3), SequenceNumber(4));
+
+        ack.update(mark, ranges);
+
+        for(int i = 0; i <= 15; i++) {            
+            CPPUNIT_ASSERT(covers(ack, i));
+        }
+        CPPUNIT_ASSERT(!covers(ack, 16));
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 15, ack.mark.getValue());
     }
 
     void testCase1()
@@ -203,6 +224,22 @@ public:
         update(ack, 1,15);
         CPPUNIT_ASSERT_EQUAL((uint32_t) 15, ack.mark.getValue());
         CPPUNIT_ASSERT_EQUAL((size_t) 0, ack.ranges.size());
+    }
+
+    void testConsolidation4()
+    {
+        AccumulatedAck ack(0);
+        ack.update(SequenceNumber(0), SequenceNumber(2));
+        ack.update(SequenceNumber(5), SequenceNumber(8));
+        ack.update(SequenceNumber(10), SequenceNumber(15));
+        ack.update(SequenceNumber(9), SequenceNumber(9));
+        ack.update(SequenceNumber(3), SequenceNumber(4));
+
+        for(int i = 0; i <= 15; i++) {            
+            CPPUNIT_ASSERT(covers(ack, i));
+        }
+        CPPUNIT_ASSERT(!covers(ack, 16));
+        CPPUNIT_ASSERT_EQUAL((uint32_t) 15, ack.mark.getValue());
     }
 
 };
