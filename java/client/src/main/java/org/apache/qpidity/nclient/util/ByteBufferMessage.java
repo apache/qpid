@@ -109,6 +109,7 @@ public class ByteBufferMessage implements Message
             {
                 _readBuffer.put(buf);
             }
+            _readBuffer.flip();
         }
     }
     
