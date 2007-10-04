@@ -589,6 +589,30 @@ class MessageTests(TestBase):
         #message should not have been removed from the queue:
         self.assertEquals(1, channel.queue_query(queue = "q").message_count)
 
+    def test_release_ordering(self):
+        """
+        Test order of released messages is as expected
+        """
+        channel = self.channel
+        channel.queue_declare(queue = "q", exclusive=True)
+        for i in range (1, 11):
+            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "released message %s" % (i)))
+
+        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1)
+        channel.message_flow(unit = 0, value = 10, destination = "a")
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+        queue = self.client.queue("a")
+        first = queue.get(timeout = 1)
+        for i in range (2, 10):        
+            self.assertEquals("released message %s" % (i), queue.get(timeout = 1).content.body)
+        last = queue.get(timeout = 1)
+        self.assertEmpty(queue)
+        channel.message_release([first.command_id, last.command_id])
+        last.complete()#will re-allocate credit, as in window mode
+        for i in range (1, 11):
+            self.assertEquals("released message %s" % (i), queue.get(timeout = 1).content.body)
+
+
     def assertDataEquals(self, channel, msg, expected):
         self.assertEquals(expected, msg.content.body)
 
