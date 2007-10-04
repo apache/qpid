@@ -20,7 +20,7 @@
  */
 package org.apache.qpidity.transport;
 
-import org.apache.qpidity.codec.Encodable;
+import org.apache.qpidity.transport.codec.Encodable;
 
 
 /**
