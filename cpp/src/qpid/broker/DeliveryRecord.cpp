@@ -39,18 +39,21 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                                                   id(_id),
                                                                   acquired(_acquired),
                                                                   confirmed(_confirmed),
-                                                                  pull(false)
+                                                                  pull(false), 
+                                                                  cancelled(false)
 {
 }
 
 DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
                                Queue::shared_ptr _queue, 
                                const DeliveryId _id) : msg(_msg), 
-                                                                queue(_queue), 
-                                                                id(_id),
-                                                                acquired(true),
-                                                                confirmed(false),
-                                                                pull(true){}
+                                                       queue(_queue), 
+                                                       id(_id),
+                                                       acquired(true),
+                                                       confirmed(false),
+                                                       pull(true),
+                                                       cancelled(false)
+{}
 
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{
@@ -76,7 +79,7 @@ bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const
 }
 
 void DeliveryRecord::redeliver(SemanticState* const session) {
-    if (!confirmed) {
+    if (!confirmed && !cancelled) {
         if(pull){
             //if message was originally sent as response to get, we must requeue it
             requeue();
@@ -147,6 +150,12 @@ void DeliveryRecord::acquire(std::vector<DeliveryId>& results) {
     } else {
         QPID_LOG(info, "Message already acquired " << id.getValue());
     }
+}
+
+void DeliveryRecord::cancel(const std::string& cancelledTag) 
+{
+    if (tag == cancelledTag)
+        cancelled = true;
 }
 
 namespace qpid {

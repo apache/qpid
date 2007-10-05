@@ -75,6 +75,11 @@ public:
         return method;
     }
 
+    const framing::SequenceNumber& getId() const
+    {
+        return id;
+    }
+
 private:
     //method and id are only set for received messages:
     const framing::MessageTransferBody method;
