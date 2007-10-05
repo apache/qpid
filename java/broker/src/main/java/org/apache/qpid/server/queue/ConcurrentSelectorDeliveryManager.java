@@ -422,7 +422,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             //If this causes ref count to hit zero then data will be purged so message.getSize() will NPE.
             message.decrementReference(storeContext);
 
-        }        
+        }
 
         _lock.unlock();
     }
@@ -462,15 +462,15 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      */
     private AMQMessage getNextMessage() throws AMQException
     {
-        return getNextMessage(_messages, null);
+        return getNextMessage(_messages, null, false);
     }
 
-    private AMQMessage getNextMessage(Queue<AMQMessage> messages, Subscription sub) throws AMQException
+    private AMQMessage getNextMessage(Queue<AMQMessage> messages, Subscription sub, boolean purgeOnly) throws AMQException
     {
         AMQMessage message = messages.peek();
 
         //while (we have a message) && ((The subscriber is not a browser or message is taken ) or we are clearing) && (Check message is taken.)
-        while (purgeMessage(message, sub))
+        while (purgeMessage(message, sub, purgeOnly))
         {
             // if we are purging then ensure we mark this message taken for the current subscriber
             // the current subscriber may be null in the case of a get or a purge but this is ok.
@@ -527,6 +527,24 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
      */
     private boolean purgeMessage(AMQMessage message, Subscription sub) throws AMQException
     {
+        return purgeMessage(message, sub, false);
+    }
+
+    /**
+     * This method will return true if the message is to be purged from the queue.
+     * \
+     * SIDE-EFFECT: The msg will be taken by the Subscription(sub) for the current Queue(_queue) when purgeOnly is false
+     *
+     * @param message
+     * @param sub
+     * @param purgeOnly When set to false the message will be taken by the given Subscription.
+     *
+     * @return if the msg should be purged
+     *
+     * @throws AMQException
+     */
+    private boolean purgeMessage(AMQMessage message, Subscription sub, boolean purgeOnly) throws AMQException
+    {
         //Original.. complicated while loop control
 //                (message != null
 //                            && (
@@ -561,9 +579,18 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             }
         }
 
-        // if we are purging then ensure we mark this message taken for the current subscriber
-        // the current subscriber may be null in the case of a get or a purge but this is ok.
-        return purge && message.taken(_queue, sub);
+        if (purgeOnly)
+        {
+            // If we are simply purging the queue don't take the message
+            // just purge up to the next non-taken msg.
+            return purge && message.isTaken(_queue);
+        }
+        else
+        {
+            // if we are purging then ensure we mark this message taken for the current subscriber
+            // the current subscriber may be null in the case of a get or a purge but this is ok.
+            return purge && message.taken(_queue, sub);
+        }
     }
 
     public void sendNextMessage(Subscription sub, AMQQueue queue)//Queue<AMQMessage> messageQueue)
@@ -594,7 +621,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         {
             synchronized (_queueHeadLock)
             {
-                message = getNextMessage(messageQueue, sub);
+                message = getNextMessage(messageQueue, sub, false);
 
                 // message will be null if we have no messages in the messageQueue.
                 if (message == null)
@@ -661,7 +688,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     //fixme - we should do the clean up as the message remains on the _message queue
                     // this is resulting in the next consumer receiving the message and then attempting to purge it
                     //
-                    _log.info(debugIdentity() + "We should do clean up of the main _message queue here");
+                    cleanMainQueue(sub);
                 }
             }
 
@@ -677,6 +704,18 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 _log.error(debugIdentity() + "Unable to release message as it is null. " + e, e);
             }
             _log.error(debugIdentity() + "Unable to deliver message as dequeue failed: " + e, e);
+        }
+    }
+
+    private void cleanMainQueue(Subscription sub)
+    {
+        try
+        {
+            getNextMessage(_messages, sub, true);
+        }
+        catch (AMQException e)
+        {
+            _log.warn("Problem during main queue purge:" + e.getMessage());
         }
     }
 

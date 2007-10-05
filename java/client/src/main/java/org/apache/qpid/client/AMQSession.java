@@ -514,8 +514,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         if (_logger.isInfoEnabled())
         {
+            StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
             _logger.info("Closing session: " + this + ":"
-                         + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
+                         + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
         }
 
         synchronized (_messageDeliveryLock)
@@ -669,7 +670,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     startDistpatcherIfNecessary(true);
                 }
 
-                _dispatcher.rejectPending(consumer);                
+                _dispatcher.rejectPending(consumer);
             }
             else
             {
