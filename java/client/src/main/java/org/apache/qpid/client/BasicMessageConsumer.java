@@ -480,15 +480,14 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             {
                 if (_logger.isTraceEnabled())
                 {
+                    StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                     if (_closedStack != null)
                     {
-                        _logger.trace(_consumerTag + " close():"
-                            + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6));
                         _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
                     }
                     else
                     {
-                        _closedStack = Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 6);
+                        _closedStack = Arrays.asList(stackTrace).subList(3, stackTrace.length - 1);
                     }
                 }
 
@@ -553,15 +552,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
             if (_logger.isTraceEnabled())
             {
+                StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                 if (_closedStack != null)
                 {
                     _logger.trace(_consumerTag + " markClosed():"
-                        + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
+                        + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
                     _logger.trace(_consumerTag + " previously:" + _closedStack.toString());
                 }
                 else
                 {
-                    _closedStack = Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8);
+                    _closedStack = Arrays.asList(stackTrace).subList(3, stackTrace.length - 1);
                 }
             }
         }
@@ -758,15 +758,16 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             _closed.set(true);
             if (_logger.isTraceEnabled())
             {
+                StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
                 if (_closedStack != null)
                 {
                     _logger.trace(_consumerTag + " notifyError():"
-                        + Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8));
+                        + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
                     _logger.trace(_consumerTag + " previously" + _closedStack.toString());
                 }
                 else
                 {
-                    _closedStack = Arrays.asList(Thread.currentThread().getStackTrace()).subList(3, 8);
+                    _closedStack = Arrays.asList(stackTrace).subList(3, stackTrace.length - 1);
                 }
             }
         }
