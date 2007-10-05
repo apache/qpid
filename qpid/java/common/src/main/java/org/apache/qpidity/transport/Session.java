@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -57,7 +58,7 @@ public class Session extends Invoker
     private Map<Long,Method> commands = new HashMap<Long,Method>();
     private long mark = 0;
 
-    private boolean closed = false;
+    private AtomicBoolean closed = new AtomicBoolean(false);
 
 
     public Map<Long,Method> getOutstandingCommands()
@@ -122,16 +123,19 @@ public class Session extends Invoker
         long mark = -1;
         boolean first = true;
         RangeSet rest = new RangeSet();
-        for (Range r: processed)
+        synchronized (processed)
         {
-            if (first)
+            for (Range r: processed)
             {
-                first = false;
-                mark = r.getUpper();
-            }
-            else
-            {
-                rest.add(r);
+                if (first)
+                {
+                    first = false;
+                    mark = r.getUpper();
+                }
+                else
+                {
+                    rest.add(r);
+                }
             }
         }
         executionComplete(mark, rest);
@@ -251,10 +255,10 @@ public class Session extends Invoker
                 executionSync();
             }
 
-            while (!closed && !commands.isEmpty())
+            while (!closed.get() && !commands.isEmpty())
             {
                 try {
-                    log.debug("%s   waiting");
+                    log.debug("%s   waiting", this);
                     commands.wait();
                 }
                 catch (InterruptedException e)
@@ -318,10 +322,11 @@ public class Session extends Invoker
         {
             synchronized (this)
             {
-                while (!isDone())
+                while (!closed.get() && !isDone())
                 {
                     try
                     {
+                        log.debug("%s waiting for result: %s", Session.this, this);
                         wait(timeout, nanos);
                     }
                     catch (InterruptedException e)
@@ -329,6 +334,11 @@ public class Session extends Invoker
                         throw new RuntimeException(e);
                     }
                 }
+            }
+
+            if (!isDone())
+            {
+                throw new RuntimeException("session closed");
             }
 
             return result;
@@ -349,6 +359,11 @@ public class Session extends Invoker
             return result != null;
         }
 
+        public String toString()
+        {
+            return String.format("Future(%s)", isDone() ? result : klass);
+        }
+
     }
 
     public void close()
@@ -359,10 +374,17 @@ public class Session extends Invoker
 
     public void closed()
     {
+        closed.set(true);
         synchronized (commands)
         {
-            closed = true;
             commands.notifyAll();
+        }
+        synchronized (results)
+        {
+            for (ResultFuture<?> result : results.values())
+            {
+                result.notifyAll();
+            }
         }
     }
 
