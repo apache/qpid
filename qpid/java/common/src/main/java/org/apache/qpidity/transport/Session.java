@@ -20,7 +20,10 @@
  */
 package org.apache.qpidity.transport;
 
+
 import org.apache.qpidity.transport.network.Frame;
+
+import org.apache.qpidity.transport.util.Logger;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -37,6 +40,8 @@ import java.util.Map;
 
 public class Session extends Invoker
 {
+
+    private static final Logger log = Logger.get(Session.class);
 
     // channel may be null
     Channel channel;
@@ -82,7 +87,6 @@ public class Session extends Invoker
 
     public void processed(Method command)
     {
-        System.out.printf("processed[%d]: %s\n", command.getId(), command.getClass());
         processed(command.getId());
     }
 
@@ -99,13 +103,15 @@ public class Session extends Invoker
 
     public void processed(Range range)
     {
+        log.debug("%s processed(%s)", this, range);
+
         boolean flush;
         synchronized (processed)
         {
             processed.add(range);
             flush = syncPoint != null && processed.includes(syncPoint);
         }
-        if (! flush)
+        if (!flush)
         {
             flushProcessed();
         }
@@ -118,7 +124,6 @@ public class Session extends Invoker
         RangeSet rest = new RangeSet();
         for (Range r: processed)
         {
-            System.out.println("Completed Range [" + r.getLower() + "," + r.getUpper() +"]" );
             if (first)
             {
                 first = false;
@@ -129,15 +134,14 @@ public class Session extends Invoker
                 rest.add(r);
             }
         }
-        System.out.println("Notifying peer with execution complete");
         executionComplete(mark, rest);
     }
 
     void syncPoint()
     {
-        System.out.println("===========Request received to sync==========================");
-
-        Range range = new Range(0, getCommandsIn() - 1);
+        long id = getCommandsIn() - 1;
+        log.debug("%s synced to %d", this, id);
+        Range range = new Range(0, id - 1);
         boolean flush;
         synchronized (processed)
         {
@@ -178,7 +182,7 @@ public class Session extends Invoker
 
             if (commands.isEmpty())
             {
-                System.out.println("\n All outstanding commands are completed !!!! \n");
+                log.debug("%s no outsanding commands", this);
                 commands.notifyAll();
             }
         }
@@ -196,7 +200,6 @@ public class Session extends Invoker
         {
             synchronized (commands)
             {
-                System.out.println("sent command " + m.getClass().getName() + " command Id" + commandsOut);
                 commands.put(commandsOut++, m);
             }
         }
@@ -240,7 +243,7 @@ public class Session extends Invoker
 
     public void sync()
     {
-        System.out.println("calling sync()");
+        log.debug("%s sync()", this);
         synchronized (commands)
         {
             if (!commands.isEmpty())
@@ -251,9 +254,8 @@ public class Session extends Invoker
             while (!closed && !commands.isEmpty())
             {
                 try {
-                    System.out.println("\n============sync() waiting for commmands to be completed ==============\n");
+                    log.debug("%s   waiting");
                     commands.wait();
-                    System.out.println("\n============sync() got notified=========================================\n");
                 }
                 catch (InterruptedException e)
                 {
@@ -352,7 +354,7 @@ public class Session extends Invoker
     public void close()
     {
         sessionClose();
-        channel.close();
+        // XXX: channel.close();
     }
 
     public void closed()

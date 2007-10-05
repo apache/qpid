@@ -100,7 +100,23 @@ public class RangeSet implements Iterable<Range>
 
     public String toString()
     {
-        return ranges.toString();
+        StringBuffer str = new StringBuffer();
+        str.append("{");
+        boolean first = true;
+        for (Range range : ranges)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                str.append(", ");
+            }
+            str.append(range);
+        }
+        str.append("}");
+        return str.toString();
     }
 
     public static final void main(String[] args)
