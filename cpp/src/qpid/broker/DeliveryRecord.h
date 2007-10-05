@@ -49,6 +49,7 @@ class DeliveryRecord{
     bool acquired;
     const bool confirmed;
     const bool pull;
+    bool cancelled;
 
   public:
     DeliveryRecord(const QueuedMessage& msg, Queue::shared_ptr queue, const std::string tag, DeliveryToken::shared_ptr token, 
@@ -63,6 +64,7 @@ class DeliveryRecord{
     void requeue() const;
     void release();
     void reject();
+    void cancel(const std::string& tag);
     void redeliver(SemanticState* const);
     void updateByteCredit(uint32_t& credit) const;
     void addTo(Prefetch&) const;

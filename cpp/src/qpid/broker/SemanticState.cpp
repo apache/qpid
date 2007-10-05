@@ -95,8 +95,14 @@ void SemanticState::cancel(const string& tag){
     // consumers is a ptr_map so erase will delete the consumer
     // which will call cancel.
     ConsumerImplMap::iterator i = consumers.find(tag);
-    if (i != consumers.end())
+    if (i != consumers.end()) {
         consumers.erase(i); 
+        //should cancel all unacked messages for this consumer so that
+        //they are not redelivered on recovery
+        Mutex::ScopedLock locker(deliveryLock);   
+        for_each(unacked.begin(), unacked.end(), boost::bind(mem_fun_ref(&DeliveryRecord::cancel), _1, tag));
+        
+    }
 }
 
 
