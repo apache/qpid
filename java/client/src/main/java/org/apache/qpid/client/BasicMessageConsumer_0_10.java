@@ -127,8 +127,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
 
 
     public void onMessage(Message message)
-    {
-        boolean messageOk = false;
+    {      
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
         String consumerTag = getConsumerTag().toString();
@@ -139,10 +138,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 new UnprocessedMessage_0_10(channelId, deliveryId, consumerTag, exchange, routingKey, redelivered);
         try
         {
-            ByteBuffer buff = message.readData();
-            ByteBuffer newBuf = ByteBuffer.allocate(buff.remaining());
-            newBuf.put(buff);
-            newMessage.receiveBody(newBuf);
+            newMessage.receiveBody(message.readData());
         }
         catch (IOException e)
         {
