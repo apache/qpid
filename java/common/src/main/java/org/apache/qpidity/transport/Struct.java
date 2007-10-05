@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity.transport;
 
+import java.util.List;
+
 import org.apache.qpidity.transport.codec.Encodable;
 
 
@@ -37,6 +39,34 @@ public abstract class Struct implements Encodable
         return StructFactory.create(type);
     }
 
+    public abstract List<Field<?>> getFields();
+
     public abstract int getEncodedType();
+
+    public String toString()
+    {
+        StringBuilder str = new StringBuilder();
+        str.append(getClass().getSimpleName());
+
+        str.append("(");
+        boolean first = true;
+        for (Field<?> f : getFields())
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                str.append(", ");
+            }
+            str.append(f.getName());
+            str.append("=");
+            str.append(f.get(this));
+        }
+        str.append(")");
+
+        return str.toString();
+    }
 
 }

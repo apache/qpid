@@ -68,4 +68,25 @@ public class Header implements ProtocolEvent {
         delegate.header(context, this);
     }
 
+    public String toString()
+    {
+        StringBuffer str = new StringBuffer();
+        str.append("Header(");
+        boolean first = true;
+        for (Struct s : structs)
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                str.append(", ");
+            }
+            str.append(s);
+        }
+        str.append(")");
+        return str.toString();
+    }
+
 }

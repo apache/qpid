@@ -325,9 +325,7 @@ abstract class AbstractDecoder implements Decoder
             return readLonglong();
 
         case DOUBLE:
-            long bits = readLonglong();
-            System.out.println("double in: " + bits);
-            return Double.longBitsToDouble(bits);
+            return Double.longBitsToDouble(readLonglong());
 
         case SIXTEEN_OCTETS:
         case THIRTY_TWO_OCTETS:

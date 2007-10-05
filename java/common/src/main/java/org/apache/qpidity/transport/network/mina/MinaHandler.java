@@ -40,6 +40,8 @@ import org.apache.qpidity.transport.ConnectionDelegate;
 import org.apache.qpidity.transport.Receiver;
 import org.apache.qpidity.transport.Sender;
 
+import org.apache.qpidity.transport.util.Logger;
+
 import org.apache.qpidity.transport.network.Assembler;
 import org.apache.qpidity.transport.network.Disassembler;
 import org.apache.qpidity.transport.network.InputHandler;
@@ -54,6 +56,8 @@ import org.apache.qpidity.transport.network.OutputHandler;
 //RA making this public until we sort out the package issues
 public class MinaHandler implements IoHandler
 {
+
+    private static final Logger log = Logger.get(MinaHandler.class);
 
     private final ConnectionDelegate delegate;
     private final InputHandler.State state;
@@ -78,7 +82,7 @@ public class MinaHandler implements IoHandler
 
     public void exceptionCaught(IoSession ssn, Throwable e)
     {
-        e.printStackTrace();
+        log.error(e, "exception caught");
     }
 
     public void sessionCreated(final IoSession ssn)
@@ -88,7 +92,7 @@ public class MinaHandler implements IoHandler
 
     public void sessionOpened(final IoSession ssn)
     {
-        System.out.println("opened " + ssn);
+        log.debug("opened: %s", this);
         // XXX: hardcoded version + max-frame
         Connection conn = new Connection
             (new Disassembler(new OutputHandler(new MinaSender(ssn)),
@@ -107,7 +111,7 @@ public class MinaHandler implements IoHandler
 
     public void sessionClosed(IoSession ssn)
     {
-        System.out.println("closed " + ssn);
+        log.debug("closed: %s", ssn);
         Attachment attachment = (Attachment) ssn.getAttachment();
         attachment.receiver.closed();
         ssn.setAttachment(null);

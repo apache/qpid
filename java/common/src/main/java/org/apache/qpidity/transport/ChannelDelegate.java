@@ -37,21 +37,11 @@ class ChannelDelegate extends MethodDelegate<Channel>
         Session ssn = new Session();
         ssn.attach(channel);
         long lifetime = open.getDetachedLifetime();
-        System.out.println("Session Opened lifetime = " + lifetime);
         ssn.sessionAttached(UUID.randomUUID(), lifetime);
-    }
-
-    public @Override void sessionAttached(Channel channel,
-                                          SessionAttached attached)
-    {
-        System.out.println("Session attached: " + attached.getSessionId() + ", " +
-                           attached.getDetachedLifetime());
     }
 
     public @Override void sessionClosed(Channel channel, SessionClosed closed)
     {
-        System.out.println("Session closed: [" + closed.getReplyCode() + "]" +
-                           closed.getReplyText());
         channel.getSession().closed();
         // XXX: should we remove the channel from the connection? It
         // could have an external reference to it. Maybe we need a
