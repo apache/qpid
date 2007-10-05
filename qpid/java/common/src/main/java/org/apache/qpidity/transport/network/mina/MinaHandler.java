@@ -59,6 +59,11 @@ public class MinaHandler implements IoHandler
 
     private static final Logger log = Logger.get(MinaHandler.class);
 
+    static
+    {
+        ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
+    }
+
     private final ConnectionDelegate delegate;
     private final InputHandler.State state;
 
