@@ -212,6 +212,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         if (size != 0)
         {
 
+            buffer.setAutoExpand(true);
             buffer.put((byte) size);
             if (_data.buf().hasArray())
             {
