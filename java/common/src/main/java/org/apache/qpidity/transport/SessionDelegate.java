@@ -70,12 +70,10 @@ public abstract class SessionDelegate
         {
             for (Range range : ranges)
             {
-                System.out.println("completed command range: " + range.getLower() + " to " + range.getUpper());
                 ssn.complete(range.getLower(), range.getUpper());
             }
         }
         ssn.complete(excmp.getCumulativeExecutionMark());
-        System.out.println("outstanding commands: " + ssn.getOutstandingCommands());
     }
 
     @Override public void executionFlush(Session ssn, ExecutionFlush flush)

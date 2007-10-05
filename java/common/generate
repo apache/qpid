@@ -21,6 +21,7 @@ class Output:
 
     self.line("package %s;" % self.package)
     self.line()
+    self.line("import java.util.ArrayList;")
     self.line("import java.util.List;")
     self.line("import java.util.Map;")
     self.line("import java.util.UUID;")
@@ -270,6 +271,11 @@ class Struct:
       out.line("    }")
 
     out.line()
+    out.line("    private static final List<Field<?>> FIELDS = new ArrayList<Field<?>>();")
+    out.line("    public List<Field<?>> getFields() { return FIELDS; }")
+    out.line()
+
+    out.line()
     for type, name in self.fields:
       out.line("    private %s %s;" % (jtype(type), name))
 
@@ -309,6 +315,7 @@ class Struct:
     out.line("        delegate.%s(context, this);" % dromedary(self.name))
     out.line("    }")
 
+    index = 0
     for type, name in self.fields:
       out.line()
       out.line("    public %s %s() {" % (jtype(type), camel(1, "get", name)))
@@ -316,13 +323,29 @@ class Struct:
       out.line("    }")
       out.line("    public %s %s(%s value) {" %
                (self.name, camel(1, "set", name), jtype(type)))
-      out.line("        this.%s = value;" % name);
+      out.line("        this.%s = value;" % name)
       out.line("        return this;")
       out.line("    }")
       out.line("    public %s %s(%s value) {" % (self.name, name, jtype(type)))
-      out.line("        this.%s = value;" % name);
+      out.line("        this.%s = value;" % name)
       out.line("        return this;")
       out.line("    }")
+
+      out.line('    static {')
+      out.line('        FIELDS.add(new Field<%s>(%s.class, "%s", %d) {' %
+               (self.name, self.name, name, index))
+      out.line('            public Object get(Object struct) {')
+      out.line('                return check(struct).%s;' % name)
+      out.line('            }')
+      out.line('            public void read(Decoder dec, Object struct) {')
+#      out.line('                check(struct).%s = dec.read%s();' % (name, camel(0, type)))
+      out.line('            }')
+      out.line('            public void write(Encoder enc, Object struct) {')
+#      out.line('                enc.write%s(check(struct).%s);' % (camel(0, type), name))
+      out.line('            }')
+      out.line('        });')
+      out.line('    }')
+      index += 1;
 
     out.line()
     out.line("    public void read(Decoder dec, byte major, byte minor) {")

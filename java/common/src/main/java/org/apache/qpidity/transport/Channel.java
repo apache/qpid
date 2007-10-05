@@ -20,10 +20,13 @@
  */
 package org.apache.qpidity.transport;
 
+import org.apache.qpidity.transport.util.Logger;
+
 import java.nio.ByteBuffer;
 
 import java.util.List;
 import java.util.ArrayList;
+
 
 import static org.apache.qpidity.transport.network.Frame.*;
 import static org.apache.qpidity.transport.util.Functions.*;
@@ -38,6 +41,8 @@ import static org.apache.qpidity.transport.util.Functions.*;
 public class Channel extends Invoker
     implements Receiver<ProtocolEvent>, ProtocolDelegate<Void>
 {
+
+    private static final Logger log = Logger.get(Channel.class);
 
     final private Connection connection;
     final private int channel;
@@ -111,7 +116,7 @@ public class Channel extends Invoker
 
     public void closed()
     {
-        System.out.println("channel closed: " + this);
+        log.debug("channel closed: ", this);
         if (session != null)
         {
             session.closed();

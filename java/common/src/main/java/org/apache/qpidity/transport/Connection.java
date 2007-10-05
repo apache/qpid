@@ -20,6 +20,8 @@
  */
 package org.apache.qpidity.transport;
 
+import org.apache.qpidity.transport.util.Logger;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,6 +44,8 @@ public class Connection
     implements Receiver<ConnectionEvent>, Sender<ConnectionEvent>
 {
 
+    private static final Logger log = Logger.get(Connection.class);
+
     final private Sender<ConnectionEvent> sender;
     final private ConnectionDelegate delegate;
 
@@ -61,12 +65,14 @@ public class Connection
 
     public void received(ConnectionEvent event)
     {
+        log.debug("RECV: %s", event);
         Channel channel = getChannel(event.getChannel());
         channel.received(event.getProtocolEvent());
     }
 
     public void send(ConnectionEvent event)
     {
+        log.debug("SEND: %s", event);
         sender.send(event);
     }
 
@@ -94,7 +100,7 @@ public class Connection
 
     public void closed()
     {
-        System.out.println("connection closed: " + this);
+        log.debug("connection closed: %s", this);
         synchronized (channels)
         {
             for (Iterator<Channel> it = channels.values().iterator();
