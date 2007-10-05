@@ -26,6 +26,8 @@ import java.nio.ByteBuffer;
 
 import java.util.Collections;
 
+import static org.apache.qpidity.transport.util.Functions.*;
+
 
 /**
  * Data
@@ -74,6 +76,28 @@ public class Data implements ProtocolEvent
     public <C> void delegate(C context, ProtocolDelegate<C> delegate)
     {
         delegate.data(context, this);
+    }
+
+    public String toString()
+    {
+        StringBuffer str = new StringBuffer();
+        str.append("Data(");
+        boolean first = true;
+        for (ByteBuffer buf : getFragments())
+        {
+            if (first)
+            {
+                first = false;
+            }
+            else
+            {
+                str.append(" | ");
+            }
+            str.append(str(buf, 20));
+        }
+        str.setLength(str.length() - 3);
+        str.append(")");
+        return str.toString();
     }
 
 }

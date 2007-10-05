@@ -20,37 +20,53 @@
  */
 package org.apache.qpidity.transport;
 
+import org.apache.qpidity.transport.codec.Decoder;
+import org.apache.qpidity.transport.codec.Encoder;
+
 
 /**
- * ConnectionEvent
+ * Field
  *
  */
 
-public class ConnectionEvent
+public abstract class Field<T>
 {
 
-    private final int channel;
-    private final ProtocolEvent event;
+    private final Class<T> container;
+    private final String name;
+    private final int index;
 
-    public ConnectionEvent(int channel, ProtocolEvent event)
+    Field(Class<T> container, String name, int index)
     {
-        this.channel = channel;
-        this.event = event;
+        this.container = container;
+        this.name = name;
+        this.index = index;
     }
 
-    public int getChannel()
+    public Class<T> getContainer()
     {
-        return channel;
+        return container;
     }
 
-    public ProtocolEvent getProtocolEvent()
+    public String getName()
     {
-        return event;
+        return name;
     }
 
-    public String toString()
+    public int getIndex()
     {
-        return String.format("[%d] %s", channel, event);
+        return index;
     }
+
+    protected T check(Object struct)
+    {
+        return container.cast(struct);
+    }
+
+    public abstract Object get(Object struct);
+
+    public abstract void read(Decoder dec, Object struct);
+
+    public abstract void write(Encoder enc, Object struct);
 
 }

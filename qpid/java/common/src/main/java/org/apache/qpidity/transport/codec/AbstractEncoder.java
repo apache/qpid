@@ -496,7 +496,6 @@ abstract class AbstractEncoder implements Encoder
 
         case DOUBLE:
             long bits = Double.doubleToLongBits(coerce(Double.class, value));
-            System.out.println("double out: " + bits);
             writeLonglong(bits);
             break;
 
