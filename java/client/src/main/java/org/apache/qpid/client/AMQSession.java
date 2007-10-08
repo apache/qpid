@@ -1370,12 +1370,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }
     }
 
-    public void sendRollback() throws AMQException, FailoverException
-    {
-        _connection.getProtocolHandler().syncWrite(TxRollbackBody.createAMQFrame(_channelId,
-                getProtocolMajorVersion(), getProtocolMinorVersion()), TxRollbackOkBody.class);
+    public abstract void  sendRollback() throws AMQException, FailoverException ;
 
-    }
 
     public void run()
     {

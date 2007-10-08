@@ -27,8 +27,6 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.testutil.QpidTestCase;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -247,13 +245,13 @@ public class TransactedTest extends QpidTestCase
     {
         try
         {
-            AMQConnection con = new AMQConnection("vm://:1", "guest", "guest", "consumer1", "test");
+            AMQConnection con = (AMQConnection) getConnection("guest", "guest");
 
             Session consumerSession = con.createSession(true, Session.SESSION_TRANSACTED);
             AMQQueue queue3 = new AMQQueue(consumerSession.getDefaultQueueExchangeName(), new AMQShortString("Q3"), false);
             MessageConsumer consumer = consumerSession.createConsumer(queue3);
 
-            AMQConnection con2 = new AMQConnection("vm://:1", "guest", "guest", "producer1", "test");
+            AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
             Session producerSession = con2.createSession(true, Session.SESSION_TRANSACTED);
             MessageProducer producer = producerSession.createProducer(queue3);
 

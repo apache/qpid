@@ -297,6 +297,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
     }
 
+      protected void rollbackReceivedMessages()
+      {
+          // do nothing as the rollback operation will do the job.
+      }
+    
     /**
      * Acquire a message
      *
