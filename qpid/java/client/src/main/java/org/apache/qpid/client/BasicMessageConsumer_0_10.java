@@ -172,6 +172,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     {
         ((AMQSession_0_10) getSession()).getQpidSession().messageStop(getConsumerTag().toString());
         ((AMQSession_0_10) getSession()).getQpidSession().sync();
+        // confirm cancel 
+        getSession().confirmConsumerCancelled(getConsumerTag());
         try
         {
             ((AMQSession_0_10) getSession()).getCurrentException();
