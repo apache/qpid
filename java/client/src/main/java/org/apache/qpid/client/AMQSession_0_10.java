@@ -158,10 +158,14 @@ public class AMQSession_0_10 extends AMQSession
         {
             for (Long messageTag : _unacknowledgedMessageTags)
             {
-                ranges.add(messageTag);
+                if( messageTag <= deliveryTag )
+                {
+                    ranges.add(messageTag);
+                    _unacknowledgedMessageTags.remove(messageTag);
+                }
             }
             //empty the list of unack messages
-            _unacknowledgedMessageTags.clear();
+
         }
         else
         {
