@@ -82,7 +82,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
      * <p/> Argument true indicates we want strict FIFO semantics
      */
-    private final ArrayBlockingQueue _synchronousQueue;
+    protected final ArrayBlockingQueue _synchronousQueue;
 
     protected MessageFactoryRegistry _messageFactory;
 
@@ -354,15 +354,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 return null;
             }
 
-            Object o ;
-            if (l > 0)
-            {
-                o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
-            }
-            else
-            {
-                o = _synchronousQueue.take();
-            }
+            Object o = getMessageFromQueue(l);
 
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
@@ -384,6 +376,8 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             releaseReceiving();
         }
     }
+
+    public abstract Object getMessageFromQueue(long l) throws InterruptedException;
 
     private boolean closeOnAutoClose() throws JMSException
     {

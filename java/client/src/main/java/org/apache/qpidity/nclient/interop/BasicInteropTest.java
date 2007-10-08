@@ -147,6 +147,5 @@ public class BasicInteropTest implements ClosedListener
         t.testSendMessage();
         t.testMessageFlush();
         t.close();
-
     }
 }
