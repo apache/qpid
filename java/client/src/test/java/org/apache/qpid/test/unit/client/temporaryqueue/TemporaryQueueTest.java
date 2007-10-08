@@ -42,12 +42,11 @@ public class TemporaryQueueTest extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
     }
 
     protected void tearDown() throws Exception
     {
-        TransportConnection.killAllVMBrokers();
+       super.tearDown();
     }
 
     protected Connection createConnection() throws Exception
