@@ -869,35 +869,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             _logger.debug("Rejecting received messages in _receivedDTs (RQ)");
         }
 
-        // rollback received but not committed messages
-        while (!_receivedDeliveryTags.isEmpty())
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags
-                        .size() + ") in _receivedDTs (RQ)" + "for consumer with tag:" + _consumerTag);
-            }
-
-            Long tag = _receivedDeliveryTags.poll();
-
-            if (tag != null)
-            {
-                if (_logger.isTraceEnabled())
-                {
-                    _logger.trace("Rejecting tag from _receivedDTs:" + tag);
-                }
-
-                _session.rejectMessage(tag, true);
-            }
-        }
-
-        if (!_receivedDeliveryTags.isEmpty())
-        {
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Queue _receivedDTs (RQ) was not empty after rejection");
-            }
-        }
+        rollbackReceivedMessages();
 
         // rollback pending messages
         if (_synchronousQueue.size() > 0)
@@ -941,6 +913,39 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
 
             clearReceiveQueue();
+        }
+    }
+
+    protected void rollbackReceivedMessages()
+    {
+        // rollback received but not committed messages
+        while (!_receivedDeliveryTags.isEmpty())
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Rejecting the messages(" + _receivedDeliveryTags
+                        .size() + ") in _receivedDTs (RQ)" + "for consumer with tag:" + _consumerTag);
+            }
+
+            Long tag = _receivedDeliveryTags.poll();
+
+            if (tag != null)
+            {
+                if (_logger.isTraceEnabled())
+                {
+                    _logger.trace("Rejecting tag from _receivedDTs:" + tag);
+                }
+
+                _session.rejectMessage(tag, true);
+            }
+        }
+
+        if (!_receivedDeliveryTags.isEmpty())
+        {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Queue _receivedDTs (RQ) was not empty after rejection");
+            }
         }
     }
 

@@ -452,6 +452,14 @@ public class AMQSession_0_10 extends AMQSession
     }
 
 
+    public void sendRollback() throws AMQException, FailoverException
+    {
+         getQpidSession().txRollback();
+       // We need to sync so that we get notify of an error.
+        getQpidSession().sync();
+        getCurrentException();
+    }
+
     //------ Private methods
     /**
      * Access to the underlying Qpid Session
