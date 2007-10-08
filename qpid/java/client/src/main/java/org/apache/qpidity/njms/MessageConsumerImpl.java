@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,6 +28,7 @@ import javax.jms.Queue;
 
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.nclient.MessagePartListener;
+import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.exchange.ExchangeDefaults;
 import org.apache.qpidity.filter.JMSSelectorFilter;
@@ -159,7 +160,7 @@ public class MessageConsumerImpl extends MessageActor
             // bind this queue with the topic exchange
             getSession().getQpidSession()
                     .queueBind(queueName, ExchangeDefaults.TOPIC_EXCHANGE_NAME, destination.getRoutingKey(), null);
-            // subscribe to this topic 
+            // subscribe to this topic
             getSession().getQpidSession()
                     .messageSubscribe(queueName, getMessageActorID(),
                                       org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
@@ -174,12 +175,21 @@ public class MessageConsumerImpl extends MessageActor
         // set the flow mode
         getSession().getQpidSession()
                 .messageFlowMode(getMessageActorID(), org.apache.qpidity.nclient.Session.MESSAGE_FLOW_MODE_CREDIT);
+        // Set unlimited byte credits
+        getSession().getQpidSession().messageFlow(getMessageActorID(), Session.MESSAGE_FLOW_UNIT_BYTE, -1);
 
         // this will prevent the broker from sending more than one message
         // When a messageListener is set the flow will be adjusted.
         // until then we assume it's for synchronous message consumption
         requestCredit(1);
-        requestSync();
+        try
+        {
+               requestSync();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
         // check for an exception
         if (getSession().getCurrentException() != null)
         {

@@ -344,7 +344,7 @@ public class AMQSession_0_10 extends AMQSession
                                           new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
                                           consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
-        getQpidSession().messageFlowMode(tag.toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
+
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
@@ -437,17 +437,30 @@ public class AMQSession_0_10 extends AMQSession
             for (BasicMessageConsumer consumer : _consumers.values())
             {
                 getQpidSession().messageStop(consumer.getConsumerTag().toString());
+                getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
+
             }
         }
         else
         {
             for (BasicMessageConsumer consumer : _consumers.values())
             {
-                getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                             MAX_PREFETCH);
-                // todo this 
-                getQpidSession()
-                        .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
+                //only set if msg list is null
+                try
+                {
+                    if (consumer.getMessageListener() != null)
+                    {
+                        getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                                                     MAX_PREFETCH);
+                        // todo this
+                        getQpidSession()
+                                .messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
+                    }
+                }
+                catch(Exception e)
+                {
+                    throw new AMQException(AMQConstant.INTERNAL_ERROR,"Error while trying to get the listener",e);
+                }
             }
         }
         // We need to sync so that we get notify of an error.
