@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,6 +29,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpidity.api.Message;
+import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.transport.*;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.filter.MessageFilter;
@@ -38,6 +39,7 @@ import javax.jms.JMSException;
 import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is a 0.10 message consumer.
@@ -65,7 +67,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     private boolean _preAcquire = true;
 
-    //--- constructor 
+    //--- constructor
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                         AMQSession session, AMQProtocolHandler protocolHandler,
@@ -127,7 +129,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
 
 
     public void onMessage(Message message)
-    {      
+    {
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
         String consumerTag = getConsumerTag().toString();
@@ -215,7 +217,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     private boolean checkPreConditions(AbstractJMSMessage message) throws AMQException
     {
         boolean messageOk = true;
-        // TODO Use a tag for fiding out if message filtering is done here or by the broker. 
+        // TODO Use a tag for fiding out if message filtering is done here or by the broker.
         try
         {
             if (getMessageSelector() != null)
@@ -334,15 +336,45 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
-        if (_connection.started())
+        if (messageListener == null)
         {
-            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                      org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
-                                                      AMQSession_0_10.MAX_PREFETCH);
-            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
-                                                      org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
-                                                      0xFFFFFFFF);
+            _0_10session.getQpidSession().messageFlowMode(getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
+            _0_10session.getQpidSession().messageStop(getConsumerTag().toString());
             _0_10session.getQpidSession().sync();
         }
+        else
+        {
+            if (_connection.started())
+            {
+                _0_10session.getQpidSession().messageFlowMode(getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
+                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                                                          org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                                                          AMQSession_0_10.MAX_PREFETCH);
+                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                                                          org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
+                                                          0xFFFFFFFF);
+                _0_10session.getQpidSession().sync();
+            }
+        }
+    }
+
+    public Object getMessageFromQueue(long l) throws InterruptedException
+    {
+        Object o;
+        _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,1);
+
+        if (l > 0)
+        {
+            o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
+            _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
+            _0_10session.getQpidSession().sync();
+            o = _synchronousQueue.poll();
+        }
+        else
+        {
+            o = _synchronousQueue.take();
+        }
+        return null;
     }
 }
