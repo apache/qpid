@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -84,4 +86,18 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
             messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
 
     }
+
+     public Object getMessageFromQueue(long l) throws InterruptedException
+     {
+         Object o;
+         if (l > 0)
+         {
+             o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
+         }
+         else
+         {
+             o = _synchronousQueue.take();
+         }
+         return null;
+     }
 }
