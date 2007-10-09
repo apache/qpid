@@ -269,8 +269,8 @@ bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
     QPID_LOG(debug, "Credit check for destination " << name << " byteCredit: " << byteCredit << " msgCredit: " << msgCredit);
     Mutex::ScopedLock l(lock);
     if (msgCredit == 0 || (byteCredit != 0xFFFFFFFF && byteCredit < msg->getRequiredCredit())) {
-        return false;
         QPID_LOG(debug, "Credit is empty for destination " << name);
+        return false;
     } else {
         if (msgCredit != 0xFFFFFFFF) {
             msgCredit--;
