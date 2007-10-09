@@ -450,6 +450,7 @@ public class AMQSession_0_10 extends AMQSession
                 {
                     if (consumer.getMessageListener() != null)
                     {
+                        getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_WINDOW);
                         getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_MESSAGE,
                                                      MAX_PREFETCH);
                         // todo this
