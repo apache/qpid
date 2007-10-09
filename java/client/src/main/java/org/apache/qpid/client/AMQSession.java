@@ -519,11 +519,11 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                          + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
         }
 
-        synchronized (_messageDeliveryLock)
+        synchronized (_connection.getFailoverMutex())
         {
             // We must close down all producers and consumers in an orderly fashion. This is the only method
             // that can be called from a different thread of control from the one controlling the session.
-            synchronized (_connection.getFailoverMutex())
+            synchronized (_messageDeliveryLock)
             {
                 // Ensure we only try and close an open session.
                 if (!_closed.getAndSet(true))
@@ -577,9 +577,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     public void closed(Throwable e) throws JMSException
     {
-        synchronized (_messageDeliveryLock)
+        synchronized (_connection.getFailoverMutex())
         {
-            synchronized (_connection.getFailoverMutex())
+            synchronized (_messageDeliveryLock)
             {
                 // An AMQException has an error code and message already and will be passed in when closure occurs as a
                 // result of a channel close request

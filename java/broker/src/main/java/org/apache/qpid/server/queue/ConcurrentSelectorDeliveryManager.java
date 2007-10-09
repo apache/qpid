@@ -857,9 +857,16 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             else
             {
 
-                if (_messages.size() > 0)
+                if (s.filtersMessages())
                 {
-                    _log.error("Direct delivery with queued msgs:" + _messages.size());
+                    if (s.getPreDeliveryQueue().size() > 0)
+                    {
+                        _log.error("Direct delivery from PDQ with queued msgs:" + s.getPreDeliveryQueue().size());
+                    }
+                }
+                else if (_messages.size() > 0)
+                {
+                    _log.error("Direct delivery from MainQueue queued msgs:" + _messages.size());
                 }
 
                 //release lock now

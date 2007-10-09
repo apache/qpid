@@ -481,9 +481,16 @@ public class CommitRollbackTest extends TestCase
             assertEquals("2", ((TextMessage) result).getText());
         }
 
-        result = _consumer.receive(1000);
-        assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+        Message result2 = _consumer.receive(1000);
+        assertNotNull("test message was consumed and rolled back, but is gone", result2);
+
+        // if this is message 1 then it should be marked as redelivered
+        if("1".equals(((TextMessage) result2).getText()))
+        {
+            assertTrue("Messasge is not marked as redelivered" + result2, result2.getJMSRedelivered());
+        }
+
+        assertNotSame("Messages should not have the same content",((TextMessage) result2).getText(), ((TextMessage) result).getText() );
 
         result = _consumer.receive(1000);
         assertNull("test message should be null:" + result, result);

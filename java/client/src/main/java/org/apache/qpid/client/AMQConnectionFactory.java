@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Hashtable;
+import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
@@ -125,21 +126,25 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         }
         _defaultPassword = password;
     }
-    
+
     /**
      * Getter for SSLConfiguration
+     *
      * @return SSLConfiguration if set, otherwise null
      */
-    public final SSLConfiguration getSSLConfiguration() {
-    	return _sslConfig;
+    public final SSLConfiguration getSSLConfiguration()
+    {
+        return _sslConfig;
     }
-    
+
     /**
      * Setter for SSLConfiguration
+     *
      * @param sslConfig config to store
      */
-    public final void setSSLConfiguration(SSLConfiguration sslConfig) {
-    	_sslConfig = sslConfig;
+    public final void setSSLConfiguration(SSLConfiguration sslConfig)
+    {
+        _sslConfig = sslConfig;
     }
 
     /**
@@ -243,7 +248,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
         }
         catch (UnknownHostException e)
         {
-            return null;
+            return "UnknownHost" + UUID.randomUUID();
         }
     }
 
@@ -336,7 +341,9 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
      * @param name
      * @param ctx
      * @param env
+     *
      * @return AMQConnection,AMQTopic,AMQQueue, or AMQConnectionFactory.
+     *
      * @throws Exception
      */
     public Object getObjectInstance(Object obj, Name name, Context ctx,
