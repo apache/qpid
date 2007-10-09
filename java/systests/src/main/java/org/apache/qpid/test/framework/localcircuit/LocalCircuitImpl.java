@@ -342,7 +342,7 @@ public class LocalCircuitImpl implements Circuit
         }
         catch (JMSException e)
         {
-            throw new RuntimeException("Got JMSException during close.", e);
+            throw new RuntimeException("Got JMSException during close:" + e.getMessage(), e);
         }
     }
 
