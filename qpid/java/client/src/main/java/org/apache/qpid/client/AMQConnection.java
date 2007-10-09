@@ -393,7 +393,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     private void setVirtualHost(String virtualHost)
     {
-        if (virtualHost.startsWith("/"))
+        if (virtualHost != null && virtualHost.startsWith("/"))
         {
             virtualHost = virtualHost.substring(1);
         }
