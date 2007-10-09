@@ -161,20 +161,20 @@ namespace Apache.Qpid.Client.Protocol
         /// <summary>
         /// Receives notification of any IO exceptions on the connection.
         ///
-        /// <p/>Upon receipt of a connection closed exception, the fail-over process is attempted. If the fail-over fails, then all method listeners
-        /// and the application connection object are notified of the connection failure exception.
+        /// <p/>Upon receipt of a connection closed exception or any IOException, the fail-over process is attempted. If the fail-over fails, then
+        /// all method listeners and the application connection object are notified of the connection failure exception.
         ///
-        /// <p/>This exception handler only deals with AMQConnectionClosedExceptions, any other exception types are thrown back to the caller.
+        /// <p/>All other exception types are propagated to all method listeners.
         /// </summary>
         public void OnException(Exception cause)
         {
             _log.Warn("public void OnException(Exception cause = " + cause + "): called");
 
-            if (cause is AMQConnectionClosedException || cause is System.IO.IOException)
+            // Ensure that the method listener set cannot be changed whilst this exception is propagated to all listeners. This also 
+            // ensures that this exception is fully propagated to all listeners, before another one can be processed.
+            lock (_lock)
             {
-                // Ensure that the method listener set cannot be changed whilst this exception is propagated to all listeners. This also 
-                // ensures that this exception is fully propagated to all listeners, before another one can be processed.
-                lock (_lock)
+                if (cause is AMQConnectionClosedException || cause is System.IO.IOException)
                 {
                     // Try a fail-over because the connection has failed.
                     FailoverState failoverState = AttemptFailover();
@@ -190,11 +190,12 @@ namespace Apache.Qpid.Client.Protocol
                         _connection.ExceptionReceived(cause);
                     }
                 }
-            }
-            // Throw the exception back to the caller if it is not of a known type, to ensure unhandled runtimes are not swallowed.
-            else
-            {
-                throw cause;
+                // Notify all method listeners of the exception.
+                else
+                {
+                    PropagateExceptionToWaiters(cause);
+                    _connection.ExceptionReceived(cause);
+                }
             }
         }
 
