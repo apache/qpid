@@ -143,17 +143,17 @@ public class DurableSubscriptionTest extends TestCase
         producer.send(session1.createTextMessage("A"));
 
         Message msg;
-        msg = consumer1.receive(100);
+        msg = consumer1.receive(500);
         assertNotNull("Message should be available", msg);
         assertEquals("Message Text doesn't match", "A", ((TextMessage) msg).getText());
 
-        msg = consumer1.receive(100);
+        msg = consumer1.receive(500);
         assertNull("There should be no more messages for consumption on consumer1.", msg);
 
         msg = consumer2.receive();
         assertNotNull(msg);
         assertEquals("Consumer 2 should also received the first msg.", "A", ((TextMessage) msg).getText());
-        msg = consumer2.receive(100);
+        msg = consumer2.receive(500);
         assertNull("There should be no more messages for consumption on consumer2.", msg);
 
         consumer2.close();
@@ -164,21 +164,24 @@ public class DurableSubscriptionTest extends TestCase
         producer.send(session1.createTextMessage("B"));
 
         _logger.info("Receive message on consumer 1 :expecting B");
-        msg = consumer1.receive(100);
+        msg = consumer1.receive(500);
         assertNotNull("Consumer 1 should get message 'B'.", msg);
         assertEquals("Incorrect Message recevied on consumer1.", "B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
-        msg = consumer1.receive(100);
+        msg = consumer1.receive(500);
         assertNull("There should be no more messages for consumption on consumer1.", msg);
 
         _logger.info("Receive message on consumer 3 :expecting B");
-        msg = consumer3.receive(100);
+        msg = consumer3.receive(500);
         assertNotNull("Consumer 3 should get message 'B'.", msg);
         assertEquals("Incorrect Message recevied on consumer4.", "B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 3 :expecting null");
-        msg = consumer3.receive(100);
+        msg = consumer3.receive(500);
         assertNull("There should be no more messages for consumption on consumer3.", msg);
-
+        
+        consumer1.close();
+        consumer3.close();
+        
         con.close();
     }
 
