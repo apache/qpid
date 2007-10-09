@@ -255,6 +255,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 
             DeliveryId deliveryTag =
                 parent->deliveryAdapter.deliver(msg.payload, token);
+            QPID_LOG(debug, "Message delivered for destination " << name);
             if (windowing || ackExpected) {
                 parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
             }
@@ -265,9 +266,11 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 
 bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
 {
+    QPID_LOG(debug, "Credit check for destination " << name << " byteCredit: " << byteCredit << " msgCredit: " << msgCredit);
     Mutex::ScopedLock l(lock);
     if (msgCredit == 0 || (byteCredit != 0xFFFFFFFF && byteCredit < msg->getRequiredCredit())) {
         return false;
+        QPID_LOG(debug, "Credit is empty for destination " << name);
     } else {
         if (msgCredit != 0xFFFFFFFF) {
             msgCredit--;
@@ -475,12 +478,14 @@ void SemanticState::setCreditMode(const std::string& destination)
 void SemanticState::addByteCredit(const std::string& destination, uint32_t value)
 {
     find(destination).addByteCredit(value);
+    QPID_LOG(debug, "Byte Credits Requested for " << destination << ": " << value);   
 }
 
 
 void SemanticState::addMessageCredit(const std::string& destination, uint32_t value)
 {
     find(destination).addMessageCredit(value);
+    QPID_LOG(debug, "Message Credit Requested for " << destination << ": " << value);
 }
 
 void SemanticState::flush(const std::string& destination)

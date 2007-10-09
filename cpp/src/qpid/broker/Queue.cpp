@@ -80,6 +80,7 @@ void Queue::deliver(Message::shared_ptr& msg){
 	}else {
             push(msg);
 	}
+	QPID_LOG(debug, "Message Enqueued: " << msg->getApplicationHeaders());
         serializer.execute(dispatchCallback);
     }
 }
