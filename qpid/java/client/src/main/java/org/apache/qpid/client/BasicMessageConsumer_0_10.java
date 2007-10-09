@@ -174,7 +174,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     {
         ((AMQSession_0_10) getSession()).getQpidSession().messageStop(getConsumerTag().toString());
         ((AMQSession_0_10) getSession()).getQpidSession().sync();
-        // confirm cancel 
+        // confirm cancel
         getSession().confirmConsumerCancelled(getConsumerTag());
         try
         {
@@ -303,7 +303,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
       {
           // do nothing as the rollback operation will do the job.
       }
-    
+
     /**
      * Acquire a message
      *
@@ -338,8 +338,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         super.setMessageListener(messageListener);
         if (messageListener == null)
         {
-            _0_10session.getQpidSession().messageFlowMode(getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
             _0_10session.getQpidSession().messageStop(getConsumerTag().toString());
+            _0_10session.getQpidSession().messageFlowMode(getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
+            _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
+                    0xFFFFFFFF);
             _0_10session.getQpidSession().sync();
         }
         else
@@ -367,14 +370,19 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         if (l > 0)
         {
             o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
-            _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
-            _0_10session.getQpidSession().sync();
-            o = _synchronousQueue.poll();
+            if (o == null)
+            {
+                _logger.debug("Message Didn't arrive in time, checking if one is inflight");
+               // checking if one is inflight
+                _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
+                _0_10session.getQpidSession().sync();
+                o = _synchronousQueue.poll();
+            }
         }
         else
         {
             o = _synchronousQueue.take();
         }
-        return null;
+        return o;
     }
 }

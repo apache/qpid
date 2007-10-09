@@ -345,6 +345,7 @@ public class AMQSession_0_10 extends AMQSession
                                           consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
                                           consumer.isExclusive() ? Option.EXCLUSIVE : Option.NO_OPTION);
 
+        getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
@@ -438,7 +439,7 @@ public class AMQSession_0_10 extends AMQSession
             {
                 getQpidSession().messageStop(consumer.getConsumerTag().toString());
                 getQpidSession().messageFlowMode(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_MODE_CREDIT);
-
+                getQpidSession().messageFlow(consumer.getConsumerTag().toString(), Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
             }
         }
         else
