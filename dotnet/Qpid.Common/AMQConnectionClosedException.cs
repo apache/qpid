@@ -24,6 +24,17 @@ using System.Runtime.Serialization;
 
 namespace Apache.Qpid
 {
+    /// <summary>
+    /// AMQConnectionClosedException indicates that a connection has been closed.
+    ///
+    /// <p/>This exception is really used as an event, in order that the method handler that raises it creates an event
+    /// which is propagated to the io handler, in order to notify it of the connection closure.
+    ///
+    /// <p/><table id="crc"><caption>CRC Card</caption>
+    /// <tr><th> Responsibilities <th> Collaborations
+    /// <tr><td> Represents a the closure of a connection.
+    /// </table>
+    /// </summary>
     [Serializable]
     public class AMQConnectionClosedException : AMQException
     {
@@ -33,7 +44,7 @@ namespace Apache.Qpid
         }
 
         protected AMQConnectionClosedException(SerializationInfo info, StreamingContext ctxt)
-           : base(info, ctxt)
+            : base(info, ctxt)
         {
         }
     }

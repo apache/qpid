@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Runtime.InteropServices;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
@@ -30,228 +31,289 @@ namespace Apache.Qpid.Client.Tests.failover
     [TestFixture, Category("Failover")]
     public class FailoverTest : IConnectionListener
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(FailoverTest));
+        private static readonly ILog _log = LogManager.GetLogger(typeof(FailoverTest));
 
-        private IConnection _connection;
-        private IChannel _channel;
-        private IMessagePublisher _publisher;
-        private int _count;
+        /// <summary>Specifies the number of times to run the test cycle.</summary>
+        const int NUM_MESSAGES = 10;
 
-        private IMessageConsumer _consumerOfResponse;
+        /// <summary>Determines how many messages to send within each commit.</summary>
+        const int COMMIT_BATCH_SIZE = 1;
 
-        void DoFailoverTest(IConnectionInfo info)
+        /// <summary>Specifies the duration of the pause to place between each message sent in the test.</summary>
+        //const int SLEEP_MILLIS = 1;
+
+        /// <summary>Specified the maximum time in milliseconds to wait for the test to complete.</summary>
+        const int TIMEOUT = 10000;
+
+        /// <summary>Defines the number of test messages to send, before prompting the user to fail a broker.</summary>
+        const int FAIL_POINT = 5;
+
+        /// <summary>Specified the ack mode to use for the test.</summary>
+        AcknowledgeMode _acknowledgeMode = AcknowledgeMode.AutoAcknowledge;
+
+        /// <summary>Determines whether this test runs transactionally or not. </summary>
+        bool transacted = false;
+
+        /// <summary>Holds the connection to run the test over.</summary>
+        AMQConnection _connection;
+
+        /// <summary>Holds the channel for the test message publisher. </summary>
+        IChannel publishingChannel;
+
+        /// <summary>Holds the test message publisher. </summary>
+        IMessagePublisher publisher;
+
+        /// <summary>Used to keep count of the number of messages sent. </summary>
+        int messagesSent;
+
+        /// <summary>Used to keep count of the number of messages received. </summary>
+        int messagesReceived;
+
+        /// <summary>Used to wait for test completion on. </summary>
+        private static object testComplete = new Object();
+
+        /// <summary>
+        /// Creates the test connection with a fail-over set up, and a producer/consumer pair on that connection.
+        /// </summary>
+        /// [SetUp]
+        public void Init(IConnectionInfo connectionInfo)
         {
-            DoFailoverTest(new AMQConnection(info));
-        }
+            // Reset all counts.
+            messagesSent = 0;
+            messagesReceived = 0;
 
-        void DoFailoverTest(IConnection connection)
-        {
-            AMQConnection amqConnection = (AMQConnection)connection;
-            amqConnection.ConnectionListener = this;
-            //Console.WriteLine("connection.url = " + amqConnection.ToURL());
-            _connection = connection;
-            _connection.ExceptionListener = new ExceptionListenerDelegate(OnConnectionException);
-            _channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge);
+            // Create a connection for the test.
+            _connection = new AMQConnection(connectionInfo);
+            _connection.ConnectionListener = this;
 
-            string exchangeName = ExchangeNameDefaults.TOPIC;
-            string routingKey = "topic1";
+            // Create a consumer to receive the test messages.
+            IChannel receivingChannel = _connection.CreateChannel(false, _acknowledgeMode);
 
-            string queueName = DeclareAndBindTemporaryQueue(exchangeName, routingKey);
-            
-            new MsgListener(_connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge), queueName);
+            string queueName = receivingChannel.GenerateUniqueName();
+            receivingChannel.DeclareQueue(queueName, false, true, true);
+            receivingChannel.Bind(queueName, "amq.direct", queueName);
 
-            IChannel channel = _channel;
+            IMessageConsumer consumer = receivingChannel.CreateConsumerBuilder(queueName)
+                .WithPrefetchLow(30)
+                .WithPrefetchHigh(60).Create();
 
-            string tempQueueName = channel.GenerateUniqueName();
-            channel.DeclareQueue(tempQueueName, false, true, true);
-            _consumerOfResponse = channel.CreateConsumerBuilder(tempQueueName).Create();
-            _consumerOfResponse.OnMessage = new MessageReceivedDelegate(OnMessage);
-
+            consumer.OnMessage = new MessageReceivedDelegate(OnMessage);
             _connection.Start();
 
-            IMessage msg = _channel.CreateTextMessage("Init");
-            // FIXME: Leaving ReplyToExchangeName as default (i.e. the default exchange)
-            // FIXME: but the implementation might not like this as it defaults to null rather than "".
-            msg.ReplyToRoutingKey = tempQueueName;
-//            msg.ReplyTo = new ReplyToDestination("" /* i.e. the default exchange */, tempQueueName);
-            _logger.Info(String.Format("sending msg.Text={0}", ((ITextMessage)msg).Text));
-
-//            _publisher = _channel.CreatePublisher(exchangeName, exchangeClass, routingKey);
-            _publisher = _channel.CreatePublisherBuilder()
-                .WithRoutingKey(routingKey)
-                .WithExchangeName(exchangeName)
+            // Create a publisher to send the test messages.
+            publishingChannel = _connection.CreateChannel(transacted, AcknowledgeMode.NoAcknowledge);
+            publisher = publishingChannel.CreatePublisherBuilder()
+                .WithRoutingKey(queueName)
                 .Create();
-            _publisher.Send(msg);
+
+            _log.Debug("connection = " + _connection);
+            _log.Debug("connectionInfo = " + connectionInfo);
+            _log.Debug("connection.AsUrl = " + _connection.toURL());
+            _log.Debug("AcknowledgeMode is " + _acknowledgeMode);
         }
 
-        public string DeclareAndBindTemporaryQueue(string exchangeName, string routingKey)
+        /// <summary>
+        /// Clean up the test connection.
+        /// </summary>
+        [TearDown]
+        public virtual void Shutdown()
         {
-            string queueName = _channel.GenerateUniqueName();
-
-            // Queue.Declare
-            _channel.DeclareQueue(queueName, false, true, true);
-
-            // Queue.Bind
-            _channel.Bind(queueName, exchangeName, routingKey);
-            return queueName;
+            Thread.Sleep(2000);
+            _connection.Close();
         }
 
-        private void OnConnectionException(Exception e)
+        /// <summary>
+        /// Runs a failover test, building up the connection information from its component parts. In particular the brokers
+        /// to fail between are seperately added into the connection info.
+        /// </summary>
+        /*[Test]
+        public void TestWithBasicInfo()
         {
-            _logger.Error("Connection exception occurred", e);
+            _log.Debug("public void TestWithBasicInfo(): called");
+
+            // Manually create the connection parameters.
+            QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
+            connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
+            connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));
+
+            Init(connectionInfo);
+            DoFailoverTest();
+        }*/
+
+        /// <summary>
+        /// Runs a failover test, with the failover configuration specified in the Qpid connection URL format.
+        /// </summary>
+        [Test]
+        public void TestWithUrl()
+        {
+            _log.Debug("public void runTestWithUrl(): called");
+
+            // Parse the connection parameters from a URL.
+            String clientId = "failover" + DateTime.Now.Ticks;
+            string defaultUrl = "amqp://guest:guest@" + clientId + "/test" +
+                "?brokerlist='tcp://localhost:5672;tcp://localhost:5673'&failover='roundrobin'";            
+            IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(defaultUrl);
+            
+            Init(connectionInfo);
+            DoFailoverTest();
         }
 
+        /// <summary>
+        /// Send the test messages, prompting at the fail point for the user to cause a broker failure. The test checks that all messages sent
+        /// are received within the test time limit.
+        /// </summary>
+        ///
+        /// <param name="connectionInfo">The connection parameters, specifying the brokers to fail between.</param>
+        void DoFailoverTest()
+        {
+            _log.Debug("void DoFailoverTest(IConnectionInfo connectionInfo): called");
+
+            for (int i = 1; i <= NUM_MESSAGES; ++i)
+            {
+                ITextMessage msg = publishingChannel.CreateTextMessage("message=" + messagesSent);
+                //_log.Debug("sending message = " + msg.Text);
+                publisher.Send(msg);
+                messagesSent++;
+
+                _log.Debug("messagesSent = " + messagesSent);
+
+                if (transacted)
+                {
+                    publishingChannel.Commit();
+                }
+
+                // Prompt the user to cause a failure if at the fail point.
+                if (i == FAIL_POINT)
+                {
+                    PromptAndWait("Cause a broker failure now, then press return...");
+                }
+
+                //Thread.Sleep(SLEEP_MILLIS);               
+            }
+
+            // Wait for all of the test messages to be received, checking that this occurs within the test time limit.
+            bool withinTimeout;
+
+            lock(testComplete)
+            {
+                withinTimeout = Monitor.Wait(testComplete, TIMEOUT);
+            }            
+
+            if (!withinTimeout)
+            {
+                Assert.Fail("Test timed out, before all messages received.");
+            }
+
+            _log.Debug("void DoFailoverTest(IConnectionInfo connectionInfo): exiting");
+        }
+
+        /// <summary>
+        /// Receives all of the test messages.
+        /// </summary>
+        ///
+        /// <param name="message">The newly arrived test message.</param>
         public void OnMessage(IMessage message)
         {
             try
             {
-                _logger.Info("received message on temp queue msg.Text=" + ((ITextMessage)message).Text);
-                Thread.Sleep(1000);
-                _publisher.Send(_channel.CreateTextMessage("Message" + (++_count)));
-            }
-            catch (QpidException e)
-            {
-                error(e);
-            }
-        }
-
-        private void error(Exception e)
-        {
-            _logger.Error("exception received", e);
-            stop();
-        }
-
-        private void stop()
-        {
-            _logger.Info("Stopping...");
-            try
-            {
-                _connection.Dispose();
-            }
-            catch (QpidException e)
-            {
-                _logger.Error("Failed to shutdown", e);
-            }
-        }
-
-        public void BytesSent(long count)
-        {
-        }
-
-        public void BytesReceived(long count)
-        {
-        }
-
-        public bool PreFailover(bool redirect)
-        {
-            _logger.Info("preFailover(" + redirect + ") called");
-            return true;
-        }
-
-        public bool PreResubscribe()
-        {
-            _logger.Info("preResubscribe() called");
-            return true;
-        }
-
-        public void FailoverComplete()
-        {
-            _logger.Info("failoverComplete() called");
-        }
-
-        private class MsgListener
-        {
-            private IChannel _session;
-            private IMessagePublisher _publisher;
-
-            internal MsgListener(IChannel session, string queueName)
-            {
-                _session = session;
-                _session.CreateConsumerBuilder(queueName).Create().OnMessage = 
-                    new MessageReceivedDelegate(OnMessage);
-            }
-
-            public void OnMessage(IMessage message)
-            {
-                try
+                if (_acknowledgeMode == AcknowledgeMode.ClientAcknowledge)
                 {
-                    _logger.Info("Received: msg.Text = " + ((ITextMessage) message).Text);
-                    if(_publisher == null)
+                    message.Acknowledge();
+                }
+
+                messagesReceived++;
+
+                _log.Debug("messagesReceived = " + messagesReceived);
+
+                // Check if all of the messages in the test have been received, in which case notify the message producer that the test has 
+                // succesfully completed.
+                if (messagesReceived == NUM_MESSAGES)
+                {
+                    lock (testComplete)
                     {
-                        _publisher = init(message);
+                        Monitor.Pulse(testComplete);
                     }
-                    reply(message);
-                }
-                catch (QpidException e)
-                {
-//                   Error(e);
-                    _logger.Error("yikes", e); // XXX
                 }
             }
-
-            private void reply(IMessage message)
+            catch (QpidException e)
             {
-                string msg = ((ITextMessage) message).Text;
-                _logger.Info("sending reply - " + msg);
-                _publisher.Send(_session.CreateTextMessage(msg));
-            }
-
-            private IMessagePublisher init(IMessage message)
-            {
-                _logger.Info(string.Format("creating reply producer with dest = '{0}:{1}'", 
-                                           message.ReplyToExchangeName, message.ReplyToRoutingKey));
-
-                string exchangeName = message.ReplyToExchangeName;
-                string routingKey = message.ReplyToRoutingKey;
-
-                //return _channel.CreatePublisher(exchangeName, exchangeClass, routingKey);
-                return _session.CreatePublisherBuilder()
-                    .WithExchangeName(exchangeName)
-                    .WithRoutingKey(routingKey)
-                    .Create();
+                _log.Fatal("Exception received. About to stop.", e);
+                Stop();
             }
         }
 
-        [Test]
-        public void TestFail()
+        /// <summary>Prompts the user on stdout and waits for a reply on stdin, using the specified prompt message.</summary>
+        ///
+        /// <param name="message">The message to prompt the user with.</param>
+        private void PromptAndWait(string message)
         {
-            Assert.Fail("Tests in this class do not pass, but hang forever, so commented out until can be fixed.");
+            Console.WriteLine("\n" + message);
+            Console.ReadLine();
         }
 
-        /*[Test]
-        public void TestWithBasicInfo()
+        // <summary>Closes the test connection.</summary>
+        private void Stop()
         {
-            Console.WriteLine("TestWithBasicInfo");
+            _log.Debug("Stopping...");
             try
             {
-                QpidConnectionInfo connectionInfo = new QpidConnectionInfo();
-                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5672, false));
-                connectionInfo.AddBrokerInfo(new AmqBrokerInfo("amqp", "localhost", 5673, false));               
-                DoFailoverTest(connectionInfo);
-                while (true)
-                {
-                    Thread.Sleep(5000);
-                }
+                _connection.Close();
             }
-            catch (Exception e)
+            catch (QpidException e)
             {
-                _logger.Error("Exception caught", e);
+                _log.Debug("Failed to shutdown: ", e);
             }
-        }*/
+        }
 
-//        [Test]
-//        public void TestWithUrl()
-//        {
-//            String clientId = "failover" + DateTime.Now.Ticks;
-//            String defaultUrl = "amqp://guest:guest@" + clientId + "/test" +
-//                                "?brokerlist='tcp://localhost:5672;tcp://localhost:5673'&failover='roundrobin'";
-//
-//            _logger.Info("url = [" + defaultUrl + "]");
-//
-//            //            _logger.Info("connection url = [" + new AMQConnectionURL(defaultUrl) + "]");
-//
-//            String broker = defaultUrl;
-//            //new FailoverTest(broker);
-//        }
+        /// <summary>
+        /// Called when bytes have been transmitted to the server
+        /// </summary>
+        ///
+        /// <param>count the number of bytes sent in total since the connection was opened</param>     
+        public void BytesSent(long count) {}
+
+        /// <summary>
+        /// Called when some bytes have been received on a connection
+        /// </summary>
+        ///
+        /// <param>count the number of bytes received in total since the connection was opened</param>         
+        public void BytesReceived(long count) {}
+
+        /// <summary>
+        /// Called after the infrastructure has detected that failover is required but before attempting failover.
+        /// </summary>
+        ///
+        /// <param>redirect true if the broker requested redirect. false if failover is occurring due to a connection error.</param>
+        ///
+        /// <return>true to continue failing over, false to veto failover and raise a connection exception</return>         
+        public bool PreFailover(bool redirect) 
+        {
+            _log.Debug("public bool PreFailover(bool redirect): called");
+            return true; 
+        }
+
+        /// <summary>
+        /// Called after connection has been made to another broker after failover has been started but before
+        /// any resubscription has been done.
+        /// </summary>
+        ///
+        /// <return> true to continue with resubscription, false to prevent automatic resubscription. This is useful in
+        /// cases where the application wants to handle resubscription. Note that in the latter case all sessions, producers
+        /// and consumers are invalidated.
+        /// </return>
+        public bool PreResubscribe() 
+        {
+            _log.Debug("public bool PreResubscribe(): called");
+            return true; 
+        }
+
+        /// <summary>
+        /// Called once failover has completed successfully. This is called irrespective of whether the client has
+        /// vetoed automatic resubscription.
+        /// </summary>
+        public void FailoverComplete() 
+        {
+            _log.Debug("public void FailoverComplete(): called");
+        }
     }
 }
