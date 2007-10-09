@@ -46,7 +46,7 @@ namespace Apache.Qpid.Client.Qms
 
         private long _lastMethodTime;
         private long _lastFailTime;
-
+        
         public FailoverPolicy(IConnectionInfo connectionInfo)
         {
             IFailoverMethod method;
