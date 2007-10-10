@@ -56,7 +56,6 @@
     <Compile Include="connection\ConnectionTest.cs" />
     <Compile Include="connection\SslConnectionTest.cs" />
     <Compile Include="failover\FailoverTest.cs" />
-    <Compile Include="failover\FailoverTxTest.cs" />
     <Compile Include="HeadersExchange\HeadersExchangeTest.cs" />
     <Compile Include="interop\TopicListener.cs" />
     <Compile Include="interop\TopicPublisher.cs" />
