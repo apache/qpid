@@ -24,6 +24,7 @@ import junit.framework.TestCase;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ import java.util.concurrent.TimeUnit;
  * the message listener later the _synchronousQueue is just poll()'ed and the first message delivered the remaining
  * messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
-public class ResetMessageListenerTest extends TestCase
+public class ResetMessageListenerTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(ResetMessageListenerTest.class);
 
@@ -75,33 +76,25 @@ public class ResetMessageListenerTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
 
         System.setProperty(AMQSession.IMMEDIATE_PREFETCH, "true");
 
-        InitialContextFactory factory = new PropertiesFileInitialContextFactory();
-
-        Hashtable<String, String> env = new Hashtable<String, String>();
-
-        env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/test?brokerlist='vm://:1'");
-        env.put("queue.queue", "direct://amq.direct//ResetMessageListenerTest");
-
-        _context = factory.getInitialContext(env);
-
-        Queue queue = (Queue) _context.lookup("queue");
+        _clientConnection = getConnection("guest", "guest");
 
         // Create Client 1
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
+        Queue queue =_clientSession.createQueue("queue");
+
         _consumer1 = _clientSession.createConsumer(queue);
+
 
         // Create Client 2 on same session
         _consumer2 = _clientSession.createConsumer(queue);
 
         // Create Producer
-        _producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _producerConnection = getConnection("guest", "guest");
 
         _producerConnection.start();
 
@@ -128,7 +121,6 @@ public class ResetMessageListenerTest extends TestCase
 
         _producerConnection.close();
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     public void testAsynchronousRecieve()
