@@ -30,8 +30,8 @@ package org.apache.qpidity.transport.codec;
 public interface Encodable
 {
 
-    void write(Encoder enc, byte major, byte minor);
+    void write(Encoder enc);
 
-    void read(Decoder dec, byte major, byte minor);
+    void read(Decoder dec);
 
 }

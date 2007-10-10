@@ -118,14 +118,14 @@ public class Disassembler implements Sender<ConnectionEvent>,
     {
         SizeEncoder sizer = new SizeEncoder(major, minor);
         sizer.writeShort(method.getEncodedType());
-        method.write(sizer, major, minor);
+        method.write(sizer);
         sizer.flush();
         int size = sizer.getSize();
 
         ByteBuffer buf = ByteBuffer.allocate(size);
         BBEncoder enc = new BBEncoder(major, minor, buf);
         enc.writeShort(method.getEncodedType());
-        method.write(enc, major, minor);
+        method.write(enc);
         enc.flush();
         buf.flip();
 

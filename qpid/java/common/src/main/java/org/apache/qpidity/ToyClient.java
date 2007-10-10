@@ -117,6 +117,7 @@ class ToyClient extends SessionDelegate
 
         Future<QueueQueryResult> future = ssn.queueQuery("asdf");
         System.out.println(future.get().getQueue());
+        ssn.sync();
         ssn.close();
         conn.close();
     }
