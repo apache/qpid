@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 public class QpidTestCase extends TestCase
 {
-   
+
     /* this clas logger */
     private static final Logger _logger = LoggerFactory.getLogger(QpidTestCase.class);
 
@@ -91,7 +91,7 @@ public class QpidTestCase extends TestCase
             // create an in_VM broker
             TransportConnection.createVMBroker(1);
         }
-       _logger.info("=========================================");
+        _logger.info("=========================================");
         _logger.info("= " + _shel + " " + _brokerPath + " " + _brokerParams);
     }
 
@@ -116,7 +116,7 @@ public class QpidTestCase extends TestCase
          super.tearDown();
     }
 
-    //--------- Util method 
+    //--------- Util method
 
     /**
      * This method starts a remote server by spawning an external process.
@@ -134,7 +134,7 @@ public class QpidTestCase extends TestCase
             //bad, we had an error starting the broker
             throw new Exception("Problem when starting the broker: " + reader.readLine());
         }
-        // We need to wait for th ebroker to start ideally we would need to ping it 
+        // We need to wait for th ebroker to start ideally we would need to ping it
         synchronized(this)
         {
             this.wait(1000);
