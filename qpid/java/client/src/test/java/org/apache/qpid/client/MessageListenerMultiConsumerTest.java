@@ -20,16 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import junit.framework.TestCase;
 
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.testutil.QpidTestCase;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
@@ -37,9 +34,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.naming.Context;
-import javax.naming.spi.InitialContextFactory;
 
-import java.util.Hashtable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -52,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  * the message listener later the _synchronousQueue is just poll()'ed and the first message delivered the remaining
  * messages will be left on the queue and lost, subsequent messages on the session will arrive first.
  */
-public class MessageListenerMultiConsumerTest extends TestCase
+public class MessageListenerMultiConsumerTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(MessageListenerMultiConsumerTest.class);
 
@@ -71,35 +66,25 @@ public class MessageListenerMultiConsumerTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
-
-        InitialContextFactory factory = new PropertiesFileInitialContextFactory();
-
-        Hashtable<String, String> env = new Hashtable<String, String>();
-
-        env.put("connectionfactory.connection", "amqp://guest:guest@MLT_ID/test?brokerlist='vm://:1'");
-        env.put("queue.queue", "direct://amq.direct//" + this.getClass().getName());
-
-        _context = factory.getInitialContext(env);
-
-        _queue = (Queue) _context.lookup("queue");
 
         // Create Client 1
-        _clientConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        _clientConnection = getConnection("guest", "guest");
 
         _clientConnection.start();
 
         _clientSession1 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+        _queue =_clientSession1.createQueue("queue");
 
         _consumer1 = _clientSession1.createConsumer(_queue);
 
         // Create Client 2
         Session clientSession2 = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        _consumer2 = clientSession2.createConsumer(_queue);
+       _consumer2 = clientSession2.createConsumer(_queue);
 
         // Create Producer
-        Connection producerConnection = ((ConnectionFactory) _context.lookup("connection")).createConnection();
+        Connection producerConnection = getConnection("guest", "guest");
 
         producerConnection.start();
 
@@ -119,9 +104,7 @@ public class MessageListenerMultiConsumerTest extends TestCase
     protected void tearDown() throws Exception
     {
         _clientConnection.close();
-
         super.tearDown();
-        TransportConnection.killAllVMBrokers();
     }
 
     public void testRecieveInterleaved() throws Exception
