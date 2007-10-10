@@ -120,7 +120,7 @@ public class TopicSessionTest extends QpidTestCase
         {
             session1.close();
             con.close();
-            con = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test", "test");
+            con =  (AMQConnection) getConnection("guest", "guest");
             con.start();
             session1 = con.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
             publisher = session1.createPublisher(null);
@@ -158,7 +158,7 @@ public class TopicSessionTest extends QpidTestCase
         assertNotNull(tm);
         con2.close();
         publisher.publish(session1.createTextMessage("Hello2"));
-        con2 = new AMQConnection("vm://:1?retries='0'", "guest", "guest", "test2", "test");
+        con2 =  (AMQConnection) getConnection("guest", "guest");
         session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         sub = session2.createDurableSubscriber(topic, "subscription0");
         con2.start();
