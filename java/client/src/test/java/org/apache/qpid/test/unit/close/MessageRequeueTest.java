@@ -178,7 +178,7 @@ public class MessageRequeueTest extends TestCase
     /** multiple consumers
      * Based on code subbmitted by client FT-304
      */
-    public void testTwoCompetingConsumers()
+    public void testCompetingConsumers()
     {
         Consumer c1 = new Consumer();
         Consumer c2 = new Consumer();
@@ -193,7 +193,7 @@ public class MessageRequeueTest extends TestCase
         t1.start();
         t2.start();
         t3.start();
-        // t4.start();
+        t4.start();
 
         try
         {
@@ -224,7 +224,7 @@ public class MessageRequeueTest extends TestCase
         {
             if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist (and we don't have msg 0)
             {
-                _logger.error("Index: " + index + " was not received.");
+                fail("Index: " + index + " was not received.");
                 list.append(" ");
                 list.append(index);
                 list.append(":");
@@ -236,7 +236,7 @@ public class MessageRequeueTest extends TestCase
         }
 
         assertEquals(list.toString() + "-" + numTestMessages + "-" + totalConsumed, 0, failed);
-        assertEquals("number of consumed messages does not match initial data", numTestMessages, totalConsumed);
+        assertTrue("number of consumed messages does not match initial data: " + totalConsumed, numTestMessages <= totalConsumed);
         passed = true;
     }
 
