@@ -81,6 +81,8 @@ public class BasicInteropTest implements ClosedListener
         props.put("spf", 8.5);
         session.header(new DeliveryProperties().setRoutingKey("testKey"),new MessageProperties().setApplicationHeaders(props));
 
+        //session.header(new DeliveryProperties().setRoutingKey("testKey"));
+
         session.data("TestMessage");
         session.endData();
         session.sync();
