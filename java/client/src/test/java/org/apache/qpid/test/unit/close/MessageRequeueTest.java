@@ -234,7 +234,7 @@ public class MessageRequeueTest extends TestCase
         {
             if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist (and we don't have msg 0)
             {
-                _logger.error("Index: " + index + " was not received.");
+                fail("Index: " + index + " was not received.");
                 list.append(" ");
                 list.append(index);
                 list.append(":");
@@ -246,7 +246,7 @@ public class MessageRequeueTest extends TestCase
         }
 
         assertEquals(list.toString() + "-" + numTestMessages + "-" + totalConsumed, 0, failed);
-        assertEquals("number of consumed messages does not match initial data", numTestMessages, totalConsumed);
+        assertTrue("number of consumed messages does not match initial data: " + totalConsumed, numTestMessages <= totalConsumed);
 
     }
 

@@ -52,7 +52,7 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @param e The exception to record.
      */
-    public void onException(JMSException e)
+    public synchronized void onException(JMSException e)
     {
         log.debug("public void onException(JMSException e): called", e);
 
@@ -64,7 +64,7 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @return <tt>true</tt> if no exceptions have been received, <tt>false</tt> otherwise.
      */
-    public boolean assertNoExceptions()
+    public synchronized boolean assertNoExceptions()
     {
         return exceptions.isEmpty();
     }
@@ -74,7 +74,7 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @return <tt>true</tt> if exactly one exception been received, <tt>false</tt> otherwise.
      */
-    public boolean assertOneJMSException()
+    public synchronized boolean assertOneJMSException()
     {
         return exceptions.size() == 1;
     }
@@ -85,7 +85,7 @@ public class ExceptionMonitor implements ExceptionListener
      * @return <tt>true</tt> if exactly one exception, with a linked cause of the specified type, been received,
      *         <tt>false</tt> otherwise.
      */
-    public boolean assertOneJMSExceptionWithLinkedCause(Class aClass)
+    public synchronized boolean assertOneJMSExceptionWithLinkedCause(Class aClass)
     {
         if (exceptions.size() == 1)
         {
@@ -107,7 +107,7 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @return The number of exceptions held by this monitor.
      */
-    public int size()
+    public synchronized int size()
     {
         return exceptions.size();
     }
@@ -115,9 +115,9 @@ public class ExceptionMonitor implements ExceptionListener
     /**
      * Clears the record of received exceptions.
      */
-    public void reset()
+    public synchronized void reset()
     {
-        exceptions = new ArrayList();
+        exceptions = new ArrayList<JMSException>();
     }
 
     /**
@@ -126,7 +126,7 @@ public class ExceptionMonitor implements ExceptionListener
      *
      * @return A string containing a dump of the stack traces of all exceptions.
      */
-    public String toString()
+    public synchronized String toString()
     {
         String result = "ExceptionMonitor: holds " + exceptions.size() + " exceptions.\n\n";
 
