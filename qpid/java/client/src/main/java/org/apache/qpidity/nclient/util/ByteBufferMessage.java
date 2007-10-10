@@ -14,8 +14,8 @@ import org.apache.qpidity.api.Message;
  * for small messages. When the readData methods are called
  * we assume the message is complete. i.e there want be any
  * appendData operations after that.</p>
- * 
- * <p>If you need large message support please see 
+ *
+ * <p>If you need large message support please see
  * <code>FileMessage</code> and <code>StreamingMessage</code>
  * </p>
  */
@@ -23,7 +23,7 @@ public class ByteBufferMessage implements Message
 {
     private Queue<ByteBuffer> _data = new LinkedList<ByteBuffer>();
     private ByteBuffer _readBuffer;
-    private int _dataSize; 
+    private int _dataSize;
     private DeliveryProperties _currentDeliveryProps;
     private MessageProperties _currentMessageProps;
     private long _transferId;
@@ -37,19 +37,19 @@ public class ByteBufferMessage implements Message
     public ByteBufferMessage(long transferId)
     {
         _transferId = transferId;
-    }    
-    
+    }
+
     public long getMessageTransferId()
     {
         return _transferId;
     }
-    
+
     public void clearData()
     {
         _data = new LinkedList<ByteBuffer>();
         _readBuffer = null;
     }
-        
+
     public void appendData(byte[] src) throws IOException
     {
         appendData(ByteBuffer.wrap(src));
@@ -61,9 +61,9 @@ public class ByteBufferMessage implements Message
     public void appendData(ByteBuffer src) throws IOException
     {
         _data.offer(src);
-        _dataSize += src.remaining();        
+        _dataSize += src.remaining();
     }
-    
+
     public DeliveryProperties getDeliveryProperties()
     {
         return _currentDeliveryProps;
@@ -71,10 +71,9 @@ public class ByteBufferMessage implements Message
 
     public MessageProperties getMessageProperties()
     {
-        System.out.println("MessageProperties is null ? " + _currentMessageProps == null? "true":"false");
         return _currentMessageProps;
     }
-    
+
     public void setDeliveryProperties(DeliveryProperties props)
     {
         _currentDeliveryProps = props;
@@ -84,17 +83,17 @@ public class ByteBufferMessage implements Message
     {
         _currentMessageProps = props;
     }
-    
+
     public void readData(byte[] target) throws IOException
     {
         getReadBuffer().get(target);
     }
-    
+
     public ByteBuffer readData() throws IOException
-    {   
+    {
         return getReadBuffer();
     }
-    
+
     private void buildReadBuffer()
     {
         //optimize for the simple cases
@@ -112,13 +111,13 @@ public class ByteBufferMessage implements Message
             _readBuffer.flip();
         }
     }
-    
+
     private ByteBuffer getReadBuffer() throws IOException
     {
         if (_readBuffer != null )
         {
            return _readBuffer.slice();
-        }    
+        }
         else
         {
             if (_data.size() >0)
@@ -132,7 +131,7 @@ public class ByteBufferMessage implements Message
             }
         }
     }
-    
+
     //hack for testing
     @Override public String toString()
     {

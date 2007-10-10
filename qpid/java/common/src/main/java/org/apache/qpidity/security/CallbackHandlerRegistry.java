@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,10 +24,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpidity.QpidConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CallbackHandlerRegistry
 {
-
+    private static final Logger _logger = LoggerFactory.getLogger(CallbackHandlerRegistry.class);
     private static CallbackHandlerRegistry _instance = new CallbackHandlerRegistry();
 
     private Map<String,Class> _mechanismToHandlerClassMap = new HashMap<String,Class>();
@@ -36,7 +38,7 @@ public class CallbackHandlerRegistry
 
     public static CallbackHandlerRegistry getInstance()
     {
-        return _instance;        
+        return _instance;
     }
 
     public Class getCallbackHandlerClass(String mechanism)
@@ -57,7 +59,7 @@ public class CallbackHandlerRegistry
     }
 
     private void registerMechanisms()
-    {   	
+    {
         for (QpidConfig.SecurityMechanism  securityMechanism: QpidConfig.get().getSecurityMechanisms() )
         {
             Class clazz = null;
@@ -66,14 +68,14 @@ public class CallbackHandlerRegistry
                 clazz = Class.forName(securityMechanism.getHandler());
                 if (!AMQPCallbackHandler.class.isAssignableFrom(clazz))
                 {
-                    System.out.println("SASL provider " + clazz + " does not implement " + AMQPCallbackHandler.class +
+                    _logger.debug("SASL provider " + clazz + " does not implement " + AMQPCallbackHandler.class +
                                  ". Skipping");
                     continue;
                 }
                 _mechanismToHandlerClassMap.put(securityMechanism.getType(), clazz);
                 if (_mechanisms == null)
                 {
-                    
+
                     _mechanisms = new StringBuilder();
                     _mechanisms.append(securityMechanism.getType());
                 }
@@ -84,7 +86,7 @@ public class CallbackHandlerRegistry
             }
             catch (ClassNotFoundException ex)
             {
-                System.out.println("Unable to load class " + securityMechanism.getHandler() + ". Skipping that SASL provider");
+                _logger.debug("Unable to load class " + securityMechanism.getHandler() + ". Skipping that SASL provider");
                 continue;
             }
         }
