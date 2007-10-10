@@ -423,10 +423,10 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
      * Holds a monitor which is used to synchronize sender and receivers threads, where the sender has elected
      * to wait until the number of unreceived message is reduced before continuing to send.
      */
-    protected final Object _sendPauseMonitor = new Object();
+    protected static final Object _sendPauseMonitor = new Object();
 
     /** Keeps a count of the number of message currently sent but not received. */
-    protected AtomicInteger _unreceived = new AtomicInteger(0);
+    protected static AtomicInteger _unreceived = new AtomicInteger(0);
 
     /** A source for providing sequential unique correlation ids. These will be unique within the same JVM. */
     private static AtomicLong _correlationIdGenerator = new AtomicLong(0L);
@@ -894,9 +894,6 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
 
                     // log.debug("Reply was expected, decrementing the latch for the id, " + correlationID);
 
-                    // log.debug("unreceived = " + unreceived);
-                    // log.debug("unreceivedSize = " + unreceivedSize);
-
                     // Release waiting senders if there are some and using maxPending limit.
                     if ((_maxPendingSize > 0))
                     {
@@ -906,11 +903,14 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                             (unreceived * ((_messageSize == 0) ? 1 : _messageSize))
                             / (_isPubSub ? getConsumersPerDestination() : 1);
 
+                        // log.debug("unreceived = " + unreceived);
+                        // log.debug("unreceivedSize = " + unreceivedSize);
+
                         synchronized (_sendPauseMonitor)
                         {
                             if (unreceivedSize < _maxPendingSize)
                             {
-                                _sendPauseMonitor.notify();
+                                _sendPauseMonitor.notifyAll();
                             }
                         }
                     }
@@ -988,7 +988,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         finally
         {
             // log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo): ending");
-            NDC.clear();
+            // NDC.clear();
         }
     }
 
