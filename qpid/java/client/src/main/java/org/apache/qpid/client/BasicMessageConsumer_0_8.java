@@ -98,6 +98,6 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
          {
              o = _synchronousQueue.take();
          }
-         return null;
+         return o;
      }
 }
