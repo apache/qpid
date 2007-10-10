@@ -238,6 +238,11 @@ public class AMQQueue implements Managable, Comparable
         return _autoDelete;
     }
 
+    public boolean isDeleted()
+    {
+        return _deleted.get();
+    }    
+
     /** @return no of messages(undelivered) on the queue. */
     public int getMessageCount()
     {

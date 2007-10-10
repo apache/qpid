@@ -130,6 +130,11 @@ public class AMQMessage
 
     }
 
+    public boolean isReferenced()
+    {
+        return _referenceCount.get() > 0;
+    }    
+
     /**
      * Used to iterate through all the body frames associated with this message. Will not keep all the data in memory
      * therefore is memory-efficient.
