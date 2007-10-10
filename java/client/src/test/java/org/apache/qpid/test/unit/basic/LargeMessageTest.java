@@ -68,6 +68,8 @@ public class LargeMessageTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        _session.close();
+        _connection.close();
         TransportConnection.killAllVMBrokers();
     }
 
