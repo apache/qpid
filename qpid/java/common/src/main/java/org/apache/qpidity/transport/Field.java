@@ -29,41 +29,52 @@ import org.apache.qpidity.transport.codec.Encoder;
  *
  */
 
-public abstract class Field<T>
+public abstract class Field<C,T>
 {
 
-    private final Class<T> container;
+    private final Class<C> container;
+    private final Class<T> type;
     private final String name;
     private final int index;
 
-    Field(Class<T> container, String name, int index)
+    Field(Class<C> container, Class<T> type, String name, int index)
     {
         this.container = container;
+        this.type = type;
         this.name = name;
         this.index = index;
     }
 
-    public Class<T> getContainer()
+    public final Class<C> getContainer()
     {
         return container;
     }
 
-    public String getName()
+    public final Class<T> getType()
+    {
+        return type;
+    }
+
+    public final String getName()
     {
         return name;
     }
 
-    public int getIndex()
+    public final int getIndex()
     {
         return index;
     }
 
-    protected T check(Object struct)
+    protected final C check(Object struct)
     {
         return container.cast(struct);
     }
 
-    public abstract Object get(Object struct);
+    public abstract boolean has(Object struct);
+
+    public abstract void has(Object struct, boolean value);
+
+    public abstract T get(Object struct);
 
     public abstract void read(Decoder dec, Object struct);
 

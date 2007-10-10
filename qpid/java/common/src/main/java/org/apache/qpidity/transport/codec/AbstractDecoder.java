@@ -88,6 +88,12 @@ abstract class AbstractDecoder implements Decoder
         }
 
         boolean result = (bits & (1 << nbits++)) != 0;
+
+        if (nbits == 8)
+        {
+            clearBits();
+        }
+
         return result;
     }
 
@@ -191,7 +197,7 @@ abstract class AbstractDecoder implements Decoder
         {
             int type = readShort();
             Struct result = Struct.create(type);
-            result.read(this, major, minor);
+            result.read(this);
             return result;
         }
     }

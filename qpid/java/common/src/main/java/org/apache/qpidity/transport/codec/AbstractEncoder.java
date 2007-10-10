@@ -236,13 +236,14 @@ abstract class AbstractEncoder implements Encoder
             {
                 SizeEncoder sizer = new SizeEncoder(major, minor);
                 sizer.writeShort(s.getEncodedType());
-                s.write(sizer, major, minor);
+                s.write(sizer);
+                sizer.flush();
                 size = sizer.getSize();
             }
 
             writeLong(size);
             writeShort(s.getEncodedType());
-            s.write(this, major, minor);
+            s.write(this);
         }
     }
 
