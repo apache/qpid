@@ -22,7 +22,9 @@ package org.apache.qpidity.transport;
 
 import java.util.List;
 
+import org.apache.qpidity.transport.codec.Decoder;
 import org.apache.qpidity.transport.codec.Encodable;
+import org.apache.qpidity.transport.codec.Encoder;
 
 
 /**
@@ -39,9 +41,126 @@ public abstract class Struct implements Encodable
         return StructFactory.create(type);
     }
 
-    public abstract List<Field<?>> getFields();
+    public abstract List<Field<?,?>> getFields();
 
     public abstract int getEncodedType();
+
+    public abstract int getSizeWidth();
+
+    public abstract int getPackWidth();
+
+    public abstract boolean hasTicket();
+
+    private final boolean isBit(Field<?,?> f)
+    {
+        return f.getType().equals(Boolean.class);
+    }
+
+    private final boolean encoded(Field<?,?> f)
+    {
+        // XXX: remove to enable packed encoding
+        if (true) { return true; }
+        return !isBit(f) && f.has(this);
+    }
+
+    private final int getFlagWidth()
+    {
+        return (getFields().size() + 7)/8;
+    }
+
+    private final int getPaddWidth()
+    {
+        int pw = getPackWidth() - getFlagWidth();
+        assert pw > 0;
+        return pw;
+    }
+
+    public final void read(Decoder dec)
+    {
+        List<Field<?,?>> fields = getFields();
+
+        assert fields.size() <= 8*getPackWidth();
+
+        // XXX: remove to enable packed encoding
+        if (false)
+        {
+            for (Field<?,?> f : fields)
+            {
+                if (isBit(f))
+                {
+                    f.has(this, true);
+                    f.read(dec, this);
+                }
+                else
+                {
+                    f.has(this, dec.readBit());
+                }
+            }
+
+            for (int i = 0; i < getPaddWidth(); i++)
+            {
+                short padd = dec.readOctet();
+                if (padd != 0x0)
+                {
+                    throw new IllegalStateException("urecognized value in reserved bytes: " + padd);
+                }
+            }
+        }
+
+        if (hasTicket())
+        {
+            dec.readShort();
+        }
+
+        for (Field<?,?> f : fields)
+        {
+            if (encoded(f))
+            {
+                f.read(dec, this);
+            }
+        }
+    }
+
+    public final void write(Encoder enc)
+    {
+        List<Field<?,?>> fields = getFields();
+
+        assert fields.size() <= 8*getPackWidth();
+
+        // XXX: remove to enable packed encoding
+        if (false)
+        {
+            for (Field<?,?> f : fields)
+            {
+                if (isBit(f))
+                {
+                    f.write(enc, this);
+                }
+                else
+                {
+                    enc.writeBit(f.has(this));
+                }
+            }
+
+            for (int i = 0; i < getPaddWidth(); i++)
+            {
+                enc.writeOctet((short) 0x0);
+            }
+        }
+
+        if (hasTicket())
+        {
+            enc.writeShort(0x0);
+        }
+
+        for (Field<?,?> f : fields)
+        {
+            if (encoded(f))
+            {
+                f.write(enc, this);
+            }
+        }
+    }
 
     public String toString()
     {
@@ -50,8 +169,17 @@ public abstract class Struct implements Encodable
 
         str.append("(");
         boolean first = true;
-        for (Field<?> f : getFields())
+        for (Field<?,?> f : getFields())
         {
+            // XXX: remove when packed encoding is enabled
+            if (false)
+            {
+                if (!f.has(this))
+                {
+                    continue;
+                }
+            }
+
             if (first)
             {
                 first = false;
