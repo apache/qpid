@@ -37,6 +37,30 @@ class Output:
   def line(self, l = ""):
     self.lines.append(l)
 
+  def getter(self, type, method, variable, pre = None):
+    self.line("    public final %s %s() {" % (type, method))
+    if pre:
+      self.line("        %s;" % pre)
+    self.line("        return %s;" % variable)
+    self.line("    }")
+
+  def setter(self, type, method, variable, value = None, pre = None,
+             post = None):
+    if value:
+      params = ""
+    else:
+      params = "%s value" % type
+      value = "value"
+
+    self.line("    public final %s %s(%s) {" % (self.name, method, params))
+    if pre:
+      self.line("        %s;" % pre)
+    self.line("        this.%s = %s;" % (variable, value))
+    if post:
+      self.line("        %s;" % post)
+    self.line("        return this;")
+    self.line("    }")
+
   def write(self):
     dir = os.path.join(self.dir, *self.package.split("."))
     if not os.path.exists(dir):
@@ -105,6 +129,15 @@ TYPES = {
   "nine-octets": "byte[]",
   "long-decimal": "byte[]",
   "void": "Void"
+  }
+
+DEFAULTS = {
+  "longlong": "0",
+  "long": "0",
+  "short": "0",
+  "octet": "0",
+  "timestamp": "0",
+  "bit": "false"
   }
 
 TRACKS = {
@@ -211,15 +244,39 @@ def jtype(type):
   else:
     return TYPES[type]
 
+def jclass(jt):
+  idx = jt.find('<')
+  if idx > 0:
+    return jt[:idx]
+  else:
+    return jt
+
+REFS = {
+  "boolean": "Boolean",
+  "byte": "Byte",
+  "short": "Short",
+  "int": "Integer",
+  "long": "Long",
+  "float": "Float",
+  "double": "Double",
+  "char": "Character"
+}
+
+def jref(jt):
+  return REFS.get(jt, jt)
+
+
 OPTIONS = {}
 
 class Struct:
 
-  def __init__(self, node, name, base, type, track, content):
+  def __init__(self, node, name, base, type, size, pack, track, content):
     self.node = node
     self.name = name
     self.base = base
     self.type = type
+    self.size = size
+    self.pack = pack
     self.track = track
     self.content = content
     self.fields = []
@@ -249,34 +306,42 @@ class Struct:
       out.line("    public static final int TYPE = %d;" % self.type)
 
     out.line()
-    out.line("    public int getEncodedType() {")
     if self.type == None:
-      out.line("        throw new UnsupportedOperationException();")
+      pre = "if (true) throw new UnsupportedOperationException()"
+      value = "0"
     else:
-      out.line("        return TYPE;")
-    out.line("    }")
+      pre = None
+      value = "TYPE"
+    out.getter("int", "getEncodedType", value, pre = pre)
+
+    out.line()
+    out.getter("int", "getSizeWidth", self.size)
+    out.line()
+    out.getter("int", "getPackWidth", self.pack)
+
+    if self.ticket:
+      out.getter("boolean", "hasTicket", "true")
+    else:
+      out.getter("boolean", "hasTicket", "false");
 
     if self.base == "Method":
       out.line()
-      out.line("    public boolean hasPayload() {")
       if self.content:
-        out.line("        return true;")
+        out.getter("boolean", "hasPayload", "true")
       else:
-        out.line("        return false;")
-      out.line("    }")
+        out.getter("boolean", "hasPayload", "false")
 
       out.line()
-      out.line("    public byte getEncodedTrack() {")
-      out.line("        return %s;" % self.track)
-      out.line("    }")
+      out.getter("byte", "getEncodedTrack", self.track)
 
     out.line()
-    out.line("    private static final List<Field<?>> FIELDS = new ArrayList<Field<?>>();")
-    out.line("    public List<Field<?>> getFields() { return FIELDS; }")
+    out.line("    private static final List<Field<?,?>> FIELDS = new ArrayList<Field<?,?>>();")
+    out.line("    public List<Field<?,?>> getFields() { return FIELDS; }")
     out.line()
 
     out.line()
     for type, name in self.fields:
+      out.line("    private boolean has_%s;" % name)
       out.line("    private %s %s;" % (jtype(type), name))
 
     if self.fields:
@@ -288,7 +353,7 @@ class Struct:
     opts = False
     for type, name in self.fields:
       if not OPTIONS.has_key(name):
-        out.line("        this.%s = %s;" % (name, name))
+        out.line("        %s(%s);" % (camel(1, "set", name), name))
       else:
         opts = True
     if opts:
@@ -307,7 +372,7 @@ class Struct:
       out.line("        }")
       for type, name in self.fields:
         if OPTIONS.has_key(name):
-          out.line("        this.%s = _%s;" % (name, name))
+          out.line("        %s(_%s);" % (camel(1, "set", name), name))
     out.line("    }")
 
     out.line()
@@ -318,65 +383,52 @@ class Struct:
     index = 0
     for type, name in self.fields:
       out.line()
-      out.line("    public %s %s() {" % (jtype(type), camel(1, "get", name)))
-      out.line("        return %s;" % name)
-      out.line("    }")
-      out.line("    public %s %s(%s value) {" %
-               (self.name, camel(1, "set", name), jtype(type)))
-      out.line("        this.%s = value;" % name)
-      out.line("        return this;")
-      out.line("    }")
-      out.line("    public %s %s(%s value) {" % (self.name, name, jtype(type)))
-      out.line("        this.%s = value;" % name)
-      out.line("        return this;")
-      out.line("    }")
+      out.getter("boolean", camel(1, "has", name), "has_" + name)
+      out.setter("boolean", camel(1, "clear", name), "has_" + name, "false",
+                 post = "this.%s = %s" % (name, DEFAULTS.get(type, "null")))
+      out.getter(jtype(type), camel(1, "get", name), name)
+      for mname in (camel(1, "set", name), name):
+        out.setter(jtype(type), mname, name,
+                   post = "this.has_%s = true" % name)
 
+      out.line()
       out.line('    static {')
-      out.line('        FIELDS.add(new Field<%s>(%s.class, "%s", %d) {' %
-               (self.name, self.name, name, index))
-      out.line('            public Object get(Object struct) {')
-      out.line('                return check(struct).%s;' % name)
+      ftype = jref(jclass(jtype(type)))
+      out.line('        FIELDS.add(new Field<%s,%s>(%s.class, %s.class, "%s", %d) {' %
+               (self.name, ftype, self.name, ftype, name, index))
+      out.line('            public boolean has(Object struct) {')
+      out.line('                return check(struct).has_%s;' % name)
+      out.line('            }')
+      out.line('            public void has(Object struct, boolean value) {')
+      out.line('                check(struct).has_%s = value;' % name)
+      out.line('            }')
+      out.line('            public %s get(Object struct) {' % ftype)
+      out.line('                return check(struct).%s();' % camel(1, "get", name))
       out.line('            }')
       out.line('            public void read(Decoder dec, Object struct) {')
-#      out.line('                check(struct).%s = dec.read%s();' % (name, camel(0, type)))
+      if TYPES.has_key(type):
+        out.line('                check(struct).%s = dec.read%s();' % (name, camel(0, type)))
+      elif STRUCTS.has_key(type):
+        out.line('                check(struct).%s = new %s();' % (name, STRUCTS[type]))
+        out.line('                check(struct).%s.read(dec);' % name)
+      else:
+        raise Exception("unknown type: %s" % type)
       out.line('            }')
       out.line('            public void write(Encoder enc, Object struct) {')
-#      out.line('                enc.write%s(check(struct).%s);' % (camel(0, type), name))
+      if TYPES.has_key(type):
+        out.line('                enc.write%s(check(struct).%s);' % (camel(0, type), name))
+      elif STRUCTS.has_key(type):
+        out.line("            if (check(struct).%s == null) {" % name)
+        out.line("                new %s().write(enc);" % jtype(type))
+        out.line("            } else {")
+        out.line('                check(struct).%s.write(enc);' % name)
+        out.line("            }")
+      else:
+        raise Exception("unknown type: %s" % type)
       out.line('            }')
       out.line('        });')
       out.line('    }')
       index += 1;
-
-    out.line()
-    out.line("    public void read(Decoder dec, byte major, byte minor) {")
-    if self.ticket:
-      out.line("        dec.readShort();")
-    for type, name in self.fields:
-      if TYPES.has_key(type):
-        out.line("        %s = dec.read%s();" % (name, camel(0, type)))
-      elif STRUCTS.has_key(type):
-        out.line("        %s = new %s();" % (name, STRUCTS[type]))
-        out.line("        %s.read(dec, major, minor);" % name)
-      else:
-        raise Exception("unknown type: %s" % type)
-    out.line("    }")
-
-    out.line()
-    out.line("    public void write(Encoder enc, byte major, byte minor) {")
-    if self.ticket:
-      out.line("        enc.writeShort(0);")
-    for type, name in self.fields:
-      if TYPES.has_key(type):
-        out.line("        enc.write%s(%s);" % (camel(0, type), name))
-      elif STRUCTS.has_key(type):
-        out.line("        if (%s == null) {" % name)
-        out.line("            new %s().write(enc, major, minor);" % jtype(type))
-        out.line("        } else {")
-        out.line("            %s.write(enc, major, minor);" % name)
-        out.line("        }")
-      else:
-        raise Exception("unknown type: %s" % type)
-    out.line("    }")
 
     out.line("}")
 
@@ -407,6 +459,16 @@ class Struct:
 
 CLASSES = {"file": False, "basic": False, "stream": False, "tunnel": False}
 
+PACK_WIDTHS = {
+  None: 2,
+  "octet": 1,
+  "short": 2,
+  "long": 4
+  }
+
+SIZE_WIDTHS = PACK_WIDTHS.copy()
+SIZE_WIDTHS[None] = 0
+
 class Visitor(mllib.transforms.Visitor):
 
   def __init__(self):
@@ -416,7 +478,7 @@ class Visitor(mllib.transforms.Visitor):
     if CLASSES.get(m.parent["@name"], True):
       name = camel(0, m.parent["@name"], m["@name"])
       type = int(m.parent["@index"])*256 + int(m["@index"])
-      self.structs.append((name, "Method", type, m))
+      self.structs.append((name, "Method", type, 0, 2, m))
       self.descend(m)
 
   def do_domain(self, d):
@@ -428,7 +490,8 @@ class Visitor(mllib.transforms.Visitor):
         type = None
       else:
         type = int(st)
-      self.structs.append((name, "Struct", type, s))
+      self.structs.append((name, "Struct", type, SIZE_WIDTHS[s["size"]],
+                           PACK_WIDTHS[s["pack"]], s))
     self.descend(d)
 
   def do_result(self, r):
@@ -436,7 +499,8 @@ class Visitor(mllib.transforms.Visitor):
     if s:
       name = camel(0, r.parent.parent["@name"], r.parent["@name"], "Result")
       type = int(r.parent.parent["@index"]) * 256 + int(s["@type"])
-      self.structs.append((name, "Result", type, s))
+      self.structs.append((name, "Result", type, SIZE_WIDTHS[s["size"]],
+                           PACK_WIDTHS[s["pack"]], s))
     self.descend(r)
 
 v = Visitor()
@@ -445,8 +509,8 @@ spec.dispatch(v)
 opts = Output(out_dir, out_pkg, "Option")
 opts.line("public enum Option {")
 structs = []
-for name, base, typecode, m in v.structs:
-  struct = Struct(m, name, base, typecode,
+for name, base, typecode, size, pack, m in v.structs:
+  struct = Struct(m, name, base, typecode, size, pack,
                   TRACKS.get(m.parent["@name"], "Frame.L4"),
                   m["@content"] == "1")
   for f in m.query["field"]:

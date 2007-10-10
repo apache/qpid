@@ -167,7 +167,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
         case Frame.METHOD:
             int methodType = dec.readShort();
             Method method = Method.create(methodType);
-            method.read(dec, major, minor);
+            method.read(dec);
             return method;
         case Frame.HEADER:
             List<Struct> structs = new ArrayList();
