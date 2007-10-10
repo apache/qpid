@@ -868,7 +868,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
             long timestamp = getTimestamp(message);
             long pingTime = now - timestamp;
 
-            NDC.push("id" + instanceId + "/cons" + consumerNo);
+            // NDC.push("id" + instanceId + "/cons" + consumerNo);
 
             // Extract the messages correlation id.
             String correlationID = message.getJMSCorrelationID();
@@ -904,7 +904,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
                             / (_isPubSub ? getConsumersPerDestination() : 1);
 
                         // log.debug("unreceived = " + unreceived);
-                        log.debug("unreceivedSize = " + unreceivedSize);
+                        // log.debug("unreceivedSize = " + unreceivedSize);
 
                         synchronized (_sendPauseMonitor)
                         {
@@ -988,7 +988,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
         finally
         {
             // log.debug("public void onMessageWithConsumerNo(Message message, int consumerNo): ending");
-            NDC.clear();
+            // NDC.clear();
         }
     }
 
