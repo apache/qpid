@@ -172,7 +172,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     public void sendCancel() throws JMSAMQException
     {
-        ((AMQSession_0_10) getSession()).getQpidSession().messageStop(getConsumerTag().toString());
+        ((AMQSession_0_10) getSession()).getQpidSession().messageCancel(getConsumerTag().toString());
         ((AMQSession_0_10) getSession()).getQpidSession().sync();
         // confirm cancel
         getSession().confirmConsumerCancelled(getConsumerTag());
