@@ -23,7 +23,6 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicRejectBody;
 import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.ack.UnacknowledgedMessage;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -71,7 +70,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
         {
             _logger.debug("Rejecting:" + evt.getMethod().deliveryTag +
                           ": Requeue:" + evt.getMethod().requeue +
-//                              ": Resend:" + evt.getMethod().resend +
+                          //": Resend:" + evt.getMethod().resend +
                           " on channel:" + channel.debugIdentity());
         }
 
@@ -86,17 +85,31 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
         }
         else
         {
+            if (message.queue == null || message.queue.isDeleted())
+            {
+                _logger.warn("Message's Queue as already been purged, unable to Reject. " +
+                             "Dropping message should use Dead Letter Queue");
+                //sendtoDeadLetterQueue(msg)                
+                return;
+            }
+
+            if (!message.message.isReferenced())
+            {
+                _logger.warn("Message as already been purged, unable to Reject.");
+                return;
+            }
+
 
             if (_logger.isTraceEnabled())
             {
                 _logger.trace("Rejecting: DT:" + deliveryTag + "-" + message.message.debugIdentity() +
                               ": Requeue:" + evt.getMethod().requeue +
-//                              ": Resend:" + evt.getMethod().resend +
+                              //": Resend:" + evt.getMethod().resend +
                               " on channel:" + channel.debugIdentity());
             }
 
             // If we haven't requested message to be resent to this consumer then reject it from ever getting it.
-//            if (!evt.getMethod().resend)
+            //if (!evt.getMethod().resend)
             {
                 message.message.reject(message.message.getDeliveredSubscription(message.queue));
             }
@@ -108,6 +121,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
             else
             {
                 _logger.warn("Dropping message as requeue not required and there is no dead letter queue");
+                //sendtoDeadLetterQueue(AMQMessage message)
 //                message.queue = channel.getDefaultDeadLetterQueue();
 //                channel.requeue(deliveryTag);
             }
