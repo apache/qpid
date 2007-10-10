@@ -96,7 +96,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
         // set the application properties
         qpidityMessage.getMessageProperties().setContentType(contentHeaderProperties.getContentType().toString());
-        qpidityMessage.getMessageProperties().setMessageId(message.getJMSMessageID()) ;      
+        qpidityMessage.getMessageProperties().setMessageId(message.getJMSMessageID()) ;
         AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
         if( correlationID != null )
         {
@@ -125,7 +125,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
             for(String key:qpidityMessage.getMessageProperties().getApplicationHeaders().keySet())
             {
-                System.out.println(key + "=" + qpidityMessage.getMessageProperties().getApplicationHeaders().get(key));
+                _logger.debug(key + "=" + qpidityMessage.getMessageProperties().getApplicationHeaders().get(key));
             }
         }
         // send the message
