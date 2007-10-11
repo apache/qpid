@@ -221,6 +221,7 @@ class MessageTests(TestBase):
             for d in data:
                 msg = unconfirmed.get(timeout=1)
                 self.assertEqual(d, msg.content.body)
+                self.assertEqual(True, msg.content['redelivered'])
             self.assertEmpty(unconfirmed)
             data.remove(msg.content.body)
             msg.complete(cumulative=False)
