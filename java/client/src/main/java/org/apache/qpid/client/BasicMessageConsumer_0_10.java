@@ -78,7 +78,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         super(channelId, connection, destination, messageSelector, noLocal, messageFactory, session, protocolHandler,
               rawSelectorFieldTable, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, noConsume, autoClose);
         _0_10session = (AMQSession_0_10) session;
-        if (messageSelector != null)
+        if (messageSelector != null && messageSelector != "")
         {
             try
             {
