@@ -31,8 +31,8 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         #setup, declare two queues:
-        channel.queue_declare(queue="test-queue-1a", exclusive=True)
-        channel.queue_declare(queue="test-queue-1b", exclusive=True)
+        channel.queue_declare(queue="test-queue-1a", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="test-queue-1b", exclusive=True, auto_delete=True)
         #establish two consumers one of which excludes delivery of locally sent messages
         self.subscribe(destination="local_included", queue="test-queue-1a")
         self.subscribe(destination="local_excluded", queue="test-queue-1b", no_local=True)
@@ -58,7 +58,7 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         #setup, declare a queue:
-        channel.queue_declare(queue="test-queue-2", exclusive=True)
+        channel.queue_declare(queue="test-queue-2", exclusive=True, auto_delete=True)
 
         #check that an exclusive consumer prevents other consumer being created:
         self.subscribe(destination="first", queue="test-queue-2", exclusive=True)
@@ -107,7 +107,7 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         #setup, declare a queue:
-        channel.queue_declare(queue="test-queue-3", exclusive=True)
+        channel.queue_declare(queue="test-queue-3", exclusive=True, auto_delete=True)
 
         #check that attempts to use duplicate tags are detected and prevented:
         self.subscribe(destination="first", queue="test-queue-3")
@@ -123,7 +123,7 @@ class MessageTests(TestBase):
         """
         channel = self.channel
         #setup, declare a queue:
-        channel.queue_declare(queue="test-queue-4", exclusive=True)
+        channel.queue_declare(queue="test-queue-4", exclusive=True, auto_delete=True)
         self.subscribe(destination="my-consumer", queue="test-queue-4")
         channel.message_transfer(content=Content(properties={'routing_key' : "test-queue-4"}, body="One"))
 
@@ -148,7 +148,7 @@ class MessageTests(TestBase):
         Test basic ack/recover behaviour
         """
         channel = self.channel
-        channel.queue_declare(queue="test-ack-queue", exclusive=True)
+        channel.queue_declare(queue="test-ack-queue", exclusive=True, auto_delete=True)
         
         self.subscribe(queue="test-ack-queue", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
@@ -193,9 +193,9 @@ class MessageTests(TestBase):
         Test recover behaviour
         """
         channel = self.channel
-        channel.queue_declare(queue="queue-a", exclusive=True)
+        channel.queue_declare(queue="queue-a", exclusive=True, auto_delete=True)
         channel.queue_bind(exchange="amq.fanout", queue="queue-a")
-        channel.queue_declare(queue="queue-b", exclusive=True)
+        channel.queue_declare(queue="queue-b", exclusive=True, auto_delete=True)
         channel.queue_bind(exchange="amq.fanout", queue="queue-b")
         
         self.subscribe(queue="queue-a", destination="unconfirmed", confirm_mode=1)
@@ -233,7 +233,7 @@ class MessageTests(TestBase):
         Test requeing on recovery
         """
         channel = self.channel
-        channel.queue_declare(queue="test-requeue", exclusive=True)
+        channel.queue_declare(queue="test-requeue", exclusive=True, auto_delete=True)
         
         self.subscribe(queue="test-requeue", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
@@ -296,7 +296,7 @@ class MessageTests(TestBase):
         """
         #setup: declare queue and subscribe
         channel = self.channel
-        channel.queue_declare(queue="test-prefetch-count", exclusive=True)
+        channel.queue_declare(queue="test-prefetch-count", exclusive=True, auto_delete=True)
         subscription = self.subscribe(queue="test-prefetch-count", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
@@ -338,7 +338,7 @@ class MessageTests(TestBase):
         """
         #setup: declare queue and subscribe
         channel = self.channel
-        channel.queue_declare(queue="test-prefetch-size", exclusive=True)
+        channel.queue_declare(queue="test-prefetch-size", exclusive=True, auto_delete=True)
         subscription = self.subscribe(queue="test-prefetch-size", destination="consumer_tag", confirm_mode=1)
         queue = self.client.queue("consumer_tag")
 
@@ -382,8 +382,8 @@ class MessageTests(TestBase):
 
     def test_reject(self):
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True, alternate_exchange="amq.fanout")
-        channel.queue_declare(queue = "r", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True, alternate_exchange="amq.fanout")
+        channel.queue_declare(queue = "r", exclusive=True, auto_delete=True)
         channel.queue_bind(queue = "r", exchange = "amq.fanout")
 
         self.subscribe(queue = "q", destination = "consumer", confirm_mode = 1)
@@ -402,7 +402,7 @@ class MessageTests(TestBase):
         """
         #declare an exclusive queue
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
         channel.message_subscribe(queue = "q", destination = "c")
         channel.message_flow_mode(mode = 0, destination = "c")
@@ -432,7 +432,7 @@ class MessageTests(TestBase):
         """
         #declare an exclusive queue
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
         channel.message_subscribe(queue = "q", destination = "c")
         channel.message_flow_mode(mode = 0, destination = "c")
@@ -464,7 +464,7 @@ class MessageTests(TestBase):
         """
         #declare an exclusive queue
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
         channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1)
         channel.message_flow_mode(mode = 1, destination = "c")
@@ -496,7 +496,7 @@ class MessageTests(TestBase):
         """
         #declare an exclusive queue
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         #create consumer (for now that defaults to infinite credit)
         channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1)
         channel.message_flow_mode(mode = 1, destination = "c")
@@ -535,7 +535,7 @@ class MessageTests(TestBase):
         #existing tests twice.
         
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range(1, 6):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "Message %s" % i))
 
@@ -562,7 +562,7 @@ class MessageTests(TestBase):
         Test explicit acquire function
         """
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "acquire me"))
 
         self.subscribe(queue = "q", destination = "a", acquire_mode = 1, confirm_mode = 1)
@@ -578,7 +578,7 @@ class MessageTests(TestBase):
         Test explicit release function
         """
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "release me"))
 
         self.subscribe(queue = "q", destination = "a", acquire_mode = 0, confirm_mode = 1)
@@ -595,7 +595,7 @@ class MessageTests(TestBase):
         Test order of released messages is as expected
         """
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range (1, 11):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "released message %s" % (i)))
 
@@ -618,7 +618,7 @@ class MessageTests(TestBase):
         Test acking of messages ranges
         """
         channel = self.channel
-        channel.queue_declare(queue = "q", exclusive=True)
+        channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range (1, 11):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message %s" % (i)))
 

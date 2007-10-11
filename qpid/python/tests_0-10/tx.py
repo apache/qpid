@@ -155,9 +155,9 @@ class TxTests(TestBase):
         commit and rollback
         """
         #setup:
-        channel.queue_declare(queue=name_a, exclusive=True)
-        channel.queue_declare(queue=name_b, exclusive=True)
-        channel.queue_declare(queue=name_c, exclusive=True)
+        channel.queue_declare(queue=name_a, exclusive=True, auto_delete=True)
+        channel.queue_declare(queue=name_b, exclusive=True, auto_delete=True)
+        channel.queue_declare(queue=name_c, exclusive=True, auto_delete=True)
 
         key = "my_key_" + name_b
         topic = "my_topic_" + name_c 
