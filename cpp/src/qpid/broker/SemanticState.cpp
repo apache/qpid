@@ -290,7 +290,7 @@ void SemanticState::ConsumerImpl::cancel()
 {
     if(queue) {
         queue->cancel(this);
-        if (queue->canAutoDelete()) {            
+        if (queue->canAutoDelete() && !queue->hasExclusiveOwner()) {            
             parent->getSession().getBroker().getQueues().destroyIf(
                 queue->getName(), 
                 boost::bind(boost::mem_fn(&Queue::canAutoDelete), queue));

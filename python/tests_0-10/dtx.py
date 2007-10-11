@@ -246,8 +246,8 @@ class DtxTests(TestBase):
         channel2.dtx_demarcation_select()
 
         #setup
-        channel1.queue_declare(queue="one", exclusive=True)
-        channel1.queue_declare(queue="two", exclusive=True)
+        channel1.queue_declare(queue="one", exclusive=True, auto_delete=True)
+        channel1.queue_declare(queue="two", exclusive=True, auto_delete=True)
         channel1.message_transfer(content=Content(properties={'routing_key':"one", 'message_id':"a"}, body="DtxMessage"))
         channel1.message_transfer(content=Content(properties={'routing_key':"two", 'message_id':"b"}, body="DtxMessage"))
 
@@ -282,8 +282,8 @@ class DtxTests(TestBase):
         channel.dtx_demarcation_select()
 
         #setup
-        channel.queue_declare(queue="one", exclusive=True)
-        channel.queue_declare(queue="two", exclusive=True)
+        channel.queue_declare(queue="one", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="two", exclusive=True, auto_delete=True)
         channel.message_transfer(content=Content(properties={'routing_key':"one", 'message_id':"a"}, body="DtxMessage"))
         channel.message_transfer(content=Content(properties={'routing_key':"two", 'message_id':"b"}, body="DtxMessage"))
 
@@ -352,7 +352,7 @@ class DtxTests(TestBase):
         """
         channel = self.client.channel(2)
         channel.session_open()
-        channel.queue_declare(queue="tx-queue", exclusive=True)
+        channel.queue_declare(queue="tx-queue", exclusive=True, auto_delete=True)
 
         #publish a message under a transaction
         channel.dtx_demarcation_select()
@@ -389,7 +389,7 @@ class DtxTests(TestBase):
         other = self.connect()
         tester = other.channel(1)
         tester.session_open()
-        tester.queue_declare(queue="dummy", exclusive=True)
+        tester.queue_declare(queue="dummy", exclusive=True, auto_delete=True)
         tester.dtx_demarcation_select()
         tx = self.xid("dummy")
         tester.dtx_demarcation_start(xid=tx)
@@ -423,7 +423,7 @@ class DtxTests(TestBase):
         other = self.connect()
         tester = other.channel(1)
         tester.session_open()
-        tester.queue_declare(queue="dummy", exclusive=True)
+        tester.queue_declare(queue="dummy", exclusive=True, auto_delete=True)
         tester.dtx_demarcation_select()
         tx = self.xid("dummy")
         tester.dtx_demarcation_start(xid=tx)
@@ -455,7 +455,7 @@ class DtxTests(TestBase):
         channel2.session_open()
 
         #setup:
-        channel2.queue_declare(queue="dummy", exclusive=True)
+        channel2.queue_declare(queue="dummy", exclusive=True, auto_delete=True)
         channel2.message_transfer(content=Content(properties={'routing_key':"dummy"}, body="whatever"))
         tx = self.xid("dummy")
 
@@ -498,8 +498,8 @@ class DtxTests(TestBase):
         channel.session_open()
         #setup:
         tx = self.xid("dummy")
-        channel.queue_declare(queue="queue-a", exclusive=True)
-        channel.queue_declare(queue="queue-b", exclusive=True)
+        channel.queue_declare(queue="queue-a", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="queue-b", exclusive=True, auto_delete=True)
         channel.message_transfer(content=Content(properties={'routing_key':"queue-a", 'message_id':"timeout"}, body="DtxMessage"))
 
         channel.dtx_demarcation_select()
@@ -524,7 +524,7 @@ class DtxTests(TestBase):
         channel = self.channel
 
         channel.dtx_demarcation_select()
-        channel.queue_declare(queue="dummy", exclusive=True)
+        channel.queue_declare(queue="dummy", exclusive=True, auto_delete=True)
 
         prepared = []
         for i in range(1, 10):
@@ -575,8 +575,8 @@ class DtxTests(TestBase):
     def txswap(self, tx, id):
         channel = self.channel
         #declare two queues:
-        channel.queue_declare(queue="queue-a", exclusive=True)
-        channel.queue_declare(queue="queue-b", exclusive=True)
+        channel.queue_declare(queue="queue-a", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="queue-b", exclusive=True, auto_delete=True)
         #put message with specified id on one queue:
         channel.message_transfer(content=Content(properties={'routing_key':"queue-a", 'message_id':id}, body="DtxMessage"))
 
