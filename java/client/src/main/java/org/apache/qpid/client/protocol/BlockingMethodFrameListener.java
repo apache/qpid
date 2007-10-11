@@ -293,4 +293,19 @@ public abstract class BlockingMethodFrameListener implements AMQMethodListener
             _lock.unlock();
         }
     }
+
+    public boolean equals(Object o)
+    {
+
+        if (o instanceof BlockingMethodFrameListener)
+        {
+            BlockingMethodFrameListener other = (BlockingMethodFrameListener) o;
+
+            return _channelId == other._channelId;
+        }
+
+        return false;
+    }
+
+
 }
