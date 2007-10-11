@@ -36,6 +36,22 @@ public class SpecificMethodFrameListener extends BlockingMethodFrameListener
 
     public boolean processMethod(int channelId, AMQMethodBody frame) //throws AMQException
     {
+
+        //equiv to: (frame instanceof _expectedClass)
         return _expectedClass.isInstance(frame);
     }
+
+    public boolean equals(Object o)
+    {
+        if (o instanceof SpecificMethodFrameListener)
+        {
+            SpecificMethodFrameListener other = (SpecificMethodFrameListener) o;
+
+            // here we need to check if the two classes are the same.
+            return (_channelId == other._channelId) && (_expectedClass.equals(other._expectedClass));
+        }
+
+        return false;
+    }
+
 }
