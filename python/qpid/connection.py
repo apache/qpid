@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -79,7 +79,7 @@ class Connection:
     self.FRAME_END = self.spec.constants.byname["frame_end"].id
     self.write = getattr(self, "write_%s_%s" % (self.spec.major, self.spec.minor))
     self.read = getattr(self, "read_%s_%s" % (self.spec.major, self.spec.minor))
-    
+
   def flush(self):
     self.codec.flush()
 
@@ -91,7 +91,7 @@ class Connection:
 
   def tini(self):
     self.codec.unpack(Connection.INIT)
-  
+
   def write_8_0(self, frame):
     c = self.codec
     c.encode_octet(self.spec.constants.byname[frame.type].id)
@@ -233,7 +233,7 @@ class Method(Frame):
     if version == (0, 10):
       c.encode_octet(self.method.klass.id)
       c.encode_octet(self.method.id)
-    else:  
+    else:
       c.encode_short(self.method.klass.id)
       c.encode_short(self.method.id)
     for field, arg in zip(self.method.fields, self.args):
@@ -244,7 +244,7 @@ class Method(Frame):
     if version == (0, 10):
       klass = spec.classes.byid[c.decode_octet()]
       meth = klass.methods.byid[c.decode_octet()]
-    else:  
+    else:
       klass = spec.classes.byid[c.decode_short()]
       meth = klass.methods.byid[c.decode_short()]
     args = tuple([c.decode(f.type) for f in meth.fields])
