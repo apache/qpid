@@ -84,6 +84,7 @@ void DeliveryRecord::redeliver(SemanticState* const session) {
             //if message was originally sent as response to get, we must requeue it
             requeue();
         }else{
+            msg.payload->redeliver();//mark as redelivered
             id = session->redeliver(msg.payload, token);
         }
     }
