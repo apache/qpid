@@ -65,8 +65,8 @@ class QueryTests(TestBase):
     def binding_query_with_key(self, exchange_name):
         channel = self.channel
         #setup: create two queues
-        channel.queue_declare(queue="used-queue", exclusive=True)
-        channel.queue_declare(queue="unused-queue", exclusive=True)
+        channel.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
         
         channel.queue_bind(exchange=exchange_name, queue="used-queue", routing_key="used-key")
 
@@ -135,8 +135,8 @@ class QueryTests(TestBase):
         """
         channel = self.channel
         #setup
-        channel.queue_declare(queue="used-queue", exclusive=True)
-        channel.queue_declare(queue="unused-queue", exclusive=True)
+        channel.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
         channel.queue_bind(exchange="amq.fanout", queue="used-queue")
 
         # test detection of any binding to specific queue
@@ -163,8 +163,8 @@ class QueryTests(TestBase):
         """
         channel = self.channel
         #setup
-        channel.queue_declare(queue="used-queue", exclusive=True)
-        channel.queue_declare(queue="unused-queue", exclusive=True)
+        channel.queue_declare(queue="used-queue", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="unused-queue", exclusive=True, auto_delete=True)
         channel.queue_bind(exchange="amq.match", queue="used-queue", arguments={"x-match":"all", "a":"A"} )
 
         # test detection of any binding to specific queue

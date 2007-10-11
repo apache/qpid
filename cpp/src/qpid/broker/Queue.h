@@ -67,7 +67,7 @@ namespace qpid {
             const string name;
             const bool autodelete;
             MessageStore* const store;
-            const ConnectionToken* const owner;
+            const ConnectionToken* owner;
             Consumers acquirers;
             Consumers browsers;
             Messages messages;
@@ -155,6 +155,8 @@ namespace qpid {
             uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }
             inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
+            inline void releaseExclusiveOwnership() { owner = 0; }
+            inline void setExclusiveOwner(const ConnectionToken* const o) { owner = o; }
             inline bool hasExclusiveConsumer() const { return exclusive; }
             inline bool hasExclusiveOwner() const { return owner != 0; }
             inline bool isDurable() const { return store != 0; }
