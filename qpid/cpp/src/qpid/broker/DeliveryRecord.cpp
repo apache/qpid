@@ -79,9 +79,13 @@ bool DeliveryRecord::coveredBy(const framing::AccumulatedAck* const range) const
 }
 
 void DeliveryRecord::redeliver(SemanticState* const session) {
-    if (!confirmed && !cancelled) {
-        if(pull){
+    if (!confirmed) {
+        if(pull || cancelled){
             //if message was originally sent as response to get, we must requeue it
+
+            //or if subscription was cancelled, requeue it (waiting for
+            //final confirmation for AMQP WG on this case)
+
             requeue();
         }else{
             msg.payload->redeliver();//mark as redelivered
