@@ -406,11 +406,11 @@ public class LocalCircuitImpl implements Circuit
         // Request a status report.
         check();
 
-        // Apply all of the requested assertions, keeping record of any that fail.
-        List<Assertion> failures = applyAssertions(assertions);
-
         // Clean up the publisher/receivers/controlSession/connections.
         close();
+
+        // Apply all of the requested assertions, keeping record of any that fail.
+        List<Assertion> failures = applyAssertions(assertions);
 
         // Return any failed assertions to the caller.
         return failures;
