@@ -46,6 +46,8 @@ public class QpidTestCase extends TestCase
     private static final String SHEL = "broker_shel";
     private static final String BROKER_PATH = "broker_path";
     private static final String BROKER_PARAM = "broker_param";
+    private static final String BROKER_VERSION  = "broker_version";
+    public static final String BROKER_08 = "08";
     private static final String BROKER_VM = "vm";
     private static final String EXT_BROKER = "ext" ;
     /**
@@ -58,6 +60,7 @@ public class QpidTestCase extends TestCase
     private String _shel = BROKER_VM;
     private String _brokerPath = "";
     private String _brokerParams = "";
+    private String _brokerVersion = "08" ;
 
     /* The broker communication objects */
     private InitialContext _initialContext;
@@ -69,6 +72,10 @@ public class QpidTestCase extends TestCase
     {
         super.setUp();
         // get the propeties if they are set
+         if (System.getProperties().containsKey(BROKER_VERSION ))
+        {
+            _brokerVersion = System.getProperties().getProperty(BROKER_VERSION );
+        }
         if (System.getProperties().containsKey(SHEL))
         {
             _shel = System.getProperties().getProperty(SHEL);
@@ -92,7 +99,7 @@ public class QpidTestCase extends TestCase
             TransportConnection.createVMBroker(1);
         }
         _logger.info("=========================================");
-        _logger.info("= " + _shel + " " + _brokerPath + " " + _brokerParams);
+        _logger.info("broker version " + _brokerVersion + " ==== " + _shel + " " + _brokerPath + " " + _brokerParams);
     }
 
     /**
@@ -139,6 +146,15 @@ public class QpidTestCase extends TestCase
         {
             this.wait(1000);
         }
+    }
+
+    /**
+     * Check whether the broker is an 0.8
+     * @return true if the broker is an 0_8 version, false otherwise. 
+     */
+    public boolean isBroker08()
+    {
+        return _brokerVersion.equals(BROKER_08);
     }
 
     /**
