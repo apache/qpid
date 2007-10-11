@@ -180,7 +180,7 @@ void BrokerAdapter::QueueHandlerImpl::declare(uint16_t /*ticket*/, const string&
 	std::pair<Queue::shared_ptr, bool> queue_created =  
             getBroker().getQueues().declare(
                 name, durable,
-                autoDelete && !exclusive,
+                autoDelete,
                 exclusive ? &getConnection() : 0);
 	queue = queue_created.first;
 	assert(queue);
@@ -202,7 +202,11 @@ void BrokerAdapter::QueueHandlerImpl::declare(uint16_t /*ticket*/, const string&
 	    if (exclusive) {
 		getConnection().exclusiveQueues.push_back(queue);
 	    }
-	}
+	} else {
+            if (exclusive && !queue->hasExclusiveOwner()) {
+                queue->setExclusiveOwner(&getConnection());
+            }
+        }
     }
     if (exclusive && !queue->isExclusiveOwner(&getConnection())) 
 	throw ResourceLockedException(

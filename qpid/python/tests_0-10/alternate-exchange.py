@@ -37,13 +37,13 @@ class AlternateExchangeTests(TestBase):
         channel.exchange_declare(exchange="primary", type="direct", alternate_exchange="secondary")
 
         #declare, bind (to the alternate exchange) and consume from a queue for 'returned' messages
-        channel.queue_declare(queue="returns", exclusive=True)
+        channel.queue_declare(queue="returns", exclusive=True, auto_delete=True)
         channel.queue_bind(queue="returns", exchange="secondary")
         self.subscribe(destination="a", queue="returns")
         returned = self.client.queue("a")
 
         #declare, bind (to the primary exchange) and consume from a queue for 'processed' messages
-        channel.queue_declare(queue="processed", exclusive=True)
+        channel.queue_declare(queue="processed", exclusive=True, auto_delete=True)
         channel.queue_bind(queue="processed", exchange="primary", routing_key="my-key")
         self.subscribe(destination="b", queue="processed")
         processed = self.client.queue("b")
@@ -71,7 +71,7 @@ class AlternateExchangeTests(TestBase):
         channel = self.channel
         #set up a 'dead letter queue':
         channel.exchange_declare(exchange="dlq", type="fanout")
-        channel.queue_declare(queue="deleted", exclusive=True)
+        channel.queue_declare(queue="deleted", exclusive=True, auto_delete=True)
         channel.queue_bind(exchange="dlq", queue="deleted")
         self.subscribe(destination="dlq", queue="deleted")
         dlq = self.client.queue("dlq")
@@ -101,13 +101,13 @@ class AlternateExchangeTests(TestBase):
         channel = self.channel
         #set up a 'dead letter queue':
         channel.exchange_declare(exchange="dlq", type="fanout")
-        channel.queue_declare(queue="immediate", exclusive=True)
+        channel.queue_declare(queue="immediate", exclusive=True, auto_delete=True)
         channel.queue_bind(exchange="dlq", queue="immediate")
         self.subscribe(destination="dlq", queue="immediate")
         dlq = self.client.queue("dlq")
 
         #create a queue using the dlq as its alternate exchange:
-        channel.queue_declare(queue="no-consumers", alternate_exchange="dlq", exclusive=True)
+        channel.queue_declare(queue="no-consumers", alternate_exchange="dlq", exclusive=True, auto_delete=True)
         #send it some messages:
         #TODO: WE HAVE LOST THE IMMEDIATE FLAG; FIX THIS ONCE ITS BACK
         channel.message_transfer(content=Content("no one wants me", properties={'routing_key':"no-consumers"}))
@@ -128,7 +128,7 @@ class AlternateExchangeTests(TestBase):
         """
         channel = self.channel
         channel.exchange_declare(exchange="alternate", type="fanout")
-        channel.queue_declare(queue="q", exclusive=True, alternate_exchange="alternate")
+        channel.queue_declare(queue="q", exclusive=True, auto_delete=True, alternate_exchange="alternate")
         try:
             channel.exchange_delete(exchange="alternate")
             self.fail("Expected deletion of in-use alternate-exchange to fail")

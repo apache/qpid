@@ -29,6 +29,7 @@
 #include "SemanticHandler.h"
 
 #include <boost/utility/in_place_factory.hpp>
+#include <boost/bind.hpp>
 
 using namespace boost;
 using namespace qpid::sys;
@@ -76,10 +77,14 @@ void Connection::closed(){
     try {
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
-            broker.getQueues().destroy(q->getName());
+            q->releaseExclusiveOwnership();
+            if (q->canAutoDelete() && 
+                broker.getQueues().destroyIf(q->getName(), boost::bind(boost::mem_fn(&Queue::canAutoDelete), q))) {
+
+                q->unbind(broker.getExchanges(), q);
+                q->destroy();
+            }
             exclusiveQueues.erase(exclusiveQueues.begin());
-            q->unbind(broker.getExchanges(), q);
-            q->destroy();
         }
     } catch(std::exception& e) {
         QPID_LOG(error, " Unhandled exception while closing session: " <<

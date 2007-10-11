@@ -62,11 +62,14 @@ class QueueRegistry{
      *
      */
     void destroy(const string& name);
-    template <class Test> void destroyIf(const string& name, Test test)
+    template <class Test> bool destroyIf(const string& name, Test test)
     {
         qpid::sys::RWlock::ScopedWlock locker(lock);
         if (test()) {
             queues.erase(name);
+            return true;
+        } else {
+            return false;
         }
     }
 
