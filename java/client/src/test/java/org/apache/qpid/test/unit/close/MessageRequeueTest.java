@@ -62,8 +62,6 @@ public class MessageRequeueTest extends TestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        TransportConnection.createVMBroker(1);
-
         QpidClientConnection conn = new QpidClientConnection(BROKER);
 
         conn.connect();
