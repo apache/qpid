@@ -69,7 +69,10 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         // set the payload
         try
         {
-            qpidityMessage.appendData(message.getData().buf());
+            if (message.getData() != null)
+            {
+                qpidityMessage.appendData(message.getData().buf());
+            }
         }
         catch (IOException e)
         {
