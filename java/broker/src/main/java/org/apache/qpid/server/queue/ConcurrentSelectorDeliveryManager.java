@@ -281,9 +281,12 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         while (currentQueue.hasNext())
         {
             AMQMessage message = currentQueue.next();
-            if (subscription.hasInterest(message))
+            if (!message.getDeliveredToConsumer())
             {
-                subscription.enqueueForPreDelivery(message, false);
+                if (subscription.hasInterest(message))
+                {
+                    subscription.enqueueForPreDelivery(message, false);
+                }
             }
         }
     }
