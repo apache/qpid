@@ -376,6 +376,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                // checking if one is inflight
                 _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
                 _0_10session.getQpidSession().sync();
+                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
                 o = _synchronousQueue.poll();
             }
         }
