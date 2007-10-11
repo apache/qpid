@@ -339,7 +339,9 @@ public class AMQSession_0_10 extends AMQSession
         {
             throw new AMQException(AMQConstant.INTERNAL_ERROR, "problem when registering consumer", e);
         }
-        getQpidSession().messageSubscribe(queueName.toString(), tag.toString(), Session.TRANSFER_CONFIRM_MODE_REQUIRED,
+        getQpidSession().messageSubscribe(queueName.toString(), tag.toString(),
+                                          (consumer.getAcknowledgeMode() != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE) ?
+                                                  Session.TRANSFER_CONFIRM_MODE_REQUIRED : Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                           preAcquire ? Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE : Session.TRANSFER_ACQUIRE_MODE_NO_ACQUIRE,
                                           new MessagePartListenerAdapter((BasicMessageConsumer_0_10) consumer), null,
                                           consumer.isNoLocal() ? Option.NO_LOCAL : Option.NO_OPTION,
