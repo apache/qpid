@@ -89,6 +89,17 @@ class SemanticState : public framing::FrameHandler::Chains,
         void acknowledged(const DeliveryRecord&);    
     };
 
+    struct FlushCompletion : DispatchCompletion
+    {
+        sys::Monitor lock;
+        ConsumerImpl& consumer;
+        bool complete;
+        
+        FlushCompletion(ConsumerImpl& c) : consumer(c), complete(false) {}
+        void wait();
+        void completed();
+    };
+
     typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
 
     SessionState& session;
