@@ -157,7 +157,8 @@ void AsynchIO::queueWrite(BufferBase* buff) {
 }
 
 void AsynchIO::queueWriteClose() {
-	queuedClose = true;
+    queuedClose = true;
+    DispatchHandle::rewatchWrite();
 }
 
 /** Return a queued buffer if there are enough
