@@ -47,6 +47,7 @@ abstract class AbstractEncoder implements Encoder
     private static Map<Class<?>,Type> ENCODINGS = new HashMap<Class<?>,Type>();
     static
     {
+        ENCODINGS.put(Boolean.class, Type.BOOLEAN);
         ENCODINGS.put(String.class, Type.LONG_STRING);
         ENCODINGS.put(Long.class, Type.SIGNED_LONG);
         ENCODINGS.put(Integer.class, Type.SIGNED_INT);
