@@ -357,27 +357,48 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             Object o = null;
             if (l > 0)
             {
-                o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
+                long endtime = System.currentTimeMillis() + l;
+                while (System.currentTimeMillis() < endtime && o == null)
+                {
+                    try 
+                    {
+                        o = _synchronousQueue.poll(endtime - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        _logger.warn("Interrupted: " + e);
+                        if (isClosed()) 
+                        {
+                            return null;
+                        }
+                    }
+                }
             }
             else
             {
-                o = _synchronousQueue.take();
+                while (o == null)
+                {
+                    try
+                    {
+                        o = _synchronousQueue.take();
+                    } 
+                    catch (InterruptedException e)
+                    {
+                        _logger.warn("Interrupted: " + e);
+                        if (isClosed()) 
+                        {
+                            return null;
+                        }
+                    }
+                }
             }
-
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
                 preApplicationProcessing(m);
                 postDeliver(m);
             }
-
             return m;
-        }
-        catch (InterruptedException e)
-        {
-            _logger.warn("Interrupted: " + e);
-
-            return null;
         }
         finally
         {
