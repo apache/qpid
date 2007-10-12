@@ -94,6 +94,8 @@ namespace qpid {
             void dispatch();
             void cancel(Consumer* c, Consumers& set);
             void serviceBrowser(Consumer* c);
+            Consumer* allocate();
+            bool seek(QueuedMessage& msg, const framing::SequenceNumber& position);
  
         protected:
 	   /**
