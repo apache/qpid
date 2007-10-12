@@ -54,8 +54,9 @@ public class Service implements MessageListener
     Service(AMQConnection connection) throws Exception
     {
         _connection = connection;
-        AMQQueue queue = new SpecialQueue(connection, "ServiceQueue");
+        //AMQQueue queue = new SpecialQueue(connection, "ServiceQueue");
         _session = (AMQSession) _connection.createSession(false, AMQSession.NO_ACKNOWLEDGE);
+          AMQQueue queue  = (AMQQueue)  _session.createQueue("ServiceQueue") ;
         _session.createConsumer(queue).setMessageListener(this);
         _connection.start();
     }
