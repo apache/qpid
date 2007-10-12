@@ -89,12 +89,14 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
 	Mutex frameQueueLock;
 	bool frameQueueClosed;
 	bool initiated;
-	
+        bool readError;
+
 public:
 	AsynchIOHandler() :
 		inputHandler(0),
 		frameQueueClosed(false),
-		initiated(false)
+		initiated(false),
+                readError(false)
 	{}
 	
 	~AsynchIOHandler() {
@@ -201,36 +203,41 @@ void AsynchIOHandler::close() {
 
 // Input side
 void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
-	framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
+    if (readError) {
+        return;
+    }
+    framing::Buffer in(buff->bytes+buff->dataStart, buff->dataCount);
     if(initiated){
         framing::AMQFrame frame;
         try{
             while(frame.decode(in)) {
                 QPID_LOG(debug, "RECV: " << frame);
-		        inputHandler->received(frame);
-    		}
-		}catch(const std::exception& e){
-	    	QPID_LOG(error, e.what());
-		}
-	}else{
-	    framing::ProtocolInitiation protocolInit;
-	    if(protocolInit.decode(in)){
-	        QPID_LOG(debug, "INIT [" << aio << "]");
-	        inputHandler->initiated(protocolInit);
-	        initiated = true;
-	    }
-	}
-	// TODO: unreading needs to go away, and when we can cope
-	// with multiple sub-buffers in the general buffer scheme, it will
-	if (in.available() != 0) {
-		// Adjust buffer for used bytes and then "unread them"
-		buff->dataStart += buff->dataCount-in.available();
-		buff->dataCount = in.available();
-		aio->unread(buff);
-	} else {
-		// Give whole buffer back to aio subsystem
-		aio->queueReadBuffer(buff);
-	}
+                inputHandler->received(frame);
+            }
+        }catch(const std::exception& e){
+            QPID_LOG(error, e.what());
+            readError = true;
+            aio->queueWriteClose();
+        }
+    }else{
+        framing::ProtocolInitiation protocolInit;
+        if(protocolInit.decode(in)){
+            QPID_LOG(debug, "INIT [" << aio << "]");
+            inputHandler->initiated(protocolInit);
+            initiated = true;
+        }
+    }
+    // TODO: unreading needs to go away, and when we can cope
+    // with multiple sub-buffers in the general buffer scheme, it will
+    if (in.available() != 0) {
+        // Adjust buffer for used bytes and then "unread them"
+        buff->dataStart += buff->dataCount-in.available();
+        buff->dataCount = in.available();
+        aio->unread(buff);
+    } else {
+        // Give whole buffer back to aio subsystem
+        aio->queueReadBuffer(buff);
+    }
 }
 
 void AsynchIOHandler::eof(AsynchIO&) {
@@ -294,7 +301,7 @@ void AsynchIOHandler::idle(AsynchIO&){
 	} while (!frameQueue.empty());
 
 	if (frameQueueClosed) {
-		aio->queueWriteClose();
+            aio->queueWriteClose();
 	}
 }
 
