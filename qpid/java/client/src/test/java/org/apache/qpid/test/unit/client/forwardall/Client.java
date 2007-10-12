@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jms.Message;
 import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
 
 /**
  * Declare a private temporary response queue,
@@ -66,10 +67,12 @@ public class Client implements MessageListener
             new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("ResponseQueue"), true);
         _session.createConsumer(response).setMessageListener(this);
         _connection.start();
-        AMQQueue service = new SpecialQueue(_connection, "ServiceQueue");
+      //  AMQQueue service = new SpecialQueue(_connection, "ServiceQueue");
+        AMQQueue service  = (AMQQueue)  _session.createQueue("ServiceQueue") ;
         Message request = _session.createTextMessage("Request!");
         request.setJMSReplyTo(response);
-        _session.createProducer(service).send(request);
+        MessageProducer prod = _session.createProducer(service);
+        prod.send(request);
     }
 
     void shutdownWhenComplete() throws Exception
@@ -95,7 +98,7 @@ public class Client implements MessageListener
 
         if (_count < _expected)
         {
-            wait(10000L);
+            wait(1000000000);
         }
 
         if (_count < _expected)
