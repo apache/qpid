@@ -49,9 +49,9 @@ public class CombinedTest extends QpidTestCase
 
     public void testForwardAll() throws Exception
     {
-        while (run < 10)
+        while (run < 1)
         {
-            int services = 2;
+            int services =1;
             ServiceCreator.start("vm://:1", services);
 
             _logger.info("Starting " + ++run + " client...");
@@ -65,6 +65,6 @@ public class CombinedTest extends QpidTestCase
 
     public static junit.framework.Test suite()
     {
-        return new VMBrokerSetup(new junit.framework.TestSuite(CombinedTest.class));
+        return new junit.framework.TestSuite(CombinedTest.class);
     }
 }
