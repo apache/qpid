@@ -61,19 +61,9 @@ abstract class AbstractEncoder implements Encoder
         ENCODINGS.put(byte[].class, Type.LONG_BINARY);
     }
 
-    // XXX: no longer need major/minor
-    private final byte major;
-    private final byte minor;
-
-    protected AbstractEncoder(byte major, byte minor)
-    {
-        this.major = major;
-        this.minor = minor;
-    }
-
     protected Sizer sizer()
     {
-        return new SizeEncoder(major, minor);
+        return new SizeEncoder();
     }
 
     protected abstract void doPut(byte b);

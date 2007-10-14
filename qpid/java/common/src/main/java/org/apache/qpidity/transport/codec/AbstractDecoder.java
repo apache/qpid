@@ -42,14 +42,10 @@ import static org.apache.qpidity.transport.util.Functions.*;
 abstract class AbstractDecoder implements Decoder
 {
 
-    private final byte major;
-    private final byte minor;
     private int count;
 
-    protected AbstractDecoder(byte major, byte minor)
+    protected AbstractDecoder()
     {
-        this.major = major;
-        this.minor = minor;
         this.count = 0;
     }
 

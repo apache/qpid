@@ -36,12 +36,11 @@ public class SizeEncoder extends AbstractEncoder implements Sizer
 
     private int size;
 
-    public SizeEncoder(byte major, byte minor) {
-        this(major, minor, 0);
+    public SizeEncoder() {
+        this(0);
     }
 
-    public SizeEncoder(byte major, byte minor, int size) {
-        super(major, minor);
+    public SizeEncoder(int size) {
         this.size = size;
     }
 
