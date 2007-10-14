@@ -55,6 +55,7 @@ public interface Encoder
 
     void writeContent(String c);
 
+    void writeStruct(int type, Struct s);
     void writeLongStruct(Struct s);
 
     void writeTable(Map<String,Object> table);

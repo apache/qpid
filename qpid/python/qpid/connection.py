@@ -163,7 +163,10 @@ class Connection:
     body_size = frame_size - 12 # TODO: Magic number (frame header size)
     body = c.read(body_size)
     dec = codec.Codec(StringIO(body), self.spec)
-    frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
+    try:
+      frame = Frame.DECODERS[type].decode(self.spec, dec, len(body))
+    except EOF:
+      raise "truncated frame body: %r" % body
     frame.channel = channel
     frame.subchannel = subchannel
     end = c.decode_octet()
@@ -350,7 +353,7 @@ class Header(Frame):
     props = self.properties.copy()
     for k in self.properties:
       for s in structs:
-        if s.has(k):
+        if s.exists(k):
           s.set(k, props.pop(k))
     if props:
       raise TypeError("no such property: %s" % (", ".join(props)))
