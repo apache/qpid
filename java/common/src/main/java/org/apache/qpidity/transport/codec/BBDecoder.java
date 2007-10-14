@@ -34,9 +34,8 @@ public class BBDecoder extends AbstractDecoder
 
     private final ByteBuffer in;
 
-    public BBDecoder(byte major, byte minor, ByteBuffer in)
+    public BBDecoder(ByteBuffer in)
     {
-        super(major, minor);
         this.in = in;
     }
 

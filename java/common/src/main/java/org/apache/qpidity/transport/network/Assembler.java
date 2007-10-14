@@ -49,15 +49,11 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 {
 
     private final Receiver<ConnectionEvent> receiver;
-    private final byte major;
-    private final byte minor;
     private final Map<Integer,List<ByteBuffer>> segments;
 
-    public Assembler(Receiver<ConnectionEvent> receiver, byte major, byte minor)
+    public Assembler(Receiver<ConnectionEvent> receiver)
     {
         this.receiver = receiver;
-        this.major = major;
-        this.minor = minor;
         segments = new HashMap<Integer,List<ByteBuffer>>();
     }
 
@@ -159,8 +155,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 
     private ProtocolEvent decode(byte type, List<ByteBuffer> segment)
     {
-        FragmentDecoder dec =
-            new FragmentDecoder(major, minor, segment.iterator());
+        FragmentDecoder dec = new FragmentDecoder(segment.iterator());
 
         switch (type)
         {

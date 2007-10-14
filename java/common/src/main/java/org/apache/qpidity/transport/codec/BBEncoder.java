@@ -34,8 +34,7 @@ public class BBEncoder extends AbstractEncoder
 
     private final ByteBuffer out;
 
-    public BBEncoder(byte major, byte minor, ByteBuffer out) {
-        super(major, minor);
+    public BBEncoder(ByteBuffer out) {
         this.out = out;
     }
 

@@ -98,14 +98,13 @@ public class MinaHandler implements IoHandler
     public void sessionOpened(final IoSession ssn)
     {
         log.debug("opened: %s", this);
-        // XXX: hardcoded version + max-frame
+        // XXX: hardcoded max-frame
         Connection conn = new Connection
             (new Disassembler(new OutputHandler(new MinaSender(ssn)),
-                              (byte)0, (byte)10, 64*1024 - 1),
+                              64*1024 - 1),
              delegate);
-        // XXX: hardcoded version
         Receiver<java.nio.ByteBuffer> receiver =
-            new InputHandler(new Assembler(conn, (byte)0, (byte)10), state);
+            new InputHandler(new Assembler(conn), state);
         ssn.setAttachment(new Attachment(conn, receiver));
         // XXX
         synchronized (ssn)
