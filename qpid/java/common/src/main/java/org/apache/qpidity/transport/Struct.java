@@ -41,13 +41,23 @@ public abstract class Struct implements Encodable
         return StructFactory.create(type);
     }
 
-    public abstract List<Field<?,?>> getFields();
+    public abstract int getStructType();
 
-    public abstract int getEncodedType();
+    public abstract List<Field<?,?>> getFields();
 
     public abstract int getSizeWidth();
 
     public abstract int getPackWidth();
+
+    public final int getEncodedType()
+    {
+        int type = getStructType();
+        if (type < 0)
+        {
+            throw new UnsupportedOperationException();
+        }
+        return type;
+    }
 
     public abstract boolean hasTicket();
 
@@ -56,11 +66,21 @@ public abstract class Struct implements Encodable
         return f.getType().equals(Boolean.class);
     }
 
+    private final boolean packed()
+    {
+        if (this instanceof Method)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+
     private final boolean encoded(Field<?,?> f)
     {
-        // XXX: remove to enable packed encoding
-        if (true) { return true; }
-        return !isBit(f) && f.has(this);
+        return !packed() || !isBit(f) && f.has(this);
     }
 
     private final int getFlagWidth()
@@ -75,14 +95,23 @@ public abstract class Struct implements Encodable
         return pw;
     }
 
+    private final int getFlagCount()
+    {
+        return 8*getPackWidth();
+    }
+
+    private final int getReservedFlagCount()
+    {
+        return getFlagCount() - getFields().size();
+    }
+
     public final void read(Decoder dec)
     {
         List<Field<?,?>> fields = getFields();
 
-        assert fields.size() <= 8*getPackWidth();
+        assert fields.size() <= getFlagCount();
 
-        // XXX: remove to enable packed encoding
-        if (false)
+        if (packed())
         {
             for (Field<?,?> f : fields)
             {
@@ -97,12 +126,11 @@ public abstract class Struct implements Encodable
                 }
             }
 
-            for (int i = 0; i < getPaddWidth(); i++)
+            for (int i = 0; i < getReservedFlagCount(); i++)
             {
-                short padd = dec.readOctet();
-                if (padd != 0x0)
+                if (dec.readBit())
                 {
-                    throw new IllegalStateException("urecognized value in reserved bytes: " + padd);
+                    throw new IllegalStateException("reserved flag true");
                 }
             }
         }
@@ -125,10 +153,9 @@ public abstract class Struct implements Encodable
     {
         List<Field<?,?>> fields = getFields();
 
-        assert fields.size() <= 8*getPackWidth();
+        assert fields.size() <= getFlagCount();
 
-        // XXX: remove to enable packed encoding
-        if (false)
+        if (packed())
         {
             for (Field<?,?> f : fields)
             {
@@ -142,9 +169,9 @@ public abstract class Struct implements Encodable
                 }
             }
 
-            for (int i = 0; i < getPaddWidth(); i++)
+            for (int i = 0; i < getReservedFlagCount(); i++)
             {
-                enc.writeOctet((short) 0x0);
+                enc.writeBit(false);
             }
         }
 
@@ -171,8 +198,7 @@ public abstract class Struct implements Encodable
         boolean first = true;
         for (Field<?,?> f : getFields())
         {
-            // XXX: remove when packed encoding is enabled
-            if (false)
+            if (packed())
             {
                 if (!f.has(this))
                 {

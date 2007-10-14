@@ -437,23 +437,25 @@ class MessageTests(TestBase):
         channel.message_subscribe(queue = "q", destination = "c")
         channel.message_flow_mode(mode = 0, destination = "c")
         #send batch of messages to queue
-        for i in range(1, 11):
+        for i in range(10):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "abcdefgh"))
 
-        #each message is currently interpreted as requiring 75 bytes of credit
+        #each message is currently interpreted as requiring msg_size bytes of credit
+        msg_size = 40
+
         #set byte credit to finite amount (less than enough for all messages)
-        channel.message_flow(unit = 1, value = 75*5, destination = "c")
+        channel.message_flow(unit = 1, value = msg_size*5, destination = "c")
         #set infinite message credit
         channel.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "c")
         #check that expected number were received
         q = self.client.queue("c")
-        for i in range(1, 6):
+        for i in range(5):
             self.assertDataEquals(channel, q.get(timeout = 1), "abcdefgh")
         self.assertEmpty(q)
-        
+
         #increase credit again and check more are received
-        for i in range(6, 11):
-            channel.message_flow(unit = 1, value = 75, destination = "c")
+        for i in range(5):
+            channel.message_flow(unit = 1, value = msg_size, destination = "c")
             self.assertDataEquals(channel, q.get(timeout = 1), "abcdefgh")
             self.assertEmpty(q)
 
@@ -501,25 +503,27 @@ class MessageTests(TestBase):
         channel.message_subscribe(queue = "q", destination = "c", confirm_mode = 1)
         channel.message_flow_mode(mode = 1, destination = "c")
         #send batch of messages to queue
-        for i in range(1, 11):
+        for i in range(10):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "abcdefgh"))
 
-        #each message is currently interpreted as requiring 75 bytes of credit
+        #each message is currently interpreted as requiring msg_size bytes of credit
+        msg_size = 40
+
         #set byte credit to finite amount (less than enough for all messages)
-        channel.message_flow(unit = 1, value = 75*5, destination = "c")
+        channel.message_flow(unit = 1, value = msg_size*5, destination = "c")
         #set infinite message credit
         channel.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "c")
         #check that expected number were received
         q = self.client.queue("c")
         msgs = []
-        for i in range(1, 6):
+        for i in range(5):
             msg = q.get(timeout = 1)
             msgs.append(msg)
             self.assertDataEquals(channel, msg, "abcdefgh")
         self.assertEmpty(q)
         
         #ack each message individually and check more are received
-        for i in range(6, 11):
+        for i in range(5):
             msg = msgs.pop()
             msg.complete(cumulative=False)
             self.assertDataEquals(channel, q.get(timeout = 1), "abcdefgh")

@@ -186,6 +186,22 @@ abstract class AbstractDecoder implements Decoder
         throw new Error("Deprecated");
     }
 
+    public Struct readStruct(int type)
+    {
+        Struct st = Struct.create(type);
+        int width = st.getSizeWidth();
+        if (false && width > 0)
+        {
+            long size = readSize(width);
+            if (size == 0)
+            {
+                return null;
+            }
+        }
+        st.read(this);
+        return st;
+    }
+
     public Struct readLongStruct()
     {
         long size = readLong();
@@ -270,17 +286,22 @@ abstract class AbstractDecoder implements Decoder
         }
         else
         {
-            switch (t.width)
-            {
-            case 1:
-                return readOctet();
-            case 2:
-                return readShort();
-            case 4:
-                return readLong();
-            default:
-                throw new IllegalStateException("irregular width: " + t);
-            }
+            return readSize(t.width);
+        }
+    }
+
+    private long readSize(int width)
+    {
+        switch (width)
+        {
+        case 1:
+            return readOctet();
+        case 2:
+            return readShort();
+        case 4:
+            return readLong();
+        default:
+            throw new IllegalStateException("illegal width: " + width);
         }
     }
 

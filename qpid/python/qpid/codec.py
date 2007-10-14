@@ -94,6 +94,7 @@ class Codec:
     """
     reads in 'n' bytes from the stream. Can raise EOF exception
     """
+    self.clearbits()
     data = self.stream.read(n)
     if n > 0 and len(data) == 0:
       raise EOF()
@@ -129,6 +130,10 @@ class Codec:
       del self.outgoing_bits[:]
       for byte in bytes:
         self.encode_octet(byte)
+
+  def clearbits(self):
+    if self.incoming_bits:
+      self.incoming_bits = []
 
   def pack(self, fmt, *args):
     """
@@ -237,6 +242,12 @@ class Codec:
     """
     return self.unpack("!L")
 
+  def encode_signed_long(self, o):
+    self.pack("!q", o)
+
+  def decode_signed_long(self):
+    return self.unpack("!q")
+
   def encode_longlong(self, o):
     """
     encodes long long (64 bits) data 'o' in network byte order
@@ -332,14 +343,8 @@ class Codec:
         w = width(code)
         if fixed(code):
           value = self.read(w)
-        elif w == 1:
-          value = self.decode_shortstr()
-        elif w == 2:
-          value = self.dec_str("!H")
-        elif w == 4:
-          value = self.decode_longstr()
         else:
-          raise ValueError("illegal width: " + w)
+          value = self.read(self.dec_num(w))
       result[key] = value
     return result
 
@@ -409,19 +414,88 @@ class Codec:
   def decode_uuid(self):
     return self.unpack("16s")
 
+  def enc_num(self, width, n):
+    if width == 1:
+      self.encode_octet(n)
+    elif width == 2:
+      self.encode_short(n)
+    elif width == 3:
+      self.encode_long(n)
+    else:
+      raise ValueError("invalid width: %s" % width)
+
+  def dec_num(self, width):
+    if width == 1:
+      return self.decode_octet()
+    elif width == 2:
+      return self.decode_short()
+    elif width == 4:
+      return self.decode_long()
+    else:
+      raise ValueError("invalid width: %s" % width)
+
   def encode_struct(self, type, s):
-    for f in type.fields:
-      if s == None:
-        val = f.default()
-      else:
-        val = s.get(f.name)
-      self.encode(f.type, val)
-    self.flush()
+    if False and type.size:
+      enc = StringIO()
+      codec = Codec(enc, self.spec)
+      codec.encode_struct_body(type, s)
+      codec.flush()
+      body = enc.getvalue()
+      self.enc_num(type.size, len(body))
+      self.write(body)
+    else:
+      self.encode_struct_body(type, s)
 
   def decode_struct(self, type):
-    s = qpid.Struct(type)
+    if False and type.size:
+      size = self.dec_num(type.size)
+      if size == 0:
+        return None
+    return self.decode_struct_body(type)
+
+  def encode_struct_body(self, type, s):
+    reserved = 8*type.pack - len(type.fields)
+    assert reserved >= 0
+
     for f in type.fields:
-      s.set(f.name, self.decode(f.type))
+      if s == None:
+        self.encode_bit(False)
+      elif f.type == "bit":
+        self.encode_bit(s.get(f.name))
+      else:
+        self.encode_bit(s.has(f.name))
+
+    for i in range(reserved):
+      self.encode_bit(False)
+
+    for f in type.fields:
+      if f.type != "bit" and s != None and s.has(f.name):
+        self.encode(f.type, s.get(f.name))
+
+    self.flush()
+
+  def decode_struct_body(self, type):
+    reserved = 8*type.pack - len(type.fields)
+    assert reserved >= 0
+
+    s = qpid.Struct(type)
+
+    for f in type.fields:
+      if f.type == "bit":
+        s.set(f.name, self.decode_bit())
+      elif self.decode_bit():
+        s.set(f.name, None)
+
+    for i in range(reserved):
+      if self.decode_bit():
+        raise ValueError("expecting reserved flag")
+
+    for f in type.fields:
+      if f.type != "bit" and s.has(f.name):
+        s.set(f.name, self.decode(f.type))
+
+    self.clearbits()
+
     return s
 
   def encode_long_struct(self, s):
@@ -429,13 +503,13 @@ class Codec:
     codec = Codec(enc, self.spec)
     type = s.type
     codec.encode_short(type.type)
-    codec.encode_struct(type, s)
+    codec.encode_struct_body(type, s)
     self.encode_longstr(enc.getvalue())
 
   def decode_long_struct(self):
     codec = Codec(StringIO(self.decode_longstr()), self.spec)
     type = self.spec.structs[codec.decode_short()]
-    return codec.decode_struct(type)
+    return codec.decode_struct_body(type)
 
 def fixed(code):
   return (code >> 6) != 2
@@ -454,9 +528,9 @@ def width(code):
       raise ValueError(code)
   # variable width
   elif code < 192 and code >= 128:
-    lenlen = (self.code >> 4) & 3
+    lenlen = (code >> 4) & 3
     if lenlen == 3: raise ValueError(code)
     return 2 ** lenlen
   # fixed width
   else:
-    return (self.code >> 4) & 7
+    return (code >> 4) & 7

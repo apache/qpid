@@ -31,7 +31,7 @@ import java.util.Map;
  * @author Rafael H. Schloming
  */
 
-public class SizeEncoder extends AbstractEncoder
+public class SizeEncoder extends AbstractEncoder implements Sizer
 {
 
     private int size;
@@ -41,8 +41,13 @@ public class SizeEncoder extends AbstractEncoder
     }
 
     public SizeEncoder(byte major, byte minor, int size) {
-        super(major, minor, false);
+        super(major, minor);
         this.size = size;
+    }
+
+    protected Sizer sizer()
+    {
+        return Sizer.NULL;
     }
 
     public int getSize() {
@@ -51,6 +56,12 @@ public class SizeEncoder extends AbstractEncoder
 
     public void setSize(int size) {
         this.size = size;
+    }
+
+    public int size()
+    {
+        flush();
+        return getSize();
     }
 
     protected void doPut(byte b)

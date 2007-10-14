@@ -31,8 +31,12 @@ class Struct:
       raise AttributeError(attr)
     return field
 
-  def has(self, name):
-    return self.type.fields.byname.has_key(name)
+  def exists(self, attr):
+    return self.type.fields.byname.has_key(attr)
+
+  def has(self, attr):
+    self._check(attr)
+    return self._values.has_key(attr)
 
   def set(self, attr, value):
     self._check(attr)
@@ -42,11 +46,18 @@ class Struct:
     field = self._check(attr)
     return self._values.get(attr, field.default())
 
+  def clear(self, attr):
+    self._check(attr)
+    del self._values[attr]
+
   def __setattr__(self, attr, value):
     self.set(attr, value)
 
   def __getattr__(self, attr):
     return self.get(attr)
+
+  def __delattr__(self, attr):
+    self.clear(attr)
 
   def __setitem__(self, attr, value):
     self.set(attr, value)
@@ -54,5 +65,11 @@ class Struct:
   def __getitem__(self, attr):
     return self.get(attr)
 
+  def __delitem__(self, attr):
+    self.clear(attr)
+
   def __str__(self):
-    return "%s %s" % (self.type.type, self._values)
+    return "%s %s" % (self.type, self._values)
+
+  def __repr__(self):
+    return str(self)

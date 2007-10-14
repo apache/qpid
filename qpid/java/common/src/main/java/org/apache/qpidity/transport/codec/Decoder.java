@@ -53,6 +53,7 @@ public interface Decoder
 
     String readContent();
 
+    Struct readStruct(int type);
     Struct readLongStruct();
 
     Map<String,Object> readTable();
