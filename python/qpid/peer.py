@@ -130,8 +130,8 @@ class Peer:
           content = None
 
         self.delegate(channel, Message(channel, frame, content))
-    except QueueClosed, e:
-      self.close(e)
+    except QueueClosed:
+      self.close("worker closed")
     except:
       self.fatal()
 

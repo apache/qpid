@@ -29,7 +29,7 @@ class so that the generated code can be reused in a variety of
 situations.
 """
 
-import re, textwrap, new, mllib
+import re, textwrap, new, mllib, qpid
 
 class SpecContainer:
 
@@ -114,6 +114,10 @@ class Spec(Metadata):
       raise ValueError(name)
     klass, meth = parts
     return self.classes.byname[klass].methods.byname[meth]
+
+  def struct(self, name):
+    type = self.domains.byname[name].type
+    return qpid.Struct(type)
 
   def define_module(self, name, doc = None):
     module = new.module(name, doc)
@@ -303,14 +307,26 @@ class Field(Metadata):
     else:
       return Method.DEFAULTS[self.type]
 
+WIDTHS = {
+  "octet": 1,
+  "short": 2,
+  "long": 4
+  }
+
+def width(st, default=None):
+  if st in (None, "none", ""):
+    return default
+  else:
+    return WIDTHS[st]
+
 def get_result(nd, spec):
   result = nd["result"]
   if not result: return None
   name = result["@domain"]
   if name != None: return spec.domains.byname[name]
   st_nd = result["struct"]
-  st = Struct(st_nd["@size"], int(result.parent.parent["@index"])*256 +
-              int(st_nd["@type"]), st_nd["@pack"])
+  st = Struct(width(st_nd["@size"]), int(result.parent.parent["@index"])*256 +
+              int(st_nd["@type"]), width(st_nd["@pack"], 2))
   spec.structs[st.type] = st
   load_fields(st_nd, st.fields, spec.domains.byname)
   return st
@@ -366,7 +382,7 @@ def load(specfile, *errata):
         code = st_nd["@type"]
         if code not in (None, "", "none"):
           code = int(code)
-        type = Struct(st_nd["@size"], code, st_nd["@pack"])
+        type = Struct(width(st_nd["@size"]), code, width(st_nd["@pack"], 2))
         if type.type != None:
           spec.structs[type.type] = type
         structs.append((type, st_nd))

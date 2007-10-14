@@ -32,13 +32,13 @@ class SpecTest(TestCase):
     if (spec.major == 0 and spec.minor == 10):
       assert qdecl_ok == None
       reply_to = spec.domains.byname["reply_to"]
-      assert reply_to.type.size == "short"
-      assert reply_to.type.pack == "short"
+      assert reply_to.type.size == 2
+      assert reply_to.type.pack == 2
       assert len(reply_to.type.fields) == 2
 
       qq = spec.method("queue_query")
       assert qq != None
-      assert qq.result.size == "long"
+      assert qq.result.size == 4
       assert qq.result.type != None
       args = qq.result.fields.byname["arguments"]
       assert args.type == "table"

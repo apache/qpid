@@ -61,20 +61,19 @@ abstract class AbstractEncoder implements Encoder
         ENCODINGS.put(byte[].class, Type.LONG_BINARY);
     }
 
+    // XXX: no longer need major/minor
     private final byte major;
     private final byte minor;
-    private final boolean calcsize;
-
-    protected AbstractEncoder(byte major, byte minor, boolean calcsize)
-    {
-        this.major = major;
-        this.minor = minor;
-        this.calcsize = calcsize;
-    }
 
     protected AbstractEncoder(byte major, byte minor)
     {
-        this(major, minor, true);
+        this.major = major;
+        this.minor = minor;
+    }
+
+    protected Sizer sizer()
+    {
+        return new SizeEncoder(major, minor);
     }
 
     protected abstract void doPut(byte b);
@@ -224,6 +223,33 @@ abstract class AbstractEncoder implements Encoder
         throw new Error("Deprecated");
     }
 
+    public void writeStruct(int type, Struct s)
+    {
+        boolean empty = false;
+        if (s == null)
+        {
+            s = Struct.create(type);
+            empty = true;
+        }
+
+        int width = s.getSizeWidth();
+        if (false && width > 0)
+        {
+            if (empty)
+            {
+                writeSize(width, 0);
+            }
+            else
+            {
+                Sizer sizer = sizer();
+                s.write(sizer);
+                writeSize(width, sizer.size());
+            }
+        }
+
+        s.write(this);
+    }
+
     public void writeLongStruct(Struct s)
     {
         if (s == null)
@@ -232,17 +258,10 @@ abstract class AbstractEncoder implements Encoder
         }
         else
         {
-            int size = 0;
-            if (calcsize)
-            {
-                SizeEncoder sizer = new SizeEncoder(major, minor);
-                sizer.writeShort(s.getEncodedType());
-                s.write(sizer);
-                sizer.flush();
-                size = sizer.getSize();
-            }
-
-            writeLong(size);
+            Sizer sizer = sizer();
+            sizer.writeShort(s.getEncodedType());
+            s.write(sizer);
+            writeLong(sizer.size());
             writeShort(s.getEncodedType());
             s.write(this);
         }
@@ -308,15 +327,10 @@ abstract class AbstractEncoder implements Encoder
             return;
         }
 
-        int size = 0;
-        if (calcsize)
-        {
-            SizeEncoder sizer = new SizeEncoder(major, minor);
-            sizer.writeTableEntries(table);
-            size = sizer.getSize();
-        }
-
-        writeLong(size);
+        Sizer sizer = sizer();
+        sizer.writeTable(table);
+        // XXX: - 4
+        writeLong(sizer.size() - 4);
         writeTableEntries(table);
     }
 
@@ -335,15 +349,10 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeSequence(List<Object> sequence)
     {
-        int size = 0;
-        if (calcsize)
-        {
-            SizeEncoder sizer = new SizeEncoder(major, minor);
-            sizer.writeSequenceEntries(sequence);
-            size = sizer.getSize();
-        }
-
-        writeLong(size);
+        Sizer sizer = sizer();
+        sizer.writeSequence(sequence);
+        // XXX: - 4
+        writeLong(sizer.size() - 4);
         writeSequenceEntries(sequence);
     }
 
@@ -359,15 +368,10 @@ abstract class AbstractEncoder implements Encoder
 
     public void writeArray(List<Object> array)
     {
-        int size = 0;
-        if (calcsize)
-        {
-            SizeEncoder sizer = new SizeEncoder(major, minor);
-            sizer.writeArrayEntries(array);
-            size = sizer.getSize();
-        }
-
-        writeLong(size);
+        Sizer sizer = sizer();
+        sizer.writeArray(array);
+        // XXX: -4
+        writeLong(sizer.size() - 4);
         writeArrayEntries(array);
     }
 
@@ -405,21 +409,26 @@ abstract class AbstractEncoder implements Encoder
         }
         else
         {
-            // XXX: should check lengths
-            switch (t.width)
-            {
-            case 1:
-                writeOctet((short) size);
-                break;
-            case 2:
-                writeShort(size);
-                break;
-            case 4:
-                writeLong(size);
-                break;
-            default:
-                throw new IllegalStateException("irregular width: " + t);
-            }
+            writeSize(t.width, size);
+        }
+    }
+
+    private void writeSize(int width, int size)
+    {
+        // XXX: should check lengths
+        switch (width)
+        {
+        case 1:
+            writeOctet((short) size);
+            break;
+        case 2:
+            writeShort(size);
+            break;
+        case 4:
+            writeLong(size);
+            break;
+        default:
+            throw new IllegalStateException("illegal width: " + width);
         }
     }
 
