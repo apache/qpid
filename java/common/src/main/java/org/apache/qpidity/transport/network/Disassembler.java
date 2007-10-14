@@ -53,11 +53,8 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     private final Sender<NetworkEvent> sender;
     private final int maxPayload;
-    private final byte major;
-    private final byte minor;
 
-    public Disassembler(Sender<NetworkEvent> sender, byte major, byte minor,
-                        int maxFrame)
+    public Disassembler(Sender<NetworkEvent> sender, int maxFrame)
     {
         if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
         {
@@ -65,8 +62,6 @@ public class Disassembler implements Sender<ConnectionEvent>,
                 ("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
         }
         this.sender = sender;
-        this.major = major;
-        this.minor = minor;
         this.maxPayload  = maxFrame - HEADER_SIZE;
 
     }
@@ -116,14 +111,12 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     public void method(ConnectionEvent event, Method method)
     {
-        SizeEncoder sizer = new SizeEncoder(major, minor);
+        SizeEncoder sizer = new SizeEncoder();
         sizer.writeShort(method.getEncodedType());
         method.write(sizer);
-        sizer.flush();
-        int size = sizer.getSize();
 
-        ByteBuffer buf = ByteBuffer.allocate(size);
-        BBEncoder enc = new BBEncoder(major, minor, buf);
+        ByteBuffer buf = ByteBuffer.allocate(sizer.size());
+        BBEncoder enc = new BBEncoder(buf);
         enc.writeShort(method.getEncodedType());
         method.write(enc);
         enc.flush();
@@ -141,14 +134,14 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     public void header(ConnectionEvent event, Header header)
     {
-        SizeEncoder sizer = new SizeEncoder(major, minor);
+        SizeEncoder sizer = new SizeEncoder();
         for (Struct st : header.getStructs())
         {
             sizer.writeLongStruct(st);
         }
 
-        ByteBuffer buf = ByteBuffer.allocate(sizer.getSize());
-        BBEncoder enc = new BBEncoder(major, minor, buf);
+        ByteBuffer buf = ByteBuffer.allocate(sizer.size());
+        BBEncoder enc = new BBEncoder(buf);
         for (Struct st : header.getStructs())
         {
             enc.writeLongStruct(st);

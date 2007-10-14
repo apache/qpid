@@ -40,9 +40,8 @@ public class FragmentDecoder extends AbstractDecoder
     private final Iterator<ByteBuffer> fragments;
     private ByteBuffer current;
 
-    public FragmentDecoder(byte major, byte minor, Iterator<ByteBuffer> fragments)
+    public FragmentDecoder(Iterator<ByteBuffer> fragments)
     {
-        super(major, minor);
         this.fragments = fragments;
         this.current = null;
     }
