@@ -23,17 +23,17 @@ class StructGen < CppGen
     "long-struct"=>"LongString"
   }
   SizeMap={
-    "octet"=>"1",
-    "short"=>"2",
-    "long"=>"4",
-    "longlong"=>"8",
-    "timestamp"=>"8"
+    "octet"=>1,
+    "short"=>2,
+    "long"=>4,
+    "longlong"=>8,
+    "timestamp"=>8
   }
 
   ValueTypes=["octet", "short", "long", "longlong", "timestamp"]
 
   def is_packed(s)
-    false and s.kind_of? AmqpStruct and s.pack
+    s.kind_of? AmqpStruct
   end
 
   def execution_header?(s)
@@ -62,55 +62,60 @@ class StructGen < CppGen
     end
   end
 
+  def flag_mask(s, i)
+    pos = SizeMap[s.pack]*8 - 8 - (i/8)*8 + (i % 8)
+    return "(1 << #{pos})"
+  end
+
   def get_flags_impl(s)
     genl "#{s.cpp_pack_type.name} flags = 0;"
-    process_packed_fields(s) { |f, i| set_field_flag(f, i) }
+    process_packed_fields(s) { |f, i| set_field_flag(s, f, i) }
     genl "return flags;"
   end
 
-  def set_field_flag(f, i)
+  def set_field_flag(s, f, i)
     if (ValueTypes.include?(f.domain.type_) || f.domain.type_ == "bit")
-      genl "if (#{f.cppname}) flags |= (1 << #{i});"
+      genl "if (#{f.cppname}) flags |= #{flag_mask(s, i)};"
     else
-      genl "if (#{f.cppname}.size()) flags |= (1 << #{i});"
+      genl "if (#{f.cppname}.size()) flags |= #{flag_mask(s, i)};"
     end
   end
 
   def encode_packed_struct(s)
     genl "#{s.cpp_pack_type.name} flags = getFlags();"
     genl s.cpp_pack_type.encode('flags', 'buffer')
-    process_packed_fields(s) { |f, i| encode_packed_field(f, i) unless f.domain.type_ == "bit" }
+    process_packed_fields(s) { |f, i| encode_packed_field(s, f, i) unless f.domain.type_ == "bit" }
   end
 
   def decode_packed_struct(s)
     genl "#{s.cpp_pack_type.name} #{s.cpp_pack_type.decode('flags', 'buffer')}"
-    process_packed_fields(s) { |f, i| decode_packed_field(f, i) unless f.domain.type_ == "bit" }
-    process_packed_fields(s) { |f, i| set_bitfield(f, i) if f.domain.type_ == "bit" }
+    process_packed_fields(s) { |f, i| decode_packed_field(s, f, i) unless f.domain.type_ == "bit" }
+    process_packed_fields(s) { |f, i| set_bitfield(s, f, i) if f.domain.type_ == "bit" }
   end
 
   def size_packed_struct(s)
     genl "#{s.cpp_pack_type.name} flags = getFlags();" unless has_bitfields_only(s)
     genl "total += #{SizeMap[s.pack]};"
-    process_packed_fields(s) { |f, i| size_packed_field(f, i) unless f.domain.type_ == "bit" }
+    process_packed_fields(s) { |f, i| size_packed_field(s, f, i) unless f.domain.type_ == "bit" }
   end
 
-  def encode_packed_field(f, i)
-    genl "if (flags & (1 << #{i}))"
+  def encode_packed_field(s, f, i)
+    genl "if (flags & #{flag_mask(s, i)})"
     indent { genl f.domain.cpptype.encode(f.cppname,"buffer") }
   end
 
-  def decode_packed_field(f, i)
-    genl "if (flags & (1 << #{i}))"
+  def decode_packed_field(s, f, i)
+    genl "if (flags & #{flag_mask(s, i)})"
     indent { genl f.domain.cpptype.decode(f.cppname,"buffer") }
   end
 
-  def size_packed_field(f, i)
-      genl "if (flags & (1 << #{i}))"
+  def size_packed_field(s, f, i)
+      genl "if (flags & #{flag_mask(s, i)})"
       indent { generate_size(f, []) }
   end
 
-  def set_bitfield(f, i)
-    genl "#{f.cppname} = (flags & (1 << #{i}));"
+  def set_bitfield(s, f, i)
+      genl "#{f.cppname} = (flags & #{flag_mask(s, i)});"
   end
 
   def generate_encode(f, combined)

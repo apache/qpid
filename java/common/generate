@@ -11,6 +11,12 @@ spec_file = sys.argv[3]
 
 spec = mllib.xml_parse(spec_file)
 
+def jbool(b):
+  if b:
+    return "true"
+  else:
+    return "false"
+
 class Output:
 
   def __init__(self, dir, package, name):
@@ -37,11 +43,12 @@ class Output:
   def line(self, l = ""):
     self.lines.append(l)
 
-  def getter(self, type, method, variable, pre = None):
+  def getter(self, type, method, value, pre = None):
+    self.line()
     self.line("    public final %s %s() {" % (type, method))
     if pre:
       self.line("        %s;" % pre)
-    self.line("        return %s;" % variable)
+    self.line("        return %s;" % value)
     self.line("    }")
 
   def setter(self, type, method, variable, value = None, pre = None,
@@ -52,6 +59,7 @@ class Output:
       params = "%s value" % type
       value = "value"
 
+    self.line()
     self.line("    public final %s %s(%s) {" % (self.name, method, params))
     if pre:
       self.line("        %s;" % pre)
@@ -301,37 +309,15 @@ class Struct:
   def impl(self, out):
     out.line("public class %s extends %s {" % (self.name, self.base))
 
-    if self.type != None:
-      out.line()
-      out.line("    public static final int TYPE = %d;" % self.type)
-
     out.line()
-    if self.type == None:
-      pre = "if (true) throw new UnsupportedOperationException()"
-      value = "0"
-    else:
-      pre = None
-      value = "TYPE"
-    out.getter("int", "getEncodedType", value, pre = pre)
-
-    out.line()
+    out.line("    public static final int TYPE = %d;" % self.type)
+    out.getter("int", "getStructType", "TYPE")
     out.getter("int", "getSizeWidth", self.size)
-    out.line()
     out.getter("int", "getPackWidth", self.pack)
-
-    if self.ticket:
-      out.getter("boolean", "hasTicket", "true")
-    else:
-      out.getter("boolean", "hasTicket", "false");
+    out.getter("boolean", "hasTicket", jbool(self.ticket))
 
     if self.base == "Method":
-      out.line()
-      if self.content:
-        out.getter("boolean", "hasPayload", "true")
-      else:
-        out.getter("boolean", "hasPayload", "false")
-
-      out.line()
+      out.getter("boolean", "hasPayload", jbool(self.content))
       out.getter("byte", "getEncodedTrack", self.track)
 
     out.line()
@@ -382,7 +368,6 @@ class Struct:
 
     index = 0
     for type, name in self.fields:
-      out.line()
       out.getter("boolean", camel(1, "has", name), "has_" + name)
       out.setter("boolean", camel(1, "clear", name), "has_" + name, "false",
                  post = "this.%s = %s" % (name, DEFAULTS.get(type, "null")))
@@ -409,8 +394,8 @@ class Struct:
       if TYPES.has_key(type):
         out.line('                check(struct).%s = dec.read%s();' % (name, camel(0, type)))
       elif STRUCTS.has_key(type):
-        out.line('                check(struct).%s = new %s();' % (name, STRUCTS[type]))
-        out.line('                check(struct).%s.read(dec);' % name)
+        out.line('                check(struct).%s = (%s) dec.readStruct(%s.TYPE);' %
+                 (name, STRUCTS[type], STRUCTS[type]))
       else:
         raise Exception("unknown type: %s" % type)
       out.line('            }')
@@ -418,11 +403,8 @@ class Struct:
       if TYPES.has_key(type):
         out.line('                enc.write%s(check(struct).%s);' % (camel(0, type), name))
       elif STRUCTS.has_key(type):
-        out.line("            if (check(struct).%s == null) {" % name)
-        out.line("                new %s().write(enc);" % jtype(type))
-        out.line("            } else {")
-        out.line('                check(struct).%s.write(enc);' % name)
-        out.line("            }")
+        out.line('                enc.writeStruct(%s.TYPE, check(struct).%s);' %
+                 (STRUCTS[type], name))
       else:
         raise Exception("unknown type: %s" % type)
       out.line('            }')
@@ -473,6 +455,7 @@ class Visitor(mllib.transforms.Visitor):
 
   def __init__(self):
     self.structs = []
+    self.untyped = -1
 
   def do_method(self, m):
     if CLASSES.get(m.parent["@name"], True):
@@ -487,11 +470,12 @@ class Visitor(mllib.transforms.Visitor):
       name = camel(0, d["@name"])
       st = s["@type"]
       if st in (None, "none", ""):
-        type = None
+        type = self.untyped
+        self.untyped -= 1
       else:
         type = int(st)
-      self.structs.append((name, "Struct", type, SIZE_WIDTHS[s["size"]],
-                           PACK_WIDTHS[s["pack"]], s))
+      self.structs.append((name, "Struct", type, SIZE_WIDTHS[s["@size"]],
+                           PACK_WIDTHS[s["@pack"]], s))
     self.descend(d)
 
   def do_result(self, r):
@@ -499,8 +483,8 @@ class Visitor(mllib.transforms.Visitor):
     if s:
       name = camel(0, r.parent.parent["@name"], r.parent["@name"], "Result")
       type = int(r.parent.parent["@index"]) * 256 + int(s["@type"])
-      self.structs.append((name, "Result", type, SIZE_WIDTHS[s["size"]],
-                           PACK_WIDTHS[s["pack"]], s))
+      self.structs.append((name, "Result", type, SIZE_WIDTHS[s["@size"]],
+                           PACK_WIDTHS[s["@pack"]], s))
     self.descend(r)
 
 v = Visitor()
@@ -540,7 +524,6 @@ fct.line("class StructFactory {")
 fct.line("    public static Struct create(int type) {")
 fct.line("        switch (type) {")
 for s in structs:
-  if s.type == None: continue
   fct.line("        case %s.TYPE:" % s.name)
   fct.line("            return new %s();" % s.name)
 fct.line("        default:")

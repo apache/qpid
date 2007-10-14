@@ -127,7 +127,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         props.setContentType(mprop.getContentType());
         props.setCorrelationId(mprop.getCorrelationId());
         String encoding = mprop.getContentEncoding();
-        if (!encoding.equals(""))
+        if (encoding != null && !encoding.equals(""))
         {
             props.setEncoding(encoding);
         }

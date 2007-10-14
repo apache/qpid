@@ -203,12 +203,12 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
-                assertTrue(_consumer1.receive() != null);
+                assertTrue(_consumer1.receive(3000) != null);
             }
 
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
-                assertTrue(consumer2.receive() != null);
+                assertTrue(consumer2.receive(3000) != null);
             }
         }
         else
@@ -218,12 +218,12 @@ public class MessageListenerMultiConsumerTest extends QpidTestCase
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
 
-                assertTrue(_consumer1.receive() != null);
+                assertTrue(_consumer1.receive(3000) != null);
             }
 
             for (int msg = 0; msg < (MSG_COUNT / 2); msg++)
             {
-                assertTrue(_consumer2.receive() != null);
+                assertTrue(_consumer2.receive(3000) != null);
             }
         }
     }

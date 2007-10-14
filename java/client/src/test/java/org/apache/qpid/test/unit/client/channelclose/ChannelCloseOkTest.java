@@ -199,19 +199,27 @@ public class ChannelCloseOkTest extends QpidTestCase
 
     private void waitFor(List<Message> received, int count) throws InterruptedException
     {
+        long timeout = 3000;
+
         synchronized (received)
         {
+            long start = System.currentTimeMillis();
             while (received.size() < count)
             {
+                if (System.currentTimeMillis() - start > timeout)
+                {
+                    fail("timeout expired waiting for messages");
+                }
                 try
                 {
-                    received.wait();
+                    received.wait(timeout);
                 }
                 catch (InterruptedException e)
                 {
                     _log.info("Interrupted: " + e);
                     throw e;
                 }
+
             }
         }
     }

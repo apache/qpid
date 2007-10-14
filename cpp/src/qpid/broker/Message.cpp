@@ -75,7 +75,7 @@ uint32_t Message::getRequiredCredit() const
 {
     //add up payload for all header and content frames in the frameset
     SumBodySize sum;
-    frames.map_if(sum, TypeFilter(METHOD_BODY, HEADER_BODY));
+    frames.map_if(sum, TypeFilter(HEADER_BODY, CONTENT_BODY));
     return sum.getSize();
 }
 

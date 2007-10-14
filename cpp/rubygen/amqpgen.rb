@@ -41,10 +41,25 @@ class Module
   # Add attribute reader for XML attribute.
   def amqp_attr_reader(*attrs)
     attrs.each { |a|
-      define_method(mangle(a)) {
-        @amqp_attr_reader||={ }
-        @amqp_attr_reader[a] ||= xml.attributes[a.to_s]
-      }
+      case a
+      when Symbol
+        define_method(mangle(a)) {
+          @amqp_attr_reader||={ }
+          @amqp_attr_reader[a] ||= xml.attributes[a.to_s]
+        }
+      when Hash
+        a.each { |attr, default|
+          define_method(mangle(attr)) {
+            @amqp_attr_reader||={ }
+            value = xml.attributes[attr.to_s]
+            if value
+              @amqp_attr_reader[attr] ||= value
+            else
+              @amqp_attr_reader[attr] ||= default
+            end
+          }
+        }
+      end
     }
   end
 
@@ -151,7 +166,7 @@ end
 
 class AmqpStruct < AmqpElement
   def initialize(xml, parent) super; end
-  amqp_attr_reader :size, :type, :pack
+  amqp_attr_reader :size, :type, :pack => "short"
   amqp_child_reader :field
   
   def result?() parent.xml.name == "result"; end
