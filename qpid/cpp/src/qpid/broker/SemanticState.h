@@ -137,15 +137,12 @@ class SemanticState : public framing::FrameHandler::Chains,
     
     /**
      * Get named queue, never returns 0.
-     * @return: named queue or default queue for session if name=""
+     * @return: named queue
      * @exception: ChannelException if no queue of that name is found.
      * @exception: ConnectionException if name="" and session has no default.
      */
     Queue::shared_ptr getQueue(const std::string& name) const;
     
-
-    void setDefaultQueue(Queue::shared_ptr queue){ defaultQueue = queue; }
-    Queue::shared_ptr getDefaultQueue() const { return defaultQueue; }
     uint32_t setPrefetchSize(uint32_t size){ return prefetchSize = size; }
     uint16_t setPrefetchCount(uint16_t n){ return prefetchCount = n; }
 

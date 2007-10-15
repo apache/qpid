@@ -126,11 +126,8 @@ class QueueTests(TestBase):
         #straightforward case, both exchange & queue exist so no errors expected:
         channel.queue_bind(queue="queue-1", exchange="amq.direct", routing_key="key1")
 
-        #bind the default queue for the channel (i.e. last one declared):
-        channel.queue_bind(exchange="amq.direct", routing_key="key2")
-
-        #use the queue name where neither routing key nor queue are specified:
-        channel.queue_bind(exchange="amq.direct")
+        #use the queue name where the routing key is not specified:
+        channel.queue_bind(queue="queue-1", exchange="amq.direct")
 
         #try and bind to non-existant exchange
         try:
