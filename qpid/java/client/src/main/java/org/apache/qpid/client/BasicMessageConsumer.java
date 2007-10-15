@@ -266,7 +266,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         }
     }
 
-    private void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
     {
 
         if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
