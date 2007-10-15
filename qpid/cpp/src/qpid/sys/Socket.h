@@ -77,6 +77,17 @@ public:
      */
     std::string getSockname() const;
 
+    /** Returns the "peer name" ie the address bound to 
+     * the remote end of the socket
+     */
+    std::string getPeername() const;
+
+    /** 
+     * Returns an address (host and port) for the remote end of the
+     * socket
+     */
+    std::string getPeerAddress() const;
+
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
