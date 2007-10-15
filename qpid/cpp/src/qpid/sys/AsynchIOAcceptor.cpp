@@ -211,7 +211,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         framing::AMQFrame frame;
         try{
             while(frame.decode(in)) {
-                QPID_LOG(debug, "RECV: " << frame);
+                QPID_LOG(debug, "RECV [" << aio->getSocket().getPeerAddress() << "]: " << frame);
                 inputHandler->received(frame);
             }
         }catch(const std::exception& e){
@@ -222,7 +222,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     }else{
         framing::ProtocolInitiation protocolInit;
         if(protocolInit.decode(in)){
-            QPID_LOG(debug, "INIT [" << aio << "]");
+            QPID_LOG(debug, "INIT [" << aio->getSocket().getPeerAddress() << "]");
             inputHandler->initiated(protocolInit);
             initiated = true;
         }
@@ -285,7 +285,7 @@ void AsynchIOHandler::idle(AsynchIO&){
 			// Encode output frame	
 			frame.encode(out);
 			buffUsed += frameSize;
-			QPID_LOG(debug, "SENT: " << frame);
+			QPID_LOG(debug, "SENT [" << aio->getSocket().getPeerAddress() << "]: " << frame);
 			
 			if (frameQueue.empty())
 				break;

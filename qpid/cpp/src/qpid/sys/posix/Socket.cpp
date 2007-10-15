@@ -39,12 +39,45 @@ namespace sys {
 
 class SocketPrivate {
 public:
-	SocketPrivate(int f = -1) :
-		fd(f)
-	{}
+    SocketPrivate(int f = -1) :
+            fd(f)
+    {}
+    
+    int fd;
 
-	int fd;
+    std::string getName(bool local, bool includeService = false) const;   
 };
+
+std::string SocketPrivate::getName(bool local, bool includeService) const
+{
+    ::sockaddr_storage name; // big enough for any socket address    
+    ::socklen_t namelen = sizeof(name);
+    
+    int result = -1;
+    if (local) {
+        result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
+    } else {
+        result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
+    }
+
+    if (result < 0)
+        throw QPID_POSIX_ERROR(errno);
+
+    char servName[NI_MAXSERV];
+    char dispName[NI_MAXHOST];
+    if (includeService) {
+        if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName), 
+                                 servName, sizeof(servName), 
+                                 NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+            throw QPID_POSIX_ERROR(rc);
+        return std::string(dispName) + ":" + std::string(servName);
+
+    } else {
+        if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName), 0, 0, NI_NUMERICHOST) != 0)
+            throw QPID_POSIX_ERROR(rc);
+        return dispName;
+    }
+}
 
 Socket::Socket() :
 	impl(new SocketPrivate)
@@ -175,17 +208,17 @@ int Socket::write(const void *buf, size_t count) const
 
 std::string Socket::getSockname() const
 {
-    ::sockaddr_storage name; // big enough for any socket address    
-    ::socklen_t namelen = sizeof(name);
+    return impl->getName(true);
+}
 
-	const int& socket = impl->fd;
-    if (::getsockname(socket, (::sockaddr*)&name, &namelen) < 0)
-        throw QPID_POSIX_ERROR(errno);
-    
-    char dispName[NI_MAXHOST];
-    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName), 0, 0, NI_NUMERICHOST) != 0)
-    	throw QPID_POSIX_ERROR(rc);
-    return dispName;
+std::string Socket::getPeername() const
+{
+    return impl->getName(false);
+}
+
+std::string Socket::getPeerAddress() const
+{
+    return impl->getName(false, true);
 }
 
 int toFd(const SocketPrivate* s)
