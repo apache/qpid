@@ -122,6 +122,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/MethodHolder.cpp \
   qpid/framing/MethodHolderMaxSize.h \
   qpid/framing/TransferContent.cpp \
+  qpid/assert.cpp qpid/assert.h \
   qpid/Exception.cpp \
   qpid/Plugin.cpp \
   qpid/Url.cpp \
