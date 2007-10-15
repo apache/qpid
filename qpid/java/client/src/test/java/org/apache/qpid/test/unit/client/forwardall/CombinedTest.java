@@ -49,7 +49,7 @@ public class CombinedTest extends QpidTestCase
 
     public void testForwardAll() throws Exception
     {
-        while (run < 1)
+        while (run < 10)
         {
             int services =1;
             ServiceCreator.start("vm://:1", services);
