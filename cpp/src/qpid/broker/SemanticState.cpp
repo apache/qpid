@@ -540,14 +540,10 @@ void SemanticState::ConsumerImpl::stop()
 }
 
 Queue::shared_ptr SemanticState::getQueue(const string& name) const {
-    //Note: this can be removed soon as the default queue for sessions is scrapped in 0-10
     Queue::shared_ptr queue;
     if (name.empty()) {
-        queue = getDefaultQueue();
-        if (!queue)
-            throw NotAllowedException(QPID_MSG("No queue name specified."));
-    }
-    else {
+        throw NotAllowedException(QPID_MSG("No queue name specified."));
+    } else {
         queue = session.getBroker().getQueues().find(name);
         if (!queue)
             throw NotFoundException(QPID_MSG("Queue not found: "<<name));
