@@ -40,6 +40,7 @@ import javax.jms.MessageListener;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * This is a 0.10 message consumer.
@@ -47,6 +48,10 @@ import java.util.concurrent.TimeUnit;
 public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], ByteBuffer>
         implements org.apache.qpidity.nclient.util.MessageListener
 {
+    /**
+     * A counter for keeping the number of available messages for this consumer
+     */
+    private final AtomicLong _messageCounter = new AtomicLong(0);
     /**
      * This class logger
      */
@@ -78,7 +83,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         super(channelId, connection, destination, messageSelector, noLocal, messageFactory, session, protocolHandler,
               rawSelectorFieldTable, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, noConsume, autoClose);
         _0_10session = (AMQSession_0_10) session;
-        if (messageSelector != null && messageSelector != "")
+        if (messageSelector != null && ! messageSelector.equals("") )
         {
             try
             {
@@ -161,6 +166,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             newMessage.setReplyToURL(replyToUrl);
         }
         newMessage.setContentHeader(headers);
+        // increase the counter of messages
+        _messageCounter.incrementAndGet();
         getSession().messageReceived(newMessage);
         // else ignore this message
     }
@@ -348,6 +355,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         return result;
     }
 
+      protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    {
+        _messageCounter.decrementAndGet();
+        super.preApplicationProcessing(jmsMsg);   
+    }
 
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
@@ -393,7 +405,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
                 _0_10session.getQpidSession().sync();
                 _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
-                o = _synchronousQueue.poll();
+                if( _messageCounter.get() > 0 )
+                {
+                      o = _synchronousQueue.take();
+                }
             }
         }
         else
