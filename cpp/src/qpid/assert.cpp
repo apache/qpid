@@ -32,7 +32,7 @@ void assert_fail(char const * expr, char const * function, char const * file, lo
     msg << "Internal error: " << expr << " in function " << function
         << "(" << file << ":" << line << ")";
 #ifdef NDEBUG
-    throw InternalErrorException(msg);
+    throw framing::InternalErrorException(msg);
 #else
     std::cerr << msg << std::endl;
     abort();
