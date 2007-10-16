@@ -191,14 +191,20 @@ class StructGen < CppGen
 
   def methodbody_extra_defs(s)
     gen <<EOS
+    typedef #{s.result ? s.result.struct.cpptype.name : 'void'} ResultType;
+
+    template <class T> ResultType invoke(T& invocable) const {
+        return invocable.#{s.cppname}(#{s.param_names.join ", "});
+    }
+
     using  AMQMethodBody::accept;
     void accept(MethodBodyConstVisitor& v) const { v.visit(*this); }
 
-    inline ClassId amqpClassId() const { return CLASS_ID; }
-    inline MethodId amqpMethodId() const { return METHOD_ID; }
-    inline bool isContentBearing() const { return  #{s.content ? "true" : "false" }; }
-    inline bool resultExpected() const { return  #{s.result ? "true" : "false"}; }
-    inline bool responseExpected() const { return  #{s.responses().empty? ? "false" : "true"}; }
+    ClassId amqpClassId() const { return CLASS_ID; }
+    MethodId amqpMethodId() const { return METHOD_ID; }
+    bool isContentBearing() const { return  #{s.content ? "true" : "false" }; }
+    bool resultExpected() const { return  #{s.result ? "true" : "false"}; }
+    bool responseExpected() const { return  #{s.responses().empty? ? "false" : "true"}; }
 EOS
   end
 

@@ -35,7 +35,6 @@ namespace framing {
 
 class Buffer;
 class AMQP_ServerOperations;
-class Invocable;
 class MethodBodyConstVisitor;
 
 class AMQMethodBody : public AMQBody {
@@ -52,9 +51,6 @@ class AMQMethodBody : public AMQBody {
     virtual bool isContentBearing() const = 0;
     virtual bool resultExpected() const = 0;    
     virtual bool responseExpected() const = 0;    
-
-    void invoke(AMQP_ServerOperations&);
-    bool invoke(Invocable*);
 
     template <class T> bool isA() const {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;

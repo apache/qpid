@@ -35,21 +35,14 @@ public:
 
     template <class T> void encode(const T t, std::string& data) {
         uint32_t size = t.size() + 2/*type*/;
-        char* bytes = static_cast<char*>(::alloca(size));
-        Buffer wbuffer(bytes, size);
+        data.resize(size);
+        Buffer wbuffer(const_cast<char*>(data.data()), size);
         wbuffer.putShort(T::TYPE);
         t.encode(wbuffer);
-        
-        Buffer rbuffer(bytes, size);
-        rbuffer.getRawData(data, size);        
     }
 
     template <class T> void decode(T& t, const std::string& data) {
-        char* bytes = static_cast<char*>(::alloca(data.length()));
-        Buffer wbuffer(bytes, data.length());
-        wbuffer.putRawData(data);        
-
-        Buffer rbuffer(bytes, data.length());
+        Buffer rbuffer(const_cast<char*>(data.data()), data.length());
         uint16_t type = rbuffer.getShort();
         if (type == T::TYPE) {
             t.decode(rbuffer);

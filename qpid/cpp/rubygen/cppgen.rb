@@ -202,7 +202,6 @@ class CppGen < Generator
   end
 
   def struct_class(type, name, bases, &block)
-    genl
     gen "#{type} #{name}"
     if (!bases.empty?)
       genl ":"
