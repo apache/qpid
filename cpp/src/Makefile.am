@@ -341,6 +341,7 @@ nobase_include_HEADERS = \
   qpid/framing/HandlerUpdater.h \
   qpid/framing/HeaderProperties.h \
   qpid/framing/InitiationHandler.h \
+  qpid/framing/Invoker.h \
   qpid/framing/InputHandler.h \
   qpid/framing/MethodContent.h \
   qpid/framing/MethodHolder.h \

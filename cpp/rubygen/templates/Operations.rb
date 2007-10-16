@@ -29,9 +29,11 @@ class OperationsGen < CppGen
       handlerclass=handler_classname c
       gen <<EOS
 // ==================== class #{handlerclass} ====================
-class #{handlerclass} : public virtual Invocable {
+class #{handlerclass} {
     // Constructors and destructors
   public:
+    class Invoker;              // Declared in #{@chassis.caps}Invoker
+      
     #{handlerclass}(){};
     virtual ~#{handlerclass}() {}
     // Protocol methods
@@ -64,16 +66,10 @@ namespace framing {
 
 class AMQMethodBody;
 
-class Invocable 
-{
-protected:
-    Invocable() {}        
-    virtual ~Invocable() {}        
-};
-
 class #{@classname} {
-
   public:
+    class Invoker;              // Declared in #{@chassis.caps}Invoker
+
     virtual ~#{@classname}() {}
 
     virtual ProtocolVersion getVersion() const = 0;

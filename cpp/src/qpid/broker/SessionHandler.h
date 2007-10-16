@@ -41,7 +41,7 @@ class SessionState;
  * association between the channel and a session.
  */
 class SessionHandler : public framing::FrameHandler::InOutHandler,
-                       private framing::AMQP_ServerOperations::SessionHandler,
+                       public framing::AMQP_ServerOperations::SessionHandler,
                        private boost::noncopyable
 {
   public:
