@@ -408,7 +408,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                 return null;
             }
 
-            Object o = _synchronousQueue.poll();
+            Object o = getMessageFromQueue(-1);
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
@@ -417,6 +417,12 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
             }
 
             return m;
+        }
+        catch (InterruptedException e)
+        {
+            _logger.warn("Interrupted: " + e);
+
+            return null;
         }
         finally
         {
