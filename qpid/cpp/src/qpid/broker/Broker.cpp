@@ -62,17 +62,18 @@ Broker::Options::Options(const std::string& name) :
     stagingThreshold(5000000)
 {
     addOptions()
-        ("port,p", optValue(port,"PORT"), "Use PORT for AMQP connections.")
+        ("port,p", optValue(port,"PORT"),
+         "Tells the broker to listen on PORT")
         ("worker-threads", optValue(workerThreads, "N"),
-         "Broker thread pool size")
+         "Sets the broker thread pool size")
         ("max-connections", optValue(maxConnections, "N"),
-         "Maximum allowed connections")
+         "Sets the maximum allowed connections")
         ("connection-backlog", optValue(connectionBacklog, "N"),
-         "Connection backlog limit for server socket.")
+         "Sets the connection backlog limit for the server socket")
         ("staging-threshold", optValue(stagingThreshold, "N"),
-         "Messages over N bytes are staged to disk.")
+         "Stages messages over N bytes to disk")
         ("store,s", optValue(store,"LIBNAME"),
-         "Name of message store shared library.");
+         "Tells the broker to use the message store shared library LIBNAME for persistence");
 }
 
 const std::string empty;

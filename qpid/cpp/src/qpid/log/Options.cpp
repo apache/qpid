@@ -36,19 +36,21 @@ Options::Options(const std::string& name) : qpid::Options(name),
     for (int i = 1; i < LevelTraits::COUNT; ++i)
         levels << " " << LevelTraits::name(Level(i));
     addOptions()
-        ("trace,t", optValue(trace), "Enable full debug tracing." )
+        ("log.output", optValue(outputs, "FILE"),
+         "Send log output to FILE. "
+         "FILE can be a file name or one of the special values:\n"
+         "stderr, stdout, syslog")
+        ("trace,t", optValue(trace), "Enables all logging" )
         ("log.enable", optValue(selectors, "RULE"),
-         ("You can specify this option mutliple times.\n"
-         "RULE is of the form 'LEVEL[+][:COMPONENT]'"
-         "Levels are: "+levels.str()+"\n"
+         ("Enables logging for selected levels and components. " 
+         "RULE is in the form 'LEVEL[+][:COMPONENT]' "
+         "Levels are one of: \n\t "+levels.str()+"\n"
          "For example:\n"
          "\t'--log.enable warning+' "
-         "enables all warning, error and critical messages.\n"
+         "logs all warning, error and critical messages.\n"
          "\t'--log.enable debug:framing' "
-          "enables debug messages from the framing component.").c_str())
-        ("log.output", optValue(outputs, "FILE"),
-         "File to receive log output, or one of these special values: "
-         "'stderr', 'stdout', 'syslog'.")
+          "logs debug messages from the framing component. "
+         "This option can be used multiple times").c_str())
         ("log.time", optValue(time, "yes|no"),
          "Include time in log messages")
         ("log.level", optValue(level,"yes|no"),
