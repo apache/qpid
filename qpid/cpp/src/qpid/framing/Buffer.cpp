@@ -22,35 +22,39 @@
 #include "FramingContent.h" 
 #include "FieldTable.h" 
 
-qpid::framing::Buffer::Buffer(char* _data, uint32_t _size)
+namespace qpid {
+
+namespace framing {
+
+Buffer::Buffer(char* _data, uint32_t _size)
     : size(_size), data(_data), position(0) {
 }
 
-void qpid::framing::Buffer::record(){
+void Buffer::record(){
     r_position = position;
 }
 
-void qpid::framing::Buffer::restore(){
+void Buffer::restore(){
     position = r_position;
 }
 
-uint32_t qpid::framing::Buffer::available(){
+uint32_t Buffer::available(){
     return size - position;
 }
 
 ///////////////////////////////////////////////////
 
-void qpid::framing::Buffer::putOctet(uint8_t i){
+void Buffer::putOctet(uint8_t i){
     data[position++] = i;
 }
 
-void qpid::framing::Buffer::putShort(uint16_t i){
+void Buffer::putShort(uint16_t i){
     uint16_t b = i;
     data[position++] = (uint8_t) (0xFF & (b >> 8));
     data[position++] = (uint8_t) (0xFF & b);
 }
 
-void qpid::framing::Buffer::putLong(uint32_t i){
+void Buffer::putLong(uint32_t i){
     uint32_t b = i;
     data[position++] = (uint8_t) (0xFF & (b >> 24));
     data[position++] = (uint8_t) (0xFF & (b >> 16));
@@ -58,25 +62,25 @@ void qpid::framing::Buffer::putLong(uint32_t i){
     data[position++] = (uint8_t) (0xFF & b);
 }
 
-void qpid::framing::Buffer::putLongLong(uint64_t i){
+void Buffer::putLongLong(uint64_t i){
     uint32_t hi = i >> 32;
     uint32_t lo = i;
     putLong(hi);
     putLong(lo);
 }
 
-uint8_t qpid::framing::Buffer::getOctet(){ 
+uint8_t Buffer::getOctet(){ 
     return (uint8_t) data[position++]; 
 }
 
-uint16_t qpid::framing::Buffer::getShort(){ 
+uint16_t Buffer::getShort(){ 
     uint16_t hi = (unsigned char) data[position++];
     hi = hi << 8;
     hi |= (unsigned char) data[position++];
     return hi;
 }
 
-uint32_t qpid::framing::Buffer::getLong(){ 
+uint32_t Buffer::getLong(){ 
     uint32_t a = (unsigned char) data[position++];
     uint32_t b = (unsigned char) data[position++];
     uint32_t c = (unsigned char) data[position++];
@@ -88,73 +92,98 @@ uint32_t qpid::framing::Buffer::getLong(){
     return a;
 }
 
-uint64_t qpid::framing::Buffer::getLongLong(){
+uint64_t Buffer::getLongLong(){
     uint64_t hi = getLong();
     uint64_t lo = getLong();
     hi = hi << 32;
     return hi | lo;
 }
 
+template <>
+uint64_t Buffer::getUInt<1>() {
+    return getOctet();
+}
 
-void qpid::framing::Buffer::putShortString(const string& s){
+template <>
+uint64_t Buffer::getUInt<2>() {
+    return getShort();
+}
+
+template <>
+uint64_t Buffer::getUInt<4>() {
+    return getLong();
+}
+
+template <>
+uint64_t Buffer::getUInt<8>() {
+    return getLongLong();
+}
+
+template <>
+void Buffer::putUInt<1>(uint64_t i) {
+    putOctet(i);
+}
+
+template <>
+void Buffer::putUInt<2>(uint64_t i) {
+    putShort(i);
+}
+
+template <>
+void Buffer::putUInt<4>(uint64_t i) {
+    putLong(i);
+}
+
+template <>
+void Buffer::putUInt<8>(uint64_t i) {
+    putLongLong(i);
+}
+
+void Buffer::putShortString(const string& s){
     uint8_t len = s.length();
     putOctet(len);
     s.copy(data + position, len);
     position += len;    
 }
 
-void qpid::framing::Buffer::putLongString(const string& s){
+void Buffer::putLongString(const string& s){
     uint32_t len = s.length();
     putLong(len);
     s.copy(data + position, len);
     position += len;    
 }
 
-void qpid::framing::Buffer::getShortString(string& s){
+void Buffer::getShortString(string& s){
     uint8_t len = getOctet();
     s.assign(data + position, len);
     position += len;
 }
 
-void qpid::framing::Buffer::getLongString(string& s){
+void Buffer::getLongString(string& s){
     uint32_t len = getLong();
     s.assign(data + position, len);
     position += len;
 }
 
-void qpid::framing::Buffer::putFieldTable(const FieldTable& t){
-    t.encode(*this);
-}
-
-void qpid::framing::Buffer::getFieldTable(FieldTable& t){
-    t.decode(*this);
-}
-
-void qpid::framing::Buffer::putContent(const Content& c){
-    c.encode(*this);
-}
-
-void qpid::framing::Buffer::getContent(Content& c){
-    c.decode(*this);
-}
-
-void qpid::framing::Buffer::putRawData(const string& s){
+void Buffer::putRawData(const string& s){
     uint32_t len = s.length();
     s.copy(data + position, len);
     position += len;    
 }
 
-void qpid::framing::Buffer::getRawData(string& s, uint32_t len){
+void Buffer::getRawData(string& s, uint32_t len){
     s.assign(data + position, len);
     position += len;
 }
 
-void qpid::framing::Buffer::putRawData(const uint8_t* s, size_t len){
+void Buffer::putRawData(const uint8_t* s, size_t len){
     memcpy(data + position, s, len);
     position += len;    
 }
 
-void qpid::framing::Buffer::getRawData(uint8_t* s, size_t len){
+void Buffer::getRawData(uint8_t* s, size_t len){
     memcpy(s, data + position, len);
     position += len;
 }
+
+}}

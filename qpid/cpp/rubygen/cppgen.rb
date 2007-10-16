@@ -120,8 +120,8 @@ class AmqpDomain
     "timestamp"=>CppType.new("uint64_t").code("LongLong").defval("0"),
     "longstr"=>CppType.new("string").passcref.retcref.code("LongString"),
     "shortstr"=>CppType.new("string").passcref.retcref.code("ShortString"),
-    "table"=>CppType.new("FieldTable").passcref.retcref.code("FieldTable"),
-    "content"=>CppType.new("Content").passcref.retcref.code("Content"),
+    "table"=>CppType.new("FieldTable").passcref.retcref,
+    "content"=>CppType.new("Content").passcref.retcref,
     "rfc1982-long-set"=>CppType.new("SequenceNumberSet").passcref.retcref,
     "long-struct"=>CppType.new("string").passcref.retcref.code("LongString"),
     "uuid"=>CppType.new("Uuid").passcref.retcref

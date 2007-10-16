@@ -35,7 +35,7 @@ Exchange::shared_ptr Exchange::decode(ExchangeRegistry& exchanges, Buffer& buffe
     buffer.getShortString(name);
     bool durable(buffer.getOctet());
     buffer.getShortString(type);
-    buffer.getFieldTable(args);
+    buffer.get(args);
 
     return exchanges.declare(name, type, durable, args).first;
 }
@@ -45,7 +45,7 @@ void Exchange::encode(Buffer& buffer) const
     buffer.putShortString(name);
     buffer.putOctet(durable);
     buffer.putShortString(getType());
-    buffer.putFieldTable(args);
+    buffer.put(args);
 }
 
 uint32_t Exchange::encodedSize() const 

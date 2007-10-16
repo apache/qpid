@@ -21,7 +21,7 @@
 #include "FieldTable.h"
 #include "qpid/QpidError.h"
 #include "Buffer.h"
-#include "Value.h"
+#include "FieldValue.h"
 #include <assert.h>
 
 namespace qpid {
@@ -32,8 +32,8 @@ FieldTable::~FieldTable() {}
 uint32_t FieldTable::size() const {
     uint32_t len(4);
     for(ValueMap::const_iterator i = values.begin(); i != values.end(); ++i) {
-        // 2 = shortstr_len_byyte + type_char_byte
-	len += 2 + (i->first).size() + (i->second)->size();
+        // shortstr_len_byte + key size + value size
+	len += 1 + (i->first).size() + (i->second)->size();
     }
     return len;
 }
@@ -51,13 +51,17 @@ std::ostream& operator<<(std::ostream& out, const FieldTable::ValueMap::value_ty
 
 std::ostream& operator<<(std::ostream& out, const FieldTable& t) {
     out << "{";
-    FieldTable::ValueMap::const_iterator i = t.getMap().begin();
-    if (i != t.getMap().end()) out << *i++;
-    while (i != t.getMap().end()) 
+    FieldTable::ValueMap::const_iterator i = t.begin();
+    if (i != t.end()) out << *i++;
+    while (i != t.end()) 
     {
         out << "," << *i++;
     }
     return out << "}";
+}
+
+void FieldTable::set(const std::string& name, const ValuePtr& value){
+    values[name] = value;
 }
 
 void FieldTable::setString(const std::string& name, const std::string& value){
@@ -76,43 +80,51 @@ void FieldTable::setTable(const std::string& name, const FieldTable& value){
     values[name] = ValuePtr(new FieldTableValue(value));
 }
 
+FieldTable::ValuePtr FieldTable::get(const std::string& name) const
+{
+    ValuePtr value;
+    ValueMap::const_iterator i = values.find(name);
+    if ( i!=values.end() )
+        value = i->second;
+    return value;
+}
+
 namespace {
-template <class T> T default_value() { return T(); }
-template <> int default_value<int>() { return 0; }
-template <> uint64_t default_value<uint64_t>() { return 0; }
+    template <class T> T default_value() { return T(); }
+    template <> int default_value<int>() { return 0; }
+    template <> uint64_t default_value<uint64_t>() { return 0; }
 }
 
 template <class T>
-T FieldTable::getValue(const std::string& name) const
+T getValue(const FieldTable::ValuePtr value)
 {
-    ValueMap::const_iterator i = values.find(name);
-    if (i == values.end()) return default_value<T>();
-    const ValueOps<T> *vt = dynamic_cast<const ValueOps<T>*>(i->second.get());
-    return vt->getValue();
+    if (!value || !value->convertsTo<T>())
+        return default_value<T>();
+
+    return value->get<T>();
 }
 
-std::string FieldTable::getString(const std::string& name) const {
-    return getValue<std::string>(name);
-}
+//std::string FieldTable::getString(const std::string& name) const {
+//    return getValue<std::string>(name);
+//}
 
 int FieldTable::getInt(const std::string& name) const {
-    return getValue<int>(name);
+    return getValue<int>(get(name));
 }
 
-uint64_t FieldTable::getTimestamp(const std::string& name) const {
-    return getValue<uint64_t>(name);
-}
-
-void FieldTable::getTable(const std::string& name, FieldTable& value) const {
-    value = getValue<FieldTable>(name);
-}
+//uint64_t FieldTable::getTimestamp(const std::string& name) const {
+//    return getValue<uint64_t>(name);
+//}
+//
+//void FieldTable::getTable(const std::string& name, FieldTable& value) const {
+//    value = getValue<FieldTable>(name);
+//}
 
 void FieldTable::encode(Buffer& buffer) const{
     buffer.putLong(size() - 4);
     for (ValueMap::const_iterator i = values.begin(); i!=values.end(); ++i) {
         buffer.putShortString(i->first);
-        buffer.putOctet(i->second->getType());
-	i->second->encode(buffer);
+    	i->second->encode(buffer);
     }
 }
 
@@ -124,9 +136,11 @@ void FieldTable::decode(Buffer& buffer){
     uint32_t leftover = available - len;
     while(buffer.available() > leftover){
         std::string name;
+        ValuePtr value(new FieldValue);
+
         buffer.getShortString(name);
-        std::auto_ptr<Value> value(Value::decode_value(buffer));
-        values[name] = ValuePtr(value.release());
+        value->decode(buffer);
+        values[name] = ValuePtr(value);
     }    
 }
 
@@ -141,10 +155,10 @@ bool FieldTable::operator==(const FieldTable& x) const {
     return true;
 }
 
-void FieldTable::erase(const std::string& name) 
-{
-    values.erase(values.find(name));
-}
+//void FieldTable::erase(const std::string& name) 
+//{
+//    values.erase(values.find(name));
+//}
 
 }
 }

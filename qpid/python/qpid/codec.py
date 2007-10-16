@@ -68,11 +68,10 @@ class Codec:
       dict: "table"
       }
 
-    if False:
-      for constant in self.spec.constants:
-        if constant.klass == "field-table-type":
-          type = constant.name.replace("field_table_", "")
-          self.typecode(constant.id, TYPE_ALIASES.get(type, type))
+    for constant in self.spec.constants:
+      if constant.klass == "field-table-type":
+        type = constant.name.replace("field_table_", "")
+        self.typecode(constant.id, TYPE_ALIASES.get(type, type))
 
     if not self.types:
       self.typecode(ord('S'), "longstr")

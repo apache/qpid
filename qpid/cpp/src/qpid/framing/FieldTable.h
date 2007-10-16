@@ -34,7 +34,7 @@ namespace qpid {
      */
 namespace framing {
 
-class Value;
+class FieldValue;
 class Buffer;
 
 /**
@@ -46,38 +46,44 @@ class Buffer;
 class FieldTable
 {
   public:
-    typedef boost::shared_ptr<Value> ValuePtr;
+    typedef boost::shared_ptr<FieldValue> ValuePtr;
     typedef std::map<std::string, ValuePtr> ValueMap;
 
     ~FieldTable();
     uint32_t size() const;
+    void encode(Buffer& buffer) const;
+    void decode(Buffer& buffer);
+
     int count() const;
+    void set(const std::string& name, const ValuePtr& value);
+    ValuePtr get(const std::string& name) const;
+
     void setString(const std::string& name, const std::string& value);
     void setInt(const std::string& name, int value);
     void setTimestamp(const std::string& name, uint64_t value);
     void setTable(const std::string& name, const FieldTable& value);
     //void setDecimal(string& name, xxx& value);
-    std::string getString(const std::string& name) const;
+
+//    std::string getString(const std::string& name) const;
     int getInt(const std::string& name) const;
-    uint64_t getTimestamp(const std::string& name) const;
-    void getTable(const std::string& name, FieldTable& value) const;
-    //void getDecimal(string& name, xxx& value);
-    void erase(const std::string& name);
+//    uint64_t getTimestamp(const std::string& name) const;
+//    void getTable(const std::string& name, FieldTable& value) const;
+//    //void getDecimal(string& name, xxx& value);
+//    //void erase(const std::string& name);
     
-    void encode(Buffer& buffer) const;
-    void decode(Buffer& buffer);
 
     bool operator==(const FieldTable& other) const;
 
-    // TODO aconway 2006-09-26: Yeuch! Rework FieldTable to  have
-    // a map-like interface.
-    const ValueMap& getMap() const { return values; }
-    ValueMap& getMap() { return values; }
+    // Map-like interface.
+    // TODO: may need to duplicate into versions that return mutable iterator
+    ValueMap::const_iterator begin() const { return values.begin(); }
+    ValueMap::const_iterator end() const { return values.end(); }
+    ValueMap::const_iterator find(const std::string& s) const { return values.find(s); }
     
   private:
-  friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
     ValueMap values;
-    template<class T> T getValue(const std::string& name) const;
+
+    friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
 };
 
 class FieldNotFoundException{};

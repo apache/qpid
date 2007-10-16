@@ -55,7 +55,7 @@ void qpid::framing::BasicHeaderProperties::encode(qpid::framing::Buffer& buffer)
     
     if(contentType.length() > 0) buffer.putShortString(contentType);
     if(contentEncoding.length() > 0) buffer.putShortString(contentEncoding);
-    if(headers.count() > 0) buffer.putFieldTable(headers);
+    if(headers.count() > 0) buffer.put(headers);
     if(deliveryMode != 0) buffer.putOctet(deliveryMode);
     if(priority != 0) buffer.putOctet(priority);
     if(correlationId.length() > 0) buffer.putShortString(correlationId);
@@ -74,7 +74,7 @@ void qpid::framing::BasicHeaderProperties::decode(qpid::framing::Buffer& buffer,
     uint16_t flags = buffer.getShort();
     if(flags & (1 << 15)) buffer.getShortString(contentType);
     if(flags & (1 << 14)) buffer.getShortString(contentEncoding);
-    if(flags & (1 << 13)) buffer.getFieldTable(headers);
+    if(flags & (1 << 13)) buffer.get(headers);
     if(flags & (1 << 12)) deliveryMode = DeliveryMode(buffer.getOctet());
     if(flags & (1 << 11)) priority = buffer.getOctet();
     if(flags & (1 << 10)) buffer.getShortString(correlationId);
