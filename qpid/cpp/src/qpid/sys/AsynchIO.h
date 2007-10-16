@@ -106,9 +106,10 @@ public:
 
     void start(Poller::shared_ptr poller);
     void queueReadBuffer(BufferBase* buff);
-    void queueWrite(BufferBase* buff = 0);
     void unread(BufferBase* buff);
+    void queueWrite(BufferBase* buff = 0);
     void queueWriteClose();
+    bool writeQueueEmpty() { return writeQueue.empty(); }
     BufferBase* getQueuedBuffer();
     const Socket& getSocket() const { return DispatchHandle::getSocket(); }
 
