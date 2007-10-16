@@ -59,10 +59,10 @@ void DecimalValue::decode(Buffer& buffer){
 }
 
 void FieldTableValue::encode(Buffer& buffer){
-    buffer.putFieldTable(value);
+    buffer.put(value);
 }
 void FieldTableValue::decode(Buffer& buffer){
-    buffer.getFieldTable(value);
+    buffer.get(value);
 }
 
 std::auto_ptr<Value> Value::decode_value(Buffer& buffer)

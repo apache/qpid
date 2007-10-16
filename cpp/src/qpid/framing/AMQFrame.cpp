@@ -157,7 +157,7 @@ void AMQFrame::decodeBody(Buffer& buffer, uint32_t size, uint8_t type)
 std::ostream& operator<<(std::ostream& out, const AMQFrame& f)
 {
     return out << "Frame[" 
-        //<< "B=" << f.getBof() << "E=" << f.getEof() << "b=" << f.getBos() << "e=" << f.getEos() << "; "
+               << (f.getBof() ? "B" : "") << (f.getEof() ? "E" : "") << (f.getBos() ? "b" : "") << (f.getEos() ? "e" : "") << "; "
                << "channel=" << f.getChannel() << "; " << *f.getBody()
                << "]";
 }

@@ -53,17 +53,17 @@ public:
     uint16_t getShort(); 
     uint32_t getLong();
     uint64_t getLongLong();
+    
+    template <int n>
+    uint64_t getUInt();
+
+    template <int n>
+    void putUInt(uint64_t);
 
     void putShortString(const string& s);
     void putLongString(const string& s);
     void getShortString(string& s);
     void getLongString(string& s);
-
-    void putFieldTable(const FieldTable& t);
-    void getFieldTable(FieldTable& t);
-
-    void putContent(const Content& c);
-    void getContent(Content& c);
 
     void putRawData(const string& s);
     void getRawData(string& s, uint32_t size);

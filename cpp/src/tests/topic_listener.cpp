@@ -40,12 +40,14 @@
 #include "qpid/client/MessageListener.h"
 #include "qpid/client/Queue.h"
 #include "qpid/sys/Time.h"
+#include "qpid/framing/FieldValue.h"
 #include <iostream>
 #include <sstream>
 
 using namespace qpid;
 using namespace qpid::client;
 using namespace qpid::sys;
+using namespace qpid::framing;
 using namespace std;
 
 /**
@@ -134,11 +136,11 @@ void Listener::received(Message& message){
         count = 0;
         init = true;
     }
-    string type(message.getHeaders().getString("TYPE"));
+    FieldTable::ValuePtr type(message.getHeaders().get("TYPE"));
 
-    if(type == "TERMINATION_REQUEST"){
+    if(!!type && StringValue("TERMINATION_REQUEST") == *type){
         shutdown();
-    }else if(type == "REPORT_REQUEST"){        
+    }else if(!!type && StringValue("REPORT_REQUEST") == *type){
         //send a report:
         report();
         init = false;

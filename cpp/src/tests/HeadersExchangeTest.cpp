@@ -21,7 +21,7 @@
 
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/framing/FieldTable.h"
-#include "qpid/framing/Value.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid_test_plugin.h"
 
 using namespace qpid::broker;
@@ -41,7 +41,7 @@ class HeadersExchangeTest : public CppUnit::TestCase
 
     void testMatchAll() 
     {
-        FieldTable b, m;
+        FieldTable b, m, n;
         b.setString("x-match", "all");
         b.setString("foo", "FOO");
         b.setInt("n", 42);
@@ -58,20 +58,20 @@ class HeadersExchangeTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
 
         // Fail mismatch, missing value
-        m.erase("foo");
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
+        n.setInt("n", 42);
+        n.setString("extra", "x");
+        CPPUNIT_ASSERT(!HeadersExchange::match(b, n));
     }
 
     void testMatchAny() 
     {
-        FieldTable b, m;
+        FieldTable b, m, n;
         b.setString("x-match", "any");
         b.setString("foo", "FOO");
         b.setInt("n", 42);
         m.setString("foo", "FOO");
+        CPPUNIT_ASSERT(!HeadersExchange::match(b, n));
         CPPUNIT_ASSERT(HeadersExchange::match(b, m));
-        m.erase("foo");
-        CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
         m.setInt("n", 42);
         CPPUNIT_ASSERT(HeadersExchange::match(b, m));
     }
@@ -80,8 +80,8 @@ class HeadersExchangeTest : public CppUnit::TestCase
     {
         FieldTable b, m;
         b.setString("x-match", "all");
-        b.getMap()["foo"] = FieldTable::ValuePtr(new EmptyValue());
-        b.getMap()["n"] = FieldTable::ValuePtr(new EmptyValue());
+        b.set("foo", FieldTable::ValuePtr());
+        b.set("n", FieldTable::ValuePtr());
         CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
         m.setString("foo", "blah");
         m.setInt("n", 123);
