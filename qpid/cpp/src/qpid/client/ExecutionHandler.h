@@ -38,9 +38,9 @@ namespace qpid {
 namespace client {
 
 class ExecutionHandler : 
-    private framing::AMQP_ServerOperations::ExecutionHandler,
-    public framing::FrameHandler,
-    public Execution
+        public framing::AMQP_ServerOperations::ExecutionHandler,
+        public framing::FrameHandler,
+        public Execution
 {
     framing::SequenceNumber incomingCounter;
     framing::AccumulatedAck incomingCompletionStatus;

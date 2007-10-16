@@ -23,6 +23,7 @@
 #include "Connection.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/constants.h"
+#include "qpid/framing/ServerInvoker.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
@@ -48,10 +49,10 @@ void SessionHandler::handleIn(AMQFrame& f) {
     // state. This is a temporary state after we have sent a channel
     // exception, where extra frames might arrive that should be
     // ignored.
-    // 
-    AMQMethodBody* m=f.getMethod();
+    //
+    AMQMethodBody* m = f.getBody()->getMethod();
     try {
-        if (m && m->invoke(this))
+        if (m && invoke(*this, *m))
             return;
         else if (session.get())
             session->in(f);

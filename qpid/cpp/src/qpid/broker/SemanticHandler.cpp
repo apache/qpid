@@ -28,7 +28,7 @@
 #include "Connection.h"
 #include "qpid/framing/ExecutionCompleteBody.h"
 #include "qpid/framing/ExecutionResultBody.h"
-#include "qpid/framing/InvocationVisitor.h"
+#include "qpid/framing/ServerInvoker.h"
 
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
@@ -121,14 +121,13 @@ void SemanticHandler::handleCommand(framing::AMQMethodBody* method)
 {
     SequenceNumber id = incoming.next();
     BrokerAdapter adapter(state);
-    InvocationVisitor v(&adapter);
-    method->accept(v);
+    Invoker::Result invoker = invoke(adapter, *method);
     incoming.complete(id);                                    
     
-    if (!v.wasHandled()) {
+    if (!invoker.wasHandled()) {
         throw ConnectionException(540, "Not implemented");
-    } else if (v.hasResult()) {
-        session.getProxy().getExecution().result(id.getValue(), v.getResult());
+    } else if (invoker.hasResult()) {
+        session.getProxy().getExecution().result(id.getValue(), invoker.getResult());
     }
     if (method->isSync()) { 
         incoming.sync(id); 
@@ -139,9 +138,8 @@ void SemanticHandler::handleCommand(framing::AMQMethodBody* method)
 
 void SemanticHandler::handleL3(framing::AMQMethodBody* method)
 {
-    if (!method->invoke(this)) {
+    if (!invoke(*this, *method))
         throw ConnectionException(540, "Not implemented");
-    }
 }
 
 void SemanticHandler::handleContent(AMQFrame& frame)
