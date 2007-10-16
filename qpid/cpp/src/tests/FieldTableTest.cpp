@@ -19,7 +19,9 @@
  *
  */
 #include <iostream>
-#include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/FieldTable.h"
+#include "qpid/framing/FieldValue.h"
+
 #include "qpid_test_plugin.h"
 
 using namespace qpid::framing;
@@ -37,16 +39,16 @@ class FieldTableTest : public CppUnit::TestCase
     {
         FieldTable ft;
         ft.setString("A", "BCDE");
-        CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), ft.getString("A"));
+        CPPUNIT_ASSERT(StringValue("BCDE") == *ft.get("A"));
 
         char buff[100];
         Buffer wbuffer(buff, 100);
-        wbuffer.putFieldTable(ft);
+        wbuffer.put(ft);
 
         Buffer rbuffer(buff, 100);
         FieldTable ft2;
-        rbuffer.getFieldTable(ft2);
-        CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), ft2.getString("A"));
+        rbuffer.get(ft2);
+        CPPUNIT_ASSERT(StringValue("BCDE") == *ft2.get("A"));
 
     }
 
@@ -60,10 +62,12 @@ class FieldTableTest : public CppUnit::TestCase
         b = a;
         a.setString("A", "CCCC");
         
-        CPPUNIT_ASSERT_EQUAL(std::string("CCCC"), a.getString("A"));
-        CPPUNIT_ASSERT_EQUAL(std::string("BBBB"), b.getString("A"));
+        CPPUNIT_ASSERT(StringValue("CCCC") == *a.get("A"));
+        CPPUNIT_ASSERT(StringValue("BBBB") == *b.get("A"));
         CPPUNIT_ASSERT_EQUAL(1234, a.getInt("B"));
         CPPUNIT_ASSERT_EQUAL(1234, b.getInt("B"));
+        CPPUNIT_ASSERT(IntegerValue(1234) == *a.get("B"));
+        CPPUNIT_ASSERT(IntegerValue(1234) == *b.get("B"));
 
         FieldTable d;
         {
@@ -72,16 +76,16 @@ class FieldTableTest : public CppUnit::TestCase
             
             char* buff = static_cast<char*>(::alloca(c.size()));
             Buffer wbuffer(buff, c.size());
-            wbuffer.putFieldTable(c);
+            wbuffer.put(c);
 
             Buffer rbuffer(buff, c.size());
-            rbuffer.getFieldTable(d);
+            rbuffer.get(d);
             CPPUNIT_ASSERT_EQUAL(c, d);
-            CPPUNIT_ASSERT_EQUAL(std::string("CCCC"), c.getString("A"));
-            CPPUNIT_ASSERT_EQUAL(1234, c.getInt("B"));
+            CPPUNIT_ASSERT(StringValue("CCCC") == *c.get("A"));
+            CPPUNIT_ASSERT(IntegerValue(1234) == *c.get("B"));
         }
-        CPPUNIT_ASSERT_EQUAL(std::string("CCCC"), d.getString("A"));
-        CPPUNIT_ASSERT_EQUAL(1234, d.getInt("B"));
+        CPPUNIT_ASSERT(StringValue("CCCC") == *d.get("A"));
+        CPPUNIT_ASSERT(IntegerValue(1234) == *d.get("B"));
     }
 };
 

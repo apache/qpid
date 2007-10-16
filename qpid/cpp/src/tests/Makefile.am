@@ -98,7 +98,6 @@ broker_unit_tests =	\
   TxAckTest		\
   TxBufferTest		\
   TxPublishTest		\
-  ValueTest		\
   MessageHandlerTest    \
   MessageBuilderTest    \
   ClientSessionTest
@@ -127,11 +126,12 @@ unit_tests =		\
 testprogs=		\
   client_test		\
   exception_test	\
-  echo_service		\
   topic_listener	\
   topic_publisher	
+#  echo_service
 
-check_PROGRAMS += $(testprogs) interop_runner
+#check_PROGRAMS += $(testprogs) interop_runner
+check_PROGRAMS += $(testprogs)
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
@@ -192,14 +192,14 @@ all-am: .valgrind.supp .valgrindrc
 CLEANFILES+=valgrind.out *.log *.vglog .valgrindrc .valgrind.supp dummy_test $(unit_wrappers)
 MAINTAINERCLEANFILES=gen.mk
 
-interop_runner_SOURCES = 	\
-  interop_runner.cpp	 	\
-  SimpleTestCaseBase.cpp	\
-  BasicP2PTest.cpp		\
-  BasicPubSubTest.cpp		\
-  SimpleTestCaseBase.h		\
-  BasicP2PTest.h		\
-  BasicPubSubTest.h		\
-  TestCase.h			\
-  TestOptions.h
-interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
+#interop_runner_SOURCES = 	\
+#  interop_runner.cpp	 	\
+#  SimpleTestCaseBase.cpp	\
+#  BasicP2PTest.cpp		\
+#  BasicPubSubTest.cpp		\
+#  SimpleTestCaseBase.h		\
+#  BasicP2PTest.h		\
+#  BasicPubSubTest.h		\
+#  TestCase.h			\
+#  TestOptions.h
+#interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)

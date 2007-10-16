@@ -19,7 +19,7 @@
  *
  */
 #include "HeadersExchange.h"
-#include "qpid/framing/Value.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid/QpidError.h"
 #include <algorithm>
 
@@ -35,8 +35,8 @@ using namespace qpid::sys;
 using namespace qpid::broker;
 
 namespace {
-    const std::string all("all");
-    const std::string any("any");
+    const StringValue all("all");
+    const StringValue any("any");
     const std::string x_match("x-match");
 }
 
@@ -45,8 +45,8 @@ HeadersExchange::HeadersExchange(const std::string& _name, bool _durable, const 
 
 bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
     RWlock::ScopedWlock locker(lock);
-    std::string what = args->getString("x-match");
-    if (what != all && what != any) {
+    FieldTable::ValuePtr what = args->get(x_match);
+    if (*what != all && *what != any) {
         THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid x-match value binding to headers exchange.");
     }
     Binding binding(*args, queue);
@@ -98,8 +98,8 @@ const std::string HeadersExchange::typeName("headers");
 namespace 
 {
 
-    bool match_values(const Value& bind, const Value& msg) {
-        return  dynamic_cast<const EmptyValue*>(&bind) || bind == msg;
+    bool match_values(const FieldValue& bind, const FieldValue& msg) {
+        return  bind.empty() || bind == msg;
     }
 
 }
@@ -107,29 +107,31 @@ namespace
 
 bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
     typedef FieldTable::ValueMap Map;
-    std::string what = bind.getString(x_match);
-    if (what == all) {
-        for (Map::const_iterator i = bind.getMap().begin();
-             i != bind.getMap().end();
+    FieldTable::ValuePtr what = bind.get(x_match);
+    if (!what) {
+        return false;
+    } else if (*what == all) {
+        for (Map::const_iterator i = bind.begin();
+             i != bind.end();
              ++i)
         {
             if (i->first != x_match) 
             {
-                Map::const_iterator j = msg.getMap().find(i->first);
-                if (j == msg.getMap().end()) return false;
+                Map::const_iterator j = msg.find(i->first);
+                if (j == msg.end()) return false;
                 if (!match_values(*(i->second), *(j->second))) return false;
             }
         }
         return true;
-    } else if (what == any) {
-        for (Map::const_iterator i = bind.getMap().begin();
-             i != bind.getMap().end();
+    } else if (*what == any) {
+        for (Map::const_iterator i = bind.begin();
+             i != bind.end();
              ++i)
         {
             if (i->first != x_match) 
             {
-                Map::const_iterator j = msg.getMap().find(i->first);
-                if (j != msg.getMap().end()) {
+                Map::const_iterator j = msg.find(i->first);
+                if (j != msg.end()) {
                     if (match_values(*(i->second), *(j->second))) return true;
                 }
             }
@@ -142,12 +144,12 @@ bool HeadersExchange::match(const FieldTable& bind, const FieldTable& msg) {
 
 bool HeadersExchange::equal(const FieldTable& a, const FieldTable& b) {
     typedef FieldTable::ValueMap Map;
-    for (Map::const_iterator i = a.getMap().begin();
-         i != a.getMap().end();
+    for (Map::const_iterator i = a.begin();
+         i != a.end();
          ++i)
     {
-        Map::const_iterator j = b.getMap().find(i->first);
-        if (j == b.getMap().end()) return false;
+        Map::const_iterator j = b.find(i->first);
+        if (j == b.end()) return false;
         if (!match_values(*(i->second), *(j->second))) return false;
     }
     return true;

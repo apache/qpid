@@ -413,7 +413,7 @@ void Queue::setPersistenceId(uint64_t _persistenceId) const
 void Queue::encode(framing::Buffer& buffer) const 
 {
     buffer.putShortString(name);
-    buffer.putFieldTable(settings);
+    buffer.put(settings);
 }
 
 uint32_t Queue::encodedSize() const
@@ -426,7 +426,7 @@ Queue::shared_ptr Queue::decode(QueueRegistry& queues, framing::Buffer& buffer)
     string name;
     buffer.getShortString(name);
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
-    buffer.getFieldTable(result.first->settings);
+    buffer.get(result.first->settings);
     result.first->configure(result.first->settings);
     return result.first;
 }
