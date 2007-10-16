@@ -131,17 +131,14 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         {
             props.setEncoding(encoding);
         }
-        props.setExpiration(devprop.getExpiration());
-        // todo update when fieldtable is used props.setHeaders(mprop.getApplicationHeaders());
+        props.setExpiration(devprop.getExpiration());        
         props.setMessageId(mprop.getMessageId());
         props.setPriority((byte) devprop.getPriority());
         props.setReplyTo(replyToURL);
         props.setTimestamp(devprop.getTimestamp());
         props.setType(mprop.getType());
         props.setUserId(mprop.getUserId());
-
-        props.setHeaders(FiledTableSupport.convertToFieldTable(mprop.getApplicationHeaders()));
-
+        props.setHeaders(FiledTableSupport.convertToFieldTable(mprop.getApplicationHeaders()));        
         return createMessage(messageNbr, data, exchange, routingKey, props);
     }
 
