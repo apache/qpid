@@ -47,10 +47,10 @@ struct DaemonOptions : public qpid::Options {
     DaemonOptions() : qpid::Options("Daemon options"), daemon(false), quit(false), check(false), wait(10)
     {
         addOptions()
-            ("daemon,d", optValue(daemon), "Run as a daemon. With --port 0 print actual listening port.")
-            ("wait,w", optValue(wait, "SECONDS"), "Maximum wait for daemon response.")
-            ("check,c", optValue(check), "If a daemon is running print its pid to stdout and return 0.")
-            ("quit,q", optValue(quit), "Stop the running daemon politely.");
+            ("daemon,d", optValue(daemon), "Run as a daemon.")
+            ("wait,w", optValue(wait, "SECONDS"), "Sets the maximum wait time to initialize the daemon. If the daemon fails to initialize, prints an error and returns 1")
+            ("check,c", optValue(check), "Prints the daemon's process ID to stdout and returns 0 if the daemon is running, otherwise returns 1")
+            ("quit,q", optValue(quit), "Tells the daemon to shut down");
     }
 };
 

@@ -59,7 +59,7 @@ struct EnvOptMapper {
 
 }
 std::string prettyArg(const std::string& name, const std::string& value) {
-    return value.empty() ? name+" " : name+" (="+value+") ";
+    return value.empty() ? name+" " : name+" ("+value+") ";
 }
 
 Options::Options(const string& name) : po::options_description(name) {}
@@ -104,9 +104,9 @@ CommonOptions::CommonOptions(const string& name, const string& configfile)
     : Options(name), config(configfile)
 {
     addOptions()
-        ("help,h", optValue(help), "Print help message.")
-        ("version,v", optValue(version), "Print version information.")
-        ("config", optValue(config, "FILE"), "Configuration file.");
+        ("help,h", optValue(help), "Displays the help message")
+        ("version,v", optValue(version), "Displays version information")
+        ("config", optValue(config, "FILE"), "Reads configuration from FILE");
 }
 
 } // namespace qpid
