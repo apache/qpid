@@ -35,6 +35,7 @@ import org.apache.qpidity.QpidException;
 import org.apache.qpidity.filter.MessageFilter;
 import org.apache.qpidity.filter.JMSSelectorFilter;
 
+import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.MessageListener;
 import java.io.IOException;
@@ -91,7 +92,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             }
             catch (QpidException e)
             {
-                throw new JMSException("cannot create consumer because of selector issue");
+                throw new InvalidSelectorException("cannot create consumer because of selector issue");
             }
             if (destination instanceof AMQQueue)
             {
