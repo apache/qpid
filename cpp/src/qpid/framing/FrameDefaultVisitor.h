@@ -43,7 +43,8 @@ class AMQHeartbeatBody;
  * for any non-overridden visit functions.
  *
  */
-struct FrameDefaultVisitor : public AMQBodyConstVisitor, public MethodBodyDefaultVisitor
+struct FrameDefaultVisitor : public AMQBodyConstVisitor,
+                             protected MethodBodyDefaultVisitor
 {
     virtual void defaultVisit(const AMQBody&) = 0;
 

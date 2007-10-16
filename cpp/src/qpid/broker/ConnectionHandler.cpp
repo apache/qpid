@@ -23,6 +23,7 @@
 #include "ConnectionHandler.h"
 #include "Connection.h"
 #include "qpid/framing/ConnectionStartBody.h"
+#include "qpid/framing/ServerInvoker.h"
 
 using namespace qpid;
 using namespace qpid::broker;
@@ -44,7 +45,7 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
     try{
-        if (!method->invoke(handler.get()))
+        if (!invoke(*handler.get(), *method))
             throw ConnectionException(503, "Class can't be accessed over channel 0");
     }catch(ConnectionException& e){
         handler->client.close(e.code, e.toString(), method->amqpClassId(), method->amqpMethodId());

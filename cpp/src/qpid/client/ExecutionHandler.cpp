@@ -25,6 +25,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/AMQP_HighestVersion.h"
 #include "qpid/framing/all_method_bodies.h"
+#include "qpid/framing/ServerInvoker.h"
 
 using namespace qpid::client;
 using namespace qpid::framing;
@@ -49,20 +50,13 @@ bool isContentFrame(AMQFrame& frame)
     return type == HEADER_BODY || type == CONTENT_BODY || isMessageMethod(body); 
 }
 
-bool invoke(AMQBody* body, Invocable* target)
-{
-    AMQMethodBody* method=body->getMethod();
-    return method && method->invoke(target);
-}
-
 ExecutionHandler::ExecutionHandler(uint64_t _maxFrameSize) : 
     version(framing::highestProtocolVersion), maxFrameSize(_maxFrameSize) {}
 
 //incoming:
 void ExecutionHandler::handle(AMQFrame& frame)
 {
-    AMQBody* body = frame.getBody();
-    if (!invoke(body, this)) {
+    if (!invoke(*this, *frame.getBody())) {
         if (!arriving) {
             arriving = FrameSet::shared_ptr(new FrameSet(++incomingCounter));
         }
