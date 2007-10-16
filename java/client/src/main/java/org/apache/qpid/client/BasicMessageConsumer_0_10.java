@@ -253,6 +253,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         {
             throw new AMQException(AMQConstant.INTERNAL_ERROR, "Error when evaluating message selector", e);
         }
+
+        System.out.println("---------------------------------------------------------");
+        System.out.println("messageOk : " + messageOk + " pre-acquire mode : " + _preAcquire);
+        System.out.println("---------------------------------------------------------");
+
         if (_logger.isDebugEnabled())
         {
             _logger.debug("messageOk " + messageOk);
@@ -396,9 +401,20 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                 org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,1);
 
-        if (l > 0)
+        if (l == 0)
         {
-            o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
+            o = _synchronousQueue.take();
+        }
+        else
+        {
+            if (l > 0)
+            {
+                o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
+            }
+            else
+            {
+                o = _synchronousQueue.poll();
+            }
             if (o == null)
             {
                 _logger.debug("Message Didn't arrive in time, checking if one is inflight");
@@ -415,10 +431,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                     System.out.println("null");
                 }
             }
-        }
-        else
-        {
-            o = _synchronousQueue.take();
         }
         return o;
     }
