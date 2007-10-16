@@ -37,7 +37,7 @@ struct ClusterPlugin : public Plugin {
         ClusterOptions() : Options("Cluster Options") {
             addOptions()
                 ("cluster", optValue(clusterName, "NAME"),
-                 "Join the cluster named NAME");
+                 "Joins the cluster named NAME");
         }
     };
 

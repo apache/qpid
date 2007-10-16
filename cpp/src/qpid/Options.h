@@ -98,7 +98,7 @@ inline po::value_semantic* optValue(bool& value) { return po::bool_switch(&value
    MyOptions() : Options("My Options") {
     addOptions()
       ("z", boolSwitch(z), "Option Z")
-      ("foo", optValue(foo), "Multiple option foo.");
+      ("foo", optValue(foo), "Multiple option foo");
     add(subOptions);
  }
 
