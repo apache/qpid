@@ -99,6 +99,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
         // set the application properties
         qpidityMessage.getMessageProperties().setContentType(contentHeaderProperties.getContentType().toString());
+        AMQShortString type = contentHeaderProperties.getType();
+        if( type != null )
+        {
+            qpidityMessage.getMessageProperties().setType( type.toString());
+        }
         qpidityMessage.getMessageProperties().setMessageId(message.getJMSMessageID()) ;
         AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
         if( correlationID != null )
@@ -121,8 +126,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                     .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
         }
          //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
-        // TODO remove second test
-        if (contentHeaderProperties.getHeaders() != null && contentHeaderProperties.getHeaders().size() > 1)
+        if (contentHeaderProperties.getHeaders() != null)
         {
             qpidityMessage.getMessageProperties().setApplicationHeaders(FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders()));
 
