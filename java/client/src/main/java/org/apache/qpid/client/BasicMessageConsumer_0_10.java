@@ -355,10 +355,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         return result;
     }
 
-      protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    void preDeliver(AbstractJMSMessage msg)
     {
         _messageCounter.decrementAndGet();
-        super.preApplicationProcessing(jmsMsg);   
+         super.preDeliver(msg);
     }
 
     public void setMessageListener(final MessageListener messageListener) throws JMSException
@@ -408,6 +408,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 if( _messageCounter.get() > 0 )
                 {
                       o = _synchronousQueue.take();
+                }
+                else
+                {
+                    System.out.println("null");
                 }
             }
         }
