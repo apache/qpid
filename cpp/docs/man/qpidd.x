@@ -1,6 +1,6 @@
 [NAME]
 
-qpidd \- the Qpid AMQP broker daemon
+qpidd \- the Qpid AMQP Broker Daemon
 
 [SYNOPSIS]
 
@@ -8,8 +8,8 @@ qpidd [options]
 
 [DESCRIPTION]
 
-An AMQP broker daemon that stores, routes and forwards messages via
-the AMQP protocol.
+An AMQP broker daemon that stores, routes and forwards messages using
+the Advanced Message Queueing Protocol (AMQP).
 
 [OPTIONS]
 
