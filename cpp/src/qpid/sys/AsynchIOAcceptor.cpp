@@ -246,6 +246,10 @@ void AsynchIOHandler::eof(AsynchIO&) {
 }
 
 void AsynchIOHandler::closedSocket(AsynchIO&, const Socket& s) {
+    // If we closed with data still to send log a warning 
+    if (!aio->writeQueueEmpty()) {
+        QPID_LOG(warning, "CLOSING [" << aio->getSocket().getPeerAddress() << "] unsent data (probably due to client disconnect)");
+    }
 	delete &s;
 	aio->queueForDeletion();
 	delete this;
