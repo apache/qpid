@@ -267,7 +267,8 @@ bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
 {
     Mutex::ScopedLock l(lock);
     if (msgCredit == 0 || (byteCredit != 0xFFFFFFFF && byteCredit < msg->getRequiredCredit())) {
-        QPID_LOG(debug, "Not enough credit for '" << name << "', bytes: " << byteCredit << " msgs: " << msgCredit);
+        QPID_LOG(debug, "Not enough credit for '" << name  << "' on " << parent 
+                 << ", bytes: " << byteCredit << " msgs: " << msgCredit);
         return false;
     } else {
         uint32_t originalMsgCredit = msgCredit;
@@ -279,8 +280,8 @@ bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
         if (byteCredit != 0xFFFFFFFF) {
             byteCredit -= msg->getRequiredCredit();
         }
-        QPID_LOG(debug, "Credit available for '" << name 
-                 << "', was " << " bytes: " << originalByteCredit << " msgs: " << originalMsgCredit
+        QPID_LOG(debug, "Credit available for '" << name << "' on " << parent
+                 << ", was " << " bytes: " << originalByteCredit << " msgs: " << originalMsgCredit
                  << " now bytes: " << byteCredit << " msgs: " << msgCredit);
         return true;
     }
@@ -519,7 +520,9 @@ void SemanticState::ConsumerImpl::addByteCredit(uint32_t value)
 {
     {
         Mutex::ScopedLock l(lock);
-        byteCredit += value;
+        if (byteCredit != 0xFFFFFFFF) {
+            byteCredit += value;
+        }
     }
     requestDispatch();
 }
@@ -528,7 +531,9 @@ void SemanticState::ConsumerImpl::addMessageCredit(uint32_t value)
 {
     {
         Mutex::ScopedLock l(lock);
-        msgCredit += value;
+        if (msgCredit != 0xFFFFFFFF) {
+            msgCredit += value;
+        }
     }
     requestDispatch();
 }

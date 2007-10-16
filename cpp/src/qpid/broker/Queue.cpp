@@ -155,12 +155,14 @@ Consumer* Queue::allocate()
 bool Queue::dispatch(QueuedMessage& msg)
 {
     Consumer* c = allocate();
-    int start = next;
+    Consumer* first = c;
     while(c){
         if(c->deliver(msg)) {
             return true;            
+        } else {
+            c = allocate();
+            if (c == first) c = 0;
         }
-        c = next == start ? 0 : allocate();            
     }
     return false;
 }
@@ -170,7 +172,10 @@ void Queue::dispatch(){
      while(true){
         {
 	    Mutex::ScopedLock locker(messageLock);
-	    if (messages.empty()) break; 
+	    if (messages.empty()) { 
+                QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
+                break; 
+            }
 	    msg = messages.front();
 	}
         if( msg.payload->isEnqueueComplete() && dispatch(msg) ) {
