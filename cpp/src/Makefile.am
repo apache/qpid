@@ -104,6 +104,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/ChannelAdapter.cpp \
   qpid/framing/Buffer.cpp \
   qpid/framing/FieldTable.cpp \
+  qpid/framing/FieldValue.cpp \
   qpid/framing/FramingContent.cpp \
   qpid/framing/FrameSet.cpp \
   qpid/framing/InitiationHandler.cpp \
@@ -114,7 +115,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/SendContent.cpp \
   qpid/framing/SequenceNumber.cpp \
   qpid/framing/SequenceNumberSet.cpp \
-  qpid/framing/Value.cpp \
   qpid/framing/Proxy.cpp \
   qpid/framing/Uuid.cpp \
   qpid/framing/AMQP_HighestVersion.h \
@@ -331,6 +331,7 @@ nobase_include_HEADERS = \
   qpid/framing/Buffer.h \
   qpid/framing/ChannelAdapter.h \
   qpid/framing/FieldTable.h \
+  qpid/framing/FieldValue.h \
   qpid/framing/FrameDefaultVisitor.h \
   qpid/framing/FrameHandler.h \
   qpid/framing/FrameHandler.h \
@@ -358,7 +359,6 @@ nobase_include_HEADERS = \
   qpid/framing/TransferContent.h \
   qpid/framing/TypeFilter.h \
   qpid/framing/Uuid.h \
-  qpid/framing/Value.h \
   qpid/framing/Visitor.h \
   qpid/framing/amqp_framing.h \
   qpid/framing/amqp_types.h \

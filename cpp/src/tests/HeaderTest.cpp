@@ -20,6 +20,7 @@
  */
 #include <iostream>
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/FieldValue.h"
 #include "qpid_test_plugin.h"
 
 using namespace qpid::framing;
@@ -47,8 +48,7 @@ public:
         body2.decode(rbuffer, body.size());
         BasicHeaderProperties* props =
             body2.get<BasicHeaderProperties>(true);
-        CPPUNIT_ASSERT_EQUAL(std::string("BCDE"),
-                             props->getHeaders().getString("A"));
+        CPPUNIT_ASSERT(StringValue("BCDE") == *props->getHeaders().get("A"));
     }
 
     void testAllSpecificProperties(){
@@ -95,7 +95,7 @@ public:
         properties = in.castBody<AMQHeaderBody>()->get<BasicHeaderProperties>(true);
 
         CPPUNIT_ASSERT_EQUAL(contentType, properties->getContentType());
-        CPPUNIT_ASSERT_EQUAL(std::string("BCDE"), properties->getHeaders().getString("A"));
+        CPPUNIT_ASSERT(StringValue("BCDE") == *properties->getHeaders().get("A"));
         CPPUNIT_ASSERT_EQUAL(deliveryMode, properties->getDeliveryMode());
         CPPUNIT_ASSERT_EQUAL(priority, properties->getPriority());
         CPPUNIT_ASSERT_EQUAL(correlationId, properties->getCorrelationId());
