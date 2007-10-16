@@ -67,6 +67,14 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         message.prepareForSending();
         org.apache.qpidity.api.Message qpidityMessage = new ByteBufferMessage();
         // set the payload
+
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("Message Props: " + message.toString());
+        }
+
+        //System.out.println("Message Props" + message.toString());
+
         try
         {
             if (message.getData() != null)
