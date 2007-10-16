@@ -120,6 +120,22 @@ class FixedWidthValue<0> : public FieldValue::Data {
     void print(std::ostream& o) const { o << "F0"; };
 };
 
+template<> FixedWidthValue<8>::FixedWidthValue(uint64_t v);
+template<> int64_t FixedWidthValue<8>::getInt() const;
+template<> bool FixedWidthValue<8>::convertsToInt() const;
+
+template<> int64_t FixedWidthValue<4>::getInt() const;
+template<> FixedWidthValue<4>::FixedWidthValue(uint64_t v);
+template<> bool FixedWidthValue<4>::convertsToInt() const;
+
+template<> FixedWidthValue<2>::FixedWidthValue(uint64_t v);
+template<> int64_t FixedWidthValue<2>::getInt() const;
+template<> bool FixedWidthValue<2>::convertsToInt() const;
+
+template<> FixedWidthValue<1>::FixedWidthValue(uint64_t v);
+template<> int64_t FixedWidthValue<1>::getInt() const;
+template<> bool FixedWidthValue<1>::convertsToInt() const;
+
 template <int lenwidth>
 class VariableWidthValue : public FieldValue::Data {
     std::vector<uint8_t> octets;
