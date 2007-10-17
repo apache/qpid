@@ -570,7 +570,7 @@ public class MessageConsumerImpl extends MessageActor
         boolean messageOk = true;
         if (_messageSelector != null)
         {
-            messageOk = _filter.matches((Message) message);
+            messageOk = false; //_filter.matches(message);
         }
         if (_logger.isDebugEnabled())
         {

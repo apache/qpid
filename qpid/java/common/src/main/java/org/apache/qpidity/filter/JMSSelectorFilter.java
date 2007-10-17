@@ -21,8 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.filter.selector.SelectorParser;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 
 public class JMSSelectorFilter implements MessageFilter
 {
@@ -44,7 +44,7 @@ public class JMSSelectorFilter implements MessageFilter
         _matcher = new SelectorParser().parse(selector);
     }
 
-    public boolean matches(Message message)
+    public boolean matches(AbstractJMSMessage message)
     {
         try
         {

@@ -18,8 +18,8 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -131,7 +131,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         /**
          *  org.apache.activemq.filter.Expression#evaluate(MessageEvaluationContext)
          */
-        public Object evaluate(Message message) throws QpidException
+        public Object evaluate(AbstractJMSMessage message) throws QpidException
         {
 
             Object rv = this.getRight().evaluate(message);
@@ -151,7 +151,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
             return likePattern.matcher((String) rv).matches() ? Boolean.TRUE : Boolean.FALSE;
         }
 
-        public boolean matches(Message message) throws QpidException
+        public boolean matches(AbstractJMSMessage message) throws QpidException
         {
             Object object = evaluate(message);
 
@@ -234,7 +234,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         return new ComparisonExpression(left, right)
             {
 
-                public Object evaluate(Message message) throws QpidException
+                public Object evaluate(AbstractJMSMessage message) throws QpidException
                 {
                     Object lv = left.evaluate(message);
                     Object rv = right.evaluate(message);
@@ -417,7 +417,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
         super(left, right);
     }
 
-    public Object evaluate(Message message) throws QpidException
+    public Object evaluate(AbstractJMSMessage message) throws QpidException
     {
         Comparable lv = (Comparable) left.evaluate(message);
         if (lv == null)
@@ -579,7 +579,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     protected abstract boolean asBoolean(int answer);
 
-    public boolean matches(Message message) throws QpidException
+    public boolean matches(AbstractJMSMessage message) throws QpidException
     {
         Object object = evaluate(message);
 
