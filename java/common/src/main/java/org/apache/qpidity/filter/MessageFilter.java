@@ -18,10 +18,10 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 
 public interface MessageFilter
 {
-    boolean matches(Message message) throws QpidException;
+    boolean matches(AbstractJMSMessage message) throws QpidException;
 }

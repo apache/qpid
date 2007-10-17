@@ -18,8 +18,8 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 import java.math.BigDecimal;
 
 /**
@@ -35,7 +35,7 @@ public class ConstantExpression implements Expression
             super(value);
         }
 
-        public boolean matches(Message message) throws QpidException
+        public boolean matches(AbstractJMSMessage message) throws QpidException
         {
             Object object = evaluate(message);
 
@@ -114,7 +114,7 @@ public class ConstantExpression implements Expression
         this.value = value;
     }
 
-    public Object evaluate(Message message) throws QpidException
+    public Object evaluate(AbstractJMSMessage message) throws QpidException
     {
         return value;
     }
