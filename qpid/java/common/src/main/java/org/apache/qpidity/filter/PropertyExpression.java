@@ -17,70 +17,279 @@
  */
 package org.apache.qpidity.filter;
 
-import org.slf4j.LoggerFactory;
-import org.apache.qpidity.ErrorCode;
+import org.apache.qpid.framing.CommonContentHeaderProperties;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpidity.QpidException;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
-import javax.jms.Message;
-import java.lang.reflect.Method;
+import javax.jms.JMSException;
+import java.util.HashMap;
 
 /**
  * Represents a property  expression
  */
 public class PropertyExpression implements Expression
 {
-    private static final org.slf4j.Logger _logger = LoggerFactory.getLogger(PropertyExpression.class);
+    // Constants - defined the same as JMS
+    private static final int NON_PERSISTENT = 1;
+    private static final int DEFAULT_PRIORITY = 4;
 
-    private Method _getter;
+    private static final Logger _logger = LoggerFactory.getLogger(PropertyExpression.class);
+
+    private static final HashMap<String, Expression> JMS_PROPERTY_EXPRESSIONS = new HashMap<String, Expression>();
+
+    static
+    {
+        JMS_PROPERTY_EXPRESSIONS.put("JMSDestination", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+                                             //TODO
+                                             return null;
+                                         }
+                                     });
+        JMS_PROPERTY_EXPRESSIONS.put("JMSReplyTo", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+                                             try
+                                             {
+                                                 CommonContentHeaderProperties _properties =
+                                                         message.getContentHeaderProperties();
+                                                 AMQShortString replyTo = _properties.getReplyTo();
+
+                                                 return (replyTo == null) ? null : replyTo.toString();
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property", e);
+
+                                                 return null;
+                                             }
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSType", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+                                             try
+                                             {
+                                                  CommonContentHeaderProperties _properties =
+                                                         message.getContentHeaderProperties();
+                                                 AMQShortString type = _properties.getType();
+
+                                                 return (type == null) ? null : type.toString();
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property", e);
+
+                                                 return null;
+                                             }
+
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSDeliveryMode", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+                                             try
+                                             {
+                                                 int mode = message.getJMSDeliveryMode();
+                                                 if (_logger.isDebugEnabled())
+                                                 {
+                                                     _logger.debug("JMSDeliveryMode is :" + mode);
+                                                 }
+
+                                                 return mode;
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property",e);
+                                             }
+
+                                             return NON_PERSISTENT;
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSPriority", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+                                             try
+                                             {
+                                              CommonContentHeaderProperties _properties =
+                                                         message.getContentHeaderProperties();
+                                                 return (int) _properties.getPriority();
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property",e);
+                                             }
+
+                                             return DEFAULT_PRIORITY;
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("AMQMessageID", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+
+                                             try
+                                             {
+                                                  CommonContentHeaderProperties _properties =
+                                                         message.getContentHeaderProperties();
+                                                 AMQShortString messageId = _properties.getMessageId();
+
+                                                 return (messageId == null) ? null : messageId;
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property",e);
+
+                                                 return null;
+                                             }
+
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSTimestamp", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+                                             try
+                                             {
+                                               CommonContentHeaderProperties _properties =
+                                                         message.getContentHeaderProperties();
+                                                 return _properties.getTimestamp();
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property",e);
+
+                                                 return null;
+                                             }
+
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSCorrelationID", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+
+                                             try
+                                             {
+                                                 CommonContentHeaderProperties _properties =
+                                                                                                message.getContentHeaderProperties();
+                                                 AMQShortString correlationId = _properties.getCorrelationId();
+                                                 return (correlationId == null) ? null : correlationId.toString();
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property",e);
+
+                                                 return null;
+                                             }
+
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSExpiration", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+
+                                             try
+                                             {
+                                                     CommonContentHeaderProperties _properties =
+                                                                                                message.getContentHeaderProperties();
+                                                 return _properties.getExpiration();
+                                             }
+                                             catch (Exception e)
+                                             {
+                                                 _logger.warn("Error evaluating property",e);
+                                                 return null;
+                                             }
+
+                                         }
+                                     });
+
+        JMS_PROPERTY_EXPRESSIONS.put("JMSRedelivered", new Expression()
+                                     {
+                                         public Object evaluate(AbstractJMSMessage message)
+                                         {
+                                             try
+                                             {
+                                                 return message.getJMSRedelivered();
+                                             }
+                                             catch (JMSException e)
+                                             {
+                                                _logger.warn("Error evaluating property",e);
+                                                 return null;
+                                             }
+                                         }
+                                     });
+
+    }
+
+    private final String name;
+    private final Expression jmsPropertyExpression;
 
     public PropertyExpression(String name)
     {
-        Class clazz = Message.class;
-        try
+        this.name = name;
+        jmsPropertyExpression = JMS_PROPERTY_EXPRESSIONS.get(name);
+    }
+
+    public Object evaluate(AbstractJMSMessage message) throws QpidException
+    {
+
+        if (jmsPropertyExpression != null)
         {
-            _getter = clazz.getMethod("get" + name, null);
+            return jmsPropertyExpression.evaluate(message);
         }
-        catch (NoSuchMethodException e)
+        else
         {
-            PropertyExpression._logger.warn("Cannot compare property: " + name, e);
+
+           CommonContentHeaderProperties _properties =     message.getContentHeaderProperties();
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Looking up property:" + name);
+                _logger.debug("Properties are:" + _properties.getHeaders().keySet());
+            }
+            return _properties.getHeaders().getObject(name);
         }
     }
 
-    public Object evaluate(Message message) throws QpidException
+    public String getName()
     {
-        Object result = null;
-        if( _getter != null )
-        {
-            try
-            {
-                result = _getter.invoke(message, null);
-            }
-            catch (Exception e)
-            {
-                throw new QpidException("cannot evaluate property ", ErrorCode.UNDEFINED, e);
-            }
-        }
-        return result;
+        return name;
     }
 
     /**
-     * @see Object#toString()
+     * @see java.lang.Object#toString()
      */
     public String toString()
     {
-        return _getter.toString();
+        return name;
     }
 
     /**
-     * @see Object#hashCode()
+     * @see java.lang.Object#hashCode()
      */
     public int hashCode()
     {
-        return _getter.hashCode();
+        return name.hashCode();
     }
 
     /**
-     * @see Object#equals(Object)
+     * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object o)
     {
@@ -88,7 +297,7 @@ public class PropertyExpression implements Expression
         {
             return false;
         }
-        return _getter.equals(((PropertyExpression) o)._getter);
+        return name.equals(((PropertyExpression) o).name);
     }
 
 }

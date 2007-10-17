@@ -18,8 +18,8 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 
 /**
  * An expression which performs an operation on two expression values
@@ -241,7 +241,7 @@ public abstract class ArithmeticExpression extends BinaryExpression
         }
     }
 
-    public Object evaluate(Message message) throws QpidException
+    public Object evaluate(AbstractJMSMessage message) throws QpidException
     {
         Object lvalue = left.evaluate(message);
         if (lvalue == null)

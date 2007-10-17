@@ -18,8 +18,8 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 
 /**
  * A filter performing a comparison of two objects
@@ -32,7 +32,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         return new LogicExpression(lvalue, rvalue)
             {
 
-                public Object evaluate(Message message) throws QpidException
+                public Object evaluate(AbstractJMSMessage message) throws QpidException
                 {
 
                     Boolean lv = (Boolean) left.evaluate(message);
@@ -59,7 +59,7 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         return new LogicExpression(lvalue, rvalue)
             {
 
-                public Object evaluate(Message message) throws QpidException
+                public Object evaluate(AbstractJMSMessage message) throws QpidException
                 {
 
                     Boolean lv = (Boolean) left.evaluate(message);
@@ -96,9 +96,9 @@ public abstract class LogicExpression extends BinaryExpression implements Boolea
         super(left, right);
     }
 
-    public abstract Object evaluate(Message message) throws QpidException;
+    public abstract Object evaluate(AbstractJMSMessage message) throws QpidException;
 
-    public boolean matches(Message message) throws QpidException
+    public boolean matches(AbstractJMSMessage message) throws QpidException
     {
         Object object = evaluate(message);
 

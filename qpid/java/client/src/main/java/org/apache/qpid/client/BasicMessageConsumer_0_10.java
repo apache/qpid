@@ -98,7 +98,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             {
                 _preAcquire = false;
             }
-        }
+        }                
     }
 
     // ----- Interface org.apache.qpidity.client.util.MessageListener
@@ -245,7 +245,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         {
             if (getMessageSelector() != null)
             {
-                messageOk = _filter.matches((javax.jms.Message) message);
+                messageOk = _filter.matches(message);
             }
         }
         catch (Exception e)
@@ -253,11 +253,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             throw new AMQException(AMQConstant.INTERNAL_ERROR, "Error when evaluating message selector", e);
         }
 
-        System.out.println("---------------------------------------------------------");
-        System.out.println("messageOk : " + messageOk + " pre-acquire mode : " + _preAcquire);
-        System.out.println("---------------------------------------------------------");
-
-        if (_logger.isDebugEnabled())
+       if (_logger.isDebugEnabled())
         {
             _logger.debug("messageOk " + messageOk);
             _logger.debug("_preAcquire " + _preAcquire);

@@ -18,8 +18,8 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 
 /**
  * Represents an expression
@@ -30,5 +30,5 @@ public interface Expression
      * @param message The message to evaluate
      * @return the value of this expression
      */
-    public Object evaluate(Message message) throws QpidException;
+    public Object evaluate(AbstractJMSMessage message) throws QpidException;
 }
