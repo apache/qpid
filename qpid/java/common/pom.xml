@@ -103,25 +103,7 @@
                 </executions>
             </plugin>
 
-            <!-- Generates message selector grammar -->
-              <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>javacc-maven-plugin</artifactId>
-                <version>2.0</version>
-                <executions>
-                    <execution>
-                        <phase>generate-sources</phase>
-                        <configuration>
-                            <sourceDirectory>${basedir}/src/main/grammar</sourceDirectory>
-                            <outputDirectory>${project.build.directory}/generated-sources/selector</outputDirectory>
-                            <packageName>org.apache.qpidity.filter.selector</packageName>
-                        </configuration>
-                        <goals>
-                            <goal>javacc</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+        
 
             <!-- Backports the module to Java 1.4. This is done during the packaging phase as a transformation of the Jar. -->
             <plugin>
