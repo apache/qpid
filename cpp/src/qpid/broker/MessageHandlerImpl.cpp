@@ -17,6 +17,7 @@
  */
 
 #include "qpid/QpidError.h"
+#include "qpid/log/Statement.h"
 #include "MessageHandlerImpl.h"
 #include "qpid/framing/FramingContent.h"
 #include "Connection.h"
@@ -156,7 +157,6 @@ MessageHandlerImpl::reject(const SequenceNumberSet& transfers, uint16_t /*code*/
 
 void MessageHandlerImpl::flow(const std::string& destination, u_int8_t unit, u_int32_t value)
 {
-    
     if (unit == 0) {
         //message
         state.addMessageCredit(destination, value);
