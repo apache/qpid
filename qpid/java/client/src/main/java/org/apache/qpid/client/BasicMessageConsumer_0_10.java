@@ -133,7 +133,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
     }
 
-
     public void onMessage(Message message)
     {
         int channelId = getSession().getChannelId();
@@ -272,6 +271,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _logger.debug("filterMessage - trying to ack message");
             }
             acknowledgeMessage(message);
+            requestCreditIfCreditMode();
         }
         else if (!messageOk)
         {
@@ -280,6 +280,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _logger.debug("Message not OK, releasing");
             }
             releaseMessage(message);
+            requestCreditIfCreditMode();
         }
         // now we need to acquire this message if needed
         // this is the case of queue with a message selector set
@@ -292,6 +293,26 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             messageOk = acquireMessage(message);
         }
         return messageOk;
+    }
+
+    private void requestCreditIfCreditMode()
+    {
+        try
+        {
+            // the current message received is not good, so we need to get a message.
+            if (getMessageListener() == null)
+            {
+                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                    org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,1);
+                _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
+                _0_10session.getQpidSession().sync();
+                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
+            }
+        }
+        catch(Exception e)
+        {
+            _logger.error("Error getting message listener, couldn't request credit after releasing a message that failed the selector test",e);
+        }
     }
 
     /**
