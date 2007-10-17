@@ -39,6 +39,8 @@ namespace qpid {
         class Consumer {
             const bool acquires;
         public:
+            typedef shared_ptr<Consumer> ptr;            
+
             framing::SequenceNumber position;
 
             Consumer(bool preAcquires = true) : acquires(preAcquires) {}
