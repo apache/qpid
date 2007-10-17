@@ -325,3 +325,11 @@ class MiscellaneousErrorsTests(TestBase):
         c2.session_open()
         c2.exchange_delete(exchange="test_different_declared_type_exchange")
     
+class ExchangeTests(TestBase):
+    def testHeadersBindNoMatchArg(self):
+        self.channel.queue_declare(queue="q", exclusive=True, auto_delete=True)
+        try: 
+            self.channel.queue_bind(queue="q", exchange="amq.match", arguments={"name":"fred" , "age":3} )
+            self.fail("Expected failure for missing x-match arg.")
+        except Closed, e:    
+            self.assertConnectionException(541, e.args[0])
