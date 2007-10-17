@@ -94,7 +94,7 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<ContentHeader
          {
              o = _synchronousQueue.poll(l, TimeUnit.MILLISECONDS);
          }
-         if (l < 0)
+         else if (l < 0)
          {
              o = _synchronousQueue.poll();
          }
