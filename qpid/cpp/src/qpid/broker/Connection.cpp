@@ -78,11 +78,8 @@ void Connection::closed(){
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();
-            if (q->canAutoDelete() && 
-                broker.getQueues().destroyIf(q->getName(), boost::bind(boost::mem_fn(&Queue::canAutoDelete), q))) {
-
-                q->unbind(broker.getExchanges(), q);
-                q->destroy();
+            if (q->canAutoDelete()) {
+                Queue::tryAutoDelete(broker, q);
             }
             exclusiveQueues.erase(exclusiveQueues.begin());
         }

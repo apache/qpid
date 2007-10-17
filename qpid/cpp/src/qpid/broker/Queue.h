@@ -36,11 +36,9 @@
 #include "QueuePolicy.h"
 #include "QueueBindings.h"
 
-// TODO aconway 2007-02-06: Use auto_ptr and boost::ptr_vector to
-// enforce ownership of Consumers.
-
 namespace qpid {
     namespace broker {
+        class Broker;
         class MessageStore;
         class QueueRegistry;
         class TransactionContext;
@@ -61,7 +59,7 @@ namespace qpid {
          * or more consumers registers.
          */
         class Queue : public PersistableQueue {
-            typedef std::vector<Consumer*> Consumers;
+            typedef std::vector<Consumer::ptr> Consumers;
             typedef std::deque<QueuedMessage> Messages;
             
             struct DispatchFunctor 
@@ -86,7 +84,7 @@ namespace qpid {
             int next;
             mutable qpid::sys::RWlock consumerLock;
             mutable qpid::sys::Mutex messageLock;
-            Consumer* exclusive;
+            Consumer::ptr exclusive;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
             std::auto_ptr<QueuePolicy> policy;            
@@ -104,10 +102,10 @@ namespace qpid {
              * only called by serilizer
 	     */
             void dispatch();
-            void cancel(Consumer* c, Consumers& set);
+            void cancel(Consumer::ptr c, Consumers& set);
             void serviceAllBrowsers();
-            void serviceBrowser(Consumer* c);
-            Consumer* allocate();
+            void serviceBrowser(Consumer::ptr c);
+            Consumer::ptr allocate();
             bool seek(QueuedMessage& msg, const framing::SequenceNumber& position);
  
         protected:
@@ -117,7 +115,6 @@ namespace qpid {
   	   virtual void notifyDurableIOComplete();
 
         public:
-            
             typedef boost::shared_ptr<Queue> shared_ptr;
 
             typedef std::vector<shared_ptr> vector;
@@ -162,10 +159,10 @@ namespace qpid {
              * at any time, so this call schedules the despatch based on
 	     * the serilizer policy.
              */
-            void requestDispatch(Consumer* c = 0);
+            void requestDispatch(Consumer::ptr c = Consumer::ptr());
             void flush(DispatchCompletion& callback);
-            void consume(Consumer* c, bool exclusive = false);
-            void cancel(Consumer* c);
+            void consume(Consumer::ptr c, bool exclusive = false);
+            void cancel(Consumer::ptr c);
             uint32_t purge();
             uint32_t getMessageCount() const;
             uint32_t getConsumerCount() const;
@@ -202,6 +199,7 @@ namespace qpid {
             uint32_t encodedSize() const;
 
             static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer);
+            static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
         };
     }
 }
