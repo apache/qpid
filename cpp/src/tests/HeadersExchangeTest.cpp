@@ -19,6 +19,7 @@
  *
  */
 
+#include "qpid/QpidError.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
@@ -35,6 +36,7 @@ class HeadersExchangeTest : public CppUnit::TestCase
     CPPUNIT_TEST(testMatchEmptyValue);
     CPPUNIT_TEST(testMatchEmptyArgs);
     CPPUNIT_TEST(testMatchNoXMatch);
+    CPPUNIT_TEST(testBindNoXMatch);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -105,6 +107,20 @@ class HeadersExchangeTest : public CppUnit::TestCase
         b.setString("foo", "FOO");
         m.setString("foo", "FOO");
         CPPUNIT_ASSERT(!HeadersExchange::match(b, m));
+    }
+    
+    void testBindNoXMatch() 
+    {
+        HeadersExchange exchange("test");
+        Queue::shared_ptr queue;
+        std::string key;
+        FieldTable args;
+        try {
+            //just checking this doesn't cause assertion etc
+            exchange.bind(queue, key, &args);
+        } catch(qpid::QpidError&) {
+            //expected
+        }
     }
     
     
