@@ -18,8 +18,8 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 
 /**
  * A BooleanExpression is an expression that always
@@ -28,6 +28,6 @@ import javax.jms.Message;
 public interface BooleanExpression extends Expression
 {
 
-    public boolean matches(Message message) throws QpidException;
+    public boolean matches(AbstractJMSMessage message) throws QpidException;
 
 }

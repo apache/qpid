@@ -18,8 +18,8 @@
 package org.apache.qpidity.filter;
 
 import org.apache.qpidity.QpidException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 
-import javax.jms.Message;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Collection;
@@ -39,7 +39,7 @@ public abstract class UnaryExpression implements Expression
     {
         return new UnaryExpression(left)
         {
-            public Object evaluate(Message message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws QpidException
             {
                 Object rvalue = right.evaluate(message);
                 if (rvalue == null)
@@ -84,7 +84,7 @@ public abstract class UnaryExpression implements Expression
 
         return new BooleanUnaryExpression(right)
         {
-            public Object evaluate(Message message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws QpidException
             {
 
                 Object rvalue = right.evaluate(message);
@@ -156,7 +156,7 @@ public abstract class UnaryExpression implements Expression
             super(left);
         }
 
-        public boolean matches(Message message) throws QpidException
+        public boolean matches(AbstractJMSMessage message) throws QpidException
         {
             Object object = evaluate(message);
 
@@ -170,7 +170,7 @@ public abstract class UnaryExpression implements Expression
     {
         return new BooleanUnaryExpression(left)
         {
-            public Object evaluate(Message message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws QpidException
             {
                 Boolean lvalue = (Boolean) right.evaluate(message);
                 if (lvalue == null)
@@ -191,7 +191,7 @@ public abstract class UnaryExpression implements Expression
     {
         return new BooleanUnaryExpression(left)
         {
-            public Object evaluate(Message message) throws QpidException
+            public Object evaluate(AbstractJMSMessage message) throws QpidException
             {
                 Object rvalue = right.evaluate(message);
                 if (rvalue == null)
