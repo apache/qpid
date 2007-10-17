@@ -133,7 +133,7 @@ public class AMQMessage
     public boolean isReferenced()
     {
         return _referenceCount.get() > 0;
-    }    
+    }
 
     /**
      * Used to iterate through all the body frames associated with this message. Will not keep all the data in memory
@@ -558,6 +558,7 @@ public class AMQMessage
                 taken.set(false);
             }
 
+            _deliveredToConsumer = false;
             _takenMap.put(queue, taken);
             _takenBySubcriptionMap.put(queue, null);
         }
@@ -694,7 +695,10 @@ public class AMQMessage
         return false;
     }
 
-    /** Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality). */
+    /**
+     * Called when this message is delivered to a consumer. (used to implement the 'immediate' flag functionality).
+     * And for selector efficiency.
+     */
     public void setDeliveredToConsumer()
     {
         _deliveredToConsumer = true;
