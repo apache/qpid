@@ -54,7 +54,7 @@ public class TxnBuffer
         _ops.clear();
     }
 
-    private boolean prepare(StoreContext context)
+    private boolean prepare(StoreContext context) throws AMQException
     {
         for (int i = 0; i < _ops.size(); i++)
         {
@@ -63,19 +63,31 @@ public class TxnBuffer
             {
                 op.prepare(context);
             }
-            catch (Exception e)
+            catch (AMQException e)
             {
-                //compensate previously prepared ops
-                for (int j = 0; j < i; j++)
-                {
-                    _ops.get(j).undoPrepare();
-                }
-                return false;
+                undoPrepare(i);
+                throw e;
+            }
+            catch (RuntimeException e)
+            {
+                undoPrepare(i);
+                throw e;
             }
         }
         return true;
     }
 
+    private void undoPrepare(int lastPrepared)
+    {
+        //compensate previously prepared ops
+        for (int j = 0; j < lastPrepared; j++)
+        {
+            _ops.get(j).undoPrepare();
+        }
+    }
+
+	
+	
     public void rollback(StoreContext context) throws AMQException
     {
         for (TxnOp op : _ops)
