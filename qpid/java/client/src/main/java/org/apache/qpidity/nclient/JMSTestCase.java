@@ -1,30 +1,44 @@
 package org.apache.qpidity.nclient;
 
-import org.apache.qpidity.njms.ConnectionFactoryImpl;
-import org.apache.qpidity.njms.TopicImpl;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.framing.AMQShortString;
 
 public class JMSTestCase
 {
+
     public static void main(String[] args)
     {
+
         try
         {
-            javax.jms.Connection con = (new ConnectionFactoryImpl("localhost",5672, "test", "guest","guest")).createConnection();
+            javax.jms.Connection con = new AMQConnection("qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:127.0.0.1:5672");
             con.start();
-            
+
             javax.jms.Session ssn = con.createSession(false, 1);
-            
-            javax.jms.Destination dest = new TopicImpl("myTopic");
+
+            javax.jms.Destination dest = new AMQTopic(new AMQShortString("amq.topic"),"myTopic");
             javax.jms.MessageProducer prod = ssn.createProducer(dest);
-            javax.jms.MessageConsumer cons = ssn.createConsumer(dest); 
-            
-            javax.jms.BytesMessage msg = ssn.createBytesMessage();
-            msg.writeInt(123);
+            javax.jms.MessageConsumer cons = ssn.createConsumer(dest,"targetMessage = TRUE");
+
+            javax.jms.TextMessage msg = ssn.createTextMessage();
+            msg.setText("This is a test message");
+            msg.setBooleanProperty("targetMessage", false);
             prod.send(msg);
-            
-            javax.jms.BytesMessage m = (javax.jms.BytesMessage)cons.receive();
-            System.out.println("Data : " + m.readInt());
-            
+
+            msg.setBooleanProperty("targetMessage", true);
+            prod.send(msg);
+
+            javax.jms.TextMessage m = (javax.jms.TextMessage)cons.receiveNoWait();
+
+            if (m == null)
+            {
+               System.out.println("message is null");
+            }
+            else
+            {
+               System.out.println("message is not null");
+            }
         }
         catch(Exception e)
         {
