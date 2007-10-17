@@ -37,9 +37,8 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/shared_ptr.h"
 
-#include <boost/ptr_container/ptr_map.hpp>
-
 #include <list>
+#include <map>
 #include <vector>
 
 namespace qpid {
@@ -72,13 +71,13 @@ class SemanticState : public framing::FrameHandler::Chains,
         bool checkCredit(Message::shared_ptr& msg);
 
       public:
+        typedef shared_ptr<ConsumerImpl> shared_ptr;
+
         ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
                      const string& name, Queue::shared_ptr queue,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
         bool deliver(QueuedMessage& msg);            
-        void cancel();
-        void requestDispatch();
 
         void setWindowMode();
         void setCreditMode();
@@ -87,6 +86,8 @@ class SemanticState : public framing::FrameHandler::Chains,
         void flush();
         void stop();
         void acknowledged(const DeliveryRecord&);    
+        Queue::shared_ptr getQueue() { return queue; }
+        bool isBlocked() const { return blocked; }
     };
 
     struct FlushCompletion : DispatchCompletion
@@ -100,7 +101,7 @@ class SemanticState : public framing::FrameHandler::Chains,
         void completed();
     };
 
-    typedef boost::ptr_map<string,ConsumerImpl> ConsumerImplMap;
+    typedef std::map<std::string,ConsumerImpl::shared_ptr> ConsumerImplMap;
 
     SessionState& session;
     DeliveryAdapter& deliveryAdapter;
@@ -124,10 +125,13 @@ class SemanticState : public framing::FrameHandler::Chains,
     void record(const DeliveryRecord& delivery);
     bool checkPrefetch(Message::shared_ptr& msg);
     void checkDtxTimeout();
-    ConsumerImpl& find(const std::string& destination);
+    ConsumerImpl::shared_ptr find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
     void acknowledged(const DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
+    void requestDispatch();
+    void requestDispatch(ConsumerImpl::shared_ptr);
+    void cancel(ConsumerImpl::shared_ptr);
 
   public:
     SemanticState(DeliveryAdapter&, SessionState&);
