@@ -571,11 +571,19 @@ class MessageTests(TestBase):
 
         self.subscribe(queue = "q", destination = "a", acquire_mode = 1, confirm_mode = 1)
         msg = self.client.queue("a").get(timeout = 1)
-        channel.message_acquire([msg.command_id, msg.command_id])
-        msg.complete()
+        #message should still be on the queue:
+        self.assertEquals(1, channel.queue_query(queue = "q").message_count)
 
+        channel.message_acquire([msg.command_id, msg.command_id])
+        #check that we get notification (i.e. message_acquired)
+        response = channel.control_queue.get(timeout=1)
+        self.assertEquals(response.transfers, [msg.command_id, msg.command_id])
         #message should have been removed from the queue:
         self.assertEquals(0, channel.queue_query(queue = "q").message_count)
+        msg.complete()
+
+
+
 
     def test_release(self):
         """

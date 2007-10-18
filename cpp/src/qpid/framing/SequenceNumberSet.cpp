@@ -48,14 +48,20 @@ SequenceNumberSet SequenceNumberSet::condense() const
 {
     SequenceNumberSet result;
     const_iterator last = end();
+    const_iterator start = end();
     for (const_iterator i = begin(); i != end(); i++) {
-        if (last == end()) {
-            last = i;
+        if (start == end()) {
+            start = i;
         } else if (*i - *last > 1) {
-            result.push_back(*last);
-            result.push_back(*i);            
-            last = end();
+            result.push_back(*start);
+            result.push_back(*last);            
+            start = i;
         }
+        last = i;
+    }
+    if (start != end()) {
+        result.push_back(*start);
+        result.push_back(*last);            
     }
     return result;
 }
