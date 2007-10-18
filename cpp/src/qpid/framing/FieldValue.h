@@ -78,6 +78,18 @@ class FieldValue {
     std::auto_ptr<Data> data; 
 };
 
+template <>
+inline bool FieldValue::convertsTo<int>() const { return data->convertsToInt(); }
+
+template <>
+inline bool FieldValue::convertsTo<std::string>() const { return data->convertsToString(); }
+
+template <>
+inline int FieldValue::get<int>() const { return data->getInt(); }
+
+template <>
+inline std::string FieldValue::get<std::string>() const { return data->getString(); }
+
 inline std::ostream& operator<<(std::ostream& out, const FieldValue& v) {
     v.print(out);
     return out;
