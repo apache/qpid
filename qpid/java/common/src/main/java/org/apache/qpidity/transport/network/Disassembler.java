@@ -79,6 +79,24 @@ public class Disassembler implements Sender<ConnectionEvent>,
     private void fragment(byte flags, byte type, ConnectionEvent event,
                           ByteBuffer buf, boolean first, boolean last)
     {
+        if(!buf.hasRemaining())
+        {
+            //empty data
+              byte nflags = flags;
+            if (first)
+            {
+                nflags |= FIRST_FRAME;
+                first = false;
+            }
+             nflags |= LAST_FRAME;
+              Frame frame = new Frame(nflags, type,
+                                    event.getProtocolEvent().getEncodedTrack(),
+                                    event.getChannel());
+           // frame.addFragment(buf);
+            sender.send(frame);
+        }
+        else
+        {
         while (buf.hasRemaining())
         {
             ByteBuffer slice = buf.slice();
@@ -101,6 +119,7 @@ public class Disassembler implements Sender<ConnectionEvent>,
                                     event.getChannel());
             frame.addFragment(slice);
             sender.send(frame);
+        }
         }
     }
 
