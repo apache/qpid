@@ -41,7 +41,7 @@ class SemanticState;
  * Record of a delivery for which an ack is outstanding.
  */
 class DeliveryRecord{
-    mutable QueuedMessage msg;
+    QueuedMessage msg;
     mutable Queue::shared_ptr queue;
     const std::string tag;
     DeliveryToken::shared_ptr token;

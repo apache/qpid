@@ -177,11 +177,11 @@ namespace qpid {
             inline bool isAutoDelete() const { return autodelete; }
             bool canAutoDelete() const;
 
-            bool enqueue(TransactionContext* ctxt, Message::shared_ptr& msg);
+            bool enqueue(TransactionContext* ctxt, Message::shared_ptr msg);
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
-            bool dequeue(TransactionContext* ctxt, Message::shared_ptr& msg);
+            bool dequeue(TransactionContext* ctxt, Message::shared_ptr msg);
             /**
              * dequeues from memory only
              */
