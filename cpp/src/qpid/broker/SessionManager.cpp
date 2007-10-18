@@ -82,6 +82,12 @@ std::auto_ptr<SessionState>  SessionManager::resume(
     return state;
 }
 
+void SessionManager::erase(const framing::Uuid& id)
+{
+    Mutex::ScopedLock l(lock);
+    active.erase(id);
+}
+
 void SessionManager::eraseExpired() {
     // Called with lock held.
     if (!suspended.empty()) {
