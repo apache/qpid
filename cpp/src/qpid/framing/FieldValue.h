@@ -90,7 +90,14 @@ class FixedWidthValue : public FieldValue::Data {
   public:
     FixedWidthValue() {}
     FixedWidthValue(const uint8_t (&data)[width]) : octets(data) {}
-    FixedWidthValue(uint64_t v);
+    FixedWidthValue(uint64_t v)
+    {
+        for (int i = width; i > 0; --i) {
+            octets[i-1] = (uint8_t) (0xFF & v); v >>= 8;
+        }
+        octets[0] = (uint8_t) (0xFF & v);
+    }
+
     uint32_t size() const { return width; }
     void encode(Buffer& buffer) { buffer.putRawData(octets, width); }
     void decode(Buffer& buffer) { buffer.getRawData(octets, width); }
@@ -100,8 +107,16 @@ class FixedWidthValue : public FieldValue::Data {
         else return std::equal(&octets[0], &octets[width], &rhs->octets[0]); 
     }
 
-    bool convertsToInt() const { return false; }
-    int64_t getInt() const { return 0; }
+    bool convertsToInt() const { return true; }
+    int64_t getInt() const
+    {
+        int64_t v = 0;
+        for (int i = 0; i < width-1; ++i) {
+            v |= octets[i]; v <<= 8;
+        }
+        v |= octets[width-1];
+        return v;
+    }
 
     void print(std::ostream& o) const { o << "F" << width << ":"; };
 };
@@ -119,22 +134,6 @@ class FixedWidthValue<0> : public FieldValue::Data {
     }
     void print(std::ostream& o) const { o << "F0"; };
 };
-
-template<> FixedWidthValue<8>::FixedWidthValue(uint64_t v);
-template<> int64_t FixedWidthValue<8>::getInt() const;
-template<> bool FixedWidthValue<8>::convertsToInt() const;
-
-template<> int64_t FixedWidthValue<4>::getInt() const;
-template<> FixedWidthValue<4>::FixedWidthValue(uint64_t v);
-template<> bool FixedWidthValue<4>::convertsToInt() const;
-
-template<> FixedWidthValue<2>::FixedWidthValue(uint64_t v);
-template<> int64_t FixedWidthValue<2>::getInt() const;
-template<> bool FixedWidthValue<2>::convertsToInt() const;
-
-template<> FixedWidthValue<1>::FixedWidthValue(uint64_t v);
-template<> int64_t FixedWidthValue<1>::getInt() const;
-template<> bool FixedWidthValue<1>::convertsToInt() const;
 
 template <int lenwidth>
 class VariableWidthValue : public FieldValue::Data {
