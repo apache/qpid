@@ -82,30 +82,6 @@ void FieldValue::decode(Buffer& buffer)
     data->decode(buffer);
 }
 
-template<>
-bool FieldValue::convertsTo<int>() const
-{
-    return data->convertsToInt();
-}
-
-template<>
-bool FieldValue::convertsTo<string>() const
-{
-    return data->convertsToString();
-}
-
-template<>
-int FieldValue::get<int>() const
-{
-    return data->getInt();
-}
-
-template<>
-std::string FieldValue::get<std::string>() const
-{
-    return data->getString();
-}
-
 void FieldValue::encode(Buffer& buffer)
 {
     buffer.putOctet(typeOctet);
