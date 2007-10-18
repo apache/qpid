@@ -267,7 +267,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _logger.debug("filterMessage - trying to ack message");
             }
             acknowledgeMessage(message);
-            requestCreditIfCreditMode();
         }
         else if (!messageOk)
         {
@@ -276,7 +275,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _logger.debug("Message not OK, releasing");
             }
             releaseMessage(message);
-            requestCreditIfCreditMode();
         }
         // now we need to acquire this message if needed
         // this is the case of queue with a message selector set
@@ -287,6 +285,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _logger.debug("filterMessage - trying to acquire message");
             }
             messageOk = acquireMessage(message);
+        }
+        if( ! messageOk )
+        {
+            requestCreditIfCreditMode();
         }
         return messageOk;
     }
