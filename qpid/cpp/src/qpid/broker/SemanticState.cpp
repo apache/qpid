@@ -355,7 +355,7 @@ void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
         if (cumulative || first != last) {
             //need to find end (position it just after the last record in range)
             end = find_if(start, unacked.end(), bind2nd(mem_fun_ref(&DeliveryRecord::after), last));
-        } else {
+        } else if (start != unacked.end()) {
             //just acked single element (move end past it)
             ++end;
         }
