@@ -67,6 +67,7 @@ class SessionManager : private boost::noncopyable {
     Suspended suspended;
     Active active;
 
+    void erase(const framing::Uuid&);             
     void eraseExpired();             
   friend class SessionState; // removes deleted sessions from active set.
 };

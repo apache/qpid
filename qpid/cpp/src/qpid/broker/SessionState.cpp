@@ -49,7 +49,7 @@ SessionState::SessionState(SessionManager& f, SessionHandler& h, uint32_t timeou
 
 SessionState::~SessionState() {
     // Remove ID from active session list.
-    factory.active.erase(getId());
+    factory.erase(getId());
 }
 
 SessionHandler& SessionState::getHandler() {
