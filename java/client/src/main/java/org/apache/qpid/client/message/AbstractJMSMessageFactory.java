@@ -131,7 +131,8 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         {
             props.setEncoding(encoding);
         }
-        props.setExpiration(devprop.getExpiration());        
+        props.setDeliveryMode((byte) devprop.getDeliveryMode());
+        props.setExpiration(devprop.getExpiration());
         props.setMessageId(mprop.getMessageId());
         props.setPriority((byte) devprop.getPriority());
         props.setReplyTo(replyToURL);
