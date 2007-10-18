@@ -22,6 +22,7 @@
 #include "qpid_test_plugin.h"
 #include <iostream>
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/SequenceNumberSet.h"
 
 using namespace qpid::framing;
 
@@ -31,6 +32,9 @@ class SequenceNumberTest : public CppUnit::TestCase
     CPPUNIT_TEST(testIncrementPostfix);
     CPPUNIT_TEST(testIncrementPrefix);
     CPPUNIT_TEST(testWrapAround);
+    CPPUNIT_TEST(testCondense);
+    CPPUNIT_TEST(testCondenseSingleRange);
+    CPPUNIT_TEST(testCondenseSingleItem);
     CPPUNIT_TEST(testDifference);
     CPPUNIT_TEST(testDifferenceWithWrapAround1);
     CPPUNIT_TEST(testDifferenceWithWrapAround2);
@@ -110,6 +114,50 @@ class SequenceNumberTest : public CppUnit::TestCase
         }
         CPPUNIT_ASSERT(a == b);
         CPPUNIT_ASSERT(++a > b);
+    }
+
+    void testCondense()
+    {
+        SequenceNumberSet set;
+        for (uint i = 0; i < 6; i++) {
+            set.push_back(SequenceNumber(i));
+        }
+        set.push_back(SequenceNumber(7));
+        for (uint i = 9; i < 13; i++) {
+            set.push_back(SequenceNumber(i));
+        }
+        set.push_back(SequenceNumber(13));
+        SequenceNumberSet actual = set.condense();
+
+        SequenceNumberSet expected;
+        expected.addRange(SequenceNumber(0), SequenceNumber(5));
+        expected.addRange(SequenceNumber(7), SequenceNumber(7));
+        expected.addRange(SequenceNumber(9), SequenceNumber(13));
+        CPPUNIT_ASSERT_EQUAL(expected, actual);
+    }
+
+    void testCondenseSingleRange()
+    {
+        SequenceNumberSet set;
+        for (uint i = 0; i < 6; i++) {
+            set.push_back(SequenceNumber(i));
+        }
+        SequenceNumberSet actual = set.condense();
+
+        SequenceNumberSet expected;
+        expected.addRange(SequenceNumber(0), SequenceNumber(5));
+        CPPUNIT_ASSERT_EQUAL(expected, actual);
+    }
+
+    void testCondenseSingleItem()
+    {
+        SequenceNumberSet set;
+        set.push_back(SequenceNumber(1));
+        SequenceNumberSet actual = set.condense();
+
+        SequenceNumberSet expected;
+        expected.addRange(SequenceNumber(1), SequenceNumber(1));
+        CPPUNIT_ASSERT_EQUAL(expected, actual);
     }
 
     void testDifference()
