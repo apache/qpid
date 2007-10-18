@@ -64,6 +64,8 @@ class Broker : public sys::Runnable, public Plugin::Target
         int connectionBacklog;
         std::string store;      
         long stagingThreshold;
+		string storeDir;
+		bool storeAsync;
     };
     
     virtual ~Broker();
