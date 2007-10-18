@@ -211,10 +211,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
-    /**
-     *
-     * @return the state of the async processor.
-     */
+    /** @return the state of the async processor. */
     public boolean isProcessingAsync()
     {
         return _processing.get();
@@ -830,14 +827,15 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 {
                     addMessageToQueue(msg, deliverFirst);
 
+                    //release lock now message is on queue.
+                    _lock.unlock();
+
                     //if  we have a non-filtering subscriber but queued messages && we're not Async && we have other Active subs then something is wrong!
                     if ((s != null && hasQueuedMessages()) && !isProcessingAsync() && _subscriptions.hasActiveSubscribers())
                     {
                         _queue.deliverAsync();
                     }
 
-                    //release lock now message is on queue.
-                    _lock.unlock();
 
                     //Pre Deliver to all subscriptions
                     if (debugEnabled)
@@ -984,7 +982,7 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         return id;
     }
 
-    Runner asyncDelivery = new Runner();
+    final Runner _asyncDelivery = new Runner();
 
     private class Runner implements Runnable
     {
@@ -1000,11 +998,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                 //Check that messages have not been added since we did our last peek();
                 // Synchronize with the thread that adds to the queue.
                 // If the queue is still empty then we can exit
-
-                if (!(hasQueuedMessages() && _subscriptions.hasActiveSubscribers()))
+                synchronized (_asyncDelivery)
                 {
-                    running = false;
-                    _processing.set(false);
+                    if (!(hasQueuedMessages() && _subscriptions.hasActiveSubscribers()))
+                    {
+                        running = false;
+                        _processing.set(false);
+                    }
                 }
             }
             Thread.currentThread().setName(startName);
@@ -1018,16 +1018,19 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             _log.debug(debugIdentity() + "Processing Async." + currentStatus());
         }
 
-        if (hasQueuedMessages() && _subscriptions.hasActiveSubscribers())
+        synchronized (_asyncDelivery)
         {
-            //are we already running? if so, don't re-run
-            if (_processing.compareAndSet(false, true))
+            if (hasQueuedMessages() && _subscriptions.hasActiveSubscribers())
             {
-                if (_log.isDebugEnabled())
+                //are we already running? if so, don't re-run
+                if (_processing.compareAndSet(false, true))
                 {
-                    _log.debug(debugIdentity() + "Executing Async process.");
+                    if (_log.isDebugEnabled())
+                    {
+                        _log.debug(debugIdentity() + "Executing Async process.");
+                    }
+                    executor.execute(_asyncDelivery);
                 }
-                executor.execute(asyncDelivery);
             }
         }
     }
