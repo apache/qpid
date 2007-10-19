@@ -151,6 +151,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         origMessage.setJMSTimestamp(qpidityMessage.getDeliveryProperties().getTimestamp());
         origMessage.setJMSExpiration(qpidityMessage.getDeliveryProperties().getExpiration());
         origMessage.setJMSMessageID(message.getJMSMessageID());
+        origMessage.setJMSDeliveryMode(deliveryMode);
         // send the message
         try
         {
