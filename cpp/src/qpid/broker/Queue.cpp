@@ -154,16 +154,15 @@ Consumer::ptr Queue::allocate()
 
 bool Queue::dispatch(QueuedMessage& msg)
 {
+    //additions to the acquirers will result in a separate dispatch
+    //request, so won't result in anyone being missed
+    uint counter = getAcquirerCount();
     Consumer::ptr c = allocate();
-    Consumer::ptr first = c;
-    while(c){
+    while(c && counter--){
         if(c->deliver(msg)) {
             return true;            
         } else {
             c = allocate();
-            if (c == first) { 
-                break;
-            }
         }
     }
     return false;
@@ -194,6 +193,7 @@ void Queue::serviceAllBrowsers()
      Consumers copy;
      {
          RWlock::ScopedRlock locker(consumerLock);
+         if (browsers.empty()) return;//shortcut
          copy = browsers;
      }
      for (Consumers::iterator i = copy.begin(); i != copy.end(); i++) {
@@ -310,6 +310,11 @@ uint32_t Queue::getMessageCount() const{
 uint32_t Queue::getConsumerCount() const{
     RWlock::ScopedRlock locker(consumerLock);
     return acquirers.size() + browsers.size();
+}
+
+uint32_t Queue::getAcquirerCount() const{
+    RWlock::ScopedRlock locker(consumerLock);
+    return acquirers.size();
 }
 
 bool Queue::canAutoDelete() const{
