@@ -60,8 +60,10 @@ Broker::Options::Options(const std::string& name) :
     connectionBacklog(10),
     store(),
     stagingThreshold(5000000),
-	storeDir("/var"),
-	storeAsync(false)
+    storeDir("/var"),
+    storeAsync(false),
+    enableMgmt(0),
+    mgmtPubInterval(10)
 {
     addOptions()
         ("port,p", optValue(port,"PORT"),
@@ -79,7 +81,11 @@ Broker::Options::Options(const std::string& name) :
         ("store-directory", optValue(storeDir,"DIR"),
          "Store directory location for persistence.")
         ("store-async", optValue(storeAsync,"yes|no"),
-         "Use async persistence storage - if store supports it, enable AIO 0-DIRECT.");
+         "Use async persistence storage - if store supports it, enable AIO 0-DIRECT.")
+        ("mgmt,m", optValue(enableMgmt,"yes|no"),
+         "Enable Management")
+        ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"),
+         "Management Publish Interval");
 }
 
 const std::string empty;
@@ -87,6 +93,7 @@ const std::string amq_direct("amq.direct");
 const std::string amq_topic("amq.topic");
 const std::string amq_fanout("amq.fanout");
 const std::string amq_match("amq.match");
+const std::string qpid_management("qpid.management");
 
 Broker::Broker(const Broker::Options& conf) :
     config(conf),
@@ -96,11 +103,24 @@ Broker::Broker(const Broker::Options& conf) :
     factory(*this),
     dtxManager(store.get())
 {
+    if(conf.enableMgmt){
+	managementAgent = ManagementAgent::shared_ptr (new ManagementAgent (conf.mgmtPubInterval));
+	queues.setManagementAgent(managementAgent);
+    }
+
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     exchanges.declare(amq_direct, DirectExchange::typeName);
     exchanges.declare(amq_topic, TopicExchange::typeName);
     exchanges.declare(amq_fanout, FanOutExchange::typeName);
     exchanges.declare(amq_match, HeadersExchange::typeName);
+    
+    if(conf.enableMgmt) {
+    	QPID_LOG(info, "Management enabled");
+        exchanges.declare(qpid_management, TopicExchange::typeName);
+        managementAgent->setExchange (exchanges.get (qpid_management));
+    }
+    else
+    	QPID_LOG(info, "Management not enabled");
 
     if(store.get()) {
 		store->init(conf.storeDir, conf.storeAsync);
