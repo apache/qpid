@@ -257,7 +257,7 @@ public class ResetMessageListenerTest extends TestCase
 
         try
         {
-            _allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+            _allSecondMessagesSent.await(5000, TimeUnit.MILLISECONDS);
         }
         catch (InterruptedException e)
         {
