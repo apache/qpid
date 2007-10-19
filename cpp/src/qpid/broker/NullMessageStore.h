@@ -38,6 +38,7 @@ class NullMessageStore : public MessageStore
 public:
     NullMessageStore(bool warn = false);
 
+	virtual void init(const std::string& dir, const bool async);
     virtual std::auto_ptr<TransactionContext> begin();
     virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     virtual void prepare(TPCTransactionContext& txn);
@@ -62,6 +63,7 @@ public:
     virtual void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
     virtual void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
     virtual u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
+	virtual void flush(const qpid::broker::PersistableQueue& queue);
     ~NullMessageStore(){}
 };
 
