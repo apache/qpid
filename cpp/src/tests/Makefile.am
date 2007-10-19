@@ -60,6 +60,16 @@ check_PROGRAMS+=Shlib
 Shlib_SOURCES=Shlib.cpp
 Shlib_LDADD=-lboost_unit_test_framework $(lib_common)
 
+TESTS+=FieldValue
+check_PROGRAMS+=FieldValue
+FieldValue_SOURCES=FieldValue.cpp
+FieldValue_LDADD=-lboost_unit_test_framework $(lib_common)
+
+TESTS+=FieldTable
+check_PROGRAMS+=FieldTable
+FieldTable_SOURCES=FieldTable.cpp
+FieldTable_LDADD=-lboost_unit_test_framework $(lib_common)
+
 # TODO aconway 2007-08-07: Why aren't these tests run automatically?
 
 check_PROGRAMS+=ConcurrentQueue
@@ -106,7 +116,6 @@ broker_unit_tests =	\
   ClientChannelTest     
 
 framing_unit_tests =	\
-  FieldTableTest	\
   FramingTest		\
   HeaderTest		\
   SequenceNumberTest

@@ -24,6 +24,8 @@
 #include "Buffer.h"
 #include "amqp_types.h"
 
+#include "assert.h"
+
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -49,10 +51,10 @@ class FieldValue {
         virtual void decode(Buffer& buffer) = 0;
         virtual bool operator==(const Data&) const = 0;
 
-        virtual bool convertsToInt() const { return false; }
+        virtual bool convertsToInt() const { assert(0!=0); return false; }
         virtual bool convertsToString() const { return false; }
-        virtual int64_t getInt() const { return 0; }
-        virtual std::string getString() const { return ""; }
+        virtual int64_t getInt() const { assert(0!=0); return 0;}
+        virtual std::string getString() const { assert(0!=0); return ""; }
 
         virtual void print(std::ostream& out) const = 0;
     };
