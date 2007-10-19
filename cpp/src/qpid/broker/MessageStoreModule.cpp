@@ -28,6 +28,11 @@ MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
 {
 }
 
+void MessageStoreModule::init(const std::string& dir, const bool async)
+{
+	store->init(dir, async);
+}
+
 void MessageStoreModule::create(PersistableQueue& queue)
 {
     store->create(queue);
@@ -93,6 +98,11 @@ void MessageStoreModule::enqueue(TransactionContext* ctxt, PersistableMessage& m
 void MessageStoreModule::dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue)
 {
     store->dequeue(ctxt, msg, queue);
+}
+
+void MessageStoreModule::flush(const qpid::broker::PersistableQueue& queue)
+{
+    store->flush(queue);
 }
 
 u_int32_t MessageStoreModule::outstandingQueueAIO(const PersistableQueue& queue)

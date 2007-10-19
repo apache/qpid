@@ -38,6 +38,7 @@ class MessageStoreModule : public MessageStore
 public:
     MessageStoreModule(const std::string& name);
 
+	void init(const std::string& dir, const bool async);
     std::auto_ptr<TransactionContext> begin();
     std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     void prepare(TPCTransactionContext& txn);
@@ -62,7 +63,8 @@ public:
     void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
     void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
     u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
-
+    void flush(const qpid::broker::PersistableQueue& queue);
+	 
     ~MessageStoreModule(){}
 };
 
