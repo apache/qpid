@@ -830,13 +830,6 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                     //release lock now message is on queue.
                     _lock.unlock();
 
-                    //if  we have a non-filtering subscriber but queued messages && we're not Async && we have other Active subs then something is wrong!
-                    if ((s != null && hasQueuedMessages()) && !isProcessingAsync() && _subscriptions.hasActiveSubscribers())
-                    {
-                        _queue.deliverAsync();
-                    }
-
-
                     //Pre Deliver to all subscriptions
                     if (debugEnabled)
                     {
@@ -868,6 +861,13 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
                             sub.enqueueForPreDelivery(msg, deliverFirst);
                         }
                     }
+
+                    //if  we have a non-filtering subscriber but queued messages && we're not Async && we have other Active subs then something is wrong!
+                     if ((s != null && hasQueuedMessages()) && !isProcessingAsync() && _subscriptions.hasActiveSubscribers())
+                     {
+                         _queue.deliverAsync();
+                     }
+
                 }
             }
             else
