@@ -209,7 +209,7 @@ public class RecoverTest extends QpidTestCase
         _logger.info("Starting connection");
         con.start();
 
-        TextMessage tm2 = (TextMessage) consumer2.receive();
+        TextMessage tm2 = (TextMessage) consumer2.receive(2000);
         assertNotNull(tm2);
         assertEquals("msg2", tm2.getText());
 
