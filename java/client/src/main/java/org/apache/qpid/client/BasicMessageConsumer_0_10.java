@@ -104,7 +104,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
             {
                 _preAcquire = false;
             }
-        }                
+        }
     }
 
     // ----- Interface org.apache.qpidity.client.util.MessageListener
@@ -327,12 +327,13 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                   int oldval = _messageCounter.intValue();
                 _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                     org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,1);
+                _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
                 _0_10session.getQpidSession().messageFlush(getConsumerTag().toString());
                 _0_10session.getQpidSession().sync();
                 _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),Session.MESSAGE_FLOW_UNIT_BYTE, 0xFFFFFFFF);
                 if( _messageCounter.intValue() <= oldval )
                 {
-                    // we haven't received a message so tell the receiver to return null                     
+                    // we haven't received a message so tell the receiver to return null
                     _synchronousQueue.add(new NullTocken());
                 }
                 else
