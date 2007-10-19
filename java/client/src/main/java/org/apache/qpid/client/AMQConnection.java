@@ -300,7 +300,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 //We need to change protocol handler here as an error during the connect will not
                 // cause the StateManager to be replaced. So the state is out of sync on reconnect
                 // This can be seen when a exception occurs during connection. i.e. log4j NoSuchMethod. (using < 1.2.12)
-                _protocolHandler.setStateManager(new AMQStateManager());                
+                _protocolHandler.setStateManager(new AMQStateManager());
 
                 if (_logger.isInfoEnabled())
                 {
@@ -809,6 +809,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
                         _protocolHandler.closeConnection(timeout);
 
+                        //If the taskpool hasn't shutdown by now then give it shutdownNow.
+                        // This will interupt any running tasks.
+                        if (!_taskPool.isTerminated())
+                        {
+                            List<Runnable> tasks = _taskPool.shutdownNow();
+                            for (Runnable r : tasks)
+                            {
+                                _logger.warn("Connection close forced taskpool to prevent execution:" + r);
+                            }
+                        }
                     }
                     catch (AMQException e)
                     {
