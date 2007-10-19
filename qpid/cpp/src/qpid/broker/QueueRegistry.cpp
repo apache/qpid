@@ -19,13 +19,16 @@
  *
  */
 #include "QueueRegistry.h"
+#include "ManagementAgent.h"
+#include "ManagementObjectQueue.h"
 #include <sstream>
 #include <assert.h>
 
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-QueueRegistry::QueueRegistry(MessageStore* const _store) : counter(1), store(_store){}
+QueueRegistry::QueueRegistry(MessageStore* const _store) :
+    counter(1), store(_store) {}
 
 QueueRegistry::~QueueRegistry(){}
 
@@ -37,9 +40,18 @@ QueueRegistry::declare(const string& declareName, bool durable,
     string name = declareName.empty() ? generateName() : declareName;
     assert(!name.empty());
     QueueMap::iterator i =  queues.find(name);
+
     if (i == queues.end()) {
 	Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner));
 	queues[name] = queue;
+
+	if (managementAgent){
+	    ManagementObjectQueue::shared_ptr mgmtObject(new ManagementObjectQueue (name, durable, autoDelete));
+
+	    queue->setMgmt (mgmtObject);
+	    managementAgent->addObject(dynamic_pointer_cast<ManagementObject>(mgmtObject));
+	}
+	
 	return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
 	return std::pair<Queue::shared_ptr, bool>(i->second, false);
@@ -48,12 +60,24 @@ QueueRegistry::declare(const string& declareName, bool durable,
 
 void QueueRegistry::destroy(const string& name){
     RWlock::ScopedWlock locker(lock);
+
+    if (managementAgent){
+	ManagementObjectQueue::shared_ptr mgmtObject;
+	QueueMap::iterator i = queues.find(name);
+
+	if (i != queues.end()){
+	    mgmtObject = i->second->getMgmt ();
+	    managementAgent->deleteObject (dynamic_pointer_cast<ManagementObject>(mgmtObject));
+	}
+    }
+
     queues.erase(name);
 }
 
 Queue::shared_ptr QueueRegistry::find(const string& name){
     RWlock::ScopedRlock locker(lock);
     QueueMap::iterator i = queues.find(name);
+    
     if (i == queues.end()) {
 	return Queue::shared_ptr();
     } else {
@@ -76,3 +100,14 @@ string QueueRegistry::generateName(){
 MessageStore* const QueueRegistry::getStore() const {
     return store;
 }
+
+void QueueRegistry::setManagementAgent (ManagementAgent::shared_ptr agent)
+{
+    managementAgent = agent;
+}
+
+ManagementAgent::shared_ptr QueueRegistry::getManagementAgent (void)
+{
+    return managementAgent;
+}
+
