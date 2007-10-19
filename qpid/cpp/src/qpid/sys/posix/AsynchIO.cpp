@@ -189,11 +189,7 @@ void AsynchIO::readable(DispatchHandle& h) {
             errno = 0;
             int readCount = buff->byteCount-buff->dataCount;
             int rc = h.getSocket().read(buff->bytes + buff->dataCount, readCount);
-            if (rc == 0) {
-                eofCallback(*this);
-                h.unwatchRead();
-                return;
-            } else if (rc > 0) {
+            if (rc > 0) {
                 buff->dataCount += rc;
                 readCallback(*this, buff);
                 if (rc != readCount) {
@@ -204,8 +200,8 @@ void AsynchIO::readable(DispatchHandle& h) {
                 // Put buffer back
                 bufferQueue.push_back(buff);
                 
-                // This is effectively the same as eof
-                if (errno == ECONNRESET) {
+                // Eof or other side has gone away
+                if (rc == 0 || errno == ECONNRESET) {
                     eofCallback(*this);
                     h.unwatchRead();
                     return;
