@@ -49,10 +49,7 @@ using namespace qpid::broker;
 
 NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
 
-void NullMessageStore::init(const std::string& /*dir*/, const bool /*async*/)
-{
-    QPID_LOG(info, "Can't init, store not enabled");
-}
+void NullMessageStore::init(const std::string& /*dir*/, const bool /*async*/) {}
 
 void NullMessageStore::create(PersistableQueue& queue)
 {

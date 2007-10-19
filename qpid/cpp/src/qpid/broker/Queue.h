@@ -107,6 +107,7 @@ namespace qpid {
             void serviceBrowser(Consumer::ptr c);
             Consumer::ptr allocate();
             bool seek(QueuedMessage& msg, const framing::SequenceNumber& position);
+            uint32_t getAcquirerCount() const;
  
         protected:
 	   /**
