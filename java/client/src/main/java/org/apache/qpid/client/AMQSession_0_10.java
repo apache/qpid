@@ -26,6 +26,7 @@ import org.apache.qpid.client.failover.FailoverNoopSupport;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
+import org.apache.qpid.client.message.FiledTableSupport;
 import org.apache.qpidity.nclient.Session;
 import org.apache.qpidity.nclient.util.MessagePartListenerAdapter;
 import org.apache.qpidity.ErrorCode;
@@ -41,6 +42,8 @@ import javax.jms.JMSException;
 import javax.jms.Destination;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.UUID;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * This is a 0.10 Session
@@ -189,7 +192,13 @@ public class AMQSession_0_10 extends AMQSession
                               final FieldTable arguments, final AMQShortString exchangeName)
             throws AMQException, FailoverException
     {
-        getQpidSession().queueBind(queueName.toString(), exchangeName.toString(), routingKey.toString(), null);
+        Map args = FiledTableSupport.convertToMap(arguments);
+        // this is there only becasue the broker may expect a value for x-match
+        if( ! args.containsKey("x-match") )
+        {
+            args.put("x-match", "any");
+        }
+        getQpidSession().queueBind(queueName.toString(), exchangeName.toString(), routingKey.toString(), args);
         // We need to sync so that we get notify of an error.
         getQpidSession().sync();
         getCurrentException();
