@@ -207,7 +207,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
         return _acknowledgeMode;
     }
 
-    private boolean isMessageListenerSet()
+    protected boolean isMessageListenerSet()
     {
         return _messageListener.get() != null;
     }
