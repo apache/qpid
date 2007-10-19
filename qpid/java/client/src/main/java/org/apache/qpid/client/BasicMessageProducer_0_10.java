@@ -31,6 +31,7 @@ import org.apache.qpidity.transport.ReplyTo;
 import javax.jms.Message;
 import javax.jms.JMSException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 /**
  * This is a 0_10 message producer.
@@ -75,6 +76,10 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             if (message.getData() != null)
             {
                 qpidityMessage.appendData(message.getData().buf());
+            }
+            else
+            {
+                   qpidityMessage.appendData(ByteBuffer.allocate(0));
             }
         }
         catch (IOException e)
