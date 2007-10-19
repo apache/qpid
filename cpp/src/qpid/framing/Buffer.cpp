@@ -34,8 +34,17 @@ void Buffer::record(){
     r_position = position;
 }
 
-void Buffer::restore(){
+void Buffer::restore(bool reRecord){
+    uint32_t savedPosition = position;
+
     position = r_position;
+
+    if (reRecord)
+	r_position = savedPosition;
+}
+
+void Buffer::reset(){
+    position = 0;
 }
 
 uint32_t Buffer::available(){
