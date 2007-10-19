@@ -127,8 +127,14 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 getSession().getAMQConnection().getExceptionListener()
                         .onException(new JMSAMQException("Error when receiving message", e));
             }
-            catch (JMSException e1)
+            catch (Exception e1)
             {
+                // the receiver may be waiting for a message
+                if( _messageCounter.get() >= 0)
+                {
+                    _messageCounter.decrementAndGet();
+                    _synchronousQueue.add(new NullTocken());
+                }
                 // we should silently log thie exception as it only hanppens when the connection is closed
                 _logger.error("Exception when receiving message", e1);
             }
@@ -261,7 +267,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         // TODO Use a tag for fiding out if message filtering is done here or by the broker.
         try
         {
-            if (getMessageSelector() != null)
+            if (getMessageSelector() != null && ! getMessageSelector().equals(""))
             {
                 messageOk = _filter.matches(message);
             }
