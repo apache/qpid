@@ -58,11 +58,13 @@ public class MessageRequeueTest extends TestCase
 
     private long[] receieved = new long[numTestMessages + 1];
     private boolean passed = false;
+    QpidClientConnection conn;
+
 
     protected void setUp() throws Exception
     {
         super.setUp();
-        QpidClientConnection conn = new QpidClientConnection(BROKER);
+         conn = new QpidClientConnection(BROKER);
 
         conn.connect();
         // clear queue
@@ -142,6 +144,7 @@ public class MessageRequeueTest extends TestCase
             msg = consumer.receive(1000);
         }
 
+         _logger.info("consuming done.");
         conn.getSession().commit();
         consumer.close();
         assertEquals("number of consumed messages does not match initial data", (int) numTestMessages, messagesReceived);
@@ -151,22 +154,26 @@ public class MessageRequeueTest extends TestCase
         list.append("Failed to receive:");
         int failed = 0;
 
-        for (long b : messageLog)
+        // wit 0_10 we can have a delivery tag of 0
+        if (conn.isBroker08())
         {
-            if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist
+            for (long b : messageLog)
             {
-                _logger.error("Index: " + index + " was not received.");
-                list.append(" ");
-                list.append(index);
-                list.append(":");
-                list.append(b);
-                failed++;
+                if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist
+                {
+                    _logger.error("Index: " + index + " was not received.");
+                    list.append(" ");
+                    list.append(index);
+                    list.append(":");
+                    list.append(b);
+                    failed++;
+                }
+
+                index++;
             }
 
-            index++;
+            assertEquals(list.toString(), 0, failed);
         }
-
-        assertEquals(list.toString(), 0, failed);
         _logger.info("consumed: " + messagesReceived);
         conn.disconnect();
         passed = true;
@@ -216,23 +223,25 @@ public class MessageRequeueTest extends TestCase
         StringBuilder list = new StringBuilder();
         list.append("Failed to receive:");
         int failed = 0;
-
-        for (long b : receieved)
+        if (conn.isBroker08())
         {
-            if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist (and we don't have msg 0)
+            for (long b : receieved)
             {
-                _logger.error("Index: " + index + " was not received.");
-                list.append(" ");
-                list.append(index);
-                list.append(":");
-                list.append(b);
-                failed++;
+                if ((b == 0) && (index != 0)) // delivery tag of zero shouldn't exist (and we don't have msg 0)
+                {
+                    _logger.error("Index: " + index + " was not received.");
+                    list.append(" ");
+                    list.append(index);
+                    list.append(":");
+                    list.append(b);
+                    failed++;
+                }
+
+                index++;
             }
 
-            index++;
+            assertEquals(list.toString() + "-" + numTestMessages + "-" + totalConsumed, 0, failed);
         }
-
-        assertEquals(list.toString() + "-" + numTestMessages + "-" + totalConsumed, 0, failed);
         assertEquals("number of consumed messages does not match initial data", numTestMessages, totalConsumed);
         passed = true;
     }
