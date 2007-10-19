@@ -37,6 +37,16 @@ namespace broker {
  */
 class MessageStore : public TransactionalStore, public Recoverable {
 public:
+
+    /**
+     * init the store, call before any other call. If not called, store 
+     * is free to pick any defaults
+     * 
+     * @param dir the directory to create logs/db's
+     * @param async true, enable async, false, enable sync
+	 */
+	virtual void init(const std::string& dir, const bool async) = 0;
+
     /**
      * Record the existence of a durable queue
      */
@@ -133,6 +143,15 @@ public:
      */
     virtual void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue) = 0;
 
+    /**
+     * Flushes all async messages to disk for the specified queue
+     *
+     * Note: that this is async so the return of the function does
+     * not mean the opperation is complete.
+     * 
+     * @param queue the name of the queue from which it is to be dequeued
+     */
+    virtual void flush(const qpid::broker::PersistableQueue& queue)=0;
 
    /**
      * Returns the number of outstanding AIO's for a given queue
