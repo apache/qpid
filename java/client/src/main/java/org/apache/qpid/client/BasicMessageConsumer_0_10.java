@@ -53,6 +53,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      * A counter for keeping the number of available messages for this consumer
      */
     private final AtomicLong _messageCounter = new AtomicLong(0);
+
+    /**
+     * Number of received message so far
+     */
+      private final AtomicLong _messagesReceived = new AtomicLong(0);
+
     /**
      * This class logger
      */
@@ -135,6 +141,18 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
 
     public void onMessage(Message message)
     {
+        if( isMessageListenerSet())
+        {
+            _messagesReceived.incrementAndGet();
+            if( _messagesReceived.get() >= AMQSession_0_10.MAX_PREFETCH )
+            {
+                // require more credit
+                 _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
+                                                          org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,
+                                                          AMQSession_0_10.MAX_PREFETCH);
+                _messagesReceived.set(0);
+            }
+        }
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
         String consumerTag = getConsumerTag().toString();
@@ -417,6 +435,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                                                           org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_BYTE,
                                                           0xFFFFFFFF);
                 _0_10session.getQpidSession().sync();
+                _messagesReceived.set(0);;
             }
         }
     }
