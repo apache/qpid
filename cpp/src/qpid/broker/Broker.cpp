@@ -76,7 +76,7 @@ Broker::Options::Options(const std::string& name) :
          "Stages messages over N bytes to disk")
         ("store,s", optValue(store,"LIBNAME"),
          "Tells the broker to use the message store shared library LIBNAME for persistence")
-        ("store-diretcory", optValue(storeDir,"DIR"),
+        ("store-directory", optValue(storeDir,"DIR"),
          "Store directory location for persistence.")
         ("store-async", optValue(storeAsync,"yes|no"),
          "Use async persistence storage - if store supports it, enable AIO 0-DIRECT.");
