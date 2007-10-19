@@ -41,7 +41,8 @@ public:
     Buffer(char* data, uint32_t size);
 
     void record();
-    void restore();
+    void restore(bool reRecord = false);
+    void reset();
     uint32_t available();
     
     void putOctet(uint8_t i);

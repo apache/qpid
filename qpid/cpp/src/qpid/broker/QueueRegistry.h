@@ -24,6 +24,7 @@
 #include <map>
 #include "qpid/sys/Mutex.h"
 #include "Queue.h"
+#include "ManagementAgent.h"
 
 namespace qpid {
 namespace broker {
@@ -87,6 +88,12 @@ class QueueRegistry{
      * Return the message store used.
      */
     MessageStore* const getStore() const;
+    
+    /**
+     * Set/Get the ManagementAgent in use.
+     */
+    void setManagementAgent (ManagementAgent::shared_ptr agent);
+    ManagementAgent::shared_ptr getManagementAgent (void);
 
 private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
@@ -94,6 +101,7 @@ private:
     qpid::sys::RWlock lock;
     int counter;
     MessageStore* const store;
+    ManagementAgent::shared_ptr managementAgent;
 };
 
     

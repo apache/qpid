@@ -35,6 +35,7 @@
 #include "PersistableQueue.h"
 #include "QueuePolicy.h"
 #include "QueueBindings.h"
+#include "ManagementObjectQueue.h"
 
 namespace qpid {
     namespace broker {
@@ -93,6 +94,7 @@ namespace qpid {
             qpid::sys::Serializer<DispatchFunctor> serializer;
             DispatchFunctor dispatchCallback;
             framing::SequenceNumber sequence;
+	    ManagementObjectQueue::shared_ptr mgmtObjectPtr;
 
             void pop();
             void push(Message::shared_ptr& msg);
@@ -130,6 +132,8 @@ namespace qpid {
             void destroy();
             void bound(const string& exchange, const string& key, const qpid::framing::FieldTable& args);
             void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
+            void setMgmt (ManagementObjectQueue::shared_ptr mgmt) { mgmtObjectPtr = mgmt; }
+            ManagementObjectQueue::shared_ptr getMgmt (void) { return mgmtObjectPtr; }
 
             bool acquire(const QueuedMessage& msg);
 
@@ -158,7 +162,7 @@ namespace qpid {
              * Request dispatch any queued messages providing there are
              * consumers for them. Only one thread can be dispatching
              * at any time, so this call schedules the despatch based on
-	     * the serilizer policy.
+	         * the serilizer policy.
              */
             void requestDispatch(Consumer::ptr c = Consumer::ptr());
             void flush(DispatchCompletion& callback);
