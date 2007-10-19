@@ -142,7 +142,7 @@ public class TxnTest extends TestCase implements MessageListener
         _consumer = _clientSession.createConsumer(_queue);
 
         //Receive Message
-        Message received = _consumer.receive(100);
+        Message received = _consumer.receive(1000);
         assertNull("More messages received", received);
 
         _consumer.close();
@@ -174,12 +174,12 @@ public class TxnTest extends TestCase implements MessageListener
         _producer.send(_producerSession.createTextMessage("TxtTestReceive"));
 
         //Receive Message
-        Message received = _consumer.receive(100);
+        Message received = _consumer.receive(1000);
 
         assertEquals("Incorrect Message Received.", "TxtTestReceive", ((TextMessage) received).getText());
         //Receive Message
 
-        received = _consumer.receive(100);
+        received = _consumer.receive(1000);
 
         assertNull("More messages received", received);
 

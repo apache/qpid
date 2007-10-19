@@ -151,7 +151,7 @@ public class LargeMessageTest extends TestCase
 
             producer.send(_session.createTextMessage(_messageText));
 
-            TextMessage result = (TextMessage) consumer.receive(1000);
+            TextMessage result = (TextMessage) consumer.receive(10000);
 
             assertNotNull("Null message recevied", result);
             assertEquals("Message Size", _messageText.length(), result.getText().length());

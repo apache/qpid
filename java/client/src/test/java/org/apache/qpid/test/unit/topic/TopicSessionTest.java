@@ -308,15 +308,15 @@ public class TopicSessionTest extends TestCase
         publisher.publish(session1.createTextMessage("hello-new2"));
 
         //test normal subscriber gets message
-        m = (TextMessage) normal.receive(1000);
+        m = (TextMessage) normal.receive(5000);
         assertNotNull(m);
 
         //test selector subscriber doesn't message
-        m = (TextMessage) select.receive(1000);
+        m = (TextMessage) select.receive(2000);
         assertNull(m);
 
         //test nolocal subscriber doesn't message
-        m = (TextMessage) noLocal.receive(1000);
+        m = (TextMessage) noLocal.receive(2000);
         if (m != null)
         {
             System.out.println("Message:" + m.getText());
@@ -330,15 +330,15 @@ public class TopicSessionTest extends TestCase
         publisher.publish(message);
 
         //test normal subscriber gets message
-        m = (TextMessage) normal.receive(1000);
+        m = (TextMessage) normal.receive(5000);
         assertNotNull(m);
 
         //test selector subscriber does get message
-        m = (TextMessage) select.receive(100);
+        m = (TextMessage) select.receive(2000);
         assertNotNull(m);
 
         //test nolocal subscriber doesn't message
-        m = (TextMessage) noLocal.receive(100);
+        m = (TextMessage) noLocal.receive(1000);
         assertNull(m);
 
         AMQConnection con2 = new AMQConnection(BROKER + "?retries='0'", "guest", "guest", "test2", "test");
@@ -352,15 +352,15 @@ public class TopicSessionTest extends TestCase
         publisher2.publish(message);
 
         //test normal subscriber gets message
-        m = (TextMessage) normal.receive(1000);
+        m = (TextMessage) normal.receive(2000);
         assertNotNull(m);
 
         //test selector subscriber does get message
-        m = (TextMessage) select.receive(100);
+        m = (TextMessage) select.receive(2000);
         assertNotNull(m);
 
         //test nolocal subscriber does message
-        m = (TextMessage) noLocal.receive(100);
+        m = (TextMessage) noLocal.receive(2000);
         assertNotNull(m);
 
 
