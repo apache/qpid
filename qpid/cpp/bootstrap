@@ -16,6 +16,7 @@ cat > src/rubygen.mk <<EOF
 	\$(rgen_cmd)
 EOF
 
+
 automake
 autoconf
 
