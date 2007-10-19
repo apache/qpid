@@ -49,6 +49,11 @@ using namespace qpid::broker;
 
 NullMessageStore::NullMessageStore(bool _warn) : warn(_warn){}
 
+void NullMessageStore::init(const std::string& /*dir*/, const bool /*async*/)
+{
+    QPID_LOG(info, "Can't init, store not enabled");
+}
+
 void NullMessageStore::create(PersistableQueue& queue)
 {
     QPID_LOG(info, "Can't create durable queue '" << queue.getName() << "'. Persistence not enabled.");
@@ -107,6 +112,11 @@ void NullMessageStore::dequeue(TransactionContext*, PersistableMessage& msg, con
 {
     msg.dequeueComplete();
     QPID_LOG(info, "Can't dequeue message from '" << queue.getName() << "'. Persistence not enabled.");
+}
+
+void NullMessageStore::flush(const qpid::broker::PersistableQueue& queue)
+{
+    QPID_LOG(info, "Can't flush. Persistence not enabled queue-" << queue.getName());
 }
 
 u_int32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& )
