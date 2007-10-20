@@ -20,8 +20,11 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import junit.framework.TestCase;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.transport.TransportConnection;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -30,14 +33,20 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
+import javax.jms.Queue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.transport.TransportConnection;
-
+/**
+ * ConnectionStartTest:
+ * This test verifies that a fresh connection is not started and no messages are delivered until the connection is
+ * started.
+ *
+ * After the connection is started then the message should be there, and the connection started.
+ *
+ * This Test verifies that using receive() and a messageListener does not cause message delivery before start is called.   
+ *
+ */
 public class ConnectionStartTest extends TestCase
 {
 
@@ -54,23 +63,24 @@ public class ConnectionStartTest extends TestCase
 
         try
         {
+            // Create Consumer Connection
+            _connection = new AMQConnection(_broker, "guest", "guest", "fred", "test");
+
+            _consumerSess = _connection.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
+
+            Queue queue = _consumerSess.createQueue("ConnectionStartTest");
+
+            _consumer = _consumerSess.createConsumer(queue);
 
 
+            // Create Producer Connection to send message
             AMQConnection pubCon = new AMQConnection(_broker, "guest", "guest", "fred", "test");
-
-            AMQQueue queue = new AMQQueue(pubCon,"ConnectionStartTest");
 
             Session pubSess = pubCon.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
 
             MessageProducer pub = pubSess.createProducer(queue);
 
             pub.send(pubSess.createTextMessage("Initial Message"));
-
-            _connection = new AMQConnection(_broker, "guest", "guest", "fred", "test");
-
-            _consumerSess = _connection.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
-
-            _consumer = _consumerSess.createConsumer(queue);
 
             pubCon.close();
 
@@ -85,6 +95,7 @@ public class ConnectionStartTest extends TestCase
     {
         _connection.close();
         TransportConnection.killVMBroker(1);
+        super.tearDown();
     }
 
     public void testSimpleReceiveConnection()
@@ -94,9 +105,9 @@ public class ConnectionStartTest extends TestCase
             assertTrue("Connection should not be started", !_connection.started());
             //Note that this next line will start the dispatcher in the session
             // should really not be called before _connection start
-            assertTrue("There should not be messages waiting for the consumer", _consumer.receiveNoWait() == null);
+            assertNull("There should not be messages waiting for the consumer", _consumer.receiveNoWait());
             _connection.start();
-            assertTrue("There should be messages waiting for the consumer", _consumer.receiveNoWait() == null);
+            assertNotNull("There should be messages waiting for the consumer", _consumer.receive(1000));
             assertTrue("Connection should be started", _connection.started());
 
         }
@@ -131,7 +142,11 @@ public class ConnectionStartTest extends TestCase
                 }
             });
 
+            // Ensure that setting a ML doesn't start the connection
             assertTrue("Connection should not be started", !_connection.started());
+            // Ensure that the message wasn't delivered while the connection was stopped.
+            assertEquals("Message latch should still be set",1,_gotMessage.getCount());
+
             _connection.start();
             assertTrue("Connection should be started", _connection.started());
 

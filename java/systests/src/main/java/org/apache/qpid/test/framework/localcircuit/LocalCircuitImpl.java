@@ -342,7 +342,7 @@ public class LocalCircuitImpl implements Circuit
         }
         catch (JMSException e)
         {
-            throw new RuntimeException("Got JMSException during close.", e);
+            throw new RuntimeException("Got JMSException during close:" + e.getMessage(), e);
         }
     }
 
@@ -401,16 +401,16 @@ public class LocalCircuitImpl implements Circuit
         }
 
         // Inject a short pause to allow time for exceptions to come back asynchronously.
-        TestUtils.pause(100L);
+        TestUtils.pause(500L);
 
         // Request a status report.
         check();
 
-        // Apply all of the requested assertions, keeping record of any that fail.
-        List<Assertion> failures = applyAssertions(assertions);
-
         // Clean up the publisher/receivers/controlSession/connections.
         close();
+
+        // Apply all of the requested assertions, keeping record of any that fail.
+        List<Assertion> failures = applyAssertions(assertions);
 
         // Return any failed assertions to the caller.
         return failures;

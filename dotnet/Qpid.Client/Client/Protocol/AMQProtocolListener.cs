@@ -29,21 +29,40 @@ using Apache.Qpid.Framing;
 
 namespace Apache.Qpid.Client.Protocol
 {
+    /// <summary>
+    /// AMQProtocolListener 
+    ///
+    /// <p/>Fail-over state transition rules...
+    ///
+    /// <p/>The failover handler is created when the session is created since it needs a reference to the IoSession in order
+    /// to be able to send errors during failover back to the client application. The session won't be available in the case
+    /// when failing over due to a Connection.Redirect message from the broker.
+    ///
+    /// <p><table id="crc"><caption>CRC Card</caption>
+    /// <tr><th> Responsibilities <th> Collaborations
+    /// <tr><td> Track fail over state of a connection.
+    /// <tr><td> Manage method listeners. <td> IAMQMethodListener
+    /// <tr><td> Receive notification of all IO errors on a connection. <td> IoHandler
+    /// <tr><td> Inform method listeners of all method events on a connection. <td> IAMQMethodListener
+    /// <tr><td> Inform method listeners of all error events on a connection. <td> IAMQMethodListener
+    /// </table>
+    ///
+    /// <b>Todo:</b> The broker will close the connection with no warning if authentication fails. This may result in the fail-over process being
+    /// triggered, when it should not be.
+    ///
+    /// </summary>
     public class AMQProtocolListener : IProtocolListener
     {
+        /// <summary>Used for debugging.</summary>
         private static readonly ILog _log = LogManager.GetLogger(typeof(AMQProtocolListener));
 
-        /**
-         * We create the failover handler when the session is created since it needs a reference to the IoSession in order
-         * to be able to send errors during failover back to the client application. The session won't be available in the
-         * case where we failing over due to a Connection.Redirect message from the broker.
-         */
+        /// <summary>
+        /// Holds the failover handler for the connection. When a failure is detected, and the current failover state allows it,
+        /// the failover process is handed off to this handler.
+        /// </summary>
         private FailoverHandler _failoverHandler;
 
-        /**
-         * This flag is used to track whether failover is being attempted. It is used to prevent the application constantly
-         * attempting failover where it is failing.
-         */
+        /// <summary>Tracks the current fail-over state.</summary>
         internal FailoverState _failoverState = FailoverState.NOT_STARTED;
 
         internal FailoverState FailoverState
@@ -63,15 +82,14 @@ namespace Apache.Qpid.Client.Protocol
             set { _stateManager = value; }
         }
 
-        //private readonly CopyOnWriteArraySet _frameListeners = new CopyOnWriteArraySet();
         private readonly ArrayList _frameListeners = ArrayList.Synchronized(new ArrayList());
         
-        AMQProtocolSession _protocolSession = null; // FIXME
-        public AMQProtocolSession ProtocolSession { set { _protocolSession = value; } } // FIXME: can this be fixed?
-        
+        AMQProtocolSession _protocolSession = null;
 
         private readonly Object _lock = new Object();
 
+        public AMQProtocolSession ProtocolSession { set { _protocolSession = value; } }
+        
         public AMQProtocolListener(AMQConnection connection, AMQStateManager stateManager)
         {
             _connection = connection;
@@ -138,88 +156,91 @@ namespace Apache.Qpid.Client.Protocol
             {
                 _log.Debug("HeartBeat received");
             }
-            //_connection.BytesReceived(_protocolSession.Channel.ReadBytes); // XXX: is this really useful?
         }
 
+        /// <summary>
+        /// Receives notification of any IO exceptions on the connection.
+        ///
+        /// <p/>Upon receipt of a connection closed exception or any IOException, the fail-over process is attempted. If the fail-over fails, then
+        /// all method listeners and the application connection object are notified of the connection failure exception.
+        ///
+        /// <p/>All other exception types are propagated to all method listeners.
+        /// </summary>
         public void OnException(Exception cause)
         {
-            _log.Warn("Protocol Listener received exception", cause);
+            _log.Warn("public void OnException(Exception cause = " + cause + "): called");
+
+            // Ensure that the method listener set cannot be changed whilst this exception is propagated to all listeners. This also 
+            // ensures that this exception is fully propagated to all listeners, before another one can be processed.
             lock (_lock)
             {
-                if (_failoverState == FailoverState.NOT_STARTED)
+                if (cause is AMQConnectionClosedException || cause is System.IO.IOException)
                 {
-                    if (cause is AMQConnectionClosedException)
+                    // Try a fail-over because the connection has failed.
+                    FailoverState failoverState = AttemptFailover();
+
+                    // Check if the fail-over has failed, in which case notify all method listeners of the exception.
+                    // The application connection object is also notified of the failure of the connection with the exception.
+                    if (failoverState == FailoverState.FAILED)
                     {
-                        WhenClosed();
+                        _log.Debug("Fail-over has failed. Notifying all method listeners of the exception.");
+
+                        AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
+                        PropagateExceptionToWaiters(amqe);
+                        _connection.ExceptionReceived(cause);
                     }
                 }
-                    // We reach this point if failover was attempted and failed therefore we need to let the calling app
-                    // know since we cannot recover the situation.
-                else if (_failoverState == FailoverState.FAILED)
+                // Notify all method listeners of the exception.
+                else
                 {
-                    // we notify the state manager of the error in case we have any clients waiting on a state
-                    // change. Those "waiters" will be interrupted and can handle the exception
-                    AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
-                    PropagateExceptionToWaiters(amqe);
+                    PropagateExceptionToWaiters(cause);
                     _connection.ExceptionReceived(cause);
                 }
             }
         }
 
-        /**
-         * When the broker connection dies we can either get sessionClosed() called or exceptionCaught() followed by
-         * sessionClosed() depending on whether we were trying to send data at the time of failure.
-         *
-         * @param session
-         * @throws Exception
-         */
-        void WhenClosed()
+        /// <summary>
+        /// Tries to fail-over the connection, if the connection policy will permit it, and the fail-over process has not yet been
+        /// started. If the connection does not allow fail-over then an exception will be raised. If a fail-over is already in progress
+        /// this method allows it to continue to run and will do nothing.
+        ///
+        /// <p/>This method should only be called when the connection has been remotely closed.
+        /// </summary>
+        ///
+        /// <returns>The fail-over state at the end of this attempt.</returns>
+        private FailoverState AttemptFailover()
         {
+            _log.Debug("private void AttemptFailover(): called");
+            _log.Debug("_failoverState = " + _failoverState);
+
+            // Ensure that the connection stops sending heart beats, if it still is.
             _connection.StopHeartBeatThread();
 
-            // TODO: Server just closes session with no warning if auth fails.
+            // Check that the connection policy allows fail-over to be attempted.
+            if (!_connection.IsFailoverAllowed)
+            {
+                _log.Debug("Connection does not allowed to failover");
+                _connection.ExceptionReceived(
+                    new AMQDisconnectedException("Broker closed connection and reconnection is not permitted."));
+            }
+
+            // Check if connection was closed deliberately by the application, in which case no fail-over is attempted.
             if (_connection.Closed)
             {
-                _log.Info("Channel closed called by client");
+                return _failoverState;
             }
-            else
+
+            // If the connection allows fail-over and fail-over has not yet been started, then it is started and the fail-over state is 
+            // advanced to 'in progress'
+            if (_failoverState == FailoverState.NOT_STARTED && _connection.IsFailoverAllowed)
             {
-                _log.Info("Channel closed called with failover state currently " + _failoverState);
+                _log.Info("Starting the fail-over process.");
 
-                // Reconnectablility was introduced here so as not to disturb the client as they have made their intentions
-                // known through the policy settings.
-
-                if ((_failoverState != FailoverState.IN_PROGRESS) && _connection.IsFailoverAllowed)
-                {
-                    _log.Info("FAILOVER STARTING");
-                    if (_failoverState == FailoverState.NOT_STARTED)
-                    {
-                        _failoverState = FailoverState.IN_PROGRESS;
-                        StartFailoverThread();
-                    }
-                    else
-                    {
-                        _log.Info("Not starting failover as state currently " + _failoverState);
-                    }
-                }
-                else
-                {
-                    _log.Info("Failover not allowed by policy.");
-
-                    if (_failoverState != FailoverState.IN_PROGRESS)
-                    {
-                        _log.Info("sessionClose() not allowed to failover");
-                        _connection.ExceptionReceived(
-                            new AMQDisconnectedException("Server closed connection and reconnection not permitted."));
-                    }
-                    else
-                    {
-                        _log.Info("sessionClose() failover in progress");
-                    }
-                }
+                _failoverState = FailoverState.IN_PROGRESS;
+                StartFailoverThread();
             }
 
-            _log.Info("Protocol Channel [" + this + "] closed");
+            return _failoverState;
         }
 
         /// <summary>

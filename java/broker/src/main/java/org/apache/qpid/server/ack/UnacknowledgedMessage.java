@@ -60,7 +60,7 @@ public class UnacknowledgedMessage
     {
         if (queue != null)
         {
-            message.dequeue(storeContext, queue);
+            queue.dequeue(storeContext, message);
         }
         //if the queue is null then the message is waiting to be acked, but has been removed.
         message.decrementReference(storeContext);

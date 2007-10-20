@@ -238,6 +238,11 @@ public class AMQQueue implements Managable, Comparable
         return _autoDelete;
     }
 
+    public boolean isDeleted()
+    {
+        return _deleted.get();
+    }    
+
     /** @return no of messages(undelivered) on the queue. */
     public int getMessageCount()
     {
@@ -581,7 +586,7 @@ public class AMQQueue implements Managable, Comparable
     /** Removes the AMQMessage from the top of the queue. */
     public synchronized void deleteMessageFromTop(StoreContext storeContext) throws AMQException
     {
-        _deliveryMgr.removeAMessageFromTop(storeContext);
+        _deliveryMgr.removeAMessageFromTop(storeContext, this);
     }
 
     /** removes all the messages from the queue. */
@@ -809,7 +814,7 @@ public class AMQQueue implements Managable, Comparable
         }
     }
 
-    void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
+    public void dequeue(StoreContext storeContext, AMQMessage msg) throws FailedDequeueException
     {
         try
         {

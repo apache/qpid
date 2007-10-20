@@ -126,12 +126,18 @@ gen.mk: Makefile.am
 check_PROGRAMS = interop_runner
 interop_runner_SOURCES = 	\
   interop_runner.cpp	 	\
+  TestUtils.cpp                 \
   SimpleTestCaseBase.cpp	\
   BasicP2PTest.cpp		\
   BasicPubSubTest.cpp		\
+  P2PMessageSizeTest.cpp        \
+  PubSubMessageSizeTest.cpp     \
+  TestUtils.h                   \
   SimpleTestCaseBase.h		\
   BasicP2PTest.h		\
   BasicPubSubTest.h		\
+  P2PMessageSizeTest.h          \
+  PubSubMessageSizeTest.h       \
   TestCase.h			\
-  TestOptions.h
+  TestOptions.h                 
 interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)

@@ -258,9 +258,7 @@ void Channel::rollback(){
     
 void Channel::handleMethod(AMQMethodBody::shared_ptr body){
     //channel.flow, channel.close, basic.deliver, basic.return or a response to a synchronous request
-    if(responses.isWaiting()){
-        responses.signalResponse(body);
-    }else if(method_bodies.basic_deliver.match(body.get())){
+    if(method_bodies.basic_deliver.match(body.get())){
         if(incoming != 0){
             std::cout << "Existing message not complete [deliveryTag=" << incoming->getDeliveryTag() << "]" << std::endl;
             THROW_QPID_ERROR(PROTOCOL_ERROR + 504, "Existing message not complete");
@@ -280,6 +278,8 @@ void Channel::handleMethod(AMQMethodBody::shared_ptr body){
 
     }else if(method_bodies.channel_flow.match(body.get())){
         
+    } else if(responses.isWaiting()){
+        responses.signalResponse(body);
     }else{
         //signal error
         std::cout << "Unhandled method: " << *body << std::endl;

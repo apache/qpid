@@ -204,18 +204,12 @@
                             <configuration>
                                 <tasks>
 
-                                    <condition property="broker.dir" 
-                                               else="${user.dir}${file.separator}broker"
-                                               value="${user.dir}">
-                                        <contains string="${user.dir}" substring="broker" />
-                                    </condition>
-
                                     <condition property="skip-python-tests" value="true">
                                         <isset property="skip.python.tests"/>
                                     </condition>
 
                                     <property name="command" 
-                                              value="python run-tests -v -I java_failing.txt"/>
+                                              value="python run-tests -v -I java_failing.txt -b localhost:2000"/>
                                     <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
 
                                     <ant antfile="python-test.xml" inheritRefs="true">

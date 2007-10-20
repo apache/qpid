@@ -143,9 +143,10 @@ namespace Apache.Qpid.Client.Transport
          try
          {
             _topStream.Write(buffer.Array, buffer.Position, buffer.Limit); // FIXME
-         } catch ( Exception e )
+         } 
+         catch (Exception e)
          {
-            _log.Error("Write caused exception", e);
+            _log.Warn("Write caused exception", e);
             _protocolListener.OnException(e);
          }
       }

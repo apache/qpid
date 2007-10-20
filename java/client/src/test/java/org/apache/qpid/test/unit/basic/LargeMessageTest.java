@@ -68,6 +68,9 @@ public class LargeMessageTest extends TestCase
     protected void tearDown() throws Exception
     {
         super.tearDown();
+        _session.close();
+        _connection.close();
+        TransportConnection.killAllVMBrokers();
     }
 
     private void init(AMQConnection connection) throws Exception
@@ -148,7 +151,7 @@ public class LargeMessageTest extends TestCase
 
             producer.send(_session.createTextMessage(_messageText));
 
-            TextMessage result = (TextMessage) consumer.receive(1000);
+            TextMessage result = (TextMessage) consumer.receive(10000);
 
             assertNotNull("Null message recevied", result);
             assertEquals("Message Size", _messageText.length(), result.getText().length());

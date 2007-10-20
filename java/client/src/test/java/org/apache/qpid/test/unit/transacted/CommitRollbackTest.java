@@ -201,7 +201,7 @@ public class CommitRollbackTest extends TestCase
 
         _logger.info("getting test message");
 
-        Message msg = _consumer.receive(1000);
+        Message msg = _consumer.receive(5000);
         assertNotNull("retrieved message is null", msg);
 
         _logger.info("closing connection");
@@ -210,7 +210,7 @@ public class CommitRollbackTest extends TestCase
         newConnection();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(5000);
 
         _session.commit();
 
@@ -237,7 +237,7 @@ public class CommitRollbackTest extends TestCase
 
         _logger.info("getting test message");
 
-        Message msg = _consumer.receive(1000);
+        Message msg = _consumer.receive(5000);
         assertNotNull("retrieved message is null", msg);
         assertEquals("test message was correct message", MESSAGE_TEXT, ((TextMessage) msg).getText());
 
@@ -248,7 +248,7 @@ public class CommitRollbackTest extends TestCase
         newConnection();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(5000);
 
         _session.commit();
 
@@ -313,7 +313,7 @@ public class CommitRollbackTest extends TestCase
 
         _logger.info("getting test message");
 
-        Message msg = _consumer.receive(1000);
+        Message msg = _consumer.receive(5000);
 
         assertNotNull("retrieved message is null", msg);
         assertEquals("test message was correct message", MESSAGE_TEXT, ((TextMessage) msg).getText());
@@ -328,7 +328,7 @@ public class CommitRollbackTest extends TestCase
 
         _consumer = _session.createConsumer(_jmsQueue);
 
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(5000);
 
         _session.commit();
         assertNotNull("test message was consumed and rolled back, but is gone", result);
@@ -363,7 +363,7 @@ public class CommitRollbackTest extends TestCase
             _session.rollback();
 
             _logger.info("receiving result");
-            Message result = _consumer.receive(1000);
+            Message result = _consumer.receive(5000);
 
             assertNotNull("test message was consumed and rolled back, but is gone", result);
 
@@ -407,7 +407,6 @@ public class CommitRollbackTest extends TestCase
         {
             _logger.info("Got 1 redelivered");
             assertTrue("Message is not marked as redelivered", result.getJMSRedelivered());
-            assertFalse("Already received message one", _gotone);
             _gotone = true;
 
         }
@@ -418,15 +417,15 @@ public class CommitRollbackTest extends TestCase
             if (result.getJMSRedelivered())
             {
                 _logger.info("Got 2 redelivered, message was prefetched");
-                assertFalse("Already received message redelivered two", _gottwoRedelivered);
-
                 _gottwoRedelivered = true;
+                
             }
             else
             {
                 _logger.warn("Got 2, message prefetched wasn't cleared or messages was in transit when rollback occured");                
                 assertFalse("Already received message two", _gottwo);
-
+                assertFalse("Already received message redelivered two", _gottwoRedelivered);
+                
                 _gottwo = true;
             }
         }
@@ -434,6 +433,13 @@ public class CommitRollbackTest extends TestCase
         verifyMessages(_consumer.receive(1000));
     }
 
+    /**
+     * This test sends two messages receives on of them but doesn't ack it.
+     * The consumer is then closed
+     * the first message should be returned as redelivered.
+     *  the second message should be delivered normally. 
+     * @throws Exception
+     */
     public void testSend2ThenCloseAfter1andTryAgain() throws Exception
     {
         assertTrue("session is not transacted", _session.getTransacted());
@@ -445,7 +451,7 @@ public class CommitRollbackTest extends TestCase
         _pubSession.commit();
 
         _logger.info("getting test message");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(5000);
 
         assertNotNull("Message received should not be null", result);
         assertEquals("1", ((TextMessage) result).getText());
@@ -461,7 +467,7 @@ public class CommitRollbackTest extends TestCase
 
 // NOTE: Both msg 1 & 2 will be marked as redelivered as they have both will have been rejected.
 // Only the occasion where it is not rejected will it mean it hasn't arrived at the client yet.
-        result = _consumer.receive(1000);
+        result = _consumer.receive(5000);
         assertNotNull("test message was consumed and rolled back, but is gone", result);
 
 // The first message back will be either 1 or 2 being redelivered
@@ -475,9 +481,16 @@ public class CommitRollbackTest extends TestCase
             assertEquals("2", ((TextMessage) result).getText());
         }
 
-        result = _consumer.receive(1000);
-        assertNotNull("test message was consumed and rolled back, but is gone", result);
-        assertTrue("Messasge is not marked as redelivered" + result, result.getJMSRedelivered());
+        Message result2 = _consumer.receive(5000);
+        assertNotNull("test message was consumed and rolled back, but is gone", result2);
+
+        // if this is message 1 then it should be marked as redelivered
+        if("1".equals(((TextMessage) result2).getText()))
+        {
+            assertTrue("Messasge is not marked as redelivered" + result2, result2.getJMSRedelivered());
+        }
+
+        assertNotSame("Messages should not have the same content",((TextMessage) result2).getText(), ((TextMessage) result).getText() );
 
         result = _consumer.receive(1000);
         assertNull("test message should be null:" + result, result);
@@ -497,7 +510,7 @@ public class CommitRollbackTest extends TestCase
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
         _pubSession.commit();
 
-        assertNotNull(_consumer.receive(100));
+        assertNotNull(_consumer.receive(5000));
 
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
@@ -505,14 +518,14 @@ public class CommitRollbackTest extends TestCase
         _pubSession.rollback();
 
         _logger.info("receiving result");
-        Message result = _consumer.receive(1000);
+        Message result = _consumer.receive(5000);
         assertNull("test message was put and rolled back, but is still present", result);
 
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
         _pubSession.commit();
 
-        assertNotNull(_consumer.receive(100));
+        assertNotNull(_consumer.receive(5000));
 
     }
 

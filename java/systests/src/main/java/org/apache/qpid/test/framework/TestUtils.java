@@ -26,16 +26,13 @@ import static org.apache.qpid.test.framework.MessagingTestConfigProperties.*;
 
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.Message;
+import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import java.util.Properties;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * TestUtils provides static helper methods that are usefull for writing tests against QPid.
@@ -50,6 +47,10 @@ public class TestUtils
 {
     /** Used for debugging. */
     private static Logger log = Logger.getLogger(TestUtils.class);
+
+    private static byte[] MESSAGE_DATA_BYTES =
+        "Test Message -- Test Message -- Test Message -- Test Message -- Test Message -- Test Message -- Test Message -- "
+        .getBytes();
 
     /**
      * Establishes a JMS connection using a set of properties and qpids built in JNDI implementation. This is a simple
@@ -96,9 +97,8 @@ public class TestUtils
             Context ctx = new InitialContext(messagingProps);
 
             ConnectionFactory cf = (ConnectionFactory) ctx.lookup(CONNECTION_NAME);
-            Connection connection = cf.createConnection();
 
-            return connection;
+            return cf.createConnection();
         }
         catch (NamingException e)
         {
@@ -108,6 +108,39 @@ public class TestUtils
         {
             throw new RuntimeException("Could not establish connection due to JMSException.", e);
         }
+    }
+
+    /**
+     * Creates a test message of the specified size, on the given JMS session.
+     *
+     * @param session The JMS session.
+     * @param size    The size of the message in bytes.
+     *
+     * @return A bytes message, of the specified size, filled with dummy data.
+     *
+     *
+     */
+    public static Message createTestMessageOfSize(Session session, int size) throws JMSException
+    {
+        BytesMessage message = session.createBytesMessage();
+
+        if (size > 0)
+        {
+            int div = MESSAGE_DATA_BYTES.length / size;
+            int mod = MESSAGE_DATA_BYTES.length % size;
+
+            for (int i = 0; i < div; i++)
+            {
+                message.writeBytes(MESSAGE_DATA_BYTES);
+            }
+
+            if (mod != 0)
+            {
+                message.writeBytes(MESSAGE_DATA_BYTES, 0, mod);
+            }
+        }
+
+        return message;
     }
 
     /**

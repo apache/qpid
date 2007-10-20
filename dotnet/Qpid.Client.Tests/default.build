@@ -28,19 +28,22 @@
             file="log4net.config"
          />
     </target>
+
     <target name="test" depends="build">
-         <nunit2>
+        <nunit2>
             <formatter type="${nant.formatter}" usefile="false" />
             <test>
-               <assemblies>
-                  <include name="${build.dir}/${project::get-name()}.tests.dll"/>
-               </assemblies>
-               <categories>
-                  <exclude name="Failover"/>
-                  <exclude name="SSL" if="${framework::get-target-framework() == 'mono-2.0'}"/>
-               </categories>
+                <assemblies>
+                    <include name="${build.dir}/${project::get-name()}.tests.dll"/>
+                </assemblies>
+                <categories>
+                    <!-- The fail-over tests are interactive so should not be run as part of the build. -->
+                    <exclude name="Failover"/>
+                    <exclude name="SSL" if="${framework::get-target-framework() == 'mono-2.0'}"/>
+                </categories>
             </test>
-         </nunit2>
+        </nunit2>
     </target>
+
 </project>
 

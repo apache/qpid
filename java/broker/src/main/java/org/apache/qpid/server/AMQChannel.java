@@ -943,6 +943,8 @@ public class AMQChannel
             AMQMessage message = bouncedMessage.getAMQMessage();
             session.getProtocolOutputConverter().writeReturn(message, _channelId, bouncedMessage.getReplyCode().getCode(),
                 new AMQShortString(bouncedMessage.getMessage()));
+
+            message.decrementReference(_storeContext);
         }
 
         _returnMessages.clear();

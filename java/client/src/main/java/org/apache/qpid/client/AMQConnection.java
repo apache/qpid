@@ -29,6 +29,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -69,11 +70,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +87,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * held by any child objects of this connection such as the session, producers and consumers.
      */
     private final Object _failoverMutex = new Object();
+
+    private final Object _sessionCreationLock = new Object();
 
     /**
      * A channel is roughly analogous to a session. The server can negotiate the maximum number of channels per session
@@ -298,6 +297,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 lastException = e;
 
+                //We need to change protocol handler here as an error during the connect will not
+                // cause the StateManager to be replaced. So the state is out of sync on reconnect
+                // This can be seen when a exception occurs during connection. i.e. log4j NoSuchMethod. (using < 1.2.12)
+                _protocolHandler.setStateManager(new AMQStateManager());
+
                 if (_logger.isInfoEnabled())
                 {
                     _logger.info("Unable to connect to broker at " + _failoverPolicy.getCurrentBrokerDetails(),
@@ -503,6 +507,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
                                                      final int prefetchHigh, final int prefetchLow) throws JMSException
     {
+        synchronized(_sessionCreationLock)
+        {
         checkNotClosed();
 
         if (channelLimitReached())
@@ -566,6 +572,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                         return session;
                     }
                 }, this).execute();
+        }
     }
 
     private void createChannelOverWire(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
@@ -754,44 +761,73 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public void close(long timeout) throws JMSException
     {
-        synchronized (getFailoverMutex())
+        close(new ArrayList<AMQSession>(_sessions.values()),timeout);
+    }
+
+    public void close(List<AMQSession> sessions, long timeout) throws JMSException
+    {
+        synchronized(_sessionCreationLock)
         {
-            if (!_closed.getAndSet(true))
+            if(!sessions.isEmpty())
             {
-                try
+                AMQSession session = sessions.remove(0);
+                synchronized(session.getMessageDeliveryLock())
                 {
-                    long startCloseTime = System.currentTimeMillis();
-
-                    _taskPool.shutdown();
-                    closeAllSessions(null, timeout, startCloseTime);
-
-                    if (!_taskPool.isTerminated())
+                    close(sessions, timeout);
+                }
+            }
+            else
+            {
+            synchronized (getFailoverMutex())
+            {
+                if (!_closed.getAndSet(true))
+                {
+                    try
                     {
-                        try
-                        {
-                            // adjust timeout
-                            long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
+                        long startCloseTime = System.currentTimeMillis();
 
-                            _taskPool.awaitTermination(taskPoolTimeout, TimeUnit.MILLISECONDS);
-                        }
-                        catch (InterruptedException e)
+                        _taskPool.shutdown();
+                        closeAllSessions(null, timeout, startCloseTime);
+
+                        if (!_taskPool.isTerminated())
                         {
-                            _logger.info("Interrupted while shutting down connection thread pool.");
+                            try
+                            {
+                                // adjust timeout
+                                long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
+
+                                _taskPool.awaitTermination(taskPoolTimeout, TimeUnit.MILLISECONDS);
+                            }
+                            catch (InterruptedException e)
+                            {
+                                _logger.info("Interrupted while shutting down connection thread pool.");
+                            }
+                        }
+
+                        // adjust timeout
+                        timeout = adjustTimeout(timeout, startCloseTime);
+
+                        _protocolHandler.closeConnection(timeout);
+
+                        //If the taskpool hasn't shutdown by now then give it shutdownNow.
+                        // This will interupt any running tasks.
+                        if (!_taskPool.isTerminated())
+                        {
+                            List<Runnable> tasks = _taskPool.shutdownNow();
+                            for (Runnable r : tasks)
+                            {
+                                _logger.warn("Connection close forced taskpool to prevent execution:" + r);
+                            }
                         }
                     }
-
-                    // adjust timeout
-                    timeout = adjustTimeout(timeout, startCloseTime);
-
-                    _protocolHandler.closeConnection(timeout);
-
+                    catch (AMQException e)
+                    {
+                        JMSException jmse = new JMSException("Error closing connection: " + e);
+                        jmse.setLinkedException(e);
+                        throw jmse;
+                    }
                 }
-                catch (AMQException e)
-                {
-                    JMSException jmse = new JMSException("Error closing connection: " + e);
-                    jmse.setLinkedException(e);
-                    throw jmse;
-                }
+            }
             }
         }
     }
@@ -1107,6 +1143,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (_exceptionListener != null)
         {
             _exceptionListener.onException(je);
+        }
+        else
+        {
+            _logger.error("Throwable Received but no listener set: " + cause.getMessage());
         }
 
         if (!(cause instanceof AMQUndeliveredException) && !(cause instanceof AMQAuthenticationException))
