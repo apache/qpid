@@ -83,13 +83,14 @@ struct Buff : public AsynchIO::BufferBase {
 };
 
 class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
-	AsynchIO* aio;
-	ConnectionInputHandler* inputHandler;
-	std::queue<framing::AMQFrame> frameQueue;
-	Mutex frameQueueLock;
-	bool frameQueueClosed;
-	bool initiated;
-        bool readError;
+    AsynchIO* aio;
+    ConnectionInputHandler* inputHandler;
+    std::queue<framing::AMQFrame> frameQueue;
+    Mutex frameQueueLock;
+    bool frameQueueClosed;
+    bool initiated;
+    bool readError;
+    std::string identifier;
 
 public:
 	AsynchIOHandler() :
@@ -211,7 +212,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         framing::AMQFrame frame;
         try{
             while(frame.decode(in)) {
-                QPID_LOG(debug, "RECV [" << aio->getSocket().getPeerAddress() << "]: " << frame);
+                QPID_LOG(debug, "RECV [" << identifier << "]: " << frame);
                 inputHandler->received(frame);
             }
         }catch(const std::exception& e){
@@ -222,7 +223,8 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     }else{
         framing::ProtocolInitiation protocolInit;
         if(protocolInit.decode(in)){
-            QPID_LOG(debug, "INIT [" << aio->getSocket().getPeerAddress() << "]");
+            identifier = aio->getSocket().getPeerAddress();
+            QPID_LOG(debug, "INIT [" << identifier << "]");
             inputHandler->initiated(protocolInit);
             initiated = true;
         }
@@ -241,6 +243,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
 }
 
 void AsynchIOHandler::eof(AsynchIO&) {
+        QPID_LOG(debug, "DISCONNECTED [" << identifier << "]");
 	inputHandler->closed();
 	aio->queueWriteClose();
 }
@@ -248,7 +251,7 @@ void AsynchIOHandler::eof(AsynchIO&) {
 void AsynchIOHandler::closedSocket(AsynchIO&, const Socket& s) {
     // If we closed with data still to send log a warning 
     if (!aio->writeQueueEmpty()) {
-        QPID_LOG(warning, "CLOSING [" << aio->getSocket().getPeerAddress() << "] unsent data (probably due to client disconnect)");
+        QPID_LOG(warning, "CLOSING [" << identifier << "] unsent data (probably due to client disconnect)");
     }
 	delete &s;
 	aio->queueForDeletion();
@@ -289,7 +292,7 @@ void AsynchIOHandler::idle(AsynchIO&){
 			// Encode output frame	
 			frame.encode(out);
 			buffUsed += frameSize;
-			QPID_LOG(debug, "SENT [" << aio->getSocket().getPeerAddress() << "]: " << frame);
+			QPID_LOG(debug, "SENT [" << identifier << "]: " << frame);
 			
 			if (frameQueue.empty())
 				break;
