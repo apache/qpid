@@ -60,13 +60,14 @@ public class ConnectionStartTest extends QpidTestCase
 
             MessageProducer pub = pubSess.createProducer(queue);
 
-            pub.send(pubSess.createTextMessage("Initial Message"));
-
             _connection = (AMQConnection) getConnection("guest", "guest");
 
             _consumerSess = _connection.createSession(false, AMQSession.AUTO_ACKNOWLEDGE);
 
             _consumer = _consumerSess.createConsumer(queue);
+
+            //publish after queue is created to ensure it can be routed as expected
+            pub.send(pubSess.createTextMessage("Initial Message"));
 
             pubCon.close();
 
@@ -82,7 +83,7 @@ public class ConnectionStartTest extends QpidTestCase
     {
         _connection.close();
     }
-
+                
     public void testSimpleReceiveConnection()
     {
         try
@@ -90,9 +91,9 @@ public class ConnectionStartTest extends QpidTestCase
             assertTrue("Connection should not be started", !_connection.started());
             //Note that this next line will start the dispatcher in the session
             // should really not be called before _connection start
-            assertTrue("There should not be messages waiting for the consumer", _consumer.receiveNoWait() == null);
+            //assertTrue("There should not be messages waiting for the consumer", _consumer.receiveNoWait() == null);
             _connection.start();
-            assertTrue("There should be messages waiting for the consumer", _consumer.receive(10*1000) == null);
+            assertTrue("There should be messages waiting for the consumer", _consumer.receive(10*1000) != null);
             assertTrue("Connection should be started", _connection.started());
 
         }
@@ -110,7 +111,7 @@ public class ConnectionStartTest extends QpidTestCase
         try
         {
             assertTrue("Connection should not be started", !_connection.started());
-            _consumerSess.setMessageListener(new MessageListener()
+            _consumer.setMessageListener(new MessageListener()
             {
                 public void onMessage(Message message)
                 {
@@ -133,7 +134,7 @@ public class ConnectionStartTest extends QpidTestCase
 
             try
             {
-                _gotMessage.await(1000, TimeUnit.MILLISECONDS);
+                assertTrue("Listener was never called", _gotMessage.await(10 * 1000, TimeUnit.MILLISECONDS));
             }
             catch (InterruptedException e)
             {
