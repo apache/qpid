@@ -88,6 +88,7 @@ public class MinaHandler<E> implements IoHandler
     public void exceptionCaught(IoSession ssn, Throwable e)
     {
         log.error(e, "exception caught");
+        throw new RuntimeException("IOException", e);
     }
 
     public void sessionCreated(final IoSession ssn)

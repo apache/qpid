@@ -50,6 +50,10 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
     {
         synchronized (lock)
         {
+            if( session.isClosing())
+            {
+                throw new RuntimeException("Trying to write on a closed socket");
+            }
             lastWrite = session.write(ByteBuffer.wrap(buf));
         }
     }
