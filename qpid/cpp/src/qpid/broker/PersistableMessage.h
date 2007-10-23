@@ -23,13 +23,17 @@
  */
 
 #include <string>
+#include <list>
 #include <boost/shared_ptr.hpp>
 #include "Persistable.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Monitor.h"
+#include "PersistableQueue.h"
 
 namespace qpid {
 namespace broker {
+
+class MessageStore;
 
 /**
  * The interface messages must expose to the MessageStore in order to
@@ -39,7 +43,8 @@ class PersistableMessage : public Persistable
 {
     sys::Monitor asyncEnqueueLock;
     sys::Monitor asyncDequeueLock;
-
+	sys::Mutex storeLock;
+	
     /**
      * Tracks the number of outstanding asynchronous enqueue
      * operations. When the message is enqueued asynchronously the
@@ -57,7 +62,10 @@ class PersistableMessage : public Persistable
      * dequeues.
      */
     int asyncDequeueCounter;
-
+protected:
+    typedef std::list<PersistableQueue*> syncList;
+	syncList synclist;
+	MessageStore* store;
 public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;
 
@@ -70,8 +78,11 @@ public:
 
     PersistableMessage(): 
     	asyncEnqueueCounter(0), 
-    	asyncDequeueCounter(0) 
+    	asyncDequeueCounter(0),
+        store(0) 
 	{}
+
+    void flush();
     
     inline void waitForEnqueueComplete() {
         sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
@@ -94,6 +105,15 @@ public:
         }
     }
 
+    inline void enqueueAsync(PersistableQueue* queue, MessageStore* _store) { 
+		if (_store){
+			sys::ScopedLock<sys::Mutex> l(storeLock);
+		    store = _store;
+		    synclist.push_back(queue);
+		}
+	    enqueueAsync();
+	}
+
     inline void enqueueAsync() { 
         sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
         asyncEnqueueCounter++; 
@@ -105,6 +125,7 @@ public:
     }
     
     inline void dequeueComplete() { 
+
         sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
         if (asyncDequeueCounter > 0) {
             if (--asyncDequeueCounter == 0) {
@@ -119,6 +140,15 @@ public:
             asyncDequeueLock.wait();
         }
     }
+
+    inline void dequeueAsync(PersistableQueue* queue, MessageStore* _store) { 
+		if (_store){
+            sys::ScopedLock<sys::Mutex> l(storeLock);
+            store = _store;
+			synclist.push_back(queue);
+		}
+	    dequeueAsync();
+	}
 
     inline void dequeueAsync() { 
         sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);
