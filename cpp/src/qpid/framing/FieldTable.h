@@ -64,7 +64,7 @@ class FieldTable
     void setTable(const std::string& name, const FieldTable& value);
     //void setDecimal(string& name, xxx& value);
 
-//    std::string getString(const std::string& name) const;
+    std::string getString(const std::string& name) const;
     int getInt(const std::string& name) const;
 //    uint64_t getTimestamp(const std::string& name) const;
 //    void getTable(const std::string& name, FieldTable& value) const;
@@ -86,9 +86,9 @@ class FieldTable
     friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
 };
 
-class FieldNotFoundException{};
-class UnknownFieldName : public FieldNotFoundException{};
-class IncorrectFieldType : public FieldNotFoundException{};
+//class FieldNotFoundException{};
+//class UnknownFieldName : public FieldNotFoundException{};
+//class IncorrectFieldType : public FieldNotFoundException{};
 }
 }
 

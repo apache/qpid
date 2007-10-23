@@ -21,6 +21,7 @@
  *
  */
 
+#include "qpid/Exception.h"
 #include "Buffer.h"
 #include "amqp_types.h"
 
@@ -32,6 +33,22 @@
 
 namespace qpid {
 namespace framing {
+
+/**
+ * Exception that is base exception for all field table errors 
+ * 
+ * \ingroup clientapi
+ */
+class FieldValueException : public qpid::Exception {};
+
+/**
+ * Exception thrown when we can't perform requested conversion
+ * 
+ * \ingroup clientapi
+ */
+struct InvalidConversionException : public FieldValueException {
+    InvalidConversionException() {}
+};
 
 /**
  * Value that can appear in an AMQP field table
@@ -51,10 +68,10 @@ class FieldValue {
         virtual void decode(Buffer& buffer) = 0;
         virtual bool operator==(const Data&) const = 0;
 
-        virtual bool convertsToInt() const { assert(0!=0); return false; }
+        virtual bool convertsToInt() const { return false; }
         virtual bool convertsToString() const { return false; }
-        virtual int64_t getInt() const { assert(0!=0); return 0;}
-        virtual std::string getString() const { assert(0!=0); return ""; }
+        virtual int64_t getInt() const { throw InvalidConversionException();}
+        virtual std::string getString() const { throw InvalidConversionException(); }
 
         virtual void print(std::ostream& out) const = 0;
     };
@@ -70,7 +87,7 @@ class FieldValue {
     void print(std::ostream& out) const { out << "(0x" << std::hex << int(typeOctet) << ")"; data->print(out); }
     
     template <typename T> bool convertsTo() const { return false; }
-    template <typename T> T get() const;
+    template <typename T> T get() const { throw InvalidConversionException(); }
 
   protected:
     FieldValue(uint8_t t, Data* d): typeOctet(t), data(d) {}
@@ -172,6 +189,10 @@ class VariableWidthValue : public FieldValue::Data {
         if (rhs == 0) return false;
         else return octets==rhs->octets; 
     }
+    
+    bool convertsToString() const { return true; }
+    std::string getString() const { return std::string(octets.begin(), octets.end()); }
+
     void print(std::ostream& o) const { o << "V" << lenwidth << ":" << octets.size() << ":"; };
 };
 
