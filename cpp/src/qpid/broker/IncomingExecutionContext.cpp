@@ -112,6 +112,10 @@ SequenceNumberSet IncomingExecutionContext::getRange()
 void IncomingExecutionContext::wait()
 {
     check();
+	// for IO flush on the store
+    for (Messages::iterator i = incomplete.begin(); i != incomplete.end(); i++) {
+        (*i)->flush();
+    }
     incomplete.front()->waitForEnqueueComplete();
     flush();
 }
