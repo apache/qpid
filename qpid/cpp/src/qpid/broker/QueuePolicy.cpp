@@ -19,6 +19,7 @@
  *
  */
 #include "QueuePolicy.h"
+#include "qpid/framing/FieldValue.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -60,7 +61,7 @@ int QueuePolicy::getInt(const FieldTable& settings, const std::string& key, int 
     //      restricts the values that can be set on the queue policy.
     try {
         return settings.getInt(key); 
-    } catch (FieldNotFoundException& ignore) {
+    } catch (FieldValueException& ignore) {
         return defaultValue;
     }
 }

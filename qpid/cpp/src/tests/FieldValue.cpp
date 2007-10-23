@@ -35,7 +35,12 @@ BOOST_AUTO_TEST_CASE(testStringValueEquals)
     BOOST_CHECK(StringValue("abc") == s);
     BOOST_CHECK(StringValue("foo") != s);
     BOOST_CHECK(s != i);
+    BOOST_CHECK(s.convertsTo<std::string>() == true);
+    BOOST_CHECK(s.convertsTo<int>() == false);
+    BOOST_CHECK(s.get<std::string>() == "abc");
+    BOOST_CHECK_THROW(s.get<int>(), InvalidConversionException);
 //    BOOST_CHECK(s != ft);
+
 }
 
 BOOST_AUTO_TEST_CASE(testIntegerValueEquals)
@@ -43,6 +48,10 @@ BOOST_AUTO_TEST_CASE(testIntegerValueEquals)
     BOOST_CHECK(IntegerValue(42) == i);
     BOOST_CHECK(IntegerValue(5) != i);
     BOOST_CHECK(i != s);
+    BOOST_CHECK(i.convertsTo<std::string>() == false);
+    BOOST_CHECK(i.convertsTo<int>() == true);
+    BOOST_CHECK_THROW(i.get<std::string>(), InvalidConversionException);
+    BOOST_CHECK(i.get<int>() == 42);
 //    BOOST_CHECK(i != ft);
 }
 
