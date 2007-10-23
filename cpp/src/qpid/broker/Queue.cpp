@@ -347,7 +347,6 @@ bool Queue::canAutoDelete() const{
 bool Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr msg)
 {
     if (msg->isPersistent() && store) {
-std::cout << "--------------  enqueue ------------" << std::endl << std::flush;
         msg->enqueueAsync(this, store); //increment to async counter -- for message sent to more than one queue
         store->enqueue(ctxt, *msg.get(), *this);
 	return true;
