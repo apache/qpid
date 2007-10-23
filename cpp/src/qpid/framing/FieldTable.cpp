@@ -104,9 +104,9 @@ T getValue(const FieldTable::ValuePtr value)
     return value->get<T>();
 }
 
-//std::string FieldTable::getString(const std::string& name) const {
-//    return getValue<std::string>(name);
-//}
+std::string FieldTable::getString(const std::string& name) const {
+    return getValue<std::string>(get(name));
+}
 
 int FieldTable::getInt(const std::string& name) const {
     return getValue<int>(get(name));
