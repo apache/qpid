@@ -260,10 +260,18 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
                 parent->deliveryAdapter.deliver(msg.payload, token);
             if (windowing || ackExpected) {
                 parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
+            } else if (!ackExpected) {
+                queue->dequeue(0, msg.payload);
             }
         }
         return !blocked;
     }
+}
+
+bool SemanticState::ConsumerImpl::filter(Message::shared_ptr msg)
+{
+    return !(nolocal &&
+             &parent->getSession().getConnection() == msg->getPublisher());
 }
 
 bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)

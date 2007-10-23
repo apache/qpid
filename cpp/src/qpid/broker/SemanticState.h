@@ -78,6 +78,7 @@ class SemanticState : public framing::FrameHandler::Chains,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
         bool deliver(QueuedMessage& msg);            
+        bool filter(Message::shared_ptr msg);            
 
         void setWindowMode();
         void setCreditMode();

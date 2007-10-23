@@ -202,8 +202,8 @@ void BrokerAdapter::QueueHandlerImpl::declare(uint16_t /*ticket*/, const string&
 		getConnection().exclusiveQueues.push_back(queue);
 	    }
 	} else {
-            if (exclusive && !queue->hasExclusiveOwner()) {
-                queue->setExclusiveOwner(&getConnection());
+            if (exclusive && queue->setExclusiveOwner(&getConnection())) {
+		getConnection().exclusiveQueues.push_back(queue);
             }
         }
     }
