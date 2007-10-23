@@ -85,6 +85,7 @@ namespace qpid {
             int next;
             mutable qpid::sys::RWlock consumerLock;
             mutable qpid::sys::Mutex messageLock;
+            mutable qpid::sys::Mutex ownershipLock;
             Consumer::ptr exclusive;
             mutable uint64_t persistenceId;
             framing::FieldTable settings;
@@ -110,6 +111,8 @@ namespace qpid {
             Consumer::ptr allocate();
             bool seek(QueuedMessage& msg, const framing::SequenceNumber& position);
             uint32_t getAcquirerCount() const;
+            bool getNextMessage(QueuedMessage& msg);
+            bool exclude(Message::shared_ptr msg);
  
         protected:
 	   /**
@@ -172,11 +175,11 @@ namespace qpid {
             uint32_t getMessageCount() const;
             uint32_t getConsumerCount() const;
             inline const string& getName() const { return name; }
-            inline const bool isExclusiveOwner(const ConnectionToken* const o) const { return o == owner; }
-            inline void releaseExclusiveOwnership() { owner = 0; }
-            inline void setExclusiveOwner(const ConnectionToken* const o) { owner = o; }
-            inline bool hasExclusiveConsumer() const { return exclusive; }
-            inline bool hasExclusiveOwner() const { return owner != 0; }
+            bool isExclusiveOwner(const ConnectionToken* const o) const;
+            void releaseExclusiveOwnership();
+            bool setExclusiveOwner(const ConnectionToken* const o);
+            bool hasExclusiveConsumer() const;
+            bool hasExclusiveOwner() const;
             inline bool isDurable() const { return store != 0; }
             inline const framing::FieldTable& getSettings() const { return settings; }
             inline bool isAutoDelete() const { return autodelete; }
