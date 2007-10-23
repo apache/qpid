@@ -24,6 +24,7 @@
 
 #include <string>
 #include "Persistable.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -49,16 +50,17 @@ public:
 class PersistableQueue : public Persistable
 {
 public:
+    typedef boost::shared_ptr<PersistableQueue> shared_ptr;
 
     virtual const std::string& getName() const = 0;
     virtual ~PersistableQueue() {
         if (externalQueueStore) 
-	   delete externalQueueStore;
+             delete externalQueueStore;
     };
 
     inline void setExternalQueueStore(ExternalQueueStore* inst){
         if (externalQueueStore!=inst && externalQueueStore) 
-	   delete externalQueueStore; 
+             delete externalQueueStore; 
         externalQueueStore = inst;
     };
     

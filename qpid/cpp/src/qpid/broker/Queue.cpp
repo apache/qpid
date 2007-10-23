@@ -347,7 +347,8 @@ bool Queue::canAutoDelete() const{
 bool Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr msg)
 {
     if (msg->isPersistent() && store) {
-	msg->enqueueAsync(); //increment to async counter -- for message sent to more than one queue
+std::cout << "--------------  enqueue ------------" << std::endl << std::flush;
+        msg->enqueueAsync(this, store); //increment to async counter -- for message sent to more than one queue
         store->enqueue(ctxt, *msg.get(), *this);
 	return true;
     }
@@ -358,7 +359,7 @@ bool Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr msg)
 bool Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr msg)
 {
     if (msg->isPersistent() && store) {
-	msg->dequeueAsync(); //increment to async counter -- for message sent to more than one queue
+        msg->dequeueAsync(this, store); //increment to async counter -- for message sent to more than one queue
         store->dequeue(ctxt, *msg.get(), *this);
 	return true;
     }

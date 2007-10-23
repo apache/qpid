@@ -144,6 +144,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/BrokerSingleton.cpp \
   qpid/broker/Exchange.cpp \
   qpid/broker/Queue.cpp \
+  qpid/broker/PersistableMessage.cpp \
   qpid/broker/Connection.cpp \
   qpid/broker/ConnectionHandler.cpp \
   qpid/broker/ConnectionFactory.cpp \
@@ -199,6 +200,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Connection.cpp		\
   qpid/client/Channel.cpp			\
   qpid/client/Exchange.cpp		\
+  qpid/broker/PersistableMessage.cpp \
   qpid/client/Queue.cpp			\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
