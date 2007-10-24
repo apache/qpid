@@ -133,11 +133,11 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             qpidityMessage.getMessageProperties()
                     .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
         }
-         //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
         if (contentHeaderProperties.getHeaders() != null)
         {
+             //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
+            contentHeaderProperties.getHeaders().remove(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());  
             qpidityMessage.getMessageProperties().setApplicationHeaders(FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders()));
-
             for(String key:qpidityMessage.getMessageProperties().getApplicationHeaders().keySet())
             {
                 _logger.debug(key + "=" + qpidityMessage.getMessageProperties().getApplicationHeaders().get(key));
