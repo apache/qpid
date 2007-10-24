@@ -958,4 +958,16 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     {
         _synchronousQueue.clear();
     }
+
+
+    public void start()
+    {
+        // do nothing as this is a 0_10 feature
+    }
+
+
+    public void stop()
+    {
+        // do nothing as this is a 0_10 feature
+    }
 }
