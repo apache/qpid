@@ -556,11 +556,23 @@ public class AMQSession_0_10 extends AMQSession
     {
 
         super.suspendChannel(false);
-
+        for(BasicMessageConsumer  c:  _consumers.values())
+        {
+              c.start();
+        }
         // If the event dispatcher is not running then start it too.
         if (hasMessageListeners())
         {
             startDistpatcherIfNecessary();
+        }
+    }
+
+     void stop() throws AMQException
+    {
+        super.stop();
+           for(BasicMessageConsumer  c:  _consumers.values())
+        {
+              c.stop();
         }
     }
 
