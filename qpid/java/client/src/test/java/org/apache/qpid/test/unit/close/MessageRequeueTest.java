@@ -50,7 +50,7 @@ public class MessageRequeueTest extends TestCase
 
     protected final int consumeTimeout = 3000;
 
-    protected final String queue = "direct://amq.direct//queue";
+    protected final String queue = "direct://amq.direct//message-requeue-test-queue";
     protected String payload = "Message:";
 
     protected final String BROKER = "vm://:1";

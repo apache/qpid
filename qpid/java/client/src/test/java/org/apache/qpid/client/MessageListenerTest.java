@@ -69,7 +69,7 @@ public class MessageListenerTest extends QpidTestCase implements MessageListener
 
         Session clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        Queue queue =clientSession.createQueue("queue");
+        Queue queue =clientSession.createQueue("message-listener-test-queue");
 
         _consumer = clientSession.createConsumer(queue);
 
