@@ -29,15 +29,7 @@ import org.apache.qpid.testutil.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
+import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
@@ -72,6 +64,8 @@ public class ResetMessageListenerTest extends QpidTestCase
 
     private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(2); // all messages Sent Lock
     private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(2); // all messages Sent Lock
+    private final CountDownLatch _allFirstMessagesSent010 = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
+       private final CountDownLatch _allSecondMessagesSent010 = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
 
     protected void setUp() throws Exception
     {
@@ -85,10 +79,9 @@ public class ResetMessageListenerTest extends QpidTestCase
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        Queue queue =_clientSession.createQueue("reset-message-listener-test-queue");
+        Queue queue = _clientSession.createQueue("reset-message-listener-test-queue");
 
         _consumer1 = _clientSession.createConsumer(queue);
-
 
         // Create Client 2 on same session
         _consumer2 = _clientSession.createConsumer(queue);
@@ -102,21 +95,18 @@ public class ResetMessageListenerTest extends QpidTestCase
 
         _producer = _producerSession.createProducer(queue);
 
+        TextMessage m = _producerSession.createTextMessage();
+        m.setStringProperty("rank", "first");
         for (int msg = 0; msg < MSG_COUNT; msg++)
         {
-            _producer.send(_producerSession.createTextMessage("Message " + msg));
+            m.setText("Message " + msg);
+            _producer.send(m);
         }
 
     }
 
     protected void tearDown() throws Exception
     {
-        assertEquals("First batch of messages not received correctly", 0, _allFirstMessagesSent.getCount());
-        assertEquals("Second batch of messages not received correctly", 0, _allSecondMessagesSent.getCount());
-        assertEquals("Client 1 ML1 didn't get all messages", MSG_COUNT / 2, receivedCount1ML1);
-        assertEquals("Client 2 didn't get all messages", MSG_COUNT, receivedCount2);
-        assertEquals("Client 1 ML2 didn't get all messages", MSG_COUNT / 2, receivedCount1ML2);
-
         _clientConnection.close();
 
         _producerConnection.close();
@@ -127,11 +117,12 @@ public class ResetMessageListenerTest extends QpidTestCase
     {
 
         _logger.info("Test Start");
-
-        // Set default Message Listener
-        try
+        if (isBroker08())
         {
-            _consumer1.setMessageListener(new MessageListener()
+            // Set default Message Listener
+            try
+            {
+                _consumer1.setMessageListener(new MessageListener()
                 {
                     public void onMessage(Message message)
                     {
@@ -144,15 +135,15 @@ public class ResetMessageListenerTest extends QpidTestCase
                         }
                     }
                 });
-        }
-        catch (JMSException e)
-        {
-            _logger.error("Error Setting Default ML on consumer1");
-        }
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Error Setting Default ML on consumer1");
+            }
 
-        try
-        {
-            _consumer2.setMessageListener(new MessageListener()
+            try
+            {
+                _consumer2.setMessageListener(new MessageListener()
                 {
                     public void onMessage(Message message)
                     {
@@ -173,37 +164,37 @@ public class ResetMessageListenerTest extends QpidTestCase
                     }
                 });
 
-            _clientConnection.start();
-        }
-        catch (JMSException e)
-        {
-            _logger.error("Error Setting Default ML on consumer2");
+                _clientConnection.start();
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Error Setting Default ML on consumer2");
 
-        }
+            }
 
-        try
-        {
-            _allFirstMessagesSent.await(1000, TimeUnit.MILLISECONDS);
-            _logger.info("Received first batch of messages");
-        }
-        catch (InterruptedException e)
-        {
-            // do nothing
-        }
+            try
+            {
+                _allFirstMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+                _logger.info("Received first batch of messages");
+            }
+            catch (InterruptedException e)
+            {
+                // do nothing
+            }
 
-        try
-        {
-            _clientConnection.stop();
-        }
-        catch (JMSException e)
-        {
-            _logger.error("Error stopping connection");
-        }
+            try
+            {
+                _clientConnection.stop();
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Error stopping connection");
+            }
 
-        _logger.info("Reset Message Listener to better listener while connection stopped, will restart session");
-        try
-        {
-            _consumer1.setMessageListener(new MessageListener()
+            _logger.info("Reset Message Listener to better listener while connection stopped, will restart session");
+            try
+            {
+                _consumer1.setMessageListener(new MessageListener()
                 {
                     public void onMessage(Message message)
                     {
@@ -217,41 +208,164 @@ public class ResetMessageListenerTest extends QpidTestCase
                     }
                 });
 
-            _clientConnection.start();
-        }
-        catch (javax.jms.IllegalStateException e)
-        {
-            _logger.error("Connection not stopped while setting ML", e);
-            fail("Unable to change message listener:" + e.getCause());
-        }
-        catch (JMSException e)
-        {
-            _logger.error("Error Setting Better ML on consumer1", e);
-        }
-
-        try
-        {
-            _logger.info("Send additional messages");
-
-            for (int msg = 0; msg < MSG_COUNT; msg++)
-            {
-                _producer.send(_producerSession.createTextMessage("Message " + msg));
+                _clientConnection.start();
             }
-        }
-        catch (JMSException e)
-        {
-            _logger.error("Unable to send additional messages", e);
-        }
+            catch (javax.jms.IllegalStateException e)
+            {
+                _logger.error("Connection not stopped while setting ML", e);
+                fail("Unable to change message listener:" + e.getCause());
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Error Setting Better ML on consumer1", e);
+            }
 
-        _logger.info("Waiting upto 2 seconds for messages");
+            try
+            {
+                _logger.info("Send additional messages");
 
-        try
-        {
-            _allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+                for (int msg = 0; msg < MSG_COUNT; msg++)
+                {
+                    _producer.send(_producerSession.createTextMessage("Message " + msg));
+                }
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Unable to send additional messages", e);
+            }
+
+            _logger.info("Waiting upto 2 seconds for messages");
+
+            try
+            {
+                _allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+            }
+            catch (InterruptedException e)
+            {
+                // do nothing
+            }
+            assertEquals("First batch of messages not received correctly", 0, _allFirstMessagesSent.getCount());
+            assertEquals("Second batch of messages not received correctly", 0, _allSecondMessagesSent.getCount());
+            assertEquals("Client 1 ML1 didn't get all messages", MSG_COUNT / 2, receivedCount1ML1);
+            assertEquals("Client 2 didn't get all messages", MSG_COUNT, receivedCount2);
+            assertEquals("Client 1 ML2 didn't get all messages", MSG_COUNT / 2, receivedCount1ML2);
         }
-        catch (InterruptedException e)
+        else
         {
-            // do nothing
+            try
+            {
+                _consumer1.setMessageListener(new MessageListener()
+                {
+                    public void onMessage(Message message)
+                    {
+                        _logger.info("Received Message(" + receivedCount1ML1 + "):" + message);
+
+                        try
+                        {
+                            if (message.getStringProperty("rank").equals("first"))
+                            {
+                                _allFirstMessagesSent010.countDown();
+                            }
+                        }
+                        catch (JMSException e)
+                        {
+                            e.printStackTrace();
+                            fail("error receiving message");
+                        }
+                    }
+                });
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Error Setting Default ML on consumer1");
+            }
+            try
+            {
+                _allFirstMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+                _logger.info("Received first batch of messages");
+            }
+            catch (InterruptedException e)
+            {
+                // do nothing
+            }
+
+            try
+            {
+                _clientConnection.stop();
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Error stopping connection");
+            }
+
+            _logger.info("Reset Message Listener ");
+            try
+            {
+                _consumer1.setMessageListener(new MessageListener()
+                {
+                    public void onMessage(Message message)
+                    {
+                        _logger.info("Received Message(" + receivedCount1ML1 + "):" + message);
+
+                        try
+                        {
+                            if (message.getStringProperty("rank").equals("first"))
+                            {
+                                _allFirstMessagesSent010.countDown();
+                            }
+                            else
+                            {
+                                _allSecondMessagesSent010.countDown();
+                            }
+                        }
+                        catch (JMSException e)
+                        {
+                            e.printStackTrace();
+                            fail("error receiving message");
+                        }
+                    }
+                });
+
+                _clientConnection.start();
+            }
+            catch (javax.jms.IllegalStateException e)
+            {
+                _logger.error("Connection not stopped while setting ML", e);
+                fail("Unable to change message listener:" + e.getCause());
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Error Setting Better ML on consumer1", e);
+            }
+
+            try
+            {
+                _logger.info("Send additional messages");
+                TextMessage m = _producerSession.createTextMessage();
+                m.setStringProperty("rank", "second");
+                for (int msg = 0; msg < MSG_COUNT; msg++)
+                {
+                    m.setText("Message " + msg);
+                    _producer.send(m);
+                }
+            }
+            catch (JMSException e)
+            {
+                _logger.error("Unable to send additional messages", e);
+            }
+
+            _logger.info("Waiting upto 2 seconds for messages");
+
+            try
+            {
+                _allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS);
+            }
+            catch (InterruptedException e)
+            {
+                // do nothing
+            }
+            assertEquals("First batch of messages not received correctly", 0, _allFirstMessagesSent010.getCount());
+            assertEquals("Second batch of messages not received correctly", 0, _allSecondMessagesSent010.getCount());                  
         }
     }
 
