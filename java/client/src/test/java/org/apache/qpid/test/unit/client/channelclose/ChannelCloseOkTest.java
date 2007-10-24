@@ -212,7 +212,7 @@ public class ChannelCloseOkTest extends QpidTestCase
                 }
                 try
                 {
-                    received.wait(timeout);
+                     received.wait(timeout);
                 }
                 catch (InterruptedException e)
                 {

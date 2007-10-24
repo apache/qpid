@@ -506,6 +506,7 @@ public class CommitRollbackTest extends QpidTestCase
 
         assertNotNull(_consumer.receive(100));
 
+        _session.commit();
     }
 
 }
