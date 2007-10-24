@@ -92,7 +92,7 @@ public class JMSPropertiesTest extends QpidTestCase
         con.start();
 
         // get message and check JMS properties
-        ObjectMessage rm = (ObjectMessage) consumer.receive();
+        ObjectMessage rm = (ObjectMessage) consumer.receive(2000);
         assertNotNull(rm);
 
         assertEquals("JMS Correlation ID mismatch", sentMsg.getJMSCorrelationID(), rm.getJMSCorrelationID());
