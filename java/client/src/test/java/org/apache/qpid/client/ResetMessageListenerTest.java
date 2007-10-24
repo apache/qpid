@@ -85,7 +85,7 @@ public class ResetMessageListenerTest extends QpidTestCase
 
         _clientSession = _clientConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        Queue queue =_clientSession.createQueue("queue");
+        Queue queue =_clientSession.createQueue("reset-message-listener-test-queue");
 
         _consumer1 = _clientSession.createConsumer(queue);
 

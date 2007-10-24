@@ -58,7 +58,7 @@ public class DurableSubscriptionTest extends QpidTestCase
     public void testUnsubscribe() throws Exception
     {
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
-        AMQTopic topic = new AMQTopic(con, "MyTopic");
+        AMQTopic topic = new AMQTopic(con, "MyDurableSubscriptionTestTopic");
         _logger.info("Create Session 1");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         _logger.info("Create Consumer on Session 1");
@@ -117,7 +117,7 @@ public class DurableSubscriptionTest extends QpidTestCase
     {
 
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
-        AMQTopic topic = new AMQTopic(con, "MyTopic");
+        AMQTopic topic = new AMQTopic(con, "MyDurableSubscriptionTestTopic");
         Session session1 = con.createSession(false, AMQSession.NO_ACKNOWLEDGE);
         MessageConsumer consumer1 = session1.createConsumer(topic);
 
