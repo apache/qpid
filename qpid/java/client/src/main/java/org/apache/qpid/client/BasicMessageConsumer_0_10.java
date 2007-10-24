@@ -79,6 +79,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
      */
     private boolean _preAcquire = true;
 
+    /**
+     * Indicate whether this consumer is started.
+     */
+    private boolean _isStarted = false;
+
     //--- constructor
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
@@ -105,6 +110,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
                 _preAcquire = false;
             }
         }
+         _isStarted  = connection.started();
     }
 
     // ----- Interface org.apache.qpidity.client.util.MessageListener
@@ -449,6 +455,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
 
     public Object getMessageFromQueue(long l) throws InterruptedException
     {
+        if( !_isStarted )
+        {
+            return null;
+        }
         Object o;
         _0_10session.getQpidSession().messageFlow(getConsumerTag().toString(),
                 org.apache.qpidity.nclient.Session.MESSAGE_FLOW_UNIT_MESSAGE,1);
@@ -496,5 +506,15 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     private class NullTocken
     {
 
+    }
+        
+    public void start()
+    {
+       _isStarted = true;
+    }
+
+    public void stop()
+    {
+       _isStarted = false;
     }
 }
