@@ -100,7 +100,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 qpidityMessage.getDeliveryProperties().setExpiration(0);
             }
         }
-        qpidityMessage.getDeliveryProperties().setDeliveryMode((byte) deliveryMode);
+            qpidityMessage.getDeliveryProperties().setDeliveryMode((byte) deliveryMode);
         qpidityMessage.getDeliveryProperties().setPriority((byte) priority);
         qpidityMessage.getDeliveryProperties().setExchange(destination.getExchangeName().toString());
         qpidityMessage.getDeliveryProperties().setRoutingKey(destination.getRoutingKey().toString());
@@ -163,6 +163,12 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         catch (IOException e)
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+        }
+        catch(RuntimeException rte)
+        {
+            JMSException ex =  new JMSException("Exception when sending message");
+            ex.setLinkedException(rte);
+            throw ex;
         }
 
     }
