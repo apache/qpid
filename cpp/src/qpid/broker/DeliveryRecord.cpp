@@ -96,7 +96,7 @@ void DeliveryRecord::redeliver(SemanticState* const session) {
 
 void DeliveryRecord::requeue() const
 {
-    if (!confirmed) {
+    if (acquired && !confirmed) {
         msg.payload->redeliver();
         queue->requeue(msg);
     }
