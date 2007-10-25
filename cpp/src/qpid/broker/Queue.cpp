@@ -252,11 +252,16 @@ void Queue::serviceBrowser(Consumer::ptr browser)
 bool Queue::seek(QueuedMessage& msg, const framing::SequenceNumber& position) {
     Mutex::ScopedLock locker(messageLock);
     if (!messages.empty() && messages.back().position > position) {
-        uint index = (position - messages.front().position) + 1;
-        if (index < messages.size()) {
-            msg = messages[index];
+        if (position < messages.front().position) {
+            msg = messages.front();
             return true;
-        } 
+        } else {        
+            uint index = (position - messages.front().position) + 1;
+            if (index < messages.size()) {
+                msg = messages[index];
+                return true;
+            } 
+        }
     }
     return false;
 }
@@ -280,6 +285,12 @@ void Queue::consume(Consumer::ptr c, bool requestExclusive){
     if (c->preAcquires()) {
         acquirers.push_back(c);
     } else {
+        Mutex::ScopedLock locker(messageLock);
+        if (messages.empty()) {
+            c->position = SequenceNumber(sequence.getValue() - 1);
+        } else {
+            c->position = SequenceNumber(messages.front().position.getValue() - 1);
+        }
         browsers.push_back(c);
     }
 }
