@@ -533,11 +533,6 @@ class MessageTests(TestBase):
         """
         Test the not-acquired modes works as expected for a simple case
         """
-        #NOTE: I'm using not-acquired == 1 and pre-acquired == 0 as
-        #that keeps the default behaviour as expected. This was
-        #discussed by the SIG, and I'd rather not change all the
-        #existing tests twice.
-        
         channel = self.channel
         channel.queue_declare(queue = "q", exclusive=True, auto_delete=True)
         for i in range(1, 6):
@@ -648,6 +643,40 @@ class MessageTests(TestBase):
         self.assertEquals("message 3", queue.get(timeout = 1).content.body)
         self.assertEmpty(queue)
 
+    def test_subscribe_not_acquired_2(self):
+        channel = self.channel        
+
+        #publish some messages
+        self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+        for i in range(1, 11):
+            channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "message-%d" % (i)))
+
+        #consume some of them    
+        channel.message_subscribe(queue = "q", destination = "a", confirm_mode = 1)
+        channel.message_flow_mode(mode = 0, destination = "a")
+        channel.message_flow(unit = 0, value = 5, destination = "a")
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "a")
+
+        queue = self.client.queue("a")
+        for i in range(1, 6):
+            msg = queue.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.content.body)
+            msg.complete()
+        self.assertEmpty(queue)
+
+        #now create a not-acquired subscriber
+        channel.message_subscribe(queue = "q", destination = "b", confirm_mode = 1, acquire_mode=1)
+        channel.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "b")
+
+        #check it gets those not consumed
+        queue = self.client.queue("b")
+        channel.message_flow(unit = 0, value = 1, destination = "b")
+        for i in range(6, 11):
+            msg = queue.get(timeout = 1)
+            self.assertEquals("message-%d" % (i), msg.content.body)
+            msg.complete()
+        channel.message_flow(unit = 0, value = 1, destination = "b")
+        self.assertEmpty(queue)
 
     def assertDataEquals(self, channel, msg, expected):
         self.assertEquals(expected, msg.content.body)
