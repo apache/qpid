@@ -23,14 +23,19 @@
 
 using namespace qpid::framing;
 using namespace qpid::broker;
+using namespace qpid::sys;
 
 void ManagementObject::schemaItem (Buffer&     buf,
-				   uint8_t     typeCode,
-				   std::string name,
-				   std::string description,
-				   bool        isConfig)
+                                   uint8_t     typeCode,
+                                   std::string name,
+                                   std::string description,
+                                   bool        isConfig,
+                                   bool        isIndex)
 {
-    buf.putOctet       (isConfig ? 1 : 0);
+    uint8_t flags =
+        (isConfig ? FLAG_CONFIG : 0) | (isIndex ? FLAG_INDEX : 0);
+
+    buf.putOctet       (flags);
     buf.putOctet       (typeCode);
     buf.putShortString (name);
     buf.putShortString (description);
@@ -38,5 +43,12 @@ void ManagementObject::schemaItem (Buffer&     buf,
 
 void ManagementObject::schemaListEnd (Buffer& buf)
 {
-    buf.putOctet (0xFF);
+    buf.putOctet (FLAG_END);
+}
+
+void ManagementObject::writeTimestamps (Buffer& buf)
+{
+    buf.putLongLong (uint64_t (Duration (now ())));
+    buf.putLongLong (createTime);
+    buf.putLongLong (destroyTime);
 }

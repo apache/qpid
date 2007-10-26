@@ -38,21 +38,21 @@ class ManagementAgent
 
     typedef boost::shared_ptr<ManagementAgent> shared_ptr;
 
-    ManagementAgent(uint16_t interval);
+    ManagementAgent (uint16_t interval);
 
-    void setExchange  (Exchange::shared_ptr exchangePtr);
+    void setExchange  (Exchange::shared_ptr         exchange);
     void addObject    (ManagementObject::shared_ptr object);
-    void deleteObject (ManagementObject::shared_ptr object);
+    void clientAdded  (void);
     
   private:
 
     struct Periodic : public TimerTask
     {
         ManagementAgent& agent;
-	
+
         Periodic (ManagementAgent& agent, uint32_t seconds);
-	~Periodic () {}
-    	void fire ();
+        ~Periodic () {}
+        void fire ();
     };
 
     ManagementObjectList managementObjects;
