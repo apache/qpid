@@ -23,6 +23,7 @@
 #include "FanOutExchange.h"
 #include "HeadersExchange.h"
 #include "TopicExchange.h"
+#include "ManagementExchange.h"
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -41,7 +42,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end()) {
-	Exchange::shared_ptr exchange;
+        Exchange::shared_ptr exchange;
 
         if(type == TopicExchange::typeName){
             exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args));
@@ -51,13 +52,15 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
             exchange = Exchange::shared_ptr(new FanOutExchange(name, durable, args));
         }else if (type == HeadersExchange::typeName) {
             exchange = Exchange::shared_ptr(new HeadersExchange(name, durable, args));
+        }else if (type == ManagementExchange::typeName) {
+            exchange = Exchange::shared_ptr(new ManagementExchange(name, durable, args));
         }else{
             throw UnknownExchangeTypeException();    
         }
-	exchanges[name] = exchange;
-	return std::pair<Exchange::shared_ptr, bool>(exchange, true);
+        exchanges[name] = exchange;
+        return std::pair<Exchange::shared_ptr, bool>(exchange, true);
     } else {
-	return std::pair<Exchange::shared_ptr, bool>(i->second, false);
+        return std::pair<Exchange::shared_ptr, bool>(i->second, false);
     }
 }
 

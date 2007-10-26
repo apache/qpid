@@ -28,6 +28,7 @@
 #include "NullMessageStore.h"
 #include "RecoveryManagerImpl.h"
 #include "TopicExchange.h"
+#include "ManagementExchange.h"
 
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"
@@ -104,8 +105,8 @@ Broker::Broker(const Broker::Options& conf) :
     dtxManager(store.get())
 {
     if(conf.enableMgmt){
-	managementAgent = ManagementAgent::shared_ptr (new ManagementAgent (conf.mgmtPubInterval));
-	queues.setManagementAgent(managementAgent);
+        managementAgent = ManagementAgent::shared_ptr (new ManagementAgent (conf.mgmtPubInterval));
+        queues.setManagementAgent(managementAgent);
     }
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
@@ -115,16 +116,18 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges.declare(amq_match, HeadersExchange::typeName);
     
     if(conf.enableMgmt) {
-    	QPID_LOG(info, "Management enabled");
-        exchanges.declare(qpid_management, TopicExchange::typeName);
-        managementAgent->setExchange (exchanges.get (qpid_management));
+        QPID_LOG(info, "Management enabled");
+        exchanges.declare(qpid_management, ManagementExchange::typeName);
+        Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
+        managementAgent->setExchange (mExchange);
+        dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent (managementAgent);
     }
     else
-    	QPID_LOG(info, "Management not enabled");
+        QPID_LOG(info, "Management not enabled");
 
     if(store.get()) {
-		store->init(conf.storeDir, conf.storeAsync);
-		RecoveryManagerImpl recoverer(queues, exchanges, dtxManager, 
+        store->init(conf.storeDir, conf.storeAsync);
+        RecoveryManagerImpl recoverer(queues, exchanges, dtxManager, 
                                       conf.stagingThreshold);
         store->recover(recoverer);
     }
