@@ -76,7 +76,9 @@ ManagementObjectQueue::~ManagementObjectQueue () {}
 
 void ManagementObjectQueue::writeSchema (Buffer& buf)
 {
-    schemaItem (buf, TYPE_STRING, "name",                "Queue Name", true);
+    schemaNeeded = false;
+
+    schemaItem (buf, TYPE_STRING, "name",                "Queue Name", true, true);
     schemaItem (buf, TYPE_BOOL,   "durable",             "Durable",    true);
     schemaItem (buf, TYPE_BOOL,   "autoDelete",          "AutoDelete", true);
 
@@ -115,21 +117,24 @@ void ManagementObjectQueue::writeSchema (Buffer& buf)
     schemaItem (buf, TYPE_UINT32, "consumersHigh",       "Consumer high water mark this interval");
 
     schemaListEnd (buf);
-
-    schemaNeeded = false;
 }
 
 void ManagementObjectQueue::writeConfig (Buffer& buf)
 {
+    configChanged = false;
+
+    writeTimestamps    (buf);
     buf.putShortString (name);
     buf.putOctet       (durable    ? 1 : 0);
     buf.putOctet       (autoDelete ? 1 : 0);
-    
-    configChanged = false;
 }
 
 void ManagementObjectQueue::writeInstrumentation (Buffer& buf)
 {
+    instChanged = false;
+
+    writeTimestamps (buf);
+    buf.putShortString (name);
     buf.putLongLong (msgTotalEnqueues);
     buf.putLongLong (msgTotalDequeues);
     buf.putLongLong (msgTxEnqueues);
@@ -164,5 +169,14 @@ void ManagementObjectQueue::writeInstrumentation (Buffer& buf)
     buf.putLong     (consumersLow);
     buf.putLong     (consumersHigh);
 
-    instChanged = false;
+    msgDepthLow        = msgDepth;
+    msgDepthHigh       = msgDepth;
+    byteDepthLow       = byteDepth;
+    byteDepthHigh      = byteDepth;
+    enqueueTxCountLow  = enqueueTxCount;
+    enqueueTxCountHigh = enqueueTxCount;
+    dequeueTxCountLow  = dequeueTxCount;
+    dequeueTxCountHigh = dequeueTxCount;
+    consumersLow       = consumers;
+    consumersHigh      = consumers;
 }
