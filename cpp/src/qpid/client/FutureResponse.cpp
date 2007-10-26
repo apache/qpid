@@ -31,7 +31,7 @@ using namespace qpid::sys;
 AMQMethodBody* FutureResponse::getResponse(SessionCore& session)
 {
     waitForCompletion();
-    session.checkClosed();            
+    session.assertOpen();            
     return response.get();
 }
 

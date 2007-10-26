@@ -26,6 +26,7 @@
 #include <iostream>
 #include <memory>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace qpid::broker;
 using namespace qpid::sys;

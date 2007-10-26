@@ -23,7 +23,6 @@
  */
 #include <map>
 #include <string>
-#include "qpid/QpidError.h"
 #include "Channel.h"
 #include "ConnectionImpl.h"
 #include "qpid/client/Session.h"
@@ -57,10 +56,12 @@ class Connection
     framing::ChannelId channelIdCounter;
     framing::ProtocolVersion version;
     const uint32_t max_frame_size;
-    shared_ptr<ConnectionImpl> impl;
     bool isOpen;
     bool debug;
-    
+
+  protected:
+    boost::shared_ptr<ConnectionImpl> impl;
+
   public:
     /**
      * Creates a connection object, but does not open the

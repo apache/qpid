@@ -1,3 +1,6 @@
+#ifndef QPID_FRAMING_CHANNELHANDLER_H
+#define QPID_FRAMING_CHANNELHANDLER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,22 +21,33 @@
  * under the License.
  *
  */
-
-#include <cerrno>
-#include "check.h" 
+#include "FrameHandler.h"
+#include "AMQFrame.h"
 
 namespace qpid {
-namespace sys {
+namespace framing {
 
-std::string
-PosixError::getMessage(int errNo)
+/**
+ * Sets the channel number on outgoing frames.
+ */
+class ChannelHandler : public FrameHandler
 {
-    char buf[512];
-    return std::string(strerror_r(errNo, buf, sizeof(buf)));
-}
+  public:
+    ChannelHandler(uint16_t channelId=0, FrameHandler* next=0)
+        : FrameHandler(next), channel(channelId) {}
+    void handle(AMQFrame& frame) {
+        frame.setChannel(channel);
+        next->handle(frame);
+    }
+    uint16_t get() const { return channel; }
+    ChannelHandler& set(uint16_t ch) { channel=ch; return *this; }
+    operator uint16_t() const { return get(); }
+    ChannelHandler& operator=(uint16_t ch) { return set(ch); }
 
-PosixError::PosixError(int errNo, const qpid::SrcLine& loc) throw()
-    : qpid::QpidError(INTERNAL_ERROR + errNo, getMessage(errNo), loc)
-{ }
-    
-}}
+  private:
+    uint16_t channel;
+};
+
+}} // namespace qpid::framing
+
+#endif  /*!QPID_FRAMING_CHANNELHANDLER_H*/

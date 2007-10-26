@@ -20,6 +20,7 @@
 
 #include "test_tools.h"
 #include "qpid/sys/Shlib.h"
+#include "qpid/Exception.h"
 
 #define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
 #include <boost/test/auto_unit_test.hpp>
@@ -40,7 +41,7 @@ BOOST_AUTO_TEST_CASE(testShlib) {
         sh.getSymbol("callMe");
         BOOST_FAIL("Expected exception");
     }
-    catch (...) {}
+    catch (const qpid::Exception&) {}
 }
     
 BOOST_AUTO_TEST_CASE(testAutoShlib) {

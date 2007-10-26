@@ -56,7 +56,7 @@ class ChannelTestBase : public CppUnit::TestCase
         }
     };
     
-    InProcessBrokerClient connection; // client::connection + local broker
+    qpid::InProcessBrokerClient connection; 
     const std::string qname;
     const std::string data;
     Queue queue;

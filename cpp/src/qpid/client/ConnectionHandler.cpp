@@ -68,7 +68,7 @@ void ConnectionHandler::incoming(AMQFrame& frame)
             try {
                 in(frame);
             }catch(ConnectionException& e){
-                error(e.code, e.toString(), body);
+                error(e.code, e.what(), body);
             }catch(std::exception& e){
                 error(541/*internal error*/, e.what(), body);
             }
@@ -124,6 +124,8 @@ void ConnectionHandler::error(uint16_t code, const std::string& message, uint16_
 
 void ConnectionHandler::error(uint16_t code, const std::string& message, AMQBody* body)
 {
+    if (onError)
+        onError(code, message);
     AMQMethodBody* method = body->getMethod();
     if (method)
         error(code, message, method->amqpClassId(), method->amqpMethodId());

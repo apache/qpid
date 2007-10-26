@@ -30,12 +30,12 @@ namespace client {
 class StateManager
 {
     int state;
-    sys::Monitor stateLock;
+    mutable sys::Monitor stateLock;
     
 public:
     StateManager(int initial);
     void setState(int state);
-    int getState();
+    int getState() const ;
     void waitForStateChange(int current);
     void waitFor(std::set<int> states);
     void waitFor(int state);

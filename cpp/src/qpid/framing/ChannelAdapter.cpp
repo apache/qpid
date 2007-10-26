@@ -15,8 +15,6 @@
  * limitations under the License.
  *
  */
-#include <boost/format.hpp>
-
 #include "ChannelAdapter.h"
 #include "OutputHandler.h"
 #include "AMQFrame.h"
@@ -25,8 +23,6 @@
 
 #include "AMQMethodBody.h"
 #include "qpid/framing/ConnectionOpenBody.h"
-
-using boost::format;
 
 namespace qpid {
 namespace framing {
@@ -53,20 +49,20 @@ void ChannelAdapter::send(const AMQBody& body)
 
 void ChannelAdapter::assertMethodOk(AMQMethodBody& method) const {
     if (getId() != 0 && method.amqpClassId() == ConnectionOpenBody::CLASS_ID)
-        throw ConnectionException(
-            504, format("Connection method on non-0 channel %d.")%getId());
+        throw ChannelErrorException(
+            QPID_MSG("Connection method on non-0 channel " << getId()));
 }
 
 void ChannelAdapter::assertChannelOpen() const {
     if (getId() != 0 && !isOpen())
-        throw ConnectionException(
-            504, format("Channel %d is not open.")%getId());
+        throw ChannelErrorException(
+            QPID_MSG("Channel " << getId() << " is not open."));
 }
 
 void ChannelAdapter::assertChannelNotOpen() const {
     if (getId() != 0 && isOpen())
-        throw ConnectionException(
-            504, format("Channel %d is already open.") % getId());
+        throw ChannelErrorException(
+            QPID_MSG("Channel " << getId() << " is already open."));
 }
 
 void ChannelAdapter::handle(AMQFrame& f) { handleBody(f.getBody()); }

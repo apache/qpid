@@ -28,8 +28,9 @@
 #include "BrokerAdapter.h"
 #include "SemanticHandler.h"
 
-#include <boost/utility/in_place_factory.hpp>
 #include <boost/bind.hpp>
+
+#include <algorithm>
 
 using namespace boost;
 using namespace qpid::sys;
@@ -61,6 +62,7 @@ void Connection::close(
     ReplyCode code, const string& text, ClassId classId, MethodId methodId)
 {
     adapter.close(code, text, classId, methodId);
+    channels.clear();
     getOutput().close();
 }
 
@@ -73,8 +75,11 @@ void Connection::idleOut(){}
 
 void Connection::idleIn(){}
 
-void Connection::closed(){
+void Connection::closed(){ // Physically closed, suspend open sessions.
     try {
+        std::for_each(
+            channels.begin(), channels.end(),
+            boost::bind(&SessionHandler::localSuspend, _1));
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();

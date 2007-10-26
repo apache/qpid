@@ -44,7 +44,7 @@ DtxDemarcationEndResult DtxHandlerImpl::end(u_int16_t /*ticket*/,
         if (fail) {
             state.endDtx(xid, true);
             if (suspend) {
-                throw ConnectionException(503, "End and suspend cannot both be set.");
+                throw CommandInvalidException(QPID_MSG("End and suspend cannot both be set."));
             } else {
                 return DtxDemarcationEndResult(XA_RBROLLBACK);
             }
@@ -67,7 +67,7 @@ DtxDemarcationStartResult DtxHandlerImpl::start(u_int16_t /*ticket*/,
                            bool resume)
 {
     if (join && resume) {
-        throw ConnectionException(503, "Join and resume cannot both be set.");
+        throw CommandInvalidException(QPID_MSG("Join and resume cannot both be set."));
     }
     try {
         if (resume) {
@@ -161,7 +161,7 @@ void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
                             const string& xid)
 {
     //Currently no heuristic completion is supported, so this should never be used.
-    throw ConnectionException(503, boost::format("Forget is invalid. Branch with xid %1% not heuristically completed!") % xid);
+    throw CommandInvalidException(QPID_MSG("Forget is invalid. Branch with xid "  << xid << " not heuristically completed!"));
 }
 
 DtxCoordinationGetTimeoutResult DtxHandlerImpl::getTimeout(const string& xid)

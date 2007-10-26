@@ -24,105 +24,301 @@
 #include "FutureResponse.h"
 #include "FutureResult.h"
 #include "ConnectionImpl.h"
-
+#include "qpid/framing/FrameSet.h"
 #include "qpid/framing/constants.h"
+#include "qpid/framing/ClientInvoker.h"
+#include "qpid/log/Statement.h"
 
 #include <boost/bind.hpp>
 
-using namespace qpid::client;
+namespace qpid {
+namespace client {
+
 using namespace qpid::framing;
 
-SessionCore::SessionCore(shared_ptr<ConnectionImpl> conn, uint16_t ch, uint64_t maxFrameSize)
-    : connection(conn), channel(ch), l2(*this), l3(maxFrameSize),
-      uuid(false), sync(false)
-{
-    l2.next = &l3;
-    l3.out = &out;
-    out.next = connection.get();
+namespace { const std::string OK="ok"; }
+
+typedef sys::Monitor::ScopedLock  Lock;
+typedef sys::Monitor::ScopedUnlock  UnLock;
+
+inline void SessionCore::invariant() const {
+    switch (state.get()) {
+      case OPENING:
+        assert(!session);
+        assert(code==REPLY_SUCCESS);
+        assert(connection);
+        assert(channel.get());
+        assert(channel.next == connection.get());
+        break;
+      case RESUMING:
+        assert(session);
+        assert(session->getState() == SessionState::RESUMING);
+        assert(code==REPLY_SUCCESS);
+        assert(connection);
+        assert(channel.get());
+        assert(channel.next == connection.get());
+        break;
+      case OPEN:
+      case CLOSING:
+      case SUSPENDING:
+        assert(session);
+        assert(code==REPLY_SUCCESS);
+        assert(connection);
+        assert(channel.get());
+        assert(channel.next == connection.get());
+        break;
+      case SUSPENDED:
+        assert(code==REPLY_SUCCESS);
+        assert(session);
+        assert(!connection);
+        break;
+      case CLOSED:
+        assert(!session);
+        assert(!connection);
+        break;
+    }
 }
 
-SessionCore::~SessionCore() {}
+inline void SessionCore::setState(State s) {
+    state = s;
+    invariant();
+}
 
-ExecutionHandler& SessionCore::getExecution()
+inline void SessionCore::waitFor(State s) {
+    invariant();
+    // We can be CLOSED or SUSPENDED by error at any time.
+    state.waitFor(States(s, CLOSED, SUSPENDED));
+    check();
+    assert(state==s);
+    invariant();
+}
+
+SessionCore::SessionCore(shared_ptr<ConnectionImpl> conn,
+                         uint16_t ch, uint64_t maxFrameSize)
+    : l3(maxFrameSize),
+      sync(false),
+      channel(ch),
+      proxy(channel),
+      state(OPENING)
 {
-    checkClosed();
+    l3.out = &out;
+    attaching(conn);
+}
+
+void SessionCore::attaching(shared_ptr<ConnectionImpl> c) {
+    assert(c);
+    assert(channel.get());
+    connection = c;
+    channel.next = connection.get();
+    code = REPLY_SUCCESS;
+    text = OK;
+    state = session ? RESUMING : OPENING;
+    invariant();
+}
+
+SessionCore::~SessionCore() {
+    Lock l(state);
+    invariant();
+    detach(COMMAND_INVALID, "Session deleted");
+    state.waitAll();
+}
+
+void SessionCore::detach(int c, const std::string& t) {
+    connection.reset();
+    channel.next = 0;
+    code=c;
+    text=t;
+}
+
+void SessionCore::doClose(int code, const std::string& text) {
+    if (state != CLOSED) {
+        session.reset();
+        l3.getDemux().close();
+        l3.getCompletionTracker().close();
+        detach(code, text);
+        setState(CLOSED);
+    }
+    invariant();
+}
+
+void SessionCore::doSuspend(int code, const std::string& text) {
+    if (state != CLOSED) {
+        invariant();
+        detach(code, text);
+        session->suspend();
+        setState(SUSPENDED);
+    }
+}
+
+ExecutionHandler& SessionCore::getExecution() { // user thread
     return l3;
 }
 
-FrameSet::shared_ptr SessionCore::get()
-{
-    checkClosed();
-    return l3.getDemux().getDefault().pop();
-}
-
-void SessionCore::setSync(bool s)
-{
+void SessionCore::setSync(bool s) { // user thread
     sync = s;
 }
 
-bool SessionCore::isSync()
-{
+bool SessionCore::isSync() { // user thread
     return sync;
 }
 
-namespace {
-struct ClosedOnExit {
-    SessionCore& core;
-    int code;
-    std::string text;
-    ClosedOnExit(SessionCore& s, int c, const std::string& t)
-        : core(s), code(c), text(t) {}
-    ~ClosedOnExit() { core.closed(code, text); }
-};
+FrameSet::shared_ptr SessionCore::get() { // user thread
+    // No lock here: pop does a blocking wait.
+    return l3.getDemux().getDefault().pop();
 }
 
-void SessionCore::close()
+void SessionCore::open(uint32_t detachedLifetime) { // user thread
+    Lock l(state);
+    check(state==OPENING && !session,
+          COMMAND_INVALID, QPID_MSG("Cannot re-open a session."));
+    proxy.open(detachedLifetime);
+    waitFor(OPEN);
+}
+
+void SessionCore::close() { // user thread
+    Lock l(state);
+    check();
+    if (state==OPEN) {
+        setState(CLOSING);
+        proxy.close();
+        waitFor(CLOSED);
+    }
+    else
+        doClose(REPLY_SUCCESS, OK);
+}
+
+void SessionCore::suspend() { // user thread
+    Lock l(state);
+    checkOpen();
+    setState(SUSPENDING);
+    proxy.suspend();
+    waitFor(SUSPENDED);
+}
+
+void SessionCore::setChannel(uint16_t ch) { channel=ch; }
+
+void SessionCore::resume(shared_ptr<ConnectionImpl> c) {
+    // user thread
+    {
+        Lock l(state);
+        if (state==OPEN)
+            doSuspend(REPLY_SUCCESS, OK);
+        check(state==SUSPENDED, COMMAND_INVALID, QPID_MSG("Session cannot be resumed."));
+        SequenceNumber sendAck=session->resuming();
+        attaching(c);
+        proxy.resume(getId());
+        waitFor(OPEN);
+        proxy.ack(sendAck, SequenceNumberSet());
+        // FIXME aconway 2007-10-23: Replay inside the lock might be a prolem
+        // for large replay sets.
+        SessionState::Replay replay=session->replay();
+        for (SessionState::Replay::iterator i = replay.begin();
+             i != replay.end(); ++i)
+        {
+            invariant();
+            channel.handle(*i);     // Direct to channel.
+            check();
+        }
+    }
+}
+
+void SessionCore::assertOpen() const {
+    Lock l(state);
+    checkOpen();
+}
+
+// network thread
+void SessionCore::attached(const Uuid& sessionId,
+                           uint32_t /*detachedLifetime*/)
 {
-    checkClosed();
-    ClosedOnExit closer(*this, CHANNEL_ERROR, "Session closed by user.");
-    l2.close();
+    Lock l(state);
+    invariant();
+    check(state == OPENING || state == RESUMING,
+          COMMAND_INVALID, QPID_MSG("Received unexpected session.attached"));
+    if (state==OPENING) {        // New session
+        // FIXME aconway 2007-10-17: arbitrary ack value of 100 for
+        // client, allow configuration.
+        session=in_place<SessionState>(100, sessionId);
+        setState(OPEN);
+    }
+    else {                      // RESUMING
+        check(sessionId == session->getId(),
+              INVALID_ARGUMENT, QPID_MSG("session.resumed has invalid ID."));
+        // Don't setState yet, wait for first incoming ack.
+    }
 }
 
-void SessionCore::suspend() {
-    checkClosed();
-    ClosedOnExit closer(*this, CHANNEL_ERROR, "Client session is suspended");
-    l2.suspend();
+void  SessionCore::detached() { // network thread
+    Lock l(state);
+    check(state == SUSPENDING,
+          COMMAND_INVALID, QPID_MSG("Received unexpected session.detached."));
+    connection->erase(channel);
+    doSuspend(REPLY_SUCCESS, OK);
+}
+
+void SessionCore::ack(uint32_t ack, const SequenceNumberSet&) {
+    Lock l(state);
+    invariant();
+    check(state==OPEN || state==RESUMING,
+          COMMAND_INVALID, QPID_MSG("Received unexpected session.ack"));
+    session->receivedAck(ack);
+    if (state==RESUMING) {
+        setState(OPEN);
+    }
+    invariant();
 }
 
 void SessionCore::closed(uint16_t code, const std::string& text)
-{
-    out.next = 0;
-    reason.code = code;
-    reason.text = text;
-    l2.closed();
-    l3.getDemux().close();
-    l3.getCompletionTracker().close();
+{ // network thread
+    Lock l(state);
+    invariant();
+    doClose(code, text);
 }
 
-void SessionCore::checkClosed() const
-{
-    // TODO: could have been a connection exception
-    if(out.next == 0)
-        throw ChannelException(reason.code, reason.text);
+// closed by connection
+void SessionCore::connectionClosed(uint16_t code, const std::string& text) {
+    Lock l(state);
+    try {
+        doClose(code, text);
+    } catch(...) { assert (0); }
 }
 
-void SessionCore::open(uint32_t detachedLifetime) {
-    assert(out.next);
-    l2.open(detachedLifetime);
+void SessionCore::connectionBroke(uint16_t code, const std::string& text) {
+    Lock l(state);
+    try {
+        doSuspend(code, text);
+    } catch (...) { assert(0); }
 }
 
-void SessionCore::resume(shared_ptr<ConnectionImpl> conn) {
-    connection = conn;
-    out.next = connection.get();
-    l2.resume();
+void SessionCore::check() const { // Called with lock held.
+    invariant();
+    if (code != REPLY_SUCCESS)
+        throwReplyException(code, text);
+}
+ 
+void SessionCore::check(bool cond, int newCode, const std::string& msg)  const {
+    check();
+    if (!cond) {
+        const_cast<SessionCore*>(this)->doClose(newCode, msg);
+        throwReplyException(code, text);
+    }
+}
+
+void SessionCore::checkOpen() const {
+    if (state==SUSPENDED) {
+        std::string cause;
+        if (code != REPLY_SUCCESS)
+            cause=" by :"+text;        
+        throw CommandInvalidException(QPID_MSG("Session is suspended" << cause));
+    }
+    check(state==OPEN, COMMAND_INVALID, QPID_MSG("Session is not open"));
 }
 
 Future SessionCore::send(const AMQBody& command)
-{ 
-    checkClosed();
-
+{
+    Lock l(state);
+    checkOpen();
     command.getMethod()->setSync(sync);
-
     Future f;
     //any result/response listeners must be set before the command is sent
     if (command.getMethod()->resultExpected()) {
@@ -145,21 +341,61 @@ Future SessionCore::send(const AMQBody& command)
 
 Future SessionCore::send(const AMQBody& command, const MethodContent& content)
 {
-    checkClosed();
+    Lock l(state);
+    checkOpen();
     //content bearing methods don't currently have responses or
     //results, if that changes should follow procedure for the other
     //send method impl:
     return Future(l3.send(command, content));
 }
 
+// Network thread.
 void SessionCore::handleIn(AMQFrame& frame) {
-    l2.handle(frame);
+    try {
+        // Cast to expose private SessionHandler functions.
+        if (!invoke(static_cast<SessionHandler&>(*this), *frame.getBody())) {
+            session->received(frame);
+            l3.handle(frame);
+        }
+    } catch (const ChannelException& e) {
+        QPID_LOG(error, "Channel exception:" << e.what());
+        doClose(e.code, e.what());
+    } 
 }
 
 void SessionCore::handleOut(AMQFrame& frame)
 {
-    checkClosed();
-    frame.setChannel(channel);
-    out.next->handle(frame);
+    Lock l(state);
+    if (state==OPEN) {
+        if (session->sent(frame)) 
+            proxy.solicitAck();
+        channel.handle(frame);
+    }
 }
 
+void  SessionCore::solicitAck( ) {
+    Lock l(state);
+    checkOpen();
+    proxy.ack(session->sendingAck(), SequenceNumberSet());
+}
+
+void SessionCore::flow(bool) {
+    assert(0); throw NotImplementedException("session.flow");
+}
+
+void  SessionCore::flowOk(bool /*active*/) {
+    assert(0); throw NotImplementedException("session.flow");
+}
+
+void  SessionCore::highWaterMark(uint32_t /*lastSentMark*/) {
+    // FIXME aconway 2007-10-02: may be removed from spec.
+    assert(0); throw NotImplementedException("session.highWaterMark");
+}
+
+const Uuid SessionCore::getId() const {
+    if (session)
+        return session->getId();
+    throw Exception(QPID_MSG("Closed session, no ID."));
+}
+
+}} // namespace qpid::client
