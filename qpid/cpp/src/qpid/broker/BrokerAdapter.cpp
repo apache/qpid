@@ -21,6 +21,7 @@
 #include "MessageDelivery.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/Exception.h"
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace broker {
@@ -75,8 +76,7 @@ void BrokerAdapter::ExchangeHandlerImpl::declare(uint16_t /*ticket*/, const stri
                 checkAlternate(response.first, alternate);
             }
         }catch(UnknownExchangeTypeException& e){
-            throw ConnectionException(
-                503, "Exchange type not implemented: " + type);
+            throw CommandInvalidException(QPID_MSG("Exchange type not implemented: " << type));
         }
     }
 }
@@ -84,24 +84,23 @@ void BrokerAdapter::ExchangeHandlerImpl::declare(uint16_t /*ticket*/, const stri
 void BrokerAdapter::ExchangeHandlerImpl::checkType(Exchange::shared_ptr exchange, const std::string& type)
 {
     if (!type.empty() && exchange->getType() != type) {
-        throw ConnectionException(530, "Exchange declared to be of type " + exchange->getType() + ", requested " + type);
+        throw NotAllowedException(QPID_MSG("Exchange declared to be of type " << exchange->getType() << ", requested " << type));
     }
 }
 
 void BrokerAdapter::ExchangeHandlerImpl::checkAlternate(Exchange::shared_ptr exchange, Exchange::shared_ptr alternate)
 {
-    if (alternate && alternate != exchange->getAlternate()) {
-        throw ConnectionException(530, "Exchange declared with alternate-exchange "
-                                  + exchange->getAlternate()->getName() + ", requested " 
-                                  + alternate->getName());
-    }
-
+    if (alternate && alternate != exchange->getAlternate()) 
+        throw NotAllowedException(
+            QPID_MSG("Exchange declared with alternate-exchange "
+                     << exchange->getAlternate()->getName() << ", requested " 
+                     << alternate->getName()));
 }
                 
 void BrokerAdapter::ExchangeHandlerImpl::delete_(uint16_t /*ticket*/, const string& name, bool /*ifUnused*/){
     //TODO: implement unused
     Exchange::shared_ptr exchange(getBroker().getExchanges().get(name));
-    if (exchange->inUseAsAlternate()) throw ConnectionException(530, "Exchange in use as alternate-exchange.");
+    if (exchange->inUseAsAlternate()) throw NotAllowedException(QPID_MSG("Exchange in use as alternate-exchange."));
     if (exchange->isDurable()) getBroker().getStore().destroy(*exchange);
     if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
     getBroker().getExchanges().destroy(name);
@@ -292,7 +291,7 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
     
     Queue::shared_ptr queue = state.getQueue(queueName);    
     if(!consumerTag.empty() && state.exists(consumerTag)){
-        throw ConnectionException(530, "Consumer tags must be unique");
+        throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
     }
     string newTag = consumerTag;
     //need to generate name here, so we have it for the adapter (it is

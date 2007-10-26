@@ -26,6 +26,7 @@
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/framing/ChannelHandler.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -52,7 +53,7 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     SessionState* getSession() { return session.get(); }
     const SessionState* getSession() const { return session.get(); }
 
-    framing::ChannelId getChannel() const { return channel; }
+    framing::ChannelId getChannel() const { return channel.get(); }
     
     Connection& getConnection() { return connection; }
     const Connection& getConnection() const { return connection; }
@@ -60,6 +61,9 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     framing::AMQP_ClientProxy& getProxy() { return proxy; }
     const framing::AMQP_ClientProxy& getProxy() const { return proxy; }
 
+    // Called by closing connection.
+    void localSuspend();
+    
   protected:
     void handleIn(framing::AMQFrame&);
     void handleOut(framing::AMQFrame&);
@@ -79,12 +83,14 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     void solicitAck();
 
 
-    void assertOpen(const char* method);
-    void assertClosed(const char* method);
+    void assertAttached(const char* method) const;
+    void assertActive(const char* method) const;
+    void assertClosed(const char* method) const;
 
     Connection& connection;
-    const framing::ChannelId channel;
+    framing::ChannelHandler channel;
     framing::AMQP_ClientProxy proxy;
+    framing::AMQP_ClientProxy::Session peerSession;
     bool ignoring;
     std::auto_ptr<SessionState> session;
 };

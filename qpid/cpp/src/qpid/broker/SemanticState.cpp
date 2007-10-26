@@ -31,7 +31,6 @@
 #include "SessionHandler.h"
 #include "TxAck.h"
 #include "TxPublish.h"
-#include "qpid/QpidError.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 
@@ -116,7 +115,8 @@ void SemanticState::startTx()
 
 void SemanticState::commit(MessageStore* const store)
 {
-    if (!txBuffer) throw ConnectionException(503, "Session has not been selected for use with transactions");
+    if (!txBuffer) throw
+        CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
 
     TxOp::shared_ptr txAck(new TxAck(accumulatedAck, unacked));
     txBuffer->enlist(txAck);
@@ -127,7 +127,8 @@ void SemanticState::commit(MessageStore* const store)
 
 void SemanticState::rollback()
 {
-    if (!txBuffer) throw ConnectionException(503, "Session has not been selected for use with transactions");
+    if (!txBuffer)
+        throw CommandInvalidException(QPID_MSG("Session has not been selected for use with transactions"));
 
     txBuffer->rollback();
     accumulatedAck.clear();
@@ -141,7 +142,7 @@ void SemanticState::selectDtx()
 void SemanticState::startDtx(const std::string& xid, DtxManager& mgr, bool join)
 {
     if (!dtxSelected) {
-        throw ConnectionException(503, "Session has not been selected for use with dtx");
+        throw CommandInvalidException(QPID_MSG("Session has not been selected for use with dtx"));
     }
     dtxBuffer = DtxBuffer::shared_ptr(new DtxBuffer(xid));
     txBuffer = static_pointer_cast<TxBuffer>(dtxBuffer);
@@ -155,11 +156,12 @@ void SemanticState::startDtx(const std::string& xid, DtxManager& mgr, bool join)
 void SemanticState::endDtx(const std::string& xid, bool fail)
 {
     if (!dtxBuffer) {
-        throw ConnectionException(503, boost::format("xid %1% not associated with this session") % xid);
+        throw CommandInvalidException(QPID_MSG("xid " << xid << " not associated with this session"));
     }
     if (dtxBuffer->getXid() != xid) {
-        throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on end") 
-                                  % dtxBuffer->getXid() % xid);
+        throw CommandInvalidException(
+            QPID_MSG("xid specified on start was " << dtxBuffer->getXid() << ", but " << xid << " specified on end"));
+
     }
 
     txBuffer.reset();//ops on this session no longer transactional
@@ -176,8 +178,8 @@ void SemanticState::endDtx(const std::string& xid, bool fail)
 void SemanticState::suspendDtx(const std::string& xid)
 {
     if (dtxBuffer->getXid() != xid) {
-        throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on suspend") 
-                                  % dtxBuffer->getXid() % xid);
+        throw CommandInvalidException(
+            QPID_MSG("xid specified on start was " << dtxBuffer->getXid() << ", but " << xid << " specified on suspend"));
     }
     txBuffer.reset();//ops on this session no longer transactional
 
@@ -188,11 +190,12 @@ void SemanticState::suspendDtx(const std::string& xid)
 void SemanticState::resumeDtx(const std::string& xid)
 {
     if (dtxBuffer->getXid() != xid) {
-        throw ConnectionException(503, boost::format("xid specified on start was %1%, but %2% specified on resume") 
-                                  % dtxBuffer->getXid() % xid);
+        throw CommandInvalidException(
+            QPID_MSG("xid specified on start was " << dtxBuffer->getXid() << ", but " << xid << " specified on resume"));
+
     }
     if (!dtxBuffer->isSuspended()) {
-        throw ConnectionException(503, boost::format("xid %1% not suspended")% xid);
+        throw CommandInvalidException(QPID_MSG("xid " << xid << " not suspended"));
     }
 
     checkDtxTimeout();

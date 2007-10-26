@@ -29,12 +29,7 @@ namespace broker {
 
 class DtxManager;
 
-
-struct DtxTimeoutException : public Exception 
-{
-    DtxTimeoutException() {}
-};
-
+struct DtxTimeoutException : public Exception {};
 
 struct DtxTimeout : public TimerTask
 {

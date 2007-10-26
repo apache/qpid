@@ -31,21 +31,24 @@ namespace broker {
 
 using namespace framing;
 
-SessionState::SessionState(SessionManager& f, SessionHandler& h, uint32_t timeout_) 
-    : factory(f), handler(&h), id(true), timeout(timeout_),
-      broker(h.getConnection().broker),
-      version(h.getConnection().getVersion())
-{
-    // FIXME aconway 2007-09-21: Break dependnecy - broker updates session.
-    chain.push_back(new SemanticHandler(*this));
-    in = &chain[0];             // Incoming frame to handler chain.
-    out = &handler->out;        // Outgoing frames to SessionHandler
+void SessionState::handleIn(AMQFrame& f) { semanticHandler->handle(f); }
 
-    // FIXME aconway 2007-09-20: use broker to add plugin
-    // handlers to the chain. 
-    // FIXME aconway 2007-08-31: Shouldn't be passing channel ID.
-    broker.update(handler->getChannel(), *this);       
+void SessionState::handleOut(AMQFrame& f) {
+    assert(handler);
+    handler->out.handle(f);
 }
+
+SessionState::SessionState(
+    SessionManager& f, SessionHandler& h, uint32_t timeout_, uint32_t ack) 
+    : framing::SessionState(ack),
+      factory(f), handler(&h), id(true), timeout(timeout_),
+      broker(h.getConnection().broker),
+      version(h.getConnection().getVersion()),
+      semanticHandler(new SemanticHandler(*this))
+{
+    // FIXME aconway 2007-09-20: SessionManager may add plugin
+    // handlers to the chain.
+ }
 
 SessionState::~SessionState() {
     // Remove ID from active session list.
@@ -63,6 +66,14 @@ AMQP_ClientProxy& SessionState::getProxy() {
 
 Connection& SessionState::getConnection() {
     return getHandler().getConnection();
+}
+
+void SessionState::detach() {
+    handler = 0;
+}
+
+void SessionState::attach(SessionHandler& h) {
+    handler = &h;
 }
 
 }} // namespace qpid::broker

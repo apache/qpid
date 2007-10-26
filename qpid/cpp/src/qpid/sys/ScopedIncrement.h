@@ -30,17 +30,17 @@ namespace sys {
  * Optionally call a function if the decremented counter value is 0.
  * Note the function must not throw, it is called in the destructor.
  */
-template <class T>
+template <class T, class F=boost::function<void()> >
 class ScopedIncrement : boost::noncopyable
 {
   public:
-    ScopedIncrement(T& c, boost::function0<void> f=0)
+    ScopedIncrement(T& c, F f=0)
         : count(c), callback(f) { ++count; }
     ~ScopedIncrement() { if (--count == 0 && callback) callback(); }
 
   private:
     T& count;
-    boost::function0<void> callback;
+    F callback;
 };
 
 

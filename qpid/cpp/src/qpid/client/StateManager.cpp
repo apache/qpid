@@ -60,7 +60,7 @@ void StateManager::setState(int s)
     stateLock.notifyAll();
 }
 
-int StateManager::getState()
+int StateManager::getState() const
 {
     Monitor::ScopedLock l(stateLock);
     return state;

@@ -51,14 +51,14 @@ class ConnectionImpl : public framing::FrameHandler,
     bool isClosed;
 
     void incoming(framing::AMQFrame& frame);    
-    void closed();
-    void closedByPeer(uint16_t, const std::string&);
+    void closed(uint16_t, const std::string&);
     void idleOut();
     void idleIn();
     void shutdown();
-    void signalClose(uint16_t, const std::string&);
-    void assertNotClosed();
-public:
+
+    template <class F> void forChannels(F functor);
+
+  public:
     typedef boost::shared_ptr<ConnectionImpl> shared_ptr;
 
     ConnectionImpl(boost::shared_ptr<Connector> c);
@@ -69,7 +69,9 @@ public:
               const std::string& pwd = "guest", 
               const std::string& virtualhost = "/");
     void close();
-    void handle(framing::AMQFrame& frame);    
+    void handle(framing::AMQFrame& frame);
+    void erase(uint16_t channel);
+    boost::shared_ptr<Connector> getConnector() { return connector; }
 };
 
 }}

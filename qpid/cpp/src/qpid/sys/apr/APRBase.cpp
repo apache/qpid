@@ -20,7 +20,6 @@
  */
 #include <iostream>
 #include "qpid/log/Statement.h"
-#include "qpid/QpidError.h"
 #include "APRBase.h"
 
 using namespace qpid::sys;

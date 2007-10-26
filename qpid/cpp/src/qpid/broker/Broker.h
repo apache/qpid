@@ -69,6 +69,7 @@ class Broker : public sys::Runnable, public Plugin::Target
 	bool storeAsync;
 	bool enableMgmt;
 	uint16_t mgmtPubInterval;
+        uint32_t ack;
     };
     
     virtual ~Broker();

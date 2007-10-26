@@ -20,8 +20,7 @@
  */
 #include "FieldValue.h"
 #include "Buffer.h"
-#include "qpid/QpidError.h"
-
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace framing {
@@ -75,9 +74,7 @@ void FieldValue::decode(Buffer& buffer)
         data.reset(new FixedWidthValue<0>());
         break;
       default:
-        std::stringstream out;
-        out << "Unknown field table value type: " << typeOctet;
-        THROW_QPID_ERROR(FRAMING_ERROR, out.str());
+        throw SyntaxErrorException(QPID_MSG("Unknown field table value type: " << (int)typeOctet));
     }
     data->decode(buffer);
 }

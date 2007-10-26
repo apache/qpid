@@ -24,6 +24,7 @@
 #include "HeadersExchange.h"
 #include "TopicExchange.h"
 #include "ManagementExchange.h"
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::broker;
 using namespace qpid::sys;
@@ -75,9 +76,8 @@ void ExchangeRegistry::destroy(const string& name){
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){
     RWlock::ScopedRlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
-    if (i == exchanges.end()) {
-        throw ChannelException(404, "Exchange not found: " + name);
-    }
+    if (i == exchanges.end())
+        throw framing::NotFoundException(QPID_MSG("Exchange not found: " << name));
     return i->second;
 }
 

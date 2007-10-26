@@ -23,7 +23,6 @@
 
 /**@file Tools for using boost::variant */
 
-#include "qpid/QpidError.h"
 
 #include <boost/variant.hpp>
 
@@ -39,7 +38,7 @@ template <class R=void>
 struct NoBlankVisitor : public boost::static_visitor<R> {
     R foundBlank() const {
         assert(0);
-        THROW_QPID_ERROR(INTERNAL_ERROR, "Invalid variant value.");
+        throw Exception(QPID_MSG("Invalid variant value."));
     }
     R operator()(const boost::blank&) const { return foundBlank(); }
     R operator()(boost::blank&) const { return foundBlank(); }

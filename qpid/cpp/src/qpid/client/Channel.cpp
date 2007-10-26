@@ -24,7 +24,6 @@
 #include "Channel.h"
 #include "qpid/sys/Monitor.h"
 #include "Message.h"
-#include "qpid/QpidError.h"
 #include "Connection.h"
 #include "Demux.h"
 #include "FutureResponse.h"
@@ -71,7 +70,7 @@ void Channel::open(const Session& s)
 {
     Mutex::ScopedLock l(stopLock);
     if (isOpen())
-        THROW_QPID_ERROR(INTERNAL_ERROR, "Attempt to re-open channel");
+        throw ChannelBusyException();
     active = true;
     session = s;
     if(isTransactional()) {
@@ -142,7 +141,7 @@ void Channel::consume(
         Mutex::ScopedLock l(lock);
         ConsumerMap::iterator i = consumers.find(tag);
         if (i != consumers.end())
-            throw Exception(boost::format("Consumer already exists with tag: '%1%'") % tag);
+            throw NotAllowedException(QPID_MSG("Consumer already exists with tag " << tag ));
         Consumer& c = consumers[tag];
         c.listener = listener;
         c.ackMode = ackMode;

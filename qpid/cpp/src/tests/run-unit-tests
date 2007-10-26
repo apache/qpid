@@ -24,5 +24,5 @@ test -z "$TEST_ARGS" && TEST_ARGS=".libs/*Test.so"
 test -z "$srcdir" && srcdir=.
 
 # libdlclose_noop prevents unloading symbols needed for valgrind output.
-LD_PRELOAD=.libs/libdlclose_noop.so exec $srcdir/test_env DllPlugInTester -c -b $TEST_ARGS
-
+export LD_PRELOAD=.libs/libdlclose_noop.so
+source $srcdir/run_test DllPlugInTester -c -b $TEST_ARGS

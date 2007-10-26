@@ -20,16 +20,20 @@
  */
 #include "DtxManager.h"
 #include "DtxTimeout.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <iostream>
 using qpid::sys::Mutex;
 
 using namespace qpid::broker;
+using namespace qpid::framing;
 
 DtxManager::DtxManager(TransactionalStore* const _store) : store(_store) {}
 
-DtxManager::~DtxManager() {}
+DtxManager::~DtxManager() {
+    // timer.stop(); // FIXME aconway 2007-10-23: leaking threads.
+}
 
 void DtxManager::start(const std::string& xid, DtxBuffer::shared_ptr ops)
 {
@@ -84,7 +88,7 @@ DtxManager::WorkMap::iterator DtxManager::getWork(const std::string& xid)
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
-        throw ConnectionException(503, boost::format("Unrecognised xid %1%!") % xid);
+        throw InvalidArgumentException(QPID_MSG("Unrecognised xid " << xid));
     }
     return i;
 }
@@ -94,7 +98,7 @@ void DtxManager::remove(const std::string& xid)
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
-        throw ConnectionException(503, boost::format("Unrecognised xid %1%!") % xid);
+        throw InvalidArgumentException(QPID_MSG("Unrecognised xid " << xid));
     } else {
         work.erase(i);
     }
@@ -105,7 +109,7 @@ DtxManager::WorkMap::iterator DtxManager::createWork(std::string xid)
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i != work.end()) {
-        throw ConnectionException(503, boost::format("Xid %1% is already known (use 'join' to add work to an existing xid)!") % xid);
+        throw CommandInvalidException(QPID_MSG("Xid " << xid << " is already known (use 'join' to add work to an existing xid)"));
     } else {
         return work.insert(xid, new DtxWorkRecord(xid, store)).first;
     }

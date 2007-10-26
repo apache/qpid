@@ -30,14 +30,15 @@
 namespace qpid {
 namespace framing {
 
-struct NoSuchPropertiesException : public Exception {};
-
 class TransferContent : public MethodContent
 {
     AMQHeaderBody header;
     std::string data;
 public:
-    TransferContent(const std::string& data = "");
+    TransferContent(const std::string& data = std::string(),
+                    const std::string& routingKey = std::string(),
+                    const std::string& exchange = std::string());
+
     AMQHeaderBody getHeader() const;
     void setData(const std::string&);
     void appendData(const std::string&);

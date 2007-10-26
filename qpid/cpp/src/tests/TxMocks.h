@@ -25,7 +25,6 @@
 #include "qpid/Exception.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/broker/TxOp.h"
-#include <boost/format.hpp>
 #include <iostream>
 #include <vector>
 
@@ -40,9 +39,9 @@ template <class T> void assertEqualVector(std::vector<T>& expected, std::vector<
         i++;
     }
     if (i < expected.size()) {
-        throw qpid::Exception(boost::format("Missing %1%") % expected[i]);
+        throw qpid::Exception(QPID_MSG("Missing " << expected[i]));
     } else if (i < actual.size()) {
-        throw qpid::Exception(boost::format("Extra %1%") % actual[i]);
+        throw qpid::Exception(QPID_MSG("Extra " << actual[i]));
     }
     CPPUNIT_ASSERT_EQUAL(expected.size(), actual.size());
 }
