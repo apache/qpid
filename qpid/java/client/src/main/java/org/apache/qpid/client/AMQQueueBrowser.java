@@ -109,7 +109,7 @@ public class AMQQueueBrowser implements QueueBrowser
                     {
                         _logger.info("QB:nextElement about to receive");
 
-                        _nextMessage = consumer.receive();
+                        _nextMessage = consumer.receive(1000);
                         _logger.info("QB:nextElement received:" + _nextMessage);
                     }
                     catch (JMSException e)
