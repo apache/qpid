@@ -343,7 +343,7 @@ public class AMQSession_0_10 extends AMQSession
         boolean preAcquire;
         try
         {
-            preAcquire = consumer.getMessageSelector() == null || !(consumer.getDestination() instanceof AMQQueue);
+            preAcquire = ( ! consumer.isNoConsume()  && consumer.getMessageSelector() == null) || !(consumer.getDestination() instanceof AMQQueue);
         }
         catch (JMSException e)
         {
