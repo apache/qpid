@@ -293,6 +293,10 @@ void Queue::consume(Consumer::ptr c, bool requestExclusive){
         }
         browsers.push_back(c);
     }
+
+    if (mgmtObjectPtr != 0){
+        mgmtObjectPtr->incConsumers ();
+    }
 }
 
 void Queue::cancel(Consumer::ptr c){
@@ -301,6 +305,9 @@ void Queue::cancel(Consumer::ptr c){
         cancel(c, acquirers);
     } else {
         cancel(c, browsers);
+    }
+    if (mgmtObjectPtr != 0){
+        mgmtObjectPtr->decConsumers ();
     }
     if(exclusive == c) exclusive.reset();
 }

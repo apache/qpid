@@ -21,6 +21,7 @@
 #include "QueueRegistry.h"
 #include "ManagementAgent.h"
 #include "ManagementObjectQueue.h"
+#include "qpid/log/Statement.h"
 #include <sstream>
 #include <assert.h>
 
@@ -42,33 +43,32 @@ QueueRegistry::declare(const string& declareName, bool durable,
     QueueMap::iterator i =  queues.find(name);
 
     if (i == queues.end()) {
-	Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner));
-	queues[name] = queue;
+        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner));
+        queues[name] = queue;
 
-	if (managementAgent){
-	    ManagementObjectQueue::shared_ptr mgmtObject(new ManagementObjectQueue (name, durable, autoDelete));
+        if (managementAgent){
+            ManagementObjectQueue::shared_ptr mgmtObject(new ManagementObjectQueue (name, durable, autoDelete));
 
-	    queue->setMgmt (mgmtObject);
-	    managementAgent->addObject(dynamic_pointer_cast<ManagementObject>(mgmtObject));
-	}
-	
-	return std::pair<Queue::shared_ptr, bool>(queue, true);
+            queue->setMgmt (mgmtObject);
+            managementAgent->addObject(dynamic_pointer_cast<ManagementObject>(mgmtObject));
+        }
+
+        return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
-	return std::pair<Queue::shared_ptr, bool>(i->second, false);
+        return std::pair<Queue::shared_ptr, bool>(i->second, false);
     }
 }
 
 void QueueRegistry::destroy(const string& name){
     RWlock::ScopedWlock locker(lock);
-
     if (managementAgent){
-	ManagementObjectQueue::shared_ptr mgmtObject;
-	QueueMap::iterator i = queues.find(name);
+        ManagementObjectQueue::shared_ptr mgmtObject;
+        QueueMap::iterator i = queues.find(name);
 
-	if (i != queues.end()){
-	    mgmtObject = i->second->getMgmt ();
-	    managementAgent->deleteObject (dynamic_pointer_cast<ManagementObject>(mgmtObject));
-	}
+        if (i != queues.end()){
+            mgmtObject = i->second->getMgmt ();
+            mgmtObject->resourceDestroy ();
+        }
     }
 
     queues.erase(name);
@@ -79,20 +79,20 @@ Queue::shared_ptr QueueRegistry::find(const string& name){
     QueueMap::iterator i = queues.find(name);
     
     if (i == queues.end()) {
-	return Queue::shared_ptr();
+        return Queue::shared_ptr();
     } else {
-	return i->second;
+        return i->second;
     }
 }
 
 string QueueRegistry::generateName(){
     string name;
     do {
-	std::stringstream ss;
-	ss << "tmp_" << counter++;
-	name = ss.str();
-	// Thread safety: Private function, only called with lock held
-	// so this is OK.
+        std::stringstream ss;
+        ss << "tmp_" << counter++;
+        name = ss.str();
+        // Thread safety: Private function, only called with lock held
+        // so this is OK.
     } while(queues.find(name) != queues.end());
     return name;
 }

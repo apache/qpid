@@ -89,28 +89,29 @@ class ManagementObjectQueue : public ManagementObject
     void        writeConfig          (Buffer& buf);
     void        writeInstrumentation (Buffer& buf);
     bool        getSchemaNeeded      (void) { return schemaNeeded; }
+    void        setSchemaNeeded      (void) { schemaNeeded = true; }
     
     inline void adjustQueueHiLo (void){
-	if (msgDepth > msgDepthHigh) msgDepthHigh = msgDepth;
-	if (msgDepth < msgDepthLow)  msgDepthLow  = msgDepth;
+        if (msgDepth > msgDepthHigh) msgDepthHigh = msgDepth;
+        if (msgDepth < msgDepthLow)  msgDepthLow  = msgDepth;
 
-	if (byteDepth > byteDepthHigh) byteDepthHigh = byteDepth;
-	if (byteDepth < byteDepthLow)  byteDepthLow  = byteDepth;
-	instChanged = true;
+        if (byteDepth > byteDepthHigh) byteDepthHigh = byteDepth;
+        if (byteDepth < byteDepthLow)  byteDepthLow  = byteDepth;
+        instChanged = true;
     }
     
     inline void adjustTxHiLo (void){
-    	if (enqueueTxCount > enqueueTxCountHigh) enqueueTxCountHigh = enqueueTxCount;
-	if (enqueueTxCount < enqueueTxCountLow)  enqueueTxCountLow  = enqueueTxCount;
-    	if (dequeueTxCount > dequeueTxCountHigh) dequeueTxCountHigh = dequeueTxCount;
-	if (dequeueTxCount < dequeueTxCountLow)  dequeueTxCountLow  = dequeueTxCount;
-	instChanged = true;
+        if (enqueueTxCount > enqueueTxCountHigh) enqueueTxCountHigh = enqueueTxCount;
+        if (enqueueTxCount < enqueueTxCountLow)  enqueueTxCountLow  = enqueueTxCount;
+        if (dequeueTxCount > dequeueTxCountHigh) dequeueTxCountHigh = dequeueTxCount;
+        if (dequeueTxCount < dequeueTxCountLow)  dequeueTxCountLow  = dequeueTxCount;
+        instChanged = true;
     }
     
     inline void adjustConsumerHiLo (void){
-    	if (consumers > consumersHigh) consumersHigh = consumers;
-	if (consumers < consumersLow)  consumersLow  = consumers;
-	instChanged = true;
+        if (consumers > consumersHigh) consumersHigh = consumers;
+        if (consumers < consumersLow)  consumersLow  = consumers;
+        instChanged = true;
     }
 
   public:
@@ -124,51 +125,51 @@ class ManagementObjectQueue : public ManagementObject
     // messages when counting statistics.
 
     inline void enqueue (uint64_t bytes, uint32_t attrMask = 0){
-    	msgTotalEnqueues++;
-	byteTotalEnqueues += bytes;
-	
-	if (attrMask & MSG_MASK_TX){
-	    msgTxEnqueues++;
-	    byteTxEnqueues += bytes;
-	}
-	
-	if (attrMask & MSG_MASK_PERSIST){
-	    msgPersistEnqueues++;
-	    bytePersistEnqueues += bytes;
-	}
+        msgTotalEnqueues++;
+        byteTotalEnqueues += bytes;
+        
+        if (attrMask & MSG_MASK_TX){
+            msgTxEnqueues++;
+            byteTxEnqueues += bytes;
+        }
+        
+        if (attrMask & MSG_MASK_PERSIST){
+            msgPersistEnqueues++;
+            bytePersistEnqueues += bytes;
+        }
 
-	msgDepth++;
-	byteDepth += bytes;
-	adjustQueueHiLo ();
+        msgDepth++;
+        byteDepth += bytes;
+        adjustQueueHiLo ();
     }
     
     inline void dequeue (uint64_t bytes, uint32_t attrMask = 0){
-    	msgTotalDequeues++;
-	byteTotalDequeues += bytes;
+        msgTotalDequeues++;
+        byteTotalDequeues += bytes;
 
-	if (attrMask & MSG_MASK_TX){
-	    msgTxDequeues++;
-	    byteTxDequeues += bytes;
-	}
-	
-	if (attrMask & MSG_MASK_PERSIST){
-	    msgPersistDequeues++;
-	    bytePersistDequeues += bytes;
-	}
+        if (attrMask & MSG_MASK_TX){
+            msgTxDequeues++;
+            byteTxDequeues += bytes;
+        }
+        
+        if (attrMask & MSG_MASK_PERSIST){
+            msgPersistDequeues++;
+            bytePersistDequeues += bytes;
+        }
 
-	msgDepth--;
-	byteDepth -= bytes;
-	adjustQueueHiLo ();
+        msgDepth--;
+        byteDepth -= bytes;
+        adjustQueueHiLo ();
     }
     
     inline void incConsumers (void){
-    	consumers++;
-	adjustConsumerHiLo ();
+        consumers++;
+        adjustConsumerHiLo ();
     }
     
     inline void decConsumers (void){
-    	consumers--;
-	adjustConsumerHiLo ();
+        consumers--;
+        adjustConsumerHiLo ();
     }
 };
 

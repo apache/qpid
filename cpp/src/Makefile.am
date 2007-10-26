@@ -163,6 +163,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/IncomingExecutionContext.cpp \
   qpid/broker/ManagementAgent.cpp \
+  qpid/broker/ManagementExchange.cpp \
   qpid/broker/ManagementObject.cpp \
   qpid/broker/ManagementObjectQueue.cpp \
   qpid/broker/Message.cpp \
@@ -260,6 +261,7 @@ nobase_include_HEADERS = \
   qpid/broker/HeadersExchange.h \
   qpid/broker/IncomingExecutionContext.h \
   qpid/broker/ManagementAgent.h \
+  qpid/broker/ManagementExchange.h \
   qpid/broker/ManagementObject.h \
   qpid/broker/ManagementObjectQueue.h \
   qpid/broker/Message.h \
