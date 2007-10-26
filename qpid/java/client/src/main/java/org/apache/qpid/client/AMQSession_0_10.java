@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Destination;
+import javax.jms.TemporaryQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.UUID;
 import java.util.Map;
@@ -514,6 +515,28 @@ public class AMQSession_0_10 extends AMQSession
                                    toBeTrhown.getMessage(), toBeTrhown);
         }
     }
+
+
+     public TemporaryQueue createTemporaryQueue() throws JMSException
+    {
+        checkNotClosed();
+        AMQTemporaryQueue result = new AMQTemporaryQueue(this);
+        try
+        {
+            // this is done so that we can produce to a temporary queue beofre we create a consumer
+            sendCreateQueue(result.getDestinationName(), result.isAutoDelete(), result.isDurable(), result.isExclusive());
+            sendQueueBind(result.getDestinationName(), result.getDestinationName(), new FieldTable(), result.getExchangeName());
+            result.setQueueName(result.getDestinationName());
+        }
+        catch (Exception e)
+        {
+           throw new JMSException("Cannot create temporary queue" );
+        }
+        return result;
+    }
+
+
+
 
     //------ Inner classes
     /**

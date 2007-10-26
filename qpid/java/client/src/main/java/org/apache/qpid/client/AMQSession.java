@@ -1038,13 +1038,8 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         return new TopicSubscriberAdaptor(dest, (BasicMessageConsumer) createConsumer(dest, messageSelector, noLocal));
     }
 
-    public TemporaryQueue createTemporaryQueue() throws JMSException
-    {
-        checkNotClosed();
-
-        return new AMQTemporaryQueue(this);
-    }
-
+    public abstract TemporaryQueue createTemporaryQueue() throws JMSException;
+   
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
         checkNotClosed();

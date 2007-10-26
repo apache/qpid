@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
+import javax.jms.TemporaryQueue;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -324,5 +325,12 @@ public class AMQSession_0_8 extends AMQSession
     {
         _connection.getProtocolHandler().syncWrite(TxRollbackBody.createAMQFrame(_channelId,
             getProtocolMajorVersion(), getProtocolMinorVersion()), TxRollbackOkBody.class);
+    }
+
+     public TemporaryQueue createTemporaryQueue() throws JMSException
+    {
+        checkNotClosed();
+
+        return new AMQTemporaryQueue(this);
     }
 }
