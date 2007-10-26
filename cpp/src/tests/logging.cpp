@@ -71,22 +71,18 @@ BOOST_AUTO_TEST_CASE(testSelector_enable) {
     BOOST_CHECK(s.isEnabled(critical, "oops"));
 }
 
-Logger& clearLogger() {
-    Logger::instance().clear();
-    return Logger::instance();
-}
-
 BOOST_AUTO_TEST_CASE(testStatementEnabled) {
-    // Verify that the logger enables and disables log statements.
-    Logger& l=clearLogger();
+    // Verify that the singleton enables and disables static
+    // log statements.
+    Logger& l = Logger::instance();
     l.select(Selector(debug));
-    Statement s=QPID_LOG_STATEMENT_INIT(debug);
+    static Statement s=QPID_LOG_STATEMENT_INIT(debug);
     BOOST_CHECK(!s.enabled);
-    Statement::Initializer init(s);
+    static Statement::Initializer init(s);
     BOOST_CHECK(s.enabled);
 
-    Statement s2=QPID_LOG_STATEMENT_INIT(warning);
-    Statement::Initializer init2(s2);
+    static Statement s2=QPID_LOG_STATEMENT_INIT(warning);
+    static Statement::Initializer init2(s2);
     BOOST_CHECK(!s2.enabled);
 
     l.select(Selector(warning));
@@ -98,9 +94,10 @@ struct TestOutput : public Logger::Output {
     vector<string> msg;
     vector<Statement> stmt;
 
-    TestOutput() {
-        Logger::instance().output(qpid::make_auto_ptr<Logger::Output>(this));
+    TestOutput(Logger& l) {
+        l.output(std::auto_ptr<Logger::Output>(this));
     }
+                 
     void log(const Statement& s, const string& m) {
         msg.push_back(m);
         stmt.push_back(s);
@@ -111,10 +108,12 @@ struct TestOutput : public Logger::Output {
 using boost::assign::list_of;
 
 BOOST_AUTO_TEST_CASE(testLoggerOutput) {
-    Logger& l=clearLogger();
+    Logger l;
+    l.clear();
     l.select(Selector(debug));
     Statement s=QPID_LOG_STATEMENT_INIT(debug);
-    TestOutput* out=new TestOutput();
+
+    TestOutput* out=new TestOutput(l);
 
     // Verify message is output.
     l.log(s, "foo");
@@ -122,7 +121,7 @@ BOOST_AUTO_TEST_CASE(testLoggerOutput) {
     BOOST_CHECK_EQUAL(expect, out->msg);
 
     // Verify multiple outputs
-    TestOutput* out2=new TestOutput();
+    TestOutput* out2=new TestOutput(l);
     l.log(Statement(), "baz");
     expect.push_back("baz\n");
     BOOST_CHECK_EQUAL(expect, out->msg);
@@ -131,9 +130,10 @@ BOOST_AUTO_TEST_CASE(testLoggerOutput) {
 }
 
 BOOST_AUTO_TEST_CASE(testMacro) {
-    Logger& l = clearLogger();
+    Logger& l=Logger::instance();
+    l.clear();
     l.select(Selector(info));
-    TestOutput* out=new TestOutput();
+    TestOutput* out=new TestOutput(l);
     QPID_LOG(info, "foo");
     vector<string> expect=list_of("foo\n");
     BOOST_CHECK_EQUAL(expect, out->msg);
@@ -150,9 +150,9 @@ BOOST_AUTO_TEST_CASE(testMacro) {
 }
 
 BOOST_AUTO_TEST_CASE(testLoggerFormat) {
-    Logger& l=clearLogger();
+    Logger& l = Logger::instance();
     l.select(Selector(critical));
-    TestOutput* out=new TestOutput();
+    TestOutput* out=new TestOutput(l);
 
     // Time format is YYY-Month-dd hh:mm:ss
     l.format(Logger::TIME);
@@ -183,7 +183,8 @@ BOOST_AUTO_TEST_CASE(testLoggerFormat) {
 }
 
 BOOST_AUTO_TEST_CASE(testOstreamOutput) {
-    Logger& l=clearLogger();
+    Logger& l=Logger::instance();
+    l.clear();
     l.select(Selector(error));
     ostringstream os;
     l.output(os);
@@ -191,12 +192,12 @@ BOOST_AUTO_TEST_CASE(testOstreamOutput) {
     QPID_LOG(error, "bar");
     QPID_LOG(error, "baz");
     BOOST_CHECK_EQUAL("foo\nbar\nbaz\n", os.str());
-    l.clear();
 }
 
 #if 0 // This test requires manual intervention. Normally disabled.
 BOOST_AUTO_TEST_CASE(testSyslogOutput) {
-    Logger& l = clearLogger();
+    Logger& l=Logger::instance();
+    l.clear();
     l.select(Selector(info));
     l.syslog("qpid_test");
     QPID_LOG(info, "Testing QPID");
@@ -312,7 +313,7 @@ BOOST_AUTO_TEST_CASE(testSelectorFromOptions) {
 }
 
 BOOST_AUTO_TEST_CASE(testOptionsFormat) {
-    Logger& l = clearLogger();
+    Logger l;
     {
         Options opts;
         BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
@@ -344,7 +345,8 @@ BOOST_AUTO_TEST_CASE(testOptionsFormat) {
 }
 
 BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
-    Logger& l = clearLogger();
+    Logger& l=Logger::instance();
+    l.clear();
     Options opts;
     char* argv[]={
         0,

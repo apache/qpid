@@ -22,17 +22,25 @@
 #ifndef _SessionCore_
 #define _SessionCore_
 
-#include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include "qpid/framing/AMQMethodBody.h"
+#include "qpid/shared_ptr.h"
 #include "qpid/framing/FrameHandler.h"
-#include "qpid/framing/FrameSet.h"
-#include "qpid/framing/MethodContent.h"
-#include "qpid/framing/Uuid.h"
-#include "SessionHandler.h"
+#include "qpid/framing/ChannelHandler.h"
+#include "qpid/framing/SessionState.h"
+#include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/AMQP_ClientOperations.h"
+#include "qpid/framing/AMQP_ServerProxy.h"
+#include "qpid/sys/StateMonitor.h"
 #include "ExecutionHandler.h"
 
+#include <boost/optional.hpp>
+
 namespace qpid {
+namespace framing {
+class FrameSet;
+class MethodContent;
+class SequenceNumberSet;
+}
+
 namespace client {
 
 class Future;
@@ -43,60 +51,90 @@ class ConnectionImpl;
  * Attaches to a SessionHandler when active, detaches
  * when closed.
  */
-class SessionCore : public framing::FrameHandler::InOutHandler
+class SessionCore : public framing::FrameHandler::InOutHandler,
+                    private framing::AMQP_ClientOperations::SessionHandler
 {
-    struct Reason
-    {
-        uint16_t code;
-        std::string text;
-    };
-
-    shared_ptr<ConnectionImpl> connection;
-    uint16_t channel;
-    SessionHandler l2;
-    ExecutionHandler l3;
-    framing::Uuid uuid;
-    volatile bool sync;
-    Reason reason;
-
-  protected:
-    void handleIn(framing::AMQFrame& frame);
-    void handleOut(framing::AMQFrame& frame);
-
   public:
     SessionCore(shared_ptr<ConnectionImpl>, uint16_t channel, uint64_t maxFrameSize);
     ~SessionCore();
 
     framing::FrameSet::shared_ptr get();
+    const framing::Uuid getId() const;
+    uint16_t getChannel() const { return channel; }
+    void assertOpen() const;
 
-    framing::Uuid getId() const { return uuid; } 
-    void setId(const framing::Uuid& id)  { uuid= id; }
-        
-    uint16_t getChannel() const { assert(channel); return channel; }
-    void setChannel(uint16_t ch) { assert(ch); channel=ch; }
-
+    // NOTE: Public functions called in user thread.
     void open(uint32_t detachedLifetime);
-
-    /** Closed by client code */
     void close();
-
-    /** Closed by peer */
-    void closed(uint16_t code, const std::string& text);
-
     void resume(shared_ptr<ConnectionImpl>);
     void suspend();
+    void setChannel(uint16_t channel);
 
-    void setSync(bool);
+    void setSync(bool s);
     bool isSync();
     ExecutionHandler& getExecution();
-    void checkClosed() const;
 
     Future send(const framing::AMQBody& command);
+
     Future send(const framing::AMQBody& command, const framing::MethodContent& content);
+
+    void connectionClosed(uint16_t code, const std::string& text);
+    void connectionBroke(uint16_t code, const std::string& text);
+
+  private:
+    enum State {
+        OPENING,
+        RESUMING,
+        OPEN,
+        CLOSING,
+        SUSPENDING,
+        SUSPENDED,
+        CLOSED
+    };
+    typedef framing::AMQP_ClientOperations::SessionHandler SessionHandler;
+    typedef sys::StateMonitor<State, CLOSED> StateMonitor;
+    typedef StateMonitor::Set States;
+
+    inline void invariant() const;
+    inline void setState(State s);
+    inline void waitFor(State);
+    void doClose(int code, const std::string& text);
+    void doSuspend(int code, const std::string& text);
+    
+    /** If there is an error, throw the exception */
+    void check(bool condition, int code, const std::string& text) const;
+    /** Throw if *error */
+    void check() const;
+
+    void handleIn(framing::AMQFrame& frame);
+    void handleOut(framing::AMQFrame& frame);
+
+    // Private functions are called by broker in network thread.
+    void attached(const framing::Uuid& sessionId, uint32_t detachedLifetime);
+    void flow(bool active);
+    void flowOk(bool active);
+    void detached();
+    void ack(uint32_t cumulativeSeenMark,
+             const framing::SequenceNumberSet& seenFrameSet);
+    void highWaterMark(uint32_t lastSentMark);
+    void solicitAck();
+    void closed(uint16_t code, const std::string& text);
+
+    void attaching(shared_ptr<ConnectionImpl>);
+    void detach(int code, const std::string& text);
+    void checkOpen() const;
+
+    int code;                   // Error code
+    std::string text;           // Error text
+    boost::optional<framing::SessionState> session;
+    shared_ptr<ConnectionImpl> connection;
+    ExecutionHandler l3;
+    volatile bool sync;
+    framing::ChannelHandler channel;
+    framing::AMQP_ServerProxy::Session proxy;
+    mutable StateMonitor state;
 };
 
-}
-}
-
+}} // namespace qpid::client
 
 #endif

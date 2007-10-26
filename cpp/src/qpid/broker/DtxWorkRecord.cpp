@@ -19,12 +19,14 @@
  *
  */
 #include "DtxWorkRecord.h"
+#include "qpid/framing/reply_exceptions.h"
 #include <boost/format.hpp>
 #include <boost/mem_fn.hpp>
 using boost::mem_fn;
 using qpid::sys::Mutex;
 
 using namespace qpid::broker;
+using namespace qpid::framing;
 
 DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const _store) : 
     xid(_xid), store(_store), completed(false), rolledback(false), prepared(false), expired(false) {}
@@ -71,8 +73,7 @@ bool DtxWorkRecord::commit(bool onePhase)
         if (prepared) {
             //already prepared i.e. 2pc
             if (onePhase) {
-                throw ConnectionException(503, 
-                    boost::format("Branch with xid %1% has been prepared, one-phase option not valid!") % xid);        
+                throw CommandInvalidException(QPID_MSG("Branch with xid " << xid << " has been prepared, one-phase option not valid!"));
             }
 
             store->commit(*txn);
@@ -83,8 +84,7 @@ bool DtxWorkRecord::commit(bool onePhase)
         } else {
             //1pc commit optimisation, don't need a 2pc transaction context:
             if (!onePhase) {
-                throw ConnectionException(503, 
-                    boost::format("Branch with xid %1% has not been prepared, one-phase option required!") % xid);        
+                throw CommandInvalidException(QPID_MSG("Branch with xid " << xid << " has not been prepared, one-phase option required!"));        
             }
             std::auto_ptr<TransactionContext> localtxn = store->begin();
             if (prepare(localtxn.get())) {
@@ -119,7 +119,7 @@ void DtxWorkRecord::add(DtxBuffer::shared_ptr ops)
         throw DtxTimeoutException();
     }
     if (completed) {
-        throw ConnectionException(503, boost::format("Branch with xid %1% has been completed!") % xid);
+        throw CommandInvalidException(QPID_MSG("Branch with xid " << xid << " has been completed!"));
     }
     work.push_back(ops);
 }
@@ -133,7 +133,7 @@ bool DtxWorkRecord::check()
         //iterate through all DtxBuffers and ensure they are all ended
         for (Work::iterator i = work.begin(); i != work.end(); i++) {
             if (!(*i)->isEnded()) {
-                throw ConnectionException(503, boost::format("Branch with xid %1% not completed!") % xid);
+                throw CommandInvalidException(QPID_MSG("Branch with xid " << xid << " not completed!"));
             } else if ((*i)->isRollbackOnly()) {
                 rolledback = true;
             }

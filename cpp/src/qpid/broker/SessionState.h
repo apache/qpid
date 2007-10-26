@@ -24,11 +24,12 @@
 
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/SessionState.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/sys/Time.h"
 
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include <set>
 #include <vector>
@@ -42,31 +43,26 @@ class AMQP_ClientProxy;
 
 namespace broker {
 
+class SemanticHandler;
 class SessionHandler;
 class SessionManager;
 class Broker;
 class Connection;
 
 /**
- * State of a session.
- *
- * An attached session has a SessionHandler which is attached to a
- * connection. A suspended session has no handler.
- *
- * A SessionState is always associated with an open session (attached or
- * suspended) it is destroyed when the session is closed.
- *
- * The SessionState includes the sessions handler chains, which may
- * themselves have state. The handlers will be preserved as long as
- * the session is alive.
+ * Broker-side session state includes sessions handler chains, which may
+ * themselves have state. 
  */
-class SessionState : public framing::FrameHandler::Chains,
-                     private boost::noncopyable
+class SessionState : public framing::SessionState,
+                     public framing::FrameHandler::InOutHandler
 {
   public:
     ~SessionState();
     bool isAttached() { return handler; }
 
+    void detach();
+    void attach(SessionHandler& handler);
+    
     /** @pre isAttached() */
     SessionHandler& getHandler();
 
@@ -76,23 +72,30 @@ class SessionState : public framing::FrameHandler::Chains,
     /** @pre isAttached() */
     Connection& getConnection();
 
-    const framing::Uuid& getId() const { return id; }
     uint32_t getTimeout() const { return timeout; }
     Broker& getBroker() { return broker; }
     framing::ProtocolVersion getVersion() const { return version; }
+
+  protected:
+    void handleIn(framing::AMQFrame&);
+    void handleOut(framing::AMQFrame&);
     
   private:
-    /** Only SessionManager can open sessions */
-    SessionState(SessionManager& f, SessionHandler& h, uint32_t timeout_);
-
+    // SessionManager creates sessions.
+    SessionState(SessionManager&,
+                 SessionHandler& out,
+                 uint32_t timeout,
+                 uint32_t ackInterval);
+    
     SessionManager& factory;
     SessionHandler* handler;    
     framing::Uuid id;
     uint32_t timeout;
     sys::AbsTime expiry;        // Used by SessionManager.
     Broker& broker;
-    boost::ptr_vector<framing::FrameHandler> chain;
     framing::ProtocolVersion version;
+    
+    boost::scoped_ptr<SemanticHandler> semanticHandler;
 
   friend class SessionManager;
 };

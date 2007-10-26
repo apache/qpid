@@ -30,7 +30,7 @@ using namespace qpid::sys;
 const std::string& FutureResult::getResult(SessionCore& session) const
 {
     waitForCompletion();
-    session.checkClosed();            
+    session.assertOpen();            
     return result;
 }
 

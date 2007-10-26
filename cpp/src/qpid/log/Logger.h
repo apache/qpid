@@ -67,9 +67,6 @@ class Logger : private boost::noncopyable {
     /** Add a statement. */
     void add(Statement& s);
 
-    /** Remove a statement */
-    void remove(Statement& s);
-    
     /** Log a message. */
     void log(const Statement&, const std::string&);
 
@@ -93,7 +90,7 @@ class Logger : private boost::noncopyable {
     /** Add an output destination for messages */
     void output(std::auto_ptr<Output> out); 
 
-    /** Reset the logger to it's original state */
+    /** Reset the logger to it's original state. */
     void clear();
 
   private:

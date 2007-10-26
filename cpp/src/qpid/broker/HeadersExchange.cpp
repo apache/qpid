@@ -20,7 +20,7 @@
  */
 #include "HeadersExchange.h"
 #include "qpid/framing/FieldValue.h"
-#include "qpid/QpidError.h"
+#include "qpid/framing/reply_exceptions.h"
 #include <algorithm>
 
 
@@ -46,9 +46,8 @@ HeadersExchange::HeadersExchange(const std::string& _name, bool _durable, const 
 bool HeadersExchange::bind(Queue::shared_ptr queue, const string& /*routingKey*/, const FieldTable* args){
     RWlock::ScopedWlock locker(lock);
     FieldTable::ValuePtr what = args->get(x_match);
-    if (!what || (*what != all && *what != any)) {
-        THROW_QPID_ERROR(PROTOCOL_ERROR, "Invalid x-match value binding to headers exchange.");
-    }
+    if (!what || (*what != all && *what != any)) 
+        throw InternalErrorException(QPID_MSG("Invalid x-match value binding to headers exchange."));
     Binding binding(*args, queue);
     Bindings::iterator i =
         std::find(bindings.begin(),bindings.end(), binding);

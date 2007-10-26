@@ -32,7 +32,6 @@
  * listening).
  */
 
-#include "qpid/QpidError.h"
 #include "TestOptions.h"
 #include "qpid/client/Channel.h"
 #include "qpid/client/Connection.h"

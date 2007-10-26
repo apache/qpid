@@ -24,9 +24,13 @@
 namespace qpid {
 namespace framing {
 
-TransferContent::TransferContent(const std::string& _data)
+TransferContent::TransferContent(const std::string& data,
+                                 const std::string& routingKey,
+                                 const std::string& exchange)
 {
-    setData(_data);
+    setData(data);
+    getDeliveryProperties().setRoutingKey(routingKey);
+    getDeliveryProperties().setExchange(exchange);
 }
 
 AMQHeaderBody TransferContent::getHeader() const
@@ -73,14 +77,14 @@ void TransferContent::populate(const FrameSet& frameset)
 const MessageProperties& TransferContent::getMessageProperties() const
 {
     const MessageProperties* props = header.get<MessageProperties>();
-    if (!props) throw NoSuchPropertiesException();
+    if (!props) throw Exception("No message properties.");
     return *props;
 }
 
 const DeliveryProperties& TransferContent::getDeliveryProperties() const
 {
     const DeliveryProperties* props = header.get<DeliveryProperties>();
-    if (!props) throw NoSuchPropertiesException();
+    if (!props) throw Exception("No message properties.");
     return *props;
 }
 

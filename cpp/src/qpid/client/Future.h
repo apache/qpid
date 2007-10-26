@@ -63,7 +63,7 @@ public:
                 boost::bind(&FutureCompletion::completed, &callback)
             );
             callback.waitForCompletion();
-            session.checkClosed();
+            session.assertOpen();
             complete = true;
         }
     }

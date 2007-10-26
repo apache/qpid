@@ -18,14 +18,13 @@
  * under the License.
  *
  */
-#include "qpid/QpidError.h"
 #include "BodyHandler.h"
 #include "AMQMethodBody.h"
 #include "AMQHeaderBody.h"
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
-
 #include <boost/cast.hpp>
+#include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::framing;
 using namespace boost;
@@ -49,7 +48,8 @@ void BodyHandler::handleBody(AMQBody* body) {
 	handleHeartbeat(polymorphic_downcast<AMQHeartbeatBody*>(body));
 	break;
       default:
-        QPID_ERROR(PROTOCOL_ERROR, "Unknown frame type "+body->type());
+	throw SyntaxErrorException(
+            QPID_MSG("Invalid frame type " << body->type()));
     }
 }
 

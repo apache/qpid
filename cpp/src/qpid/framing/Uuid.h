@@ -62,6 +62,9 @@ struct Uuid : public boost::array<uint8_t, 16> {
     void encode(framing::Buffer& buf) const;
     
     void decode(framing::Buffer& buf);
+
+    /** String value in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb */
+    std::string str() const;
 };
 
 /** Print in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb */

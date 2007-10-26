@@ -20,7 +20,6 @@
  */
 #include <iostream>
 #include "qpid/log/Statement.h"
-#include "qpid/QpidError.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/AMQFrame.h"
 #include "Connector.h"
@@ -36,7 +35,6 @@ namespace client {
 
 using namespace qpid::sys;
 using namespace qpid::framing;
-using qpid::QpidError;
 
 Connector::Connector(
     ProtocolVersion ver, bool _debug, uint32_t buffer_size

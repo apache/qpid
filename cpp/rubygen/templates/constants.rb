@@ -10,31 +10,71 @@ class ConstantsGen < CppGen
     @dir="qpid/framing"
   end
 
-  def generate()
+  def constants_h()
     h_file("#{@dir}/constants") {
       namespace(@namespace) { 
-        scope("enum AmqpConstant {","};") { 
-          genl @amqp.constants.map { |c| "#{c.name.shout}=#{c.value}" }.join(",\n")
-        }
-      }
-    }
-    
+        scope("enum AmqpConstant {","};") {
+          l=[]
+          l.concat @amqp.constants.map { |c| "#{c.name.shout}=#{c.value}" }
+          @amqp.classes.each { |c|
+            l << "#{c.name.shout}_CLASS_ID=#{c.index}"
+            l.concat c.methods_.map { |m|
+              "#{c.name.shout}_#{m.name.shout}_METHOD_ID=#{m.index}" }
+          }
+          genl l.join(",\n")
+        }}}
+  end
+
+  def exbase(c)
+    case c.class_
+    when "soft-error" then "ChannelException"
+    when "hard-error" then "ConnectionException"
+    end
+  end
+
+  def reply_exceptions_h()
     h_file("#{@dir}/reply_exceptions") {
       include "qpid/Exception"
       namespace(@namespace) {
         @amqp.constants.each { |c|
-          if c.class_
-            exname=c.name.caps+"Exception"
-            base = c.class_=="soft-error" ? "ChannelException" : "ConnectionException"
-            text=(c.doc or c.name).tr_s!(" \t\n"," ")
-            struct(exname, base) {
-              genl "#{exname}(const std::string& msg=\"#{text})\") : #{base}(#{c.value}, msg) {}"
+          base = exbase c
+          if base
+            genl
+            struct(c.name.caps+"Exception", base) {
+              genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{c.value}, \"#{c.name}: \"+msg) {}"
             }
           end
         }
+        genl
+        genl "void throwReplyException(int code, const std::string& text);"
       }
     }
-    
+  end
+
+  def reply_exceptions_cpp()
+    cpp_file("#{@dir}/reply_exceptions") {
+      include "#{@dir}/reply_exceptions"
+      include "<sstream>"
+      namespace("qpid::framing") {
+        scope("void throwReplyException(int code, const std::string& text) {"){
+          scope("switch (code) {") {
+            genl "case 200: break; // No exception"
+            @amqp.constants.each {  |c|
+              if exbase c 
+                genl "case #{c.value}: throw #{c.name.caps}Exception(text);"
+              end
+            }
+            scope("default:","") {
+              genl "std::ostringstream msg;"
+              genl 'msg << "Invalid reply code " << code << ": " << text;'
+              genl 'throw InvalidArgumentException(msg.str());'
+            }}}}}
+  end
+
+  def generate()
+    constants_h
+    reply_exceptions_h
+    reply_exceptions_cpp
   end
 end
 

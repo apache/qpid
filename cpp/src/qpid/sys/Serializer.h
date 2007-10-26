@@ -23,7 +23,7 @@
  *
  */
 
-
+#include "qpid/Exception.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
@@ -41,6 +41,8 @@ class SerializerBase : private boost::noncopyable, private Runnable
 {
   public:
     typedef boost::function<void()> VoidFn0;
+    struct ShutdownException : public Exception {};
+        
     /** @see Serializer::Serializer */
     SerializerBase(bool immediate=true, VoidFn0 notifyDispatch=VoidFn0());
 

@@ -39,7 +39,7 @@ namespace broker {
 using namespace sys;
 using namespace framing;
 
-SessionManager::SessionManager() {}
+SessionManager::SessionManager(uint32_t a) : ack(a) {}
 
 SessionManager::~SessionManager() {}
 
@@ -47,7 +47,8 @@ std::auto_ptr<SessionState>  SessionManager::open(
     SessionHandler& h, uint32_t timeout_)
 {
     Mutex::ScopedLock l(lock);
-    std::auto_ptr<SessionState> session(new SessionState(*this, h, timeout_));
+    std::auto_ptr<SessionState> session(
+        new SessionState(*this, h, timeout_, ack));
     active.insert(session->getId());
     return session;
 }
@@ -55,14 +56,13 @@ std::auto_ptr<SessionState>  SessionManager::open(
 void  SessionManager::suspend(std::auto_ptr<SessionState> session) {
     Mutex::ScopedLock l(lock);
     active.erase(session->getId());
+    session->suspend();
     session->expiry = AbsTime(now(),session->getTimeout()*TIME_SEC);
-    session->handler = 0;
     suspended.push_back(session.release()); // In expiry order
     eraseExpired();
 }
 
-std::auto_ptr<SessionState>  SessionManager::resume(
-    SessionHandler& sh, const Uuid& id)
+std::auto_ptr<SessionState>  SessionManager::resume(const Uuid& id)
 {
     Mutex::ScopedLock l(lock);
     eraseExpired();
@@ -78,7 +78,6 @@ std::auto_ptr<SessionState>  SessionManager::resume(
             QPID_MSG("No suspended session with id=" << id));
     active.insert(id);
     std::auto_ptr<SessionState> state(suspended.release(i).release());
-    state->handler = &sh;
     return state;
 }
 
@@ -94,8 +93,10 @@ void SessionManager::eraseExpired() {
         Suspended::iterator keep = std::lower_bound(
             suspended.begin(), suspended.end(), now(),
             boost::bind(std::less<AbsTime>(), boost::bind(&SessionState::expiry, _1), _2));
-        QPID_LOG(debug, "Expiring sessions: " << log::formatList(suspended.begin(), keep));
-        suspended.erase(suspended.begin(), keep);
+        if (suspended.begin() != keep) {
+            QPID_LOG(debug, "Expiring sessions: " << log::formatList(suspended.begin(), keep));
+            suspended.erase(suspended.begin(), keep);
+        }
     }
 }
 

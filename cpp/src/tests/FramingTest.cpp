@@ -18,8 +18,6 @@
  * under the License.
  *
  */
-#include "InProcessBroker.h"
-#include "qpid/QpidError.h"
 #include "qpid/client/Exchange.h"
 #include "qpid/client/Queue.h"
 #include "qpid/client/Connection.h"
@@ -30,6 +28,7 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/amqp_framing.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid_test_plugin.h"
 
 #include <boost/bind.hpp>
@@ -200,18 +199,12 @@ class FramingTest : public CppUnit::TestCase
         try {
             Content content(REFERENCE, "");
             CPPUNIT_ASSERT(false);//fail, expected exception
-        } catch (QpidError& e) {
-            CPPUNIT_ASSERT_EQUAL(FRAMING_ERROR, e.code);
-            CPPUNIT_ASSERT_EQUAL(string("Reference cannot be empty"), e.msg);
-        }
+        } catch (const InvalidArgumentException& e) {}
         
         try {
             Content content(2, "Blah");
             CPPUNIT_ASSERT(false);//fail, expected exception
-        } catch (QpidError& e) {
-            CPPUNIT_ASSERT_EQUAL(FRAMING_ERROR, e.code);
-            CPPUNIT_ASSERT_EQUAL(string("Invalid discriminator: 2"), e.msg);
-        }
+        } catch (const SyntaxErrorException& e) {}
         
         try {
             Buffer wbuff(buffer, sizeof(buffer));
@@ -221,11 +214,8 @@ class FramingTest : public CppUnit::TestCase
             Buffer rbuff(buffer, sizeof(buffer));
             Content content;
             content.decode(rbuff);
-            CPPUNIT_ASSERT(false);//fail, expected exception
-        } catch (QpidError& e) {
-            CPPUNIT_ASSERT_EQUAL(FRAMING_ERROR, e.code);
-            CPPUNIT_ASSERT_EQUAL(string("Invalid discriminator: 2"), e.msg);
-        }
+            CPPUNIT_FAIL("Expected exception");
+        } catch (Exception& e) {}
         
     }
 

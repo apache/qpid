@@ -19,8 +19,9 @@
  *
  */
 
+#include "qpid/Msg.h"
+
 #include <boost/current_function.hpp>
-#include <sstream>
 
 namespace qpid {
 namespace log {
@@ -69,22 +70,13 @@ struct Statement {
 
     struct Initializer {
         Initializer(Statement& s);
-        ~Initializer();
         Statement& statement;
     };
 };
 
-///@internal trickery to make QPID_LOG_STRINGSTREAM work.
-inline std::ostream& noop(std::ostream& s) { return s; }
-
 ///@internal static initializer for a Statement.
 #define QPID_LOG_STATEMENT_INIT(level) \
     { 0, __FILE__, __LINE__,  BOOST_CURRENT_FUNCTION, (::qpid::log::level) }
-
-///@internal Stream streamable message and return a string.
-#define QPID_LOG_STRINGSTREAM(message) \
-    static_cast<std::ostringstream&>( \
-        std::ostringstream() << qpid::log::noop << message).str()
 
 /**
  * Macro for log statements. Example of use:
@@ -110,19 +102,9 @@ inline std::ostream& noop(std::ostream& s) { return s; }
         static ::qpid::log::Statement stmt_= QPID_LOG_STATEMENT_INIT(level); \
         static ::qpid::log::Statement::Initializer init_(stmt_);        \
         if (stmt_.enabled)                                              \
-            stmt_.log(QPID_LOG_STRINGSTREAM(message));                \
+            stmt_.log(::qpid::Msg() << message);                        \
     } while(0)
 
-/**
- * Macro for complicated logging logic that can't fit in a simple QPID_LOG
- * statement. For example:
- * @code
- * QPID_IF_LOG(debug) {
- *   message = do_complicated_stuff;
- *   QPID_LOG(debug, message);
- * }
- */
-#define QPID_IF_LOG(level)
 }} // namespace qpid::log
 
 

@@ -52,7 +52,6 @@ qpidd_SOURCES = qpidd.cpp
 
 posix_plat_src = \
   qpid/sys/epoll/EpollPoller.cpp \
-  qpid/sys/posix/check.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
   qpid/sys/posix/Time.cpp \
@@ -110,8 +109,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/InitiationHandler.cpp \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
-  qpid/framing/ProtocolVersionException.cpp \
-  qpid/framing/ResumeHandler.cpp qpid/framing/ResumeHandler.h \
+  qpid/framing/SessionState.cpp qpid/framing/SessionState.h \
   qpid/framing/SendContent.cpp \
   qpid/framing/SequenceNumber.cpp \
   qpid/framing/SequenceNumberSet.cpp \
@@ -126,7 +124,6 @@ libqpidcommon_la_SOURCES = \
   qpid/Exception.cpp \
   qpid/Plugin.cpp \
   qpid/Url.cpp \
-  qpid/QpidError.cpp \
   qpid/sys/AsynchIOAcceptor.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
@@ -210,7 +207,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/MessageListener.cpp		\
   qpid/client/Correlator.cpp			\
   qpid/client/CompletionTracker.cpp		\
-  qpid/client/SessionHandler.cpp		\
   qpid/client/ConnectionHandler.cpp		\
   qpid/client/ExecutionHandler.cpp		\
   qpid/client/FutureCompletion.cpp		\
@@ -221,12 +217,12 @@ libqpidclient_la_SOURCES =			\
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
+  qpid/assert.h \
   qpid/Exception.h \
   qpid/ExceptionHolder.h \
   qpid/Msg.h \
   qpid/Options.h \
   qpid/Plugin.h \
-  qpid/QpidError.h \
   qpid/SharedObject.h \
   qpid/Url.h \
   qpid/memory.h \
@@ -323,7 +319,6 @@ nobase_include_HEADERS = \
   qpid/client/MessageQueue.h \
   qpid/client/Response.h \
   qpid/client/SessionCore.h \
-  qpid/client/SessionHandler.h \
   qpid/client/StateManager.h \
   qpid/client/TypedResult.h \
   qpid/framing/AMQBody.h \
@@ -339,6 +334,7 @@ nobase_include_HEADERS = \
   qpid/framing/Blob.h \
   qpid/framing/BodyHandler.h \
   qpid/framing/Buffer.h \
+  qpid/framing/ChannelHandler.h \
   qpid/framing/ChannelAdapter.h \
   qpid/framing/FieldTable.h \
   qpid/framing/FieldValue.h \
@@ -360,7 +356,6 @@ nobase_include_HEADERS = \
   qpid/framing/OutputHandler.h \
   qpid/framing/ProtocolInitiation.h \
   qpid/framing/ProtocolVersion.h \
-  qpid/framing/ProtocolVersionException.h \
   qpid/framing/Proxy.h \
   qpid/framing/SendContent.h \
   qpid/framing/SequenceNumber.h \
@@ -399,6 +394,8 @@ nobase_include_HEADERS = \
   qpid/sys/Shlib.h \
   qpid/sys/ShutdownHandler.h \
   qpid/sys/Socket.h \
+  qpid/sys/StateMonitor.h \
+  qpid/sys/Waitable.h \
   qpid/sys/Thread.h \
   qpid/sys/Time.h \
   qpid/sys/TimeoutHandler.h

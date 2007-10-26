@@ -61,5 +61,11 @@ class Uuid;
 const ChannelId CHANNEL_MAX=(ChannelId(~1))>>1;
 const ChannelId CHANNEL_HIGH_BIT= ChannelId(~CHANNEL_MAX);
 
+// Forward declare class types
+class FramingContent;
+class FieldTable;
+class SequenceNumberSet;
+class Uuid;
+
 }} // namespace qpid::framing
 #endif
