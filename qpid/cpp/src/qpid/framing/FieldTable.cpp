@@ -19,9 +19,10 @@
  *
  */
 #include "FieldTable.h"
-#include "qpid/QpidError.h"
 #include "Buffer.h"
 #include "FieldValue.h"
+#include "qpid/Exception.h"
+#include "qpid/framing/reply_exceptions.h"
 #include <assert.h>
 
 namespace qpid {
@@ -132,7 +133,7 @@ void FieldTable::decode(Buffer& buffer){
     uint32_t len = buffer.getLong();
     uint32_t available = buffer.available();
     if (available < len)
-        THROW_QPID_ERROR(FRAMING_ERROR, "Not enough data for  field table.");
+        throw SyntaxErrorException(QPID_MSG("Not enough data for  field table."));
     uint32_t leftover = available - len;
     while(buffer.available() > leftover){
         std::string name;

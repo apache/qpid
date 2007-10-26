@@ -53,7 +53,7 @@ class Timer : private qpid::sys::Runnable
 {
     qpid::sys::Monitor monitor;            
     std::priority_queue<TimerTask::shared_ptr, std::vector<TimerTask::shared_ptr>, Later> tasks;
-    std::auto_ptr<qpid::sys::Thread> runner;
+    qpid::sys::Thread runner;
     bool active;
 
     void run();

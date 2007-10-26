@@ -73,7 +73,7 @@ void ExecutionHandler::handle(AMQFrame& frame)
 void ExecutionHandler::complete(uint32_t cumulative, const SequenceNumberSet& range)
 {
     if (range.size() % 2) { //must be even number        
-        throw ConnectionException(530, "Received odd number of elements in ranged mark");
+        throw NotAllowedException(QPID_MSG("Received odd number of elements in ranged mark"));
     } else {
         SequenceNumber mark(cumulative);        
         {

@@ -54,7 +54,7 @@ class FailOnDeliver : public Deliverable
 public:
     void deliverTo(Queue::shared_ptr& queue)
     {
-        throw Exception(boost::format("Invalid delivery to %1%") % queue->getName());
+        throw Exception(QPID_MSG("Invalid delivery to " << queue->getName()));
     }
 };
 

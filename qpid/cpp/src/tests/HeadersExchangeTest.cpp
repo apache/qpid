@@ -19,7 +19,7 @@
  *
  */
 
-#include "qpid/QpidError.h"
+#include "qpid/Exception.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
@@ -118,7 +118,7 @@ class HeadersExchangeTest : public CppUnit::TestCase
         try {
             //just checking this doesn't cause assertion etc
             exchange.bind(queue, key, &args);
-        } catch(qpid::QpidError&) {
+        } catch(qpid::Exception&) {
             //expected
         }
     }

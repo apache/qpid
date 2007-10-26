@@ -19,9 +19,8 @@
  *
  */
 
-#include <boost/format.hpp>
-
 #include "qpid/log/Statement.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "Broker.h"
 #include "Queue.h"
 #include "Exchange.h"
@@ -37,7 +36,6 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 using namespace qpid::framing;
-using boost::format;
 
 Queue::Queue(const string& _name, bool _autodelete, 
              MessageStore* const _store,
@@ -269,17 +267,15 @@ bool Queue::seek(QueuedMessage& msg, const framing::SequenceNumber& position) {
 void Queue::consume(Consumer::ptr c, bool requestExclusive){
     RWlock::ScopedWlock locker(consumerLock);
     if(exclusive) {
-        throw ChannelException(
-            403, format("Queue '%s' has an exclusive consumer."
-                        " No more consumers allowed.") % getName());
+        throw AccessRefusedException(
+            QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
     }
     if(requestExclusive) {
         if(acquirers.empty() && browsers.empty()) {
             exclusive = c;
         } else {
-            throw ChannelException(
-                403, format("Queue '%s' already has consumers."
-                            "Exclusive access denied.") % getName());
+            throw AccessRefusedException(
+                QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
         }
     }
     if (c->preAcquires()) {

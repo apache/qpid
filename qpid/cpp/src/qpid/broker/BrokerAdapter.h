@@ -82,7 +82,7 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
         throw framing::NotImplementedException("Tunnel class not implemented"); }
 
     // Handlers no longer implemented in BrokerAdapter:
-#define BADHANDLER() assert(0); throw framing::InternalErrorException()
+#define BADHANDLER() assert(0); throw framing::NotImplementedException("")
     ExecutionHandler* getExecutionHandler() { BADHANDLER(); }
     ConnectionHandler* getConnectionHandler() { BADHANDLER(); }
     SessionHandler* getSessionHandler() { BADHANDLER(); }

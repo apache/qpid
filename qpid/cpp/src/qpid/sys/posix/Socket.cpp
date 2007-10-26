@@ -21,7 +21,6 @@
 
 #include "qpid/sys/Socket.h"
 
-#include "qpid/QpidError.h"
 #include "check.h"
 #include "PrivatePosix.h"
 
@@ -60,8 +59,7 @@ std::string SocketPrivate::getName(bool local, bool includeService) const
         result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
     }
 
-    if (result < 0)
-        throw QPID_POSIX_ERROR(errno);
+    QPID_POSIX_CHECK(result);
 
     char servName[NI_MAXSERV];
     char dispName[NI_MAXHOST];

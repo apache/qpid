@@ -125,7 +125,7 @@ void SemanticHandler::handleCommand(framing::AMQMethodBody* method)
     incoming.complete(id);                                    
     
     if (!invoker.wasHandled()) {
-        throw ConnectionException(540, "Not implemented");
+        throw NotImplementedException("Not implemented");
     } else if (invoker.hasResult()) {
         session.getProxy().getExecution().result(id.getValue(), invoker.getResult());
     }
@@ -139,7 +139,7 @@ void SemanticHandler::handleCommand(framing::AMQMethodBody* method)
 void SemanticHandler::handleL3(framing::AMQMethodBody* method)
 {
     if (!invoke(*this, *method))
-        throw ConnectionException(540, "Not implemented");
+        throw NotImplementedException("Not implemented");
 }
 
 void SemanticHandler::handleContent(AMQFrame& frame)

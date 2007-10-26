@@ -73,17 +73,14 @@ void Timer::start()
     Monitor::ScopedLock l(monitor);
     if (!active) {
         active = true;
-        runner = std::auto_ptr<Thread>(new Thread(this));
+        runner = Thread(this);
     }
 }
 
 void Timer::stop()
 {
     signalStop();
-    if (runner.get()) {
-        runner->join();
-        runner.reset();
-    }
+    runner.join();
 }
 void Timer::signalStop()
 {

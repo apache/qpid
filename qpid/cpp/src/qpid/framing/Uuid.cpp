@@ -17,9 +17,9 @@
  */
 
 #include "Uuid.h"
-
-#include "qpid/QpidError.h"
+#include "qpid/Exception.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace framing {
@@ -34,7 +34,7 @@ void Uuid::encode(Buffer& buf) const {
 
 void Uuid::decode(Buffer& buf) {
     if (buf.available() < size())
-        THROW_QPID_ERROR(FRAMING_ERROR, "Not enough data for UUID.");
+        throw SyntaxErrorException(QPID_MSG("Not enough data for UUID."));
     buf.getRawData(c_array(), size());
 }
 
@@ -50,6 +50,12 @@ istream& operator>>(istream& in, Uuid& uuid) {
     if (uuid_parse(unparsed, uuid.c_array()) != 0) 
         in.setstate(ios::failbit);
     return in;
+}
+
+std::string Uuid::str() const {
+    std::ostringstream os;
+    os << *this;
+    return os.str();
 }
 
 }} // namespace qpid::framing

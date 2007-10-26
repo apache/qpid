@@ -16,7 +16,7 @@
  *
  */
 
-#include "qpid/QpidError.h"
+#include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 #include "MessageHandlerImpl.h"
 #include "qpid/framing/FramingContent.h"
@@ -56,39 +56,39 @@ MessageHandlerImpl::cancel(const string& destination )
 void
 MessageHandlerImpl::open(const string& /*reference*/)
 {
-    throw ConnectionException(540, "References no longer supported");
+    throw NotImplementedException("References no longer supported");
 }
 
 void
 MessageHandlerImpl::append(const std::string& /*reference*/, const std::string& /*bytes*/)
 {
-    throw ConnectionException(540, "References no longer supported");
+    throw NotImplementedException("References no longer supported");
 }
 
 void
 MessageHandlerImpl::close(const string& /*reference*/)
 {
-    throw ConnectionException(540, "References no longer supported");
+    throw NotImplementedException("References no longer supported");
 }
 
 void
 MessageHandlerImpl::checkpoint(const string& /*reference*/,
                                const string& /*identifier*/ )
 {
-    throw ConnectionException(540, "References no longer supported");
+    throw NotImplementedException("References no longer supported");
 }
 
 void
 MessageHandlerImpl::resume(const string& /*reference*/,
                            const string& /*identifier*/ )
 {
-    throw ConnectionException(540, "References no longer supported");
+    throw NotImplementedException("References no longer supported");
 }
 
 void
 MessageHandlerImpl::offset(uint64_t /*value*/ )
 {
-    throw ConnectionException(540, "References no longer supported");
+    throw NotImplementedException("References no longer supported");
 }
 
 void
@@ -97,19 +97,19 @@ MessageHandlerImpl::get(uint16_t /*ticket*/,
                         const string& /*destination*/,
                         bool /*noAck*/ )
 {
-    throw ConnectionException(540, "get no longer supported");
+    throw NotImplementedException("get no longer supported");
 }
 
 void
 MessageHandlerImpl::empty()
 {
-    throw ConnectionException(540, "empty no longer supported");
+    throw NotImplementedException("empty no longer supported");
 }
 
 void
 MessageHandlerImpl::ok()
 {
-    throw ConnectionException(540, "Message.Ok no longer supported");    
+    throw NotImplementedException("Message.Ok no longer supported");    
 }
 
 void
@@ -134,7 +134,7 @@ MessageHandlerImpl::subscribe(uint16_t /*ticket*/,
 {
     Queue::shared_ptr queue = state.getQueue(queueName);
     if(!destination.empty() && state.exists(destination))
-        throw ConnectionException(530, "Consumer tags must be unique");
+        throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
 
     string tag = destination;
     state.consume(MessageDelivery::getMessageDeliveryToken(destination, confirmMode, acquireMode), 
@@ -165,7 +165,7 @@ void MessageHandlerImpl::flow(const std::string& destination, u_int8_t unit, u_i
         state.addByteCredit(destination, value);
     } else {
         //unknown
-        throw ConnectionException(502, boost::format("Invalid value for unit %1%") % unit);
+        throw SyntaxErrorException(QPID_MSG("Invalid value for unit " << unit));
     }
     
 }
@@ -179,7 +179,7 @@ void MessageHandlerImpl::flowMode(const std::string& destination, u_int8_t mode)
         //window
         state.setWindowMode(destination);
     } else{
-        throw ConnectionException(502, boost::format("Invalid value for mode %1%") % mode);        
+        throw SyntaxErrorException(QPID_MSG("Invalid value for mode " << mode));        
     }
 }
     

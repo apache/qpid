@@ -190,12 +190,6 @@ void Logger::add(Statement& s) {
     statements.insert(&s);
 }
 
-void Logger::remove(Statement& s) {
-    ScopedLock l(lock);
-    s.enabled = false;
-    statements.erase(&s);
-}
-
 void Logger::configure(const Options& opts, const std::string& prog)
 {
     clear();

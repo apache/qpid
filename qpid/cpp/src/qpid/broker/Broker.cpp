@@ -64,7 +64,8 @@ Broker::Options::Options(const std::string& name) :
     storeDir("/var"),
     storeAsync(false),
     enableMgmt(0),
-    mgmtPubInterval(10)
+    mgmtPubInterval(10),
+    ack(100)	    
 {
     addOptions()
         ("port,p", optValue(port,"PORT"),
@@ -102,7 +103,8 @@ Broker::Broker(const Broker::Options& conf) :
     queues(store.get()),
     stagingThreshold(0),
     factory(*this),
-    dtxManager(store.get())
+    dtxManager(store.get()),
+    sessionManager(conf.ack)
 {
     if(conf.enableMgmt){
         managementAgent = ManagementAgent::shared_ptr (new ManagementAgent (conf.mgmtPubInterval));

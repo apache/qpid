@@ -19,8 +19,7 @@
  */
 
 #include "qpid/sys/Shlib.h"
-
-#include <qpid/QpidError.h>
+#include "qpid/Exception.h"
 #include <dlfcn.h>
 
 
@@ -32,7 +31,7 @@ void Shlib::load(const char* name) {
     handle = ::dlopen(name, RTLD_NOW);
     const char* error = ::dlerror();
     if (error) {
-        THROW_QPID_ERROR(INTERNAL_ERROR, error);
+        throw Exception(QPID_MSG(error));
     }
 }
 
@@ -42,7 +41,7 @@ void  Shlib::unload() {
         ::dlclose(handle);
         const char* error = ::dlerror();
         if (error) {
-            THROW_QPID_ERROR(INTERNAL_ERROR, error);
+            throw Exception(QPID_MSG(error));
         }
         handle = 0;
     }
@@ -53,7 +52,7 @@ void*  Shlib::getSymbol(const char* name) {
     void* sym = ::dlsym(handle, name);
     const char* error = ::dlerror();
     if (error) 
-        THROW_QPID_ERROR(INTERNAL_ERROR, error);
+        throw Exception(QPID_MSG(error));
     return sym;
 }
 

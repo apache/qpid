@@ -61,7 +61,7 @@ template <class T> class DualVectorDualLockQueue {
     /** If the queue is non-empty, pop the front item into data and
      * return true. If the queue is empty, return false
      */
-    bool pop(T& data) {
+    bool tryPop(T& data) {
         Mutex::ScopedLock l(popLock);
         if (popIter == popVec.end()) {
             popVec.clear();
@@ -109,7 +109,7 @@ void nspin(const Duration& delay) {
 struct NullQueue {
     NullQueue(int items=0) : npush(items), npop(items) {}
     void push(int) { --npush; }
-    bool pop(int& n) {
+    bool tryPop(int& n) {
         if (npop == 0)
             return false;
         else {
@@ -144,7 +144,7 @@ struct Popper : public Runnable {
     void run() {
         for (int i=items; i > 0; i--) {
             int n;
-            if (queue.pop(n))
+            if (queue.tryPop(n))
                 BOOST_REQUIRE_EQUAL(i,n);
             npause();
         }

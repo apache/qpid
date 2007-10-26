@@ -24,135 +24,52 @@
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/Msg.h"
-#include <exception>
-#include <string>
+
 #include <memory>
-#include <boost/shared_ptr.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/function.hpp>
+#include <string>
 
 namespace qpid
 {
 
-/** Get the error message for error number err. */
+/** Get the error message for a system number err, e.g. errno. */
 std::string strError(int err);
 
 /**
- * Exception base class for all Qpid exceptions.
+ * Base class for Qpid runtime exceptions.
  */
 class Exception : public std::exception
 {
-  protected:
-    std::string whatStr;
-
   public:
-    typedef boost::shared_ptr<Exception> shared_ptr;
-    typedef boost::shared_ptr<const Exception> shared_ptr_const;
-    typedef std::auto_ptr<Exception> auto_ptr;
-
-    Exception() throw();
-    Exception(const std::string& str) throw();
-    Exception(const char* str) throw();
-    Exception(const std::exception&) throw();
-
-    /** Allow any type that has ostream operator<< to act as message */
-    template <class T>
-    Exception(const T& message)
-        : whatStr(boost::lexical_cast<std::string>(message)) {}
-
+    explicit Exception(const std::string& str=std::string()) throw();
     virtual ~Exception() throw();
-
-    virtual const char* what() const throw();
-    virtual std::string toString() const throw();
-
-    virtual auto_ptr clone() const throw();
-    virtual void throwSelf() const;
-
-    /** Default message: "Unknown exception" or something like it. */
-    static const char* defaultMessage;
-
-    /**
-     * Log a message of the form "message: what"
-     *@param what Exception's what() message.
-     *@param message Prefix message.
-     */
-    static void log(const char* what, const char* message = defaultMessage);
-
-    /**
-     * Log an exception.
-     *@param e Exception to log.
-
-     */
-    static void log(
-        const std::exception& e, const char* message = defaultMessage);
     
-
-    /**
-     * Log an unknown exception - use in catch(...)
-     *@param message Prefix message.
-     */
-    static void logUnknown(const char* message = defaultMessage);
-
-    /**
-     * Wrapper template function to call another function inside
-     * try/catch and log any exception. Use boost::bind to wrap
-     * member function calls or functions with arguments.
-     * 
-     *@param f Function to call in try block.
-     *@param retrhow If true the exception is rethrown.
-     *@param message Prefix message.
-     */
-    template <class T>
-    static T tryCatchLog(boost::function0<T> f, bool rethrow=true,
-                         const char* message=defaultMessage)
-    {
-        try {
-            return f();
-        }
-        catch (const std::exception& e) {
-            log(e, message);
-            if (rethrow)
-                throw;
-        }
-        catch (...) {
-            logUnknown(message);
-            if (rethrow)
-                throw;
-        }
-    }
+    virtual const char *what() const throw();
+    virtual std::auto_ptr<Exception> clone() const throw();
+    virtual std::string str() const throw();
+  private:
+    std::string msg;
 };
 
 struct ChannelException : public Exception {
-    framing::ReplyCode code;
-    template <class T>
-    ChannelException(framing::ReplyCode code_, const T& message)
+    const framing::ReplyCode code;
+    ChannelException(framing::ReplyCode code_, const std::string& message)
         : Exception(message), code(code_) {}
-    void throwSelf() const { throw *this; }
 };
 
 struct ConnectionException : public Exception {
-    framing::ReplyCode code;
-    template <class T>
-    ConnectionException(framing::ReplyCode code_, const T& message)
+    const framing::ReplyCode code;
+    ConnectionException(framing::ReplyCode code_, const std::string& message)
         : Exception(message), code(code_) {}
-    void throwSelf() const { throw *this; }
 };
 
-/**
- * Exception used to indicate that a thread should shut down.
- * Does not indicate an error that should be signalled to the user.
+/** Clone an exception.
+ * For qpid::Exception this calls the clone member function.
+ * For standard exceptions, uses the copy constructor.
+ * For unknown exception types creates a std::exception
+ * with the same what() string.
  */
-struct ShutdownException : public Exception {
-    ShutdownException();
-    void throwSelf() const { throw *this; }
-};
+std::auto_ptr<std::exception> clone(const std::exception&);
 
-/** Exception to indicate empty queue or other empty state */
-struct EmptyException : public Exception {
-    EmptyException();
-    void throwSelf() const { throw *this; }
-};
-
-}
+} // namespace qpid
 
 #endif  /*!_Exception_*/

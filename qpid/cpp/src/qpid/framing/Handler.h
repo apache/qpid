@@ -33,6 +33,7 @@ template <class T>
 struct Handler {
     typedef T HandledType;
     typedef void handleFptr(T);
+    typedef void result_type;   // Compatible with std/boost functors.
 
     Handler(Handler<T>* next_=0) : next(next_) {}
     virtual ~Handler() {}
@@ -51,7 +52,7 @@ struct Handler {
     struct Chain : public Handler<T> {
         Chain(Handler<T>* first=0) : Handler(first) {}
         void operator=(Handler<T>* h) { next = h; }
-        void handle(T t) { (*next)(t); }
+        void handle(T t) { next->handle(t); }
         // TODO aconway 2007-08-29: chain modifier ops here.
     };
 

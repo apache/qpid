@@ -17,7 +17,7 @@
  */
 #include "Daemon.h"
 #include "qpid/log/Statement.h"
-#include "qpid/QpidError.h"
+#include "qpid/Exception.h"
 
 #include <boost/iostreams/stream.hpp>
 #include <boost/iostreams/device/file_descriptor.hpp>

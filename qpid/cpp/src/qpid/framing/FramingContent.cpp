@@ -18,12 +18,10 @@
  * under the License.
  *
  */
-#include <assert.h>
-
 #include "Buffer.h"
 #include "FramingContent.h"
-#include "qpid/QpidError.h"
-#include <sstream>
+#include "qpid/Exception.h"
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace framing {
@@ -37,12 +35,12 @@ Content::Content(uint8_t _discriminator, const string& _value): discriminator(_d
 void Content::validate() {
     if (discriminator == REFERENCE) {
         if(value.empty()) {
-            THROW_QPID_ERROR(FRAMING_ERROR, "Reference cannot be empty");
+            throw InvalidArgumentException(
+                QPID_MSG("Reference cannot be empty"));
         }
     }else if (discriminator != INLINE) {
-        std::stringstream out;
-        out << "Invalid discriminator: " << (int) discriminator;
-	THROW_QPID_ERROR(FRAMING_ERROR, out.str());
+        throw SyntaxErrorException(
+            QPID_MSG("Invalid discriminator: " << discriminator));
     }
 }
 

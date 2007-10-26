@@ -29,7 +29,7 @@
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
-#include "qpid/QpidError.h"
+#include "qpid/shared_ptr.h"
 #include <iostream>
 #include <sstream>
 #include <functional>
@@ -44,23 +44,26 @@ namespace client {
 Connection::Connection(bool _debug, uint32_t _max_frame_size, framing::ProtocolVersion _version) : 
     channelIdCounter(0), version(_version), 
     max_frame_size(_max_frame_size), 
-    impl(new ConnectionImpl(boost::shared_ptr<Connector>(new Connector(_version, _debug)))),
-    isOpen(false) {}
+    isOpen(false),
+    impl(new ConnectionImpl(
+             shared_ptr<Connector>(new Connector(_version, _debug))))
+{}
 
-Connection::Connection(boost::shared_ptr<Connector> c) : 
+Connection::Connection(shared_ptr<Connector> c) : 
     channelIdCounter(0), version(framing::highestProtocolVersion), 
     max_frame_size(65536), 
-    impl(new ConnectionImpl(c)),
-    isOpen(false) {}
+    isOpen(false),
+    impl(new ConnectionImpl(c))
+{}
 
-Connection::~Connection(){}
+Connection::~Connection(){ }
 
 void Connection::open(
     const std::string& host, int port,
     const std::string& uid, const std::string& pwd, const std::string& vhost)
 {
     if (isOpen)
-        THROW_QPID_ERROR(INTERNAL_ERROR, "Channel object is already open");
+        throw Exception(QPID_MSG("Channel object is already open"));
 
     impl->open(host, port, uid, pwd, vhost);
     isOpen = true;
@@ -79,10 +82,9 @@ Session Connection::newSession(uint32_t detachedLifetime) {
 }
 
 void Connection::resume(Session& session) {
-    shared_ptr<SessionCore> core=session.impl;
-    core->setChannel(++channelIdCounter);
-    impl->addSession(core);
-    core->resume(impl);
+    session.impl->setChannel(++channelIdCounter);
+    impl->addSession(session.impl);
+    session.impl->resume(impl);
 }
 
 void Connection::close() {

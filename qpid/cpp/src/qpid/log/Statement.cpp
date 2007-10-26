@@ -32,10 +32,6 @@ Statement::Initializer::Initializer(Statement& s) : statement(s) {
     Logger::instance().add(s);
 }
 
-Statement::Initializer::~Initializer() {
-    Logger::instance().remove(statement);
-}
-
 namespace {
 const char* names[LevelTraits::COUNT] = {
     "trace", "debug", "info", "notice", "warning", "error", "critical"

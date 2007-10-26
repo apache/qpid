@@ -117,18 +117,18 @@ class EventChannelTest : public CppUnit::TestCase
         CPPUNIT_ASSERT(re.hasError());
         try {
             re.throwIfError();
-            CPPUNIT_FAIL("Expected QpidError.");
+            CPPUNIT_FAIL("Expected Exception.");
         }
-        catch (const qpid::QpidError&) { }
+        catch (const qpid::Exception&) { }
 
         //  Bad file descriptor. Note in this case we fail
         //  in postEvent and throw immediately.
         try {
             ReadEvent bad;
             ec->postEvent(bad);
-            CPPUNIT_FAIL("Expected QpidError.");
+            CPPUNIT_FAIL("Expected Exception.");
         }
-        catch (const qpid::QpidError&) { }
+        catch (const qpid::Exception&) { }
     }
 
     void testWrite() {

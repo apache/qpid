@@ -23,6 +23,7 @@
 #include "Exception.h"
 #include <typeinfo>
 #include <errno.h>
+#include <assert.h>
 
 namespace qpid {
 
@@ -31,45 +32,22 @@ std::string strError(int err) {
     return std::string(strerror_r(err, buf, sizeof(buf)));
 }
 
-static void ctorLog(const std::exception* e) {
-    QPID_LOG(trace, "Exception: " << e->what());
+Exception::Exception(const std::string& s) throw() : msg(s) {
+    QPID_LOG(warning, "Exception: " << msg);
 }
-    
-Exception::Exception() throw() { ctorLog(this); }
-
-Exception::Exception(const std::string& str) throw()
-    : whatStr(str) { ctorLog(this); }
-
-Exception::Exception(const char* str) throw() : whatStr(str) { ctorLog(this); }
-
-Exception::Exception(const std::exception& e) throw() : whatStr(e.what()) {}
 
 Exception::~Exception() throw() {}
 
-const char* Exception::what() const throw() { return whatStr.c_str(); }
-
-std::string Exception::toString() const throw() { return whatStr; }
-
-Exception::auto_ptr Exception::clone() const throw() { return Exception::auto_ptr(new Exception(*this)); }
-
-void Exception::throwSelf() const  { throw *this; }
-
-ShutdownException::ShutdownException() : Exception("Shut down.") {}
-
-EmptyException::EmptyException() : Exception("Empty.") {}
-
-const char* Exception::defaultMessage = "Unexpected exception";
-
-void Exception::log(const char* what, const char* message) {
-    QPID_LOG(error, message << ": " << what);
+std::string Exception::str() const throw() {
+    if (msg.empty())
+        const_cast<std::string&>(msg).assign(typeid(*this).name());
+    return msg;
 }
 
-void Exception::log(const std::exception& e, const char* message) {
-    log(e.what(), message);
-}
+const char* Exception::what() const throw() { return str().c_str(); }
 
-void Exception::logUnknown(const char* message) {
-    log("unknown exception.", message);
+std::auto_ptr<Exception> Exception::clone() const throw() {
+    return std::auto_ptr<Exception>(new Exception(*this));
 }
 
 } // namespace qpid

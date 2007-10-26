@@ -32,4 +32,3 @@
 #include "ProtocolInitiation.h"
 #include "BasicHeaderProperties.h"
 #include "ProtocolVersion.h"
-#include "ProtocolVersionException.h"

@@ -29,6 +29,7 @@
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/log/Statement.h"
@@ -301,7 +302,7 @@ void AsynchIOHandler::idle(AsynchIO&){
 		}
 		// If frame was egregiously large complain
 		if (frameSize > buff->byteCount)
-			THROW_QPID_ERROR(FRAMING_ERROR, "Could not write frame, too large for buffer.");
+                    throw framing::ContentTooLargeException(QPID_MSG("Could not write frame, too large for buffer."));
 	
 		buff->dataCount = buffUsed;
 		aio->queueWrite(buff);
