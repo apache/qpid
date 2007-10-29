@@ -22,8 +22,8 @@ from qpid.testlib import testrunner, TestBase
 
 class ExampleTest (TestBase):
     """
-    An example Qpid test, illustrating the unittest frameowkr and the
-    python Qpid client. The test class must inherit TestCase.  The
+    An example Qpid test, illustrating the unittest framework and the
+    python Qpid client. The test class must inherit TestBase.  The
     test code uses the Qpid client to interact with a qpid broker and
     verify it behaves as expected.
     """ 
