@@ -24,7 +24,7 @@
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
-#include "BlockingQueue.h"
+#include "qpid/sys/BlockingQueue.h"
 #include "Message.h"
 
 using qpid::framing::FrameSet;
@@ -62,7 +62,7 @@ void Dispatcher::start()
 
 void Dispatcher::run()
 {    
-    BlockingQueue<FrameSet::shared_ptr>& q = queue.empty() ? 
+    sys::BlockingQueue<FrameSet::shared_ptr>& q = queue.empty() ? 
         session.execution().getDemux().getDefault() : 
         session.execution().getDemux().get(queue); 
 

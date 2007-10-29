@@ -29,9 +29,9 @@ namespace qpid {
 namespace sys {
 
 /**
- * A monitor that keeps track of waiting threads.
- * Threads that use a WaitLock are counted as waiters, threads that
- * use a normal ScopedLock are not considered waiters.
+ * A monitor that keeps track of waiting threads.  Threads declare a
+ * ScopedWait around wait() inside a ScopedLock to be considered
+ * waiters.
  */
 class Waitable : public Monitor {
   public:
@@ -43,24 +43,22 @@ class Waitable : public Monitor {
     struct ScopedWait {
         Waitable& w;
         ScopedWait(Waitable& w_) : w(w_) { ++w.waiters; }
-        ~ScopedWait() { --w.waiters; w.notifyAll(); }
+        ~ScopedWait() { if (--w.waiters==0) w.notifyAll(); }
     };
 
-    /** Block till all waiters have finished waiting.
-     * The calling thread does not count as a waiter.
+    /** Block till there are no more ScopedWaits.
      *@pre Must be called inside a ScopedLock but NOT a ScopedWait.
      */
-    bool waitAll(Duration timeout=TIME_INFINITE) {
-        AbsTime deadline(now(), timeout);
-        while (waiters > 0) {
-            if (!wait(deadline)) {
-                assert(timeout != TIME_INFINITE);
-                return false;
-            }
-        }
-        return true;
+    void waitWaiters() {
+        while (waiters != 0) 
+            wait();
     }
 
+    /** Returns the number of outstanding ScopedWaits.
+     * Must be called with the lock held.
+     */
+    size_t hasWaiters() { return waiters; }
+    
   private:
   friend struct ScopedWait;
     size_t waiters;

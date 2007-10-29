@@ -80,7 +80,7 @@ class Channel : private sys::Runnable
     ConsumerMap consumers;
     Session_0_10 session;
     framing::ChannelId channelId;
-    BlockingQueue<framing::FrameSet::shared_ptr> gets;
+    sys::BlockingQueue<framing::FrameSet::shared_ptr> gets;
     framing::Uuid uniqueId;
     uint32_t nameCounter;
     bool active;

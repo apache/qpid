@@ -35,8 +35,7 @@ static const ProtocolVersion VER;
 /** Child part of Cluster::clusterTwo test */
 void clusterTwo() {
     TestCluster cluster("clusterTwo", "amqp:child:2");
-    AMQFrame frame;
-    BOOST_REQUIRE(cluster.received.waitPop(frame)); // Frame from parent.
+    AMQFrame frame = cluster.received.pop(frame); // Frame from parent.
     BOOST_CHECK_TYPEID_EQUAL(SessionOpenBody, *frame.getBody());
     BOOST_CHECK_EQUAL(2u, cluster.size()); // Me and parent
 

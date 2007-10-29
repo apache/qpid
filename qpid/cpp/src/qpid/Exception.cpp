@@ -46,8 +46,4 @@ std::string Exception::str() const throw() {
 
 const char* Exception::what() const throw() { return str().c_str(); }
 
-std::auto_ptr<Exception> Exception::clone() const throw() {
-    return std::auto_ptr<Exception>(new Exception(*this));
-}
-
 } // namespace qpid

@@ -20,10 +20,10 @@
  */
 
 /**@file
- * Compare alternative implementations for ConcurrentQueue.
+ * Compare alternative implementations for BlockingQueue.
  */
 
-#include "qpid/sys/ConcurrentQueue.h"
+#include "qpid/sys/BlockingQueue.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
@@ -83,7 +83,7 @@ template <class T> class DualVectorDualLockQueue {
     typename std::vector<T>::iterator popIter;
 };
 
-template <class T> struct LockedDequeQueue : public ConcurrentQueue<T> {
+template <class T> struct LockedDequeQueue : public BlockingQueue<T> {
     /** size_t ignored, can't pre-allocate space in a dequeue */
     LockedDequeQueue(size_t=0) {};
 };
