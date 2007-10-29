@@ -120,7 +120,7 @@ SessionCore::~SessionCore() {
     Lock l(state);
     invariant();
     detach(COMMAND_INVALID, "Session deleted");
-    state.waitAll();
+    state.waitWaiters();
 }
 
 void SessionCore::detach(int c, const std::string& t) {

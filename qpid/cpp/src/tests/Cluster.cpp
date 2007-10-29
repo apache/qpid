@@ -36,8 +36,7 @@ BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
     AMQFrame send(1, SessionOpenBody(VER));
     cluster.handle(send);
-    AMQFrame received;
-    BOOST_REQUIRE(cluster.received.waitPop(received));
+    AMQFrame received = cluster.received.pop();
     BOOST_CHECK_TYPEID_EQUAL(SessionOpenBody, *received.getBody());
     BOOST_CHECK_EQUAL(1u, cluster.size());
     Cluster::MemberList members = cluster.getMembers();
@@ -62,11 +61,10 @@ BOOST_AUTO_TEST_CASE(testClusterTwo) {
         // Exchange frames with child.
         AMQFrame send(1, SessionOpenBody(VER));
         cluster.handle(send);
-        AMQFrame received;
-        BOOST_REQUIRE(cluster.received.waitPop(received));
+        AMQFrame received = cluster.received.pop();
         BOOST_CHECK_TYPEID_EQUAL(SessionOpenBody, *received.getBody());
         
-        BOOST_REQUIRE(cluster.received.waitPop(received));
+        received=cluster.received.pop();
         BOOST_CHECK_TYPEID_EQUAL(SessionAttachedBody, *received.getBody());
 
         if (!nofork) {

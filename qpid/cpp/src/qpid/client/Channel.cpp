@@ -187,13 +187,14 @@ bool Channel::get(Message& msg, const Queue& _queue, AckMode ackMode) {
     status.sync();
     session.messageCancel(tag);
 
-    if (incoming.empty()) {
-        return false;
-    } else {
-        msg.populate(*(incoming.pop()));
+    FrameSet::shared_ptr p;
+    if (incoming.tryPop(p)) {
+        msg.populate(*p);
         if (ackMode == AUTO_ACK) msg.acknowledge(session, false, true);
         return true;
     }
+    else
+        return false;
 }
 
 void Channel::publish(Message& msg, const Exchange& exchange,
@@ -263,7 +264,7 @@ void Channel::run() {
                 QPID_LOG(warning, "Dropping unsupported message type: " << content->getMethod());                        
             }
         }
-    } catch (const QueueClosed&) {}
+    } catch (const sys::QueueClosed&) {}
 }
 
 }}

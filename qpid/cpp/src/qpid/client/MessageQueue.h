@@ -22,28 +22,29 @@
 #ifndef _MessageQueue_
 #define _MessageQueue_
 #include <iostream>
-#include "BlockingQueue.h"
+#include "qpid/sys/BlockingQueue.h"
 #include "MessageListener.h"
 
 namespace qpid {
 namespace client {
 
-    /**
-     * A MessageListener implementation that simply queues up
-     * messages.
-     *
-     * \ingroup clientapi
-     */
-    class MessageQueue : public MessageListener, public BlockingQueue<Message>
+/**
+ * A MessageListener implementation that simply queues up
+ * messages.
+ *
+ * \ingroup clientapi
+ */
+class MessageQueue : public MessageListener,
+                     public sys::BlockingQueue<Message>
+{
+    std::queue<Message> messages;
+  public:
+    void received(Message& msg)
     {
-        std::queue<Message> messages;
-    public:
-        void received(Message& msg)
-        {
-            std::cout << "Adding message to queue: " << msg.getData() << std::endl;
-            push(msg);
-        }
-    };
+        std::cout << "Adding message to queue: " << msg.getData() << std::endl;
+        push(msg);
+    }
+};
 
 }
 }
