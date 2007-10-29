@@ -9,7 +9,7 @@ class SessionGen < CppGen
   def initialize(outdir, amqp)
     super(outdir, amqp)
     @chassis="server"
-    @classname="Session"
+    @classname="Session_#{@amqp.version.bars}"
   end
   
   def return_type(m)
@@ -82,9 +82,9 @@ class SessionGen < CppGen
       params=m.signature
     end
     if (params.empty?)
-      gen "#{return_type(m)} Session::#{m.parent.name.lcaps}#{m.name.caps}(){\n\n" 
+      gen "#{return_type(m)} #{@classname}::#{m.parent.name.lcaps}#{m.name.caps}(){\n\n" 
     else
-      gen "#{return_type(m)} Session::#{m.parent.name.lcaps}#{m.name.caps}(" 
+      gen "#{return_type(m)} #{@classname}::#{m.parent.name.lcaps}#{m.name.caps}(" 
       indent { gen params.join(",\n") }
       gen "){\n\n"
     end
