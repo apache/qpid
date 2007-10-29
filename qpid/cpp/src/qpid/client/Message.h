@@ -22,7 +22,7 @@
  *
  */
 #include <string>
-#include "qpid/client/Session.h"
+#include "qpid/client/Session_0_10.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/TransferContent.h"
 
@@ -60,7 +60,7 @@ public:
         return getMessageProperties().getApplicationHeaders(); 
     }
 
-    void acknowledge(Session& session, bool cumulative = true, bool send = true) const
+    void acknowledge(Session_0_10& session, bool cumulative = true, bool send = true) const
     {
         session.execution().completed(id, cumulative, send);
     }
