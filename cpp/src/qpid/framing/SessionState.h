@@ -35,12 +35,11 @@ namespace framing {
 
 /**
  * Session state common to client and broker.
- * Implements session ack/resume protcools.
+ * Stores replay frames, implements session ack/resume protcools.
  *
  * A SessionState is always associated with an _open_ session (attached or
  * suspended) it is destroyed when the session is closed.
  *
- * A template to make it protocol independent and easy to test.
  */
 class SessionState
 {
@@ -58,9 +57,16 @@ class SessionState
      *Create a newly opened active session.
      *@param ackInterval send/solicit an ack whenever N unacked frames
      * have been received/sent.
-     *@pre ackInterval > 0
+     * 
+     * N=0 disables voluntary send/solict ack.
      */
-    SessionState(uint32_t ackInterval=1, const framing::Uuid& id=framing::Uuid(true));
+    SessionState(uint32_t ackInterval, const framing::Uuid& id=framing::Uuid(true));
+
+    /**
+     * Create a non-resumable session. Does not store session frames,
+     * never volunteers ack or solicit-ack.
+     */
+    SessionState(const framing::Uuid& id=framing::Uuid(true));
 
     const framing::Uuid& getId() const { return id; }
     State getState() const { return state; }
@@ -103,6 +109,7 @@ class SessionState
 
     SequenceNumber getLastSent() const { return lastSent; }
     SequenceNumber getLastReceived() const { return lastReceived; }
+
   private:
     typedef std::deque<AMQFrame> Unacked;
 
@@ -110,6 +117,7 @@ class SessionState
 
     State state;
     framing::Uuid id;
+
     Unacked unackedOut;
     SequenceNumber lastReceived;
     SequenceNumber lastSent;
@@ -118,6 +126,7 @@ class SessionState
     SequenceNumber solicitAckAt;
     bool ackSolicited;
     bool suspending;
+    bool resumable;
 };
 
 
