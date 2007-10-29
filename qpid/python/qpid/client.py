@@ -138,6 +138,9 @@ class ClientDelegate(Delegate):
   def channel_close(self, ch, msg):
     ch.close(msg)
 
+  def session_ack(self, ch, msg):
+    pass
+
   def session_closed(self, ch, msg):
     ch.close(msg)
 
