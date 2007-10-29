@@ -308,7 +308,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         }
         // now we need to acquire this message if needed
         // this is the case of queue with a message selector set
-        if (!_preAcquire && messageOk)
+        if (!_preAcquire && messageOk && ! isNoConsume())
         {
             if (_logger.isDebugEnabled())
             {
