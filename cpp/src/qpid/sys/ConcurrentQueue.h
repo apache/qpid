@@ -79,18 +79,15 @@ template <class T> class ConcurrentQueue : public Waitable {
         return true;
     }
 
-    /** Wait up to a timeout for a data item to be available.
-     *@return true if data was available, false if timed out or shut down.
-     *@throws ShutdownException if the queue is destroyed.
+    /** Wait for a data item to be available.
+     * Return false if shut down.
      */
-    bool waitPop(T& data, Duration timeout=TIME_INFINITE) {
+    bool waitPop(T& data) {
         ScopedLock l(lock);
-        AbsTime deadline(now(), timeout);
         {
             ScopedWait(*this);
             while (!shutdownFlag && queue.empty())
-                if (!lock.wait(deadline))
-                    return false;
+                lock.wait();
         }
         if (queue.empty())
             return false;
