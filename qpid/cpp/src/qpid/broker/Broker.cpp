@@ -65,7 +65,7 @@ Broker::Options::Options(const std::string& name) :
     storeAsync(false),
     enableMgmt(0),
     mgmtPubInterval(10),
-    ack(100)	    
+    ack(100)
 {
     addOptions()
         ("port,p", optValue(port,"PORT"),
@@ -87,7 +87,9 @@ Broker::Options::Options(const std::string& name) :
         ("mgmt,m", optValue(enableMgmt,"yes|no"),
          "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"),
-         "Management Publish Interval");
+         "Management Publish Interval")
+        ("ack", optValue(ack, "N"),
+         "Send ack/solicit-ack at least every N frames. 0 disables voluntary acks/solitict-ack");
 }
 
 const std::string empty;
