@@ -20,7 +20,7 @@
  */
 
 #include "qpid/cluster/Cluster.h"
-#include "qpid/sys/ConcurrentQueue.h"
+#include "qpid/sys/BlockingQueue.h"
 #include "qpid/framing/AMQFrame.h"
 
 #include <boost/bind.hpp>
@@ -45,12 +45,10 @@ using namespace boost;
 void null_deleter(void*) {}
 
 template <class T>
-class TestHandler : public Handler<T&>, public ConcurrentQueue<T>
+class TestHandler : public Handler<T&>, public BlockingQueue<T>
 {
   public:
     void handle(T& frame) { push(frame); }
-    bool waitPop(T& x) { return waitPop(x, TIME_SEC); }
-    using ConcurrentQueue<T>::waitPop;
 };
 
 typedef TestHandler<AMQFrame> TestFrameHandler;

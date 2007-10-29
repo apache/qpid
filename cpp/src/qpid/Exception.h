@@ -44,7 +44,6 @@ class Exception : public std::exception
     virtual ~Exception() throw();
     
     virtual const char *what() const throw();
-    virtual std::auto_ptr<Exception> clone() const throw();
     virtual std::string str() const throw();
   private:
     std::string msg;
@@ -61,14 +60,6 @@ struct ConnectionException : public Exception {
     ConnectionException(framing::ReplyCode code_, const std::string& message)
         : Exception(message), code(code_) {}
 };
-
-/** Clone an exception.
- * For qpid::Exception this calls the clone member function.
- * For standard exceptions, uses the copy constructor.
- * For unknown exception types creates a std::exception
- * with the same what() string.
- */
-std::auto_ptr<std::exception> clone(const std::exception&);
 
 } // namespace qpid
 

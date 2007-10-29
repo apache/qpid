@@ -294,7 +294,6 @@ nobase_include_HEADERS = \
   qpid/broker/TxOp.h \
   qpid/broker/TxPublish.h \
   qpid/client/AckMode.h \
-  qpid/client/BlockingQueue.h \
   qpid/client/ChainableFrameHandler.h	\
   qpid/client/Channel.h \
   qpid/client/Exchange.h \
@@ -378,7 +377,7 @@ nobase_include_HEADERS = \
   qpid/sys/Acceptor.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AtomicCount.h \
-  qpid/sys/ConcurrentQueue.h \
+  qpid/sys/BlockingQueue.h \
   qpid/sys/Condition.h \
   qpid/sys/ConnectionInputHandler.h \
   qpid/sys/ConnectionInputHandlerFactory.h \
