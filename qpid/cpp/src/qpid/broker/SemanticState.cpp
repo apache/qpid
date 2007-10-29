@@ -248,6 +248,10 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
 
 bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
+    if (!parent->getSession().isAttached()) {
+        return false;
+    }
+
     if (nolocal &&
         &parent->getSession().getConnection() == msg.payload->getPublisher()) {
         return false;
