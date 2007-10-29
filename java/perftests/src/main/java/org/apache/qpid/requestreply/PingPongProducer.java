@@ -558,7 +558,7 @@ public class PingPongProducer implements Runnable /*, MessageListener*/, Excepti
     /**
      * Holds the producer controlSession, needed to create ping messages.
      */
-    protected Session _producerSession = (Session) _connection.createSession(_transacted, _ackMode);
+    protected Session _producerSession ;
 
     /**
      * Holds the destination where the response messages will arrive.

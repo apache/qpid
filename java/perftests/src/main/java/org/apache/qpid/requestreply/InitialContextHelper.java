@@ -42,7 +42,14 @@ public class InitialContextHelper
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             // NB: Need to change path to reflect package if moving classes around !
             InputStream is = cl.getResourceAsStream(propertyFile);
+            if( is != null )
+            {
             fileProperties.load(is);
             return new InitialContext(fileProperties);
+            }
+        else
+            {
+                return new InitialContext();
+            }
     }
 }
