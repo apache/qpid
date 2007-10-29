@@ -21,7 +21,7 @@
 #include "qpid_test_plugin.h"
 #include "InProcessBroker.h"
 #include "qpid/client/Dispatcher.h"
-#include "qpid/client/Session.h"
+#include "qpid/client/Session_0_10.h"
 #include "qpid/framing/TransferContent.h"
 #include "qpid/framing/reply_exceptions.h"
 
@@ -42,7 +42,7 @@ struct DummyListener : public MessageListener
     uint count;
     Dispatcher dispatcher;
 
-    DummyListener(Session& session, const std::string& _name, uint _expected) : name(_name), expected(_expected), count(0), 
+    DummyListener(Session_0_10& session, const std::string& _name, uint _expected) : name(_name), expected(_expected), count(0), 
                                                                                 dispatcher(session) {}
 
     void listen()
@@ -74,7 +74,7 @@ class ClientSessionTest : public CppUnit::TestCase
     CPPUNIT_TEST_SUITE_END();
 
     shared_ptr<broker::Broker> broker;
-    Session session;
+    Session_0_10 session;
     // Defer construction & thread creation to setUp
     boost::optional<InProcessConnection> c;
     boost::optional<InProcessConnection> c2;

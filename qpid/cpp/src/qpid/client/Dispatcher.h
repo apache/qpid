@@ -33,11 +33,11 @@
 namespace qpid {
 namespace client {
 
-class Session;
+class Session_0_10;
 
 class Subscriber : public MessageListener
 {
-    Session& session;
+    Session_0_10& session;
     MessageListener* const listener;
     const bool autoAck;
     const uint ackBatchSize;
@@ -45,7 +45,7 @@ class Subscriber : public MessageListener
 
 public:
     typedef boost::shared_ptr<Subscriber> shared_ptr;
-    Subscriber(Session& session, MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
+    Subscriber(Session_0_10& session, MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
     void received(Message& msg);
     
 };
@@ -57,7 +57,7 @@ class Dispatcher : public sys::Runnable
     typedef std::map<std::string, Subscriber::shared_ptr> Listeners;
     sys::Mutex lock;
     sys::Thread worker;
-    Session& session;
+    Session_0_10& session;
     const std::string queue;
     bool running;
     bool stopped;
@@ -71,7 +71,7 @@ class Dispatcher : public sys::Runnable
     bool isStopped();
 
 public:
-    Dispatcher(Session& session, const std::string& queue = "");
+    Dispatcher(Session_0_10& session, const std::string& queue = "");
 
     void start();
     void run();
