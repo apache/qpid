@@ -24,7 +24,7 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/framing/FrameSet.h"
 #include "qpid/sys/Mutex.h"
-#include "BlockingQueue.h"
+#include "qpid/sys/BlockingQueue.h"
 
 #ifndef _Demux_
 #define _Demux_
@@ -44,7 +44,7 @@ class Demux
 {
 public:
     typedef boost::function<bool(const framing::FrameSet&)> Condition;
-    typedef BlockingQueue<framing::FrameSet::shared_ptr> Queue;
+    typedef sys::BlockingQueue<framing::FrameSet::shared_ptr> Queue;
 
     void handle(framing::FrameSet::shared_ptr);
     void close();
