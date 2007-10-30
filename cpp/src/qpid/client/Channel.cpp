@@ -44,6 +44,7 @@ using namespace qpid::sys;
 
 namespace qpid{
 namespace client{
+using namespace arg;
 
 const std::string empty;
 
@@ -89,12 +90,12 @@ void Channel::setPrefetch(uint32_t _prefetch){
 
 void Channel::declareExchange(Exchange& _exchange, bool synch){
     ScopedSync s(session, synch);
-    session.exchangeDeclare_(exchange=_exchange.getName(), type=_exchange.getType());
+    session.exchangeDeclare(exchange=_exchange.getName(), type=_exchange.getType());
 }
 
 void Channel::deleteExchange(Exchange& _exchange, bool synch){
     ScopedSync s(session, synch);
-    session.exchangeDelete_(exchange=_exchange.getName(), ifUnused=false);
+    session.exchangeDelete(exchange=_exchange.getName(), ifUnused=false);
 }
 
 void Channel::declareQueue(Queue& _queue, bool synch){
@@ -105,14 +106,14 @@ void Channel::declareQueue(Queue& _queue, bool synch){
     }
 
     ScopedSync s(session, synch);
-    session.queueDeclare_(queue=_queue.getName(), passive=false/*passive*/, durable=_queue.isDurable(),
+    session.queueDeclare(queue=_queue.getName(), passive=false/*passive*/, durable=_queue.isDurable(),
                               exclusive=_queue.isExclusive(), autoDelete=_queue.isAutoDelete());
     
 }
 
 void Channel::deleteQueue(Queue& _queue, bool ifunused, bool ifempty, bool synch){
     ScopedSync s(session, synch);
-    session.queueDelete_(queue=_queue.getName(), ifUnused=ifunused, ifEmpty=ifempty);
+    session.queueDelete(queue=_queue.getName(), ifUnused=ifunused, ifEmpty=ifempty);
 }
 
 void Channel::bind(const Exchange& exchange, const Queue& queue, const std::string& key, const FieldTable& args, bool synch){
@@ -180,7 +181,7 @@ bool Channel::get(Message& msg, const Queue& _queue, AckMode ackMode) {
     ScopedDivert handler(tag, session.execution().getDemux());
     Demux::Queue& incoming = handler.getQueue();
 
-    session.messageSubscribe_(destination=tag, queue=_queue.getName(), confirmMode=(ackMode == NO_ACK ? 0 : 1));
+    session.messageSubscribe(destination=tag, queue=_queue.getName(), confirmMode=(ackMode == NO_ACK ? 0 : 1));
     session.messageFlow(tag, 1/*BYTES*/, 0xFFFFFFFF);
     session.messageFlow(tag, 0/*MESSAGES*/, 1);
     Completion status = session.messageFlush(tag);
@@ -203,7 +204,7 @@ void Channel::publish(Message& msg, const Exchange& exchange,
 
     msg.getDeliveryProperties().setRoutingKey(routingKey);
     msg.getDeliveryProperties().setDiscardUnroutable(!mandatory);
-    session.messageTransfer_(destination=exchange.getName(), content=msg);
+    session.messageTransfer(destination=exchange.getName(), content=msg);
 }
 
 void Channel::close()

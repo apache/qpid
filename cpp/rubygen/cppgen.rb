@@ -97,12 +97,13 @@ class AmqpField
   def cppname() name.lcaps.cppsafe; end
   def cpptype() domain.cpptype;  end
   def bit?() domain.type_ == "bit"; end
+  def signature() cpptype.param+" "+cppname; end
 end
 
 class AmqpMethod
   def cppname() name.lcaps.cppsafe; end
   def param_names() fields.map { |f| f.cppname }; end
-  def signature() fields.map { |f| f.cpptype.param+" "+f.cppname }; end
+  def signature() fields.map { |f| f.signature }; end
   def body_name() parent.name.caps+name.caps+"Body"; end
 end
 
@@ -197,7 +198,7 @@ class CppGen < Generator
     genl
     yield
     genl
-    genl('}'*names.size+" // "+name)
+    genl('}'*names.size+" // namespace "+name)
     genl
   end
 
@@ -233,6 +234,14 @@ class CppGen < Generator
   def parse_classname(full_cname)
     names=full_cname.split("::")
     return names[0..-2].join('::'), names[-1], names.join("/") 
+  end
+end
+
+# Fully-qualified class name
+class FqClass < Struct.new(:fqname,:namespace,:name,:file)
+  def initialize(fqclass)
+    names=fqclass.split "::"
+    super(fqclass, names[0..-2].join('::'), names[-1], names.join("/"))
   end
 end
 
