@@ -30,6 +30,7 @@
 #include <list>
 
 using namespace qpid::client;
+using namespace qpid::client::arg;
 using namespace qpid::framing;
 using namespace qpid;
 using namespace boost;
@@ -98,22 +99,22 @@ public:
     {
         // FIXME aconway 2007-10-18: autoDelete queues are destroyed on channel close, not session.
         // Fix & make all test queues exclusive, autoDelete
-        session.queueDeclare_(queue=q);  // FIXME aconway 2007-10-01: exclusive=true, autoDelete=true);
-        session.messageSubscribe_(queue=q, destination=dest, acquireMode=1);
-        session.messageFlow_(destination=dest, unit=0, value=0xFFFFFFFF);//messages
-        session.messageFlow_(destination=dest, unit=1, value=0xFFFFFFFF);//bytes
+        session.queueDeclare(queue=q);  // FIXME aconway 2007-10-01: exclusive=true, autoDelete=true);
+        session.messageSubscribe(queue=q, destination=dest, acquireMode=1);
+        session.messageFlow(destination=dest, unit=0, value=0xFFFFFFFF);//messages
+        session.messageFlow(destination=dest, unit=1, value=0xFFFFFFFF);//bytes
     }
 
     bool queueExists(const std::string& q) {
-        TypedResult<QueueQueryResult> result = session.queueQuery_(q);
+        TypedResult<QueueQueryResult> result = session.queueQuery(q);
         return result.get().getQueue() == q;
     }
     
     void testQueueQuery() 
     {
         session = c->newSession();
-        session.queueDeclare_(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
-        TypedResult<QueueQueryResult> result = session.queueQuery_(std::string("my-queue"));
+        session.queueDeclare(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
+        TypedResult<QueueQueryResult> result = session.queueQuery(std::string("my-queue"));
         CPPUNIT_ASSERT_EQUAL(false, result.get().getDurable());
         CPPUNIT_ASSERT_EQUAL(true, result.get().getExclusive());
         CPPUNIT_ASSERT_EQUAL(std::string("amq.fanout"),
@@ -124,7 +125,7 @@ public:
     {
         session = c->newSession();
         declareSubscribe();
-        session.messageTransfer_(content=TransferContent("my-message", "my-queue"));
+        session.messageTransfer(content=TransferContent("my-message", "my-queue"));
         //get & test the message:
         FrameSet::shared_ptr msg = session.get();
         CPPUNIT_ASSERT(msg->isA<MessageTransferBody>());
@@ -140,15 +141,15 @@ public:
 
         TransferContent msg1("One");
         msg1.getDeliveryProperties().setRoutingKey("my-queue");
-        session.messageTransfer_(content=msg1);
+        session.messageTransfer(content=msg1);
 
         TransferContent msg2("Two");
         msg2.getDeliveryProperties().setRoutingKey("my-queue");
-        session.messageTransfer_(content=msg2);
+        session.messageTransfer(content=msg2);
 
         TransferContent msg3("Three");
         msg3.getDeliveryProperties().setRoutingKey("my-queue");
-        session.messageTransfer_(content=msg3);
+        session.messageTransfer(content=msg3);
                 
         DummyListener listener(session, "my-dest", 3);
         listener.listen();
@@ -175,7 +176,7 @@ public:
         session = c->newSession(60);
         session.suspend();
         try {
-            session.exchangeQuery_(name="amq.fanout");
+            session.exchangeQuery(name="amq.fanout");
             CPPUNIT_FAIL("Expected session suspended exception");
         } catch(const CommandInvalidException&) {}
     }
@@ -186,18 +187,18 @@ public:
         session.suspend();
         // Make sure we are still subscribed after resume.
         c->resume(session);
-        session.messageTransfer_(content=TransferContent("my-message", "my-queue"));
+        session.messageTransfer(content=TransferContent("my-message", "my-queue"));
         FrameSet::shared_ptr msg = session.get();
         CPPUNIT_ASSERT_EQUAL(string("my-message"), msg->getContent());
     }
 
     void testDisconnectResume() {
         session = c->newSession(60);
-        session.queueDeclare_(queue="before");
+        session.queueDeclare(queue="before");
         CPPUNIT_ASSERT(queueExists("before"));
         // Simulate lost frames.
         c->discard();
-        session.queueDeclare_(queue=string("after"));
+        session.queueDeclare(queue=string("after"));
         c->disconnect(); // Simulate disconnect, resume on a new connection.
         c2->resume(session);
         CPPUNIT_ASSERT(queueExists("after"));
@@ -206,7 +207,7 @@ public:
     void testAutoDelete() {
         // Verify that autoDelete queues survive suspend/resume.
         session = c->newSession(60);
-        session.queueDeclare_(queue="my-queue", exclusive=true, autoDelete=true);
+        session.queueDeclare(queue="my-queue", exclusive=true, autoDelete=true);
         CPPUNIT_ASSERT(queueExists("my-queue"));
         session.suspend();
         c->resume(session);
