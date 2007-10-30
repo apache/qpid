@@ -11,22 +11,38 @@ class CppGen
       excludes.include? m.parent.name
     }
   end
+
+  def doxygen(m)
+    doxygen_comment {
+      genl m.doc
+      genl
+      m.fields_c.each { |f|
+        genl "@param #{f.cppname}"
+        genl f.doc if f.doc
+        genl
+      }
+    }
+  end
 end
 
 class ContentField               # For extra content parameters
   def cppname() "content"  end
   def signature() "const MethodContent& content" end
+  def sig_default() signature+"="+"DefaultContent(std::string())" end
   def unpack() "p[arg::content|DefaultContent(std::string())]"; end
+  def doc() "Message content"; end
 end
 
 class AmqpField
   def unpack() "p[arg::#{cppname}|#{cpptype.default_value}]"; end
+  def sig_default() signature+"="+cpptype.default_value; end
 end
 
 class AmqpMethod
   def fields_c() content ? fields+[ContentField.new] : fields end
   def param_names_c() fields_c.map { |f| f.cppname} end
   def signature_c()  fields_c.map { |f| f.signature }; end
+  def sig_c_default()  fields_c.map { |f| f.sig_default }; end
   def argpack_name() "#{parent.cppname}#{name.caps}Parameters"; end
   def argpack_type()
     "boost::parameter::parameters<" +
@@ -73,24 +89,42 @@ class SessionNoKeywordGen < CppGen
         genl "using framing::SequenceNumberSet;"
         genl "using framing::Uuid;"
         genl
-        namespace("no_keyword") { 
+        namespace("no_keyword") {
+          doxygen_comment {
+            genl "AMQP #{@amqp.version} session API."
+            genl @amqp.class_("session").doc
+          }
           cpp_class(@classname) {
             public
             gen <<EOS
 #{@classname}();
+
+/** Get the next message frame-set from the session. */
 framing::FrameSet::shared_ptr get() { return impl->get(); }
+
+/** Get the session ID */
 Uuid getId() const { return impl->getId(); }
-void setSynchronous(bool sync) { impl->setSync(sync); } 
+
+/** @param sync if true all session methods block till a response arrives. */
+void setSynchronous(bool sync) { impl->setSync(sync); }
+
+/** Suspend the session, can be resumed on a different connection.
+ * @see Connection::resume()
+ */
 void suspend();
+
+/** Close the session */
 void close();
+
 Execution& execution() { return impl->getExecution(); }
 
 typedef framing::TransferContent DefaultContent;
 EOS
-          session_methods.each { |m|
-            genl
-            args=m.signature_c.join(", ") 
-            genl "#{m.return_type} #{m.session_function}(#{args});" 
+            session_methods.each { |m|
+              genl
+              doxygen(m)
+              args=m.sig_c_default.join(", ") 
+              genl "#{m.return_type} #{m.session_function}(#{args});" 
             }
             genl
             protected
@@ -103,9 +137,9 @@ EOS
           }}}}
 
     cpp_file(@file) { 
-        include @classname
-        include "qpid/framing/all_method_bodies.h"
-        namespace(@namespace) {
+      include @classname
+      include "qpid/framing/all_method_bodies.h"
+      namespace(@namespace) {
         gen <<EOS
 using namespace framing;
 #{@classname}::#{@classname}() {}
@@ -166,6 +200,30 @@ class SessionGen < CppGen
             genl "BOOST_PARAMETER_KEYWORD(keyword_tags, #{k})"
           }}
         genl
+        # Doxygen comment.
+        doxygen_comment {
+          genl "AMQP #{@amqp.version} session API with keyword arguments."
+          genl <<EOS
+This class provides the same set of functions as #{@base}, but also
+allows parameters be passed using keywords. The keyword is the
+parameter name in the namespace "arg".
+
+For example given the normal function "foo(int x=0, int y=0, int z=0)"
+you could call it in either of the following ways:
+
+@code
+session.foo(1,2,3);             // Normal no keywords
+session.foo(arg::z=3, arg::x=1); // Keywords and a default
+@endcode
+
+The keyword functions are easy to use but their declarations are hard
+to read. You may find it easier to read the documentation for #{@base}
+which provides the same set of functions using normal non-keyword
+declarations.
+
+EOS
+        }
+        # Session class.
         cpp_class(@classname,"public #{@base}") {
           private
           genl "#{@classname}(shared_ptr<SessionCore> core) : #{ @base}(core) {}"
@@ -174,7 +232,7 @@ class SessionGen < CppGen
           public
           genl "#{@classname}() {}"
           keyword_methods.each { |m| gen_keyword_decl(m,@base+"::") }
-       }}}
+        }}}
   end
 end
 

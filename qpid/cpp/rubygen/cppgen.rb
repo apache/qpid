@@ -235,6 +235,12 @@ class CppGen < Generator
     names=full_cname.split("::")
     return names[0..-2].join('::'), names[-1], names.join("/") 
   end
+
+  def doxygen_comment(&block)
+    genl "/**"
+    prefix(" * ",&block)
+    genl " */"
+  end
 end
 
 # Fully-qualified class name

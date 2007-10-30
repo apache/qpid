@@ -89,7 +89,7 @@ end
 class AmqpElement
 
   def wrap(xml)
-    return nil if ["doc","assert","rule"].include? xml.name
+    return nil if ["assert","rule"].include? xml.name
     eval("Amqp"+xml.name.caps).new(xml, self) or raise "nil wrapper"
   end
 
@@ -103,7 +103,7 @@ class AmqpElement
     @cache_children[nil]=@children
   end
 
-  attr_reader :parent, :xml, :children
+  attr_reader :parent, :xml, :children, :doc
   amqp_attr_reader :name, :label
 
   # List of children of type elname, or all children if elname
@@ -128,6 +128,11 @@ class AmqpElement
 end
 
 AmqpResponse = AmqpElement
+
+class AmqpDoc < AmqpElement
+  def initialize(xml,parent) super; end
+  def text() @xml.text end
+end
 
 class AmqpDomain < AmqpElement
   def initialize(xml, parent) super; end
