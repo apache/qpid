@@ -81,12 +81,14 @@ void SessionHandler::handleIn(AMQFrame& f) {
 }
 
 void SessionHandler::handleOut(AMQFrame& f) {
-    if (!session.get())
-        throw InternalErrorException(
-            QPID_MSG("attempt to send frame on detached channel."));
-    channel.handle(f);          // Send it.
-    if (session->sent(f))
-        peerSession.solicitAck();
+    ConditionalScopedLock<Semaphore> s(suspension);
+    if (s.lockAcquired() && session.get() && session->isAttached()) {
+        channel.handle(f);          // Send it.
+        if (session->sent(f))
+            peerSession.solicitAck();
+    } else {
+        QPID_LOG(warning, "Dropping frame as session is no longer attached to a channel: " << f);
+    }
 }
 
 void SessionHandler::assertAttached(const char* method) const {
@@ -150,7 +152,8 @@ void  SessionHandler::closed(uint16_t replyCode, const string& replyText) {
 }
 
 void SessionHandler::localSuspend() {
-    if (session.get()) {
+    ScopedLock<Semaphore> s(suspension);
+    if (session.get() && session->isAttached()) {
         session->detach();
         connection.broker.getSessionManager().suspend(session);
     }

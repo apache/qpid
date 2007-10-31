@@ -27,6 +27,8 @@
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/ChannelHandler.h"
+#include "qpid/sys/Mutex.h"
+#include "qpid/sys/Semaphore.h"
 
 #include <boost/noncopyable.hpp>
 
@@ -94,6 +96,7 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     bool ignoring;
     bool resuming;
     std::auto_ptr<SessionState> session;
+    sys::Semaphore suspension;
 };
 
 }} // namespace qpid::broker
