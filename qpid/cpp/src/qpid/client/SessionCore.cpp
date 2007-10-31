@@ -62,13 +62,11 @@ inline void SessionCore::invariant() const {
       case CLOSING:
       case SUSPENDING:
         assert(session);
-        assert(code==REPLY_SUCCESS);
         assert(connection);
         assert(channel.get());
         assert(channel.next == connection.get());
         break;
       case SUSPENDED:
-        assert(code==REPLY_SUCCESS);
         assert(session);
         assert(!connection);
         break;
