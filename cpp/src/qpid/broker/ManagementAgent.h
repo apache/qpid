@@ -40,9 +40,12 @@ class ManagementAgent
 
     ManagementAgent (uint16_t interval);
 
-    void setExchange  (Exchange::shared_ptr         exchange);
-    void addObject    (ManagementObject::shared_ptr object);
-    void clientAdded  (void);
+    void setExchange     (Exchange::shared_ptr         exchange);
+    void addObject       (ManagementObject::shared_ptr object);
+    void clientAdded     (void);
+    void dispatchCommand (Deliverable&      msg,
+                          const string&     routingKey,
+                          const FieldTable* args);
     
   private:
 
@@ -55,10 +58,10 @@ class ManagementAgent
         void fire ();
     };
 
-    ManagementObjectList managementObjects;
-    Timer                timer;
-    Exchange::shared_ptr exchange;
-    uint16_t             interval;
+    ManagementObjectVector managementObjects;
+    Timer                  timer;
+    Exchange::shared_ptr   exchange;
+    uint16_t               interval;
 
     void PeriodicProcessing (void);
 };

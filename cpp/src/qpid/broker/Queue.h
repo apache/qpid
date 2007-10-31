@@ -95,7 +95,7 @@ namespace qpid {
             qpid::sys::Serializer<DispatchFunctor> serializer;
             DispatchFunctor dispatchCallback;
             framing::SequenceNumber sequence;
-	    ManagementObjectQueue::shared_ptr mgmtObjectPtr;
+            ManagementObjectQueue::shared_ptr mgmtObject;
 
             void pop();
             void push(Message::shared_ptr& msg);
@@ -103,7 +103,7 @@ namespace qpid {
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             /**
              * only called by serilizer
-	     */
+             */
             void dispatch();
             void cancel(Consumer::ptr c, Consumers& set);
             void serviceAllBrowsers();
@@ -115,16 +115,16 @@ namespace qpid {
             bool exclude(Message::shared_ptr msg);
  
         protected:
-	   /**
-	   * Call back from store
-	   */
-  	   virtual void notifyDurableIOComplete();
+           /**
+            * Call back from store
+            */
+            virtual void notifyDurableIOComplete();
 
         public:
             typedef boost::shared_ptr<Queue> shared_ptr;
 
             typedef std::vector<shared_ptr> vector;
-	    
+
             Queue(const string& name, bool autodelete = false, 
                   MessageStore* const store = 0, 
                   const ConnectionToken* const owner = 0);
@@ -135,8 +135,8 @@ namespace qpid {
             void destroy();
             void bound(const string& exchange, const string& key, const qpid::framing::FieldTable& args);
             void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
-            void setMgmt (ManagementObjectQueue::shared_ptr mgmt) { mgmtObjectPtr = mgmt; }
-            ManagementObjectQueue::shared_ptr getMgmt (void) { return mgmtObjectPtr; }
+            void setMgmt (ManagementObjectQueue::shared_ptr mgmt) { mgmtObject = mgmt; }
+            ManagementObjectQueue::shared_ptr getMgmt (void) { return mgmtObject; }
 
             bool acquire(const QueuedMessage& msg);
 
@@ -165,7 +165,7 @@ namespace qpid {
              * Request dispatch any queued messages providing there are
              * consumers for them. Only one thread can be dispatching
              * at any time, so this call schedules the despatch based on
-	         * the serilizer policy.
+             * the serilizer policy.
              */
             void requestDispatch(Consumer::ptr c = Consumer::ptr());
             void flush(DispatchCompletion& callback);
