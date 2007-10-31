@@ -23,9 +23,9 @@
  */
 
 #include "qpid/Options.h"
-#include "Exchange.h"
+#include "qpid/broker/Exchange.h"
+#include "qpid/broker/Timer.h"
 #include "ManagementObject.h"
-#include "Timer.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid { 

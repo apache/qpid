@@ -37,6 +37,7 @@ class ManagementObjectQueue : public ManagementObject
     static bool schemaNeeded;
 
     std::string objectName;
+    std::string vhostName;
     std::string name;
     bool        durable;
     bool        autoDelete;

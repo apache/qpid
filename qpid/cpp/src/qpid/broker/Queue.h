@@ -35,7 +35,7 @@
 #include "PersistableQueue.h"
 #include "QueuePolicy.h"
 #include "QueueBindings.h"
-#include "ManagementObjectQueue.h"
+#include "management/ManagementObjectQueue.h"
 
 namespace qpid {
     namespace broker {

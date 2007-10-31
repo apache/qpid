@@ -21,7 +21,7 @@
 #ifndef _ManagementExchange_
 #define _ManagementExchange_
 
-#include "TopicExchange.h"
+#include "qpid/broker/TopicExchange.h"
 #include "ManagementAgent.h"
 
 namespace qpid {
