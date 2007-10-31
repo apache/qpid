@@ -393,6 +393,7 @@ nobase_include_HEADERS = \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \
   qpid/sys/ScopedIncrement.h \
+  qpid/sys/Semaphore.h \
   qpid/sys/Serializer.h \
   qpid/sys/Shlib.h \
   qpid/sys/ShutdownHandler.h \
