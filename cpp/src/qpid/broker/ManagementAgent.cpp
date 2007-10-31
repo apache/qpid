@@ -25,6 +25,7 @@
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageDelivery.h>
 #include <qpid/framing/AMQFrame.h>
+#include <list>
 
 using namespace qpid::framing;
 using namespace qpid::broker;
@@ -57,7 +58,7 @@ void ManagementAgent::Periodic::fire ()
 
 void ManagementAgent::clientAdded (void)
 {
-    for (ManagementObjectList::iterator iter = managementObjects.begin ();
+    for (ManagementObjectVector::iterator iter = managementObjects.begin ();
          iter != managementObjects.end ();
          iter++)
     {
@@ -74,6 +75,7 @@ void ManagementAgent::PeriodicProcessing (void)
     char      msgChars[BUFSIZE];
     Buffer    msgBuffer (msgChars, BUFSIZE);
     uint32_t  contentSize;
+    std::list<uint32_t> deleteList;
 
     if (managementObjects.empty ())
         return;
@@ -86,11 +88,9 @@ void ManagementAgent::PeriodicProcessing (void)
     msgBuffer.putOctet ('0');
     msgBuffer.putOctet ('1');
 
-    for (ManagementObjectList::iterator iter = managementObjects.begin ();
-         iter != managementObjects.end ();
-         iter++)
+    for (uint32_t idx = 0; idx < managementObjects.size (); idx++)
     {
-        ManagementObject::shared_ptr object = *iter;
+        ManagementObject::shared_ptr object = managementObjects[idx];
 
         if (object->getSchemaNeeded ())
         {
@@ -147,10 +147,7 @@ void ManagementAgent::PeriodicProcessing (void)
         }
 
         if (object->isDeleted ())
-        {
-            managementObjects.remove (object);
-            QPID_LOG (debug, "Management Object Removed");
-        }
+            deleteList.push_back (idx);
 
         // Temporary protection against buffer overrun.
         // This needs to be replaced with frame fragmentation.
@@ -189,5 +186,20 @@ void ManagementAgent::PeriodicProcessing (void)
 
     DeliverableMessage deliverable (msg);
     exchange->route (deliverable, "mgmt", 0);
+
+    // Delete flagged objects
+    for (std::list<uint32_t>::reverse_iterator iter = deleteList.rbegin ();
+         iter != deleteList.rend ();
+         iter++)
+    {
+        managementObjects.erase (managementObjects.begin () + *iter);
+    }
+    deleteList.clear ();
+}
+
+void ManagementAgent::dispatchCommand (Deliverable&      /*msg*/,
+                                       const string&     /*routingKey*/,
+                                       const FieldTable* /*args*/)
+{
 }
 

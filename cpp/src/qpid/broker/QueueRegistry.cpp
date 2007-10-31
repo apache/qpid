@@ -59,8 +59,7 @@ QueueRegistry::declare(const string& declareName, bool durable,
     }
 }
 
-void QueueRegistry::destroy(const string& name){
-    RWlock::ScopedWlock locker(lock);
+void QueueRegistry::destroyLH (const string& name){
     if (managementAgent){
         ManagementObjectQueue::shared_ptr mgmtObject;
         QueueMap::iterator i = queues.find(name);
@@ -72,6 +71,11 @@ void QueueRegistry::destroy(const string& name){
     }
 
     queues.erase(name);
+}
+
+void QueueRegistry::destroy (const string& name){
+    RWlock::ScopedWlock locker(lock);
+    destroyLH (name);
 }
 
 Queue::shared_ptr QueueRegistry::find(const string& name){

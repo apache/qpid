@@ -62,12 +62,13 @@ class QueueRegistry{
      * subsequent calls to find or declare with the same name.
      *
      */
-    void destroy(const string& name);
+    void destroyLH (const string& name);
+    void destroy   (const string& name);
     template <class Test> bool destroyIf(const string& name, Test test)
     {
         qpid::sys::RWlock::ScopedWlock locker(lock);
         if (test()) {
-            queues.erase(name);
+            destroyLH (name);
             return true;
         } else {
             return false;

@@ -57,8 +57,7 @@ void ManagementExchange::route (Deliverable&      msg,
     if (routingKey.length () > 7 &&
         routingKey.substr (0, 7).compare ("method.") == 0)
     {
-        QPID_LOG (debug, "ManagementExchange: Intercept command " << routingKey);
-        // TODO: Send intercepted commands to ManagementAgent for dispatch
+        managementAgent->dispatchCommand (msg, routingKey, args);
         return;
     }
 
