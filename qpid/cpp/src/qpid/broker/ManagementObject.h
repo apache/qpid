@@ -25,7 +25,7 @@
 #include "qpid/sys/Time.h"
 #include <qpid/framing/Buffer.h>
 #include <boost/shared_ptr.hpp>
-#include <list>
+#include <vector>
 
 namespace qpid { 
 namespace broker {
@@ -108,7 +108,7 @@ class ManagementObject
 
 };
 
- typedef std::list<ManagementObject::shared_ptr> ManagementObjectList;
+ typedef std::vector<ManagementObject::shared_ptr> ManagementObjectVector;
 
 }}
             
