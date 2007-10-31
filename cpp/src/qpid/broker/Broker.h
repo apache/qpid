@@ -30,7 +30,9 @@
 #include "MessageStore.h"
 #include "QueueRegistry.h"
 #include "SessionManager.h"
-#include "ManagementAgent.h"
+#include "management/ManagementAgent.h"
+#include "management/ManagementObjectBroker.h"
+#include "management/ManagementObjectVhost.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/Url.h"
@@ -65,10 +67,10 @@ class Broker : public sys::Runnable, public Plugin::Target
         int connectionBacklog;
         std::string store;      
         long stagingThreshold;
-	string storeDir;
-	bool storeAsync;
-	bool enableMgmt;
-	uint16_t mgmtPubInterval;
+        string storeDir;
+        bool storeAsync;
+        bool enableMgmt;
+        uint16_t mgmtPubInterval;
         uint32_t ack;
     };
     
@@ -129,6 +131,8 @@ class Broker : public sys::Runnable, public Plugin::Target
     HandlerUpdaters handlerUpdaters;
     SessionManager sessionManager;
     ManagementAgent::shared_ptr managementAgent;
+    ManagementObjectBroker::shared_ptr mgmtObject;
+    ManagementObjectVhost::shared_ptr  mgmtVhostObject;
 
     static MessageStore* createStore(const Options& config);
 };

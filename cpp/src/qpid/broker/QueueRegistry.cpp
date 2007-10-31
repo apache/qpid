@@ -19,8 +19,8 @@
  *
  */
 #include "QueueRegistry.h"
-#include "ManagementAgent.h"
-#include "ManagementObjectQueue.h"
+#include "management/ManagementAgent.h"
+#include "management/ManagementObjectQueue.h"
 #include "qpid/log/Statement.h"
 #include <sstream>
 #include <assert.h>

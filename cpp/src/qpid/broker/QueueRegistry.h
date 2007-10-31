@@ -24,7 +24,7 @@
 #include <map>
 #include "qpid/sys/Mutex.h"
 #include "Queue.h"
-#include "ManagementAgent.h"
+#include "management/ManagementAgent.h"
 
 namespace qpid {
 namespace broker {

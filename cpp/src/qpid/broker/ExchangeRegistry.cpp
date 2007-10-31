@@ -23,7 +23,7 @@
 #include "FanOutExchange.h"
 #include "HeadersExchange.h"
 #include "TopicExchange.h"
-#include "ManagementExchange.h"
+#include "management/ManagementExchange.h"
 #include "qpid/framing/reply_exceptions.h"
 
 using namespace qpid::broker;
