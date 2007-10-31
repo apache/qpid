@@ -159,10 +159,12 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/IncomingExecutionContext.cpp \
-  qpid/broker/ManagementAgent.cpp \
-  qpid/broker/ManagementExchange.cpp \
-  qpid/broker/ManagementObject.cpp \
-  qpid/broker/ManagementObjectQueue.cpp \
+  qpid/broker/management/ManagementAgent.cpp \
+  qpid/broker/management/ManagementExchange.cpp \
+  qpid/broker/management/ManagementObject.cpp \
+  qpid/broker/management/ManagementObjectBroker.cpp \
+  qpid/broker/management/ManagementObjectQueue.cpp \
+  qpid/broker/management/ManagementObjectVhost.cpp \
   qpid/broker/Message.cpp \
   qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
@@ -256,10 +258,12 @@ nobase_include_HEADERS = \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.h \
   qpid/broker/IncomingExecutionContext.h \
-  qpid/broker/ManagementAgent.h \
-  qpid/broker/ManagementExchange.h \
-  qpid/broker/ManagementObject.h \
-  qpid/broker/ManagementObjectQueue.h \
+  qpid/broker/management/ManagementAgent.h \
+  qpid/broker/management/ManagementExchange.h \
+  qpid/broker/management/ManagementObject.h \
+  qpid/broker/management/ManagementObjectBroker.h \
+  qpid/broker/management/ManagementObjectQueue.h \
+  qpid/broker/management/ManagementObjectVhost.h \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \

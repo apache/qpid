@@ -27,8 +27,9 @@ using namespace qpid::framing;
 
 bool ManagementObjectQueue::schemaNeeded = true;
 
-ManagementObjectQueue::ManagementObjectQueue (std::string& _name, bool _durable, bool _autoDelete) :
-    name(_name), durable(_durable), autoDelete(_autoDelete)
+ManagementObjectQueue::ManagementObjectQueue (std::string& _name,
+                                              bool _durable, bool _autoDelete) :
+    vhostName("/"), name(_name), durable(_durable), autoDelete(_autoDelete)
 {
     msgTotalEnqueues     = 0;
     msgTotalDequeues     = 0;
@@ -78,6 +79,7 @@ void ManagementObjectQueue::writeSchema (Buffer& buf)
 {
     schemaNeeded = false;
 
+    schemaItem (buf, TYPE_STRING, "vhostRef",            "Virtual Host Ref", true, true);
     schemaItem (buf, TYPE_STRING, "name",                "Queue Name", true, true);
     schemaItem (buf, TYPE_BOOL,   "durable",             "Durable",    true);
     schemaItem (buf, TYPE_BOOL,   "autoDelete",          "AutoDelete", true);
@@ -124,6 +126,7 @@ void ManagementObjectQueue::writeConfig (Buffer& buf)
     configChanged = false;
 
     writeTimestamps    (buf);
+    buf.putShortString (vhostName);
     buf.putShortString (name);
     buf.putOctet       (durable    ? 1 : 0);
     buf.putOctet       (autoDelete ? 1 : 0);
@@ -134,6 +137,7 @@ void ManagementObjectQueue::writeInstrumentation (Buffer& buf)
     instChanged = false;
 
     writeTimestamps (buf);
+    buf.putShortString (vhostName);
     buf.putShortString (name);
     buf.putLongLong (msgTotalEnqueues);
     buf.putLongLong (msgTotalDequeues);
