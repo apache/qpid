@@ -66,6 +66,18 @@ class ScopedWlock
     L& mutex;
 };
 
+template <class L>
+class ConditionalScopedLock
+{
+  public:
+    ConditionalScopedLock(L& l) : mutex(l) { acquired = l.trylock(); }
+    ~ConditionalScopedLock() { if (acquired) mutex.unlock(); }
+    bool lockAcquired() { return acquired; }
+  private:
+    L& mutex;
+    bool acquired;
+};
+
 }}
     
 #ifdef USE_APR_PLATFORM
