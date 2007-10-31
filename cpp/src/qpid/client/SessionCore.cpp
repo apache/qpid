@@ -52,7 +52,6 @@ inline void SessionCore::invariant() const {
         break;
       case RESUMING:
         assert(session);
-        assert(session->getState() == SessionState::RESUMING);
         assert(code==REPLY_SUCCESS);
         assert(connection);
         assert(channel.get());
@@ -143,7 +142,6 @@ void SessionCore::doSuspend(int code, const std::string& text) {
     if (state != CLOSED) {
         invariant();
         detach(code, text);
-        session->suspend();
         setState(SUSPENDED);
     }
 }
@@ -202,7 +200,7 @@ void SessionCore::resume(shared_ptr<ConnectionImpl> c) {
         if (state==OPEN)
             doSuspend(REPLY_SUCCESS, OK);
         check(state==SUSPENDED, COMMAND_INVALID, QPID_MSG("Session cannot be resumed."));
-        SequenceNumber sendAck=session->resuming();
+        SequenceNumber sendAck=session->sendingAck();
         attaching(c);
         proxy.resume(getId());
         waitFor(OPEN);

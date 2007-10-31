@@ -33,7 +33,6 @@ namespace qpid {
 namespace framing {
 
 SessionState::SessionState(uint32_t ack,  const Uuid& uuid) :
-    state(ATTACHED),
     id(uuid),
     lastReceived(-1),
     lastSent(-1),
@@ -45,7 +44,6 @@ SessionState::SessionState(uint32_t ack,  const Uuid& uuid) :
 {}
 
 SessionState::SessionState(const Uuid& uuid) :
-    state(ATTACHED),
     id(uuid),
     lastReceived(-1),
     lastSent(-1),
@@ -65,10 +63,6 @@ bool isSessionCommand(const AMQFrame& f) {
 boost::optional<SequenceNumber> SessionState::received(const AMQFrame& f) {
     if (isSessionCommand(f))
         return boost::none;
-    if (state==RESUMING)
-        throw CommandInvalidException(
-            QPID_MSG("Invalid frame: Resuming session, expected session-ack"));
-    assert(state = ATTACHED);
     ++lastReceived;
     QPID_LOG(trace, "Recv # "<< lastReceived << " " << id);
     if (ackInterval && lastReceived == sendAckAt)
@@ -85,7 +79,6 @@ bool SessionState::sent(const AMQFrame& f) {
     ++lastSent;
     QPID_LOG(trace, "Sent # "<< lastSent << " " << id);
     return ackInterval &&
-        (state!=RESUMING) &&
         (lastSent == solicitAckAt) &&
         sendingSolicit();
 }
@@ -97,8 +90,6 @@ SessionState::Replay SessionState::replay() {
 }
 
 void SessionState::receivedAck(SequenceNumber acked) {
-    if (state==RESUMING) state=ATTACHED;
-    assert(state==ATTACHED);
      if (lastSent < acked)
         throw InvalidArgumentException("Invalid sequence number in ack");
     size_t keep = lastSent - acked;
@@ -113,22 +104,10 @@ SequenceNumber SessionState::sendingAck() {
 }
 
 bool SessionState::sendingSolicit() {
-    assert(state == ATTACHED);
     if (ackSolicited)
         return false;
     solicitAckAt = lastSent + ackInterval;
     return ackInterval != 0;
-}
-
-SequenceNumber SessionState::resuming() {
-    if (!resumable)
-        throw InternalErrorException("Session is not resumable");
-    state = RESUMING;
-    return sendingAck();
-}
-
-void SessionState::suspend() {
-    state = SUSPENDED;
 }
 
 }} // namespace qpid::framing
