@@ -80,6 +80,9 @@ void SessionHandler::handleIn(AMQFrame& f) {
 }
 
 void SessionHandler::handleOut(AMQFrame& f) {
+    if (!session.get())
+        throw InternalErrorException(
+            QPID_MSG("attempt to send frame on detached channel."));
     channel.handle(f);          // Send it.
     if (session->sent(f))
         peerSession.solicitAck();
