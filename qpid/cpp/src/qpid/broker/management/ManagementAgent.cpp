@@ -20,7 +20,7 @@
  */
  
 #include "ManagementAgent.h"
-#include "DeliverableMessage.h"
+#include "qpid/broker/DeliverableMessage.h"
 #include "qpid/log/Statement.h"
 #include <qpid/broker/Message.h>
 #include <qpid/broker/MessageDelivery.h>
@@ -181,7 +181,6 @@ void ManagementAgent::PeriodicProcessing (void)
 
     MessageProperties* props = msg->getFrames().getHeaders()->get<MessageProperties>(true);
     props->setContentLength(contentSize);
-    //msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey("mgmt");
     msg->getFrames().append(content);
 
     DeliverableMessage deliverable (msg);

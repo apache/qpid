@@ -92,9 +92,9 @@ class ManagementObject
     virtual bool        getSchemaNeeded      (void)        = 0;
     virtual void        setSchemaNeeded      (void)        = 0;
 
-    inline bool getConfigChanged (void) { return configChanged; }
-    inline bool getInstChanged   (void) { return instChanged; }
-    inline void setAllChanged    (void)
+    inline  bool getConfigChanged (void) { return configChanged; }
+    virtual bool getInstChanged   (void) { return instChanged; }
+    inline  void setAllChanged    (void)
     {
         configChanged = true;
         instChanged   = true;
