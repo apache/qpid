@@ -182,6 +182,7 @@ Consumer::ptr Queue::allocate()
 
 bool Queue::dispatch(QueuedMessage& msg)
 {
+    QPID_LOG(info, "Dispatch message " << msg.position << " from queue " << name);
     //additions to the acquirers will result in a separate dispatch
     //request, so won't result in anyone being missed
     uint counter = getAcquirerCount();
