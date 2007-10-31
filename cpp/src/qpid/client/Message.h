@@ -38,7 +38,10 @@ namespace client {
 class Message : public framing::TransferContent 
 {
 public:
-    Message(const std::string& data_=std::string()) : TransferContent(data_) {}
+    Message(const std::string& data_=std::string(),
+            const std::string& routingKey=std::string(),
+            const std::string& exchange=std::string()
+    ) : TransferContent(data_, routingKey, exchange) {}
 
     std::string getDestination() const 
     { 

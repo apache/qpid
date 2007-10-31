@@ -21,6 +21,8 @@
 
 #include "Dispatcher.h"
 
+#include <boost/cast.hpp>
+
 #include <assert.h>
 
 namespace qpid {
@@ -36,7 +38,8 @@ Dispatcher::~Dispatcher() {
 void Dispatcher::run() {
     do {
         Poller::Event event = poller->wait();
-        DispatchHandle* h = static_cast<DispatchHandle*>(event.handle);
+        DispatchHandle* h =
+            boost::polymorphic_downcast<DispatchHandle*>(event.handle);
 
         // If can read/write then dispatch appropriate callbacks        
         if (h) {
