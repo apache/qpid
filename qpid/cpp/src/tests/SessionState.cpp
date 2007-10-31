@@ -97,21 +97,16 @@ BOOST_AUTO_TEST_CASE(testReplay) {
     // Replay of all frames.
     SessionState session(100);
     sent(session, "abc"); 
-    session.suspend(); session.resuming();
     session.receivedAck(-1);
     BOOST_CHECK_EQUAL(replayChars(session.replay()), "abc");
 
     // Replay with acks
     session.receivedAck(0); // ack a.
-    session.suspend();
-    session.resuming();
     session.receivedAck(1); // ack b.
     BOOST_CHECK_EQUAL(replayChars(session.replay()), "c");
 
     // Replay after further frames.
     sent(session, "def");
-    session.suspend();
-    session.resuming();
     session.receivedAck(3);
     BOOST_CHECK_EQUAL(replayChars(session.replay()), "ef");
 

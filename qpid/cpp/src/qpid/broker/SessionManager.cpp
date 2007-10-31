@@ -56,7 +56,6 @@ std::auto_ptr<SessionState>  SessionManager::open(
 void  SessionManager::suspend(std::auto_ptr<SessionState> session) {
     Mutex::ScopedLock l(lock);
     active.erase(session->getId());
-    session->suspend();
     session->expiry = AbsTime(now(),session->getTimeout()*TIME_SEC);
     suspended.push_back(session.release()); // In expiry order
     eraseExpired();

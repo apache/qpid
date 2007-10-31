@@ -38,7 +38,8 @@ SessionHandler::SessionHandler(Connection& c, ChannelId ch)
       connection(c), channel(ch, &c.getOutput()),
       proxy(out),               // Via my own handleOut() for L2 data.
       peerSession(channel),     // Direct to channel for L2 commands.
-      ignoring(false) {}
+      ignoring(false),
+      resuming(false) {}
 
 SessionHandler::~SessionHandler() {}
 
@@ -114,7 +115,8 @@ void  SessionHandler::resume(const Uuid& id) {
     assertClosed("resume");
     session = connection.broker.getSessionManager().resume(id);
     session->attach(*this);
-    SequenceNumber seq = session->resuming();
+    resuming=true;
+    SequenceNumber seq = session->sendingAck();
     peerSession.attached(session->getId(), session->getTimeout());
     proxy.getSession().ack(seq, SequenceNumberSet());
 }
@@ -148,7 +150,7 @@ void  SessionHandler::closed(uint16_t replyCode, const string& replyText) {
 }
 
 void SessionHandler::localSuspend() {
-    if (session.get() && session->getState() == SessionState::ATTACHED) {
+    if (session.get()) {
         session->detach();
         connection.broker.getSessionManager().suspend(session);
     }
@@ -166,7 +168,8 @@ void  SessionHandler::ack(uint32_t     cumulativeSeenMark,
                           const SequenceNumberSet& /*seenFrameSet*/)
 {
     assertAttached("ack");
-    if (session->getState() == SessionState::RESUMING) {
+    if (resuming) {
+        resuming=false;
         session->receivedAck(cumulativeSeenMark);
         framing::SessionState::Replay replay=session->replay();
         std::for_each(replay.begin(), replay.end(),
