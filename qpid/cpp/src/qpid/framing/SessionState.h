@@ -35,7 +35,10 @@ namespace framing {
 
 /**
  * Session state common to client and broker.
- * Stores replay frames, implements session ack/resume protcools.
+ * 
+ * Stores data needed to resume a session: replay frames, implements
+ * session ack/resume protcools. Stores handler chains for the session,
+ * handlers may themselves store state.
  *
  * A SessionState is always associated with an _open_ session (attached or
  * suspended) it is destroyed when the session is closed.
@@ -46,13 +49,6 @@ class SessionState
   public:
     typedef std::vector<AMQFrame> Replay;
 
-    /** States of a session. */
-    enum State {
-        SUSPENDED, ///< Suspended, detached from any channel.
-        RESUMING, ///< Resuming: waiting for initial ack from peer.
-        ATTACHED ///< Attached to channel and operating normally.
-    };
-
     /**
      *Create a newly opened active session.
      *@param ackInterval send/solicit an ack whenever N unacked frames
@@ -60,7 +56,8 @@ class SessionState
      * 
      * N=0 disables voluntary send/solict ack.
      */
-    SessionState(uint32_t ackInterval, const framing::Uuid& id=framing::Uuid(true));
+    SessionState(uint32_t ackInterval,
+                 const framing::Uuid& id=framing::Uuid(true));
 
     /**
      * Create a non-resumable session. Does not store session frames,
@@ -69,7 +66,6 @@ class SessionState
     SessionState(const framing::Uuid& id=framing::Uuid(true));
 
     const framing::Uuid& getId() const { return id; }
-    State getState() const { return state; }
     
     /** Received incoming L3 frame.
      * @return SequenceNumber if an ack should be sent, empty otherwise.
@@ -92,13 +88,6 @@ class SessionState
      */
     Replay replay();
 
-    /** Suspend the session. */
-    void suspend();
-
-    /** Start resume protocol for the session.
-     *@returns sequence number to ack immediately.  */
-    SequenceNumber resuming();
-
     /** About to send an unscheduled ack, e.g. to respond to a solicit-ack.
      * 
      * Note: when received() returns a sequence number this function
@@ -115,9 +104,7 @@ class SessionState
 
     bool sendingSolicit();
 
-    State state;
     framing::Uuid id;
-
     Unacked unackedOut;
     SequenceNumber lastReceived;
     SequenceNumber lastSent;
