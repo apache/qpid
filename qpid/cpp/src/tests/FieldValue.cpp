@@ -18,8 +18,8 @@
  */
 #include "qpid/framing/FieldValue.h"
 
-#define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(FieldValue);
 
 using namespace qpid::framing;
 
@@ -86,3 +86,4 @@ BOOST_AUTO_TEST_CASE(testFieldTableValueEquals)
 }
 #endif
 
+BOOST_AUTO_TEST_SUITE_END();

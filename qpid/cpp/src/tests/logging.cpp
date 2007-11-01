@@ -16,18 +16,21 @@
  *
  */
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
-#include <boost/test/auto_unit_test.hpp>
+
 #include "test_tools.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
 #include "qpid/memory.h"
 #include "qpid/Options.h"
+
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/format.hpp>
+#include <boost/test/auto_unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(logging);
+
 #include <exception>
-#include <time.h>
 #include <fstream>
+#include <time.h>
 
 
 using namespace std;
@@ -366,3 +369,5 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     log.close();
     unlink("logging.tmp");
 }
+
+BOOST_AUTO_TEST_SUITE_END();

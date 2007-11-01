@@ -34,16 +34,6 @@
    fun:epoll_ctl
 }
 {
-   TODO: shutdown leak, not critical but better to fix it. Unjoined thread?
-   Memcheck:Leak
-   fun:calloc
-   fun:_dl_allocate_tls
-   fun:pthread_create@@GLIBC_2.1
-   fun:pthread_create@GLIBC_2.0
-   fun:_ZN4qpid3sys16AsynchIOAcceptor3runEPNS0_29ConnectionInputHandlerFactoryE
-}
- 
-{
    Bogus error appearing on Fedora 7.
    Memcheck:Cond
    fun:_dl_relocate_object
