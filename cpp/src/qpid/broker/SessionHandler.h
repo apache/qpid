@@ -94,7 +94,6 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
     framing::AMQP_ClientProxy proxy;
     framing::AMQP_ClientProxy::Session peerSession;
     bool ignoring;
-    bool resuming;
     std::auto_ptr<SessionState> session;
     sys::Semaphore suspension;
 };

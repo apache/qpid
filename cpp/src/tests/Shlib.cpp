@@ -22,8 +22,8 @@
 #include "qpid/sys/Shlib.h"
 #include "qpid/Exception.h"
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
 #include <boost/test/auto_unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(Shlib);
 
 using namespace qpid::sys;
 typedef void (*CallMe)(int*);
@@ -55,3 +55,5 @@ BOOST_AUTO_TEST_CASE(testAutoShlib) {
     BOOST_CHECK_EQUAL(42, unloaded);
 }
     
+
+BOOST_AUTO_TEST_SUITE_END();
