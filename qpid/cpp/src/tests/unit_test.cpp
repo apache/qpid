@@ -1,6 +1,3 @@
-#ifndef _posix_AtomicCount_h
-#define _posix_AtomicCount_h
-
 /*
  *
  * Copyright (c) 2006 The Apache Software Foundation
@@ -19,35 +16,7 @@
  *
  */
 
-#include <boost/detail/atomic_count.hpp>
-#include "ScopedIncrement.h"
+#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
+#include <boost/test/auto_unit_test.hpp>
 
-namespace qpid {
-namespace sys {
-
-/**
- * Atomic counter.
- */
-class AtomicCount {
-  public:
-    typedef ScopedDecrement<AtomicCount> ScopedDecrement;
-    typedef ScopedIncrement<AtomicCount> ScopedIncrement;
-
-    AtomicCount(long value = 0) : count(value) {}
-    
-    void operator++() { ++count ; }
-    
-    long operator--() { return --count; }
-    
-    operator long() const { return count; }
-
-    
-  private:
-    boost::detail::atomic_count  count;
-};
-
-
-}}
-
-
-#endif // _posix_AtomicCount_h
+// Defines test_main function to link with actual unit test code.

@@ -17,62 +17,23 @@ EXTRA_DIST=
 CLEANFILES=
 
 #
-# Unit test programs.
+# Unit test program
+#
+# Unit tests are built as a single program to reduce valgrind overhead
+# when running the tests. If you want to build a subset of the tests do 
+#   rm unit_test; make unit_test unit_test_SOURCES="SelectedTest.cpp"
 # 
 
-TESTS+=SessionState
-check_PROGRAMS+=SessionState
-SessionState_SOURCES=SessionState.cpp 
-SessionState_LDADD=-lboost_unit_test_framework $(lib_common)
-
-TESTS+=Blob
-check_PROGRAMS+=Blob
-Blob_SOURCES=Blob.cpp 
-Blob_LDADD=-lboost_unit_test_framework $(lib_common)
-
-TESTS+=logging
-check_PROGRAMS+=logging
-logging_SOURCES=logging.cpp test_tools.h
-logging_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common) 
-
-TESTS+=Url
-check_PROGRAMS+=Url
-Url_SOURCES=Url.cpp test_tools.h
-Url_LDADD=-lboost_unit_test_framework $(lib_common) 
-
-TESTS+=Uuid
-check_PROGRAMS+=Uuid
-Uuid_SOURCES=Uuid.cpp test_tools.h
-Uuid_LDADD=-lboost_unit_test_framework $(lib_common) 
+TESTS+=unit_test
+check_PROGRAMS+=unit_test
+unit_test_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common)
+unit_test_SOURCES= unit_test.cpp \
+	RefCounted.cpp SessionState.cpp Blob.cpp logging.cpp Url.cpp Uuid.cpp \
+	Shlib.cpp FieldValue.cpp FieldTable.cpp
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
 libshlibtest_la_SOURCES = shlibtest.cpp
-
-TESTS+=Shlib
-check_PROGRAMS+=Shlib
-Shlib_SOURCES=Shlib.cpp
-Shlib_LDADD=-lboost_unit_test_framework $(lib_common)
-
-TESTS+=FieldValue
-check_PROGRAMS+=FieldValue
-FieldValue_SOURCES=FieldValue.cpp
-FieldValue_LDADD=-lboost_unit_test_framework $(lib_common)
-
-TESTS+=FieldTable
-check_PROGRAMS+=FieldTable
-FieldTable_SOURCES=FieldTable.cpp
-FieldTable_LDADD=-lboost_unit_test_framework $(lib_common)
-
-# TODO aconway 2007-08-07: Why aren't these tests run automatically?
-
-check_PROGRAMS+=ConcurrentQueue
-ConcurrentQueue_SOURCES=ConcurrentQueue.cpp
-ConcurrentQueue_LDADD=-lboost_test_exec_monitor $(lib_common)
-
-check_PROGRAMS+=Serializer
-Serializer_SOURCES=Serializer.cpp
-Serializer_LDADD=-lboost_unit_test_framework $(lib_common)
 
 include cluster.mk
 
@@ -135,21 +96,21 @@ testprogs=		\
 
 check_PROGRAMS += $(testprogs) interop_runner
 
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test
 
 system_tests = client_test exception_test quick_perftest quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 
 
 EXTRA_DIST +=								\
-  test_env run_test vg_check						\
+  run_test vg_check							\
   run-unit-tests start_broker python_tests stop_broker 			\
   quick_topictest							\
   quick_perftest							\
   topictest								\
-  .valgrind.supp-default						\
-  .valgrindrc-default							\
+  .valgrind.supp							\
+  .valgrindrc								\
   InProcessBroker.h							\
-  MessageUtils.h								\
+  MessageUtils.h							\
   MockChannel.h								\
   MockConnectionInputHandler.h						\
   TxMocks.h								\
@@ -182,16 +143,7 @@ gen.mk: Makefile.am
 check-unit:
 	$(MAKE) check TESTS=$(UNIT_TESTS) run-unit-tests
 
-# Make sure valgrind files are generated.
-all-am: .valgrind.supp .valgrindrc
-
-# Create a copy so that can be modified without risk of committing the changes.
-.valgrindrc: .valgrindrc-default
-	cp $^ $@
-.valgrind.supp: .valgrind.supp-default
-	cp $^ $@
-
-CLEANFILES+=valgrind.out *.log *.vglog .valgrindrc .valgrind.supp dummy_test $(unit_wrappers)
+CLEANFILES+=valgrind.out *.log *.vglog dummy_test $(unit_wrappers)
 MAINTAINERCLEANFILES=gen.mk
 
 interop_runner_SOURCES = 	\

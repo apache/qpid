@@ -16,12 +16,15 @@
  *
  */
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
-#include <boost/test/auto_unit_test.hpp>
+
 #include "test_tools.h"
 #include "qpid/cluster/Cpg.h"
 #include "qpid/framing/AMQBody.h"
+
 #include <boost/bind.hpp>
+#include <boost/test/auto_unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(Cpg);
+
 #include <string>
 #include <iostream>
 #include <iterator>
@@ -102,3 +105,5 @@ BOOST_AUTO_TEST_CASE(CpgBasic) {
     BOOST_CHECK_EQUAL(0, cb.configChanges[1]);
 }
 
+
+BOOST_AUTO_TEST_SUITE_END();
