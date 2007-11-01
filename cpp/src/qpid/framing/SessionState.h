@@ -25,6 +25,7 @@
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/sys/Mutex.h"
 
 #include <boost/optional.hpp>
 
@@ -127,6 +128,7 @@ class SessionState
     bool ackSolicited;
     bool suspending;
     bool resumable;
+    sys::Mutex unackedLock;
 };
 
 

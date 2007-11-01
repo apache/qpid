@@ -80,8 +80,10 @@ boost::optional<SequenceNumber> SessionState::received(const AMQFrame& f) {
 bool SessionState::sent(const AMQFrame& f) {
     if (isSessionCommand(f))
         return false;
-    if (resumable)
+    if (resumable) {
+        sys::Mutex::ScopedLock l(unackedLock);
         unackedOut.push_back(f);
+    }
     ++lastSent;
     QPID_LOG(trace, "Sent # "<< lastSent << " " << id);
     return ackInterval &&
@@ -91,6 +93,7 @@ bool SessionState::sent(const AMQFrame& f) {
 }
 
 SessionState::Replay SessionState::replay() {
+    sys::Mutex::ScopedLock l(unackedLock);
     Replay r(unackedOut.size());
     std::copy(unackedOut.begin(), unackedOut.end(), r.begin());
     return r;
@@ -102,8 +105,10 @@ void SessionState::receivedAck(SequenceNumber acked) {
      if (lastSent < acked)
         throw InvalidArgumentException("Invalid sequence number in ack");
     size_t keep = lastSent - acked;
-    if (keep < unackedOut.size()) 
+    if (keep < unackedOut.size()) {
+        sys::Mutex::ScopedLock l(unackedLock);
         unackedOut.erase(unackedOut.begin(), unackedOut.end()-keep);
+    }
     solicitAckAt = std::max(solicitAckAt, SequenceNumber(acked+ackInterval));
 }
 
