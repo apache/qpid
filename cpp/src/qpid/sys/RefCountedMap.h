@@ -25,9 +25,6 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/RefCounted.h"
 
-#include <boost/call_traits.hpp>
-#include <boost/iterator/iterator_facade.hpp>
-
 #include <map>
 
 namespace qpid {
@@ -35,134 +32,110 @@ namespace sys {
 
 /**
  * A thread-safe, RefCounted map of RefCounted entries.  Entries are
- * automatically erased when all iterators to them are destroyed.  The
- * entire map is released when all its entries are erased.
+ * automatically erased when released The entire map is released when
+ * all its entries are erased.
  *
  * The assumption is that some other object/thread holds an iterator
  * to each entry for as long as it is useful.
  *
- * API is a subset of std::map
+ * The map can be cleared with close()
  *
- * WARNING: Modifying iterators locks the map.  To avoid deadlock, you
- * MUST NOT modify an iterator while holding another lock that could be
- * locked as a result of erasing the entry and destroying its value.
+ * WARNING: Assigning an intrusive_ptr<D> returned by the map locks the
+ * map.  To avoid deadlock, you MUST NOT modify an iterator while
+ * holding another lock that could be locked as a result of erasing
+ * the entry and destroying its value.
  *
+ * @param D must be public RefCounted 
  */
-
-template <class K, class D>
+template <class Key, class Data>
 class RefCountedMap : public RefCounted
 {
-    typedef Mutex::ScopedLock Lock;
-
   public:
-    typedef K key_type;
-    typedef D data_type;
-    typedef std::pair<key_type,data_type> value_type;
-
-    /** Bidirectional iterator maintains a reference count on the map entry.
-     * Provides operator!() and operator bool() to test for end() iterator.
-     */
-    class iterator : 
-        public boost::iterator_facade<iterator, value_type,
-                                      boost::bidirectional_traversal_tag>
-    {
-      public:
-        iterator() {}
-        bool operator!() const { return !ptr; }
-        operator bool() const { return ptr; }
-        void reset() { ptr=0; }
-
-      private:
-        typedef typename RefCountedMap::Entry Entry;
-
-        iterator(intrusive_ptr<Entry> entry) : ptr(entry) {}
-
-        // boost::iterator_facade functions.
-        value_type& dereference() const { return ptr->value; }
-        bool equal(iterator j) const { return ptr==j.ptr; }
-        void increment() { assert(ptr); *this=ptr->map->next(ptr->self); }
-        void decrement() { assert(ptr); *this=ptr->map->prev(ptr->self); }
-
-        intrusive_ptr<Entry> ptr;
-
-      friend class boost::iterator_core_access;
-      friend class RefCountedMap<K,D>;
-    };
-
-    iterator begin() { Lock l(lock); return makeIterator(map.begin()); }
-
-    iterator end() { Lock l(lock); return makeIterator(map.end()); }
-
-    size_t size() { Lock l(lock); return map.size(); }
-
-    bool empty() { return size() == 0u; }
-    
-    iterator find(const key_type& key) {
-        Lock l(lock); return makeIterator(map.find(key));
-    }
-
-    std::pair<iterator, bool> insert(const value_type& x) {
-        Lock l(lock);
-        std::pair<typename Map::iterator,bool> ib=
-            map.insert(make_pair(x.first, Entry(x, this)));
-        ib.first->second.self = ib.first;
-        return std::make_pair(makeIterator(ib.first), ib.second);
-    }
+    typedef intrusive_ptr<Data> DataPtr;
 
   private:
-
-    //
-    // INVARIANT:
-    //  - All entries in the map have non-0 refcounts.
-    //  - Each entry holds an intrusive_ptr to the map 
-    //
-
-    struct Entry : public RefCounted {
-        typedef typename RefCountedMap::Map::iterator Iterator;
-
-        Entry(const value_type& v, RefCountedMap* m) : value(v), map(m) {}
-        
-        value_type value;
+    struct Entry : public Data {
+        typedef typename RefCountedMap::Iterator Iterator;
         intrusive_ptr<RefCountedMap> map;
         Iterator self;
-
-        // RefCounts are modified with map locked. 
-        struct MapLock : public Lock {
-            MapLock(RefCountedMap& m) : Lock(m.lock) {}
-        };
-
+        void init(intrusive_ptr<RefCountedMap> m, Iterator s) {
+            map=m; self=s;
+        }
         void released() const {
-            intrusive_ptr<RefCountedMap> protect(map);
-            map->map.erase(self);
+            if (map) {
+                intrusive_ptr<RefCountedMap> protect(map);
+                map->map.erase(self);
+            }
         }
     };
 
-    typedef std::map<K,Entry> Map;
+    typedef std::map<Key,Entry> Map;
+    typedef typename Map::iterator Iterator;
 
-    iterator makeIterator(typename Map::iterator i) {
-        // Call with lock held.
-        return iterator(i==map.end() ? 0 : &i->second);
-    }
-
-     void erase(typename RefCountedMap::Map::iterator i) {
-        // Make sure this is not deleted till lock is released.
-        intrusive_ptr<RefCountedMap> self(this);
-        { Lock l(lock); map.erase(i); }
-    }
-
-    iterator next(typename RefCountedMap::Map::iterator i) {
-        { Lock l(lock); return makeIterator(++i); }
-    }
-
-    iterator prev(typename RefCountedMap::Map::iterator i) {
-        { Lock l(lock); return makeIterator(--i); }
-    }
+    typedef Mutex::ScopedLock Lock;
+    struct OpenLock : public Lock {
+        OpenLock(RefCountedMap& m) : Lock(m.lock) { assert(!m.closed); }
+    };
+    
+    DataPtr ptr_(Iterator i) { return i==map.end() ? 0 : &i->second; }
 
     Mutex lock;
     Map map;
-
+    bool closed;
+    
   friend struct Entry;
   friend class iterator;
+
+  public:
+    RefCountedMap() : closed(false) {}
+    
+    /** Return 0 if not found
+     * @pre !isClosed()
+     */
+    DataPtr find(const Key& k) {
+        OpenLock l(*this);
+        return ptr_(map.find(k));
+    }
+
+    /** Find existing or create new entry for k 
+     * @pre !isClosed()
+     */
+    DataPtr get(const Key& k)  {
+        OpenLock l(*this);
+        std::pair<Iterator,bool> ib=
+            map.insert(std::make_pair(k, Entry()));
+        if (ib.second)
+            ib.first->second.init(this, ib.first);
+        return ptr_(ib.first);
+    }
+    
+    size_t size() { Lock l(lock); return map.size(); }
+
+    bool empty() { return size() == 0u; }
+
+    bool isClosed() { Lock l(lock); return closed; }
+    
+    /**
+     * Close the map and call functor on each remaining entry.
+     * Note the map will not be deleted until all entries are
+     * released, the assumption is that functor takes some
+     * action that will release the entry.
+     *
+     * close() does nothing if isClosed() 
+     */
+    template <class F>
+    void close(F functor) {
+        Lock l(lock);
+        if (closed) return;
+        closed=true;            // No more inserts
+        intrusive_ptr<RefCountedMap> protect(this);
+        Iterator i=map.begin();
+        while (i != map.end()) {
+            Iterator j=i;
+            ++i;
+            functor(j->second); // May erase j
+        }
+    }
 };
 
 
