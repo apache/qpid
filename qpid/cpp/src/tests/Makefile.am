@@ -21,14 +21,16 @@ CLEANFILES=
 #
 # Unit tests are built as a single program to reduce valgrind overhead
 # when running the tests. If you want to build a subset of the tests do 
-#   rm unit_test; make unit_test unit_test_SOURCES="SelectedTest.cpp"
+#   rm -f unit_test; make unit_test unit_test_OBJECTS="unit_test.o SelectedTest.o"
 # 
 
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common)
 unit_test_SOURCES= unit_test.cpp \
-	RefCounted.cpp SessionState.cpp Blob.cpp logging.cpp Url.cpp Uuid.cpp \
+	RefCounted.cpp RefCountedMap.cpp \
+	SessionState.cpp Blob.cpp logging.cpp \
+	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp
 
 check_LTLIBRARIES += libshlibtest.la
@@ -96,7 +98,7 @@ testprogs=		\
 
 check_PROGRAMS += $(testprogs) interop_runner
 
-TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) BOOST_TEST_SHOW_PROGRESS=yes $(srcdir)/run_test
+TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
 system_tests = client_test exception_test quick_perftest quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 

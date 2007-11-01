@@ -127,6 +127,7 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AsynchIOAcceptor.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
+  qpid/sys/RefCountedMap.h \
   qpid/sys/Serializer.cpp \
   qpid/sys/Shlib.cpp \
   qpid/Options.cpp \
