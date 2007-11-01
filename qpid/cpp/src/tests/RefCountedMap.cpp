@@ -19,89 +19,105 @@
 #include "qpid/sys/RefCountedMap.h"
 
 #include <boost/test/auto_unit_test.hpp>
+#include <boost/bind.hpp>
+
 BOOST_AUTO_TEST_SUITE(RefCountedMap);
 
 using namespace std;
 using namespace qpid;
 using namespace qpid::sys;
 
-struct TestMap : public  RefCountedMap<int,int> {
+template <int ID> struct CountEm {
     static int instances;
-    TestMap() { ++instances; }
-    ~TestMap() { --instances; }
+    CountEm() { instances++; }
+    ~CountEm() { instances--; }
+    CountEm(const CountEm&) { instances++; }
+};
+template <int ID> int CountEm<ID>::instances = 0;
+    
+struct Data;
+
+struct Attachment : public RefCounted, public CountEm<1> {
+    intrusive_ptr<Data> link;
 };
 
-int TestMap::instances=0;
+struct Data : public RefCounted, public CountEm<2> {
+    intrusive_ptr<Attachment> link;
+    void attach(intrusive_ptr<Attachment> a) {
+        if (!a) return;
+        a->link=this;
+        link=a;
+    }
+    void detach() {
+        if (!link) return;
+        intrusive_ptr<Data> protect(this);
+        link->link=0;
+        link=0;
+    }
+};
+typedef intrusive_ptr<Data> DataPtr;
+
+struct Map : public  RefCountedMap<int,Data>, public CountEm<3> {};
+
+
+
 
 BOOST_AUTO_TEST_CASE(testRefCountedMap) {
-    BOOST_CHECK_EQUAL(0, TestMap::instances);
-    intrusive_ptr<TestMap> map=new TestMap();
-    BOOST_CHECK_EQUAL(1, TestMap::instances);
+    BOOST_CHECK_EQUAL(0, Map::instances);
+    BOOST_CHECK_EQUAL(0, Data::instances);
+
+    intrusive_ptr<Map> map=new Map();
+    BOOST_CHECK_EQUAL(1, Map::instances);
 
     // Empty map
+    BOOST_CHECK(!map->isClosed());
     BOOST_CHECK(map->empty());
     BOOST_CHECK_EQUAL(map->size(), 0u);
-    BOOST_CHECK(map->begin()==map->end());
-    BOOST_CHECK(!map->begin());
-    BOOST_CHECK(!map->end());
-    BOOST_CHECK(map->find(1)==map->end());
     BOOST_CHECK(!map->find(1));
 
     {
-        // Add and modify an entry
-        pair<TestMap::iterator, bool> ib=map->insert(TestMap::value_type(1,11));
-        BOOST_CHECK(ib.second);
-        TestMap::iterator p = ib.first;
-        ib.first.reset();
-        BOOST_CHECK(p);
-        BOOST_CHECK_EQUAL(p->second, 11);
-        p->second=22;
-        BOOST_CHECK_EQUAL(22, map->find(1)->second);
-        BOOST_CHECK(!map->empty());
+        // Add entries
+        DataPtr p=map->get(1);
+        DataPtr q=map->get(2);
+
+        BOOST_CHECK_EQUAL(Data::instances, 2);
+        BOOST_CHECK_EQUAL(map->size(), 2u);
+
+        p=0;                    // verify erased
+        BOOST_CHECK_EQUAL(Data::instances, 1);
         BOOST_CHECK_EQUAL(map->size(), 1u);
 
-        // Find an entry
-        TestMap::iterator q=map->find(1);
+        p=map->find(2);
         BOOST_CHECK(q==p);
-        BOOST_CHECK_EQUAL(q->first, 1);
     }
 
     BOOST_CHECK(map->empty());
-    BOOST_CHECK_EQUAL(1, TestMap::instances); 
+    BOOST_CHECK_EQUAL(1, Map::instances); 
+    BOOST_CHECK_EQUAL(0, Data::instances); 
 
     {
         // Hold the map via a reference to an entry.
-        TestMap::iterator p=map->insert(TestMap::value_type(2,22)).first;
-        map=0;                      // Release the map->
-        BOOST_CHECK_EQUAL(1, TestMap::instances); // Held by entry.
-        BOOST_CHECK_EQUAL(p->second, 22);
+        DataPtr p=map->get(3);
+        map=0;               
+        BOOST_CHECK_EQUAL(1, Map::instances); // Held by entry.
     }
-
-    BOOST_CHECK_EQUAL(0, TestMap::instances); 
+    BOOST_CHECK_EQUAL(0, Map::instances); // entry released
 }
 
 
-BOOST_AUTO_TEST_CASE(testRefCountedMapIterator) {
-    BOOST_CHECK_EQUAL(TestMap::instances, 0);
-    {
-        intrusive_ptr<TestMap> map=new TestMap();
-        TestMap::iterator iter[4], p, q;
-        for (int i = 0; i < 4; ++i) 
-            iter[i] = map->insert(make_pair(i, 10+i)).first;
-        int j=0;
-        for (p = map->begin(); p != map->end(); ++p, ++j)  {
-            BOOST_CHECK_EQUAL(p->first, j);
-            BOOST_CHECK_EQUAL(p->second, 10+j);
-        }
-        BOOST_CHECK_EQUAL(4, j);
+BOOST_AUTO_TEST_CASE(testRefCountedMapAttachClose) {
+    intrusive_ptr<Map> map=new Map();
+    DataPtr d=map->get(5);
+    d->attach(new Attachment());
+    d=0;
+    // Attachment keeps entry pinned
+    BOOST_CHECK_EQUAL(1u, map->size());
+    BOOST_CHECK(map->find(5));
 
-        // Release two entries.
-        iter[0]=iter[2]=TestMap::iterator();
-        
-        p=map->begin();
-        BOOST_CHECK_EQUAL(p->second, 11);
-        ++p;
-        BOOST_CHECK_EQUAL(p->second, 13);
-    }
-    BOOST_CHECK_EQUAL(TestMap::instances, 0);
+    // Close breaks attachment
+    map->close(boost::bind(&Data::detach, _1));
+    BOOST_CHECK(map->empty());
+    BOOST_CHECK(map->isClosed());
+    BOOST_CHECK_EQUAL(0, Data::instances);
+    BOOST_CHECK_EQUAL(0, Attachment::instances);
 }
