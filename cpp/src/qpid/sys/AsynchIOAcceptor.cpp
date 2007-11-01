@@ -173,7 +173,7 @@ void AsynchIOAcceptor::run(ConnectionInputHandlerFactory* fact) {
 	d.run();
 	
 	// Now wait for n-1 io threads to exit
-	for (int i=0; i>numIOThreads-1; ++i) {
+	for (int i=0; i<numIOThreads-1; ++i) {
 		t[i].join();
 	}
 }

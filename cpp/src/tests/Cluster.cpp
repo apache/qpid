@@ -24,8 +24,8 @@
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/cluster/ClassifierHandler.h"
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
 #include <boost/test/auto_unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(Cluster);
 
 #include <sys/wait.h>
 
@@ -104,5 +104,5 @@ BOOST_AUTO_TEST_CASE(testClassifierHandlerWiring) {
     BOOST_CHECK_EQUAL(1u, wiring.count);
     BOOST_CHECK_EQUAL(1u, other.count);
 }
-    
 
+BOOST_AUTO_TEST_SUITE_END();

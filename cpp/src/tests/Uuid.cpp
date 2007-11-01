@@ -19,8 +19,8 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/Buffer.h"
 
-#define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(Uuid);
 
 #include <set>
 
@@ -73,3 +73,5 @@ BOOST_AUTO_TEST_CASE(testUuidEncodeDecode) {
     BOOST_CHECK_EQUAL(string(sample.begin(), sample.end()),
                       string(decoded.begin(), decoded.end()));
 }
+
+BOOST_AUTO_TEST_SUITE_END();

@@ -18,8 +18,9 @@
  */
 #include "qpid/framing/Blob.h"
 
-#define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
+
+BOOST_AUTO_TEST_SUITE(Blob);
 
 using namespace std;
 using namespace qpid::framing;
@@ -123,3 +124,5 @@ BOOST_AUTO_TEST_CASE(testClear) {
     BOOST_CHECK(b.empty());
     BOOST_CHECK_EQUAL(0, Foo::instances);
 }
+
+BOOST_AUTO_TEST_SUITE_END();

@@ -20,9 +20,9 @@
  */
 #include "qpid/framing/Frame.h"
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
-#include <boost/test/auto_unit_test.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/test/auto_unit_test.hpp>
+BOOST_AUTO_TEST_SUITE(Frame);
 
 using namespace std;
 using namespace qpid::framing;
@@ -75,3 +75,5 @@ BOOST_AUTO_TEST_CASE(testLoop) {
         BOOST_REQUIRE(dynamic_cast<AccessRequestOkBody*>(g.getBody())->getTicket() == 42);
     }
 }
+
+BOOST_AUTO_TEST_SUITE_END();
