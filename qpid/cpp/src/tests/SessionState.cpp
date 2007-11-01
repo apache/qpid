@@ -49,7 +49,7 @@ void sent(SessionState& session, const std::string& frames) {
 // Received chars as frames
 void received(SessionState& session, const std::string& frames) {
     for_each(frames.begin(), frames.end(),
-             bind(&SessionState::received, session, bind(frame, _1)));
+             bind(&SessionState::received, ref(session), bind(frame, _1)));
 }
 
 // Make a string from a ReplayRange.
