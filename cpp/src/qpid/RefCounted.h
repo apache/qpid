@@ -65,8 +65,8 @@ using boost::intrusive_ptr;
 
 // intrusive_ptr support.
 namespace boost {
-void intrusive_ptr_add_ref(const qpid::AbstractRefCounted* p) { p->addRef(); }
-void intrusive_ptr_release(const qpid::AbstractRefCounted* p) { p->release(); }
+inline void intrusive_ptr_add_ref(const qpid::AbstractRefCounted* p) { p->addRef(); }
+inline void intrusive_ptr_release(const qpid::AbstractRefCounted* p) { p->release(); }
 }
 
 
