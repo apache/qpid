@@ -197,12 +197,12 @@ libqpidbroker_la_SOURCES = \
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
-  $(rgen_client_cpp) 				\
-  qpid/client/Connection.cpp		\
+  $(rgen_client_cpp)				\
+  qpid/client/Connection.cpp			\
   qpid/client/Channel.cpp			\
-  qpid/client/Exchange.cpp		\
-  qpid/broker/PersistableMessage.cpp \
-  qpid/client/Queue.cpp			\
+  qpid/client/Exchange.cpp			\
+  qpid/broker/PersistableMessage.cpp		\
+  qpid/client/Queue.cpp				\
   qpid/client/ConnectionImpl.cpp		\
   qpid/client/Connector.cpp			\
   qpid/client/Demux.cpp				\
@@ -216,7 +216,8 @@ libqpidclient_la_SOURCES =			\
   qpid/client/FutureResponse.cpp		\
   qpid/client/FutureResult.cpp			\
   qpid/client/SessionCore.cpp			\
-  qpid/client/StateManager.cpp
+  qpid/client/StateManager.cpp			\
+  qpid/client/SubscriptionManager.cpp
 
 nobase_include_HEADERS = \
   $(platform_hdr) \
@@ -325,6 +326,7 @@ nobase_include_HEADERS = \
   qpid/client/Response.h \
   qpid/client/SessionCore.h \
   qpid/client/StateManager.h \
+  qpid/client/SubscriptionManager.h \
   qpid/client/TypedResult.h \
   qpid/framing/AMQBody.h \
   qpid/framing/AMQContentBody.h \
