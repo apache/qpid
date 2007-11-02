@@ -20,81 +20,152 @@
  */
 
 /**
- * This file provides one half of a test and example of a pub-sub
- * style of interaction. See topic_listener.cpp for the other half, in
- * which the logic for subscribers is defined.
- * 
- * This file contains the publisher logic. The publisher will send a
- * number of messages to the exchange with the appropriate routing key
- * for the logical 'topic'. Once it has done this it will then send a
- * request that each subscriber report back with the number of message
- * it has received and the time that elapsed between receiving the
- * first one and receiving the report request. Once the expected
- * number of reports are received, it sends out a request that each
- * subscriber shutdown.
+ *  topic_listener.cpp:
+ *
+ *  This program is one of three programs designed to be used
+ *  together. These programs use the topic exchange.
+ *  
+ *    topic_config_queues.cpp:
+ *
+ *      Creates a queue on a broker, binding a routing key to route
+ *      messages to that queue.
+ *
+ *    topic_publisher.cpp:
+ *
+ *      Publishes to a broker, specifying a routing key.
+ *
+ *    topic_listener.cpp (this program):
+ *
+ *      Reads from a queue on the broker using a message listener.
+ *
  */
 
-#include "qpid/Exception.h"
-#include "qpid/client/Channel.h"
-#include "qpid/client/Connection.h"
-#include "qpid/client/Exchange.h"
-#include "qpid/client/MessageListener.h"
-#include "qpid/client/Queue.h"
-#include "qpid/sys/Monitor.h"
+#include <qpid/client/Connection.h>
+#include <qpid/client/Session_0_10.h>
+#include <qpid/client/Message.h>
+#include <qpid/client/MessageListener.h>
+#include <qpid/client/Queue.h>
+#include <qpid/client/SubscriptionManager.h>
+
 #include <unistd.h>
-#include "qpid/sys/Time.h"
 #include <cstdlib>
 #include <iostream>
-#include <time.h>
+#include <set>
 
 using namespace qpid::client;
-using namespace qpid::sys;
-using namespace std;
+using namespace qpid::framing;
 
-
-bool done = 0;
-
-class Listener : public MessageListener{
-public:
-    virtual void received(Message& msg);
+class Listener : public MessageListener {
+  private:
+    Session_0_10& session;
+    SubscriptionManager subscriptions;
+  public:
+    Listener(Session_0_10& session);
+    virtual void prepareQueue(std::string queue, std::string routing_key);
+    virtual void received(Message& message);
+    virtual void listen();
     ~Listener() { };
 };
 
+/**
+ *  Listener::Listener
+ *
+ *  Subscribe to the queue, route it to a client destination for the
+ *  listener. (The destination name merely identifies the destination
+ *  in the listener, you can use any name as long as you use the same
+ *  name for the listener).
+ */
+Listener::Listener(Session_0_10& session) : 
+        session(session),
+        subscriptions(session)
+{}
+
+
+void Listener::prepareQueue(std::string queue, std::string routing_key) {
+
+    /* Create a unique queue name for this queue by concatenating
+     * the Session ID.
+     */
+    queue += session.getId().str();
+
+    std::cout << "Declaring queue: " << queue <<  std::endl;
+   
+    /* Declare an exclusive queue on the broker
+     */
+
+    session.queueDeclare(arg::queue=queue, arg::exclusive=true);
+
+    /* Route messages to the new queue if they match the routing key.
+     *
+     * Also route any messages to with the "control" routing key to
+     * this queue so we know when it's time to stop. A publisher sends
+     * a message with the content "That's all, Folks!", using the
+     * "control" routing key, when it is finished.
+     */
+
+    session.queueBind(arg::exchange="amq.topic", arg::queue=queue,
+                      arg::routingKey=routing_key);
+    session.queueBind(arg::exchange="amq.topic", arg::queue=queue,
+                      arg::routingKey="control");
+
+
+    // Subscribe to the queue using the subscription manager.
+    // The name of the subscription defaults to the name of the queue.
+    // 
+    std::cout << "Subscribing to queue " << queue << std::endl;
+    subscriptions.subscribe(*this, queue);
+}
+
+void Listener::received(Message& message) {
+    //
+    // message.getDestination() returns the name of the subscription
+    // to which this message was sent, which by default is the name
+    // of the queue subscribed to.
+    // 
+    std::cout << "Message: " << message.getData()
+              << " from " << message.getDestination() << std::endl;
+
+    if (message.getData() == "That's all, folks!") {
+        std::cout << "Shutting down listener for "
+                  << message.getDestination() << std::endl;
+        subscriptions.cancel(message.getDestination());
+    }
+}
+
+void Listener::listen() {
+    // run() will return when all the subscriptions are cancelled.
+    subscriptions.run();
+}
 
 int main() {
     Connection connection;
-    Channel channel;
-    Message msg;
-    cout << "Hello" << endl;
     try {
-        connection.open("127.0.0.1", 5672, "guest", "guest", "/test");
-        connection.openChannel(channel);
+        connection.open("127.0.0.1", 5672);
+        Session_0_10 session =  connection.newSession();
 
-  //--------- Main body of program --------------------------------------------
+	// Create a listener for the session
 
-        Queue response("listener");
-        Listener listener;
-        string routingKey="listener";
-        channel.consume(response, routingKey, &listener);
+        Listener listener(session);
 
-        channel.start();
+        // Subscribe to messages on the queues we are interested in
 
-        while (!done)
-            sleep(1000);
-  //-----------------------------------------------------------------------------
+	listener.prepareQueue("usa", "usa.#");
+	listener.prepareQueue("europe", "europe.#");
+	listener.prepareQueue("news", "#.news");
+	listener.prepareQueue("weather", "#.weather");
 
-        channel.close();
+	std::cout << "Listening for messages ..." << std::endl;
+
+        // Give up control and receive messages
+        listener.listen();
+
+
         connection.close();
         return 0;
     } catch(const std::exception& error) {
-        cout << "Unexpected exception: " << error.what() << endl;
+        std::cout << error.what() << std::endl;
     }
-    connection.close();
-    return 1;
+    return 1;   
 }
 
-void Listener::received(Message& msg) {
-    cout << "Message: " << msg.getData() << endl;
-     if (msg.getData() == "That's all, folks!")
-       done = 1;
-}
+
