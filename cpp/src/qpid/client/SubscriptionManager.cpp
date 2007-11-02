@@ -23,7 +23,7 @@
 
 #include "SubscriptionManager.h"
 #include <qpid/client/Dispatcher.h>
-#include <qpid/client/Session.h>
+#include <qpid/client/Session_0_10.h>
 #include <qpid/client/MessageListener.h>
 #include <set>
 #include <sstream>
