@@ -127,6 +127,7 @@ void SemanticHandler::handleCommand(framing::AMQMethodBody* method)
     if (!invoker.wasHandled()) {
         throw NotImplementedException("Not implemented");
     } else if (invoker.hasResult()) {
+        Mutex::ScopedLock l(outLock);
         session.getProxy().getExecution().result(id.getValue(), invoker.getResult());
     }
     if (method->isSync()) { 
