@@ -28,9 +28,10 @@ MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
 {
 }
 
-void MessageStoreModule::init(const std::string& dir, const bool async)
+bool MessageStoreModule::init(const std::string& dir, const bool async, const bool force)
 {
-	store->init(dir, async);
+	store->init(dir, async, force);
+	return true;
 }
 
 void MessageStoreModule::create(PersistableQueue& queue)

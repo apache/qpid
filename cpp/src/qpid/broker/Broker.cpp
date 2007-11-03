@@ -63,6 +63,7 @@ Broker::Options::Options(const std::string& name) :
     stagingThreshold(5000000),
     storeDir("/var"),
     storeAsync(false),
+    storeForce(false),
     enableMgmt(0),
     mgmtPubInterval(10),
     ack(100)
@@ -84,6 +85,8 @@ Broker::Options::Options(const std::string& name) :
          "Store directory location for persistence.")
         ("store-async", optValue(storeAsync,"yes|no"),
          "Use async persistence storage - if store supports it, enable AIO 0-DIRECT.")
+        ("store-force", optValue(storeForce,"yes|no"),
+         "Force changing modes of store, will delete all existing data if mode is change. Be SHURE you want to do this")
         ("mgmt,m", optValue(enableMgmt,"yes|no"),
          "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"),
@@ -138,10 +141,14 @@ Broker::Broker(const Broker::Options& conf) :
         QPID_LOG(info, "Management not enabled");
 
     if(store.get()) {
-        store->init(conf.storeDir, conf.storeAsync);
-        RecoveryManagerImpl recoverer(queues, exchanges, dtxManager, 
+        if (!store->init(conf.storeDir, conf.storeAsync, conf.storeForce)){
+              throw Exception( "Existing Journal in different mode, backup/move existing data \
+			  before changing modes. Or use --store-force yes to blow existing data away.");
+		}else{
+             RecoveryManagerImpl recoverer(queues, exchanges, dtxManager, 
                                       conf.stagingThreshold);
-        store->recover(recoverer);
+             store->recover(recoverer);
+        }
     }
 
     // Initialize plugins
