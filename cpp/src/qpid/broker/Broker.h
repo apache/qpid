@@ -69,6 +69,7 @@ class Broker : public sys::Runnable, public Plugin::Target
         long stagingThreshold;
         string storeDir;
         bool storeAsync;
+        bool storeForce;
         bool enableMgmt;
         uint16_t mgmtPubInterval;
         uint32_t ack;

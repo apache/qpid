@@ -44,8 +44,9 @@ public:
      * 
      * @param dir the directory to create logs/db's
      * @param async true, enable async, false, enable sync
+     * @param force true, delete data on mode change, false, error on mode change
 	 */
-	virtual void init(const std::string& dir, const bool async) = 0;
+	virtual bool init(const std::string& dir, const bool async, const bool force) = 0;
 
     /**
      * Record the existence of a durable queue
