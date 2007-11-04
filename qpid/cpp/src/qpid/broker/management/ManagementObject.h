@@ -30,9 +30,6 @@
 namespace qpid { 
 namespace broker {
 
-using namespace qpid::framing;
-using namespace qpid::sys;
-
 const uint16_t OBJECT_SYSTEM      = 1;
 const uint16_t OBJECT_BROKER      = 2;
 const uint16_t OBJECT_VHOST       = 3;
@@ -52,6 +49,7 @@ class ManagementObject
     
     uint64_t createTime;
     uint64_t destroyTime;
+    uint32_t objectId;
     bool     configChanged;
     bool     instChanged;
     bool     deleted;
@@ -67,31 +65,34 @@ class ManagementObject
     static const uint8_t FLAG_INDEX  = 0x02;
     static const uint8_t FLAG_END    = 0x80;
     
-    void schemaItem (Buffer&     buf,
-                     uint8_t     typeCode,
-                     std::string name,
-                     std::string description,
-                     bool        isConfig = false,
-                     bool        isIndex  = false);
-    void schemaListEnd   (Buffer& buf);
-    void writeTimestamps (Buffer& buf);
+    void schemaItem      (qpid::framing::Buffer& buf,
+                          uint8_t     typeCode,
+                          std::string name,
+                          std::string description,
+                          bool        isConfig = false,
+                          bool        isIndex  = false);
+    void schemaListBegin (qpid::framing::Buffer& buf);
+    void schemaListEnd   (qpid::framing::Buffer& buf);
+    void writeTimestamps (qpid::framing::Buffer& buf);
 
   public:
     typedef boost::shared_ptr<ManagementObject> shared_ptr;
 
-    ManagementObject () : destroyTime(0), configChanged(true),
+    ManagementObject () : destroyTime(0), objectId (), configChanged(true),
                           instChanged(true), deleted(false)
-    { createTime = uint64_t (Duration (now ())); }
+        { createTime = uint64_t (qpid::sys::Duration (qpid::sys::now ())); }
     virtual ~ManagementObject () {}
 
-    virtual uint16_t    getObjectType        (void)        = 0;
-    virtual std::string getObjectName        (void)        = 0;
-    virtual void        writeSchema          (Buffer& buf) = 0;
-    virtual void        writeConfig          (Buffer& buf) = 0;
-    virtual void        writeInstrumentation (Buffer& buf) = 0;
-    virtual bool        getSchemaNeeded      (void)        = 0;
-    virtual void        setSchemaNeeded      (void)        = 0;
+    virtual uint16_t    getObjectType        (void) = 0;
+    virtual std::string getObjectName        (void) = 0;
+    virtual void        writeSchema          (qpid::framing::Buffer& buf) = 0;
+    virtual void        writeConfig          (qpid::framing::Buffer& buf) = 0;
+    virtual void        writeInstrumentation (qpid::framing::Buffer& buf) = 0;
+    virtual bool        getSchemaNeeded      (void) = 0;
+    virtual void        setSchemaNeeded      (void) = 0;
 
+    void         setObjectId      (uint32_t oid) { objectId = oid; }
+    uint32_t     getObjectId      (void) { return objectId; }
     inline  bool getConfigChanged (void) { return configChanged; }
     virtual bool getInstChanged   (void) { return instChanged; }
     inline  void setAllChanged    (void)
@@ -101,7 +102,7 @@ class ManagementObject
     }
 
     inline void resourceDestroy  (void) {
-        destroyTime = uint64_t (Duration (now ()));
+        destroyTime = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
         deleted     = true;
     }
     bool isDeleted (void) { return deleted; }

@@ -36,8 +36,7 @@ class ManagementObjectQueue : public ManagementObject
 
     static bool schemaNeeded;
 
-    std::string objectName;
-    std::string vhostName;
+    uint32_t    vhostRef;
     std::string name;
     bool        durable;
     bool        autoDelete;
@@ -85,10 +84,10 @@ class ManagementObjectQueue : public ManagementObject
     uint32_t  consumersHigh;        // High water mark this interval
 
     uint16_t    getObjectType        (void) { return OBJECT_QUEUE; }
-    std::string getObjectName        (void) { return objectName; }
-    void        writeSchema          (Buffer& buf);
-    void        writeConfig          (Buffer& buf);
-    void        writeInstrumentation (Buffer& buf);
+    std::string getObjectName        (void) { return "queue"; }
+    void        writeSchema          (qpid::framing::Buffer& buf);
+    void        writeConfig          (qpid::framing::Buffer& buf);
+    void        writeInstrumentation (qpid::framing::Buffer& buf);
     bool        getSchemaNeeded      (void) { return schemaNeeded; }
     void        setSchemaNeeded      (void) { schemaNeeded = true; }
     
@@ -119,7 +118,8 @@ class ManagementObjectQueue : public ManagementObject
 
     typedef boost::shared_ptr<ManagementObjectQueue> shared_ptr;
 
-    ManagementObjectQueue  (std::string& name, bool durable, bool autoDelete);
+    ManagementObjectQueue  (uint32_t _vhostRef, std::string& name,
+                            bool durable, bool autoDelete);
     ~ManagementObjectQueue (void);
 
     // The following mask contents are used to describe enqueued or dequeued
