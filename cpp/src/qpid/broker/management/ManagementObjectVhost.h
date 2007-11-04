@@ -35,22 +35,21 @@ class ManagementObjectVhost : public ManagementObject
 
     typedef boost::shared_ptr<ManagementObjectVhost> shared_ptr;
 
-    ManagementObjectVhost  (const Options& conf);
+    ManagementObjectVhost  (uint32_t sysRef, const Options& conf);
     ~ManagementObjectVhost (void);
 
   private:
 
     static bool schemaNeeded;
 
-    std::string objectName;
-
+    uint32_t    sysRef;
     std::string name;
 
     uint16_t    getObjectType        (void) { return OBJECT_VHOST; }
-    std::string getObjectName        (void) { return objectName; }
-    void        writeSchema          (Buffer& buf);
-    void        writeConfig          (Buffer& buf);
-    void        writeInstrumentation (Buffer& /*buf*/) {}
+    std::string getObjectName        (void) { return "vhost"; }
+    void        writeSchema          (qpid::framing::Buffer& buf);
+    void        writeConfig          (qpid::framing::Buffer& buf);
+    void        writeInstrumentation (qpid::framing::Buffer& /*buf*/) {}
     bool        getSchemaNeeded      (void) { return schemaNeeded; }
     void        setSchemaNeeded      (void) { schemaNeeded = true; }
 

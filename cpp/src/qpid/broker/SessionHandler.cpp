@@ -32,6 +32,7 @@ namespace qpid {
 namespace broker {
 using namespace framing;
 using namespace std;
+using namespace qpid::sys;
 
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : InOutHandler(0, &c.getOutput()),

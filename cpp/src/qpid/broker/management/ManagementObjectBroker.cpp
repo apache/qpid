@@ -54,8 +54,9 @@ void ManagementObjectBroker::writeSchema (Buffer& buf)
 {
     schemaNeeded = false;
 
-    schemaItem (buf, TYPE_STRING, "sysId",         "System ID", true, true);
-    schemaItem (buf, TYPE_UINT16, "port",          "TCP Port for AMQP Service", true);
+    schemaListBegin (buf);
+    schemaItem (buf, TYPE_UINT32, "systemRef",     "System ID",                 true, true);
+    schemaItem (buf, TYPE_UINT16, "port",          "TCP Port for AMQP Service", true, true);
     schemaItem (buf, TYPE_UINT16, "workerThreads", "Thread pool size", true);
     schemaItem (buf, TYPE_UINT16, "maxConns",      "Maximum allowed connections", true);
     schemaItem (buf, TYPE_UINT16, "connBacklog",
@@ -72,7 +73,6 @@ void ManagementObjectBroker::writeSchema (Buffer& buf)
     schemaItem (buf, TYPE_STRING, "clusterName",
                 "Name of cluster this server is a member of, zero-length for standalone server", true);
     schemaItem (buf, TYPE_STRING, "version", "Running software version", true);
-
     schemaListEnd (buf);
 }
 
@@ -81,7 +81,7 @@ void ManagementObjectBroker::writeConfig (Buffer& buf)
     configChanged = false;
 
     writeTimestamps    (buf);
-    buf.putShortString (sysId);
+    buf.putLong        (0);
     buf.putShort       (port);
     buf.putShort       (workerThreads);
     buf.putShort       (maxConns);

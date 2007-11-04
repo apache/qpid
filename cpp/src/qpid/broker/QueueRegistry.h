@@ -95,6 +95,7 @@ class QueueRegistry{
      */
     void setManagementAgent (ManagementAgent::shared_ptr agent);
     ManagementAgent::shared_ptr getManagementAgent (void);
+    void setManagementVhost (ManagementObject::shared_ptr vhost);
 
 private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
@@ -102,7 +103,8 @@ private:
     qpid::sys::RWlock lock;
     int counter;
     MessageStore* const store;
-    ManagementAgent::shared_ptr managementAgent;
+    ManagementAgent::shared_ptr  managementAgent;
+    ManagementObject::shared_ptr managementVhost;
 };
 
     
