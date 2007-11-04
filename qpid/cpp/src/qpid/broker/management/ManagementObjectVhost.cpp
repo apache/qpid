@@ -28,10 +28,8 @@ using namespace qpid::framing;
 
 bool ManagementObjectVhost::schemaNeeded = true;
 
-ManagementObjectVhost::ManagementObjectVhost (const Options& /*_conf*/)
-{
-    name = "/";
-}
+ManagementObjectVhost::ManagementObjectVhost (uint32_t _sysRef, const Options& /*_conf*/) :
+    sysRef(_sysRef), name("/") {}
 
 ManagementObjectVhost::~ManagementObjectVhost () {}
 
@@ -39,8 +37,9 @@ void ManagementObjectVhost::writeSchema (Buffer& buf)
 {
     schemaNeeded = false;
 
-    schemaItem (buf, TYPE_STRING, "name", "Name of virtual host",      true, true);
-
+    schemaListBegin (buf);
+    schemaItem (buf, TYPE_UINT32, "brokerRef", "Broker Reference" ,    true);
+    schemaItem (buf, TYPE_STRING, "name",      "Name of virtual host", true);
     schemaListEnd (buf);
 }
 
@@ -49,6 +48,7 @@ void ManagementObjectVhost::writeConfig (Buffer& buf)
     configChanged = false;
 
     writeTimestamps    (buf);
+    buf.putLong        (sysRef);
     buf.putShortString (name);
 }
 

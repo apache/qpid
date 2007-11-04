@@ -47,7 +47,8 @@ QueueRegistry::declare(const string& declareName, bool durable,
         queues[name] = queue;
 
         if (managementAgent){
-            ManagementObjectQueue::shared_ptr mgmtObject(new ManagementObjectQueue (name, durable, autoDelete));
+            ManagementObjectQueue::shared_ptr mgmtObject
+                (new ManagementObjectQueue (managementVhost->getObjectId (), name, durable, autoDelete));
 
             queue->setMgmt (mgmtObject);
             managementAgent->addObject(dynamic_pointer_cast<ManagementObject>(mgmtObject));
@@ -115,3 +116,7 @@ ManagementAgent::shared_ptr QueueRegistry::getManagementAgent (void)
     return managementAgent;
 }
 
+void QueueRegistry::setManagementVhost (ManagementObject::shared_ptr vhost)
+{
+    managementVhost = vhost;
+}

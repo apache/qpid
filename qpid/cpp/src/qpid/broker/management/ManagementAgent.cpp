@@ -31,7 +31,7 @@ using namespace qpid::framing;
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval)
+ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval), nextObjectId(1)
 {
     timer.add (TimerTask::shared_ptr (new Periodic(*this, interval)));
 }
@@ -43,6 +43,7 @@ void ManagementAgent::setExchange (Exchange::shared_ptr _exchange)
 
 void ManagementAgent::addObject (ManagementObject::shared_ptr object)
 {
+    object->setObjectId (nextObjectId++);
     managementObjects.push_back (object);
     QPID_LOG(info, "Management Object Added");
 }
@@ -197,8 +198,37 @@ void ManagementAgent::PeriodicProcessing (void)
 }
 
 void ManagementAgent::dispatchCommand (Deliverable&      /*msg*/,
-                                       const string&     /*routingKey*/,
+                                       const string&     routingKey,
                                        const FieldTable* /*args*/)
 {
+    size_t pos, start;
+
+    if (routingKey.compare (0, 7, "method.") != 0)
+    {
+        QPID_LOG (debug, "Illegal routing key for dispatch: " << routingKey);
+        return;
+    }
+
+    start = 7;
+    if (routingKey.length () == start)
+    {
+        QPID_LOG (debug, "Missing class-key in routing key: " << routingKey);
+        return;
+    }
+
+    pos = routingKey.find ('.', start);
+    if (pos == string::npos || routingKey.length () == pos + 1)
+    {
+        QPID_LOG (debug, "Missing method-key in routing key: " << routingKey);
+        return;
+    }
+
+    string className = routingKey.substr (start, pos - start);
+
+    start = pos + 1;
+
+    string methodName = routingKey.substr (start, routingKey.length () - start);
+
+    QPID_LOG (debug, "Dispatch class: " << className << ", method: " << methodName);
 }
 

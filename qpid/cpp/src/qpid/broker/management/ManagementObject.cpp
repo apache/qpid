@@ -41,6 +41,11 @@ void ManagementObject::schemaItem (Buffer&     buf,
     buf.putShortString (description);
 }
 
+void ManagementObject::schemaListBegin (Buffer& buf)
+{
+    schemaItem (buf, TYPE_UINT32, "id", "Object ID", true, true);
+}
+
 void ManagementObject::schemaListEnd (Buffer& buf)
 {
     buf.putOctet (FLAG_END);
@@ -51,4 +56,5 @@ void ManagementObject::writeTimestamps (Buffer& buf)
     buf.putLongLong (uint64_t (Duration (now ())));
     buf.putLongLong (createTime);
     buf.putLongLong (destroyTime);
+    buf.putLong     (objectId);
 }

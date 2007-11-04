@@ -45,7 +45,7 @@ class ManagementAgent
     void clientAdded     (void);
     void dispatchCommand (Deliverable&      msg,
                           const string&     routingKey,
-                          const FieldTable* args);
+                          const qpid::framing::FieldTable* args);
     
   private:
 
@@ -62,6 +62,7 @@ class ManagementAgent
     Timer                  timer;
     Exchange::shared_ptr   exchange;
     uint16_t               interval;
+    uint32_t               nextObjectId;
 
     void PeriodicProcessing (void);
 };
