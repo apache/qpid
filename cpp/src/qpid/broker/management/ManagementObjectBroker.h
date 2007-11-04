@@ -42,8 +42,6 @@ class ManagementObjectBroker : public ManagementObject
 
     static bool schemaNeeded;
 
-    std::string objectName;
-
     std::string sysId;
     uint16_t    port;
     uint16_t    workerThreads;
@@ -59,10 +57,10 @@ class ManagementObjectBroker : public ManagementObject
     std::string version;
 
     uint16_t    getObjectType        (void) { return OBJECT_BROKER; }
-    std::string getObjectName        (void) { return objectName; }
-    void        writeSchema          (Buffer& buf);
-    void        writeConfig          (Buffer& buf);
-    void        writeInstrumentation (Buffer& /*buf*/) {}
+    std::string getObjectName        (void) { return "broker"; }
+    void        writeSchema          (qpid::framing::Buffer& buf);
+    void        writeConfig          (qpid::framing::Buffer& buf);
+    void        writeInstrumentation (qpid::framing::Buffer& /*buf*/) {}
     bool        getSchemaNeeded      (void) { return schemaNeeded; }
     void        setSchemaNeeded      (void) { schemaNeeded = true; }
 

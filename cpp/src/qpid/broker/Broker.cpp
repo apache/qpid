@@ -113,7 +113,18 @@ Broker::Broker(const Broker::Options& conf) :
 {
     if(conf.enableMgmt){
         managementAgent = ManagementAgent::shared_ptr (new ManagementAgent (conf.mgmtPubInterval));
-        queues.setManagementAgent(managementAgent);
+
+        mgmtObject = ManagementObjectBroker::shared_ptr (new ManagementObjectBroker (conf));
+        managementAgent->addObject (dynamic_pointer_cast<ManagementObject>(mgmtObject));
+
+        // Since there is currently no support for virtual hosts, a management object
+        // representing the implied single virtual host is added here.
+        mgmtVhostObject = ManagementObjectVhost::shared_ptr
+            (new ManagementObjectVhost (mgmtObject->getObjectId (), conf));
+        managementAgent->addObject (dynamic_pointer_cast<ManagementObject>(mgmtVhostObject));
+
+        queues.setManagementAgent (managementAgent);
+        queues.setManagementVhost (dynamic_pointer_cast<ManagementObject>(mgmtVhostObject));
     }
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
@@ -128,14 +139,6 @@ Broker::Broker(const Broker::Options& conf) :
         Exchange::shared_ptr mExchange = exchanges.get (qpid_management);
         managementAgent->setExchange (mExchange);
         dynamic_pointer_cast<ManagementExchange>(mExchange)->setManagmentAgent (managementAgent);
-
-        mgmtObject = ManagementObjectBroker::shared_ptr (new ManagementObjectBroker (conf));
-        managementAgent->addObject (dynamic_pointer_cast<ManagementObject>(mgmtObject));
-
-        // Since there is currently no support for virtual hosts, a management object
-        // representing the implied single virtual host is added here.
-        mgmtVhostObject = ManagementObjectVhost::shared_ptr (new ManagementObjectVhost (conf));
-        managementAgent->addObject (dynamic_pointer_cast<ManagementObject>(mgmtVhostObject));
     }
     else
         QPID_LOG(info, "Management not enabled");

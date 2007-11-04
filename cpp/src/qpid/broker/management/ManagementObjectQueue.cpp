@@ -27,9 +27,9 @@ using namespace qpid::framing;
 
 bool ManagementObjectQueue::schemaNeeded = true;
 
-ManagementObjectQueue::ManagementObjectQueue (std::string& _name,
+ManagementObjectQueue::ManagementObjectQueue (uint32_t _vhostRef, std::string& _name,
                                               bool _durable, bool _autoDelete) :
-    vhostName("/"), name(_name), durable(_durable), autoDelete(_autoDelete)
+    vhostRef(_vhostRef), name(_name), durable(_durable), autoDelete(_autoDelete)
 {
     msgTotalEnqueues     = 0;
     msgTotalDequeues     = 0;
@@ -79,15 +79,15 @@ void ManagementObjectQueue::writeSchema (Buffer& buf)
 {
     schemaNeeded = false;
 
-    schemaItem (buf, TYPE_STRING, "vhostRef",            "Virtual Host Ref", true, true);
-    schemaItem (buf, TYPE_STRING, "name",                "Queue Name", true, true);
+    schemaListBegin (buf);
+    schemaItem (buf, TYPE_UINT32, "vhostRef",            "Virtual Host Ref", true);
+    schemaItem (buf, TYPE_STRING, "name",                "Queue Name", true);
     schemaItem (buf, TYPE_BOOL,   "durable",             "Durable",    true);
     schemaItem (buf, TYPE_BOOL,   "autoDelete",          "AutoDelete", true);
-
     schemaItem (buf, TYPE_UINT64, "msgTotalEnqueues",    "Total messages enqueued");
     schemaItem (buf, TYPE_UINT64, "msgTotalDequeues",    "Total messages dequeued");
-    schemaItem (buf, TYPE_UINT64, "msgTxEnqueues",       "Transactional messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "msgTxDequeues",       "Transactional messages dequeued");
+    schemaItem (buf, TYPE_UINT64, "msgTxnEnqueues",      "Transactional messages enqueued");
+    schemaItem (buf, TYPE_UINT64, "msgTxnDequeues",      "Transactional messages dequeued");
     schemaItem (buf, TYPE_UINT64, "msgPersistEnqueues",  "Persistent messages enqueued");
     schemaItem (buf, TYPE_UINT64, "msgPersistDequeues",  "Persistent messages dequeued");
     schemaItem (buf, TYPE_UINT32, "msgDepth",            "Current size of queue in messages");
@@ -95,29 +95,28 @@ void ManagementObjectQueue::writeSchema (Buffer& buf)
     schemaItem (buf, TYPE_UINT32, "msgDepthHigh",        "High-water queue size, this interval");
     schemaItem (buf, TYPE_UINT64, "byteTotalEnqueues",   "Total messages enqueued");
     schemaItem (buf, TYPE_UINT64, "byteTotalDequeues",   "Total messages dequeued");
-    schemaItem (buf, TYPE_UINT64, "byteTxEnqueues",      "Transactional messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "byteTxDequeues",      "Transactional messages dequeued");
+    schemaItem (buf, TYPE_UINT64, "byteTxnEnqueues",     "Transactional messages enqueued");
+    schemaItem (buf, TYPE_UINT64, "byteTxnDequeues",     "Transactional messages dequeued");
     schemaItem (buf, TYPE_UINT64, "bytePersistEnqueues", "Persistent messages enqueued");
     schemaItem (buf, TYPE_UINT64, "bytePersistDequeues", "Persistent messages dequeued");
     schemaItem (buf, TYPE_UINT32, "byteDepth",           "Current size of queue in bytes");
     schemaItem (buf, TYPE_UINT32, "byteDepthLow",        "Low-water mark this interval");
     schemaItem (buf, TYPE_UINT32, "byteDepthHigh",       "High-water mark this interval");
-    schemaItem (buf, TYPE_UINT64, "enqueueTxStarts",     "Total enqueue transactions started ");
-    schemaItem (buf, TYPE_UINT64, "enqueueTxCommits",    "Total enqueue transactions committed");
-    schemaItem (buf, TYPE_UINT64, "enqueueTxRejects",    "Total enqueue transactions rejected");
-    schemaItem (buf, TYPE_UINT32, "enqueueTxCount",      "Current pending enqueue transactions");
-    schemaItem (buf, TYPE_UINT32, "enqueueTxCountLow",   "Low water mark this interval");
-    schemaItem (buf, TYPE_UINT32, "enqueueTxCountHigh",  "High water mark this interval");
-    schemaItem (buf, TYPE_UINT64, "dequeueTxStarts",     "Total dequeue transactions started ");
-    schemaItem (buf, TYPE_UINT64, "dequeueTxCommits",    "Total dequeue transactions committed");
-    schemaItem (buf, TYPE_UINT64, "dequeueTxRejects",    "Total dequeue transactions rejected");
-    schemaItem (buf, TYPE_UINT32, "dequeueTxCount",      "Current pending dequeue transactions");
-    schemaItem (buf, TYPE_UINT32, "dequeueTxCountLow",   "Transaction low water mark this interval");
-    schemaItem (buf, TYPE_UINT32, "dequeueTxCountHigh",  "Transaction high water mark this interval");
+    schemaItem (buf, TYPE_UINT64, "enqueueTxnStarts",    "Total enqueue transactions started ");
+    schemaItem (buf, TYPE_UINT64, "enqueueTxnCommits",   "Total enqueue transactions committed");
+    schemaItem (buf, TYPE_UINT64, "enqueueTxnRejects",   "Total enqueue transactions rejected");
+    schemaItem (buf, TYPE_UINT32, "enqueueTxnCount",     "Current pending enqueue transactions");
+    schemaItem (buf, TYPE_UINT32, "enqueueTxnCountLow",  "Low water mark this interval");
+    schemaItem (buf, TYPE_UINT32, "enqueueTxnCountHigh", "High water mark this interval");
+    schemaItem (buf, TYPE_UINT64, "dequeueTxnStarts",    "Total dequeue transactions started ");
+    schemaItem (buf, TYPE_UINT64, "dequeueTxnCommits",   "Total dequeue transactions committed");
+    schemaItem (buf, TYPE_UINT64, "dequeueTxnRejects",   "Total dequeue transactions rejected");
+    schemaItem (buf, TYPE_UINT32, "dequeueTxnCount",     "Current pending dequeue transactions");
+    schemaItem (buf, TYPE_UINT32, "dequeueTxnCountLow",  "Transaction low water mark this interval");
+    schemaItem (buf, TYPE_UINT32, "dequeueTxnCountHigh", "Transaction high water mark this interval");
     schemaItem (buf, TYPE_UINT32, "consumers",           "Current consumers on queue");
     schemaItem (buf, TYPE_UINT32, "consumersLow",        "Consumer low water mark this interval");
     schemaItem (buf, TYPE_UINT32, "consumersHigh",       "Consumer high water mark this interval");
-
     schemaListEnd (buf);
 }
 
@@ -126,7 +125,7 @@ void ManagementObjectQueue::writeConfig (Buffer& buf)
     configChanged = false;
 
     writeTimestamps    (buf);
-    buf.putShortString (vhostName);
+    buf.putLong        (vhostRef);
     buf.putShortString (name);
     buf.putOctet       (durable    ? 1 : 0);
     buf.putOctet       (autoDelete ? 1 : 0);
@@ -137,8 +136,6 @@ void ManagementObjectQueue::writeInstrumentation (Buffer& buf)
     instChanged = false;
 
     writeTimestamps (buf);
-    buf.putShortString (vhostName);
-    buf.putShortString (name);
     buf.putLongLong (msgTotalEnqueues);
     buf.putLongLong (msgTotalDequeues);
     buf.putLongLong (msgTxEnqueues);
