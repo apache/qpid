@@ -93,6 +93,7 @@ public class QueueTests extends QpidTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
+        init();
     }
 
     /**
@@ -122,7 +123,7 @@ public class QueueTests extends QpidTestCase
     /**
      * Initialize standard actors
      */
-    public void testInit()
+    public void init()
     {
         if (!isBroker08())
         {
@@ -730,7 +731,6 @@ public class QueueTests extends QpidTestCase
     {
         killBroker();
         System.out.println("initializing server connection and actores ");
-        setUp();
-        testInit();
+        setUp();       
     }
 }
