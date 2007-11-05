@@ -396,7 +396,10 @@ public class Session extends Invoker
         {
             for (ResultFuture<?> result : results.values())
             {
-                result.notifyAll();
+                synchronized(result)
+                {
+                    result.notifyAll();
+                }
             }
         }
     }
