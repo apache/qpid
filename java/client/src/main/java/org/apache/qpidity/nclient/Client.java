@@ -124,8 +124,9 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
     public DtxSession createDTXSession(int expiryInSeconds)
     {
-        // TODO Auto-generated method stub
-        return null;
+         ClientSession clientSession =  (ClientSession) createSession(expiryInSeconds);
+         clientSession.dtxDemarcationSelect();
+         return (DtxSession) clientSession;
     }
 
     public void setClosedListener(ClosedListener closedListner)
