@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -76,6 +76,43 @@ public class ConnectionURLTest extends TestCase
         assertTrue(service.getTransport().equals("tcp"));
         assertTrue(service.getHost().equals("localhost"));
         assertTrue(service.getPort() == 5672);
+    }
+
+    public void testSingleTransportwithRetriesURL() throws URLSyntaxException
+    {
+        String url = "amqp://ritchiem:bob@/test?brokerlist='tcp://localhost:5672?retries='1';tcp://localhost:5672?retries='30';tcp://localhost:5672?retries='300''";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("ritchiem"));
+        assertTrue(connectionurl.getPassword().equals("bob"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+
+        assertTrue(connectionurl.getBrokerCount() == 3);
+
+        BrokerDetails service = connectionurl.getBrokerDetails(0);
+
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertEquals(5672, service.getPort());
+        assertEquals("1", service.getOption(BrokerDetails.OPTIONS_RETRY));
+
+        service = connectionurl.getBrokerDetails(1);
+
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertEquals(5672, service.getPort());
+        assertEquals("30", service.getOption(BrokerDetails.OPTIONS_RETRY));
+
+
+         service = connectionurl.getBrokerDetails(2);
+
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertEquals(5672, service.getPort());
+        assertEquals("300", service.getOption(BrokerDetails.OPTIONS_RETRY));
+
     }
 
     public void testSingleTransportUsernameBlankPasswordURL() throws URLSyntaxException
@@ -463,13 +500,13 @@ public class ConnectionURLTest extends TestCase
 
         AMQConnectionURL conn = new AMQConnectionURL(url);
 
-        assertEquals(conn.getDefaultQueueExchangeName(),"test.direct");
+        assertEquals(conn.getDefaultQueueExchangeName(), "test.direct");
 
-        assertEquals(conn.getDefaultTopicExchangeName(),"test.topic");
+        assertEquals(conn.getDefaultTopicExchangeName(), "test.topic");
 
-        assertEquals(conn.getTemporaryQueueExchangeName(),"tmp.direct");
+        assertEquals(conn.getTemporaryQueueExchangeName(), "tmp.direct");
 
-        assertEquals(conn.getTemporaryTopicExchangeName(),"tmp.topic");
+        assertEquals(conn.getTemporaryTopicExchangeName(), "tmp.topic");
 
     }
 
