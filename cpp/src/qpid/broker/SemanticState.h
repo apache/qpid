@@ -103,6 +103,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     };
 
     typedef std::map<std::string,ConsumerImpl::shared_ptr> ConsumerImplMap;
+    typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
 
     SessionState& session;
     DeliveryAdapter& deliveryAdapter;
@@ -117,6 +118,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     TxBuffer::shared_ptr txBuffer;
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
+    DtxBufferMap suspendedXids;
     framing::AccumulatedAck accumulatedAck;
     bool flowActive;
 

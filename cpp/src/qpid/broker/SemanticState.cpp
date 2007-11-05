@@ -185,10 +185,23 @@ void SemanticState::suspendDtx(const std::string& xid)
 
     checkDtxTimeout();
     dtxBuffer->setSuspended(true);
+    suspendedXids[xid] = dtxBuffer;
+    dtxBuffer.reset();
 }
 
 void SemanticState::resumeDtx(const std::string& xid)
 {
+    if (!dtxSelected) {
+        throw CommandInvalidException(QPID_MSG("Session has not been selected for use with dtx"));
+    }
+
+    dtxBuffer = suspendedXids[xid];
+    if (!dtxBuffer) {
+        throw CommandInvalidException(QPID_MSG("xid " << xid << " not attached"));
+    } else {
+        suspendedXids.erase(xid);
+    }
+
     if (dtxBuffer->getXid() != xid) {
         throw CommandInvalidException(
             QPID_MSG("xid specified on start was " << dtxBuffer->getXid() << ", but " << xid << " specified on resume"));
