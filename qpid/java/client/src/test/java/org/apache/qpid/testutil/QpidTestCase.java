@@ -109,6 +109,12 @@ public class QpidTestCase extends TestCase
      */
     protected void tearDown() throws Exception
     {
+          killBroker();
+         super.tearDown();
+    }
+
+    public void killBroker()
+    {
         _logger.info("Kill broker");
         if (_brokerProcess != null)
         {
@@ -120,7 +126,6 @@ public class QpidTestCase extends TestCase
         {
             TransportConnection.killAllVMBrokers();
         }
-         super.tearDown();
     }
 
     //--------- Util method
@@ -168,6 +173,8 @@ public class QpidTestCase extends TestCase
         {
             _brokerProcess.destroy();
         }
+        _initialContext = null;
+        _connectionFactory = null;
     }
 
     /**
