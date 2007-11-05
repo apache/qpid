@@ -42,6 +42,7 @@ class AbsTime {
     inline AbsTime(const AbsTime& time0, const Duration& duration);
     // Default asignment operation fine
     // Default copy constructor fine
+    inline void reset(const AbsTime& time0, const Duration& duration);
 	 
     static AbsTime now();
     inline static AbsTime FarFuture();
@@ -67,6 +68,11 @@ class Duration {
 AbsTime::AbsTime(const AbsTime& t, const Duration& d) :
     time_ns(d == Duration::max() ? max() : t.time_ns+d.nanosecs)
 {}
+
+void AbsTime::reset(const AbsTime& t, const Duration& d)
+{
+    time_ns = d == Duration::max() ? max() : t.time_ns+d.nanosecs;
+}
 
 AbsTime AbsTime::FarFuture() { AbsTime ff; ff.time_ns = max(); return ff;}
 
