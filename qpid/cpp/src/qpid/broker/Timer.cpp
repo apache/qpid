@@ -27,9 +27,10 @@ using qpid::sys::Monitor;
 using qpid::sys::Thread;
 using namespace qpid::broker;
 
-TimerTask::TimerTask(Duration timeout) : time(AbsTime::now(), timeout), cancelled(false) {}
-TimerTask::TimerTask(AbsTime _time) : time(_time), cancelled(false) {}
+TimerTask::TimerTask(Duration timeout) : duration(timeout), time(AbsTime::now(), timeout), cancelled(false) {}
+TimerTask::TimerTask(AbsTime _time) : duration(0), time(_time), cancelled(false) {}
 TimerTask::~TimerTask(){}
+void TimerTask::reset() { time.reset(AbsTime::now(), duration); }
 
 Timer::Timer() : active(false) 
 {
@@ -82,6 +83,7 @@ void Timer::stop()
     signalStop();
     runner.join();
 }
+
 void Timer::signalStop()
 {
     Monitor::ScopedLock l(monitor);
@@ -110,6 +112,7 @@ TimerA::~TimerA()
 {
     stop();
 }
+
 void TimerA::run()
 {
     Monitor::ScopedLock l(monitor);
@@ -157,6 +160,7 @@ void TimerA::stop()
     signalStop();
     runner.join();
 }
+
 void TimerA::signalStop()
 {
     Monitor::ScopedLock l(monitor);
