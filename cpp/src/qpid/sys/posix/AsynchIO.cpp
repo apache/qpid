@@ -197,7 +197,7 @@ void AsynchIO::readable(DispatchHandle& h) {
                     return;
                 }
             } else {
-                // Put buffer back
+                // Put buffer back (at front so it doesn't interfere with unread buffers)
                 bufferQueue.push_front(buff);
                 
                 // Eof or other side has gone away
