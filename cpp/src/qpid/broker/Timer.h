@@ -34,14 +34,16 @@ namespace broker {
 
 struct TimerTask
 {
+    const qpid::sys::Duration duration;
     typedef boost::shared_ptr<TimerTask> shared_ptr;
 
-    const qpid::sys::AbsTime time;
+    qpid::sys::AbsTime time;
     volatile bool cancelled;
 
     TimerTask(qpid::sys::Duration timeout);
     TimerTask(qpid::sys::AbsTime time);
     virtual ~TimerTask();
+    void reset();
     virtual void fire() = 0;
 };
 
