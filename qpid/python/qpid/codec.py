@@ -510,6 +510,23 @@ class Codec:
     type = self.spec.structs[codec.decode_short()]
     return codec.decode_struct_body(type)
 
+  def decode_array(self):
+    size = self.decode_long()
+    code = self.decode_octet()
+    count = self.decode_long()
+    result = []
+    for i in range(0, count):
+      if self.types.has_key(code):
+        value = self.decode(self.types[code])
+      else:
+        w = width(code)
+        if fixed(code):
+          value = self.read(w)
+        else:
+          value = self.read(self.dec_num(w))
+      result.append(value)
+    return result
+
 def fixed(code):
   return (code >> 6) != 2
 

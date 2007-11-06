@@ -304,6 +304,38 @@ class DtxTests(TestBase):
         self.assertMessageId("a", "two")
         self.assertMessageId("b", "one")
 
+    def test_suspend_start_end_resume(self):        
+        """
+        Test suspension and resumption of an association with work
+        done on another transaction when the first transaction is
+        suspended
+        """
+        channel = self.channel
+        channel.dtx_demarcation_select()
+
+        #setup
+        channel.queue_declare(queue="one", exclusive=True, auto_delete=True)
+        channel.queue_declare(queue="two", exclusive=True, auto_delete=True)
+        channel.message_transfer(content=Content(properties={'routing_key':"one", 'message_id':"a"}, body="DtxMessage"))
+        channel.message_transfer(content=Content(properties={'routing_key':"two", 'message_id':"b"}, body="DtxMessage"))
+
+        tx = self.xid("dummy")
+
+        channel.dtx_demarcation_start(xid=tx)
+        self.swap(channel, "one", "two")#swap 'a' from 'one' to 'two'
+        channel.dtx_demarcation_end(xid=tx, suspend=True)
+
+        channel.dtx_demarcation_start(xid=tx, resume=True)
+        self.swap(channel, "two", "one")#swap 'b' from 'two' to 'one'
+        channel.dtx_demarcation_end(xid=tx)
+        
+        #commit and check
+        channel.dtx_coordination_commit(xid=tx, one_phase=True)
+        self.assertMessageCount(1, "one")
+        self.assertMessageCount(1, "two")
+        self.assertMessageId("a", "two")
+        self.assertMessageId("b", "one")
+
     def test_end_suspend_and_fail(self):
         """        
         Verify that the correct error is signalled if the suspend and
@@ -538,18 +570,7 @@ class DtxTests(TestBase):
             else:    
                 channel.dtx_coordination_rollback(xid=tx)
 
-        indoubt = channel.dtx_coordination_recover().in_doubt
-        #convert indoubt table to a list of xids (note: this will change for 0-10)
-        data = indoubt["xids"]
-        xids = []
-        pos = 0
-        while pos < len(data):
-            size = unpack("!B", data[pos])[0]
-            start = pos + 1
-            end = start + size
-            xid = data[start:end]
-            xids.append(xid)
-            pos = end
+        xids = channel.dtx_coordination_recover().in_doubt
         
         #rollback the prepared transactions returned by recover
         for x in xids:
@@ -566,6 +587,16 @@ class DtxTests(TestBase):
             for x in missing:
                 channel.dtx_coordination_rollback(xid=x)            
             self.fail("Recovered xids not as expected. missing: %s; extra: %s" % (missing, extra))
+
+    def test_bad_resume(self):
+        """
+        Test that a resume on a session not selected for use with dtx fails
+        """
+        channel = self.channel
+        try:
+            channel.dtx_demarcation_start(resume=True)
+        except Closed, e:
+            self.assertConnectionException(503, e.args[0])
 
     def xid(self, txid):
         DtxTests.tx_counter += 1

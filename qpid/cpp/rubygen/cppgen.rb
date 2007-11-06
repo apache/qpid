@@ -122,6 +122,7 @@ class AmqpDomain
     "longstr"=>CppType.new("string").passcref.retcref.code("LongString"),
     "shortstr"=>CppType.new("string").passcref.retcref.code("ShortString"),
     "table"=>CppType.new("FieldTable").passcref.retcref,
+    "array"=>CppType.new("Array").passcref.retcref,
     "content"=>CppType.new("Content").passcref.retcref,
     "rfc1982-long-set"=>CppType.new("SequenceNumberSet").passcref.retcref,
     "long-struct"=>CppType.new("string").passcref.retcref.code("LongString"),
