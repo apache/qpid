@@ -48,10 +48,10 @@ import java.util.concurrent.CountDownLatch;
  * <ol>
  * <li>Sets the failing over condition to true.</li>
  * <li>Creates a {@link FailoverException} and gets the protocol connection handler to propagate this event to all
- *     interested parties.</li>
+ * interested parties.</li>
  * <li>Takes the failover mutex on the protocol connection handler.</li>
  * <li>Abandons the fail over if any of the interested parties vetoes it. The mutex is released and the condition
- *     reset.</li>
+ * reset.</li>
  * <li>Creates a new {@link AMQStateManager} and re-established the connection through it.</li>
  * <li>Informs the AMQConnection if the connection cannot be re-established.</li>
  * <li>Recreates all sessions from the old connection to the new.</li>
@@ -64,17 +64,14 @@ import java.util.concurrent.CountDownLatch;
  * </table>
  *
  * @todo The failover latch and mutex are used like a lock and condition. If the retrotranlator supports lock/condition
- *       then could change over to using them. 1.4 support still needed.
- *
+ * then could change over to using them. 1.4 support still needed.
  * @todo If the condition is set to null on a vetoes fail-over and there are already other threads waiting on the
- *       condition, they will never be released. It might be an idea to reset the condition in a finally block.
- *
+ * condition, they will never be released. It might be an idea to reset the condition in a finally block.
  * @todo Creates a {@link AMQDisconnectedException} and passes it to the AMQConnection. No need to use an
- *       exception-as-argument here, could just as easily call a specific method for this purpose on AMQConnection.
- *
+ * exception-as-argument here, could just as easily call a specific method for this purpose on AMQConnection.
  * @todo Creates a {@link FailoverException} and propagates it to the MethodHandlers. No need to use an
- *       exception-as-argument here, could just as easily call a specific method for this purpose on
- *       {@link org.apache.qpid.protocol.AMQMethodListener}.
+ * exception-as-argument here, could just as easily call a specific method for this purpose on
+ * {@link org.apache.qpid.protocol.AMQMethodListener}.
  */
 public class FailoverHandler implements Runnable
 {
@@ -182,6 +179,7 @@ public class FailoverHandler implements Runnable
             }
             else
             {
+                existingStateManager.setProtocolSession(_amqProtocolHandler.getProtocolSession());                
                 _amqProtocolHandler.setStateManager(existingStateManager);
                 try
                 {
