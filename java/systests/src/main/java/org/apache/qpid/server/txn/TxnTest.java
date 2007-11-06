@@ -228,7 +228,7 @@ public class TxnTest extends TestCase implements MessageListener
 
         //Check no more messages are received
         received = consumer.receive(1000);
-        System.err.println("Second receive completed.");
+//        System.err.println("Second receive completed.");
 
         assertNull("More messages received", received);
 
