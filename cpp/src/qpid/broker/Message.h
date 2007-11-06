@@ -125,14 +125,12 @@ public:
     mutable uint64_t persistenceId;
     bool redelivered;
     ConnectionToken* publisher;
-    MessageStore* store;
     mutable MessageAdapter* adapter;
 
     static TransferAdapter TRANSFER;
     static PublishAdapter PUBLISH;
 
     MessageAdapter& getAdapter() const;
-    bool isContentReleased() const { return store; } 
 };
 
 }}
