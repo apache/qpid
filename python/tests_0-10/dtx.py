@@ -601,7 +601,7 @@ class DtxTests(TestBase):
     def xid(self, txid):
         DtxTests.tx_counter += 1
         branchqual = "v%s" % DtxTests.tx_counter
-        return pack('LBB', 0, len(txid), len(branchqual)) + txid + branchqual
+        return pack('!LBB', 0, len(txid), len(branchqual)) + txid + branchqual
         
     def txswap(self, tx, id):
         channel = self.channel
