@@ -20,6 +20,7 @@
 #include <boost/format.hpp>
 #include "Broker.h"
 #include "qpid/framing/constants.h"
+#include "qpid/framing/Array.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -136,25 +137,14 @@ DtxCoordinationRecoverResult DtxHandlerImpl::recover(u_int16_t /*ticket*/,
     // strictly 'legal', but that is ok for testing
     std::set<std::string> xids;
     getBroker().getStore().collectPreparedXids(xids);        
-    uint size(0);
+
+    //TODO: remove the need to copy from one container type to another
+    std::vector<std::string> data;
     for (std::set<std::string>::iterator i = xids.begin(); i != xids.end(); i++) {
-        size += i->size() + 1/*shortstr size*/;        
+        data.push_back(*i);
     }
-
-    char* bytes = static_cast<char*>(::alloca(size + 4/*longstr size*/));
-    Buffer wbuffer(bytes, size + 4/*longstr size*/);
-    wbuffer.putLong(size);
-    for (std::set<std::string>::iterator i = xids.begin(); i != xids.end(); i++) {
-        wbuffer.putShortString(*i);
-    }
-
-    Buffer rbuffer(bytes, size + 4/*longstr size*/);
-    string data;
-    rbuffer.getLongString(data);
-
-    FieldTable response;
-    response.setString("xids", data);
-    return DtxCoordinationRecoverResult(response);
+    Array indoubt(data);
+    return DtxCoordinationRecoverResult(indoubt);
 }
 
 void DtxHandlerImpl::forget(u_int16_t /*ticket*/,
