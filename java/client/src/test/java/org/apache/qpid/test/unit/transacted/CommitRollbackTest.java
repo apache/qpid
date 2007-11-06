@@ -81,6 +81,7 @@ public class CommitRollbackTest extends QpidTestCase
 
     protected void tearDown() throws Exception
     {
+        conn.close();
         super.tearDown();
     }
 
