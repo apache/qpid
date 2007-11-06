@@ -255,6 +255,7 @@ class Method(Metadata):
               "shortstr": "",
               "longstr": "",
               "table": {},
+              "array": [],
               "octet": 0,
               "short": 0,
               "long": 0,
