@@ -66,6 +66,10 @@ protected:
     typedef std::list<PersistableQueue*> syncList;
 	syncList synclist;
 	MessageStore* store;
+	bool contentReleased;
+
+	inline void setContentReleased() {contentReleased = true; }
+
 public:
     typedef boost::shared_ptr<PersistableMessage> shared_ptr;
 
@@ -79,11 +83,14 @@ public:
     PersistableMessage(): 
     	asyncEnqueueCounter(0), 
     	asyncDequeueCounter(0),
-        store(0) 
+        store(0),
+		contentReleased(false) 
 	{}
 
     void flush();
     
+	inline bool isContentReleased()const {return contentReleased; }
+	
     inline void waitForEnqueueComplete() {
         sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
         while (asyncEnqueueCounter > 0) {
