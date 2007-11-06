@@ -36,7 +36,7 @@ using std::string;
 TransferAdapter Message::TRANSFER;
 PublishAdapter Message::PUBLISH;
 
-Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), publisher(0), store(0), adapter(0) {}
+Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), publisher(0), adapter(0) {}
 
 std::string Message::getRoutingKey() const
 {
@@ -131,12 +131,15 @@ void Message::decodeContent(framing::Buffer& buffer)
 
 void Message::releaseContent(MessageStore* _store)
 {
-    store = _store;
+    if (!store){
+		store = _store;
+	}
     if (!getPersistenceId()) {
         store->stage(*this);
     }
     //remove any content frames from the frameset
     frames.remove(TypeFilter(CONTENT_BODY));
+    setContentReleased();
 }
 
 void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize) const
