@@ -78,6 +78,8 @@ class FieldValue {
 
     FieldValue(): data(0) {};
     // Default assignment operator is fine
+    void setType(uint8_t type);
+    Data& getData() { return *data; }
     uint32_t size() const { return 1 + data->size(); };
     bool empty() const { return data.get() == 0; } 
     void encode(Buffer& buffer);

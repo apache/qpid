@@ -1310,6 +1310,7 @@
   <domain name="timestamp" type="timestamp" label="64-bit POSIX timestamp" />
   <domain name="table" type="table" label="field table" />
   <domain name="uuid" type="uuid" label="UUID (RFC4122 section 4.1.2) - 16 octets" />
+  <domain name="array" type="array" label="array"/>
 
   <domain name="content" type="content" label="message content">
     <doc>
@@ -5912,19 +5913,10 @@
             are in a prepared or heuristically completed state.
           </doc>
 
-          <field name="in-doubt" domain="table" label="Table of xids to be recovered">
+          <field name="in-doubt" domain="array" label="array of xids to be recovered">
             <doc>
-              Table containing the sequence of xids to be recovered (xids that are in a prepared or
-              heuristically completed state).
+              xids to be recovered (xids that are in a prepared or heuristically completed state).
             </doc>
-
-            <rule name="xid-sequence">
-              <doc>
-                The field table must contain a field called 'xids' of type sequence of longstrs
-                representing the xids that are in a prepared or heuristically completed state.
-              </doc>
-            </rule>
-
             <assert check="notnull" />
           </field>
         </struct>

@@ -25,9 +25,9 @@
 namespace qpid {
 namespace framing {
 
-void FieldValue::decode(Buffer& buffer)
+void FieldValue::setType(uint8_t type)
 {
-    typeOctet = buffer.getOctet();
+    typeOctet = type;
     
     uint8_t lenType = typeOctet >> 4;
     switch(lenType){
@@ -76,6 +76,11 @@ void FieldValue::decode(Buffer& buffer)
       default:
         throw SyntaxErrorException(QPID_MSG("Unknown field table value type: " << (int)typeOctet));
     }
+}
+
+void FieldValue::decode(Buffer& buffer)
+{
+    setType(buffer.getOctet());
     data->decode(buffer);
 }
 

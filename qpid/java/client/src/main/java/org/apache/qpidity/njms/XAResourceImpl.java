@@ -335,9 +335,9 @@ public class XAResourceImpl implements XAResource
         int i = 0;
         try
         {
-            for (String xid : res.getInDoubt().keySet())
+            for (Object xid : res.getInDoubt())
             {
-                result[i] = new XidImpl(xid);
+                result[i] = new XidImpl((String) xid);
                 i++;
             }
         }
