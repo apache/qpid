@@ -351,6 +351,7 @@ public class TxnTest extends TestCase implements MessageListener
         {
             txProducer.send(_clientSession.createTextMessage(MESSAGE_TXT));
             txProducer.send(_clientSession.createTextMessage(MESSAGE_TXT));
+            _clientSession.commit();
         }
         catch (JMSException jmse)
         {
@@ -360,6 +361,17 @@ public class TxnTest extends TestCase implements MessageListener
             }
         }
 
+        received = _consumer.receive(10000);
+        assertNotNull("Message should be received.", received);
+        assertEquals("Incorrect Message Received.", MESSAGE_TXT, ((TextMessage) received).getText());
+
+        received = _consumer.receive(10000);
+        assertNotNull("Message should be received.", received);
+        assertEquals("Incorrect Message Received.", MESSAGE_TXT, ((TextMessage) received).getText());
+
+        //Check that the message isn't received.
+        received = _consumer.receive(1000);
+        assertNull("Additional message received", received);
 
         _consumer.close();
     }
