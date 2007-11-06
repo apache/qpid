@@ -104,23 +104,22 @@ import java.util.concurrent.CountDownLatch;
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Create the filter chain to filter this handlers events.
- *     <td> {@link ProtocolCodecFilter}, {@link SSLContextFactory}, {@link SSLFilter}, {@link ReadWriteThreadModel}.
+ * <td> {@link ProtocolCodecFilter}, {@link SSLContextFactory}, {@link SSLFilter}, {@link ReadWriteThreadModel}.
  *
  * <tr><td> Maintain fail-over state.
  * <tr><td>
  * </table>
  *
  * @todo Explain the system property: amqj.shared_read_write_pool. How does putting the protocol codec filter before the
- *       async write filter make it a shared pool? The pooling filter uses the same thread pool for reading and writing
- *       anyway, see {@link org.apache.qpid.pool.PoolingFilter}, docs for comments. Will putting the protocol codec
- *       filter before it mean not doing the read/write asynchronously but in the main filter thread?
- *
+ * async write filter make it a shared pool? The pooling filter uses the same thread pool for reading and writing
+ * anyway, see {@link org.apache.qpid.pool.PoolingFilter}, docs for comments. Will putting the protocol codec
+ * filter before it mean not doing the read/write asynchronously but in the main filter thread?
  * @todo Use a single handler instance, by shifting everything to do with the 'protocol session' state, including
- *       failover state, into AMQProtocolSession, and tracking that from AMQConnection? The lifecycles of
- *       AMQProtocolSesssion and AMQConnection will be the same, so if there is high cohesion between them, they could
- *       be merged, although there is sense in keeping the session model seperate. Will clarify things by having data
- *       held per protocol handler, per protocol session, per network connection, per channel, in seperate classes, so
- *       that lifecycles of the fields match lifecycles of their containing objects.
+ * failover state, into AMQProtocolSession, and tracking that from AMQConnection? The lifecycles of
+ * AMQProtocolSesssion and AMQConnection will be the same, so if there is high cohesion between them, they could
+ * be merged, although there is sense in keeping the session model seperate. Will clarify things by having data
+ * held per protocol handler, per protocol session, per network connection, per channel, in seperate classes, so
+ * that lifecycles of the fields match lifecycles of their containing objects.
  */
 public class AMQProtocolHandler extends IoHandlerAdapter
 {
@@ -200,7 +199,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         {
             SSLConfiguration sslConfig = _connection.getSSLConfiguration();
             SSLContextFactory sslFactory =
-                new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
+                    new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
             SSLFilter sslFilter = new SSLFilter(sslFactory.buildClientContext());
             sslFilter.setUseClientMode(true);
             session.getFilterChain().addBefore("protocolFilter", "ssl", sslFilter);
@@ -235,7 +234,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * @param session The MINA session.
      *
      * @todo Clarify: presumably exceptionCaught is called when the client is sending during a connection failure and
-     *       not otherwise? The above comment doesn't make that clear.
+     * not otherwise? The above comment doesn't make that clear.
      */
     public void sessionClosed(IoSession session)
     {
@@ -413,74 +412,74 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
         switch (bodyFrame.getFrameType())
         {
-        case AMQMethodBody.TYPE:
+            case AMQMethodBody.TYPE:
 
-            if (debug)
-            {
-                _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + frame);
-            }
-
-            final AMQMethodEvent<AMQMethodBody> evt =
-                new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
-
-            try
-            {
-
-                boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
-                if (!_frameListeners.isEmpty())
+                if (debug)
                 {
-                    Iterator it = _frameListeners.iterator();
-                    while (it.hasNext())
+                    _logger.debug("(" + System.identityHashCode(this) + ")Method frame received: " + frame);
+                }
+
+                final AMQMethodEvent<AMQMethodBody> evt =
+                        new AMQMethodEvent<AMQMethodBody>(frame.getChannel(), (AMQMethodBody) bodyFrame);
+
+                try
+                {
+
+                    boolean wasAnyoneInterested = getStateManager().methodReceived(evt);
+                    if (!_frameListeners.isEmpty())
                     {
-                        final AMQMethodListener listener = (AMQMethodListener) it.next();
-                        wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                        Iterator it = _frameListeners.iterator();
+                        while (it.hasNext())
+                        {
+                            final AMQMethodListener listener = (AMQMethodListener) it.next();
+                            wasAnyoneInterested = listener.methodReceived(evt) || wasAnyoneInterested;
+                        }
+                    }
+
+                    if (!wasAnyoneInterested)
+                    {
+                        throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
+                                               + _frameListeners);
                     }
                 }
-
-                if (!wasAnyoneInterested)
+                catch (AMQException e)
                 {
-                    throw new AMQException("AMQMethodEvent " + evt + " was not processed by any listener.  Listeners:"
-                        + _frameListeners);
-                }
-            }
-            catch (AMQException e)
-            {
-                getStateManager().error(e);
-                if (!_frameListeners.isEmpty())
-                {
-                    Iterator it = _frameListeners.iterator();
-                    while (it.hasNext())
+                    getStateManager().error(e);
+                    if (!_frameListeners.isEmpty())
                     {
-                        final AMQMethodListener listener = (AMQMethodListener) it.next();
-                        listener.error(e);
+                        Iterator it = _frameListeners.iterator();
+                        while (it.hasNext())
+                        {
+                            final AMQMethodListener listener = (AMQMethodListener) it.next();
+                            listener.error(e);
+                        }
                     }
+
+                    exceptionCaught(session, e);
                 }
 
-                exceptionCaught(session, e);
-            }
+                break;
 
-            break;
+            case ContentHeaderBody.TYPE:
 
-        case ContentHeaderBody.TYPE:
+                _protocolSession.messageContentHeaderReceived(frame.getChannel(), (ContentHeaderBody) bodyFrame);
+                break;
 
-            _protocolSession.messageContentHeaderReceived(frame.getChannel(), (ContentHeaderBody) bodyFrame);
-            break;
+            case ContentBody.TYPE:
 
-        case ContentBody.TYPE:
+                _protocolSession.messageContentBodyReceived(frame.getChannel(), (ContentBody) bodyFrame);
+                break;
 
-            _protocolSession.messageContentBodyReceived(frame.getChannel(), (ContentBody) bodyFrame);
-            break;
+            case HeartbeatBody.TYPE:
 
-        case HeartbeatBody.TYPE:
+                if (debug)
+                {
+                    _logger.debug("Received heartbeat");
+                }
 
-            if (debug)
-            {
-                _logger.debug("Received heartbeat");
-            }
+                break;
 
-            break;
-
-        default:
+            default:
 
         }
 
@@ -491,6 +490,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
 
     public void messageSent(IoSession session, Object message) throws Exception
     {
+//        System.err.println("Sent PS:" + System.identityHashCode(_protocolSession) + ":" + message);
+
         final long sentMessages = _messagesOut++;
 
         final boolean debug = _logger.isDebugEnabled();
@@ -547,7 +548,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * @param listener the blocking listener. Note the calling thread will block.
      */
     public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame, BlockingMethodFrameListener listener)
-        throws AMQException, FailoverException
+            throws AMQException, FailoverException
     {
         return writeCommandFrameAndWaitForReply(frame, listener, DEFAULT_SYNC_TIMEOUT);
     }
@@ -560,7 +561,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
      * @param listener the blocking listener. Note the calling thread will block.
      */
     public AMQMethodEvent writeCommandFrameAndWaitForReply(AMQFrame frame, BlockingMethodFrameListener listener,
-        long timeout) throws AMQException, FailoverException
+                                                           long timeout) throws AMQException, FailoverException
     {
         try
         {
@@ -570,8 +571,8 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             AMQMethodEvent e = listener.blockForFrame(timeout);
 
             return e;
-                // When control resumes before this line, a reply will have been received
-                // that matches the criteria defined in the blocking listener
+            // When control resumes before this line, a reply will have been received
+            // that matches the criteria defined in the blocking listener
         }
         catch (AMQException e)
         {
@@ -595,7 +596,7 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public AMQMethodEvent syncWrite(AMQFrame frame, Class responseClass, long timeout) throws AMQException, FailoverException
     {
         return writeCommandFrameAndWaitForReply(frame, new SpecificMethodFrameListener(frame.getChannel(), responseClass),
-                timeout);
+                                                timeout);
     }
 
     public void closeSession(AMQSession session) throws AMQException
@@ -621,12 +622,12 @@ public class AMQProtocolHandler extends IoHandlerAdapter
         // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
         // Be aware of possible changes to parameter order as versions change.
         final AMQFrame frame =
-            ConnectionCloseBody.createAMQFrame(0, _protocolSession.getProtocolMajorVersion(),
-                _protocolSession.getProtocolMinorVersion(), // AMQP version (major, minor)
-                0, // classId
-                0, // methodId
-                AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
-                new AMQShortString("JMS client is closing the connection.")); // replyText
+                ConnectionCloseBody.createAMQFrame(0, _protocolSession.getProtocolMajorVersion(),
+                                                   _protocolSession.getProtocolMinorVersion(), // AMQP version (major, minor)
+                                                   0, // classId
+                                                   0, // methodId
+                                                   AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
+                                                   new AMQShortString("JMS client is closing the connection.")); // replyText
 
         try
         {

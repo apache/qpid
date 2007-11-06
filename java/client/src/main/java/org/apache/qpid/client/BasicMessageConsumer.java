@@ -754,6 +754,30 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
+    /**
+     * Acknowledge up to last message delivered (if any). Used when commiting.
+     *
+     * @return the lastDeliveryTag to acknowledge
+     */
+    Long getLastDelivered()
+    {
+        if (!_receivedDeliveryTags.isEmpty())
+        {
+            Long lastDeliveryTag = _receivedDeliveryTags.poll();
+
+            while (!_receivedDeliveryTags.isEmpty())
+            {
+                lastDeliveryTag = _receivedDeliveryTags.poll();
+            }
+
+            assert _receivedDeliveryTags.isEmpty();
+
+            return lastDeliveryTag;
+        }
+
+        return null;
+    }
+
     /** Acknowledge up to last message delivered (if any). Used when commiting. */
     void acknowledgeLastDelivered()
     {
@@ -772,6 +796,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
+
     void notifyError(Throwable cause)
     {
         // synchronized (_closed)
@@ -783,7 +808,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 if (_closedStack != null)
                 {
                     _logger.trace(_consumerTag + " notifyError():"
-                        + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
+                                  + Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
                     _logger.trace(_consumerTag + " previously" + _closedStack.toString());
                 }
                 else
@@ -904,7 +929,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("Rejecting the messages(" + _receivedDeliveryTags.size() + ") in _receivedDTs (RQ)"
-                    + "for consumer with tag:" + _consumerTag);
+                              + "for consumer with tag:" + _consumerTag);
             }
 
             Long tag = _receivedDeliveryTags.poll();
@@ -934,7 +959,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("Rejecting the messages(" + _synchronousQueue.size() + ") in _syncQueue (PRQ)"
-                    + "for consumer with tag:" + _consumerTag);
+                              + "for consumer with tag:" + _consumerTag);
             }
 
             Iterator iterator = _synchronousQueue.iterator();
