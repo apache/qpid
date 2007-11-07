@@ -36,30 +36,30 @@ Options::Options(const std::string& name) : qpid::Options(name),
     for (int i = 1; i < LevelTraits::COUNT; ++i)
         levels << " " << LevelTraits::name(Level(i));
     addOptions()
-        ("log.output", optValue(outputs, "FILE"),
+        ("log-output", optValue(outputs, "FILE"),
          "Send log output to FILE. "
          "FILE can be a file name or one of the special values:\n"
          "stderr, stdout, syslog")
         ("trace,t", optValue(trace), "Enables all logging" )
-        ("log.enable", optValue(selectors, "RULE"),
+        ("log-enable", optValue(selectors, "RULE"),
          ("Enables logging for selected levels and components. " 
          "RULE is in the form 'LEVEL[+][:COMPONENT]' "
          "Levels are one of: \n\t "+levels.str()+"\n"
          "For example:\n"
-         "\t'--log.enable warning+' "
+         "\t'--log-enable warning+' "
          "logs all warning, error and critical messages.\n"
-         "\t'--log.enable debug:framing' "
+         "\t'--log-enable debug:framing' "
           "logs debug messages from the framing component. "
          "This option can be used multiple times").c_str())
-        ("log.time", optValue(time, "yes|no"),
+        ("log-time", optValue(time, "yes|no"),
          "Include time in log messages")
-        ("log.level", optValue(level,"yes|no"),
+        ("log-level", optValue(level,"yes|no"),
          "Include severity level in log messages")
-        ("log.source", optValue(source,"yes|no"),
+        ("log-source", optValue(source,"yes|no"),
          "Include source file:line in log messages")
-        ("log.thread", optValue(thread,"yes|no"),
+        ("log-thread", optValue(thread,"yes|no"),
          "Include thread ID in log messages")
-        ("log.function", optValue(function,"yes|no"),
+        ("log-function", optValue(function,"yes|no"),
          "Include function signature in log messages");
 }        
         
