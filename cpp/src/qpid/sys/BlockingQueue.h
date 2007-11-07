@@ -29,8 +29,6 @@
 namespace qpid {
 namespace sys {
 
-struct QueueClosed {};
-
 template <class T>
 class BlockingQueue
 {
@@ -46,7 +44,7 @@ public:
     T pop()
     {
         Waitable::ScopedLock l(lock);
-        if (!queueWait()) throw QueueClosed();
+        if (!queueWait()) throw ClosedException();
         return popInternal();
     }
 
@@ -78,7 +76,7 @@ public:
     }
 
     /**
-     * Close the queue. Throws QueueClosed in threads waiting in pop().
+     * Close the queue. Throws ClosedException in threads waiting in pop().
      * Blocks till all waiting threads have been notified.
      */ 
     void close()

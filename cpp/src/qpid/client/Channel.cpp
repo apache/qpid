@@ -179,7 +179,7 @@ void Channel::cancel(const std::string& tag, bool synch) {
 bool Channel::get(Message& msg, const Queue& _queue, AckMode ackMode) {
     string tag = "get-handler";
     ScopedDivert handler(tag, session.execution().getDemux());
-    Demux::Queue& incoming = handler.getQueue();
+    Demux::QueuePtr incoming = handler.getQueue();
 
     session.messageSubscribe(destination=tag, queue=_queue.getName(), confirmMode=(ackMode == NO_ACK ? 0 : 1));
     session.messageFlow(tag, 1/*BYTES*/, 0xFFFFFFFF);
@@ -189,7 +189,7 @@ bool Channel::get(Message& msg, const Queue& _queue, AckMode ackMode) {
     session.messageCancel(tag);
 
     FrameSet::shared_ptr p;
-    if (incoming.tryPop(p)) {
+    if (incoming->tryPop(p)) {
         msg.populate(*p);
         if (ackMode == AUTO_ACK) msg.acknowledge(session, false, true);
         return true;
@@ -265,7 +265,7 @@ void Channel::run() {
                 QPID_LOG(warning, "Dropping unsupported message type: " << content->getMethod());                        
             }
         }
-    } catch (const sys::QueueClosed&) {}
+    } catch (const ClosedException&) {}
 }
 
 }}

@@ -37,7 +37,7 @@ bool ByTransferDest::operator()(const framing::FrameSet& frameset) const
 
 ScopedDivert::ScopedDivert(const std::string& _dest, Demux& _demuxer) : dest(_dest), demuxer(_demuxer) 
 {
-    queue = &(demuxer.add(dest, ByTransferDest(dest)));
+    queue = demuxer.add(dest, ByTransferDest(dest));
 }
 
 ScopedDivert::~ScopedDivert() 
@@ -45,9 +45,9 @@ ScopedDivert::~ScopedDivert()
     demuxer.remove(dest); 
 }
 
-Demux::Queue& ScopedDivert::getQueue()
+Demux::QueuePtr ScopedDivert::getQueue()
 {
-    return *queue;
+    return queue;
 }
 
 void Demux::handle(framing::FrameSet::shared_ptr frameset)
@@ -61,7 +61,7 @@ void Demux::handle(framing::FrameSet::shared_ptr frameset)
         }
     }
     if (!matched) {
-        defaultQueue.push(frameset);
+        defaultQueue->push(frameset);
     }
 }
 
@@ -71,17 +71,17 @@ void Demux::close()
     for (iterator i = records.begin(); i != records.end(); i++) {
         i->queue->close();
     }
-    defaultQueue.close();
+    defaultQueue->close();
 }
 
-Demux::Queue& Demux::add(const std::string& name, Condition condition)
+Demux::QueuePtr Demux::add(const std::string& name, Condition condition)
 {
     sys::Mutex::ScopedLock l(lock);
     iterator i = std::find_if(records.begin(), records.end(), Find(name));
     if (i == records.end()) {        
         Record r(name, condition);
         records.push_back(r);
-        return *(r.queue);
+        return r.queue;
     } else {
         throw Exception("Queue already exists for " + name);
     }
@@ -93,17 +93,17 @@ void Demux::remove(const std::string& name)
     records.remove_if(Find(name));
 }
 
-Demux::Queue& Demux::get(const std::string& name)
+Demux::QueuePtr Demux::get(const std::string& name)
 {
     sys::Mutex::ScopedLock l(lock);
     iterator i = std::find_if(records.begin(), records.end(), Find(name));
     if (i == records.end()) {
         throw Exception("No queue for " + name);
     }
-    return *(i->queue);
+    return i->queue;
 }
 
-Demux::Queue& Demux::getDefault()
+Demux::QueuePtr Demux::getDefault()
 {
     return defaultQueue;
 }
