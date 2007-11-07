@@ -71,17 +71,15 @@ struct PublishThread : public Runnable { Thread thread; void run(); };
 
 // Create and purge the shared queues 
 void setup() {
+    cout << "Create shared queues" << endl;
     Connection connection;
     opts.open(connection);
     Session_0_10 session = connection.newSession();
     session.setSynchronous(true); // Make sure this is all completed.
     session.queueDeclare(arg::queue="control"); // Control queue
-    if (!opts.publish)
-        return;                 // Only do this in publish thread.
-    if (mode==SHARED) 
+    session.queuePurge(arg::queue="control");
+    if (mode==SHARED) {
         session.queueDeclare(arg::queue="perftest"); // Shared data queue
-    if (opts.publish) { // Only do this in the publisher process.
-        session.queuePurge(arg::queue="control");
         session.queuePurge(arg::queue="perftest");
     }
     session.close();
