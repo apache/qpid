@@ -434,7 +434,7 @@ class Codec:
       raise ValueError("invalid width: %s" % width)
 
   def encode_struct(self, type, s):
-    if False and type.size:
+    if type.size:
       enc = StringIO()
       codec = Codec(enc, self.spec)
       codec.encode_struct_body(type, s)
@@ -446,7 +446,7 @@ class Codec:
       self.encode_struct_body(type, s)
 
   def decode_struct(self, type):
-    if False and type.size:
+    if type.size:
       size = self.dec_num(type.size)
       if size == 0:
         return None

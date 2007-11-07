@@ -41,8 +41,13 @@ class AMQHeaderBody :  public AMQBody
 
     PropertyList properties;
 
+    void decode(BasicHeaderProperties s, Buffer& b, uint32_t size) {
+        s.decode(b, size);
+        properties.push_back(s);
+    }
+
     template <class T> void decode(T t, Buffer& b, uint32_t size) {
-        t.decode(b, size);
+        t.decodeStructBody(b, size);
         properties.push_back(t);
     }
 
@@ -52,9 +57,13 @@ class AMQHeaderBody :  public AMQBody
         Encode(Buffer& b) : buffer(b) {}
 
         template <class T> void operator()(T& t) const {
-            buffer.putLong(t.size() + 2/*typecode*/);
-            buffer.putShort(T::TYPE);
             t.encode(buffer);
+        }
+
+        void operator()(const BasicHeaderProperties& s) const {
+            buffer.putLong(s.size() + 2/*typecode*/);
+            buffer.putShort(BasicHeaderProperties::TYPE);           
+            s.encode(buffer);
         }
     };
 
@@ -65,6 +74,10 @@ class AMQHeaderBody :  public AMQBody
 
         template <class T> void operator()(T& t) {
             size += t.size();
+        }
+
+        void operator()(const BasicHeaderProperties& s) {
+            size += s.size() + 2/*typecode*/ + 4/*size field*/;
         }
 
         uint32_t totalSize() { 
