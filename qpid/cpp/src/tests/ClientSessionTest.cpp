@@ -48,7 +48,7 @@ struct DummyListener : public MessageListener
 
     void listen()
     {
-        dispatcher.listen(name, this, true, 1);
+        dispatcher.listen(name, this);
         dispatcher.run();
     }
 
