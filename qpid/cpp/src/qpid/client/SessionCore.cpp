@@ -162,7 +162,7 @@ bool SessionCore::isSync() { // user thread
 
 FrameSet::shared_ptr SessionCore::get() { // user thread
     // No lock here: pop does a blocking wait.
-    return l3.getDemux().getDefault().pop();
+    return l3.getDemux().getDefault()->pop();
 }
 
 void SessionCore::open(uint32_t detachedLifetime) { // user thread

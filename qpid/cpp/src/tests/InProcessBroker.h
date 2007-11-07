@@ -83,7 +83,7 @@ class InProcessConnector :
                         QPID_LOG(debug, QPID_MSG(receiver << " DROP: " << f));
                 }
             }
-            catch (const sys::QueueClosed&) {
+            catch (const ClosedException&) {
                 return;
             }
         }

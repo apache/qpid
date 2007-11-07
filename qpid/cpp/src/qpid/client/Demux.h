@@ -45,16 +45,19 @@ class Demux
 public:
     typedef boost::function<bool(const framing::FrameSet&)> Condition;
     typedef sys::BlockingQueue<framing::FrameSet::shared_ptr> Queue;
+    typedef boost::shared_ptr<Queue> QueuePtr;
 
+    Demux() : defaultQueue(new Queue()) {}
+    
     void handle(framing::FrameSet::shared_ptr);
     void close();
 
-    Queue& add(const std::string& name, Condition);
+    QueuePtr add(const std::string& name, Condition);
     void remove(const std::string& name);
-    Queue& get(const std::string& name);
-    Queue& getDefault();
+    QueuePtr get(const std::string& name);
+    QueuePtr getDefault();
+
 private:
-    typedef boost::shared_ptr<Queue> QueuePtr;
     struct Record
     {
         const std::string name;
@@ -66,7 +69,7 @@ private:
 
     sys::Mutex lock;
     std::list<Record> records;
-    Queue defaultQueue;
+    QueuePtr defaultQueue;
 
     typedef std::list<Record>::iterator iterator;
 
@@ -82,15 +85,14 @@ class ScopedDivert
 {
     const std::string dest;
     Demux& demuxer;
-    Demux::Queue* queue;
+    Demux::QueuePtr queue;
 public:
     ScopedDivert(const std::string& dest, Demux& demuxer);
     ~ScopedDivert();
-    Demux::Queue& getQueue();
+    Demux::QueuePtr getQueue();
 };
 
-}
-}
+}} // namespace qpid::client
 
 
 #endif
