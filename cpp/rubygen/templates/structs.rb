@@ -260,7 +260,7 @@ EOS
         genl "}"
       end
       genl "bool #{s.cppname}::has#{f.name.caps}() const { return flags & #{flag_mask(s, i)}; }"
-      genl "void #{s.cppname}::clear#{f.name.caps}() { flags &= ~#{flag_mask(s, i)}; }"
+      genl "void #{s.cppname}::clear#{f.name.caps}Flag() { flags &= ~#{flag_mask(s, i)}; }"
     end
     genl ""
   end
@@ -275,9 +275,11 @@ EOS
     if (f.cpptype.name == "FieldTable")
       genl "#{f.cpptype.name}& get#{f.name.caps}();"
     end
-    #extra 'accessors' for packed fields:
-    genl "bool has#{f.name.caps}() const;";
-    genl "void clear#{f.name.caps}();";
+    if (f.domain.type_ != "bit")
+      #extra 'accessors' for packed fields:
+      genl "bool has#{f.name.caps}() const;"
+      genl "void clear#{f.name.caps}Flag();"
+    end
   end
 
   def define_accessors(f)
@@ -370,7 +372,10 @@ EOS
   gen <<EOS
     void encode(Buffer&) const;
     void decode(Buffer&, uint32_t=0);
+    void encodeStructBody(Buffer&) const;
+    void decodeStructBody(Buffer&, uint32_t=0);
     uint32_t size() const;
+    uint32_t bodySize() const;
     void print(std::ostream& out) const;
 }; /* class #{classname} */
 
@@ -394,7 +399,7 @@ EOS
         define_packed_accessors(s)
       end
       gen <<EOS
-void #{classname}::encode(Buffer& #{buffer}) const
+void #{classname}::encodeStructBody(Buffer& #{buffer}) const
 {
 EOS
       if (execution_header?(s))
@@ -409,7 +414,24 @@ EOS
       gen <<EOS
 }
 
-void #{classname}::decode(Buffer& #{buffer}, uint32_t /*size*/)
+void #{classname}::encode(Buffer& buffer) const
+{
+EOS
+      indent {
+        if (s.kind_of? AmqpStruct)
+          if (s.type_)
+            genl "buffer.put#{s.size.caps}(bodySize() + 2/*typecode*/);" if s.size
+            genl "buffer.putShort(TYPE);" 
+          else
+            genl "buffer.put#{s.size.caps}(size());" if s.size
+          end
+        end
+        genl "encodeStructBody(buffer);"
+      }
+      gen <<EOS
+}
+
+void #{classname}::decodeStructBody(Buffer& #{buffer}, uint32_t /*size*/)
 {
 EOS
       if (execution_header?(s))
@@ -424,7 +446,20 @@ EOS
       gen <<EOS
 }
 
-uint32_t #{classname}::size() const
+void #{classname}::decode(Buffer& buffer, uint32_t /*size*/)
+{
+EOS
+      indent {
+        if (s.kind_of? AmqpStruct)
+          genl "buffer.get#{s.size.caps}();" if s.size
+          genl "if (TYPE != buffer.getShort()) throw InternalErrorException(\"Bad type code for struct\");" if s.type_
+        end
+        genl "decodeStructBody(buffer);"
+      }
+      gen <<EOS
+}
+
+uint32_t #{classname}::bodySize() const
 {
     uint32_t total = 0;
 EOS
@@ -437,6 +472,18 @@ EOS
       else 
         indent { process_fields(s) { |f, combined| generate_size(f, combined) } } 
       end
+      gen <<EOS
+    return total;
+}
+
+uint32_t #{classname}::size() const
+{
+    uint32_t total = bodySize();
+EOS
+        if (s.kind_of? AmqpStruct)
+          genl "total += #{SizeMap[s.size]}/*size field*/;" if s.size
+          genl "total += 2/*typecode*/;" if s.type_
+        end
       gen <<EOS
     return total;
 }
