@@ -5,20 +5,21 @@ from qpid.content import Content
 
 client = Client("127.0.0.1", 5672)
 client.start({"LOGIN": "guest", "PASSWORD": "guest"})
-ch = client.channel(1)
-ch.session_open()
-ch.queue_declare(queue="test")
-ch.queue_bind(exchange="amq.direct", queue="test", routing_key="test")
-#print ch.queue_query(queue="test")
-ch.message_subscribe(queue="test", destination="amq.direct")
-ch.message_flow("amq.direct", 0, 0xFFFFFFFF)
-ch.message_flow("amq.direct", 1, 0xFFFFFFFF)
+ssn = client.session()
+ssn.open()
+ssn.queue_declare(queue="test")
+ssn.queue_bind(exchange="amq.direct", queue="test", routing_key="test")
+#print ssn.queue_query(queue="test")
+ssn.message_subscribe(queue="test", destination="amq.direct")
+ssn.message_flow("amq.direct", 0, 0xFFFFFFFF)
+ssn.message_flow("amq.direct", 1, 0xFFFFFFFF)
 msg = Content("hello world")
 msg["content_type"] = "text/plain"
 msg["routing_key"] = "test"
 msg["reply_to"] = client.structs.reply_to("asdf", "fdsa")
 msg["application_headers"] = {"x": 1, "y": 2, "z": "zee"}
-ch.message_transfer(destination="amq.direct", content=msg)
+ssn.message_transfer(destination="amq.direct", content=msg)
 queue = client.queue("amq.direct")
 msg = queue.get(timeout=10)
 print msg
+ssn.close()
