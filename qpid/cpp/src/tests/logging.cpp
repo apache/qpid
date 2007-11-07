@@ -264,15 +264,15 @@ Statement statement(
 BOOST_AUTO_TEST_CASE(testOptionsParse) {
     char* argv[]={
         0,
-        "--log.enable", "error+:foo",
-        "--log.enable", "debug:bar",
-        "--log.enable", "info",
-        "--log.output", "x",
-        "--log.output", "y",
-        "--log.level", "yes",
-        "--log.source", "1",
-        "--log.thread", "true",
-        "--log.function", "YES"
+        "--log-enable", "error+:foo",
+        "--log-enable", "debug:bar",
+        "--log-enable", "info",
+        "--log-output", "x",
+        "--log-output", "y",
+        "--log-level", "yes",
+        "--log-source", "1",
+        "--log-thread", "true",
+        "--log-function", "YES"
     };
     qpid::log::Options opts;
     opts.parse(ARGC(argv), argv);
@@ -299,9 +299,9 @@ BOOST_AUTO_TEST_CASE(testOptionsDefault) {
 BOOST_AUTO_TEST_CASE(testSelectorFromOptions) {
     char* argv[]={
         0,
-        "--log.enable", "error+:foo",
-        "--log.enable", "debug:bar",
-        "--log.enable", "info"
+        "--log-enable", "error+:foo",
+        "--log-enable", "debug:bar",
+        "--log-enable", "info"
     };
     qpid::log::Options opts;
     opts.parse(ARGC(argv), argv);
@@ -322,10 +322,10 @@ BOOST_AUTO_TEST_CASE(testOptionsFormat) {
         BOOST_CHECK_EQUAL(Logger::TIME|Logger::LEVEL, l.format(opts));
         char* argv[]={
             0,
-            "--log.time", "no", 
-            "--log.level", "no",
-            "--log.source", "1",
-            "--log.thread",  "1"
+            "--log-time", "no", 
+            "--log-level", "no",
+            "--log-source", "1",
+            "--log-thread",  "1"
         };
         opts.parse(ARGC(argv), argv);
         BOOST_CHECK_EQUAL(
@@ -335,10 +335,10 @@ BOOST_AUTO_TEST_CASE(testOptionsFormat) {
         Options opts;           // Clear.
         char* argv[]={
             0,
-            "--log.level", "no",
-            "--log.thread", "true",
-            "--log.function", "YES",
-            "--log.time", "YES"
+            "--log-level", "no",
+            "--log-thread", "true",
+            "--log-function", "YES",
+            "--log-time", "YES"
         };
         opts.parse(ARGC(argv), argv);
         BOOST_CHECK_EQUAL(
@@ -353,10 +353,10 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     Options opts;
     char* argv[]={
         0,
-        "--log.time", "no", 
-        "--log.source", "yes",
-        "--log.output", "logging.tmp",
-        "--log.enable", "critical"
+        "--log-time", "no", 
+        "--log-source", "yes",
+        "--log-output", "logging.tmp",
+        "--log-enable", "critical"
     };
     opts.parse(ARGC(argv), argv);
     l.configure(opts, "test");
