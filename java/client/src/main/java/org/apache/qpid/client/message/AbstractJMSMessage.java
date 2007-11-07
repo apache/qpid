@@ -73,11 +73,11 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         _headerAdapter = new JMSHeaderAdapter(((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders());
 
         _strictAMQP =
-            Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
+                Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
     }
 
     protected AbstractJMSMessage(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-        AMQShortString routingKey, ByteBuffer data) throws AMQException
+                                 AMQShortString routingKey, ByteBuffer data) throws AMQException
     {
         this(contentHeader, deliveryTag);
 
@@ -201,7 +201,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         if (!(destination instanceof AMQDestination))
         {
             throw new IllegalArgumentException(
-                "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
+                    "ReplyTo destination may only be an AMQDestination - passed argument was type " + destination.getClass());
         }
 
         final AMQDestination amqd = (AMQDestination) destination;
@@ -391,12 +391,26 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public String getStringProperty(String propertyName) throws JMSException
     {
-        if (_strictAMQP)
-        {
-            throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
-        }
 
-        return getJmsHeaders().getString(propertyName);
+        if (propertyName.startsWith("JMSX"))
+        {
+            //NOTE: if the JMSX Property is a non AMQP property then we must check _strictAMQP and throw as below.
+            if (propertyName.equals(CustomJMSXProperty.JMSXUserID.toString()))
+            {
+                return ((BasicContentHeaderProperties) _contentHeaderProperties).getUserIdAsString();
+            }
+
+            return null;
+        }
+        else
+        {
+            if (_strictAMQP)
+            {
+                throw new UnsupportedOperationException("JMS Proprerties not supported in AMQP");
+            }
+
+            return getJmsHeaders().getString(propertyName);
+        }
     }
 
     public Object getObjectProperty(String propertyName) throws JMSException

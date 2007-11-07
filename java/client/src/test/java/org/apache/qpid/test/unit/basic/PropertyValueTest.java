@@ -59,6 +59,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
     private final List<String> messages = new ArrayList<String>();
     private int _count = 1;
     public String _connectionString = "vm://:1";
+    private static final String USERNAME = "guest";
 
     protected void setUp() throws Exception
     {
@@ -109,7 +110,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
                 _logger.error("Run Number:" + run++);
                 try
                 {
-                    init(new AMQConnection(_connectionString, "guest", "guest", randomize("Client"), "test"));
+                    init(new AMQConnection(_connectionString, USERNAME, "guest", randomize("Client"), "test"));
                 }
                 catch (Exception e)
                 {
@@ -175,7 +176,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
             _logger.trace("Message:" + m);
 
             Assert.assertEquals("Check temp queue has been set correctly", m.getJMSReplyTo().toString(),
-                m.getStringProperty("TempQueue"));
+                                m.getStringProperty("TempQueue"));
 
             m.setJMSType("Test");
             m.setLongProperty("UnsignedInt", (long) 4294967295L);
@@ -210,7 +211,7 @@ public class PropertyValueTest extends TestCase implements MessageListener
             try
             {
                 ((AMQMessage) m).setDecimalProperty(new AMQShortString("decimal-bad-scale"),
-                    bd.setScale(Byte.MAX_VALUE + 1));
+                                                    bd.setScale(Byte.MAX_VALUE + 1));
                 fail("UnsupportedOperationException should be thrown as scale can't be correctly transmitted");
             }
             catch (UnsupportedOperationException uoe)
@@ -248,47 +249,51 @@ public class PropertyValueTest extends TestCase implements MessageListener
 
             Assert.assertEquals("Check Boolean properties are correctly transported", true, m.getBooleanProperty("Bool"));
             Assert.assertEquals("Check Byte properties are correctly transported", (byte) Byte.MAX_VALUE,
-                m.getByteProperty("Byte"));
+                                m.getByteProperty("Byte"));
             Assert.assertEquals("Check Double properties are correctly transported", (double) Double.MAX_VALUE,
-                m.getDoubleProperty("Double"));
+                                m.getDoubleProperty("Double"));
             Assert.assertEquals("Check Float properties are correctly transported", (float) Float.MAX_VALUE,
-                m.getFloatProperty("Float"));
+                                m.getFloatProperty("Float"));
             Assert.assertEquals("Check Int properties are correctly transported", (int) Integer.MAX_VALUE,
-                m.getIntProperty("Int"));
+                                m.getIntProperty("Int"));
             Assert.assertEquals("Check CorrelationID properties are correctly transported", "Correlation",
-                m.getJMSCorrelationID());
+                                m.getJMSCorrelationID());
             Assert.assertEquals("Check Priority properties are correctly transported", 8, m.getJMSPriority());
 
             // Queue
             Assert.assertEquals("Check ReplyTo properties are correctly transported", m.getStringProperty("TempQueue"),
-                m.getJMSReplyTo().toString());
+                                m.getJMSReplyTo().toString());
 
             Assert.assertEquals("Check Type properties are correctly transported", "Test", m.getJMSType());
 
             Assert.assertEquals("Check Short properties are correctly transported", (short) Short.MAX_VALUE,
-                m.getShortProperty("Short"));
+                                m.getShortProperty("Short"));
             Assert.assertEquals("Check UnsignedInt properties are correctly transported", (long) 4294967295L,
-                m.getLongProperty("UnsignedInt"));
+                                m.getLongProperty("UnsignedInt"));
             Assert.assertEquals("Check Long properties are correctly transported", (long) Long.MAX_VALUE,
-                m.getLongProperty("Long"));
+                                m.getLongProperty("Long"));
             Assert.assertEquals("Check String properties are correctly transported", "Test", m.getStringProperty("String"));
 
             // AMQP Tests Specific values
 
             Assert.assertEquals("Check Timestamp properties are correctly transported", m.getStringProperty("time-str"),
-                ((AMQMessage) m).getTimestampProperty(new AMQShortString("time")).toString());
+                                ((AMQMessage) m).getTimestampProperty(new AMQShortString("time")).toString());
 
             // Decimal
             BigDecimal bd = new BigDecimal(Integer.MAX_VALUE);
 
             Assert.assertEquals("Check decimal properties are correctly transported", bd.setScale(Byte.MAX_VALUE),
-                ((AMQMessage) m).getDecimalProperty(new AMQShortString("decimal")));
+                                ((AMQMessage) m).getDecimalProperty(new AMQShortString("decimal")));
 
             // Void
             ((AMQMessage) m).setVoidProperty(new AMQShortString("void"));
 
             Assert.assertTrue("Check void properties are correctly transported",
-                ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
+                              ((AMQMessage) m).getPropertyHeaders().containsKey("void"));
+
+            //JMSXUserID
+            Assert.assertEquals("Check 'JMSXUserID' is supported ", USERNAME,
+                                m.getStringProperty("JMSXUserID"));
         }
 
         received.clear();
