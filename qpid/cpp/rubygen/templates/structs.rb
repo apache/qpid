@@ -45,8 +45,9 @@ class StructGen < CppGen
   end
 
   def default_initialisation(s)
-    params = s.fields.select {|f| ValueTypes.include?(f.domain.type_) || f.domain.type_ == "bit"}
+    params = s.fields.select {|f| ValueTypes.include?(f.domain.type_) || (!is_packed(s) && f.domain.type_ == "bit")}
     strings = params.collect {|f| "#{f.cppname}(0)"}   
+    strings << "flags(0)" if (is_packed(s))
     if strings.empty?
       return ""
     else
@@ -57,6 +58,8 @@ class StructGen < CppGen
   def printable_form(f)
     if (f.cpptype.name == "uint8_t")
       return "(int) " + f.cppname
+    elsif (f.domain.type_ == "bit")
+      return "get#{f.name.caps}()"
     else
       return f.cppname
     end
@@ -67,36 +70,23 @@ class StructGen < CppGen
     return "(1 << #{pos})"
   end
 
-  def get_flags_impl(s)
-    genl "#{s.cpp_pack_type.name} flags = 0;"
-    process_packed_fields(s) { |f, i| set_field_flag(s, f, i) }
-    genl "return flags;"
-  end
-
-  def set_field_flag(s, f, i)
-    if (ValueTypes.include?(f.domain.type_) || f.domain.type_ == "bit")
-      genl "if (#{f.cppname}) flags |= #{flag_mask(s, i)};"
-    else
-      genl "if (#{f.cppname}.size()) flags |= #{flag_mask(s, i)};"
-    end
-  end
-
   def encode_packed_struct(s)
-    genl "#{s.cpp_pack_type.name} flags = getFlags();"
     genl s.cpp_pack_type.encode('flags', 'buffer')
     process_packed_fields(s) { |f, i| encode_packed_field(s, f, i) unless f.domain.type_ == "bit" }
   end
 
   def decode_packed_struct(s)
-    genl "#{s.cpp_pack_type.name} #{s.cpp_pack_type.decode('flags', 'buffer')}"
+    genl "#{s.cpp_pack_type.decode('flags', 'buffer')}"
     process_packed_fields(s) { |f, i| decode_packed_field(s, f, i) unless f.domain.type_ == "bit" }
-    process_packed_fields(s) { |f, i| set_bitfield(s, f, i) if f.domain.type_ == "bit" }
   end
 
   def size_packed_struct(s)
-    genl "#{s.cpp_pack_type.name} flags = getFlags();" unless has_bitfields_only(s)
     genl "total += #{SizeMap[s.pack]};"
     process_packed_fields(s) { |f, i| size_packed_field(s, f, i) unless f.domain.type_ == "bit" }
+  end
+
+  def print_packed_struct(s)
+    process_packed_fields(s) { |f, i| print_packed_field(s, f, i) }
   end
 
   def encode_packed_field(s, f, i)
@@ -114,8 +104,11 @@ class StructGen < CppGen
       indent { generate_size(f, []) }
   end
 
-  def set_bitfield(s, f, i)
-      genl "#{f.cppname} = (flags & #{flag_mask(s, i)});"
+  def print_packed_field(s, f, i)
+    genl "if (flags & #{flag_mask(s, i)})"
+    indent { 
+      genl "out << \"#{f.name}=\" << #{printable_form(f)} << \"; \";"
+    }
   end
 
   def generate_encode(f, combined)
@@ -153,9 +146,9 @@ class StructGen < CppGen
       else 
         encoded = EncodingMap[f.domain.type_]        
         gen "total += ("
-        gen "4 " if encoded == "LongString"
-        gen "1 " if encoded == "ShortString"
-        genl "+ #{f.cppname}.size());"
+        gen "4 + " if encoded == "LongString"
+        gen "1 + " if encoded == "ShortString"
+        genl "#{f.cppname}.size());"
       end
     end
   end
@@ -215,17 +208,76 @@ EOS
         indent {gen "ProtocolVersion, "}
       end
       indent { gen s.fields.collect { |f| "#{f.cpptype.param} _#{f.cppname}" }.join(",\n") }
-      gen ")"
-      genl ": " if s.fields.size > 0
-      indent { gen s.fields.collect { |f| " #{f.cppname}(_#{f.cppname})" }.join(",\n") }
-      genl " {}"
+      genl ") : "
+      if (is_packed(s))
+        initialisers = s.fields.select { |f| f.domain.type_ != "bit"}.collect { |f| "#{f.cppname}(_#{f.cppname})"}
+
+        initialisers << "flags(0)"
+        indent { gen initialisers.join(",\n") }
+        genl "{"
+        indent {
+          process_packed_fields(s) { |f, i| genl "set#{f.name.caps}(_#{f.cppname});" if f.domain.type_ == "bit"}
+          process_packed_fields(s) { |f, i| genl "flags |= #{flag_mask(s, i)};" unless f.domain.type_ == "bit"}
+        }
+        genl "}"          
+      else
+        indent { gen s.fields.collect { |f| " #{f.cppname}(_#{f.cppname})" }.join(",\n") }
+        genl "{}"
+      end
     end
+    #default constructors:
     if (s.kind_of? AmqpMethod)
       genl "#{name}(ProtocolVersion=ProtocolVersion()) {}"
     end
     if (s.kind_of? AmqpStruct)
       genl "#{name}() #{default_initialisation(s)} {}"
     end
+  end
+
+  def define_packed_field_accessors(s, f, i)
+    if (f.domain.type_ == "bit")
+      genl "void #{s.cppname}::set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) {"
+      indent {
+        genl "if (_#{f.cppname}) flags |= #{flag_mask(s, i)};"
+        genl "else flags &= ~#{flag_mask(s, i)};"
+      }
+      genl "}"
+      genl "#{f.cpptype.ret} #{s.cppname}::get#{f.name.caps}() const { return flags & #{flag_mask(s, i)}; }"
+    else 
+      genl "void #{s.cppname}::set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname}) {"
+      indent {
+        genl "#{f.cppname} = _#{f.cppname};"
+        genl "flags |= #{flag_mask(s, i)};"
+      }
+      genl "}"
+      genl "#{f.cpptype.ret} #{s.cppname}::get#{f.name.caps}() const { return #{f.cppname}; }"
+      if (f.cpptype.name == "FieldTable")
+        genl "#{f.cpptype.name}& #{s.cppname}::get#{f.name.caps}() {"
+        indent { 
+          genl "flags |= #{flag_mask(s, i)};"#treat the field table as having been 'set'
+          genl "return #{f.cppname};" 
+        }
+        genl "}"
+      end
+      genl "bool #{s.cppname}::has#{f.name.caps}() const { return flags & #{flag_mask(s, i)}; }"
+      genl "void #{s.cppname}::clear#{f.name.caps}() { flags &= ~#{flag_mask(s, i)}; }"
+    end
+    genl ""
+  end
+
+  def define_packed_accessors(s)
+    process_packed_fields(s) { |f, i| define_packed_field_accessors(s, f, i) }
+  end
+
+  def declare_packed_accessors(f)
+    genl "void set#{f.name.caps}(#{f.cpptype.param} _#{f.cppname});";
+    genl "#{f.cpptype.ret} get#{f.name.caps}() const;"
+    if (f.cpptype.name == "FieldTable")
+      genl "#{f.cpptype.name}& get#{f.name.caps}();"
+    end
+    #extra 'accessors' for packed fields:
+    genl "bool has#{f.name.caps}() const;";
+    genl "void clear#{f.name.caps}();";
   end
 
   def define_accessors(f)
@@ -271,9 +323,13 @@ namespace framing {
 
 class #{classname} #{inheritance} {
 EOS
-  indent { s.fields.each { |f| genl "#{f.cpptype.name} #{f.cppname};" } }
   if (is_packed(s))
-    indent { genl "#{s.cpp_pack_type.name} getFlags() const;"}
+    indent { s.fields.each { |f| genl "#{f.cpptype.name} #{f.cppname};" unless f.domain.type_ == "bit"} }
+    indent {
+      genl "#{s.cpp_pack_type.name} flags;"
+    }
+  else
+    indent { s.fields.each { |f| genl "#{f.cpptype.name} #{f.cppname};" } }
   end
   genl "public:"
   if (s.kind_of? AmqpMethod)
@@ -298,7 +354,11 @@ EOS
   indent { 
     define_constructor(classname, s)
     genl ""
-    s.fields.each { |f| define_accessors(f) } 
+    if (is_packed(s))
+      s.fields.each { |f| declare_packed_accessors(f) } 
+    else
+      s.fields.each { |f| define_accessors(f) } 
+    end
   }
   if (s.kind_of? AmqpMethod)
     methodbody_extra_defs(s)
@@ -331,10 +391,7 @@ using namespace qpid::framing;
 EOS
     
       if (is_packed(s))
-        genl "#{s.cpp_pack_type.name} #{classname}::getFlags() const"
-        genl "{"
-        indent { get_flags_impl(s) }
-        genl "}"
+        define_packed_accessors(s)
       end
       gen <<EOS
 void #{classname}::encode(Buffer& #{buffer}) const
@@ -386,16 +443,21 @@ EOS
 
 void #{classname}::print(std::ostream& out) const
 {
-    out << "#{classname}: ";
+    out << "{#{classname}: ";
 EOS
-      copy = Array.new(s.fields)
-      f = copy.shift
-  
-      indent { 
-        genl "out << \"#{f.name}=\" << #{printable_form(f)};" if f
-        copy.each { |f| genl "out << \"; #{f.name}=\" << #{printable_form(f)};" } 
-      } 
+      if (is_packed(s))
+        indent {print_packed_struct(s)}
+      else 
+        copy = Array.new(s.fields)
+        f = copy.shift
+        
+        indent { 
+          genl "out << \"#{f.name}=\" << #{printable_form(f)};" if f
+          copy.each { |f| genl "out << \"; #{f.name}=\" << #{printable_form(f)};" } 
+        } 
+      end
       gen <<EOS
+    out << "}";
 }
 EOS
 
