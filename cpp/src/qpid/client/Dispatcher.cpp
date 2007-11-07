@@ -62,14 +62,14 @@ void Dispatcher::start()
 
 void Dispatcher::run()
 {    
-    sys::BlockingQueue<FrameSet::shared_ptr>& q = queue.empty() ? 
+    Demux::QueuePtr q = queue.empty() ? 
         session.execution().getDemux().getDefault() : 
         session.execution().getDemux().get(queue); 
 
     startRunning();
     stopped = false;
     while (!isStopped()) {
-        FrameSet::shared_ptr content = q.pop();
+        FrameSet::shared_ptr content = q->pop();
         if (content->isA<MessageTransferBody>()) {
             Message msg(*content);
             Subscriber::shared_ptr listener = find(msg.getDestination());

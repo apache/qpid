@@ -1,3 +1,6 @@
+#ifndef QPID_CLIENT_LOCALQUEUE_H
+#define QPID_CLIENT_LOCALQUEUE_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,33 +22,31 @@
  *
  */
 
-#include "qpid/log/Statement.h"
-#include "Exception.h"
-#include <typeinfo>
-#include <errno.h>
-#include <assert.h>
+#include "qpid/client/Message.h"
+#include "qpid/Exception.h"
+#include "qpid/sys/BlockingQueue.h"
 
 namespace qpid {
+namespace client {
 
-std::string strError(int err) {
-    char buf[512];
-    return std::string(strerror_r(err, buf, sizeof(buf)));
-}
+/**
+ * Local representation of a remote queue.
+ */
+class LocalQueue
+{
+  public:
+    LocalQueue(BlockingQueue& q) : queue(q) {}
+    ~LocalQueue();
 
-Exception::Exception(const std::string& s) throw() : msg(s) {
-    QPID_LOG(warning, "Exception: " << msg);
-}
+    /** Pop the next message off the queue.
+     *@exception ClosedException if subscription has been closed.
+     */
+    Message pop() { reurn queue->pop(); }
 
-Exception::~Exception() throw() {}
+  private:
+    BlockingQueue& queue;
+};
 
-std::string Exception::str() const throw() {
-    if (msg.empty())
-        const_cast<std::string&>(msg).assign(typeid(*this).name());
-    return msg;
-}
+}} // namespace qpid::client
 
-const char* Exception::what() const throw() { return str().c_str(); }
-
-const std::string ClosedException::CLOSED_MESSAGE("Closed");
-
-} // namespace qpid
+#endif  /*!QPID_CLIENT_LOCALQUEUE_H*/
