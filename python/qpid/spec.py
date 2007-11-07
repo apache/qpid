@@ -115,9 +115,9 @@ class Spec(Metadata):
     klass, meth = parts
     return self.classes.byname[klass].methods.byname[meth]
 
-  def struct(self, name):
+  def struct(self, name, *args, **kwargs):
     type = self.domains.byname[name].type
-    return qpid.Struct(type)
+    return qpid.Struct(type, *args, **kwargs)
 
   def define_module(self, name, doc = None):
     module = new.module(name, doc)

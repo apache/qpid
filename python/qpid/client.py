@@ -22,7 +22,7 @@ An AQMP client implementation that uses a custom delegate for
 interacting with the server.
 """
 
-import threading
+import os, threading
 from peer import Peer, Closed
 from delegate import Delegate
 from connection import Connection, Frame, connect
@@ -33,10 +33,18 @@ from reference import ReferenceId, References
 
 class Client:
 
-  def __init__(self, host, port, spec, vhost = None):
+  def __init__(self, host, port, spec = None, vhost = None):
     self.host = host
     self.port = port
-    self.spec = spec
+    if spec:
+      self.spec = spec
+    else:
+      try:
+        name = os.environ["AMQP_SPEC"]
+      except KeyError:
+        raise EnvironmentError("environment variable AMQP_SPEC must be set")
+      self.spec = load(name)
+    self.structs = StructFactory(self.spec)
 
     self.mechanism = None
     self.response = None
@@ -158,3 +166,22 @@ class ClientDelegate(Delegate):
     self.client.closed = True
     self.client.reason = reason
     self.client.started.set()
+
+class StructFactory:
+
+  def __init__(self, spec):
+    self.spec = spec
+    self.factories = {}
+
+  def __getattr__(self, name):
+    if self.factories.has_key(name):
+      return self.factories[name]
+    elif self.spec.domains.byname.has_key(name):
+      f = lambda *args, **kwargs: self.struct(name, *args, **kwargs)
+      self.factories[name] = f
+      return f
+    else:
+      raise AttributeError(name)
+
+  def struct(self, name, *args, **kwargs):
+    return self.spec.struct(name, *args, **kwargs)
