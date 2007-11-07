@@ -3,8 +3,7 @@ import qpid
 from qpid.client import Client
 from qpid.content import Content
 
-spec = qpid.spec.load("../specs/amqp.0-10-preview.xml")
-client = Client("127.0.0.1", 5672, spec)
+client = Client("127.0.0.1", 5672)
 client.start({"LOGIN": "guest", "PASSWORD": "guest"})
 ch = client.channel(1)
 ch.session_open()
@@ -17,9 +16,7 @@ ch.message_flow("amq.direct", 1, 0xFFFFFFFF)
 msg = Content("hello world")
 msg["content_type"] = "text/plain"
 msg["routing_key"] = "test"
-msg["reply_to"] = spec.struct("reply_to")
-msg["reply_to"].exchange_name = "asdf"
-msg["reply_to"].routing_key = "fdsa"
+msg["reply_to"] = client.structs.reply_to("asdf", "fdsa")
 msg["application_headers"] = {"x": 1, "y": 2, "z": "zee"}
 ch.message_transfer(destination="amq.direct", content=msg)
 queue = client.queue("amq.direct")
