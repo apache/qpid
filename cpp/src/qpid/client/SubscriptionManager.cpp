@@ -41,8 +41,8 @@ void SubscriptionManager::subscribe(
     MessageListener& listener, const std::string& q, const std::string& t)
 {
     std::string tag=t.empty() ? q:t;
-    session.messageSubscribe(arg::queue=q, arg::destination=tag);
     dispatcher.listen(tag, &listener);
+    session.messageSubscribe(arg::queue=q, arg::destination=tag);
     setFlowControl(tag, messages, bytes, window);
 }
 

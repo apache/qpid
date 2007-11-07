@@ -35,8 +35,11 @@ Message LocalQueue::pop() {
     if (!queue)
         throw ClosedException();
     FrameSet::shared_ptr content = queue->pop();
-    if (content->isA<MessageTransferBody>()) 
-        return Message(*content, session);
+    if (content->isA<MessageTransferBody>()) {
+        Message m(*content, session);
+        autoAck.ack(m);
+        return m;
+    }
     else
         throw CommandInvalidException(
             QPID_MSG("Unexpected method: " << content->getMethod()));
