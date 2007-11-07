@@ -215,7 +215,9 @@ class TestBase(unittest.TestCase):
                                    routing_key=routing_key)
         msg = queue.get(timeout=1)    
         self.assertEqual(body, msg.content.body)
-        if (properties): self.assertEqual(properties, msg.content.properties)
+        if (properties):
+            for prop in properties:
+                self.assertTrue(prop in msg.content.properties)
         
     def assertPublishConsume(self, queue="", exchange="", routing_key="", properties=None):
         """
