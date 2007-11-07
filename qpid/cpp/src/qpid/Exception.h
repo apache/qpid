@@ -61,6 +61,11 @@ struct ConnectionException : public Exception {
         : Exception(message), code(code_) {}
 };
 
-} // namespace qpid
+struct ClosedException : public Exception {
+    static const std::string CLOSED_MESSAGE;
+    ClosedException(const std::string& msg=CLOSED_MESSAGE) : Exception(msg) {}
+};
 
+} // namespace qpid
+ 
 #endif  /*!_Exception_*/
