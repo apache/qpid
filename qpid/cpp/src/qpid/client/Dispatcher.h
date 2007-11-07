@@ -29,6 +29,7 @@
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
 #include "MessageListener.h"
+#include "AckPolicy.h"
 
 namespace qpid {
 namespace client {
@@ -39,13 +40,11 @@ class Subscriber : public MessageListener
 {
     Session_0_10& session;
     MessageListener* const listener;
-    const bool autoAck;
-    const uint ackBatchSize;
-    uint count;
+    AckPolicy autoAck;
 
 public:
     typedef boost::shared_ptr<Subscriber> shared_ptr;
-    Subscriber(Session_0_10& session, MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
+    Subscriber(Session_0_10& session, MessageListener* listener, AckPolicy);
     void received(Message& msg);
     
 };
@@ -58,16 +57,14 @@ class Dispatcher : public sys::Runnable
     sys::Mutex lock;
     sys::Thread worker;
     Session_0_10& session;
-    const std::string queue;
+    Demux::QueuePtr queue;
     bool running;
-    bool stopped;
+    bool autoStop;
     Listeners listeners;
     Subscriber::shared_ptr defaultListener;
     std::auto_ptr<FrameSetHandler> handler;
 
     Subscriber::shared_ptr find(const std::string& name);
-    void startRunning();
-    void stopRunning();
     bool isStopped();
 
 public:
@@ -76,9 +73,10 @@ public:
     void start();
     void run();
     void stop();
+    void setAutoStop(bool b);
 
-    void listen(MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
-    void listen(const std::string& destination, MessageListener* listener, bool autoAck = true, uint ackBatchSize = 1);
+    void listen(MessageListener* listener, AckPolicy autoAck=AckPolicy());
+    void listen(const std::string& destination, MessageListener* listener, AckPolicy autoAck=AckPolicy());
     void cancel(const std::string& destination);
 };
 

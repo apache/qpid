@@ -52,9 +52,8 @@ Connector::Connector(
 }
 
 Connector::~Connector(){
-    if (receiver.id()) {
+    if (receiver.id() && receiver.id() != Thread::current().id())
         receiver.join();
-    }
 }
 
 void Connector::connect(const std::string& host, int port){

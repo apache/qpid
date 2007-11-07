@@ -32,7 +32,7 @@ namespace sys {
 template <class T>
 class BlockingQueue
 {
-    sys::Waitable lock;
+    mutable sys::Waitable lock;
     std::queue<T> queue;
     bool closed;
 
@@ -95,6 +95,11 @@ public:
         closed=false;
     }
 
+    bool isClosed() const { 
+        Waitable::ScopedLock l(lock);
+        return closed;
+    }
+    
   private:
 
     void queueNotify(size_t ignore) {
