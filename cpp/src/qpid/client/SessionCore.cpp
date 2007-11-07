@@ -116,7 +116,6 @@ void SessionCore::attaching(shared_ptr<ConnectionImpl> c) {
 
 SessionCore::~SessionCore() {
     Lock l(state);
-    invariant();
     detach(COMMAND_INVALID, "Session deleted");
     state.waitWaiters();
 }

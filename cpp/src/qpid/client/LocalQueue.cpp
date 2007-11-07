@@ -1,6 +1,3 @@
-#ifndef QPID_CLIENT_LOCALQUEUE_H
-#define QPID_CLIENT_LOCALQUEUE_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,37 +18,30 @@
  * under the License.
  *
  */
-
-#include "qpid/client/Message.h"
-#include "qpid/client/Demux.h"
-#include "qpid/client/AckPolicy.h"
+#include "LocalQueue.h"
+#include "qpid/Exception.h"
+#include "qpid/framing/FrameSet.h"
+#include "qpid/framing/reply_exceptions.h"
 
 namespace qpid {
 namespace client {
 
-/**
- * Local representation of a remote queue.
- */
-class LocalQueue
-{
-  public:
-    LocalQueue(AckPolicy=AckPolicy());
-    ~LocalQueue();
+using namespace framing;
 
-    /** Pop the next message off the queue.
-     *@exception ClosedException if subscription has been closed.
-     */
-    Message pop();
+LocalQueue::LocalQueue(AckPolicy a) : autoAck(a) {}
+LocalQueue::~LocalQueue() {}
 
-    void setAckPolicy(AckPolicy);
+Message LocalQueue::pop() {
+    if (!queue)
+        throw ClosedException();
+    FrameSet::shared_ptr content = queue->pop();
+    if (content->isA<MessageTransferBody>()) 
+        return Message(*content, session);
+    else
+        throw CommandInvalidException(
+            QPID_MSG("Unexpected method: " << content->getMethod()));
+}
 
-  private:
-  friend class SubscriptionManager;
-    Session_0_10 session;
-    Demux::QueuePtr queue;
-    AckPolicy autoAck;
-};
+void LocalQueue::setAckPolicy(AckPolicy a) { autoAck=a; }
 
 }} // namespace qpid::client
-
-#endif  /*!QPID_CLIENT_LOCALQUEUE_H*/

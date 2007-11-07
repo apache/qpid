@@ -208,6 +208,7 @@ libqpidclient_la_SOURCES =			\
   qpid/client/Connector.cpp			\
   qpid/client/Demux.cpp				\
   qpid/client/Dispatcher.cpp			\
+  qpid/client/LocalQueue.cpp			\
   qpid/client/MessageListener.cpp		\
   qpid/client/Correlator.cpp			\
   qpid/client/CompletionTracker.cpp		\
@@ -307,6 +308,7 @@ nobase_include_HEADERS = \
   qpid/client/Exchange.h \
   qpid/client/Message.h \
   qpid/client/Queue.h \
+  qpid/client/AckPolicy.h			\
   qpid/client/Completion.h \
   qpid/client/CompletionTracker.h \
   qpid/client/Connection.h \
@@ -316,6 +318,7 @@ nobase_include_HEADERS = \
   qpid/client/Correlator.h \
   qpid/client/Demux.h \
   qpid/client/Dispatcher.h \
+  qpid/client/LocalQueue.h \
   qpid/client/Execution.h \
   qpid/client/ExecutionHandler.h \
   qpid/client/Future.h \
