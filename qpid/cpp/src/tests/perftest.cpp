@@ -44,10 +44,11 @@ struct Opts : public TestOptions {
     bool durable;
     int consumers;
     std::string mode;
+    int autoAck;
     
     Opts() :
         listen(false), publish(false), count(500000), size(64), consumers(1),
-        mode("shared")
+        mode("shared"), autoAck(100)
     {
         addOptions() 
             ("listen", optValue(listen), "Consume messages.")
@@ -56,7 +57,8 @@ struct Opts : public TestOptions {
             ("size", optValue(size, "BYTES"), "Size of messages.")
             ("durable", optValue(durable, "N"), "Publish messages as durable.")
             ("consumers", optValue(consumers, "N"), "Number of consumers.")
-            ("mode", optValue(mode, "shared|fanout|topic"), "consume mode");
+            ("mode", optValue(mode, "shared|fanout|topic"), "consume mode")
+            ("auto-ack", optValue(autoAck, "N"), "ack every N messages.");
     }
 };
 
@@ -219,12 +221,14 @@ void ListenThread::run() {
         session.messageTransfer(arg::content=Message("ready", "control"));
 
         SubscriptionManager subs(session);
-        LocalQueue consume;
+        LocalQueue consume(AckPolicy(opts.autoAck));
         subs.subscribe(consume, consumeQueue);
         int consumed=0;
         AbsTime start=now();
-        while (consume.pop().getData() != "done")
+        Message msg;
+        while ((msg=consume.pop()).getData() != "done")
             ++consumed;
+        msg.acknowledge();      // Ack all outstanding messages.
         AbsTime end=now();
 
         // Report to publisher.
