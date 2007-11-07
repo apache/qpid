@@ -68,7 +68,14 @@ public:
         session.execution().completed(id, cumulative, send);
     }
 
-    Message(const framing::FrameSet& frameset) : method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId())
+    void acknowledge(bool cumulative = true, bool send = true) const
+    {
+        const_cast<Session_0_10&>(session).execution().completed(id, cumulative, send);
+    }
+
+    /**@internal for incoming messages */
+    Message(const framing::FrameSet& frameset, Session_0_10 s) :
+        method(*frameset.as<framing::MessageTransferBody>()), id(frameset.getId()), session(s)
     {
         populate(frameset);
     }
@@ -83,10 +90,13 @@ public:
         return id;
     }
 
+    /**@internal use for incoming messages. */
+    void setSession(Session_0_10 s) { session=s; }
 private:
     //method and id are only set for received messages:
-    const framing::MessageTransferBody method;
-    const framing::SequenceNumber id;
+    framing::MessageTransferBody method;
+    framing::SequenceNumber id;
+    Session_0_10 session;
 };
 
 }}
