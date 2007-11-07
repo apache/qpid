@@ -29,7 +29,7 @@ qpid::framing::AMQHeaderBody::~AMQHeaderBody() {}
 uint32_t qpid::framing::AMQHeaderBody::size() const{
     CalculateSize visitor;
     for_each(properties.begin(), properties.end(), boost::apply_visitor(visitor));
-    return visitor.totalSize() + (properties.size() * (2/*type codes*/ + 4/*size*/));
+    return visitor.totalSize();
 }
 
 void qpid::framing::AMQHeaderBody::encode(Buffer& buffer) const {

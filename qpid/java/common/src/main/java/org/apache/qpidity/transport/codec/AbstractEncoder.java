@@ -223,7 +223,7 @@ abstract class AbstractEncoder implements Encoder
         }
 
         int width = s.getSizeWidth();
-        if (false && width > 0)
+        if (width > 0)
         {
             if (empty)
             {
