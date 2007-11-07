@@ -49,5 +49,5 @@ class Delegate:
       print >> sys.stderr, "Error in handler: %s\n\n%s" % \
             (_handler_name(method), traceback.format_exc())
 
-  def close(self, reason):
+  def closed(self, reason):
     print "Connection closed: %s" % reason
