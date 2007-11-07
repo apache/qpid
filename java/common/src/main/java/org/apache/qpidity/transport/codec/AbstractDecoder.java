@@ -186,7 +186,7 @@ abstract class AbstractDecoder implements Decoder
     {
         Struct st = Struct.create(type);
         int width = st.getSizeWidth();
-        if (false && width > 0)
+        if (width > 0)
         {
             long size = readSize(width);
             if (size == 0)

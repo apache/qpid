@@ -38,14 +38,14 @@ public:
         data.resize(size);
         Buffer wbuffer(const_cast<char*>(data.data()), size);
         wbuffer.putShort(T::TYPE);
-        t.encode(wbuffer);
+        t.encodeStructBody(wbuffer);
     }
 
     template <class T> void decode(T& t, const std::string& data) {
         Buffer rbuffer(const_cast<char*>(data.data()), data.length());
         uint16_t type = rbuffer.getShort();
         if (type == T::TYPE) {
-            t.decode(rbuffer);
+            t.decodeStructBody(rbuffer);
         } else {
             throw Exception("Type code does not match");
         }
