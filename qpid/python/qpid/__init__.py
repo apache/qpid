@@ -21,9 +21,18 @@ import spec, codec, connection, content, peer, delegate, client
 
 class Struct:
 
-  def __init__(self, type):
+  def __init__(self, type, *args, **kwargs):
     self.__dict__["type"] = type
     self.__dict__["_values"] = {}
+
+    if len(args) > len(self.type.fields):
+      raise TypeError("too many args")
+
+    for a, f in zip(args, self.type.fields):
+      self.set(f.name, a)
+
+    for k, a in kwargs.items():
+      self.set(k, a)
 
   def _check(self, attr):
     field = self.type.fields.byname.get(attr)
