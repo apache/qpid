@@ -111,6 +111,12 @@ public:
     }
 };
 
+class MarkLastSegment
+{
+public:
+    void operator()(AMQFrame& f) const { f.setEof(true); }
+};
+
 }
 }
 
