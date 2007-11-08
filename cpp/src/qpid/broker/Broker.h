@@ -136,6 +136,7 @@ class Broker : public sys::Runnable, public Plugin::Target
     ManagementObjectVhost::shared_ptr  mgmtVhostObject;
 
     static MessageStore* createStore(const Options& config);
+    void declareStandardExchange(const std::string& name, const std::string& type);
 };
 
 }}
