@@ -53,18 +53,18 @@ bool NullMessageStore::init(const std::string& /*dir*/, const bool /*async*/, co
 
 void NullMessageStore::create(PersistableQueue& queue)
 {
-    QPID_LOG(info, "Can't create durable queue '" << queue.getName() << "'. Persistence not enabled.");
+    QPID_LOG(info, "Queue '" << queue.getName() 
+             << "' will not be durable. Persistence not enabled.");
 }
 
-void NullMessageStore::destroy(PersistableQueue& queue)
+void NullMessageStore::destroy(PersistableQueue&)
 {
-    QPID_LOG(info, "Can't destroy durable queue '" << queue.getName() << "'. Persistence not enabled.");
 }
 
 void NullMessageStore::create(const PersistableExchange& exchange)
 {
-    QPID_LOG(info, "Can't create durable exchange '"
-             << exchange.getName() << "'. Persistence not enabled.");
+    QPID_LOG(info, "Exchange'" << exchange.getName() 
+             << "' will not be durable. Persistence not enabled.");
 }
 
 void NullMessageStore::destroy(const PersistableExchange& )
@@ -86,12 +86,11 @@ void NullMessageStore::stage(PersistableMessage&)
 
 void NullMessageStore::destroy(PersistableMessage&)
 {
-    QPID_LOG(info, "No need to destroy staged message. Persistence not enabled.");
 }
 
 void NullMessageStore::appendContent(const PersistableMessage&, const string&)
 {
-    QPID_LOG(info, "Can't load content. Persistence not enabled.");
+    QPID_LOG(info, "Can't append content. Persistence not enabled.");
 }
 
 void NullMessageStore::loadContent(const PersistableMessage&, string&, uint64_t, uint32_t)
@@ -102,18 +101,16 @@ void NullMessageStore::loadContent(const PersistableMessage&, string&, uint64_t,
 void NullMessageStore::enqueue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& queue)
 {
     msg.enqueueComplete(); 
-    QPID_LOG(info, "Can't enqueue message onto '" << queue.getName() << "'. Persistence not enabled.");
+    QPID_LOG(info, "Message is not durably recorded on '" << queue.getName() << "'. Persistence not enabled.");
 }
 
-void NullMessageStore::dequeue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& queue)
+void NullMessageStore::dequeue(TransactionContext*, PersistableMessage& msg, const PersistableQueue&)
 {
     msg.dequeueComplete();
-    QPID_LOG(info, "Can't dequeue message from '" << queue.getName() << "'. Persistence not enabled.");
 }
 
-void NullMessageStore::flush(const qpid::broker::PersistableQueue& queue)
+void NullMessageStore::flush(const qpid::broker::PersistableQueue&)
 {
-    QPID_LOG(info, "Can't flush. Persistence not enabled queue-" << queue.getName());
 }
 
 u_int32_t NullMessageStore::outstandingQueueAIO(const PersistableQueue& )

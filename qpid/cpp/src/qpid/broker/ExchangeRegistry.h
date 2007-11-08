@@ -40,7 +40,7 @@ namespace broker {
         std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type)
             throw(UnknownExchangeTypeException);
         std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type, 
-                                                      bool durable, const qpid::framing::FieldTable& args)
+                                                      bool durable, const qpid::framing::FieldTable& args = framing::FieldTable())
             throw(UnknownExchangeTypeException);
         void destroy(const std::string& name);
         Exchange::shared_ptr get(const std::string& name);

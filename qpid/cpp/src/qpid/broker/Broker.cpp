@@ -128,10 +128,6 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
-    exchanges.declare(amq_direct, DirectExchange::typeName);
-    exchanges.declare(amq_topic, TopicExchange::typeName);
-    exchanges.declare(amq_fanout, FanOutExchange::typeName);
-    exchanges.declare(amq_match, HeadersExchange::typeName);
     
     if(conf.enableMgmt) {
         QPID_LOG(info, "Management enabled");
@@ -153,6 +149,11 @@ Broker::Broker(const Broker::Options& conf) :
              store->recover(recoverer);
         }
     }
+    //ensure standard exchanges exist (done after recovery from store)
+    declareStandardExchange(amq_direct, DirectExchange::typeName);
+    declareStandardExchange(amq_topic, TopicExchange::typeName);
+    declareStandardExchange(amq_fanout, FanOutExchange::typeName);
+    declareStandardExchange(amq_match, HeadersExchange::typeName);
 
     // Initialize plugins
     const Plugin::Plugins& plugins=Plugin::getPlugins();
@@ -160,6 +161,15 @@ Broker::Broker(const Broker::Options& conf) :
          i != plugins.end();
          i++)
         (*i)->initialize(*this);
+}
+
+void Broker::declareStandardExchange(const std::string& name, const std::string& type)
+{
+    bool storeEnabled = store.get();
+    std::pair<Exchange::shared_ptr, bool> status = exchanges.declare(name, type, storeEnabled);
+    if (status.second && storeEnabled) {
+        store->create(*status.first);
+    }
 }
 
 
