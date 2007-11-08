@@ -46,7 +46,7 @@ void Dispatcher::run() {
             //TODO: this is a temporary fix to ensure that if two
             //events are being processed concurrently, the first thread
             //will call dispatchCallbacks serially for each one
-            h->handle(event.type);
+            h->dispatchCallbacks(event.type);
         } else {
             // Handle shutdown
             switch (event.type) {
@@ -363,6 +363,18 @@ void DispatchHandle::dispatchCallbacks(Poller::EventType type) {
     case ACTIVE_RW:
         state = DELAYED_RW;
         break;
+    // Can only get here in a DELAYED_* state in the rare case
+    // that we're already here for reading and we get activated for
+    // writing and we can write (it might be possible the other way
+    // round too). In this case we're already processing the handle
+    // in a different thread in this function so return right away
+    case DELAYED_R:
+    case DELAYED_W:
+    case DELAYED_RW:
+    case DELAYED_INACTIVE:
+    case DELAYED_IDLE:
+    case DELAYED_DELETE:
+        return;
     default:
         assert(false);
     }
@@ -426,58 +438,7 @@ void DispatchHandle::dispatchCallbacks(Poller::EventType type) {
         break;
     }
     }      
-    //TODO: this is a temporary fix to mark the handle as deleted,
-    //but delay deletion until the handle loop below ends
-    deleted = true;
-}
-
-/**
- * TODO: The following are part of a temporary fix to ensure that
- * where a new event is generated for the same handle while an
- * earlier one is still being processed (due to an interest in
- * writeability being declared) the events are processed serially
- * by the first thread.
- */
-void DispatchHandle::handle(Poller::EventType type)
-{
-    if (start(type)) {
-        dispatchCallbacks(type);
-        drain();
-        if (deleted) delete this;
-    }       
-}
-
-bool DispatchHandle::start(Poller::EventType type) 
-{
-    Mutex::ScopedLock l(processLock);
-    if (processing) {
-        events.push(type);
-        return false;
-    } else {
-        processing = true;
-        return true;
-    }
-}
-
-void DispatchHandle::drain()
-{
-    Poller::EventType type;
-    while (next(type)) {
-        dispatchCallbacks(type);
-    }
-}
-
-bool DispatchHandle::next(Poller::EventType& type)
-{
-    Mutex::ScopedLock l(processLock);
-    if (events.empty()) {
-        processing = false; 
-        return false;          
-    } else {
-        type = events.front();
-        events.pop();
-        return true;
-    }
+    delete this;
 }
 
 }}
