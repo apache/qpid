@@ -112,7 +112,7 @@ public class Session extends Invoker
             processed.add(range);
             flush = syncPoint != null && processed.includes(syncPoint);
         }
-        if (!flush)
+        if (flush)
         {
             flushProcessed();
         }
