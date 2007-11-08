@@ -150,7 +150,7 @@ void Message::releaseContent(MessageStore* _store)
     setContentReleased();
 }
 
-void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize) const
+void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const
 {
     if (isContentReleased()) {
         //load content from store in chunks of maxContentSize
@@ -162,7 +162,7 @@ void Message::sendContent(framing::FrameHandler& out, uint16_t maxFrameSize) con
             AMQFrame frame(0, AMQContentBody());
             string& data = frame.castBody<AMQContentBody>()->getData();
 
-            store->loadContent(*this, data, offset,
+            store->loadContent(queue, *this, data, offset,
                                remaining > maxContentSize ? maxContentSize : remaining);
             frame.setBof(false);
             frame.setEof(true);

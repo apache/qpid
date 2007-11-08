@@ -93,7 +93,7 @@ void NullMessageStore::appendContent(const PersistableMessage&, const string&)
     QPID_LOG(info, "Can't append content. Persistence not enabled.");
 }
 
-void NullMessageStore::loadContent(const PersistableMessage&, string&, uint64_t, uint32_t)
+void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&, const PersistableMessage&, string&, uint64_t, uint32_t)
 {
     QPID_LOG(info, "Can't load content. Persistence not enabled.");
 }

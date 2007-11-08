@@ -21,6 +21,11 @@
 #ifndef _Consumer_
 #define _Consumer_
 
+namespace qpid {
+    namespace broker {
+		class Queue;
+}}
+
 #include "Message.h"
 
 namespace qpid {
@@ -30,9 +35,11 @@ namespace qpid {
         {
             Message::shared_ptr payload;
             framing::SequenceNumber position;
-
-            QueuedMessage(Message::shared_ptr msg, framing::SequenceNumber sn) : payload(msg), position(sn) {}
-            QueuedMessage() {}
+			Queue* queue;
+			
+            QueuedMessage(Queue* q, Message::shared_ptr msg, framing::SequenceNumber sn) : 
+			               payload(msg), position(sn), queue(q) {}
+            QueuedMessage(Queue* q) : queue(q) {}
         };
         
 

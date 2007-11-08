@@ -75,7 +75,7 @@ class SemanticHandler : public DeliveryAdapter,
     void sendCompletion();
 
     //delivery adapter methods:
-    DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token);
+    DeliveryId deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);
 
     framing::AMQP_ClientProxy& getProxy() { return session.getProxy(); }
     Connection& getConnection() { return session.getConnection(); }

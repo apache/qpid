@@ -277,7 +277,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
             Mutex::ScopedLock locker(parent->deliveryLock);
 
             DeliveryId deliveryTag =
-                parent->deliveryAdapter.deliver(msg.payload, token);
+                parent->deliveryAdapter.deliver(msg, token);
             if (windowing || ackExpected) {
                 parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
             } else if (acquire && !ackExpected) {
@@ -471,7 +471,7 @@ bool SemanticState::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue
     QueuedMessage msg = queue->dequeue();
     if(msg.payload){
         Mutex::ScopedLock locker(deliveryLock);
-        DeliveryId myDeliveryTag = deliveryAdapter.deliver(msg.payload, token);
+        DeliveryId myDeliveryTag = deliveryAdapter.deliver(msg, token);
         if(ackExpected){
             unacked.push_back(DeliveryRecord(msg, queue, myDeliveryTag));
         }
@@ -481,7 +481,7 @@ bool SemanticState::get(DeliveryToken::shared_ptr token, Queue::shared_ptr queue
     }
 }
 
-DeliveryId SemanticState::redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token)
+DeliveryId SemanticState::redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
 {
     Mutex::ScopedLock locker(deliveryLock);
     return deliveryAdapter.deliver(msg, token);

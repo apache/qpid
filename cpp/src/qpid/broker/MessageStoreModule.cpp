@@ -71,7 +71,7 @@ void MessageStoreModule::recover(RecoveryManager& registry)
     store->recover(registry);
 }
 
-void MessageStoreModule::stage(PersistableMessage& msg)
+void MessageStoreModule::stage( PersistableMessage& msg)
 {
     store->stage(msg);
 }
@@ -86,9 +86,10 @@ void MessageStoreModule::appendContent(const PersistableMessage& msg, const std:
     store->appendContent(msg, data);
 }
 
-void MessageStoreModule::loadContent(const PersistableMessage& msg, string& data, uint64_t offset, uint32_t length)
+void MessageStoreModule::loadContent(const qpid::broker::PersistableQueue& queue, 
+     const PersistableMessage& msg, string& data, uint64_t offset, uint32_t length)
 {
-    store->loadContent(msg, data, offset, length);
+    store->loadContent(queue, msg, data, offset, length);
 }
 
 void MessageStoreModule::enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue)

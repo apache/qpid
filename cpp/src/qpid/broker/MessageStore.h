@@ -85,9 +85,16 @@ public:
      * point). If the message has not yet been stored it will
      * store the headers as well as any content passed in. A
      * persistence id will be set on the message which can be
-     * used to load the content or to append to it.
+     * used to load the content or to append to it. 
+	 * 
+	 * TODO ::If it is know
+	 * which queue the message is to be staged/ release to in cases
+	 * of flowing tmp messages to disk for memory conservation set
+	 * the queue ptr. This allows the store to optimize the read/writes
+	 * for that queue and avoid searching based on id. Set queue = 0 for
+	 * large message staging when the queue is not known.
      */
-    virtual void stage(PersistableMessage& msg) = 0;
+    virtual void stage( PersistableMessage& msg) = 0;
             
     /**
      * Destroys a previously staged message. This only needs
@@ -110,7 +117,8 @@ public:
      * content should be loaded, not the headers or related
      * meta-data).
      */
-    virtual void loadContent(const PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length) = 0;
+    virtual void loadContent(const qpid::broker::PersistableQueue& queue, 
+	                         const PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length) = 0;
     
     /**
      * Enqueues a message, storing the message if it has not
