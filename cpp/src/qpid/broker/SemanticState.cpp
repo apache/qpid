@@ -280,7 +280,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
                 parent->deliveryAdapter.deliver(msg.payload, token);
             if (windowing || ackExpected) {
                 parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
-            } else if (!ackExpected) {
+            } else if (acquire && !ackExpected) {
                 queue->dequeue(0, msg.payload);
             }
         }
