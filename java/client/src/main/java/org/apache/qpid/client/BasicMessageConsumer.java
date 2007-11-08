@@ -504,7 +504,7 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
                     }
                 }
 
-                if ((_messageListener != null) && _receiving.get())
+                if (_messageListener != null && _receiving.get() && _receivingThread != null)
                 {
                     if (_logger.isInfoEnabled())
                     {
