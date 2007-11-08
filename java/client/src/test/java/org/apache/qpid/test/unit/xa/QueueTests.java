@@ -17,28 +17,28 @@
  */
 package org.apache.qpid.test.unit.xa;
 
-import org.apache.qpid.testutil.QpidTestCase;
-import org.apache.qpidity.dtx.XidImpl;
-
 import javax.jms.*;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import javax.transaction.xa.XAException;
 
 import junit.framework.TestSuite;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class QueueTests extends QpidTestCase
+public class QueueTests extends AbstractXATest
 {
+    /* this clas logger */
+    private static final Logger _logger = LoggerFactory.getLogger(QueueTests.class);
+
     /**
      * the queue use by all the tests
      */
     private static Queue _queue = null;
-
     /**
      * the queue connection factory used by all tests
      */
     private static XAQueueConnectionFactory _queueFactory = null;
-
     /**
      * standard queue connection
      */
@@ -47,54 +47,17 @@ public class QueueTests extends QpidTestCase
     /**
      * standard queue session created from the standard connection
      */
-    private static XAQueueSession _session = null;
-
-    /**
-     * standard queue session created from the standard connection
-     */
     private static QueueSession _nonXASession = null;
-
-    /**
-     * the xaResource associated with the standard session
-     */
-    private static XAResource _xaResource = null;
-
-    /**
-     * producer registered with the standard session
-     */
-    private static MessageProducer _producer = null;
-
-    /**
-     * consumer registered with the standard session
-     */
-    private static MessageConsumer _consumer = null;
-
-    /**
-     * a standard message
-     */
-    private static TextMessage _message = null;
 
     /**
      * the queue name
      */
     private static final String QUEUENAME = "xaQueue";
-    private static final String _sequenceNumberPropertyName = "seqNumber";
-
-    /**
-     * xid counter
-     */
-    private static int _xidCounter = 0;
 
     /** ----------------------------------------------------------------------------------- **/
     /**
      * ----------------------------- JUnit support  ----------------------------------------- *
      */
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-        init();
-    }
 
     /**
      * Gets the test suite tests
@@ -116,9 +79,22 @@ public class QueueTests extends QpidTestCase
         junit.textui.TestRunner.run(getSuite());
     }
 
-    /** -------------------------------------------------------------------------------------- **/
-    /** ----------------------------- Test Suite  -------------------------------------------- **/
-    /** -------------------------------------------------------------------------------------- **/
+    public void tearDown() throws Exception
+    {
+        if (!isBroker08())
+        {
+            try
+            {
+                _queueConnection.stop();
+                _queueConnection.close();
+            }
+            catch (Exception e)
+            {
+                fail("Exception thrown when cleaning standard connection: " + e.getStackTrace());
+            }
+        }
+        super.tearDown();
+    }
 
     /**
      * Initialize standard actors
@@ -156,9 +132,10 @@ public class QueueTests extends QpidTestCase
                 fail("cannot create queue connection: " + e.getMessage());
             }
             // create xa session
+            XAQueueSession session = null;
             try
             {
-                _session = _queueConnection.createXAQueueSession();
+                session = _queueConnection.createXAQueueSession();
             }
             catch (JMSException e)
             {
@@ -173,48 +150,13 @@ public class QueueTests extends QpidTestCase
             {
                 fail("cannot create queue session: " + e.getMessage());
             }
-            // get the xaResource
-            try
-            {
-                _xaResource = _session.getXAResource();
-            }
-            catch (Exception e)
-            {
-                fail("cannot access the xa resource: " + e.getMessage());
-            }
-            // create standard producer
-            try
-            {
-                _producer = _session.createProducer(_queue);
-                _producer.setDeliveryMode(DeliveryMode.PERSISTENT);
-            }
-            catch (JMSException e)
-            {
-                e.printStackTrace();
-                fail("cannot create message producer: " + e.getMessage());
-            }
-            // create standard consumer
-            try
-            {
-                _consumer = _session.createConsumer(_queue);
-            }
-            catch (JMSException e)
-            {
-                fail("cannot create message consumer: " + e.getMessage());
-            }
-            // create a standard message
-            try
-            {
-                _message = _session.createTextMessage();
-                _message.setText("test XA");
-            }
-            catch (JMSException e)
-            {
-                fail("cannot create standard message: " + e.getMessage());
-            }
+            init(session, _queue);
         }
     }
 
+    /** -------------------------------------------------------------------------------------- **/
+    /** ----------------------------- Test Suite  -------------------------------------------- **/
+    /** -------------------------------------------------------------------------------------- **/
 
     /**
      * Uses two transactions respectively with xid1 and xid2 that are used to send a message
@@ -225,6 +167,7 @@ public class QueueTests extends QpidTestCase
     {
         if (!isBroker08())
         {
+            _logger.debug("running testProducer");
             Xid xid1 = getNewXid();
             Xid xid2 = getNewXid();
             // start the xaResource for xid1
@@ -373,6 +316,7 @@ public class QueueTests extends QpidTestCase
     {
         if (!isBroker08())
         {
+            _logger.debug("running testSendAndRecover");
             Xid xid1 = getNewXid();
             // start the xaResource for xid1
             try
@@ -398,7 +342,7 @@ public class QueueTests extends QpidTestCase
             // suspend the transaction
             try
             {
-                _xaResource.end(xid1, XAResource.TMSUSPEND);
+                _xaResource.end(xid1, XAResource.TMSUCCESS);
             }
             catch (XAException e)
             {
@@ -417,6 +361,7 @@ public class QueueTests extends QpidTestCase
             /////// stop the server now !!
             try
             {
+                _logger.debug("stopping broker");
                 shutdownServer();
             }
             catch (Exception e)
@@ -481,6 +426,7 @@ public class QueueTests extends QpidTestCase
                     fail("Wrong message returned! Sequence number is " + message1
                             .getLongProperty(_sequenceNumberPropertyName));
                 }
+                nonXASession.commit();
             }
             catch (JMSException e)
             {
@@ -498,6 +444,7 @@ public class QueueTests extends QpidTestCase
     {
         if (!isBroker08())
         {
+            _logger.debug("running testRecover");
             Xid xid1 = getNewXid();
             Xid xid2 = getNewXid();
             // start the xaResource for xid1
@@ -524,7 +471,7 @@ public class QueueTests extends QpidTestCase
             // suspend the transaction
             try
             {
-                _xaResource.end(xid1, XAResource.TMSUSPEND);
+                _xaResource.end(xid1, XAResource.TMSUCCESS);
             }
             catch (XAException e)
             {
@@ -582,7 +529,7 @@ public class QueueTests extends QpidTestCase
             // suspend the transaction
             try
             {
-                _xaResource.end(xid2, XAResource.TMSUSPEND);
+                _xaResource.end(xid2, XAResource.TMSUCCESS);
             }
             catch (XAException e)
             {
@@ -601,6 +548,7 @@ public class QueueTests extends QpidTestCase
             /////// stop the server now !!
             try
             {
+                _logger.debug("stopping broker");
                 shutdownServer();
             }
             catch (Exception e)
@@ -627,7 +575,7 @@ public class QueueTests extends QpidTestCase
                 {
                     if (anInDoubt.equals(xid1))
                     {
-                        System.out.println("rollback xid1 ");
+                         _logger.debug("rollback xid1 ");
                         try
                         {
                             _xaResource.rollback(anInDoubt);
@@ -639,7 +587,7 @@ public class QueueTests extends QpidTestCase
                     }
                     else if (anInDoubt.equals(xid2))
                     {
-                        System.out.println("commit xid2 ");
+                        _logger.debug("commit xid2 ");
                         try
                         {
                             _xaResource.commit(anInDoubt, false);
@@ -675,24 +623,6 @@ public class QueueTests extends QpidTestCase
         }
     }
 
-    /**
-     * close the standard connection
-     */
-    public void testEnd()
-    {
-        if (!isBroker08())
-        {
-            try
-            {
-                _queueConnection.stop();
-                _queueConnection.close();
-            }
-            catch (Exception e)
-            {
-                fail("Exception thrown when cleaning standard connection: " + e.getStackTrace());
-            }
-        }
-    }
     /** -------------------------------------------------------------------------------------- **/
     /** ----------------------------- Utility methods  --------------------------------------- **/
     /** -------------------------------------------------------------------------------------- **/
@@ -709,28 +639,5 @@ public class QueueTests extends QpidTestCase
         return _queueFactory.createXAQueueConnection("guest", "guest");
     }
 
-    /**
-     * construct a new Xid
-     *
-     * @return a new Xid
-     */
-    private Xid getNewXid()
-    {
-        byte[] branchQualifier;
-        byte[] globalTransactionID;
-        int format = _xidCounter;
-        String branchQualifierSt = "branchQualifier" + _xidCounter;
-        String globalTransactionIDSt = "globalTransactionID" + _xidCounter;
-        branchQualifier = branchQualifierSt.getBytes();
-        globalTransactionID = globalTransactionIDSt.getBytes();
-        _xidCounter++;
-        return new XidImpl(branchQualifier, format, globalTransactionID);
-    }
 
-    public void shutdownServer() throws Exception
-    {
-        killBroker();
-        System.out.println("initializing server connection and actores ");
-        setUp();       
-    }
 }
