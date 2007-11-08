@@ -138,7 +138,8 @@ void Queue::requestDispatch(Consumer::ptr c){
     if (!c || c->preAcquires()) {
         serializer.execute(dispatchCallback);
     } else {
-        serviceBrowser(c);
+        DispatchFunctor f(*this, c);
+        serializer.execute(f);
     }
 }
 
