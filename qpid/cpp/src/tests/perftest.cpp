@@ -79,7 +79,7 @@ void setup() {
     session.queueDeclare(arg::queue="control"); // Control queue
     session.queuePurge(arg::queue="control");
     if (mode==SHARED) {
-        session.queueDeclare(arg::queue="perftest"); // Shared data queue
+        session.queueDeclare(arg::queue="perftest", arg::durable=opts.durable); // Shared data queue
         session.queuePurge(arg::queue="perftest");
     }
     session.close();
