@@ -66,11 +66,18 @@ namespace qpid {
             struct DispatchFunctor 
             {
                 Queue& queue;
+                Consumer::ptr consumer;
                 DispatchCompletion* sync;
+
                 DispatchFunctor(Queue& q, DispatchCompletion* s = 0) : queue(q), sync(s) {}
+                DispatchFunctor(Queue& q, Consumer::ptr c, DispatchCompletion* s = 0) : queue(q), consumer(c), sync(s) {}
                 void operator()()
                 {
-                    queue.dispatch(); 
+                    if (consumer && !consumer->preAcquires()) {
+                        queue.serviceBrowser(consumer);                        
+                    }else{
+                        queue.dispatch(); 
+                    }
                     if (sync) sync->completed();
                 }
             };
