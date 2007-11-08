@@ -137,9 +137,9 @@ public class QpidTestCase extends TestCase
      */
     public void startBroker() throws Exception
     {
-        _logger.info("Starting broker");
+        _logger.info("Starting broker: " + _shel + " " + _brokerPath + "  " + _brokerParams + "");
         Runtime rt = Runtime.getRuntime();
-        _brokerProcess = rt.exec(_shel + " " + _brokerPath + " " + _brokerParams);
+        _brokerProcess = rt.exec(_shel + " " + _brokerPath + "  " + _brokerParams + "");
         BufferedReader reader = new BufferedReader(new InputStreamReader(_brokerProcess.getInputStream()));
         if (reader.ready())
         {
@@ -177,6 +177,11 @@ public class QpidTestCase extends TestCase
         _connectionFactory = null;
     }
 
+     public void shutdownServer() throws Exception
+    {
+        killBroker();
+        setUp();
+    }
     /**
      * we assume that the environment is correctly set
      * i.e. -Djava.naming.provider.url="..//example010.properties"
