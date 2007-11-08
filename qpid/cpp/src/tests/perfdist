@@ -1,0 +1,33 @@
+#!/bin/bash
+#
+echo $_
+usage() {
+cat <<EOF
+Distributed perftest with ssh.
+Arguments before -- are passed to perftest.
+Arguments after -- are treated as host names.
+Publisher runs on first host. One listener runs on each 
+Remaining host. To run multiple liseners on a host, list it more than once.
+Do not pass --consumers, --publish or --listen options, they are computed
+from the host list.
+EOF
+exit 1
+}
+
+while test "$HOSTS" != "$*"; do
+    case $1 in
+	--consumers|--publish|--listen) usage ;;
+	--) shift; PUB="$1" ; shift ; HOSTS="$*" ;;
+	*) ARGS="$ARGS $1"; shift ;;
+    esac
+done
+test -n "$HOSTS" || { echo "No -- found"; usage; }
+N=`echo $HOSTS | wc -w`
+PERFTEST=`PATH=$PWD:$PATH which perftest`
+$PERFTEST --purge $ARGS
+ssh $PUB $PERFTEST $ARGS --publish --consumers $N&
+for h in $HOSTS; do
+    ssh $h $PERFTEST $ARGS --listen&
+done
+wait
+
