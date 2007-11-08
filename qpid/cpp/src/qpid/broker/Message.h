@@ -124,6 +124,7 @@ public:
     mutable boost::shared_ptr<Exchange> exchange;
     mutable uint64_t persistenceId;
     bool redelivered;
+    bool loaded;
     ConnectionToken* publisher;
     mutable MessageAdapter* adapter;
 
