@@ -113,7 +113,7 @@ DeliveryToken::shared_ptr MessageDelivery::getMessageDeliveryToken(const std::st
     return DeliveryToken::shared_ptr(new MessageDeliveryToken(destination, confirmMode, acquireMode));
 }
 
-void MessageDelivery::deliver(Message::shared_ptr msg, 
+void MessageDelivery::deliver(QueuedMessage& msg, 
                               framing::FrameHandler& handler, 
                               DeliveryId id, 
                               DeliveryToken::shared_ptr token, 
@@ -124,9 +124,9 @@ void MessageDelivery::deliver(Message::shared_ptr msg,
     //have one content class for 0-10 proper
 
     boost::shared_ptr<BaseToken> t = dynamic_pointer_cast<BaseToken>(token);
-    AMQFrame method = t->sendMethod(msg, id);
+    AMQFrame method = t->sendMethod(msg.payload, id);
     method.setEof(false);
     handler.handle(method);
-    msg->sendHeader(handler, framesize);
-    msg->sendContent(handler, framesize);
+    msg.payload->sendHeader(handler, framesize);
+    msg.payload->sendContent(*(msg.queue), handler, framesize);
 }

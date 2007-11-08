@@ -251,7 +251,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         policy.update(settings);
         
         store.expect();
-        store.stage(*msg3);
+        store.stage(0, *msg3);
         store.test();
 
         Queue::shared_ptr queue(new Queue("my_queue", false, &store, 0));

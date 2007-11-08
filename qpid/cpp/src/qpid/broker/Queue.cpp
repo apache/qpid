@@ -212,7 +212,7 @@ bool Queue::getNextMessage(QueuedMessage& msg)
 
 void Queue::dispatch()
 {
-     QueuedMessage msg;
+     QueuedMessage msg(this);
      while (getNextMessage(msg) && msg.payload->isEnqueueComplete()){
          if (dispatch(msg)) {
              pop();
@@ -242,7 +242,7 @@ void Queue::serviceAllBrowsers()
 
 void Queue::serviceBrowser(Consumer::ptr browser)
 {
-    QueuedMessage msg;
+    QueuedMessage msg(this);
     while (seek(msg, browser->position) && browser->deliver(msg)) {
         browser->position = msg.position;
     }
@@ -318,7 +318,7 @@ void Queue::cancel(Consumer::ptr c, Consumers& consumers)
 
 QueuedMessage Queue::dequeue(){
     Mutex::ScopedLock locker(messageLock);
-    QueuedMessage msg;
+    QueuedMessage msg(this);
 
     if(!messages.empty()){
         msg = messages.front();
@@ -350,7 +350,7 @@ void Queue::pop(){
 
 void Queue::push(Message::shared_ptr& msg){
     Mutex::ScopedLock locker(messageLock);
-    messages.push_back(QueuedMessage(msg, ++sequence));
+    messages.push_back(QueuedMessage(this, msg, ++sequence));
     if (policy.get()) {
         policy->enqueued(msg->contentSize());
         if (policy->limitExceeded()) {

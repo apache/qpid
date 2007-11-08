@@ -41,6 +41,7 @@ class ConnectionToken;
 class Exchange;
 class ExchangeRegistry;
 class MessageStore;
+class Queue;
 
 class Message : public PersistableMessage {
 public:
@@ -114,7 +115,7 @@ public:
      */
     void releaseContent(MessageStore* store);
 
-    void sendContent(framing::FrameHandler& out, uint16_t maxFrameSize) const;
+    void sendContent(Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const;
     void sendHeader(framing::FrameHandler& out, uint16_t maxFrameSize) const;
 
     bool isContentLoaded() const;

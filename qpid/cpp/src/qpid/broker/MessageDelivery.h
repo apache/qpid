@@ -23,6 +23,7 @@
  */
 #include <boost/shared_ptr.hpp>
 #include "DeliveryId.h"
+#include "Consumer.h"
 #include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
@@ -43,7 +44,7 @@ public:
                                                                     u_int8_t confirmMode, 
                                                                     u_int8_t acquireMode);
 
-    static void deliver(boost::shared_ptr<Message> msg, framing::FrameHandler& out, 
+    static void deliver(QueuedMessage& msg, framing::FrameHandler& out, 
                         DeliveryId deliveryTag, boost::shared_ptr<DeliveryToken> token, uint16_t framesize);
 };
 

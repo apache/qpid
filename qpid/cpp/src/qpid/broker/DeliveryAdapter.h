@@ -42,7 +42,7 @@ namespace broker {
     class DeliveryAdapter
     {
     public:
-        virtual DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token) = 0;
+        virtual DeliveryId deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token) = 0;
         virtual ~DeliveryAdapter(){}
     };
 

@@ -76,7 +76,7 @@ public:
             msg->getProperties<DeliveryProperties>()->setDeliveryMode(PERSISTENT);
             msg->getProperties<DeliveryProperties>()->setRoutingKey("routing_key");
             messages.push_back(msg);
-            QueuedMessage qm;
+            QueuedMessage qm(queue.get());
             qm.payload = msg;
             deliveries.push_back(DeliveryRecord(qm, queue, "xyz", DeliveryToken::shared_ptr(), (i+1), true));
         }
