@@ -54,33 +54,13 @@ private:
         DELAYED_DELETE
     } state;
 
-    /**
-     * TODO: The following are part of a temporary fix to ensure that
-     * where a new event is generated for the same handle while an
-     * earlier one is still being processed (due to an interest in
-     * writeability being declared) the events are processed serially
-     * by the first thread.
-     */
-    Mutex processLock;
-    bool processing;
-    bool deleted;
-    std::queue<Poller::EventType> events;
-
-    bool start(Poller::EventType type);
-    void handle(Poller::EventType type);
-    void drain();
-    bool next(Poller::EventType& type);
-    /**************************************************************/
-
 public:
     DispatchHandle(const Socket& s, Callback rCb, Callback wCb, Callback dCb) :
       PollerHandle(s),
       readableCallback(rCb),
       writableCallback(wCb),
       disconnectedCallback(dCb),
-      state(IDLE),
-      processing(false),
-      deleted(false)
+      state(IDLE)
     {}
 
     ~DispatchHandle();
