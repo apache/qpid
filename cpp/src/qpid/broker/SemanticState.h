@@ -183,7 +183,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void ackRange(DeliveryId deliveryTag, DeliveryId endTag);
     void recover(bool requeue);
     void flow(bool active);
-    DeliveryId redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token);            
+    DeliveryId redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);            
     void acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired);
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);

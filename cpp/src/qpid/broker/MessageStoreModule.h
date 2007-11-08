@@ -58,7 +58,8 @@ public:
     void stage(PersistableMessage& msg);
     void destroy(PersistableMessage& msg);
     void appendContent(const PersistableMessage& msg, const std::string& data);
-    void loadContent(const PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length);
+    void loadContent(const qpid::broker::PersistableQueue& queue, 
+	          const PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length);
 
     void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
     void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);

@@ -54,7 +54,7 @@ void MessageBuilder::handle(AMQFrame& frame)
         message->getFrames().append(frame);
         //have we reached the staging limit? if so stage message and release content
         if (state == CONTENT && stagingThreshold && message->getFrames().getContentSize() >= stagingThreshold) {
-            message->releaseContent(store);
+            message->releaseContent(store); 
             staging = true;
         }
     }
