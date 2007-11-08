@@ -556,3 +556,18 @@ bool Queue::hasExclusiveConsumer() const
 { 
     return exclusive; 
 }
+
+void Queue::DispatchFunctor::operator()()
+{
+    try {
+        if (consumer && !consumer->preAcquires()) {
+            queue.serviceBrowser(consumer);                        
+        }else{
+            queue.dispatch(); 
+        }
+    } catch (const std::exception& e) {
+        QPID_LOG(error, "Exception on dispatch: " << e.what());
+    }
+    
+    if (sync) sync->completed();
+}
