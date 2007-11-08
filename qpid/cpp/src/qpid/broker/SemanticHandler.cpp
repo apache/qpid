@@ -163,7 +163,7 @@ void SemanticHandler::handleContent(AMQFrame& frame)
     }
 }
 
-DeliveryId SemanticHandler::deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token)
+DeliveryId SemanticHandler::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
 {
     Mutex::ScopedLock l(outLock);
     MessageDelivery::deliver(

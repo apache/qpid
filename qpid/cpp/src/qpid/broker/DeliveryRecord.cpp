@@ -89,7 +89,7 @@ void DeliveryRecord::redeliver(SemanticState* const session) {
             requeue();
         }else{
             msg.payload->redeliver();//mark as redelivered
-            id = session->redeliver(msg.payload, token);
+            id = session->redeliver(msg, token);
         }
     }
 }
