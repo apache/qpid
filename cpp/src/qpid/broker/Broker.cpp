@@ -39,6 +39,7 @@
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/ConnectionInputHandlerFactory.h"
 #include "qpid/sys/TimeoutHandler.h"
+#include "qpid/sys/SystemInfo.h"
 
 #include <boost/bind.hpp>
 
@@ -68,6 +69,8 @@ Broker::Options::Options(const std::string& name) :
     mgmtPubInterval(10),
     ack(100)
 {
+    int c = sys::SystemInfo::concurrency();
+    if (c > 0) workerThreads=c;
     addOptions()
         ("port,p", optValue(port,"PORT"),
          "Tells the broker to listen on PORT")
