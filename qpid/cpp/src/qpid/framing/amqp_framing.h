@@ -30,5 +30,4 @@
 #include "OutputHandler.h"
 #include "InitiationHandler.h"
 #include "ProtocolInitiation.h"
-#include "BasicHeaderProperties.h"
 #include "ProtocolVersion.h"

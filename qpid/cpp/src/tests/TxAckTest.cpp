@@ -32,6 +32,8 @@ using std::vector;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+enum DeliveryMode { TRANSIENT = 1, PERSISTENT = 2};
+
 class TxAckTest : public CppUnit::TestCase  
 {
 
