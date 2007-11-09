@@ -36,9 +36,10 @@ SerializerBase::SerializerBase(bool allowImmediate, VoidFn0 notifyDispatchFn)
         notifyDispatch = boost::bind(&SerializerBase::notifyWorker, this);
 }
 
-SerializerBase::~SerializerBase() {
+void SerializerBase::shutdown() {
     {
         Mutex::ScopedLock l(lock);
+        if (state == SHUTDOWN) return;
         state = SHUTDOWN;
         lock.notify();
     }

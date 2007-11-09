@@ -46,7 +46,7 @@ class SerializerBase : private boost::noncopyable, private Runnable
     /** @see Serializer::Serializer */
     SerializerBase(bool immediate=true, VoidFn0 notifyDispatch=VoidFn0());
 
-    virtual ~SerializerBase();
+    virtual ~SerializerBase() { shutdown(); }
 
     virtual void dispatch() = 0;
   protected:
@@ -57,6 +57,7 @@ class SerializerBase : private boost::noncopyable, private Runnable
         SHUTDOWN ///< SerailizerBase is being destroyed.
     };
 
+    void shutdown();
     void notifyWorker();
     void run();
     virtual bool empty() = 0;
@@ -101,7 +102,8 @@ class Serializer : public SerializerBase {
      */
     Serializer(bool immediate=true, VoidFn0 notifyDispatch=VoidFn0())
         : SerializerBase(immediate, notifyDispatch) {}
-    
+
+    ~Serializer() { shutdown(); }
     /** 
      * Task may be executed immediately in the calling thread if there
      * are no other tasks pending or executing and the "immediate"
@@ -166,11 +168,11 @@ void Serializer<Task>::dispatch() {
 
 template <class Task>
 void Serializer<Task>::dispatch(Task& task) {
-    Mutex::ScopedUnlock u(lock);
     // Preconditions: lock is held, state is EXECUTING or DISPATCHING
     assert(state != IDLE);
     assert(state != SHUTDOWN);
     assert(state == EXECUTING || state == DISPATCHING);
+    Mutex::ScopedUnlock u(lock);
     // No exceptions allowed in task.
     try { task(); } catch (...) { assert(0); }
 }
