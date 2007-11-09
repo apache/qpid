@@ -21,7 +21,6 @@
 #include "amqp_types.h"
 #include "AMQBody.h"
 #include "Buffer.h"
-#include "BasicHeaderProperties.h"
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/MessageProperties.h"
 #include <iostream>
@@ -37,14 +36,9 @@ namespace framing {
 
 class AMQHeaderBody :  public AMQBody
 {
-    typedef std::vector< boost::variant<BasicHeaderProperties, DeliveryProperties, MessageProperties> > PropertyList; 
+    typedef std::vector< boost::variant<DeliveryProperties, MessageProperties> > PropertyList; 
 
     PropertyList properties;
-
-    void decode(BasicHeaderProperties s, Buffer& b, uint32_t size) {
-        s.decode(b, size);
-        properties.push_back(s);
-    }
 
     template <class T> void decode(T t, Buffer& b, uint32_t size) {
         t.decodeStructBody(b, size);
@@ -60,11 +54,6 @@ class AMQHeaderBody :  public AMQBody
             t.encode(buffer);
         }
 
-        void operator()(const BasicHeaderProperties& s) const {
-            buffer.putLong(s.size() + 2/*typecode*/);
-            buffer.putShort(BasicHeaderProperties::TYPE);           
-            s.encode(buffer);
-        }
     };
 
     class CalculateSize : public boost::static_visitor<> {
@@ -74,10 +63,6 @@ class AMQHeaderBody :  public AMQBody
 
         template <class T> void operator()(T& t) {
             size += t.size();
-        }
-
-        void operator()(const BasicHeaderProperties& s) {
-            size += s.size() + 2/*typecode*/ + 4/*size field*/;
         }
 
         uint32_t totalSize() { 

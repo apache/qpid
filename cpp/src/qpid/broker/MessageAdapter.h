@@ -24,7 +24,6 @@
 
 #include <string>
 #include "qpid/framing/BasicPublishBody.h"
-#include "qpid/framing/BasicHeaderProperties.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FrameSet.h"
 #include "qpid/framing/DeliveryProperties.h"
@@ -34,6 +33,7 @@
 namespace qpid {	
 namespace broker {
 
+// FIXME aconway 2007-11-09: No longer needed, we only have one type of message.
 struct MessageAdapter
 {
     virtual ~MessageAdapter() {}
@@ -43,15 +43,6 @@ struct MessageAdapter
     virtual bool isImmediate(const framing::FrameSet& f) = 0;
     virtual const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f) = 0;
     virtual bool isPersistent(const framing::FrameSet& f) = 0;
-};
-
-struct PublishAdapter : MessageAdapter
-{
-    std::string getRoutingKey(const framing::FrameSet& f);
-    std::string getExchange(const framing::FrameSet& f);
-    bool isImmediate(const framing::FrameSet& f);
-    const framing::FieldTable* getApplicationHeaders(const framing::FrameSet& f);
-    bool isPersistent(const framing::FrameSet& f);
 };
 
 struct TransferAdapter : MessageAdapter
