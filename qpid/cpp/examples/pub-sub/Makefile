@@ -1,0 +1,17 @@
+CXX=g++ 
+CXXFLAGS= 
+
+PROGRAMS=topic_config_queues topic_listener topic_publisher
+all: $(PROGRAMS)
+
+topic_config_queues: topic_config_queues.cpp
+	$(CXX) $(CXXFLAGS) -lqpidclient -o $@ $^
+
+topic_listener: topic_listener.cpp
+	$(CXX) $(CXXFLAGS) -lqpidclient -o $@ $^
+
+topic_publisher: topic_publisher.cpp
+	$(CXX) $(CXXFLAGS) -lqpidclient -o $@ $^
+
+clean:
+	rm -f $(PROGRAMS) 

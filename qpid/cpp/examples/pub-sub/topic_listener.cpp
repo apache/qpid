@@ -41,7 +41,7 @@
  */
 
 #include <qpid/client/Connection.h>
-#include <qpid/client/Session_0_10.h>
+#include <qpid/client/Session.h>
 #include <qpid/client/Message.h>
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/Queue.h>
@@ -55,19 +55,21 @@
 using namespace qpid::client;
 using namespace qpid::framing;
 
+
 class Listener : public MessageListener {
   private:
-    Session_0_10& session;
+    Session& session;
     SubscriptionManager subscriptions;
   public:
-    Listener(Session_0_10& session);
+    Listener(Session& session);
     virtual void prepareQueue(std::string queue, std::string routing_key);
     virtual void received(Message& message);
     virtual void listen();
     ~Listener() { };
 };
 
-/**
+
+/*
  *  Listener::Listener
  *
  *  Subscribe to the queue, route it to a client destination for the
@@ -75,19 +77,21 @@ class Listener : public MessageListener {
  *  in the listener, you can use any name as long as you use the same
  *  name for the listener).
  */
-Listener::Listener(Session_0_10& session) : 
+
+Listener::Listener(Session& session) : 
         session(session),
         subscriptions(session)
-{}
+{
+}
 
 
 void Listener::prepareQueue(std::string queue, std::string routing_key) {
 
-    /* Create a unique queue name for this queue by concatenating
-     * the Session ID.
+    /* Create a unique queue name for this consumer by concatenating
+     * the queue name parameter with the Session ID.
      */
-    queue += session.getId().str();
 
+    queue += session.getId().str();
     std::cout << "Declaring queue: " << queue <<  std::endl;
    
     /* Declare an exclusive queue on the broker
@@ -103,45 +107,37 @@ void Listener::prepareQueue(std::string queue, std::string routing_key) {
      * "control" routing key, when it is finished.
      */
 
-    session.queueBind(arg::exchange="amq.topic", arg::queue=queue,
-                      arg::routingKey=routing_key);
-    session.queueBind(arg::exchange="amq.topic", arg::queue=queue,
-                      arg::routingKey="control");
+    session.queueBind(arg::exchange="amq.topic", arg::queue=queue, arg::routingKey=routing_key);
+    session.queueBind(arg::exchange="amq.topic", arg::queue=queue, arg::routingKey="control");
 
+    /*
+     * subscribe to the queue using the subscription manager.
+     */
 
-    // Subscribe to the queue using the subscription manager.
-    // The name of the subscription defaults to the name of the queue.
-    // 
     std::cout << "Subscribing to queue " << queue << std::endl;
     subscriptions.subscribe(*this, queue);
 }
 
 void Listener::received(Message& message) {
-    //
-    // message.getDestination() returns the name of the subscription
-    // to which this message was sent, which by default is the name
-    // of the queue subscribed to.
-    // 
-    std::cout << "Message: " << message.getData()
-              << " from " << message.getDestination() << std::endl;
+    std::cout << "Message: " << message.getData() << " from " << message.getDestination() << std::endl;
 
     if (message.getData() == "That's all, folks!") {
-        std::cout << "Shutting down listener for "
-                  << message.getDestination() << std::endl;
+        std::cout << "Shutting down listener for " << message.getDestination() << std::endl;
         subscriptions.cancel(message.getDestination());
     }
 }
 
 void Listener::listen() {
-    // run() will return when all the subscriptions are cancelled.
-    subscriptions.run();
+  subscriptions.run();
 }
 
 int main() {
     Connection connection;
     try {
         connection.open("127.0.0.1", 5672);
-        Session_0_10 session =  connection.newSession();
+        Session session =  connection.newSession();
+
+        //--------- Main body of program --------------------------------------------
 
 	// Create a listener for the session
 
@@ -159,6 +155,8 @@ int main() {
         // Give up control and receive messages
         listener.listen();
 
+
+        //-----------------------------------------------------------------------------
 
         connection.close();
         return 0;
