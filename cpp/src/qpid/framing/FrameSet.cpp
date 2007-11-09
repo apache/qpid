@@ -22,7 +22,6 @@
 #include "FrameSet.h"
 #include "qpid/framing/all_method_bodies.h"
 #include "qpid/framing/frame_functors.h"
-#include "qpid/framing/BasicHeaderProperties.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/TypeFilter.h"
 

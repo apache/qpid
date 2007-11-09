@@ -130,7 +130,6 @@ public:
     mutable MessageAdapter* adapter;
 
     static TransferAdapter TRANSFER;
-    static PublishAdapter PUBLISH;
 
     MessageAdapter& getAdapter() const;
 };

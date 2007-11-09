@@ -32,6 +32,9 @@ using namespace boost;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+
+enum DeliveryMode { TRANSIENT = 1, PERSISTENT = 2};
+
 class MessageTest : public CppUnit::TestCase  
 {
     CPPUNIT_TEST_SUITE(MessageTest);
