@@ -25,6 +25,9 @@ import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.message.AMQMessage;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.requestreply.PingPongProducer;
 
 import uk.co.thebadgerset.junit.extensions.TimingController;
@@ -33,6 +36,7 @@ import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.ObjectMessage;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -242,7 +246,9 @@ public class PingLatencyTestPerf extends PingTestPerf implements TimingControlle
         public BatchedResultsListener(int batchSize)
         {
             _batchSize = batchSize;
-            _strictAMQP = false;
+            _strictAMQP =
+                Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP,
+                        AMQSession.STRICT_AMQP_DEFAULT));
         }
 
         /**
