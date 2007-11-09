@@ -99,7 +99,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/AMQHeaderBody.cpp \
   qpid/framing/AMQHeartbeatBody.cpp \
   qpid/framing/Array.cpp \
-  qpid/framing/BasicHeaderProperties.cpp \
   qpid/framing/BodyHandler.cpp \
   qpid/framing/ChannelAdapter.cpp \
   qpid/framing/Buffer.cpp \
@@ -343,7 +342,6 @@ nobase_include_HEADERS = \
   qpid/framing/AMQP_HighestVersion.h \
   qpid/framing/AccumulatedAck.h \
   qpid/framing/Array.h \
-  qpid/framing/BasicHeaderProperties.h \
   qpid/framing/Blob.h \
   qpid/framing/BodyHandler.h \
   qpid/framing/Buffer.h \

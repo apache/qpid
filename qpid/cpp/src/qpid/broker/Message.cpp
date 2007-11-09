@@ -34,7 +34,6 @@ using namespace qpid::framing;
 using std::string;
 
 TransferAdapter Message::TRANSFER;
-PublishAdapter Message::PUBLISH;
 
 Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false), publisher(0), adapter(0) {}
 
@@ -190,12 +189,12 @@ void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) 
     frames.map_if(f, TypeFilter(HEADER_BODY));    
 }
 
+// FIXME aconway 2007-11-09: Obsolete, remove. Was used to cover over
+// 0-8/0-9 message differences.
 MessageAdapter& Message::getAdapter() const
 {
     if (!adapter) {
-        if (frames.isA<BasicPublishBody>()) {
-            adapter = &PUBLISH;
-        } else if(frames.isA<MessageTransferBody>()) {
+        if(frames.isA<MessageTransferBody>()) {
             adapter = &TRANSFER;
         } else {
             const AMQMethodBody* method = frames.getMethod();

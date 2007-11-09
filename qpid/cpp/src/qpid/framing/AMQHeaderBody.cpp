@@ -44,9 +44,6 @@ void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, uint32_t size){
         uint16_t type = buffer.getShort();
         //The following switch could be generated as the number of options increases:
         switch(type) {
-        case BasicHeaderProperties::TYPE: 
-            decode(BasicHeaderProperties(), buffer, len - 2);
-            break;
         case MessageProperties::TYPE:
             decode(MessageProperties(), buffer, len - 2);
             break;
@@ -65,10 +62,6 @@ uint64_t qpid::framing::AMQHeaderBody::getContentLength() const
     const MessageProperties* mProps = get<MessageProperties>();
     if (mProps) {
         return mProps->getContentLength();
-    }
-    const BasicHeaderProperties* bProps = get<BasicHeaderProperties>();
-    if (bProps) {
-        return bProps->getContentLength();
     }
     return 0;
 }
