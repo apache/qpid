@@ -24,6 +24,6 @@ class ExecutionTests (TestBase):
     def test_flush(self):
         channel = self.channel
         for i in [1, 2, 3]:
-            channel.basic_publish(routing_key=str(i))
-            #channel.execution_flush()
+            channel.message_transfer(
+                content=Content(properties={'routing_key':str(i)}))
             assert(channel.completion.wait(channel.completion.command_id, timeout=1))
