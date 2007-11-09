@@ -128,7 +128,7 @@ libqpidcommon_la_SOURCES = \
   qpid/sys/AsynchIOAcceptor.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
-  qpid/sys/RefCountedMap.h \
+  qpid/sys/SystemInfo.cpp \
   qpid/sys/Serializer.cpp \
   qpid/sys/Shlib.cpp \
   qpid/Options.cpp \
@@ -401,9 +401,11 @@ nobase_include_HEADERS = \
   qpid/sys/Mutex.h \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \
+  qpid/sys/RefCountedMap.h \
   qpid/sys/ScopedIncrement.h \
   qpid/sys/Semaphore.h \
   qpid/sys/Serializer.h \
+  qpid/sys/SystemInfo.h \
   qpid/sys/Shlib.h \
   qpid/sys/ShutdownHandler.h \
   qpid/sys/Socket.h \
