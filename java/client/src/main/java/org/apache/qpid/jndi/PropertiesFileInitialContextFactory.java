@@ -86,6 +86,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
                 p.load(new BufferedInputStream(new FileInputStream(file)));
 
                 environment.putAll(p);
+                System.getProperties().putAll(p);
                 _logger.info("Loaded Context Properties:" + environment.toString());
             }
             else
@@ -97,6 +98,8 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
             _logger.warn("Unable to load property file specified in Provider_URL:" + environment.get(Context.PROVIDER_URL));
         }
+
+        
 
         createConnectionFactories(data, environment);
 
