@@ -199,6 +199,7 @@ libqpidbroker_la_SOURCES = \
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
   $(rgen_client_cpp)				\
+  qpid/client/Session.h				\
   qpid/client/Connection.cpp			\
   qpid/client/Channel.cpp			\
   qpid/client/Exchange.cpp			\

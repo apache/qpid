@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        8%{?dist}
+Release:        10%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -106,6 +106,7 @@ make check
 %_includedir/qpid/log
 %_libdir/libqpidcommon.so
 %_libdir/libqpidclient.so
+%doc %_datadir/%{name}/examples
 %doc docs/api/html
 
 %files -n %{qpidd}
@@ -149,8 +150,12 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Thu Nov 8 2007 Alan Conway <aconway@redhat.com> - 0.2-10
+- added examples to RPM package.
+
 * Thu Oct 9 2007 Alan Conway <aconway@redhat.com> - 0.2-9
-- added %config(noreplace) for qpidd.conf
+- added config(noreplace) for qpidd.conf
 
 * Thu Oct 4 2007 Alan Conway <aconway@redhat.com> - 0.2-8
 - Added qpidd.conf configuration file.
