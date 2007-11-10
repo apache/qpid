@@ -34,8 +34,6 @@ using std::vector;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-enum DeliveryMode { TRANSIENT = 1, PERSISTENT = 2};
-
 class TxPublishTest : public CppUnit::TestCase  
 {
     typedef std::pair<string, PersistableMessage*> msg_queue_pair;
