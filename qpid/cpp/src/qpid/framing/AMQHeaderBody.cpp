@@ -22,36 +22,21 @@
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 
-qpid::framing::AMQHeaderBody::AMQHeaderBody() {}
-
-qpid::framing::AMQHeaderBody::~AMQHeaderBody() {}
-
-uint32_t qpid::framing::AMQHeaderBody::size() const{
-    CalculateSize visitor;
-    for_each(properties.begin(), properties.end(), boost::apply_visitor(visitor));
-    return visitor.totalSize();
+uint32_t qpid::framing::AMQHeaderBody::size() const {
+    return properties.size();
 }
 
 void qpid::framing::AMQHeaderBody::encode(Buffer& buffer) const {
-    Encode visitor(buffer);
-    for_each(properties.begin(), properties.end(), boost::apply_visitor(visitor));
+    properties.encode(buffer);
 }
 
-void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, uint32_t size){
+void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, uint32_t size) {
     uint32_t limit = buffer.available() - size;
     while (buffer.available() > limit + 2) {
         uint32_t len = buffer.getLong();
         uint16_t type = buffer.getShort();
-        //The following switch could be generated as the number of options increases:
-        switch(type) {
-        case MessageProperties::TYPE:
-            decode(MessageProperties(), buffer, len - 2);
-            break;
-        case DeliveryProperties::TYPE:
-            decode(DeliveryProperties(), buffer, len - 2);
-            break;
-        default:
-            //TODO: should just skip over them keeping them for later dispatch as is
+        if (!properties.decode(buffer, len, type)) {
+            // TODO: should just skip & keep for later dispatch.
             throw Exception(QPID_MSG("Unexpected property type: " << type));
         }
     }
@@ -60,9 +45,8 @@ void qpid::framing::AMQHeaderBody::decode(Buffer& buffer, uint32_t size){
 uint64_t qpid::framing::AMQHeaderBody::getContentLength() const
 {    
     const MessageProperties* mProps = get<MessageProperties>();
-    if (mProps) {
+    if (mProps) 
         return mProps->getContentLength();
-    }
     return 0;
 }
 
@@ -70,7 +54,10 @@ void qpid::framing::AMQHeaderBody::print(std::ostream& out) const
 {
     out << "header (" << size() << " bytes)";
     out << "; properties={";
-    Print visitor(out);
-    for_each(properties.begin(), properties.end(), boost::apply_visitor(visitor));
+    properties.print(out);
     out << "}";
+}
+
+void qpid::framing::AMQHeaderBody::accept(AMQBodyConstVisitor& v) const {
+    v.visit(*this);
 }
