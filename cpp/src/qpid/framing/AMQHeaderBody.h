@@ -1,3 +1,6 @@
+#ifndef QPID_FRAMING_AMQHEADERBODY_H
+#define QPID_FRAMING_AMQHEADERBODY_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -24,66 +27,58 @@
 #include "qpid/framing/DeliveryProperties.h"
 #include "qpid/framing/MessageProperties.h"
 #include <iostream>
-#include <vector>
-#include <boost/variant.hpp>
-#include <boost/variant/get.hpp>
 
-#ifndef _AMQHeaderBody_
-#define _AMQHeaderBody_
+#include <boost/optional.hpp>
+
 
 namespace qpid {
 namespace framing {
 
 class AMQHeaderBody :  public AMQBody
 {
-    typedef std::vector< boost::variant<DeliveryProperties, MessageProperties> > PropertyList; 
-
-    PropertyList properties;
-
-    template <class T> void decode(T t, Buffer& b, uint32_t size) {
-        t.decodeStructBody(b, size);
-        properties.push_back(t);
-    }
-
-    class Encode : public boost::static_visitor<> {
-        Buffer& buffer;
-    public:
-        Encode(Buffer& b) : buffer(b) {}
-
-        template <class T> void operator()(T& t) const {
-            t.encode(buffer);
+    template <class T> struct OptProps { boost::optional<T> props; };
+    template <class Base, class T>
+    struct PropSet : public Base, public OptProps<T> {
+        uint32_t size() const {
+            const boost::optional<T>& p=this->OptProps<T>::props;
+            return (p ? p->size() : 0) + Base::size();
         }
-
-    };
-
-    class CalculateSize : public boost::static_visitor<> {
-        uint32_t size;
-    public:
-        CalculateSize() : size(0) {}
-
-        template <class T> void operator()(T& t) {
-            size += t.size();
+        void encode(Buffer& buffer) const {
+            const boost::optional<T>& p=this->OptProps<T>::props;
+            if (p) p->encode(buffer);
+            Base::encode(buffer);
         }
-
-        uint32_t totalSize() { 
-            return size; 
+        bool decode(Buffer& buffer, uint32_t size, uint16_t type) {
+            boost::optional<T>& p=this->OptProps<T>::props;
+            if (type == T::TYPE) {
+                p=T();
+                p->decodeStructBody(buffer, size);
+                return true;
+        }
+            else
+                return Base::decode(buffer, size, type);
         }        
-    };
-
-    class Print : public boost::static_visitor<> {
-        std::ostream& out;
-    public:
-        Print(std::ostream& o) : out(o) {}
-
-        template <class T> void operator()(T& t) {
-            out << t;
+        void print(std::ostream& out) const {
+            const boost::optional<T>& p=this->OptProps<T>::props;
+            Base::print(out << p);
         }
     };
 
+    struct Empty {
+        uint32_t size() const { return 0; }
+        void encode(Buffer&) const {};
+        bool decode(Buffer&, uint32_t, uint16_t) const { return false; };
+        void print(std::ostream&) const {}
+    };
+
+    // Could use boost::mpl::fold to construct a larger set.
+    typedef PropSet<PropSet<Empty, DeliveryProperties>,
+                    MessageProperties> Properties;
+
+    Properties properties;
+    
 public:
 
-    AMQHeaderBody();
-    ~AMQHeaderBody();
     inline uint8_t type() const { return HEADER_BODY; }
 
     uint32_t size() const;
@@ -91,33 +86,21 @@ public:
     void decode(Buffer& buffer, uint32_t size);
     uint64_t getContentLength() const;
     void print(std::ostream& out) const;
+    void accept(AMQBodyConstVisitor&) const;
 
-    void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
-
-    template <class T> T* get(bool create) { 
-        for (PropertyList::iterator i = properties.begin(); i != properties.end(); i++) {
-            T* p = boost::get<T>(&(*i));
-            if (p) return p;
-        }
-        if (create) {
-            properties.push_back(T());
-            return boost::get<T>(&(properties.back()));
-        } else {
-            return 0;
-        }
+    template <class T> T* get(bool create) {
+        boost::optional<T>& p=properties.OptProps<T>::props;
+        if (create && !p) p=T();
+        return p.get_ptr();
     }
 
-    template <class T> const T* get() const { 
-        for (PropertyList::const_iterator i = properties.begin(); i != properties.end(); i++) {
-            const T* p = boost::get<T>(&(*i));
-            if (p) return p;
-        }
-        return 0;
+    template <class T> const T* get() const {
+        return properties.OptProps<T>::props.get_ptr();
     }
 };
 
-}
-}
+}}
 
 
-#endif
+
+#endif  /*!QPID_FRAMING_AMQHEADERBODY_H*/
