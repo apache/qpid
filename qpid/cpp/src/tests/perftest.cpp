@@ -35,8 +35,6 @@ using namespace qpid;
 using namespace client;
 using namespace sys;
 
-enum DeliveryMode { TRANSIENT = 1, PERSISTENT = 2};
-
 struct Opts : public TestOptions {
 
     bool listen;
@@ -167,7 +165,7 @@ void PublishThread::run() {
         Message msg(string(msgSize, 'X'), "perftest");
         char* msgBuf = const_cast<char*>(msg.getData().data());
         if (opts.durable)
-	    msg.getDeliveryProperties().setDeliveryMode(PERSISTENT);
+	    msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
         // Time sending message.
         AbsTime start=now();
         if (!opts.summary) cout << "Publishing " << opts.count << " messages " << flush;
