@@ -113,13 +113,9 @@ namespace qpid {
             bool getNextMessage(QueuedMessage& msg);
             bool exclude(Message::shared_ptr msg);
  
-        protected:
-           /**
-            * Call back from store
-            */
-            virtual void notifyDurableIOComplete();
 
         public:
+            virtual void notifyDurableIOComplete();
             typedef boost::shared_ptr<Queue> shared_ptr;
 
             typedef std::vector<shared_ptr> vector;
