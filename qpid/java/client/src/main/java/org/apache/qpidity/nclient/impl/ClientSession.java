@@ -2,28 +2,27 @@ package org.apache.qpidity.nclient.impl;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
-import java.nio.ByteBuffer;
 
-import org.apache.qpidity.transport.Option;
 import org.apache.qpidity.QpidException;
-import org.apache.qpidity.transport.Range;
-import org.apache.qpidity.transport.RangeSet;
 import org.apache.qpidity.api.Message;
 import org.apache.qpidity.nclient.ClosedListener;
 import org.apache.qpidity.nclient.MessagePartListener;
+import org.apache.qpidity.transport.Option;
+import org.apache.qpidity.transport.Range;
+import org.apache.qpidity.transport.RangeSet;
 
 /**
- * Implements a Qpid Sesion. 
+ * Implements a Qpid Sesion.
  */
 public class ClientSession extends org.apache.qpidity.transport.Session implements  org.apache.qpidity.nclient.DtxSession
 {
     static
     {
         MAX_NOT_SYNC_DATA_LENGH = 200000 * 1024;
-        String max = "message_size_before_sync";       
+        String max = "message_size_before_sync";
         if (System.getProperties().containsKey(max))
         {
             try
@@ -37,12 +36,12 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         }
     }
 
-    private static  long MAX_NOT_SYNC_DATA_LENGH  ;
+    private static  long MAX_NOT_SYNC_DATA_LENGH;
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
     private ClosedListener _exceptionListner;
     private RangeSet _acquiredMessages;
     private RangeSet _rejectedMessages;
-    private long _dataSentNotSync;
+    private long _currentDataSizeNotSynced;
 
 
     public void messageAcknowledge(RangeSet ranges)
@@ -65,21 +64,38 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         // The javadoc clearly says that this method is suitable for small messages
         // therefore reading the content in one shot.
         ByteBuffer  data = msg.readData();
-        _dataSentNotSync = _dataSentNotSync + msg.getMessageProperties().getContentLength() + data.limit();
         super.messageTransfer(destination, confirmMode, acquireMode);
         super.header(msg.getDeliveryProperties(),msg.getMessageProperties());
         super.data( data );
         super.endData();
-        if( _dataSentNotSync >= MAX_NOT_SYNC_DATA_LENGH)
-        {
-            sync();
-        }
     }
 
     public void sync()
     {
-        _dataSentNotSync = 0;
         super.sync();
+        _currentDataSizeNotSynced = 0;
+    }
+
+    /* -------------------------
+     * Data methods
+     * ------------------------*/
+
+    public void data(ByteBuffer buf)
+    {
+        _currentDataSizeNotSynced = _currentDataSizeNotSynced + buf.remaining();
+        super.data(buf);
+    }
+
+    public void data(String str)
+    {
+        _currentDataSizeNotSynced = _currentDataSizeNotSynced + str.getBytes().length;
+        super.data(str);
+    }
+
+    public void data(byte[] bytes)
+    {
+        _currentDataSizeNotSynced = _currentDataSizeNotSynced + bytes.length;
+        super.data(bytes);
     }
 
     public void messageStream(String destination, Message msg, short confirmMode, short acquireMode) throws IOException
@@ -89,7 +105,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         boolean b = true;
         int count = 0;
         while(b)
-        {   
+        {
             try
             {
                 System.out.println("count : " + count++);
@@ -99,11 +115,20 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
             {
                 b = false;
             }
-        }   
-        
+        }
+
         super.endData();
     }
-    
+
+    public void endData()
+    {
+        super.endData();
+        if( MAX_NOT_SYNC_DATA_LENGH != -1 && _currentDataSizeNotSynced >= MAX_NOT_SYNC_DATA_LENGH)
+        {
+            sync();
+        }
+    }
+
     public RangeSet getAccquiredMessages()
     {
         return _acquiredMessages;
@@ -113,36 +138,36 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     {
         return _rejectedMessages;
     }
-    
+
     public void setMessageListener(String destination, MessagePartListener listener)
     {
         if (listener == null)
         {
             throw new IllegalArgumentException("Cannot set message listener to null");
         }
-        _messageListeners.put(destination, listener);       
+        _messageListeners.put(destination, listener);
     }
-    
+
     public void setClosedListener(ClosedListener exceptionListner)
     {
-        _exceptionListner = exceptionListner;        
-    }   
-    
+        _exceptionListner = exceptionListner;
+    }
+
     void setAccquiredMessages(RangeSet acquiredMessages)
     {
         _acquiredMessages = acquiredMessages;
     }
-    
+
     void setRejectedMessages(RangeSet rejectedMessages)
     {
         _rejectedMessages = rejectedMessages;
     }
-    
+
     void notifyException(QpidException ex)
     {
         _exceptionListner.onClosed(null, null);
     }
-    
+
     Map<String,MessagePartListener> getMessageListerners()
     {
         return _messageListeners;

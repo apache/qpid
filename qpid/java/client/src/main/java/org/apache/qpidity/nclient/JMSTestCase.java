@@ -1,6 +1,7 @@
-package org.apache.qpidity.nclient;
+ package org.apache.qpidity.nclient;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
 
@@ -17,27 +18,14 @@ public class JMSTestCase
 
             javax.jms.Session ssn = con.createSession(false, 1);
 
-            javax.jms.Destination dest = new AMQTopic(new AMQShortString("amq.topic"),"myTopic");
-            javax.jms.MessageProducer prod = ssn.createProducer(dest);
-            javax.jms.MessageConsumer cons = ssn.createConsumer(dest,"targetMessage = TRUE");
+            javax.jms.Destination dest = new AMQQueue(new AMQShortString("direct"),"test");
+            javax.jms.MessageConsumer cons = ssn.createConsumer(dest);
 
-            javax.jms.TextMessage msg = ssn.createTextMessage();
-            msg.setText("This is a test message");
-            msg.setBooleanProperty("targetMessage", false);
-            prod.send(msg);
+            javax.jms.TextMessage m = (javax.jms.TextMessage)cons.receive();
 
-            msg.setBooleanProperty("targetMessage", true);
-            prod.send(msg);
-
-            javax.jms.TextMessage m = (javax.jms.TextMessage)cons.receiveNoWait();
-
-            if (m == null)
+            if (m != null)
             {
-               System.out.println("message is null");
-            }
-            else
-            {
-               System.out.println("message is not null");
+               System.out.println("Message"  + m);
             }
         }
         catch(Exception e)
@@ -45,4 +33,23 @@ public class JMSTestCase
             e.printStackTrace();
         }
     }
+
+    /* javax.jms.TextMessage msg = ssn.createTextMessage();
+    msg.setText("This is a test message");
+    msg.setBooleanProperty("targetMessage", false);
+    prod.send(msg);
+
+    msg.setBooleanProperty("targetMessage", true);
+    prod.send(msg);
+
+    javax.jms.TextMessage m = (javax.jms.TextMessage)cons.receiveNoWait();
+
+    if (m == null)
+    {
+       System.out.println("message is null");
+    }
+    else
+    {
+       System.out.println("message is not null"  + m);
+    }*/
 }
