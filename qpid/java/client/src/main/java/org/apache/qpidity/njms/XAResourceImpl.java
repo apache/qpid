@@ -333,9 +333,9 @@ public class XAResourceImpl implements XAResource
         // todo make sure that the keys of the returned map are the xids
         Xid[] result = new Xid[res.getInDoubt().size()];
         int i = 0;
-      /*  try
+        try
         {
-          /*  for (Object xid : res.getInDoubt())
+            for (Object xid : res.getInDoubt())
             {
                 result[i] = new XidImpl((String) xid);
                 i++;
@@ -348,7 +348,7 @@ public class XAResourceImpl implements XAResource
                 _logger.debug("Cannot convert string into Xid ", e);
             }
             throw new XAException(XAException.XAER_PROTO);
-        }*/
+        }
         return result;
     }
 
