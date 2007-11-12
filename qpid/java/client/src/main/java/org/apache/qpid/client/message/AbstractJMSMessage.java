@@ -583,7 +583,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
             buf.append("\nJMS expiration: ").append(getJMSExpiration());
             buf.append("\nJMS priority: ").append(getJMSPriority());
             buf.append("\nJMS delivery mode: ").append(getJMSDeliveryMode());
-            buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
+            //buf.append("\nJMS reply to: ").append(String.valueOf(getJMSReplyTo()));
             buf.append("\nJMS Redelivered: ").append(_redelivered);
             buf.append("\nJMS Destination: ").append(getJMSDestination());
             buf.append("\nJMS Type: ").append(getJMSType());
