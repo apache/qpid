@@ -261,7 +261,6 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
 
 bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
-std::cout << " SemanticState::ConsumerImpl::deliver()" << windowing << "- " << ackExpected << std:: endl <<std::flush;
     if (!parent->getSession().isAttached()) {
         return false;
     }
