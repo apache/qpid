@@ -108,6 +108,11 @@ public:
         if (asyncEnqueueCounter > 0) {
             if (--asyncEnqueueCounter == 0) {
                 asyncEnqueueLock.notify();
+				if (store) {
+                    for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
+        	            (*i)->notifyDurableIOComplete();
+                    } 
+                }
             }
         }
     }
