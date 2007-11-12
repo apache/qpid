@@ -55,17 +55,18 @@ SessionState::~SessionState() {
     factory.erase(getId());
 }
 
-SessionHandler& SessionState::getHandler() {
-    assert(isAttached());
-    return *handler;
+SessionHandler* SessionState::getHandler() {
+    return handler;
 }
 
 AMQP_ClientProxy& SessionState::getProxy() {
-    return getHandler().getProxy();
+    assert(isAttached());
+    return getHandler()->getProxy();
 }
 
 Connection& SessionState::getConnection() {
-    return getHandler().getConnection();
+    assert(isAttached());
+    return getHandler()->getConnection();
 }
 
 void SessionState::detach() {
