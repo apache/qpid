@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -327,15 +327,15 @@ public class XAResourceImpl implements XAResource
      */
     public Xid[] recover(int flag) throws XAException
     {
-        // the flag is ignored 
+        // the flag is ignored
         Future<DtxCoordinationRecoverResult> future = _xaSession.getQpidSession().dtxCoordinationRecover();
         DtxCoordinationRecoverResult res = future.get();
         // todo make sure that the keys of the returned map are the xids
         Xid[] result = new Xid[res.getInDoubt().size()];
         int i = 0;
-        try
+      /*  try
         {
-            for (Object xid : res.getInDoubt())
+          /*  for (Object xid : res.getInDoubt())
             {
                 result[i] = new XidImpl((String) xid);
                 i++;
@@ -348,7 +348,7 @@ public class XAResourceImpl implements XAResource
                 _logger.debug("Cannot convert string into Xid ", e);
             }
             throw new XAException(XAException.XAER_PROTO);
-        }
+        }*/
         return result;
     }
 
