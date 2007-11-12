@@ -19,12 +19,15 @@
  *
  */
 #include "amqp_types.h"
+#include "qpid/Exception.h"
 
 #ifndef _Buffer_
 #define _Buffer_
 
 namespace qpid {
 namespace framing {
+
+struct OutOfBounds : qpid::Exception {};
 
 class Content;
 class FieldTable;
@@ -35,6 +38,8 @@ class Buffer
     char* data;
     uint32_t position;
     uint32_t r_position;
+
+    void checkAvailable(uint32_t count) { if (position + count > size) throw OutOfBounds(); }
 
 public:
 

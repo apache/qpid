@@ -164,12 +164,14 @@ void Buffer::putLongString(const string& s){
 
 void Buffer::getShortString(string& s){
     uint8_t len = getOctet();
+    checkAvailable(len);
     s.assign(data + position, len);
     position += len;
 }
 
 void Buffer::getLongString(string& s){
     uint32_t len = getLong();
+    checkAvailable(len);
     s.assign(data + position, len);
     position += len;
 }
@@ -181,6 +183,7 @@ void Buffer::putRawData(const string& s){
 }
 
 void Buffer::getRawData(string& s, uint32_t len){
+    checkAvailable(len);
     s.assign(data + position, len);
     position += len;
 }
@@ -191,6 +194,7 @@ void Buffer::putRawData(const uint8_t* s, size_t len){
 }
 
 void Buffer::getRawData(uint8_t* s, size_t len){
+    checkAvailable(len);
     memcpy(s, data + position, len);
     position += len;
 }
