@@ -349,7 +349,7 @@ void BrokerAdapter::TxHandlerImpl::commit()
 void BrokerAdapter::TxHandlerImpl::rollback()
 {    
     state.rollback();
-    state.recover(false);    
+    state.recover(true);    
 }
               
 }} // namespace qpid::broker
