@@ -163,8 +163,10 @@ void PublishThread::run() {
 
         // Create test message
         size_t msgSize=max(opts.size, 32);
-        Message msg(string(msgSize, 'X'), "perftest");
-        char* msgBuf = const_cast<char*>(msg.getData().data());
+        char* msgBuf = new char[msgSize];
+		memset(msgBuf,'X', msgSize);
+
+        Message msg(string(), "perftest");
         if (opts.durable)
 	    msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
         // Time sending message.
@@ -172,6 +174,7 @@ void PublishThread::run() {
         if (!opts.summary) cout << "Publishing " << opts.count << " messages " << flush;
         for (int i=0; i<opts.count; i++) {
             sprintf(msgBuf, "%d", i);
+            msg.setData(string(msgBuf,msgSize));
             session.messageTransfer(arg::destination=exchange(),
                                     arg::content=msg);
             if (!opts.summary && (i%10000)==0){
@@ -179,8 +182,8 @@ void PublishThread::run() {
                  session.execution().sendSyncRequest();
             }
         }
-        session.execution().sendSyncRequest();
-        
+        delete msgBuf;
+		
         //Completion compl;
         if (!opts.summary) cout << " done." << endl;
         msg.setData("done");    // Send done messages.
@@ -282,7 +285,6 @@ void ListenThread::run() {
         Message msg;
         while ((msg=consume.pop()).getData() != "done") {
             ++consumed;
-
         }
         msg.acknowledge();      // Ack all outstanding messages -- ??
         AbsTime end=now();
