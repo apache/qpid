@@ -261,6 +261,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
 
 bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
+std::cout << " SemanticState::ConsumerImpl::deliver()" << windowing << "- " << ackExpected << std:: endl <<std::flush;
     if (!parent->getSession().isAttached()) {
         return false;
     }
@@ -273,14 +274,14 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
             blocked = true;
         } else {
             blocked = false;
-
             Mutex::ScopedLock locker(parent->deliveryLock);
 
             DeliveryId deliveryTag =
                 parent->deliveryAdapter.deliver(msg, token);
             if (windowing || ackExpected) {
                 parent->record(DeliveryRecord(msg, queue, name, token, deliveryTag, acquire, !ackExpected));
-            } else if (acquire && !ackExpected) {
+            } 
+			if (acquire && !ackExpected) {
                 queue->dequeue(0, msg.payload);
             }
         }
