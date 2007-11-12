@@ -62,9 +62,9 @@ class SessionState : public framing::SessionState,
 
     void detach();
     void attach(SessionHandler& handler);
+
     
-    /** @pre isAttached() */
-    SessionHandler& getHandler();
+    SessionHandler* getHandler();
 
     /** @pre isAttached() */
     framing::AMQP_ClientProxy& getProxy();

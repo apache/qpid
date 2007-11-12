@@ -29,6 +29,7 @@
 #include "qpid/framing/ExecutionCompleteBody.h"
 #include "qpid/framing/ExecutionResultBody.h"
 #include "qpid/framing/ServerInvoker.h"
+#include "qpid/log/Statement.h"
 
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
@@ -166,10 +167,13 @@ void SemanticHandler::handleContent(AMQFrame& frame)
 DeliveryId SemanticHandler::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
 {
     Mutex::ScopedLock l(outLock);
-    MessageDelivery::deliver(
-        msg, session.getHandler().out,
-        ++outgoing.hwm, token,
-        session.getConnection().getFrameMax());
+    SessionHandler* handler = session.getHandler();
+    if (handler) {
+        uint32_t maxFrameSize = handler->getConnection().getFrameMax();
+        MessageDelivery::deliver(msg, handler->out, ++outgoing.hwm, token, maxFrameSize);
+    } else {
+        QPID_LOG(error, "Dropping message as session is no longer attached to a channel.");        
+    }
     return outgoing.hwm;
 }
 
