@@ -163,6 +163,7 @@ void Serializer<Task>::dispatch(Task& task) {
     assert(state == EXECUTING || state == DISPATCHING);
     Mutex::ScopedUnlock u(lock);
     // No exceptions allowed in task.
+	notifyWorker();
     try { task(); } catch (...) { assert(0); }
 }
 
