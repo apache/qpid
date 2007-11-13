@@ -74,7 +74,8 @@ namespace qpid {
                 DispatchFunctor(Queue& q, Consumer::ptr c, DispatchCompletion* s = 0) : queue(q), consumer(c), sync(s) {}
                 void operator()();
             };
-                
+
+			bool dispatching;                
             const string name;
             const bool autodelete;
             MessageStore* const store;
