@@ -57,10 +57,10 @@ public class JMSConsumer implements Runnable
                 if (msg != null)
                 {
                     long msgId = Integer.parseInt(msg.getJMSCorrelationID());
-                    if (_currentMsgCount+1 != msgId)
+                    /*if (_currentMsgCount+1 != msgId)
                     {
-                        _logger.error("Error : Message received out of order in JMSConsumer:" + _id + " message id was " + msgId);
-                    }
+                        _logger.error("Error : Message received out of order in JMSConsumer:" + _id + " message id was " + msgId + " expected: " + _currentMsgCount+1);
+                    }*/
                     _currentMsgCount ++;
                 }
             }
@@ -83,6 +83,7 @@ public class JMSConsumer implements Runnable
     public void stopConsuming()
     {
         _run.set(false);
+        System.out.println("Producer received notification to stop");
     }
 
     public String getId()

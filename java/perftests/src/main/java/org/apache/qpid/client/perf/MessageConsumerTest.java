@@ -124,9 +124,9 @@ public class MessageConsumerTest extends Options implements Runnable
             _memoryLog.close();
             if (printSummary)
             {
-                double totaltime = (d.getTime() - _startTime)*1000; // trying to get a per sec rate
+                double totaltime = d.getTime() - _startTime;
                 double dCount = totalMsgCount;
-                double ratio = dCount/totaltime;
+                double ratio = (dCount/totaltime)*1000;
                 FileWriter _summaryLog = new FileWriter(_logFileName + "_Summary",true);
                 buf = new StringBuffer("MessageConsumerTest \n Test started at : ");
                 buf.append(df.format(new Date(_startTime))).append("\n Test finished at : ");
