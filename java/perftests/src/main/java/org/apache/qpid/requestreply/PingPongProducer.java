@@ -669,12 +669,9 @@ public class PingPongProducer implements Runnable, ExceptionListener
         // _log.debug("protected void createConnection(String clientID = " + clientID + "): called");
 
         // _log.debug("Creating a connection for the message producer.");
-        File propsFile = new File(_fileProperties);
-        InputStream is = new FileInputStream(propsFile);
-        Properties properties = new Properties();
-        properties.load(is);
+      
 
-        Context context = new InitialContext(properties);
+        Context context = InitialContextHelper.getInitialContext(_fileProperties);
         ConnectionFactory factory = (ConnectionFactory) context.lookup(_factoryName);
         _connection = factory.createConnection(_username, _password);
 
