@@ -78,6 +78,7 @@ public class JMSProducer implements Runnable
     public void stopProducing()
     {
         _run.set(false);
+        System.out.println("Producer received notification to stop");
     }
 
     public String getId()
