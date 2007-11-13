@@ -44,7 +44,7 @@ class SerializerBase : private boost::noncopyable, private Runnable
     struct ShutdownException : public Exception {};
         
     /** @see Serializer::Serializer */
-    SerializerBase(bool immediate=true, VoidFn0 notifyDispatch=VoidFn0());
+    SerializerBase(bool immediate=true);
 
     virtual ~SerializerBase() { shutdown(); }
 
@@ -66,7 +66,6 @@ class SerializerBase : private boost::noncopyable, private Runnable
     State state;
     bool immediate;
     Thread worker;
-    boost::function<void()> notifyDispatch;
 };
 
 
@@ -92,16 +91,11 @@ class Serializer : public SerializerBase {
   public:
     /** Start a serializer.
      *
-     * @param notifyDispatch Called when work is pending and there is no
-     * active dispatch thread. Must arrange for dispatch() to be called
-     * in some thread other than the calling thread and return. 
-     * By default the Serailizer supplies its own dispatch thread.
-     *
      * @param immediate Allow execute() to execute a task immediatly
      * in the current thread.
      */
-    Serializer(bool immediate=true, VoidFn0 notifyDispatch=VoidFn0())
-        : SerializerBase(immediate, notifyDispatch) {}
+    Serializer(bool immediate=true)
+        : SerializerBase(immediate) {}
 
     ~Serializer() { shutdown(); }
     /** 
@@ -124,27 +118,22 @@ class Serializer : public SerializerBase {
 
 template <class Task>
 void Serializer<Task>::execute(Task& task) {
-    bool needNotify = false;
-    {
-        Mutex::ScopedLock l(lock);
-        assert(state != SHUTDOWN);
-        if (immediate && state == IDLE) {
-            state = EXECUTING;
-            dispatch(task);
-            if (state != SHUTDOWN) {
-                assert(state == EXECUTING);
-                state = IDLE;
-            }
-        }
-        else 
-            queue.push_back(task);
-        if (!queue.empty() && state == IDLE) {
-            state = DISPATCHING;
-            needNotify = true;
+    Mutex::ScopedLock l(lock);
+    assert(state != SHUTDOWN);
+    if (immediate && state == IDLE) {
+        state = EXECUTING;
+        dispatch(task);
+        if (state != SHUTDOWN) {
+            assert(state == EXECUTING);
+            state = IDLE;
         }
     }
-    if (needNotify)
-        notifyDispatch();       // Not my function, call outside lock.
+    else 
+        queue.push_back(task);
+    if (!queue.empty() && state == IDLE) {
+        state = DISPATCHING;
+        notifyWorker();
+    }
 }
 
 template <class Task>
