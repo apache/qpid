@@ -19,8 +19,6 @@
  *
  */
 #include "QueueRegistry.h"
-#include "management/ManagementAgent.h"
-#include "management/ManagementObjectQueue.h"
 #include "qpid/log/Statement.h"
 #include <sstream>
 #include <assert.h>
@@ -29,7 +27,7 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 
 QueueRegistry::QueueRegistry(MessageStore* const _store) :
-    counter(1), store(_store) {}
+    counter(1), store(_store), parent(0) {}
 
 QueueRegistry::~QueueRegistry(){}
 
@@ -43,16 +41,8 @@ QueueRegistry::declare(const string& declareName, bool durable,
     QueueMap::iterator i =  queues.find(name);
 
     if (i == queues.end()) {
-        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner));
+        Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent));
         queues[name] = queue;
-
-        if (managementAgent){
-            ManagementObjectQueue::shared_ptr mgmtObject
-                (new ManagementObjectQueue (managementVhost->getObjectId (), name, durable, autoDelete));
-
-            queue->setMgmt (mgmtObject);
-            managementAgent->addObject(dynamic_pointer_cast<ManagementObject>(mgmtObject));
-        }
 
         return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
@@ -61,16 +51,6 @@ QueueRegistry::declare(const string& declareName, bool durable,
 }
 
 void QueueRegistry::destroyLH (const string& name){
-    if (managementAgent){
-        ManagementObjectQueue::shared_ptr mgmtObject;
-        QueueMap::iterator i = queues.find(name);
-
-        if (i != queues.end()){
-            mgmtObject = i->second->getMgmt ();
-            mgmtObject->resourceDestroy ();
-        }
-    }
-
     queues.erase(name);
 }
 
@@ -104,19 +84,4 @@ string QueueRegistry::generateName(){
 
 MessageStore* const QueueRegistry::getStore() const {
     return store;
-}
-
-void QueueRegistry::setManagementAgent (ManagementAgent::shared_ptr agent)
-{
-    managementAgent = agent;
-}
-
-ManagementAgent::shared_ptr QueueRegistry::getManagementAgent (void)
-{
-    return managementAgent;
-}
-
-void QueueRegistry::setManagementVhost (ManagementObject::shared_ptr vhost)
-{
-    managementVhost = vhost;
 }

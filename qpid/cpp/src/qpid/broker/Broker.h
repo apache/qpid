@@ -30,9 +30,10 @@
 #include "MessageStore.h"
 #include "QueueRegistry.h"
 #include "SessionManager.h"
-#include "management/ManagementAgent.h"
-#include "management/ManagementObjectBroker.h"
-#include "management/ManagementObjectVhost.h"
+#include "Vhost.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/ManagementAgent.h"
+#include "qpid/management/Broker.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/Url.h"
@@ -55,7 +56,7 @@ namespace broker {
 /**
  * A broker instance. 
  */
-class Broker : public sys::Runnable, public Plugin::Target
+class Broker : public sys::Runnable, public Plugin::Target, public management::Manageable
 {
   public:
     struct Options : public qpid::Options {
@@ -114,7 +115,10 @@ class Broker : public sys::Runnable, public Plugin::Target
     DtxManager& getDtxManager() { return dtxManager; }
 
     SessionManager& getSessionManager() { return sessionManager; }
-    ManagementAgent::shared_ptr getManagementAgent() { return managementAgent; }
+
+    management::ManagementObject::shared_ptr GetManagementObject (void) const;
+    management::Manageable::status_t
+        ManagementMethod (uint32_t methodId, management::Args& args);
     
   private:
     sys::Acceptor& getAcceptor() const;
@@ -131,9 +135,9 @@ class Broker : public sys::Runnable, public Plugin::Target
     DtxManager dtxManager;
     HandlerUpdaters handlerUpdaters;
     SessionManager sessionManager;
-    ManagementAgent::shared_ptr managementAgent;
-    ManagementObjectBroker::shared_ptr mgmtObject;
-    ManagementObjectVhost::shared_ptr  mgmtVhostObject;
+    management::ManagementAgent::shared_ptr managementAgent;
+    management::Broker::shared_ptr mgmtObject;
+    Vhost::shared_ptr              vhostObject;
 
     static MessageStore* createStore(const Options& config);
     void declareStandardExchange(const std::string& name, const std::string& type);
