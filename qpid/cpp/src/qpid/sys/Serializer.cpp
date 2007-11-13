@@ -29,12 +29,8 @@
 namespace qpid {
 namespace sys {
 
-SerializerBase::SerializerBase(bool allowImmediate, VoidFn0 notifyDispatchFn)
-    : state(IDLE), immediate(allowImmediate), notifyDispatch(notifyDispatchFn)
-{
-    if (notifyDispatch.empty())
-        notifyDispatch = boost::bind(&SerializerBase::notifyWorker, this);
-}
+SerializerBase::SerializerBase(bool allowImmediate)
+    : state(IDLE), immediate(allowImmediate) {}
 
 void SerializerBase::shutdown() {
     {
@@ -48,6 +44,7 @@ void SerializerBase::shutdown() {
 }
 
 void SerializerBase::notifyWorker() {
+    // Call with lock held.
     if (!worker.id())
         worker = Thread(*this);
     else
