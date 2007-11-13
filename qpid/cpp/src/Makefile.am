@@ -160,12 +160,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/IncomingExecutionContext.cpp \
-  qpid/broker/management/ManagementAgent.cpp \
-  qpid/broker/management/ManagementExchange.cpp \
-  qpid/broker/management/ManagementObject.cpp \
-  qpid/broker/management/ManagementObjectBroker.cpp \
-  qpid/broker/management/ManagementObjectQueue.cpp \
-  qpid/broker/management/ManagementObjectVhost.cpp \
   qpid/broker/Message.cpp \
   qpid/broker/MessageAdapter.cpp \
   qpid/broker/MessageBuilder.cpp \
@@ -193,7 +187,14 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TxAck.cpp \
   qpid/broker/TxBuffer.cpp \
-  qpid/broker/TxPublish.cpp 
+  qpid/broker/TxPublish.cpp \
+  qpid/broker/Vhost.cpp \
+  qpid/management/Broker.cpp \
+  qpid/management/ManagementAgent.cpp \
+  qpid/management/ManagementExchange.cpp \
+  qpid/management/ManagementObject.cpp \
+  qpid/management/Queue.cpp \
+  qpid/management/Vhost.cpp
 
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
@@ -263,12 +264,6 @@ nobase_include_HEADERS = \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.h \
   qpid/broker/IncomingExecutionContext.h \
-  qpid/broker/management/ManagementAgent.h \
-  qpid/broker/management/ManagementExchange.h \
-  qpid/broker/management/ManagementObject.h \
-  qpid/broker/management/ManagementObjectBroker.h \
-  qpid/broker/management/ManagementObjectQueue.h \
-  qpid/broker/management/ManagementObjectVhost.h \
   qpid/broker/Message.h \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.h \
@@ -302,6 +297,7 @@ nobase_include_HEADERS = \
   qpid/broker/TxBuffer.h \
   qpid/broker/TxOp.h \
   qpid/broker/TxPublish.h \
+  qpid/broker/Vhost.h \
   qpid/client/AckMode.h \
   qpid/client/ChainableFrameHandler.h	\
   qpid/client/Channel.h \
@@ -386,6 +382,15 @@ nobase_include_HEADERS = \
   qpid/log/Options.h \
   qpid/log/Selector.h \
   qpid/log/Statement.h \
+  qpid/management/ArgsBrokerEcho.h \
+  qpid/management/Args.h \
+  qpid/management/Broker.h \
+  qpid/management/Manageable.h \
+  qpid/management/ManagementAgent.h \
+  qpid/management/ManagementExchange.h \
+  qpid/management/ManagementObject.h \
+  qpid/management/Queue.h \
+  qpid/management/Vhost.h \
   qpid/sys/Acceptor.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AtomicCount.h \
