@@ -308,7 +308,7 @@ void SessionCore::checkOpen() const {
             cause=" by :"+text;        
         throw CommandInvalidException(QPID_MSG("Session is suspended" << cause));
     }
-    check(state==OPEN, COMMAND_INVALID, QPID_MSG("Session is not open"));
+    check(state==OPEN, COMMAND_INVALID, "Session is not open");
 }
 
 Future SessionCore::send(const AMQBody& command)
