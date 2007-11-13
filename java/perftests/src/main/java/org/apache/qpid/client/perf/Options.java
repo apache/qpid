@@ -47,16 +47,22 @@ public class Options
     private String printTestDuration()
     {
         StringBuffer buf = new StringBuffer();
-        int hours = (int)_expiry/(60*60*1000);
-        int mins  = (int)_expiry/(60*1000);
-        int secs  = (int)_expiry/1000;
+        long temp = _expiry;
+        int hours = (int)temp/(60*60*1000);
+        temp = temp -hours*60*60*1000;
+
+        int mins  = (int)(temp)/(60*1000);
+        temp = temp -mins*60*1000;
+
+        int secs  = (int)temp/1000;
+
         if (hours > 0)
         {
-            buf.append(hours).append(" hours, ");
+            buf.append(hours).append(" hours ");
         }
         if (mins > 0)
         {
-            buf.append(mins).append(" mins, ");
+            buf.append(mins).append(" mins ");
         }
         if (secs > 0)
         {
