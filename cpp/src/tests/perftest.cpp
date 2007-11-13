@@ -182,7 +182,7 @@ void PublishThread::run() {
                  session.execution().sendSyncRequest();
             }
         }
-        delete msgBuf;
+        delete [] msgBuf;
 		
         //Completion compl;
         if (!opts.summary) cout << " done." << endl;
