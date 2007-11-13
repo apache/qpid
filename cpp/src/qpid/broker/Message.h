@@ -91,6 +91,7 @@ public:
     uint32_t getRequiredCredit() const;
 
     void encode(framing::Buffer& buffer) const;
+    void encodeContent(framing::Buffer& buffer) const;
 
     /**
      * @returns the size of the buffer needed to encode this
