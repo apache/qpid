@@ -74,14 +74,6 @@ public:
     void operator()(const AMQFrame& f) { f.getBody()->encode(buffer); }
 };
 
-class AccumulateContent
-{
-    std::string& content;
-public:
-    AccumulateContent(std::string& c) : content(c) {}
-    void operator()(const AMQFrame& f) { content += f.castBody<AMQContentBody>()->getData(); }
-};
-
 /**
  * Sends a copy of the frame its applied to to the specified handler
  */
