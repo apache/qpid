@@ -21,19 +21,16 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
 {
     static
     {
-        MAX_NOT_SYNC_DATA_LENGH = 200000 * 1024;
         String max = "message_size_before_sync";
-        if (System.getProperties().containsKey(max))
-        {
             try
             {
-                MAX_NOT_SYNC_DATA_LENGH = new Long(System.getProperties().getProperty(max));
+                MAX_NOT_SYNC_DATA_LENGH = new Long(System.getProperties().getProperty(max, "200000000"));
             }
             catch (NumberFormatException e)
             {
                 // use default size
+                MAX_NOT_SYNC_DATA_LENGH = 200000000;
             }
-        }
     }
 
     private static  long MAX_NOT_SYNC_DATA_LENGH;
@@ -66,8 +63,8 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         ByteBuffer  data = msg.readData();
         super.messageTransfer(destination, confirmMode, acquireMode);
         super.header(msg.getDeliveryProperties(),msg.getMessageProperties());
-        super.data( data );
-        super.endData();
+        data( data );
+        endData();
     }
 
     public void sync()
@@ -109,15 +106,14 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
             try
             {
                 System.out.println("count : " + count++);
-                super.data(msg.readData());
+                data(msg.readData());
             }
             catch(EOFException e)
             {
                 b = false;
             }
         }
-
-        super.endData();
+        endData();
     }
 
     public void endData()
