@@ -89,6 +89,13 @@ void Message::encode(framing::Buffer& buffer) const
     frames.map_if(f2, TypeFilter(CONTENT_BODY));
 }
 
+void Message::encodeContent(framing::Buffer& buffer) const
+{
+    //encode the payload of each content frame
+    EncodeBody f2(buffer);
+    frames.map_if(f2, TypeFilter(CONTENT_BODY));
+}
+
 uint32_t Message::encodedSize() const
 {
     return encodedHeaderSize() + encodedContentSize();

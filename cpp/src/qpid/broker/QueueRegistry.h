@@ -24,7 +24,7 @@
 #include <map>
 #include "qpid/sys/Mutex.h"
 #include "Queue.h"
-#include "management/ManagementAgent.h"
+#include "qpid/management/Manageable.h"
 
 namespace qpid {
 namespace broker {
@@ -89,22 +89,19 @@ class QueueRegistry{
      * Return the message store used.
      */
     MessageStore* const getStore() const;
-    
-    /**
-     * Set/Get the ManagementAgent in use.
-     */
-    void setManagementAgent (ManagementAgent::shared_ptr agent);
-    ManagementAgent::shared_ptr getManagementAgent (void);
-    void setManagementVhost (ManagementObject::shared_ptr vhost);
 
+    /**
+     * Register the manageable parent for declared queues
+     */
+    void setParent (management::Manageable* _parent) { parent = _parent; }
+    
 private:
     typedef std::map<string, Queue::shared_ptr> QueueMap;
     QueueMap queues;
     qpid::sys::RWlock lock;
     int counter;
     MessageStore* const store;
-    ManagementAgent::shared_ptr  managementAgent;
-    ManagementObject::shared_ptr managementVhost;
+    management::Manageable* parent;
 };
 
     

@@ -35,7 +35,8 @@
 #include "PersistableQueue.h"
 #include "QueuePolicy.h"
 #include "QueueBindings.h"
-#include "management/ManagementObjectQueue.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/Queue.h"
 
 namespace qpid {
     namespace broker {
@@ -59,7 +60,7 @@ namespace qpid {
          * registered consumers or be stored until dequeued or until one
          * or more consumers registers.
          */
-        class Queue : public PersistableQueue {
+        class Queue : public PersistableQueue, public management::Manageable {
             typedef std::vector<Consumer::ptr> Consumers;
             typedef std::deque<QueuedMessage> Messages;
             
@@ -94,7 +95,7 @@ namespace qpid {
             qpid::sys::Serializer<DispatchFunctor> serializer;
             DispatchFunctor dispatchCallback;
             framing::SequenceNumber sequence;
-            ManagementObjectQueue::shared_ptr mgmtObject;
+            management::Queue::shared_ptr mgmtObject;
 
             void pop();
             void push(Message::shared_ptr& msg);
@@ -122,7 +123,8 @@ namespace qpid {
 
             Queue(const string& name, bool autodelete = false, 
                   MessageStore* const store = 0, 
-                  const ConnectionToken* const owner = 0);
+                  const ConnectionToken* const owner = 0,
+                  Manageable* parent = 0);
             ~Queue();
 
             void create(const qpid::framing::FieldTable& settings);
@@ -130,8 +132,6 @@ namespace qpid {
             void destroy();
             void bound(const string& exchange, const string& key, const qpid::framing::FieldTable& args);
             void unbind(ExchangeRegistry& exchanges, Queue::shared_ptr shared_ref);
-            void setMgmt (ManagementObjectQueue::shared_ptr mgmt) { mgmtObject = mgmt; }
-            ManagementObjectQueue::shared_ptr getMgmt (void) { return mgmtObject; }
 
             bool acquire(const QueuedMessage& msg);
 
@@ -203,6 +203,11 @@ namespace qpid {
 
             static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer);
             static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
+
+            // Manageable entry points
+            management::ManagementObject::shared_ptr GetManagementObject (void) const;
+            management::Manageable::status_t
+                ManagementMethod (uint32_t methodId, management::Args& args);
         };
     }
 }
