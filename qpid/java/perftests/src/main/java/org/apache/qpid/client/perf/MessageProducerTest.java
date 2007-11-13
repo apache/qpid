@@ -65,6 +65,7 @@ public class MessageProducerTest extends Options implements Runnable
     {
         boolean run = true;
         _startTime = System.currentTimeMillis();
+        runReaper(false);
         try
         {
             while(run)
