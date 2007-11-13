@@ -104,6 +104,7 @@ make check
 %_includedir/qpid/framing
 %_includedir/qpid/sys
 %_includedir/qpid/log
+%_includedir/qpid/management
 %_libdir/libqpidcommon.so
 %_libdir/libqpidclient.so
 %doc %_datadir/%{name}/examples
