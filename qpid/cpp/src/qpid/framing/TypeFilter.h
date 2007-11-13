@@ -1,3 +1,6 @@
+#ifndef QPID_FRAMING_TYPEFILTER_H
+#define QPID_FRAMING_TYPEFILTER_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -23,30 +26,26 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/FrameHandler.h"
 
-#ifndef _TypeFilter_
-#define _TypeFilter_
-
 namespace qpid {
 namespace framing {
 
 /**
  * Predicate that selects frames by type
  */
-class TypeFilter
-{
-    std::vector<uint8_t> types;
-public:
-    TypeFilter(uint8_t type) { add(type); }
-    TypeFilter(uint8_t type1, uint8_t type2) { add(type1); add(type2); }
-    void add(uint8_t type) { types.push_back(type); }
-    bool operator()(const AMQFrame& f) const 
-    { 
-        return find(types.begin(), types.end(), f.getBody()->type()) != types.end(); 
-    } 
+template <uint8_t Type>
+struct TypeFilter {
+    bool operator()(const AMQFrame& f) const {
+        return f.getBody()->type() == Type;
+    }
 };
 
-}
-}
+template <uint8_t T1, uint8_t T2>
+struct TypeFilter2 {
+    bool operator()(const AMQFrame& f) const {
+        return f.getBody()->type() == T1 || f.getBody()->type() == T2;
+    }
+};
 
+}} // namespace qpid::framing
 
-#endif
+#endif  /*!QPID_FRAMING_TYPEFILTER_H*/

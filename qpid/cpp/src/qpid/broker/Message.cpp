@@ -74,7 +74,7 @@ uint32_t Message::getRequiredCredit() const
 {
     //add up payload for all header and content frames in the frameset
     SumBodySize sum;
-    frames.map_if(sum, TypeFilter(HEADER_BODY, CONTENT_BODY));
+    frames.map_if(sum, TypeFilter2<HEADER_BODY, CONTENT_BODY>());
     return sum.getSize();
 }
 
@@ -82,18 +82,18 @@ void Message::encode(framing::Buffer& buffer) const
 {
     //encode method and header frames
     EncodeFrame f1(buffer);
-    frames.map_if(f1, TypeFilter(METHOD_BODY, HEADER_BODY));
+    frames.map_if(f1, TypeFilter2<METHOD_BODY, HEADER_BODY>());
 
     //then encode the payload of each content frame
     EncodeBody f2(buffer);
-    frames.map_if(f2, TypeFilter(CONTENT_BODY));
+    frames.map_if(f2, TypeFilter<CONTENT_BODY>());
 }
 
 void Message::encodeContent(framing::Buffer& buffer) const
 {
     //encode the payload of each content frame
     EncodeBody f2(buffer);
-    frames.map_if(f2, TypeFilter(CONTENT_BODY));
+    frames.map_if(f2, TypeFilter<CONTENT_BODY>());
 }
 
 uint32_t Message::encodedSize() const
@@ -110,7 +110,7 @@ uint32_t Message::encodedHeaderSize() const
 {
     //add up the size for all method and header frames in the frameset
     SumFrameSize sum;
-    frames.map_if(sum, TypeFilter(METHOD_BODY, HEADER_BODY));
+    frames.map_if(sum, TypeFilter2<METHOD_BODY, HEADER_BODY>());
     return sum.getSize();
 }
 
@@ -137,7 +137,7 @@ void Message::decodeContent(framing::Buffer& buffer)
     } else {
         //adjust header flags
         MarkLastSegment f;
-        frames.map_if(f, TypeFilter(HEADER_BODY));    
+        frames.map_if(f, TypeFilter<HEADER_BODY>());    
     }
     //mark content loaded
     loaded = true;
@@ -152,7 +152,7 @@ void Message::releaseContent(MessageStore* _store)
         store->stage(*this);
     }
     //remove any content frames from the frameset
-    frames.remove(TypeFilter(CONTENT_BODY));
+    frames.remove(TypeFilter<CONTENT_BODY>());
     setContentReleased();
 }
 
@@ -183,17 +183,17 @@ void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t max
 
     } else {
         Count c;
-        frames.map_if(c, TypeFilter(CONTENT_BODY));
+        frames.map_if(c, TypeFilter<CONTENT_BODY>());
 
         SendContent f(out, maxFrameSize, c.getCount());
-        frames.map_if(f, TypeFilter(CONTENT_BODY));
+        frames.map_if(f, TypeFilter<CONTENT_BODY>());
     }
 }
 
 void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) const
 {
     Relay f(out);
-    frames.map_if(f, TypeFilter(HEADER_BODY));    
+    frames.map_if(f, TypeFilter<HEADER_BODY>());    
 }
 
 // FIXME aconway 2007-11-09: Obsolete, remove. Was used to cover over

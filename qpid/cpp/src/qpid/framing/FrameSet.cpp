@@ -64,18 +64,20 @@ AMQHeaderBody* FrameSet::getHeaders()
 uint64_t FrameSet::getContentSize() const
 {
     SumBodySize sum;
-    map_if(sum, TypeFilter(CONTENT_BODY));
+    map_if(sum, TypeFilter<CONTENT_BODY>());
     return sum.getSize();
 }
 
-void FrameSet::getContent(std::string& out) const
-{
-    AccumulateContent accumulator(out);
-    map_if(accumulator, TypeFilter(CONTENT_BODY));
+void FrameSet::getContent(std::string& out) const {
+    out.clear();
+    out.reserve(getContentSize());
+    for(Frames::const_iterator i = parts.begin(); i != parts.end(); i++) {
+        if (i->getBody()->type() == CONTENT_BODY)
+            out += i->castBody<AMQContentBody>()->getData();
+    }
 }
 
-std::string FrameSet::getContent() const
-{
+std::string FrameSet::getContent() const {
     std::string out;
     getContent(out);
     return out;
