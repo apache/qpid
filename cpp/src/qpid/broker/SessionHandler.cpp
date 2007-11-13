@@ -87,7 +87,7 @@ void SessionHandler::handleOut(AMQFrame& f) {
         if (session->sent(f))
             peerSession.solicitAck();
     } else {
-        QPID_LOG(warning, "Dropping frame as session is no longer attached to a channel: " << f);
+        QPID_LOG(error, "Dropping frame as session is no longer attached to a channel: " << f);
     }
 }
 
