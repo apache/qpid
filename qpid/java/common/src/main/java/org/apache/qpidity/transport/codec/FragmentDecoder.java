@@ -97,11 +97,13 @@ public class FragmentDecoder extends AbstractDecoder
     protected void doGet(byte[] bytes)
     {
         int remaining = bytes.length;
+        int  offset = 0;
         while (remaining > 0)
         {
             preRead();
             int size = min(remaining, current.remaining());
-            current.get(bytes, 0, size);
+            current.get(bytes, offset, size);
+            offset += size;
             remaining -= size;
             postRead();
         }
