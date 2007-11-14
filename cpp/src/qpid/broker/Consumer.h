@@ -33,11 +33,11 @@ namespace qpid {
 
         struct QueuedMessage
         {
-            Message::shared_ptr payload;
+            intrusive_ptr<Message> payload;
             framing::SequenceNumber position;
 			Queue* queue;
 			
-            QueuedMessage(Queue* q, Message::shared_ptr msg, framing::SequenceNumber sn) : 
+            QueuedMessage(Queue* q, intrusive_ptr<Message> msg, framing::SequenceNumber sn) : 
 			               payload(msg), position(sn), queue(q) {}
             QueuedMessage(Queue* q) : queue(q) {}
         };
@@ -53,7 +53,7 @@ namespace qpid {
             Consumer(bool preAcquires = true) : acquires(preAcquires) {}
             bool preAcquires() const { return acquires; }
             virtual bool deliver(QueuedMessage& msg) = 0;
-            virtual bool filter(Message::shared_ptr) { return true; }
+            virtual bool filter(intrusive_ptr<Message>) { return true; }
             virtual ~Consumer(){}
         };
     }

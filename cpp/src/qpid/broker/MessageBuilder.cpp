@@ -62,14 +62,14 @@ void MessageBuilder::handle(AMQFrame& frame)
 
 void MessageBuilder::end()
 {
-    message.reset();
+    message = 0;
     state = DORMANT;
     staging = false;
 }
 
 void MessageBuilder::start(const SequenceNumber& id)
 {
-    message = Message::shared_ptr(new Message(id));
+    message = intrusive_ptr<Message>(new Message(id));
     state = METHOD;
     staging = false;
 }

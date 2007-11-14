@@ -41,7 +41,7 @@ RecoveryManagerImpl::~RecoveryManagerImpl() {}
 
 class RecoverableMessageImpl : public RecoverableMessage
 {
-    Message::shared_ptr msg;
+    intrusive_ptr<Message> msg;
     const uint64_t stagingThreshold;
 public:
     RecoverableMessageImpl(Message::shared_ptr& _msg, uint64_t _stagingThreshold) 

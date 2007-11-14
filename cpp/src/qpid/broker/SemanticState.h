@@ -68,7 +68,7 @@ class SemanticState : public framing::FrameHandler::Chains,
         uint32_t msgCredit;
         uint32_t byteCredit;
 
-        bool checkCredit(Message::shared_ptr& msg);
+        bool checkCredit(intrusive_ptr<Message>& msg);
 
       public:
         typedef shared_ptr<ConsumerImpl> shared_ptr;
@@ -78,7 +78,7 @@ class SemanticState : public framing::FrameHandler::Chains,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
         bool deliver(QueuedMessage& msg);            
-        bool filter(Message::shared_ptr msg);            
+        bool filter(intrusive_ptr<Message> msg);            
 
         void setWindowMode();
         void setCreditMode();
@@ -124,9 +124,9 @@ class SemanticState : public framing::FrameHandler::Chains,
 
     boost::shared_ptr<Exchange> cacheExchange;
     
-    void route(Message::shared_ptr msg, Deliverable& strategy);
+    void route(intrusive_ptr<Message> msg, Deliverable& strategy);
     void record(const DeliveryRecord& delivery);
-    bool checkPrefetch(Message::shared_ptr& msg);
+    bool checkPrefetch(intrusive_ptr<Message>& msg);
     void checkDtxTimeout();
     ConsumerImpl::shared_ptr find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
@@ -187,7 +187,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired);
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);
-    void handle(Message::shared_ptr msg);
+    void handle(intrusive_ptr<Message> msg);
 };
 
 }} // namespace qpid::broker

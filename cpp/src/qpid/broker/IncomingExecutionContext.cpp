@@ -77,7 +77,7 @@ void IncomingExecutionContext::complete(const SequenceNumber& command)
     completed.update(command, command);
 }
 
-void IncomingExecutionContext::track(Message::shared_ptr msg)
+void IncomingExecutionContext::track(intrusive_ptr<Message> msg)
 {
     if (msg->isEnqueueComplete()) {
         complete(msg->getCommandId());

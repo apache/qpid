@@ -146,7 +146,7 @@ void SemanticHandler::handleL3(framing::AMQMethodBody* method)
 
 void SemanticHandler::handleContent(AMQFrame& frame)
 {
-    Message::shared_ptr msg(msgBuilder.getMessage());
+    intrusive_ptr<Message> msg(msgBuilder.getMessage());
     if (!msg) {//start of frameset will be indicated by frame flags
         msgBuilder.start(incoming.next());
         msg = msgBuilder.getMessage();

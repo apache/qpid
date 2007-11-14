@@ -99,7 +99,7 @@ namespace qpid {
             management::Queue::shared_ptr mgmtObject;
 
             void pop();
-            void push(Message::shared_ptr& msg);
+            void push(intrusive_ptr<Message>& msg);
             bool dispatch(QueuedMessage& msg);
             void setPolicy(std::auto_ptr<QueuePolicy> policy);
             /**
@@ -113,7 +113,7 @@ namespace qpid {
             bool seek(QueuedMessage& msg, const framing::SequenceNumber& position);
             uint32_t getAcquirerCount() const;
             bool getNextMessage(QueuedMessage& msg);
-            bool exclude(Message::shared_ptr msg);
+            bool exclude(intrusive_ptr<Message> msg);
  
 
         public:
@@ -140,12 +140,12 @@ namespace qpid {
              * Delivers a message to the queue. Will record it as
              * enqueued if persistent then process it.
              */
-            void deliver(Message::shared_ptr& msg);
+            void deliver(intrusive_ptr<Message>& msg);
             /**
              * Dispatches the messages immediately to a consumer if
              * one is available or stores it for later if not.
              */
-            void process(Message::shared_ptr& msg);
+            void process(intrusive_ptr<Message>& msg);
             /**
              * Returns a message to the in-memory queue (due to lack
              * of acknowledegement from a receiver). If a consumer is
@@ -156,7 +156,7 @@ namespace qpid {
             /**
              * Used during recovery to add stored messages back to the queue
              */
-            void recover(Message::shared_ptr& msg);
+            void recover(intrusive_ptr<Message>& msg);
             /**
              * Request dispatch any queued messages providing there are
              * consumers for them. Only one thread can be dispatching
@@ -181,11 +181,11 @@ namespace qpid {
             inline bool isAutoDelete() const { return autodelete; }
             bool canAutoDelete() const;
 
-            bool enqueue(TransactionContext* ctxt, Message::shared_ptr msg);
+            bool enqueue(TransactionContext* ctxt, intrusive_ptr<Message> msg);
             /**
              * dequeue from store (only done once messages is acknowledged)
              */
-            bool dequeue(TransactionContext* ctxt, Message::shared_ptr msg);
+            bool dequeue(TransactionContext* ctxt, intrusive_ptr<Message> msg);
             /**
              * dequeues from memory only
              */
