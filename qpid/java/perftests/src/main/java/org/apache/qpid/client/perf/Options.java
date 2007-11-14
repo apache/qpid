@@ -4,6 +4,7 @@ public class Options
 {
     int _messageSize;
     boolean _transacted;
+    boolean _synchronous;
     String[] destArray;
     int _producerCount;
     int _consumerCount;
@@ -25,6 +26,7 @@ public class Options
     public void parseOptions()
     {
         _messageSize = Integer.parseInt(System.getProperty("messageSize","100"));
+        _synchronous =Boolean.parseBoolean( System.getProperty("synchronous", "false"));
         _transacted = false;
         String destinations = System.getProperty("destinations");
         destArray = destinations.split(",");
@@ -37,7 +39,7 @@ public class Options
 
         System.out.println("============= Test Data ===================");
         System.out.println("Total no of producers  : " + _producerCount);
-        System.out.println("Total no of consumer   : " + _consumerCount);
+        System.out.println(_synchronous? "Total no of synchronous consumers   : " : "Total no of asynchronous consumers   :" + _consumerCount);
         System.out.println("Log Frequency in mins  : " + _logDuration/(1000*60));
         System.out.println("Log file path          : " + _logFilePath);
         System.out.println("Test Duration          : " + printTestDuration());
