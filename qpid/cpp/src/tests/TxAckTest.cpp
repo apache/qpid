@@ -29,6 +29,7 @@
 
 using std::list;
 using std::vector;
+using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
@@ -58,7 +59,7 @@ class TxAckTest : public CppUnit::TestCase
     AccumulatedAck acked;
     TestMessageStore store;
     Queue::shared_ptr queue;
-    vector<Message::shared_ptr> messages;
+    vector<intrusive_ptr<Message> > messages;
     list<DeliveryRecord> deliveries;
     TxAck op;
 
@@ -68,7 +69,7 @@ public:
     TxAckTest() : acked(0), queue(new Queue("my_queue", false, &store, 0)), op(acked, deliveries)
     {
         for(int i = 0; i < 10; i++){
-            Message::shared_ptr msg(new Message());
+            intrusive_ptr<Message> msg(new Message());
             AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, "exchange", 0, 0));
             AMQFrame header(0, AMQHeaderBody());
             msg->getFrames().append(method);

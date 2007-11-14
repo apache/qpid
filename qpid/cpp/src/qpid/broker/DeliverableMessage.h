@@ -28,9 +28,9 @@
 namespace qpid {
     namespace broker {
         class DeliverableMessage : public Deliverable{
-            Message::shared_ptr msg;
+            intrusive_ptr<Message> msg;
         public:
-            DeliverableMessage(Message::shared_ptr& msg);
+            DeliverableMessage(intrusive_ptr<Message>& msg);
             virtual void deliverTo(Queue::shared_ptr& queue);
             Message& getMessage();
             virtual ~DeliverableMessage(){}

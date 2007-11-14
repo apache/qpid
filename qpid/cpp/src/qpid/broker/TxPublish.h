@@ -45,24 +45,24 @@ namespace qpid {
         class TxPublish : public TxOp, public Deliverable{
             class Prepare{
                 TransactionContext* ctxt;
-                Message::shared_ptr& msg;
+                intrusive_ptr<Message>& msg;
             public:
-                Prepare(TransactionContext* ctxt, Message::shared_ptr& msg);
+                Prepare(TransactionContext* ctxt, intrusive_ptr<Message>& msg);
                 void operator()(Queue::shared_ptr& queue);            
             };
 
             class Commit{
-                Message::shared_ptr& msg;
+                intrusive_ptr<Message>& msg;
             public:
-                Commit(Message::shared_ptr& msg);
+                Commit(intrusive_ptr<Message>& msg);
                 void operator()(Queue::shared_ptr& queue);            
             };
 
-            Message::shared_ptr msg;
+            intrusive_ptr<Message> msg;
             std::list<Queue::shared_ptr> queues;
 
         public:
-            TxPublish(Message::shared_ptr msg);
+            TxPublish(intrusive_ptr<Message> msg);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

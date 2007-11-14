@@ -230,7 +230,7 @@ void SemanticState::record(const DeliveryRecord& delivery)
     delivery.addTo(outstanding);
 }
 
-bool SemanticState::checkPrefetch(Message::shared_ptr& msg)
+bool SemanticState::checkPrefetch(intrusive_ptr<Message>& msg)
 {
     Mutex::ScopedLock locker(deliveryLock);
     bool countOk = !prefetchCount || prefetchCount > unacked.size();
@@ -288,13 +288,13 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
     }
 }
 
-bool SemanticState::ConsumerImpl::filter(Message::shared_ptr msg)
+bool SemanticState::ConsumerImpl::filter(intrusive_ptr<Message> msg)
 {
     return !(nolocal &&
              &parent->getSession().getConnection() == msg->getPublisher());
 }
 
-bool SemanticState::ConsumerImpl::checkCredit(Message::shared_ptr& msg)
+bool SemanticState::ConsumerImpl::checkCredit(intrusive_ptr<Message>& msg)
 {
     Mutex::ScopedLock l(lock);
     if (msgCredit == 0 || (byteCredit != 0xFFFFFFFF && byteCredit < msg->getRequiredCredit())) {
@@ -331,7 +331,7 @@ void SemanticState::cancel(ConsumerImpl::shared_ptr c)
     }
 }
 
-void SemanticState::handle(Message::shared_ptr msg) {
+void SemanticState::handle(intrusive_ptr<Message> msg) {
     if (txBuffer.get()) {
         TxPublish* deliverable(new TxPublish(msg));
         TxOp::shared_ptr op(deliverable);
@@ -343,7 +343,7 @@ void SemanticState::handle(Message::shared_ptr msg) {
     }
 }
 
-void SemanticState::route(Message::shared_ptr msg, Deliverable& strategy) {
+void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();      
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getConnection().broker.getExchanges().get(exchangeName);

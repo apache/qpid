@@ -23,7 +23,7 @@
 
 using namespace qpid::broker;
 
-TxPublish::TxPublish(Message::shared_ptr _msg) : msg(_msg) {}
+TxPublish::TxPublish(intrusive_ptr<Message> _msg) : msg(_msg) {}
 
 bool TxPublish::prepare(TransactionContext* ctxt) throw(){
     try{
@@ -47,7 +47,7 @@ void TxPublish::deliverTo(Queue::shared_ptr& queue){
     delivered = true;
 }
 
-TxPublish::Prepare::Prepare(TransactionContext* _ctxt, Message::shared_ptr& _msg) 
+TxPublish::Prepare::Prepare(TransactionContext* _ctxt, intrusive_ptr<Message>& _msg) 
     : ctxt(_ctxt), msg(_msg){}
 
 void TxPublish::Prepare::operator()(Queue::shared_ptr& queue){
@@ -61,7 +61,7 @@ void TxPublish::Prepare::operator()(Queue::shared_ptr& queue){
     }
 }
 
-TxPublish::Commit::Commit(Message::shared_ptr& _msg) : msg(_msg){}
+TxPublish::Commit::Commit(intrusive_ptr<Message>& _msg) : msg(_msg){}
 
 void TxPublish::Commit::operator()(Queue::shared_ptr& queue){
     queue->process(msg);

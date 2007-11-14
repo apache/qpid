@@ -64,7 +64,7 @@ class ExchangeTest : public CppUnit::TestCase
         queue.reset();
         queue2.reset();
 
-        Message::shared_ptr msgPtr(MessageUtils::createMessage("exchange", "key", "id"));
+        intrusive_ptr<Message> msgPtr(MessageUtils::createMessage("exchange", "key", "id"));
         DeliverableMessage msg(msgPtr);
         topic.route(msg, "abc", 0);
         direct.route(msg, "abc", 0);

@@ -39,7 +39,7 @@ namespace broker{
 struct BaseToken : DeliveryToken
 {
     virtual ~BaseToken() {}
-    virtual AMQFrame sendMethod(Message::shared_ptr msg, DeliveryId id) = 0;
+    virtual AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId id) = 0;
 };
 
 struct BasicGetToken : BaseToken
@@ -50,7 +50,7 @@ struct BasicGetToken : BaseToken
 
     BasicGetToken(Queue::shared_ptr q) : queue(q) {}
 
-    AMQFrame sendMethod(Message::shared_ptr msg, DeliveryId id)
+    AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId id)
     {
         return AMQFrame(0, BasicGetOkBody(
             ProtocolVersion(), id.getValue(), msg->getRedelivered(), msg->getExchangeName(),
@@ -66,7 +66,7 @@ struct BasicConsumeToken : BaseToken
 
     BasicConsumeToken(const string c) : consumer(c) {}
 
-    AMQFrame sendMethod(Message::shared_ptr msg, DeliveryId id)
+    AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId id)
     {
         return AMQFrame(0, BasicDeliverBody(
             ProtocolVersion(), consumer, id.getValue(),
@@ -84,7 +84,7 @@ struct MessageDeliveryToken : BaseToken
     MessageDeliveryToken(const std::string& d, u_int8_t c, u_int8_t a) : 
         destination(d), confirmMode(c), acquireMode(a) {}
 
-    AMQFrame sendMethod(Message::shared_ptr msg, DeliveryId /*id*/)
+    AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId /*id*/)
     {
         //may need to set the redelivered flag:
         if (msg->getRedelivered()){
