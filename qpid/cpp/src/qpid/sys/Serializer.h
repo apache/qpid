@@ -61,6 +61,8 @@ class SerializerBase : private boost::noncopyable, private Runnable
     void notifyWorker();
     void run();
     virtual bool empty() = 0;
+    bool running();
+    void wait();
 
     Monitor lock;
     State state;

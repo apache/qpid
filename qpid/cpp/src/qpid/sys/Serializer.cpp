@@ -51,11 +51,20 @@ void SerializerBase::notifyWorker() {
         lock.notify();
 }
 
-void SerializerBase::run() {
+bool SerializerBase::running() {
     Mutex::ScopedLock l(lock);
-    while (state != SHUTDOWN) {
+    return state != SHUTDOWN;
+}
+
+void SerializerBase::wait() {
+    Mutex::ScopedLock l(lock);
+    lock.wait();
+}
+
+void SerializerBase::run() {
+    while (running()) {
         dispatch();
-        lock.wait();
+        wait();
     }
 }
 
