@@ -30,7 +30,7 @@ namespace broker {
 
 class IncomingExecutionContext
 {
-    typedef std::list<Message::shared_ptr> Messages;
+    typedef std::list<intrusive_ptr<Message> > Messages;
     framing::Window window;
     framing::AccumulatedAck completed;
     Messages incomplete;
@@ -45,7 +45,7 @@ public:
     void sync(const framing::SequenceNumber& point);
     framing::SequenceNumber next();
     void complete(const framing::SequenceNumber& command);
-    void track(Message::shared_ptr);
+    void track(intrusive_ptr<Message>);
 
     const framing::SequenceNumber& getMark();
     framing::SequenceNumberSet getRange();

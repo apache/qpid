@@ -59,16 +59,16 @@ struct MockHandler : ConnectionOutputHandler{
 struct DeliveryRecorder : DeliveryAdapter
 {
     DeliveryId id;
-    typedef std::pair<Message::shared_ptr, DeliveryToken::shared_ptr> Delivery;
+    typedef std::pair<intrusive_ptr<Message>, DeliveryToken::shared_ptr> Delivery;
     std::vector<Delivery> delivered;
 
-    DeliveryId deliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token)
+    DeliveryId deliver(intrusive_ptr<Message>& msg, DeliveryToken::shared_ptr token)
     {
         delivered.push_back(Delivery(msg, token));
         return ++id;
     }
 
-    void redeliver(Message::shared_ptr& msg, DeliveryToken::shared_ptr token, DeliveryId /*tag*/) 
+    void redeliver(intrusive_ptr<Message>& msg, DeliveryToken::shared_ptr token, DeliveryId /*tag*/) 
     {
         delivered.push_back(Delivery(msg, token));
     }
@@ -215,7 +215,7 @@ class BrokerChannelTest : public CppUnit::TestCase
 
     void testDeliveryNoAck(){        
         Channel channel(connection, recorder, 7);
-        Message::shared_ptr msg(createMessage("test", "my_routing_key", "my_message_id", 14));
+        intrusive_ptr<Message> msg(createMessage("test", "my_routing_key", "my_message_id", 14));
         Queue::shared_ptr queue(new Queue("my_queue"));
         string tag("test");
         DeliveryToken::shared_ptr token(MessageDelivery::getBasicConsumeToken("my-token"));
@@ -239,9 +239,9 @@ class BrokerChannelTest : public CppUnit::TestCase
         const string data1("abcd");
         const string data2("efghijk");
         const string data3("lmnopqrstuvwxyz");
-        Message::shared_ptr msg1(createMessage("e", "A", "MsgA", data1.size()));
-        Message::shared_ptr msg2(createMessage("e", "B", "MsgB", data2.size()));
-        Message::shared_ptr msg3(createMessage("e", "C", "MsgC", data3.size()));
+        intrusive_ptr<Message> msg1(createMessage("e", "A", "MsgA", data1.size()));
+        intrusive_ptr<Message> msg2(createMessage("e", "B", "MsgB", data2.size()));
+        intrusive_ptr<Message> msg3(createMessage("e", "C", "MsgC", data3.size()));
         addContent(msg1, data1);
         addContent(msg2, data2);
         addContent(msg3, data3);
@@ -261,7 +261,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         queue->deliver(msg3);
 	sleep(2);
         
-        Message::shared_ptr next = queue->dequeue().payload;
+        intrusive_ptr<Message> next = queue->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1, next);
         CPPUNIT_ASSERT_EQUAL((uint32_t) data1.size(), next->encodedContentSize());
         next = queue->dequeue().payload;
@@ -289,7 +289,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         MockMessageStore store;
         {//must ensure that store is last thing deleted
         const string data1("abcd");
-        Message::shared_ptr msg1(createMessage("e", "A", "MsgA", data1.size()));
+        intrusive_ptr<Message> msg1(createMessage("e", "A", "MsgA", data1.size()));
         addContent(msg1, data1);
  
         Queue::shared_ptr queue1(new Queue("my_queue1", false, &store, 0));
@@ -300,7 +300,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         queue3->deliver(msg1);
 	sleep(2);
         
-        Message::shared_ptr next = queue1->dequeue().payload;
+        intrusive_ptr<Message> next = queue1->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1, next);
         next = queue2->dequeue().payload;
         CPPUNIT_ASSERT_EQUAL(msg1, next);
@@ -327,7 +327,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         channel.flow(false);
 
         //'publish' a message
-        Message::shared_ptr msg(createMessage("test", "my_routing_key", "my_message_id", 14));
+        intrusive_ptr<Message> msg(createMessage("test", "my_routing_key", "my_message_id", 14));
         addContent(msg, "abcdefghijklmn");
         queue->deliver(msg);
 
@@ -342,9 +342,9 @@ class BrokerChannelTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(token, recorder.delivered.front().second);
     }
 
-    Message::shared_ptr createMessage(const string& exchange, const string& routingKey, const string& messageId, uint64_t contentSize)
+    intrusive_ptr<Message> createMessage(const string& exchange, const string& routingKey, const string& messageId, uint64_t contentSize)
     {
-        Message::shared_ptr msg(new Message());
+        intrusive_ptr<Message> msg(new Message());
 
         AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
         AMQFrame header(0, AMQHeaderBody());
@@ -358,7 +358,7 @@ class BrokerChannelTest : public CppUnit::TestCase
         return msg;
     }
 
-    void addContent(Message::shared_ptr msg, const string& data)
+    void addContent(intrusive_ptr<Message> msg, const string& data)
     {
         AMQFrame content(0, AMQContentBody(data));
         msg->getFrames().append(content);

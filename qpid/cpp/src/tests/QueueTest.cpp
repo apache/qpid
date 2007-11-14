@@ -38,7 +38,7 @@ class TestConsumer : public virtual Consumer{
 public:
     typedef shared_ptr<TestConsumer> shared_ptr;            
 
-    Message::shared_ptr last;
+    intrusive_ptr<Message> last;
     bool received;
     TestConsumer(): received(false) {};
 
@@ -71,8 +71,8 @@ class QueueTest : public CppUnit::TestCase
 
 
   public:
-    Message::shared_ptr message(std::string exchange, std::string routingKey) {
-        Message::shared_ptr msg(new Message());
+    intrusive_ptr<Message> message(std::string exchange, std::string routingKey) {
+        intrusive_ptr<Message> msg(new Message());
         AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
         AMQFrame header(0, AMQHeaderBody());
         msg->getFrames().append(method);
@@ -85,14 +85,14 @@ class QueueTest : public CppUnit::TestCase
     void testAsyncMessage(){
     
         Queue::shared_ptr queue(new Queue("my_test_queue", true));
-        Message::shared_ptr received;
+        intrusive_ptr<Message> received;
 	
         TestConsumer::shared_ptr c1(new TestConsumer()); 
         queue->consume(c1);
 
        
         //Test basic delivery:
-        Message::shared_ptr msg1 = message("e", "A");
+        intrusive_ptr<Message> msg1 = message("e", "A");
         msg1->enqueueAsync();//this is done on enqueue which is not called from process
         queue->process(msg1);
 	sleep(2);
@@ -109,7 +109,7 @@ class QueueTest : public CppUnit::TestCase
     
     void testAsyncMessageCount(){
         Queue::shared_ptr queue(new Queue("my_test_queue", true));
-        Message::shared_ptr msg1 = message("e", "A");
+        intrusive_ptr<Message> msg1 = message("e", "A");
         msg1->enqueueAsync();//this is done on enqueue which is not called from process
 	
         queue->process(msg1);
@@ -134,9 +134,9 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(uint32_t(2), queue->getConsumerCount());
         
         //Test basic delivery:
-        Message::shared_ptr msg1 = message("e", "A");
-        Message::shared_ptr msg2 = message("e", "B");
-        Message::shared_ptr msg3 = message("e", "C");
+        intrusive_ptr<Message> msg1 = message("e", "A");
+        intrusive_ptr<Message> msg2 = message("e", "B");
+        intrusive_ptr<Message> msg3 = message("e", "C");
 
         queue->deliver(msg1);
 	if (!c1->received)
@@ -183,10 +183,10 @@ class QueueTest : public CppUnit::TestCase
 
     void testDequeue(){
         Queue::shared_ptr queue(new Queue("my_queue", true));
-        Message::shared_ptr msg1 = message("e", "A");
-        Message::shared_ptr msg2 = message("e", "B");
-        Message::shared_ptr msg3 = message("e", "C");
-        Message::shared_ptr received;
+        intrusive_ptr<Message> msg1 = message("e", "A");
+        intrusive_ptr<Message> msg2 = message("e", "B");
+        intrusive_ptr<Message> msg3 = message("e", "C");
+        intrusive_ptr<Message> received;
 
         queue->deliver(msg1);
         queue->deliver(msg2);

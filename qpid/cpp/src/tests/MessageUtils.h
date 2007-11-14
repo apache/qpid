@@ -23,15 +23,16 @@
 #include "qpid/broker/MessageDelivery.h"
 #include "qpid/framing/AMQFrame.h"
 
-using namespace qpid::broker;
-using namespace qpid::framing;
+using namespace qpid;
+using namespace broker;
+using namespace framing;
 
 struct MessageUtils
 {
-    static Message::shared_ptr createMessage(const string& exchange, const string& routingKey, 
+    static intrusive_ptr<Message> createMessage(const string& exchange, const string& routingKey, 
                                              const string& messageId, uint64_t contentSize = 0)
     {
-        Message::shared_ptr msg(new Message());
+        intrusive_ptr<Message> msg(new Message());
 
         AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
         AMQFrame header(0, AMQHeaderBody());
@@ -45,7 +46,7 @@ struct MessageUtils
         return msg;
     }
 
-    static void addContent(Message::shared_ptr msg, const string& data)
+    static void addContent(intrusive_ptr<Message> msg, const string& data)
     {
         AMQFrame content(0, AMQContentBody(data));
         msg->getFrames().append(content);

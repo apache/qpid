@@ -21,9 +21,9 @@
 #ifndef _MessageBuilder_
 #define _MessageBuilder_
 
-#include "boost/shared_ptr.hpp"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/RefCounted.h"
 
 namespace qpid {
     namespace broker {
@@ -34,13 +34,13 @@ namespace qpid {
         public:
             MessageBuilder(MessageStore* const store = 0, uint64_t stagingThreshold = 0);
             void handle(framing::AMQFrame& frame);
-            boost::shared_ptr<Message> getMessage() { return message; }
+            intrusive_ptr<Message> getMessage() { return message; }
             void start(const framing::SequenceNumber& id);
             void end();
         private:
             enum State {DORMANT, METHOD, HEADER, CONTENT};
             State state;
-            boost::shared_ptr<Message> message;
+            intrusive_ptr<Message> message;
             MessageStore* const store;
             const uint64_t stagingThreshold;
             bool staging;

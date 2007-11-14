@@ -24,6 +24,7 @@
 
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/RefCounted.h"
 
 namespace qpid {
 namespace broker {
@@ -31,7 +32,7 @@ namespace broker {
 /**
  * Base class for all persistable objects
  */
-class Persistable 
+class Persistable : public RefCounted
 {
 public:
     /**

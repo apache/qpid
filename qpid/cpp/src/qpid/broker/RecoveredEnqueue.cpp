@@ -22,7 +22,7 @@
 
 using namespace qpid::broker;
 
-RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, Message::shared_ptr _msg) : queue(_queue), msg(_msg) {}
+RecoveredEnqueue::RecoveredEnqueue(Queue::shared_ptr _queue, intrusive_ptr<Message> _msg) : queue(_queue), msg(_msg) {}
 
 bool RecoveredEnqueue::prepare(TransactionContext*) throw(){
     //should never be called; transaction has already prepared if an enqueue is recovered

@@ -96,7 +96,7 @@ void ManagementAgent::PeriodicProcessing (void)
     if (managementObjects.empty ())
         return;
         
-    Message::shared_ptr msg (new Message ());
+    intrusive_ptr<Message> msg (new Message ());
 
     // Build the magic number for the management message.
     msgBuffer.putOctet ('A');
@@ -294,7 +294,7 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
         iter->second->doMethod (methodName, inBuffer, outBuffer);
     }
 
-    Message::shared_ptr outMsg (new Message ());
+    intrusive_ptr<Message> outMsg (new Message ());
     uint32_t            msgSize = 4096 - outBuffer.available ();
     outBuffer.reset ();
     AMQFrame method  (0, MessageTransferBody(ProtocolVersion(),
