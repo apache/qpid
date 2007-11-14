@@ -74,8 +74,8 @@ struct SessionManager::BrokerHandler : public FrameHandler, private ChannelAdapt
     virtual void send(const AMQBody&) {}
 
     //delivery adapter methods, also no-ops:
-    virtual DeliveryId deliver(Message::shared_ptr&, DeliveryToken::shared_ptr) { return 0; }
-    virtual void redeliver(Message::shared_ptr&, DeliveryToken::shared_ptr, DeliveryId) {}
+    virtual DeliveryId deliver(intrusive_ptr<Message>&, DeliveryToken::shared_ptr) { return 0; }
+    virtual void redeliver(intrusive_ptr<Message>&, DeliveryToken::shared_ptr, DeliveryId) {}
 };
 
 SessionManager::~SessionManager(){}

@@ -63,7 +63,7 @@ class TxPublishTest : public CppUnit::TestCase
     TestMessageStore store;
     Queue::shared_ptr queue1;
     Queue::shared_ptr queue2;
-    Message::shared_ptr msg;
+    intrusive_ptr<Message> msg;
     TxPublish op;
     
 public:
@@ -99,7 +99,7 @@ public:
         op.prepare(0);
         op.commit();
         CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue1->getMessageCount());
-	Message::shared_ptr msg_dequeue = queue1->dequeue().payload;
+	intrusive_ptr<Message> msg_dequeue = queue1->dequeue().payload;
 
  	CPPUNIT_ASSERT_EQUAL( true, ((PersistableMessage*) msg_dequeue.get())->isEnqueueComplete());
         CPPUNIT_ASSERT_EQUAL(msg, msg_dequeue);

@@ -22,7 +22,7 @@
 
 using namespace qpid::broker;
 
-DeliverableMessage::DeliverableMessage(Message::shared_ptr& _msg) : msg(_msg)
+DeliverableMessage::DeliverableMessage(intrusive_ptr<Message>& _msg) : msg(_msg)
 {
 }
 

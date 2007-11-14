@@ -49,7 +49,7 @@ class MessageTest : public CppUnit::TestCase
         string data1("abcdefg");
         string data2("hijklmn");
 
-        Message::shared_ptr msg(new Message());
+        intrusive_ptr<Message> msg(new Message());
 
         AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
         AMQFrame header(0, AMQHeaderBody());
@@ -77,7 +77,7 @@ class MessageTest : public CppUnit::TestCase
         msg->encode(wbuffer);
         
         Buffer rbuffer(buff, msg->encodedSize());
-        msg.reset(new Message());
+        msg = new Message();
         msg->decodeHeader(rbuffer);
         msg->decodeContent(rbuffer);
         CPPUNIT_ASSERT_EQUAL(exchange, msg->getExchangeName());

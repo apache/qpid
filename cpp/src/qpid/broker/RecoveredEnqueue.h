@@ -34,10 +34,10 @@ namespace qpid {
     namespace broker {
         class RecoveredEnqueue : public TxOp{
             Queue::shared_ptr queue;
-            Message::shared_ptr msg;
+            intrusive_ptr<Message> msg;
 
         public:
-            RecoveredEnqueue(Queue::shared_ptr queue, Message::shared_ptr msg);
+            RecoveredEnqueue(Queue::shared_ptr queue, intrusive_ptr<Message> msg);
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();

@@ -81,7 +81,7 @@ void Queue::notifyDurableIOComplete()
 }
 
 
-void Queue::deliver(Message::shared_ptr& msg){
+void Queue::deliver(intrusive_ptr<Message>& msg){
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg);
@@ -108,7 +108,7 @@ void Queue::deliver(Message::shared_ptr& msg){
 }
 
 
-void Queue::recover(Message::shared_ptr& msg){
+void Queue::recover(intrusive_ptr<Message>& msg){
     push(msg);
     msg->enqueueComplete(); // mark the message as enqueued
     if (mgmtObject != 0)
@@ -120,7 +120,7 @@ void Queue::recover(Message::shared_ptr& msg){
     }
 }
 
-void Queue::process(Message::shared_ptr& msg){
+void Queue::process(intrusive_ptr<Message>& msg){
 
     uint32_t mask = management::MSG_MASK_TX;
 
@@ -178,7 +178,7 @@ void Queue::flush(DispatchCompletion& completion)
  * the message, or if the queue is exclusive to a single connection
  * and has a single consumer (covers the JMS topic case).
  */
-bool Queue::exclude(Message::shared_ptr msg)
+bool Queue::exclude(intrusive_ptr<Message> msg)
 {
     RWlock::ScopedWlock locker(consumerLock);
     if (exclusive) {
@@ -373,7 +373,7 @@ void Queue::pop(){
     messages.pop_front();
 }
 
-void Queue::push(Message::shared_ptr& msg){
+void Queue::push(intrusive_ptr<Message>& msg){
     Mutex::ScopedLock locker(messageLock);
     messages.push_back(QueuedMessage(this, msg, ++sequence));
     if (policy.get()) {
@@ -412,7 +412,7 @@ bool Queue::canAutoDelete() const{
 }
 
 // return true if store exists, 
-bool Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr msg)
+bool Queue::enqueue(TransactionContext* ctxt, intrusive_ptr<Message> msg)
 {
     if (msg->isPersistent() && store) {
         msg->enqueueAsync(this, store); //increment to async counter -- for message sent to more than one queue
@@ -423,7 +423,7 @@ bool Queue::enqueue(TransactionContext* ctxt, Message::shared_ptr msg)
 }
 
 // return true if store exists, 
-bool Queue::dequeue(TransactionContext* ctxt, Message::shared_ptr msg)
+bool Queue::dequeue(TransactionContext* ctxt, intrusive_ptr<Message> msg)
 {
     if (msg->isPersistent() && store) {
         msg->dequeueAsync(this, store); //increment to async counter -- for message sent to more than one queue
