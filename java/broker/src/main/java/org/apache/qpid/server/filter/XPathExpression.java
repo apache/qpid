@@ -20,27 +20,26 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.AMQMessage;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Used to evaluate an XPath Expression in a JMS selector.
  */
 public final class XPathExpression implements BooleanExpression {
 
-    private static final Log log = LogFactory.getLog(XPathExpression.class);
+    private static final Logger log = Logger.getLogger(XPathExpression.class);
     private static final String EVALUATOR_SYSTEM_PROPERTY = "org.apache.qpid.server.filter.XPathEvaluatorClassName";
     private static final String DEFAULT_EVALUATOR_CLASS_NAME=XalanXPathEvaluator.class.getName();
-    
+
     private static final Constructor EVALUATOR_CONSTRUCTOR;
-    
+
     static {
-        String cn = System.getProperty(EVALUATOR_SYSTEM_PROPERTY, DEFAULT_EVALUATOR_CLASS_NAME);        
+        String cn = System.getProperty(EVALUATOR_SYSTEM_PROPERTY, DEFAULT_EVALUATOR_CLASS_NAME);
         Constructor m = null;
         try {
             try {
@@ -66,14 +65,14 @@ public final class XPathExpression implements BooleanExpression {
         }
         return c.getConstructor(new Class[]{String.class});
     }
-    
+
     private final String xpath;
     private final XPathEvaluator evaluator;
-    
+
     static public interface XPathEvaluator {
         public boolean evaluate(AMQMessage message) throws AMQException;
-    }    
-    
+    }
+
     XPathExpression(String xpath) {
         this.xpath = xpath;
         this.evaluator = createEvaluator(xpath);
@@ -112,7 +111,7 @@ public final class XPathExpression implements BooleanExpression {
     public String toString() {
         return "XPATH "+ConstantExpression.encodeString(xpath);
     }
-    
+
     /**
      * @param message
      * @return true if the expression evaluates to Boolean.TRUE.
@@ -121,7 +120,7 @@ public final class XPathExpression implements BooleanExpression {
     public boolean matches(AMQMessage message) throws AMQException
     {
         Object object = evaluate(message);
-        return object!=null && object==Boolean.TRUE;            
+        return object!=null && object==Boolean.TRUE;
     }
 
 }
