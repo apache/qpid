@@ -1,13 +1,11 @@
 package org.apache.qpid.client.perf;
 
 import java.io.FileWriter;
-import java.io.RandomAccessFile;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.Session;
 
@@ -21,7 +19,7 @@ public class MessageConsumerTest extends Options implements Runnable
     private static final Logger _logger = LoggerFactory.getLogger(MessageConsumerTest.class);
     private SimpleDateFormat df = new SimpleDateFormat("h:mm a");
 
-    private Map<Integer,JMSConsumer> _consumers = new ConcurrentHashMap<Integer,JMSConsumer>();
+    private Map<Integer, JMSConsumer> _consumers = new ConcurrentHashMap<Integer, JMSConsumer>();
     private int _count;
     String _logFileName;
     private long _gracePeriod = 5 * 60 * 1000;
@@ -30,30 +28,38 @@ public class MessageConsumerTest extends Options implements Runnable
 
     public void start() throws Exception
     {
-       this.parseOptions();
-       boolean useSameDest = true;
-       _logFileName = _logFilePath + "/MessageConsumerTest_" + System.currentTimeMillis();
+        this.parseOptions();
+        boolean useSameDest = true;
+        _logFileName = _logFilePath + "/MessageConsumerTest_" + System.currentTimeMillis();
 
-       // use each destination with a different producer
-       if (_producerCount == destArray.length)
-       {
-           useSameDest = false;
-       }
-       for (;_count < _producerCount;_count++)
-       {
-           createAndStartProducer(useSameDest?destArray[0]:destArray[_count]);
-       }
+        // use each destination with a different producer
+        if (_producerCount == destArray.length)
+        {
+            useSameDest = false;
+        }
+        for (; _count < _producerCount; _count++)
+        {
+            createAndStartConsumer(useSameDest ? destArray[0] : destArray[_count]);
+        }
     }
 
-    private void createAndStartProducer(String routingKey)throws Exception
+    private void createAndStartConsumer(String routingKey) throws Exception
     {
         AMQConnection con = ConnectionUtility.getInstance().getConnection();
         con.start();
-        Destination dest = new AMQTopic(con,routingKey);
-        JMSConsumer prod = new JMSConsumer(String.valueOf(_count),(Connection)con, dest, _transacted,Session.AUTO_ACKNOWLEDGE);
-        Thread t = new Thread(prod);
-        t.setName("JMSConsumer-"+_count);
-        t.start();
+        Destination dest = new AMQTopic(con, routingKey);
+        JMSConsumer prod;
+        if (_synchronous)
+        {
+            prod = new JMSSyncConsumer(String.valueOf(_count), con, dest, _transacted, Session.AUTO_ACKNOWLEDGE);
+            Thread t = new Thread((JMSSyncConsumer) prod);
+            t.setName("JMSSyncConsumer-" + _count);
+            t.start();
+        }
+        else
+        {
+            prod = new JMSAsyncConsumer(String.valueOf(_count), con, dest, _transacted, Session.AUTO_ACKNOWLEDGE);
+        }
         _consumers.put(_count, prod);
     }
 
@@ -71,12 +77,12 @@ public class MessageConsumerTest extends Options implements Runnable
         runReaper(false);
         try
         {
-            while(run)
+            while (run)
             {
                 Thread.sleep(_logDuration);
                 runReaper(false);
 
-                if(System.currentTimeMillis() + _gracePeriod - _startTime > _expiry )
+                if (System.currentTimeMillis() + _gracePeriod - _startTime > _expiry)
                 {
                     // time to stop the test.
                     for (Integer id : _consumers.keySet())
@@ -91,7 +97,7 @@ public class MessageConsumerTest extends Options implements Runnable
         }
         catch (InterruptedException e)
         {
-            _logger.error("The timer thread exited",e);
+            _logger.error("The timer thread exited", e);
         }
     }
 
@@ -99,11 +105,11 @@ public class MessageConsumerTest extends Options implements Runnable
     {
         try
         {
-            FileWriter _logFile = new FileWriter(_logFileName + ".csv",true);
+            FileWriter _logFile = new FileWriter(_logFileName + ".csv", true);
             for (Integer id : _consumers.keySet())
             {
                 JMSConsumer prod = _consumers.get(id);
-                StringBuffer buf = new StringBuffer("JMSConsumer(").append(prod.getId()).append("),");
+                StringBuffer buf = new StringBuffer("JMSSyncConsumer(").append(prod.getId()).append("),");
                 Date d = new Date(System.currentTimeMillis());
                 buf.append(df.format(d)).append(",");
                 buf.append(d.getTime()).append(",");
@@ -113,21 +119,21 @@ public class MessageConsumerTest extends Options implements Runnable
             }
             _logFile.close();
 
-            FileWriter _memoryLog = new FileWriter(_logFileName + "_memory.csv",true);
-            StringBuffer buf = new StringBuffer("JMSConsumer,");
+            FileWriter _memoryLog = new FileWriter(_logFileName + "_memory.csv", true);
+            StringBuffer buf = new StringBuffer("JMSSyncConsumer,");
             Date d = new Date(System.currentTimeMillis());
             buf.append(df.format(d)).append(",");
             buf.append(d.getTime()).append(",");
             buf.append(totalMsgCount).append(",");
-            buf.append(Runtime.getRuntime().totalMemory() -Runtime.getRuntime().freeMemory()).append("\n");
+            buf.append(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()).append("\n");
             _memoryLog.write(buf.toString());
             _memoryLog.close();
             if (printSummary)
             {
                 double totaltime = d.getTime() - _startTime;
                 double dCount = totalMsgCount;
-                double ratio = (dCount/totaltime)*1000;
-                FileWriter _summaryLog = new FileWriter(_logFileName + "_Summary",true);
+                double ratio = (dCount / totaltime) * 1000;
+                FileWriter _summaryLog = new FileWriter(_logFileName + "_Summary", true);
                 buf = new StringBuffer("MessageConsumerTest \n Test started at : ");
                 buf.append(df.format(new Date(_startTime))).append("\n Test finished at : ");
                 d = new Date(System.currentTimeMillis());
@@ -140,9 +146,9 @@ public class MessageConsumerTest extends Options implements Runnable
                 _summaryLog.close();
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
-            _logger.error("Error printing info to the log file",e);
+            _logger.error("Error printing info to the log file", e);
         }
     }
 
@@ -154,7 +160,7 @@ public class MessageConsumerTest extends Options implements Runnable
             test.start();
             test.startTimerThread();
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             e.printStackTrace();
         }
