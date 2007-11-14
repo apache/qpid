@@ -164,10 +164,12 @@ FrameSet::shared_ptr SessionCore::get() { // user thread
     return l3.getDemux().getDefault()->pop();
 }
 
+static const std::string CANNOT_REOPEN_SESSION="Cannot re-open a session.";
+
 void SessionCore::open(uint32_t detachedLifetime) { // user thread
     Lock l(state);
     check(state==OPENING && !session,
-          COMMAND_INVALID, QPID_MSG("Cannot re-open a session."));
+          COMMAND_INVALID, CANNOT_REOPEN_SESSION);
     proxy.open(detachedLifetime);
     waitFor(OPEN);
 }
@@ -194,13 +196,15 @@ void SessionCore::suspend() { // user thread
 
 void SessionCore::setChannel(uint16_t ch) { channel=ch; }
 
+static const std::string CANNOT_RESUME_SESSION("Session cannot be resumed.");
+
 void SessionCore::resume(shared_ptr<ConnectionImpl> c) {
     // user thread
     {
         Lock l(state);
         if (state==OPEN)
             doSuspend(REPLY_SUCCESS, OK);
-        check(state==SUSPENDED, COMMAND_INVALID, QPID_MSG("Session cannot be resumed."));
+        check(state==SUSPENDED, COMMAND_INVALID, CANNOT_RESUME_SESSION);
         SequenceNumber sendAck=session->resuming();
         attaching(c);
         proxy.resume(getId());
@@ -224,6 +228,12 @@ void SessionCore::assertOpen() const {
     checkOpen();
 }
 
+static const std::string UNEXPECTED_SESSION_ATTACHED(
+    "Received unexpected session.attached");
+
+static const std::string INVALID_SESSION_RESUME_ID(
+    "session.resumed has invalid ID.");
+
 // network thread
 void SessionCore::attached(const Uuid& sessionId,
                            uint32_t /*detachedLifetime*/)
@@ -231,7 +241,7 @@ void SessionCore::attached(const Uuid& sessionId,
     Lock l(state);
     invariant();
     check(state == OPENING || state == RESUMING,
-          COMMAND_INVALID, QPID_MSG("Received unexpected session.attached"));
+          COMMAND_INVALID, UNEXPECTED_SESSION_ATTACHED);
     if (state==OPENING) {        // New session
         // FIXME aconway 2007-10-17: arbitrary ack value of 100 for
         // client, allow configuration.
@@ -240,15 +250,21 @@ void SessionCore::attached(const Uuid& sessionId,
     }
     else {                      // RESUMING
         check(sessionId == session->getId(),
-              INVALID_ARGUMENT, QPID_MSG("session.resumed has invalid ID."));
+              INVALID_ARGUMENT, INVALID_SESSION_RESUME_ID);
         // Don't setState yet, wait for first incoming ack.
     }
 }
 
+static const std::string UNEXPECTED_SESSION_DETACHED(
+    "Received unexpected session.detached.");
+
+static const std::string UNEXPECTED_SESSION_ACK(
+    "Received unexpected session.ack");
+
 void  SessionCore::detached() { // network thread
     Lock l(state);
     check(state == SUSPENDING,
-          COMMAND_INVALID, QPID_MSG("Received unexpected session.detached."));
+          COMMAND_INVALID, UNEXPECTED_SESSION_DETACHED);
     connection->erase(channel);
     doSuspend(REPLY_SUCCESS, OK);
 }
@@ -257,7 +273,7 @@ void SessionCore::ack(uint32_t ack, const SequenceNumberSet&) {
     Lock l(state);
     invariant();
     check(state==OPEN || state==RESUMING,
-          COMMAND_INVALID, QPID_MSG("Received unexpected session.ack"));
+          COMMAND_INVALID, UNEXPECTED_SESSION_ACK);
     session->receivedAck(ack);
     if (state==RESUMING) {
         setState(OPEN);
@@ -301,6 +317,8 @@ void SessionCore::check(bool cond, int newCode, const std::string& msg)  const {
     }
 }
 
+static const std::string SESSION_NOT_OPEN("Session is not open");
+
 void SessionCore::checkOpen() const {
     if (state==SUSPENDED) {
         std::string cause;
@@ -308,7 +326,7 @@ void SessionCore::checkOpen() const {
             cause=" by :"+text;        
         throw CommandInvalidException(QPID_MSG("Session is suspended" << cause));
     }
-    check(state==OPEN, COMMAND_INVALID, "Session is not open");
+    check(state==OPEN, COMMAND_INVALID, SESSION_NOT_OPEN);
 }
 
 Future SessionCore::send(const AMQBody& command)
