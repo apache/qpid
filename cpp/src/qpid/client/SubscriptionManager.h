@@ -37,11 +37,15 @@ class SubscriptionManager
     typedef sys::Mutex::ScopedLock Lock;
     typedef sys::Mutex::ScopedUnlock Unlock;
 
+    void subscribeInternal(const std::string& q, const std::string& dest);
+    
     qpid::client::Dispatcher dispatcher;
     qpid::client::Session_0_10& session;
     uint32_t messages;
     uint32_t bytes;
     bool window;
+    AckPolicy autoAck;
+    bool confirmMode;
 
 public:
     SubscriptionManager(Session_0_10& session);
@@ -96,6 +100,17 @@ public:
      *@param window: if true use window-based flow control.
      */
     void setFlowControl(uint32_t messages,  uint32_t bytes, bool window=true);
+
+    /** Set the confirm-mode for new subscriptions. Defaults to true.
+     *@param confirm: if true messages must be confirmed by calling
+     *Message::acknowledge() or automatically, see setAckPolicy()
+     */
+    void setConfirmMode(bool confirm);
+
+    /** Set the acknowledgement policy for new subscriptions.
+     * Default is to acknowledge every message automatically.
+     */
+    void setAckPolicy(const AckPolicy& autoAck);
 };
 
 
