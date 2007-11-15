@@ -72,6 +72,11 @@ class ManagementAgent
     uint64_t                     nextObjectId;
 
     void PeriodicProcessing (void);
+    void EncodeHeader       (qpid::framing::Buffer&       buf);
+    void SendBuffer         (qpid::framing::Buffer&       buf,
+                             uint32_t                     length,
+                             broker::Exchange::shared_ptr exchange,
+                             std::string                  routingKey);
 };
 
 }}

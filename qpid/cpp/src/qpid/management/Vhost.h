@@ -45,16 +45,14 @@ class Vhost : public ManagementObject
     uint64_t    brokerRef;
     std::string name;
 
-    uint16_t    getObjectType        (void) { return OBJECT_VHOST; }
-    std::string getObjectName        (void) { return "vhost"; }
-    void        writeSchema          (qpid::framing::Buffer& buf);
-    void        writeConfig          (qpid::framing::Buffer& buf);
-    void        writeInstrumentation (qpid::framing::Buffer& /*buf*/) {}
-    bool        getSchemaNeeded      (void) { return schemaNeeded; }
-    void        setSchemaNeeded      (void) { schemaNeeded = true; }
-    void        doMethod             (std::string            /*methodName*/,
-                                      qpid::framing::Buffer& /*inBuf*/,
-                                      qpid::framing::Buffer& /*outBuf*/) {}
+    void writeSchema          (qpid::framing::Buffer& buf);
+    void writeConfig          (qpid::framing::Buffer& buf);
+    void writeInstrumentation (qpid::framing::Buffer& /*buf*/) {}
+    bool getSchemaNeeded      (void) { return schemaNeeded; }
+    void setSchemaNeeded      (void) { schemaNeeded = true; }
+    void doMethod             (std::string            /*methodName*/,
+                               qpid::framing::Buffer& /*inBuf*/,
+                               qpid::framing::Buffer& /*outBuf*/) {}
 
     inline bool getInstChanged       (void) { return false; }
 };
