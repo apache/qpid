@@ -20,6 +20,7 @@
  */
 
 #include "qpid/log/Statement.h"
+#include "qpid/framing/FieldTable.h"
 #include "Manageable.h" 
 #include "Queue.h"
 
@@ -32,7 +33,7 @@ bool Queue::schemaNeeded = true;
 Queue::Queue (Manageable* _core, Manageable* _parent, 
               const std::string& _name,
               bool _durable, bool _autoDelete) :
-    ManagementObject(_core), name(_name),
+    ManagementObject(_core, "queue"), name(_name),
     durable(_durable), autoDelete(_autoDelete)
 {
     vhostRef = _parent->GetManagementObject ()->getObjectId ();
@@ -83,47 +84,248 @@ Queue::~Queue () {}
 
 void Queue::writeSchema (Buffer& buf)
 {
+    FieldTable ft;
+
     schemaNeeded = false;
 
-    schemaListBegin (buf);
-    schemaItem (buf, TYPE_UINT64, "vhostRef",            "Virtual Host Ref", true);
-    schemaItem (buf, TYPE_STRING, "name",                "Queue Name", true);
-    schemaItem (buf, TYPE_BOOL,   "durable",             "Durable",    true);
-    schemaItem (buf, TYPE_BOOL,   "autoDelete",          "AutoDelete", true);
-    schemaItem (buf, TYPE_UINT64, "msgTotalEnqueues",    "Total messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "msgTotalDequeues",    "Total messages dequeued");
-    schemaItem (buf, TYPE_UINT64, "msgTxnEnqueues",      "Transactional messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "msgTxnDequeues",      "Transactional messages dequeued");
-    schemaItem (buf, TYPE_UINT64, "msgPersistEnqueues",  "Persistent messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "msgPersistDequeues",  "Persistent messages dequeued");
-    schemaItem (buf, TYPE_UINT32, "msgDepth",            "Current size of queue in messages");
-    schemaItem (buf, TYPE_UINT32, "msgDepthLow",         "Low-water queue size, this interval");
-    schemaItem (buf, TYPE_UINT32, "msgDepthHigh",        "High-water queue size, this interval");
-    schemaItem (buf, TYPE_UINT64, "byteTotalEnqueues",   "Total messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "byteTotalDequeues",   "Total messages dequeued");
-    schemaItem (buf, TYPE_UINT64, "byteTxnEnqueues",     "Transactional messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "byteTxnDequeues",     "Transactional messages dequeued");
-    schemaItem (buf, TYPE_UINT64, "bytePersistEnqueues", "Persistent messages enqueued");
-    schemaItem (buf, TYPE_UINT64, "bytePersistDequeues", "Persistent messages dequeued");
-    schemaItem (buf, TYPE_UINT32, "byteDepth",           "Current size of queue in bytes");
-    schemaItem (buf, TYPE_UINT32, "byteDepthLow",        "Low-water mark this interval");
-    schemaItem (buf, TYPE_UINT32, "byteDepthHigh",       "High-water mark this interval");
-    schemaItem (buf, TYPE_UINT64, "enqueueTxnStarts",    "Total enqueue transactions started ");
-    schemaItem (buf, TYPE_UINT64, "enqueueTxnCommits",   "Total enqueue transactions committed");
-    schemaItem (buf, TYPE_UINT64, "enqueueTxnRejects",   "Total enqueue transactions rejected");
-    schemaItem (buf, TYPE_UINT32, "enqueueTxnCount",     "Current pending enqueue transactions");
-    schemaItem (buf, TYPE_UINT32, "enqueueTxnCountLow",  "Low water mark this interval");
-    schemaItem (buf, TYPE_UINT32, "enqueueTxnCountHigh", "High water mark this interval");
-    schemaItem (buf, TYPE_UINT64, "dequeueTxnStarts",    "Total dequeue transactions started ");
-    schemaItem (buf, TYPE_UINT64, "dequeueTxnCommits",   "Total dequeue transactions committed");
-    schemaItem (buf, TYPE_UINT64, "dequeueTxnRejects",   "Total dequeue transactions rejected");
-    schemaItem (buf, TYPE_UINT32, "dequeueTxnCount",     "Current pending dequeue transactions");
-    schemaItem (buf, TYPE_UINT32, "dequeueTxnCountLow",  "Transaction low water mark this interval");
-    schemaItem (buf, TYPE_UINT32, "dequeueTxnCountHigh", "Transaction high water mark this interval");
-    schemaItem (buf, TYPE_UINT32, "consumers",           "Current consumers on queue");
-    schemaItem (buf, TYPE_UINT32, "consumersLow",        "Consumer low water mark this interval");
-    schemaItem (buf, TYPE_UINT32, "consumersHigh",       "Consumer high water mark this interval");
-    schemaListEnd (buf);
+    // Schema class header:
+    buf.putShortString (className);  // Class Name
+    buf.putShort       (4);          // Config Element Count
+    buf.putShort       (33);         // Inst Element Count
+    buf.putShort       (0);          // Method Count
+    buf.putShort       (0);          // Event Count
+
+    // Config Elements
+    ft = FieldTable ();
+    ft.setString ("name",   "vhostRef");
+    ft.setInt    ("type",   TYPE_U64);
+    ft.setInt    ("access", ACCESS_RO);
+    ft.setInt    ("index",  1);
+    ft.setString ("desc",   "Virtual Host Ref");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString ("name",   "name");
+    ft.setInt    ("type",   TYPE_SSTR);
+    ft.setInt    ("access", ACCESS_RO);
+    ft.setInt    ("index",  1);
+    ft.setString ("desc",   "Queue Name");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString ("name",   "durable");
+    ft.setInt    ("type",   TYPE_U8);
+    ft.setInt    ("access", ACCESS_RO);
+    ft.setInt    ("index",  0);
+    ft.setString ("desc",   "Durable");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString ("name",   "autoDelete");
+    ft.setInt    ("type",   TYPE_U8);
+    ft.setInt    ("access", ACCESS_RO);
+    ft.setInt    ("index",  0);
+    ft.setString ("desc",   "AutoDelete");
+    buf.put (ft);
+
+    // Inst Elements
+    ft = FieldTable ();
+    ft.setString    ("name", "msgTotalEnqueues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total messages enqueued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgTotalDequeues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total messages dequeued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgTxnEnqueues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Transactional messages enqueued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgTxnDequeues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Transactional messages dequeued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgPersistEnqueues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Persistent messages enqueued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgPersistDequeues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Persistent messages dequeued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgDepth");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Current size of queue in messages");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgDepthLow");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Low-water queue size, this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "msgDepthHigh");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "High-water queue size, this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "byteTotalEnqueues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total messages enqueued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "byteTotalDequeues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total messages dequeued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "byteTxnEnqueues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Transactional messages enqueued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "byteTxnDequeues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Transactional messages dequeued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "bytePersistEnqueues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Persistent messages enqueued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "bytePersistDequeues");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Persistent messages dequeued");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "byteDepth");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Current size of queue in bytes");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "byteDepthLow");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Low-water mark this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "byteDepthHigh");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "High-water mark this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "enqueueTxnStarts");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total enqueue transactions started ");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "enqueueTxnCommits");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total enqueue transactions committed");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "enqueueTxnRejects");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total enqueue transactions rejected");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "enqueueTxnCount");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Current pending enqueue transactions");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "enqueueTxnCountLow");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Low water mark this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "enqueueTxnCountHigh");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "High water mark this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "dequeueTxnStarts");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total dequeue transactions started ");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "dequeueTxnCommits");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total dequeue transactions committed");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "dequeueTxnRejects");
+    ft.setInt       ("type", TYPE_U64);
+    ft.setString    ("desc", "Total dequeue transactions rejected");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "dequeueTxnCount");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Current pending dequeue transactions");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "dequeueTxnCountLow");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Transaction low water mark this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "dequeueTxnCountHigh");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Transaction high water mark this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "consumers");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Current consumers on queue");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "consumersLow");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Consumer low water mark this interval");
+    buf.put (ft);
+
+    ft = FieldTable ();
+    ft.setString    ("name", "consumersHigh");
+    ft.setInt       ("type", TYPE_U32);
+    ft.setString    ("desc", "Consumer high water mark this interval");
+    buf.put (ft);
 }
 
 void Queue::writeConfig (Buffer& buf)

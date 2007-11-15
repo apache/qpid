@@ -31,18 +31,6 @@
 namespace qpid { 
 namespace management {
 
-const uint16_t OBJECT_SYSTEM      = 1;
-const uint16_t OBJECT_BROKER      = 2;
-const uint16_t OBJECT_VHOST       = 3;
-const uint16_t OBJECT_QUEUE       = 4;
-const uint16_t OBJECT_EXCHANGE    = 5;
-const uint16_t OBJECT_BINDING     = 6;
-const uint16_t OBJECT_CLIENT      = 7;
-const uint16_t OBJECT_SESSION     = 8;
-const uint16_t OBJECT_DESTINATION = 9;
-const uint16_t OBJECT_PRODUCER    = 10;
-const uint16_t OBJECT_CONSUMER    = 11;
-
 class Manageable;
 
 class ManagementObject
@@ -56,48 +44,48 @@ class ManagementObject
     bool        instChanged;
     bool        deleted;
     Manageable* coreObject;
+    std::string className;
     
-    static const uint8_t TYPE_UINT8  = 1;
-    static const uint8_t TYPE_UINT16 = 2;
-    static const uint8_t TYPE_UINT32 = 3;
-    static const uint8_t TYPE_UINT64 = 4;
-    static const uint8_t TYPE_BOOL   = 5;
-    static const uint8_t TYPE_STRING = 6;
+    static const uint8_t TYPE_U8   = 1;
+    static const uint8_t TYPE_U16  = 2;
+    static const uint8_t TYPE_U32  = 3;
+    static const uint8_t TYPE_U64  = 4;
+    static const uint8_t TYPE_SSTR = 6;
+    static const uint8_t TYPE_LSTR = 7;
+
+    static const uint8_t ACCESS_RC = 1;
+    static const uint8_t ACCESS_RW = 1;
+    static const uint8_t ACCESS_RO = 1;
+
+    static const uint8_t DIR_I     = 1;
+    static const uint8_t DIR_O     = 2;
+    static const uint8_t DIR_IO    = 3;
 
     static const uint8_t FLAG_CONFIG = 0x01;
     static const uint8_t FLAG_INDEX  = 0x02;
     static const uint8_t FLAG_END    = 0x80;
-    
-    void schemaItem      (qpid::framing::Buffer& buf,
-                          uint8_t     typeCode,
-                          std::string name,
-                          std::string description,
-                          bool        isConfig = false,
-                          bool        isIndex  = false);
-    void schemaListBegin (qpid::framing::Buffer& buf);
-    void schemaListEnd   (qpid::framing::Buffer& buf);
+
     void writeTimestamps (qpid::framing::Buffer& buf);
 
   public:
     typedef boost::shared_ptr<ManagementObject> shared_ptr;
 
-    ManagementObject (Manageable* _core) :
+    ManagementObject (Manageable* _core, std::string _name) :
         destroyTime(0), objectId (0), configChanged(true),
-        instChanged(true), deleted(false), coreObject(_core)
+        instChanged(true), deleted(false), coreObject(_core), className(_name)
     { createTime = uint64_t (qpid::sys::Duration (qpid::sys::now ())); }
     virtual ~ManagementObject () {}
 
-    virtual uint16_t    getObjectType        (void) = 0;
-    virtual std::string getObjectName        (void) = 0;
-    virtual void        writeSchema          (qpid::framing::Buffer& buf) = 0;
-    virtual void        writeConfig          (qpid::framing::Buffer& buf) = 0;
-    virtual void        writeInstrumentation (qpid::framing::Buffer& buf) = 0;
-    virtual bool        getSchemaNeeded      (void) = 0;
-    virtual void        setSchemaNeeded      (void) = 0;
-    virtual void        doMethod             (std::string            methodName,
-                                              qpid::framing::Buffer& inBuf,
-                                              qpid::framing::Buffer& outBuf) = 0;
+    virtual void writeSchema          (qpid::framing::Buffer& buf) = 0;
+    virtual void writeConfig          (qpid::framing::Buffer& buf) = 0;
+    virtual void writeInstrumentation (qpid::framing::Buffer& buf) = 0;
+    virtual bool getSchemaNeeded      (void) = 0;
+    virtual void setSchemaNeeded      (void) = 0;
+    virtual void doMethod             (std::string            methodName,
+                                       qpid::framing::Buffer& inBuf,
+                                       qpid::framing::Buffer& outBuf) = 0;
 
+    std::string  getClassName     (void) { return className; }
     void         setObjectId      (uint64_t oid) { objectId = oid; }
     uint64_t     getObjectId      (void) { return objectId; }
     inline  bool getConfigChanged (void) { return configChanged; }
