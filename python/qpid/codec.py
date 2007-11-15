@@ -247,6 +247,12 @@ class Codec:
   def decode_signed_long(self):
     return self.unpack("!q")
 
+  def encode_signed_int(self, o):
+    self.pack("!l", o)
+
+  def decode_signed_int(self):
+    return self.unpack("!l")
+
   def encode_longlong(self, o):
     """
     encodes long long (64 bits) data 'o' in network byte order
