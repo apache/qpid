@@ -84,110 +84,30 @@ void ManagementAgent::clientAdded (void)
     }
 }
 
-void ManagementAgent::PeriodicProcessing (void)
+void ManagementAgent::EncodeHeader (Buffer& buf)
 {
-#define BUFSIZE   65536
-#define THRESHOLD 16384
-    char      msgChars[BUFSIZE];
-    Buffer    msgBuffer (msgChars, BUFSIZE);
-    uint32_t  contentSize;
-    std::list<uint64_t> deleteList;
+    buf.putOctet ('A');
+    buf.putOctet ('M');
+    buf.putOctet ('0');
+    buf.putOctet ('1');
+}
 
-    if (managementObjects.empty ())
-        return;
-        
+void ManagementAgent::SendBuffer (Buffer&  buf,
+                                  uint32_t length,
+                                  Exchange::shared_ptr exchange,
+                                  string   routingKey)
+{
     intrusive_ptr<Message> msg (new Message ());
-
-    // Build the magic number for the management message.
-    msgBuffer.putOctet ('A');
-    msgBuffer.putOctet ('M');
-    msgBuffer.putOctet ('0');
-    msgBuffer.putOctet ('1');
-
-    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
-         iter != managementObjects.end ();
-         iter++)
-    {
-        ManagementObject::shared_ptr object = iter->second;
-
-        if (object->getSchemaNeeded ())
-        {
-            uint32_t startAvail = msgBuffer.available ();
-            uint32_t recordLength;
-            
-            msgBuffer.putOctet ('S');  // opcode = Schema Record
-            msgBuffer.putOctet (0);    // content-class = N/A
-            msgBuffer.putShort (object->getObjectType ());
-            msgBuffer.record   (); // Record the position of the length field
-            msgBuffer.putLong  (0xFFFFFFFF); // Placeholder for length
-
-            object->writeSchema (msgBuffer);
-            recordLength = startAvail - msgBuffer.available ();
-            msgBuffer.restore (true);         // Restore pointer to length field
-            msgBuffer.putLong (recordLength);
-            msgBuffer.restore ();             // Re-restore to get to the end of the buffer
-        }
-
-        if (object->getConfigChanged ())
-        {
-            uint32_t startAvail = msgBuffer.available ();
-            uint32_t recordLength;
-            
-            msgBuffer.putOctet ('C');  // opcode = Content Record
-            msgBuffer.putOctet ('C');  // content-class = Configuration
-            msgBuffer.putShort (object->getObjectType ());
-            msgBuffer.record   (); // Record the position of the length field
-            msgBuffer.putLong  (0xFFFFFFFF); // Placeholder for length
-
-            object->writeConfig (msgBuffer);
-            recordLength = startAvail - msgBuffer.available ();
-            msgBuffer.restore (true);         // Restore pointer to length field
-            msgBuffer.putLong (recordLength);
-            msgBuffer.restore ();             // Re-restore to get to the end of the buffer
-        }
-        
-        if (object->getInstChanged ())
-        {
-            uint32_t startAvail = msgBuffer.available ();
-            uint32_t recordLength;
-            
-            msgBuffer.putOctet ('C');  // opcode = Content Record
-            msgBuffer.putOctet ('I');  // content-class = Instrumentation
-            msgBuffer.putShort (object->getObjectType ());
-            msgBuffer.record   (); // Record the position of the length field
-            msgBuffer.putLong  (0xFFFFFFFF); // Placeholder for length
-
-            object->writeInstrumentation (msgBuffer);
-            recordLength = startAvail - msgBuffer.available ();
-            msgBuffer.restore (true);         // Restore pointer to length field
-            msgBuffer.putLong (recordLength);
-            msgBuffer.restore ();             // Re-restore to get to the end of the buffer
-        }
-
-        if (object->isDeleted ())
-            deleteList.push_back (iter->first);
-
-        // Temporary protection against buffer overrun.
-        // This needs to be replaced with frame fragmentation.
-        if (msgBuffer.available () < THRESHOLD)
-            break;
-    }
-
-    msgBuffer.putOctet ('X');  // End-of-message
-    msgBuffer.putOctet (0);
-    msgBuffer.putShort (0);
-    msgBuffer.putLong  (8);
-
-    contentSize = BUFSIZE - msgBuffer.available ();
-    msgBuffer.reset ();
-
     AMQFrame method  (0, MessageTransferBody(ProtocolVersion(),
-                                             0, "qpid.management", 0, 0));
+                                             0, exchange->getName (), 0, 0));
     AMQFrame header  (0, AMQHeaderBody());
     AMQFrame content;
 
+    QPID_LOG (debug, "ManagementAgent::SendBuffer - key="
+              << routingKey << " len=" << length);
+
     content.setBody(AMQContentBody());
-    content.castBody<AMQContentBody>()->decode(msgBuffer, contentSize);
+    content.castBody<AMQContentBody>()->decode(buf, length);
 
     method.setEof  (false);
     header.setBof  (false);
@@ -197,20 +117,85 @@ void ManagementAgent::PeriodicProcessing (void)
     msg->getFrames().append(method);
     msg->getFrames().append(header);
 
-    MessageProperties* props = msg->getFrames().getHeaders()->get<MessageProperties>(true);
-    props->setContentLength(contentSize);
+    MessageProperties* props =
+        msg->getFrames().getHeaders()->get<MessageProperties>(true);
+    props->setContentLength(length);
     msg->getFrames().append(content);
 
     DeliverableMessage deliverable (msg);
-    mExchange->route (deliverable, "mgmt", 0);
+    exchange->route (deliverable, routingKey, 0);
+}
+
+void ManagementAgent::PeriodicProcessing (void)
+{
+#define BUFSIZE   65536
+#define THRESHOLD 16384
+    char      msgChars[BUFSIZE];
+    uint32_t  contentSize;
+    string    routingKey;
+    std::list<uint64_t> deleteList;
+
+    if (managementObjects.empty ())
+        return;
+        
+    for (ManagementObjectMap::iterator iter = managementObjects.begin ();
+         iter != managementObjects.end ();
+         iter++)
+    {
+        ManagementObject::shared_ptr object = iter->second;
+
+        if (object->getSchemaNeeded ())
+        {
+            Buffer msgBuffer (msgChars, BUFSIZE);
+            EncodeHeader (msgBuffer);
+            msgBuffer.putOctet ('S');  // opcode = Schema Record
+            msgBuffer.putOctet (0);    // content-class = N/A
+            object->writeSchema (msgBuffer);
+
+            contentSize = BUFSIZE - msgBuffer.available ();
+            msgBuffer.reset ();
+            routingKey = "mgmt.schema." + object->getClassName ();
+            SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
+        }
+
+        if (object->getConfigChanged ())
+        {
+            Buffer msgBuffer (msgChars, BUFSIZE);
+            EncodeHeader (msgBuffer);
+            msgBuffer.putOctet ('C');  // opcode = Content Record
+            msgBuffer.putOctet ('C');  // content-class = Configuration
+            object->writeConfig (msgBuffer);
+
+            contentSize = BUFSIZE - msgBuffer.available ();
+            msgBuffer.reset ();
+            routingKey = "mgmt.config." + object->getClassName ();
+            SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
+        }
+        
+        if (object->getInstChanged ())
+        {
+            Buffer msgBuffer (msgChars, BUFSIZE);
+            EncodeHeader (msgBuffer);
+            msgBuffer.putOctet ('C');  // opcode = Content Record
+            msgBuffer.putOctet ('I');  // content-class = Instrumentation
+            object->writeInstrumentation (msgBuffer);
+
+            contentSize = BUFSIZE - msgBuffer.available ();
+            msgBuffer.reset ();
+            routingKey = "mgmt.inst." + object->getClassName ();
+            SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
+        }
+
+        if (object->isDeleted ())
+            deleteList.push_back (iter->first);
+    }
 
     // Delete flagged objects
     for (std::list<uint64_t>::reverse_iterator iter = deleteList.rbegin ();
          iter != deleteList.rend ();
          iter++)
-    {
         managementObjects.erase (*iter);
-    }
+
     deleteList.clear ();
 }
 
@@ -264,10 +249,11 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
     if (contentSize < 8 || contentSize > 65536)
         return;
 
-    char   *inMem  = new char[contentSize];
-    char   outMem[4096]; // TODO Fix This
-    Buffer inBuffer  (inMem,  contentSize);
-    Buffer outBuffer (outMem, 4096);
+    char     *inMem  = new char[contentSize];
+    char     outMem[4096]; // TODO Fix This
+    Buffer   inBuffer  (inMem,  contentSize);
+    Buffer   outBuffer (outMem, 4096);
+    uint32_t outLen;
 
     msg.encodeContent (inBuffer);
     inBuffer.reset ();
@@ -294,32 +280,9 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
         iter->second->doMethod (methodName, inBuffer, outBuffer);
     }
 
-    intrusive_ptr<Message> outMsg (new Message ());
-    uint32_t            msgSize = 4096 - outBuffer.available ();
+    outLen = 4096 - outBuffer.available ();
     outBuffer.reset ();
-    AMQFrame method  (0, MessageTransferBody(ProtocolVersion(),
-                                             0, "amq.direct", 0, 0));
-    AMQFrame header  (0, AMQHeaderBody());
-    AMQFrame content;
-
-    content.setBody(AMQContentBody());
-    content.castBody<AMQContentBody>()->decode(outBuffer, msgSize);
-
-    method.setEof  (false);
-    header.setBof  (false);
-    header.setEof  (false);
-    content.setBof (false);
-
-    outMsg->getFrames().append(method);
-    outMsg->getFrames().append(header);
-
-    MessageProperties* props = outMsg->getFrames().getHeaders()->get<MessageProperties>(true);
-    props->setContentLength(msgSize);
-    outMsg->getFrames().append(content);
-
-    DeliverableMessage outDeliverable (outMsg);
-    dExchange->route (outDeliverable, replyTo, 0);
-
+    SendBuffer (outBuffer, outLen, dExchange, replyTo);
     free (inMem);
 }
 

@@ -83,16 +83,14 @@ class Queue : public ManagementObject
     uint32_t  consumersLow;         // Low water mark this interval
     uint32_t  consumersHigh;        // High water mark this interval
 
-    uint16_t    getObjectType        (void) { return OBJECT_QUEUE; }
-    std::string getObjectName        (void) { return "queue"; }
-    void        writeSchema          (qpid::framing::Buffer& buf);
-    void        writeConfig          (qpid::framing::Buffer& buf);
-    void        writeInstrumentation (qpid::framing::Buffer& buf);
-    bool        getSchemaNeeded      (void) { return schemaNeeded; }
-    void        setSchemaNeeded      (void) { schemaNeeded = true; }
-    void        doMethod             (std::string            /*methodName*/,
-                                      qpid::framing::Buffer& /*inBuf*/,
-                                      qpid::framing::Buffer& /*outBuf*/) {}
+    void writeSchema          (qpid::framing::Buffer& buf);
+    void writeConfig          (qpid::framing::Buffer& buf);
+    void writeInstrumentation (qpid::framing::Buffer& buf);
+    bool getSchemaNeeded      (void) { return schemaNeeded; }
+    void setSchemaNeeded      (void) { schemaNeeded = true; }
+    void doMethod             (std::string            /*methodName*/,
+                               qpid::framing::Buffer& /*inBuf*/,
+                               qpid::framing::Buffer& /*outBuf*/) {}
 
     inline void adjustQueueHiLo (void){
         if (msgDepth > msgDepthHigh) msgDepthHigh = msgDepth;
