@@ -43,13 +43,13 @@ Options::Options(const std::string& name) : qpid::Options(name),
         ("trace,t", optValue(trace), "Enables all logging" )
         ("log-enable", optValue(selectors, "RULE"),
          ("Enables logging for selected levels and components. " 
-         "RULE is in the form 'LEVEL[+][:COMPONENT]' "
+         "RULE is in the form 'LEVEL[+][:PATTERN]' "
          "Levels are one of: \n\t "+levels.str()+"\n"
          "For example:\n"
          "\t'--log-enable warning+' "
          "logs all warning, error and critical messages.\n"
          "\t'--log-enable debug:framing' "
-          "logs debug messages from the framing component. "
+          "logs debug messages from the framing namespace. "
          "This option can be used multiple times").c_str())
         ("log-time", optValue(time, "yes|no"),
          "Include time in log messages")
