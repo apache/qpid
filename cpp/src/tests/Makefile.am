@@ -31,7 +31,8 @@ unit_test_SOURCES= unit_test.cpp \
 	RefCounted.cpp RefCountedMap.cpp \
 	SessionState.cpp Blob.cpp logging.cpp \
 	Url.cpp Uuid.cpp \
-	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp
+	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
+	InlineVector.cpp
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)

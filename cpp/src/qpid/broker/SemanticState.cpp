@@ -616,7 +616,7 @@ AckRange SemanticState::findRange(DeliveryId first, DeliveryId last)
     return AckRange(start, end);
 }
 
-void SemanticState::acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired)
+void SemanticState::acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired)
 {
     Mutex::ScopedLock locker(deliveryLock);
     AckRange range = findRange(first, last);

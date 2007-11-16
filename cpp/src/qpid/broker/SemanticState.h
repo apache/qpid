@@ -184,7 +184,7 @@ class SemanticState : public framing::FrameHandler::Chains,
     void recover(bool requeue);
     void flow(bool active);
     DeliveryId redeliver(QueuedMessage& msg, DeliveryToken::shared_ptr token);            
-    void acquire(DeliveryId first, DeliveryId last, std::vector<DeliveryId>& acquired);
+    void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);
     void handle(intrusive_ptr<Message> msg);
