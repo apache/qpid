@@ -22,12 +22,13 @@
 #define _DeliveryId_
 
 #include "qpid/framing/SequenceNumber.h"
+#include "qpid/framing/SequenceNumberSet.h"
 
 namespace qpid {
 namespace broker {
 
     typedef framing::SequenceNumber DeliveryId;
-
+    typedef framing::SequenceNumberSet DeliveryIds;
 }}
 
 

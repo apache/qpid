@@ -148,7 +148,7 @@ void DeliveryRecord::subtractFrom(Prefetch& prefetch) const{
     }
 }
 
-void DeliveryRecord::acquire(std::vector<DeliveryId>& results) {
+void DeliveryRecord::acquire(DeliveryIds& results) {
     if (queue->acquire(msg)) {
         acquired = true;
         results.push_back(id);
