@@ -52,12 +52,12 @@ Selector::Selector(const Options& opt){
              boost::bind(&Selector::enable, this, _1));
 }
 
-bool Selector::isEnabled(Level level, const std::string& file) {
+bool Selector::isEnabled(Level level, const std::string& function) {
     for (std::vector<std::string>::iterator i=substrings[level].begin();
          i != substrings[level].end();
          ++i)
     {
-        if (file.find(*i) != std::string::npos)
+        if (function.find(*i) != std::string::npos)
             return true;
     }
     return false;
