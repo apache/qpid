@@ -233,6 +233,8 @@ nobase_include_HEADERS = \
   qpid/RefCounted.h \
   qpid/SharedObject.h \
   qpid/Url.h \
+  qpid/InlineVector.h \
+  qpid/InlineAllocator.h \
   qpid/memory.h \
   qpid/shared_ptr.h \
   qpid/broker/Broker.h \
