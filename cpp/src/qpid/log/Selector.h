@@ -57,7 +57,7 @@ class Selector {
     void enable(const std::string& enableStr);
 
     /** True if level is enabld for file. */
-    bool isEnabled(Level level, const std::string& file);
+    bool isEnabled(Level level, const std::string& function);
 
   private:
     std::vector<std::string> substrings[LevelTraits::COUNT];
