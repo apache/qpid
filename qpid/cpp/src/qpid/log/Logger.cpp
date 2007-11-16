@@ -40,7 +40,7 @@ using namespace std;
 typedef sys::Mutex::ScopedLock ScopedLock;
 
 inline void Logger::enable_unlocked(Statement* s) {
-    s->enabled=selector.isEnabled(s->level, s->file);
+    s->enabled=selector.isEnabled(s->level, s->function);
 }
 
 struct OstreamOutput : public Logger::Output {
