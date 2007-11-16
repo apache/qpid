@@ -72,7 +72,7 @@ class DeliveryRecord{
     const std::string& getTag() const { return tag; } 
     bool isPull() const { return pull; }
     bool isAcquired() const { return acquired; }
-    void acquire(std::vector<DeliveryId>& results);
+    void acquire(DeliveryIds& results);
     friend bool operator<(const DeliveryRecord&, const DeliveryRecord&);         
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };
@@ -89,9 +89,9 @@ struct AckRange
 
 struct AcquireFunctor
 {
-    std::vector<DeliveryId>& results;
+    DeliveryIds& results;
 
-    AcquireFunctor(std::vector<DeliveryId>& _results) : results(_results) {}
+    AcquireFunctor(DeliveryIds& _results) : results(_results) {}
 
     void operator()(DeliveryRecord& record)
     {

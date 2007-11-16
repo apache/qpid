@@ -22,20 +22,21 @@
 #define _framing_SequenceNumberSet_h
 
 #include <ostream>
-#include <vector>
 #include "amqp_types.h"
 #include "Buffer.h"
 #include "SequenceNumber.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/InlineVector.h"
 
 namespace qpid {
 namespace framing {
 
-class SequenceNumberSet : public std::vector<SequenceNumber>
-{   
+class SequenceNumberSet : public InlineVector<SequenceNumber, 2>
+{
+    typedef InlineVector<SequenceNumber, 2> Base;
 public:
-    typedef std::vector<SequenceNumber>::const_iterator const_iterator;
-    typedef std::vector<SequenceNumber>::iterator iterator;
+    typedef Base::const_iterator const_iterator;
+    typedef Base::iterator iterator;
 
     void encode(Buffer& buffer) const;
     void decode(Buffer& buffer);
