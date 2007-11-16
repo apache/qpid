@@ -1,0 +1,84 @@
+// ------------------------------------------------------------------
+// NOTICE file corresponding to the section 4d of The Apache License,
+// Version 2.0, in this case for Qpid Common Utilities
+// ------------------------------------------------------------------
+
+Apache Qpid
+Copyright 2006-2007 Apache Software Foundation
+
+This product includes software developed at
+Apache Software Foundation (http://www.apache.org/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, SLF4J API Module (http://www.slf4j.org),
+developed by QOS.ch  (http://www.qos.ch)
+License: MIT License (http://www.slf4j.org/license.html)
+
+This product includes/uses software, Backport of JSR 166 (http://www.mathcs.emory.edu/dcl/util/backport-util-concurrent/),
+developed by Dawid Kurzyniec (http://www.mathcs.emory.edu/~dawidk/)
+License: Public Domain  (http://creativecommons.org/licenses/publicdomain)
+
+This product includes/uses software, JUnit Toolkit (http://sourceforge.net/projects/junit-toolkit/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache Log4j (http://logging.apache.org/log4j/1.2)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache MINA Core API (http://directory.apache.org/projects/mina/)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache MINA SSL Filter (http://directory.apache.org/subprojects/mina/mina-filter-ssl)
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Apache MINA Java5 Extensions (http://directory.apache.org/subprojects/mina/mina-java5)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Configuration (http://jakarta.apache.org/commons/),
+developed by The Apache Software Foundation  (http://jakarta.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Logging API - commons-logging:commons-logging-api:jar:1.0.4
+developed by The Apache Software Foundation  (http://jakarta.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Collections - commons-collections:commons-collections:jar:3.1,
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons CLI - commons-cli:commons-cli:jar:1.0
+Ideveloped by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Codec (http://jakarta.apache.org/commons/codec/),
+developed by The Apache Software Foundation  (http://jakarta.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Commons Lang - commons-lang:commons-lang:jar:2.1
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, Xalan - xalan:xalan:jar:2.7.0
+developed by Apache Software Foundation  (http://www.apache.org)
+License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
+
+This product includes/uses software, ICU4J - ICU4J 3.4.4
+developed by the ICU Project (http://icu-project.org/)
+License: http://source.icu-project.org/repos/icu/icu/trunk/license.html
+
+ICU License - ICU 1.8.1 and later
+
+COPYRIGHT AND PERMISSION NOTICE
+
+Copyright (c) 1995-2006 International Business Machines Corporation and others
+
+All rights reserved.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, provided that the above copyright notice(s) and this permission notice appear in all copies of the Software and that both the above copyright notice(s) and this permission notice appear in supporting documentation.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in this Software without prior written authorization of the copyright holder.
+
+All trademarks and registered trademarks mentioned herein are the property of their respective owners.
+
