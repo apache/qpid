@@ -51,6 +51,45 @@ class MessageTests(TestBase):
             self.fail("Received locally published message though no_local=true")
         except Empty: None
 
+    def test_consume_no_local_awkward(self):
+
+        """
+        If an exclusive queue gets a no-local delivered to it, that
+        message could 'block' delivery of subsequent messages or it
+        could be left on the queue, possibly never being consumed
+        (this is the case for example in the qpid JMS mapping of
+        topics). This test excercises a Qpid C++ broker hack that
+        deletes such messages.        
+        """
+        
+        channel = self.channel
+        #setup:
+        channel.queue_declare(queue="test-queue", exclusive=True, auto_delete=True)
+        #establish consumer which excludes delivery of locally sent messages
+        self.subscribe(destination="local_excluded", queue="test-queue", no_local=True)
+
+        #send a 'local' message
+        channel.message_transfer(content=Content(properties={'routing_key' : "test-queue"}, body="local"))
+
+        #send a non local message
+        other = self.connect()
+        channel2 = other.channel(1)
+        channel2.session_open()
+        channel2.message_transfer(content=Content(properties={'routing_key' : "test-queue"}, body="foreign"))
+        channel2.session_close()
+        other.close()
+
+        #check that the second message only is delivered
+        excluded = self.client.queue("local_excluded")
+        msg = excluded.get(timeout=1)
+        self.assertEqual("foreign", msg.content.body)
+        try:
+            excluded.get(timeout=1) 
+            self.fail("Received extra message")
+        except Empty: None
+        #check queue is empty
+        self.assertEqual(0, channel.queue_query(queue="test-queue").message_count)
+
 
     def test_consume_exclusive(self):
         """
@@ -677,6 +716,9 @@ class MessageTests(TestBase):
             msg.complete()
         channel.message_flow(unit = 0, value = 1, destination = "b")
         self.assertEmpty(queue)
+
+        #check all 'browsed' messages are still on the queue
+        self.assertEqual(5, channel.queue_query(queue="q").message_count)
 
     def assertDataEquals(self, channel, msg, expected):
         self.assertEquals(expected, msg.content.body)
