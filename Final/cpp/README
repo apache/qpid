@@ -1,0 +1,272 @@
+Qpid C++ is a C++ implementation of the AMQP protcol described at
+  http://amqp.org/
+
+The Qpid project also provides Java, Ruby and Python implementations.
+
+For additional software or information on the Qpid project go to:
+     http://incubator.apache.org/qpid/index.html
+
+
+Available documentation:
+  qpidd(1) man page - how to run the broker daemon.
+  html/index.html - C++ client API.
+
+Note the daemon and client API can be installed separately. 
+
+This README describes how to build the Qpid C++ broker and client, either
+from a checkout of the source or from a source distribution.
+
+== Prerequisites ==
+
+We prefer to avoid spending time accommodating older versions of these
+packages, so please make sure that you have the latest stable versions.
+Known version numbers for a succesfull build are given in brackets, take
+these as a recommended minimum version. Older unix versions, for example,
+Redhat Linux 3, will almost certainly require some packages to be upgraded.
+
+Qpid can be built using the gcc compiler:
+
+ # gcc     <http://gcc.gnu.org/>            (3.2.3)
+
+Qpid is compiled against libraries:
+
+ * apr     <http://apr.apache.org>          (1.2.7)
+ * boost   <http://www.boost.org>           (1.33.1)
+ * cppunit <http://cppunit.sourceforge.net> (1.11.4)
+
+Using tools:
+
+ * boost-jam  <http://boost.sourceforge.net/>          (3.1.13)
+ * GNU make   <http://www.gnu.org/software/make/>      (3.8.0)
+ * autoconf   <http://www.gnu.org/software/autoconf/>  (2.61)
+ * automake   <http://www.gnu.org/software/automake/>  (1.9.6)
+ * help2man   <http://www.gnu.org/software/help2man/>  (1.36.4)
+ * libtool    <http://www.gnu.org/software/libtool/>   (1.5.22)
+ * pkgconfig  <http://pkgconfig.freedesktop.org/wiki/> (0.21)
+ * doxygen    <ftp://ftp.stack.nl/pub/users/dimitri/>  (1.5.1)
+ * graphviz   <http://www.graphviz.org/>               (2.12)
+ * JDK 5.0    <http://java.sun.com/j2se/1.5.0/>        (1.5.0.11)
+
+=== Optional tools ===
+
+Building from a source distribution does not require:
+
+ * autoconf
+ * automake
+ * JDK 5.0
+
+Building without testing does not require:
+
+ * cppunit
+
+Building without documentaion does not require:
+
+ * help2man
+ * doxygen
+ * graphviz
+
+=== Installing as root ===
+
+On linux most packages can be installed using your distribution's package
+management tool. For example on Fedora:
+
+  # yum install apr-devel boost-devel cppunit-devel 
+  # yum install pkgconfig doxygen graphviz help2man
+
+
+Follow the manual installation instruction below for any packages not
+available through yum.
+
+===  Building and installing packages manually or as non-root user ===
+
+Required dependencies can be installed and built from source distributions.
+It is recommended that you create a directory to install them to, for example,
+~/qpid-tools. To build and install the dependency pakcages:
+
+ 1. Unzip and untar them and cd to the untared directory.
+ 2. do:
+  # ./configure --prefix=~/qpid-tools
+  # make install
+
+ The exceptions to this are boost and JDK 5.0.
+ To build the boost library:
+
+ 1. Unpack boost-jam.
+ 2. Add bjam in the unpacked directory to your path.
+ 3. Unpack boost and cd to the boost untarred directory.
+ 4. do:
+
+  # bjam -sTOOLS=gcc --prefix=~/qpid-tools
+
+To install JDK 5.0 download and run its install script, or whatever
+alternative instructions may be on the sun website.
+
+Ensure that all the build tools are available on your path, when they are
+manually installed to non-standard locations. For example:
+
+ # export PATH=~/qpid-tools/bin:$PATH
+
+Ensure that pkg-config is set up correctly. For example:
+
+ # export PKG_CONFIG_PATH=~/qpid-tools/lib/pkgconfig:/usr/local/pkgconfig
+ # export PKG_CONFIG=~/qpid-tools/bin/pkg-config
+
+Ensure that the boost libraries are made available on the gcc library path.
+For example:
+
+ # export CXXFLAGS=-I~/qpid-tools/include/boost-1_33_1
+
+Ensure that JDK 5.0 has its home location set up correctly and is added to
+the path. For example:
+
+ # export PATH=~/jdk1.5.0_11/bin:$PATH
+
+== Building from a source distribution. ==
+
+In the distribution directory
+
+Build and install with:
+
+ # ./configure --prefix=<install_location>
+ # make all
+ # make install
+
+To build and test everything:
+
+ # make
+ # make check
+
+This builds in the source tree. You can have multiple builds in the
+same working copy with different configuration. For example you can do
+the following to build twice, once for debug, the other with
+optimization:
+
+ # make distclean
+ # mkdir .build-dbg .build-opt
+ # (cd .build-opt ../configure --prefix=/tmp/x && make && make check)
+ # (cd .build-dbg ../configure CXXFLAGS=-g --prefix=/tmp/x \
+    && make && make check)
+
+
+== For Qpid developers: building a repository working copy ==
+
+=== Installing the latest autotools ===
+
+If you don't have sufficiently up-to-date autotools you can get the
+latest by running run the script qpid-autotools-install.
+
+1. Decide where you would like to install the tools. It should be in a
+   local directory so that you do not need root privileges. (Suggest
+   $HOME/qpid-tools.) Create an empty directory.
+2. Modify your environment variable PATH to ensure that the bin directory
+   within this directory comes first in the PATH string:
+   PATH=$HOME/qpid-tools/bin:$PATH
+3. Set PKG_CONFIG_PATH=$HOME/qpid-tools/lib/pkgconfig:/usr/lib/pkgconfig
+   (or if it already exists, make sure that the above path to your
+   qpid-tools directory is first).
+4. Run the install utility from the cpp directory:
+   ./qpid-autotools-install --prefix=$HOME/qpid-tools --skip-check
+   (Note that --prefix will only accept an absolute path, so don't use
+   ~/qpid-tools.) The utility will download, compile and install the
+   required tools into the qpid-tools directory (this may take a little
+   time). Watch for any notices about paths at the end of the install -
+   this means that your environment is not correct - see steps 2 and 3
+   above.
+   NOTE: If you omit the --skip-check option, the check of the build
+   can add up to an hour to what is normally a few minutes of install
+   time.
+5. Perform a check: from the command-line run "which automake" and
+   ensure that it finds the automake in your qpid-tools directory. If not,
+   check that the build completed normally and your environment.
+6. (Optional) If having the build artifacts lying around bothers you, delete
+   the (hidden) build directory cpp/.build-auto-tools.
+
+To see help, run ./qpid-autotools-install --help.
+
+=== Building a checkout ===
+To get the source code from the subversion repository (trunk) do:
+
+ # svn checkout https://svn.apache.org/repos/asf/incubator/qpid/trunk/ .
+
+To build a fresh checkout:
+
+Cd to qpid/cpp subdirectory. Before running make on a fresh checkout do:
+
+ # ./bootstrap
+
+This generates config, makefiles and the like - check the script for
+details. You only need to do this once, "make" will keep everything up
+to date thereafter (including re-generating configuration & Makefiles
+if the automake templates change etc.)
+
+If you are developing code yourself, or if you want to help
+us keep the code as tight and robust as possible, consider enabling
+the use of valgrind. If you configure like this:
+
+ # ./configure --enable-valgrind
+
+That will arrange (assuming you have valgrind installed) for "make check"
+to run tests via valgrind.  That makes the tests run more slowly, but
+helps detect certain types of bugs, as well as memory leaks.  If you run
+"make check" and valgrind detects a leak that is not listed as being
+"ignorable-for-now", the test script in question will fail.  However,
+recording whether a leak is ignorable is not easy, when the stack
+signature, libraries, compiler, O/S, architecture, etc., may all vary,
+so if you see a new leak, try to figure out if it's one you can fix
+before adding it to the list.
+
+Now follow instruction for building from a source distribution.
+
+=== Portability ===
+
+All system calls are abstracted by classes under lib/common/sys. This
+provides an object-oriented C++ API and contains platform-specific
+code.
+
+These wrappers are mainly inline by-value classes so they impose no
+run-time penalty compared do direct system calls.
+
+Initially we will have a full linux implementation and a portable
+implementation sufficient for the client using the APR portability
+library. The implementations may change in future but the interface
+for qpid code outside the qpid/sys namespace should remain stable.
+
+=== Unit tests ===
+
+Unit tests are built as .so files containing CppUnit plugins.
+
+DllPlugInTester is provided as part of cppunit. You can use it to run
+any subset of the unit tests. See Makefile for examples.
+
+NOTE: If foobar.so is a test plugin in the current directory then
+surprisingly this will fail with "can't load plugin":
+ # DllPluginTester foobar.so
+
+Instead you need to say:
+ # DllPluginTester ./foobar.so
+
+Reason: DllPluginTester uses dlopen() which only searches for shlibs
+in the standard places unless the filename contains a "/".  In that
+case it just tries to open the filename.
+
+=== System tests ===
+
+The Python test suite ../python/run_tests is the main set of broker
+system tests.
+
+There are some C++ client test executables built under client/test.
+
+== Doxygen ==
+
+Doxygen generates documentation in several formats from source code
+using special comments. You can use javadoc style comments if you know
+javadoc, if you don't or want to know the fully story on doxygen
+markup see http://www.stack.nl/~dimitri/doxygen/
+
+Even even if the code is completely uncommented, doxygen generates
+UML-esque dependency diagrams that are ''extremely'' useful in navigating
+around the code, especially for newcomers.
+
+To try it out "make doxygen" then open doxygen/html/index.html
+This README describes how to build the Qpid C++ broker and client, either
+from a checkout of the source or from a source distribution.
