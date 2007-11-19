@@ -75,7 +75,6 @@ namespace qpid {
                 void operator()();
             };
 
-			bool dispatching;                
             const string name;
             const bool autodelete;
             MessageStore* const store;
