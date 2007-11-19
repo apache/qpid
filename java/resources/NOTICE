@@ -62,6 +62,15 @@ This product includes/uses software, Xalan - xalan:xalan:jar:2.7.0
 developed by Apache Software Foundation  (http://www.apache.org)
 License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
+This product uses/references the following software from Eclipse.
+License: Eclipse Public License - v 1.0 (http://www.eclipse.org/legal/epl-v10.html)
+(Note: the versions are ommited and only the name is specified.)
+org.eclipse.jface
+org.eclipse.core.*
+org.eclipse.equinox.* 
+org.eclipse.osgi
+org.eclipse.swt
+
 This product includes/uses software, ICU4J - ICU4J 3.4.4
 developed by the ICU Project (http://icu-project.org/)
 License: http://source.icu-project.org/repos/icu/icu/trunk/license.html
