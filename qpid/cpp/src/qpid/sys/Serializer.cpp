@@ -58,7 +58,7 @@ bool SerializerBase::running() {
 
 void SerializerBase::wait() {
     Mutex::ScopedLock l(lock);
-    lock.wait();
+    if (state == IDLE) lock.wait();
 }
 
 void SerializerBase::run() {
