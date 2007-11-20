@@ -26,7 +26,7 @@ public class Options
     public void parseOptions()
     {
         _messageSize = Integer.parseInt(System.getProperty("messageSize","100"));
-        _synchronous =Boolean.parseBoolean( System.getProperty("synchronous", "false"));
+        _synchronous = Boolean.parseBoolean( System.getProperty("synchronous", "false"));
         _transacted = false;
         String destinations = System.getProperty("destinations");
         destArray = destinations.split(",");
