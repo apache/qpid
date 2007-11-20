@@ -12,6 +12,7 @@ License: Apache 2.0 License  (http://www.apache.org/licenses/LICENSE-2.0)
 
 This product includes/uses software, SLF4J API Module (http://www.slf4j.org),
 developed by QOS.ch  (http://www.qos.ch)
+Source included with binary builds at : http://slf4j.org/dist
 License: MIT License (http://www.slf4j.org/license.html)
 
 This product includes/uses software, Backport of JSR 166 (http://www.mathcs.emory.edu/dcl/util/backport-util-concurrent/),
@@ -70,6 +71,7 @@ org.eclipse.core.*
 org.eclipse.equinox.* 
 org.eclipse.osgi
 org.eclipse.swt
+Source available from : http://archive.eclipse.org/eclipse/downloads/drops/R-3.2-200606291905/index.php
 
 This product includes/uses software, ICU4J - ICU4J 3.4.4
 developed by the ICU Project (http://icu-project.org/)
