@@ -29,7 +29,6 @@ import javax.jms.*;
  * Destination which is used to synchronously consume messages. If a
  * received message has a ReplyTo header then a new response message is sent
  * to that specified destination.
- *
  */
 public class MessageMirror extends BaseExample
 {
@@ -44,24 +43,26 @@ public class MessageMirror extends BaseExample
 
     /**
      * Create a MessageMirror client.
+     *
      * @param args Command line arguments.
      */
     public MessageMirror(String[] args)
     {
         super(CLASS, args);
         _destinationType = _argProcessor.getStringArgument("-destinationType");
-        _destinationName =  _argProcessor.getStringArgument("-destinationName");
+        _destinationName = _argProcessor.getStringArgument("-destinationName");
     }
 
     /**
      * Run the message mirror example.
+     *
      * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
         _options.put("-destinationType", "Destination Type: queue/topic");
         _defaults.put("-destinationType", "queue");
-         _options.put("-destinationName", "Destination Name");
+        _options.put("-destinationName", "Destination Name");
         _defaults.put("-destinationName", "message_queue");
         MessageMirror messageMirror = new MessageMirror(args);
         messageMirror.runTest();
@@ -74,27 +75,13 @@ public class MessageMirror extends BaseExample
     {
         try
         {
-            Destination destination;
-
-            if (_destinationType.equals("queue"))
-            {
-                // Lookup the queue
-                System.out.println(CLASS + ": Looking up queue with name: " + _destinationName);
-                destination = (Queue) getInitialContext().lookup(_destinationName);
-            }
-            else
-            {
-                // Lookup the topic
-                System.out.println(CLASS + ": Looking up topic with name: " + _destinationName);
-                destination = (Topic) getInitialContext().lookup(_destinationName);
-            }
-
             // Declare the connection
             Connection connection = getConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
-            System.out.println(CLASS + ": Setting an ExceptionListener on the connection as sample uses a MessageConsumer");
+            System.out.println(
+                    CLASS + ": Setting an ExceptionListener on the connection as sample uses a MessageConsumer");
 
             connection.setExceptionListener(new ExceptionListener()
             {
@@ -113,6 +100,21 @@ public class MessageMirror extends BaseExample
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Destination destination;
+
+            if (_destinationType.equals("queue"))
+            {
+                // Lookup the queue
+                System.out.println(CLASS + ": Looking up queue with name: " + _destinationName);
+                destination = session.createQueue(_destinationName);
+            }
+            else
+            {
+                // Lookup the topic
+                System.out.println(CLASS + ": Looking up topic with name: " + _destinationName);
+                destination = session.createTopic(_destinationName);
+            }
 
             // Create a MessageConsumer
             System.out.println(CLASS + ": Creating a MessageConsumer");
@@ -145,25 +147,26 @@ public class MessageMirror extends BaseExample
 
                 if (requestMessage instanceof TextMessage)
                 {
-                       if (((TextMessage) requestMessage).getText().equals("That's all, folks!"))
+                    if (((TextMessage) requestMessage).getText().equals("That's all, folks!"))
                     {
                         System.out.println("Received final message for " + destination);
                         end = true;
                     }
-                    System.out.println("\tContents = " + ((TextMessage)requestMessage).getText());
+                    System.out.println("\tContents = " + ((TextMessage) requestMessage).getText());
                 }
 
                 // Now bounce the message if a ReplyTo header was set.
                 if (requestMessage.getJMSReplyTo() != null)
                 {
-                     System.out.println("Activating response queue listener for: " + destination);
-                    responseMessage = session.createTextMessage("Activating response queue listener for: " + destination);
+                    System.out.println("Activating response queue listener for: " + destination);
+                    responseMessage =
+                            session.createTextMessage("Activating response queue listener for: " + destination);
                     String correlationID = requestMessage.getJMSCorrelationID();
                     if (correlationID != null)
                     {
                         responseMessage.setJMSCorrelationID(correlationID);
                     }
-                    messageProducer = session.createProducer(requestMessage.getJMSReplyTo()) ;
+                    messageProducer = session.createProducer(requestMessage.getJMSReplyTo());
                     messageProducer.send(responseMessage);
                 }
                 System.out.println();

@@ -71,7 +71,7 @@ public class Publisher extends BaseExample
             message = session.createTextMessage();
 
             // lookup the topics .usa.weather
-            Topic topic = (Topic) getInitialContext().lookup("usa.weather");
+            Topic topic = session.createTopic("usa.weather");
             message.setStringProperty("topicName", "usa.weather");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");
@@ -79,7 +79,7 @@ public class Publisher extends BaseExample
             publishMessages(message, messagePublisher);
 
             // lookup the topics usa.news
-            topic = (Topic) getInitialContext().lookup("usa.news");
+            topic = session.createTopic("usa.news");
             message.setStringProperty("topicName", "usa.news");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");
@@ -87,7 +87,7 @@ public class Publisher extends BaseExample
             publishMessages(message, messagePublisher);
 
             // lookup the topics europe.weather
-            topic = (Topic) getInitialContext().lookup("europe.weather");
+            topic = session.createTopic("europe.weather");
             message.setStringProperty("topicName", "europe.weather");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");
@@ -95,7 +95,7 @@ public class Publisher extends BaseExample
             publishMessages(message, messagePublisher);
 
             // lookup the topics europe.news
-            topic = (Topic) getInitialContext().lookup("europe.news");
+            topic = session.createTopic("europe.news");
             message.setStringProperty("topicName", "europe.news");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");
@@ -104,7 +104,7 @@ public class Publisher extends BaseExample
 
             // send the final message
             message.setText("That's all, folks!");
-            topic = (Topic) getInitialContext().lookup("news");
+            topic = session.createTopic("#.news");
             message.setStringProperty("topicName", "news");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");
@@ -112,7 +112,7 @@ public class Publisher extends BaseExample
             messagePublisher
                     .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
-            topic = (Topic) getInitialContext().lookup("weather");
+            topic = session.createTopic("#.weather");
             message.setStringProperty("topicName", "weather");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");
@@ -120,7 +120,7 @@ public class Publisher extends BaseExample
             messagePublisher
                     .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
-            topic = (Topic) getInitialContext().lookup("europe");
+            topic = session.createTopic("europe.#");
             message.setStringProperty("topicName", "europe");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");
@@ -128,7 +128,7 @@ public class Publisher extends BaseExample
             messagePublisher
                     .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
-            topic = (Topic) getInitialContext().lookup("usa");
+            topic = session.createTopic("usa.#");
             message.setStringProperty("topicName", "usa");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisherr");

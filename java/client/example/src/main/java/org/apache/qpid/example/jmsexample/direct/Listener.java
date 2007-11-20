@@ -83,9 +83,6 @@ public class Listener extends BaseExample implements MessageListener
     {
         try
         {
-            // lookup the queue
-            Queue destination = (Queue) getInitialContext().lookup(_queueName);
-
             // Declare the connection
             Connection connection = getConnection();
 
@@ -110,6 +107,9 @@ public class Listener extends BaseExample implements MessageListener
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // lookup the queue
+            Queue destination =  session.createQueue(_queueName);
 
             // Create a MessageConsumer
             System.out.println(CLASS + ": Creating a MessageConsumer");
