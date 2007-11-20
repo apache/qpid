@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,6 +40,7 @@ public class JMSAsyncConsumer implements MessageListener, JMSConsumer
     private int _ackMode = Session.AUTO_ACKNOWLEDGE;
     private AtomicBoolean _run = new AtomicBoolean(true);
     private long _currentMsgCount;
+    private boolean _verifyOrder = false;
 
     /* Not implementing transactions for first phase */
     public JMSAsyncConsumer(String id,Connection connection, Destination destination,boolean transacted,int ackMode) throws Exception
@@ -52,18 +53,31 @@ public class JMSAsyncConsumer implements MessageListener, JMSConsumer
         _session = _connection.createSession(_transacted, _ackMode);
         _consumer = _session.createConsumer(_destination);
         _consumer.setMessageListener(this);
+        _verifyOrder = Boolean.getBoolean("verifyOrder");
     }
 
 
 
     public void onMessage(Message message)
     {
-        _currentMsgCount ++;
+        try
+        {
+            long msgId = Integer.parseInt(message.getJMSCorrelationID());
+            if (_verifyOrder && _currentMsgCount+1 != msgId)
+            {
+                _logger.error("Error : Message received out of order in JMSSyncConsumer:" + _id + " message id was " + msgId + " expected: " + _currentMsgCount+1);
+            }
+            _currentMsgCount ++;
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public void stopConsuming()
     {
-        System.out.println("Producer received notification to stop");
+        System.out.println("Consumer received notification to stop");
         try
         {
             _session.close();

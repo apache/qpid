@@ -83,7 +83,7 @@ public class JMSSyncConsumer implements Runnable, JMSConsumer
     public void stopConsuming()
     {
         _run.set(false);
-        System.out.println("Producer received notification to stop");
+        System.out.println("Consumer received notification to stop");
     }
 
     public String getId()
