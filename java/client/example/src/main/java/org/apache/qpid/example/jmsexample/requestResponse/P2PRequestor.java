@@ -93,7 +93,7 @@ public class P2PRequestor extends BaseExample
 
             // Lookup the destination
             System.out.println(CLASS + ": Looking up queue with name: " + _queueName);
-            Queue destination = (Queue) getInitialContext().lookup(_queueName);
+            Queue destination = session.createQueue(_queueName);
 
             // Create a QueueRequestor
             System.out.println(CLASS + ": Creating a QueueRequestor");
