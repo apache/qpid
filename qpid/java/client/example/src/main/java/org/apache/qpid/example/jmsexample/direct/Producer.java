@@ -61,9 +61,6 @@ public class Producer extends BaseExample
     {
         try
         {
-            // lookup the queue
-            Queue   destination = (Queue) getInitialContext().lookup(_queueName);
-
             // Declare the connection
             Connection connection = getConnection();
 
@@ -71,6 +68,9 @@ public class Producer extends BaseExample
             // This session is a default choice of non-transacted and uses the auto acknowledge feature of a session.
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            // lookup the queue
+            Queue   destination = session.createQueue(_queueName);
 
             // Create a Message producer
             System.out.println(CLASS + ": Creating a Message PRoducer");

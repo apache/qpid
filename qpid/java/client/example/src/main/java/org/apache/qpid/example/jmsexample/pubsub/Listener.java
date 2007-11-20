@@ -93,7 +93,7 @@ public class Listener extends BaseExample
             TopicSession session = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // lookup the topics usa
-            Topic topic = (Topic) getInitialContext().lookup("usa");
+            Topic topic = session.createTopic("usa.#");
             // Create a Message Subscriber
             System.out.println(CLASS + ": Creating a Message Subscriber");
             TopicSubscriber messageSubscriber = session.createSubscriber(topic);
@@ -101,7 +101,7 @@ public class Listener extends BaseExample
             messageSubscriber.setMessageListener(new MyMessageListener("usa"));
 
             // lookup the topics world.usa.news
-            topic = (Topic) getInitialContext().lookup("europe");
+            topic = session.createTopic("europe.#");
             // Create a Message Subscriber
             System.out.println(CLASS + ": Creating a Message Subscriber");
             messageSubscriber = session.createSubscriber(topic);
@@ -109,7 +109,7 @@ public class Listener extends BaseExample
             messageSubscriber.setMessageListener(new MyMessageListener("europe"));
 
             // lookup the topics world.europw
-            topic = (Topic) getInitialContext().lookup("news");
+            topic = session.createTopic("#.news");
             // Create a Message Subscriber
             System.out.println(CLASS + ": Creating a Message Subscriber");
             messageSubscriber = session.createSubscriber(topic);
@@ -117,7 +117,7 @@ public class Listener extends BaseExample
             messageSubscriber.setMessageListener(new MyMessageListener("news"));
 
             // lookup the topics world.europw
-            topic = (Topic) getInitialContext().lookup("weather");
+            topic = session.createTopic("#.weather");
             // Create a Message Subscriber
             System.out.println(CLASS + ": Creating a Message Subscriber");
             messageSubscriber = session.createSubscriber(topic);
