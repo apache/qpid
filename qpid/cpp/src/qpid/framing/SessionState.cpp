@@ -70,7 +70,6 @@ boost::optional<SequenceNumber> SessionState::received(const AMQFrame& f) {
             QPID_MSG("Invalid frame: Resuming session, expected session-ack"));
     assert(state = ATTACHED);
     ++lastReceived;
-    QPID_LOG(trace, "Recv # "<< lastReceived << " " << id);
     if (ackInterval && lastReceived == sendAckAt)
         return sendingAck();
     else
@@ -85,7 +84,6 @@ bool SessionState::sent(const AMQFrame& f) {
         unackedOut.push_back(f);
     }
     ++lastSent;
-    QPID_LOG(trace, "Sent # "<< lastSent << " " << id);
     return ackInterval &&
         (state!=RESUMING) &&
         (lastSent == solicitAckAt) &&
