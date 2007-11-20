@@ -89,16 +89,7 @@ public class QueueToTopic extends BaseExample
     {
         try
         {
-
-            // Lookup the queue
-            System.out.println(CLASS + ": Looking up queue with name: " + _queueName);
-            Queue queue = (Queue) getInitialContext().lookup(_queueName);
-
-            // Lookup the topic
-            System.out.println(CLASS + ": Looking up topic with name: " + _topicName);
-            Topic topic = (Topic) getInitialContext().lookup(_topicName);
-
-            // Declare the connection
+           // Declare the connection
             Connection connection = getConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
@@ -112,12 +103,6 @@ public class QueueToTopic extends BaseExample
                 {
                     // The connection may have broken invoke reconnect code if available.
                     System.err.println(CLASS + ": The sample received an exception through the ExceptionListener");
-                    System.err.println(
-                            CLASS + ": If this was a real application it should now go through reconnect code");
-                    System.err.println();
-                    System.err.println("Exception: " + jmse);
-                    System.err.println();
-                    System.err.println("Now exiting.");
                     System.exit(0);
                 }
             });
@@ -133,6 +118,14 @@ public class QueueToTopic extends BaseExample
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
             Session nonTransactedSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
+            // Lookup the queue
+            System.out.println(CLASS + ": Looking up queue with name: " + _queueName);
+            Queue queue = nonTransactedSession.createQueue(_queueName);
+
+            // Lookup the topic
+            System.out.println(CLASS + ": Looking up topic with name: " + _topicName);
+            Topic topic = nonTransactedSession.createTopic(_topicName);
+             
             // Make sure that the queue is empty
             System.out.print(CLASS + ": Purging messages from queue...");
             MessageConsumer queueMessageConsumer = nonTransactedSession.createConsumer(queue);

@@ -88,7 +88,7 @@ abstract public class BaseExample
         _defaults.put("-deliveryMode", "non-persistent");
         _options.put("-numMessages", "Number of messages to process");
         _defaults.put("-numMessages", String.valueOf(DEFAULT_NUMBER_MESSAGES));
-      
+
         _argProcessor = new ArgProcessor(Id, args, _options, _defaults);
         _argProcessor.display();
         //Set the initial context factory
@@ -136,7 +136,7 @@ abstract public class BaseExample
      * we assume that the environment is correctly set
      * i.e. -Djava.naming.provider.url="..//example.properties"
      *
-     * @return an initial context
+     * @return An initial context
      * @throws Exception if there is an error getting the context
      */
     public InitialContext getInitialContext() throws Exception
@@ -144,24 +144,12 @@ abstract public class BaseExample
         if (_initialContext == null)
         {
             Hashtable<String, String> jndiEnvironment = new Hashtable<String, String>();
-           jndiEnvironment.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY_NAME);
+            jndiEnvironment.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY_NAME);
+            jndiEnvironment.put("connectionfactory.ConnectionFactory",
+                                "qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:127.0.0.1:5672");
             if (getProviderURL() != null)
             {
                 jndiEnvironment.put(Context.PROVIDER_URL, getProviderURL());
-            }
-            else
-            {
-                jndiEnvironment.put("connectionfactory.ConnectionFactory",
-                                    "qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:127.0.0.1:5672");
-                jndiEnvironment.put("queue.message_queue", "message_queue");
-                jndiEnvironment.put("topic.usa.news", "usa.news");
-                jndiEnvironment.put("topic.usa.weather", "usa.weather");
-                jndiEnvironment.put("topic.usa", "usa.#");
-                jndiEnvironment.put("topic.europe.weather", "europe.weather");
-                jndiEnvironment.put("topic.europe.news", "europe.news");
-                jndiEnvironment.put("topic.europe", "europe.#");
-                jndiEnvironment.put("topic.news", "#.news");
-                jndiEnvironment.put("topic.weather", "#.weather");
             }
             _initialContext = new InitialContext(jndiEnvironment);
         }

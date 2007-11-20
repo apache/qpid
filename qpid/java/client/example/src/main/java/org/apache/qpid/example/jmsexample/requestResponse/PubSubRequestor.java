@@ -93,7 +93,7 @@ public class PubSubRequestor extends BaseExample
 
             // Lookup the destination
             System.out.println(CLASS + ": Looking up topic with name: " + _topicName);
-            Topic destination = (Topic) getInitialContext().lookup(_topicName);
+            Topic destination = session.createTopic(_topicName);
 
             // Create a TopicRequestor
             System.out.println(CLASS + ": Creating a TopicRequestor");
