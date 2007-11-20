@@ -1,6 +1,6 @@
 package org.apache.qpid.example.jmsexample.transacted;
 
-import org.redhat.mrg.messaging.examples.BaseExample;
+import org.apache.qpid.example.jmsexample.BaseExample;
 
 import javax.jms.*;
 

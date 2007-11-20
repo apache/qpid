@@ -1,13 +1,11 @@
 package org.apache.qpid.example.jmsexample.pubsub;
 
-import org.redhat.mrg.messaging.examples.BaseExample;
+import org.apache.qpid.example.jmsexample.BaseExample;
 
 import javax.jms.*;
 
 /**
  * Publish messages to topics
- * <p/>
- * <p>Run with <code>-help</code> argument for a description of command line arguments.
  */
 public class Publisher extends BaseExample
 {
