@@ -1,0 +1,160 @@
+Apache Incubator Qpid Java M2 Release Notes
+-------------------------------------------
+
+The Qpid M2 release contains support the for AMQP 0-8 specification.
+You can access the 0-8 specification using the following link.
+http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
+
+For full details of Qpid capabilities, as they currently stand, see our
+detailed project documentation at:
+
+http://cwiki.apache.org/confluence/display/qpid/Qpid+Java+Documentation
+
+From the link above you can access our Getting Started Guide, FAQ, Build How To
+and detailed developer documentation.
+
+
+Known Issues/Outstanding Work
+-----------------------------
+
+You can view the outstanding task list for Qpid by visiting our JIRA:
+http://issues.apache.org/jira/browse/QPID
+
+Please note that most of the issues are fixed, but are kept open until the
+merged with trunk, at which point they will be closed
+
+Here is a filtered list for your convinience
+---------------------------------------
+D-560 	        Add DiagnosticExchange exchange
+QPID-543 	Add ability to register custom exchange types
+QPID-274 	add connection configuratble timeout on
+waituntilStateHasChanged
+QPID-156 	Implement persistent store with Apache compliant licence
+QPID-155 	Add ability to configure (on/off) queue creation on demand
+QPID-43 	Multiple-AMQP version support in the broker
+QPID-28 	Allow user to select policy for undeliverable message handling
+QPID-27 	Introduce user configurable redlivery delay
+QPID-22 	Provide run scripts for clustered broker
+QPID-592 	Limit number of bytes in write buffer queue
+QPID-583 	Reinstate the old topic performance test
+QPID-582 	Ensure Java codebase builds with Java 6
+QPID-567 	Add basic multiversion support to Qpid for interop between M1,
+M2 and 0-8 and 0-9 AMQP implementations
+QPID-564 	Reapply MINA performance patches
+QPID-430 	Message Age Alerting should not depend upon queue activity
+QPID-19 	Add protocol logging capability to client and broker
+QPID-11 	Move protocol literals from code to AMQConstant
+QPID-659 	Messages sent to a queue that uses selectors may cause high
+CPU load.
+QPID-654 	ThreadPoolExecutor.getTask() can be seen WAITING causing test
+cases to hang
+QPID-653 	Timeouts in tests causing spurious failures on slower machines
+QPID-647 	Delivery Manager can stop starving consumers.
+QPID-645 	Exception thrown while preparing TxnOp not logged or
+propogated
+QPID-643 	CSDM causes duplicate message delivery.
+QPID-637 	BasicConsumer.recieve can return null before the timeout
+expires due to InterruptedException
+QPID-632 	ImmediateMessageTest fails occasionally because
+AMQNoConsumersException was not received.
+QPID-626 	AMQSession deadlocks
+QPID-623 	If all consumers of a queue use selectors then the broker will
+leak memory
+QPID-611 	Queue Total size calculations can cause NPE on broker.
+QPID-610 	Usages of queue.dequeue need to be checked to ensure memory
+loss doesn't occur
+QPID-609 	Dispatcher threads are not always killed
+QPID-608 	ConnectionTest fails because VM broker is not created
+QPID-607 	Dispatcher threads do not die
+QPID-606 	NPE from several systests occasionally
+QPID-604 	Potential NullPointerException in FieldTable trace logging
+QPID-599 	maven runs tests twice in client module
+QPID-594 	Java client does not throw exceptions for failures during
+connection establishment
+QPID-590 	Client can deadlock when session is accessed from two threads
+QPID-586 	Client state manager is not interupted when unrecoverable
+error occurs on connection
+QPID-585 	Client protocol state is maintiained between connections when
+the connection fails during initial connection
+QPID-584 	Client allows RuntimeExceptions to be silently swallowed.
+QPID-579 	Qpid Broker process fails to terminate on configuration errors
+QPID-578 	AMQChannel.queueDeletion causes unacked msgs to be discarded.
+QPID-577 	Setting a MessageListener after the connection has been
+started may result in apparent message loss.
+QPID-573 	race condition between rollback() and the dispatcher thread in
+the java client
+QPID-572 	broker delivers messages out of order
+QPID-558 	AMQShortString should autoexpand when adding content to it
+QPID-549 	AMQConnection.start() is not threadsafe
+QPID-545 	Using a private queue with selector will result in non
+matching messages being left on the broker queue as they will not be consumed.
+QPID-539 	HeadersExchange doesnot correctly implement isBound
+QPID-531 	[Memory Leak] Broker retains messages that are consumed with
+NO_ACK
+QPID-469 	Redelivered information is currently recorded per message it
+should be per message per queue.
+QPID-463 	Java client doesn't close connection gracefully when faced
+with broker with unsuported protocol version
+QPID-462 	Exclusive queues and with subscription that 'filtersMessages'
+will build up messages it doesn't hasInterest() in.
+QPID-397 	Client closeure can be processed before final message ack.
+QPID-396 	Broker OutOfMemory Error handling
+QPID-377 	NumberFormatException thrown by broker when running one
+performance test
+QPID-293 	setting MessageListener after connection has started can cause
+messages to be "lost" on a internal delivery queue.
+QPID-185 	Amend Java Broker handling of ifUnused & ifEmpty flags
+QPID-168 	qpid-server.bat needs updated to support same
+arguments/features as qpid-server (via qpid-run) bash script
+Bug		QPID-168 	qpid-server.bat needs updated to support same arguments/features as qpid-server (via qpid-run) bash script
+
+
+M2 Tasks Completed
+-------------------
+
+The set of JIRA tasks completed as part of the M2 effort is available at:
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12310520&styleName=Html&version=12312116
+
+
+Here is a filtered (by Java components) version of the JIRA items
+
+QPID-190     refactoring the java broker mbean classes 
+QPID-125     Moving eclipse plugin for broker management to Maven 
+QPID-93      Delete the old management modules (trunk\qpid\java\management) 
+QPID-418     Add ability to save user preferences to Java Management Console 
+QPID-482     [Java] Small performance tweaks 
+QPID-466     Create STRICT_AMQP System property to disable JMS extensions in Java client 
+QPID-453     AMQShortString should implement Comparable 
+QPID-421     Provide enumerated description for static constants including delivery mode 
+QPID-420     Add client id to information displayed about connections on management console 
+QPID-419     Introduce read-only and modify authorisation for all objects in a virtual host 
+QPID-129     improving Broker MBeans 
+QPID-616     Underflow in calculating message pending size in perftests. 
+QPID-614     Race condition on queue browser close 
+QPID-612     Duplicate temporary queue names when running unit tests 
+QPID-600     Deadlocks on Connection.close 
+QPID-540     Transient Broker throws NullPointerException and locks up. 
+QPID-538     [Memory Leak] Connecting lots of consumers causes the broker memory to leak 
+QPID-537     Make AMQMessage.incrementReference public 
+QPID-527     encoding issue 
+QPID-508     [Memory Leak] Broker does not return mandatory messages sent outside of a
+transaction. 
+QPID-476     AMQProtocolSession channelId2SessionMap does not have sessions removed 
+QPID-472     Creation of TemporaryQueues will not guarantee unqiue queue names if created
+rapidly. 
+QPID-471     UserManagement panel lists all users but only after a View Users has been
+executed and is not updated on Create/Delete User 
+QPID-467     Complete Interop Testing 
+QPID-465     Incorrect Exception thrown from send() method. 
+QPID-459     Broker doesn't correctly handle noLocal consumers when messages are
+pre-exisiting on queues. 
+QPID-458     Queue Browsing Broken 
+QPID-454     Message 'taken' notion is per message. But should be per message per queue 
+QPID-443     Abruptly disconnecting client on transaction publish causes error 
+QPID-440     Can create dangling transactions on unroutable messages. 
+QPID-414     Authentication requires plain text passwords in password file 
+QPID-408     Queue Depth data incorrect 
+QPID-200     set/get Destination not implemented in JMSMessage impl 
+QPID-166     Check for pre conditions to satisfy JMS spec requirments 
+QPID-159     The following Interface implementations do not throw Exceptions as required by
+the spec 

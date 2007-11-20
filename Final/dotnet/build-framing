@@ -1,0 +1,2 @@
+cd Qpid.Common
+ant
