@@ -108,8 +108,8 @@ public:
      */
     void setConfirmMode(bool confirm);
 
-    /** Set the acquire-mode for new subscriptions. Defaults to true.
-     *@param acquire: if false messages are not dequed, if true
+    /** Set the acquire-mode for new subscriptions. Defaults to false.
+     *@param acquire: if false messages pre-acquired, if true
      * messages are dequed on acknowledgement or on transfer 
 	 * depending on confirmMode.
      */

@@ -35,7 +35,7 @@ namespace client {
 SubscriptionManager::SubscriptionManager(Session_0_10& s)
     : dispatcher(s), session(s),
       messages(UNLIMITED), bytes(UNLIMITED), window(true),
-      confirmMode(true), acquireMode(true)
+      confirmMode(true), acquireMode(false)
 {}
 
 void SubscriptionManager::subscribeInternal(
