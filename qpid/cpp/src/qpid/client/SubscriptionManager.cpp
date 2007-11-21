@@ -35,14 +35,14 @@ namespace client {
 SubscriptionManager::SubscriptionManager(Session_0_10& s)
     : dispatcher(s), session(s),
       messages(UNLIMITED), bytes(UNLIMITED), window(true),
-      confirmMode(true)
+      confirmMode(true), acquireMode(true)
 {}
 
 void SubscriptionManager::subscribeInternal(
     const std::string& q, const std::string& dest)
 {
     session.messageSubscribe(arg::queue=q, arg::destination=dest,
-                             arg::confirmMode=confirmMode);
+                             arg::confirmMode=confirmMode, arg::acquireMode=acquireMode);
     setFlowControl(dest, messages, bytes, window);
 }
 
@@ -81,6 +81,8 @@ void SubscriptionManager::setFlowControl(
 }
 
 void SubscriptionManager::setConfirmMode(bool c) { confirmMode=c; }
+
+void SubscriptionManager::setAcquireMode(bool a) { acquireMode=a; }
 
 void SubscriptionManager::setAckPolicy(const AckPolicy& a) { autoAck=a; }
 
