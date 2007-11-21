@@ -55,7 +55,7 @@ struct Opts : public TestOptions {
         listen(false), publish(false), purge(false),
         count(500000), size(64), consumers(1),
         mode("shared"), autoAck(100),
-        summary(false), confirmMode(false), acquireMode(true)
+        summary(false), confirmMode(false), acquireMode(false)
     {
         addOptions() 
             ("listen", optValue(listen), "Consume messages.")
@@ -69,7 +69,7 @@ struct Opts : public TestOptions {
             ("auto-ack", optValue(autoAck, "N"), "ack every N messages.")
             ("summary,s", optValue(summary), "summary output only")
             ("confirm-mode", optValue(confirmMode, "N"), "confirm mode")
-            ("acquire-mode", optValue(acquireMode, "Y"), "acquire mode");
+            ("acquire-mode", optValue(acquireMode, "N"), "acquire mode (N - pre acquire, Y - no acquire");
     }
 };
 
