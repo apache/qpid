@@ -46,6 +46,7 @@ class SubscriptionManager
     bool window;
     AckPolicy autoAck;
     bool confirmMode;
+    bool acquireMode;
 
 public:
     SubscriptionManager(Session_0_10& session);
@@ -106,6 +107,13 @@ public:
      *Message::acknowledge() or automatically, see setAckPolicy()
      */
     void setConfirmMode(bool confirm);
+
+    /** Set the acquire-mode for new subscriptions. Defaults to true.
+     *@param acquire: if false messages are not dequed, if true
+     * messages are dequed on acknowledgement or on transfer 
+	 * depending on confirmMode.
+     */
+    void setAcquireMode(bool acquire);
 
     /** Set the acknowledgement policy for new subscriptions.
      * Default is to acknowledge every message automatically.

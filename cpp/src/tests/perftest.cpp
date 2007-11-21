@@ -48,12 +48,14 @@ struct Opts : public TestOptions {
     std::string mode;
     size_t autoAck;
     bool summary;
+	bool confirmMode;
+	bool acquireMode;
     
     Opts() :
         listen(false), publish(false), purge(false),
         count(500000), size(64), consumers(1),
         mode("shared"), autoAck(100),
-        summary(false)
+        summary(false), confirmMode(false), acquireMode(true)
     {
         addOptions() 
             ("listen", optValue(listen), "Consume messages.")
@@ -65,7 +67,9 @@ struct Opts : public TestOptions {
             ("consumers", optValue(consumers, "N"), "Number of consumers.")
             ("mode", optValue(mode, "shared|fanout|topic"), "consume mode")
             ("auto-ack", optValue(autoAck, "N"), "ack every N messages.")
-            ("summary,s", optValue(summary), "summary output only");
+            ("summary,s", optValue(summary), "summary output only")
+            ("confirm-mode", optValue(confirmMode, "N"), "confirm mode")
+            ("acquire-mode", optValue(acquireMode, "Y"), "acquire mode");
     }
 };
 
@@ -175,7 +179,8 @@ void PublishThread::run() {
             char* data = const_cast<char*>(msg.getData().data());
             *reinterpret_cast<uint32_t*>(data) = i;
             session.messageTransfer(arg::destination=exchange(),
-                                    arg::content=msg);
+                                    arg::content=msg, arg::confirmMode=opts.confirmMode,
+									arg::acquireMode=opts.acquireMode);
             if (!opts.summary && (i%10000)==0){
                  cout << "." << flush;
                  session.execution().sendSyncRequest();
@@ -267,6 +272,8 @@ void ListenThread::run() {
 
         SubscriptionManager subs(session);
         LocalQueue consume(AckPolicy(opts.autoAck));
+		subs.setConfirmMode(opts.confirmMode);
+		subs.setAcquireMode(opts.acquireMode);
         subs.subscribe(consume, consumeQueue);
         int consumed=0;
         AbsTime start=now();
