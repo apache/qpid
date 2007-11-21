@@ -34,7 +34,6 @@ void PersistableMessage::flush()
 			  store->flush(*(*i));
          } 
     }
-	synclist.clear();
 }
 
     
