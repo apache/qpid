@@ -9,11 +9,12 @@ SUBSCRIBERS=10
 MESSAGES=2000
 BATCHES=10
 
-while getopts "s:m:b:" opt ; do
+while getopts "s:m:b:h:" opt ; do
     case $opt in
 	s) SUBSCRIBERS=$OPTARG ;;
 	m) MESSAGES=$OPTARG ;;
 	b) BATCHES=$OPTARG ;;
+	h) HOST=-h$OPTARG ;;
 	?)
 	    echo "Usage: %0 [-s <subscribers>] [-m <messages.] [-b <batches>]"
 	    exit 1
@@ -28,7 +29,7 @@ subscribe() {
 }
 
 publish() {
-    ./topic_publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS
+    ./topic_publisher --messages $MESSAGES --batches $BATCHES --subscribers $SUBSCRIBERS $HOST
 }
 
 for ((i=$SUBSCRIBERS ; i--; )); do
