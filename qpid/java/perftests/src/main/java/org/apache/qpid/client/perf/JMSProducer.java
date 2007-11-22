@@ -45,6 +45,8 @@ public class JMSProducer implements Runnable
             _session = _connection.createSession(_transacted, _ackMode);
             _payload = TestMessageFactory.newBytesMessage(_session, _messageSize);
             _producer = _session.createProducer(_destination);
+            // this should speedup the message producer 
+            _producer.setDisableMessageTimestamp(true);
         }
         catch(Exception e)
         {
