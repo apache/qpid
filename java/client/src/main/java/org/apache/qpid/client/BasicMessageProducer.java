@@ -456,7 +456,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             type = AMQDestination.UNKNOWN_TYPE;
         }
 
-        message.getJmsHeaders().setInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName(), type);
+      //  message.getJmsHeaders().setInteger(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName(), type);
 
         sendMessage(destination, origMessage, message, deliveryMode, priority, timeToLive,
                  mandatory, immediate, wait);
