@@ -60,7 +60,6 @@ void SubscriptionManager::subscribe(
     std::string dest=d.empty() ? q:d;
     lq.session=session;
     lq.queue=session.execution().getDemux().add(dest, ByTransferDest(dest));
-    lq.setAckPolicy(autoAck);
     subscribeInternal(q, dest);
 }
 
