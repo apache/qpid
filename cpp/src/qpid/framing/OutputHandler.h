@@ -27,7 +27,7 @@
 namespace qpid {
 namespace framing {
 
-// FIXME aconway 2007-08-29: Replace with FrameHandler.
+// TODO aconway 2007-08-29: Replace with FrameHandler.
 class OutputHandler : public FrameHandler {
   public:
     virtual ~OutputHandler() {}

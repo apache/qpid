@@ -118,7 +118,7 @@ void ExecutionHandler::flushTo(const framing::SequenceNumber& point)
 void ExecutionHandler::sendFlushRequest()
 {
     Mutex::ScopedLock l(lock);
-    AMQFrame frame(0, ExecutionFlushBody());
+    AMQFrame frame(in_place<ExecutionFlushBody>());
     out(frame);
 }
 
@@ -134,7 +134,7 @@ void ExecutionHandler::syncTo(const framing::SequenceNumber& point)
 void ExecutionHandler::sendSyncRequest()
 {
     Mutex::ScopedLock l(lock);
-    AMQFrame frame(0, ExecutionSyncBody());
+    AMQFrame frame(in_place<ExecutionSyncBody>());
     out(frame);
 }
 
@@ -161,7 +161,9 @@ void ExecutionHandler::sendCompletion()
     Mutex::ScopedLock l(lock);
     SequenceNumberSet range;
     incomingCompletionStatus.collectRanges(range);
-    AMQFrame frame(0, ExecutionCompleteBody(version, incomingCompletionStatus.mark.getValue(), range));
+    AMQFrame frame(
+        in_place<ExecutionCompleteBody>(
+            version, incomingCompletionStatus.mark.getValue(), range));
     out(frame);    
 }
 
@@ -177,7 +179,7 @@ SequenceNumber ExecutionHandler::send(const AMQBody& command, CompletionTracker:
     if(l) {
         completion.listenForResult(id, l);
     }
-    AMQFrame frame(0/*channel will be filled in by channel handler*/, command);
+    AMQFrame frame(command);
     if (hasContent) {
         frame.setEof(false);
     }
@@ -196,7 +198,7 @@ SequenceNumber ExecutionHandler::send(const AMQBody& command, const MethodConten
 
 void ExecutionHandler::sendContent(const MethodContent& content)
 {
-    AMQFrame header(0, content.getHeader());
+    AMQFrame header(content.getHeader());
     header.setBof(false);
     u_int64_t data_length = content.getData().length();
     if(data_length > 0){
@@ -205,7 +207,7 @@ void ExecutionHandler::sendContent(const MethodContent& content)
         //frame itself uses 8 bytes
         u_int32_t frag_size = maxFrameSize - 8;
         if(data_length < frag_size){
-            AMQFrame frame(0, AMQContentBody(content.getData()));
+            AMQFrame frame(in_place<AMQContentBody>(content.getData()));
             frame.setBof(false);
             out(frame);
         }else{
@@ -214,7 +216,7 @@ void ExecutionHandler::sendContent(const MethodContent& content)
             while (remaining > 0) {
                 u_int32_t length = remaining > frag_size ? frag_size : remaining;
                 string frag(content.getData().substr(offset, length));
-                AMQFrame frame(0, AMQContentBody(frag));
+                AMQFrame frame(in_place<AMQContentBody>(frag));
                 frame.setBof(false);
                 if (offset > 0) {
                     frame.setBos(false);

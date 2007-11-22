@@ -34,8 +34,8 @@ struct MessageUtils
     {
         intrusive_ptr<Message> msg(new Message());
 
-        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
-        AMQFrame header(0, AMQHeaderBody());
+        AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(in_place<AMQHeaderBody>());
 
         msg->getFrames().append(method);
         msg->getFrames().append(header);
@@ -48,7 +48,7 @@ struct MessageUtils
 
     static void addContent(intrusive_ptr<Message> msg, const string& data)
     {
-        AMQFrame content(0, AMQContentBody(data));
+        AMQFrame content(in_place<AMQContentBody>(data));
         msg->getFrames().append(content);
     }
 };

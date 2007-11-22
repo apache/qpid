@@ -31,7 +31,7 @@ using namespace qpid::framing;
 
 typedef std::vector<Queue::shared_ptr> QueueVector;
 
-// FIXME aconway 2007-08-31: now that functionality is distributed
+// TODO aconway 2007-08-31: now that functionality is distributed
 // between different handlers, BrokerAdapter should be dropped.
 // Instead the individual class Handler interfaces can be implemented
 // by the handlers responsible for those classes.

@@ -51,7 +51,8 @@ void qpid::framing::SendContent::operator()(const AMQFrame& f)
 
 void qpid::framing::SendContent::sendFragment(const AMQContentBody& body, uint32_t offset, uint16_t size, bool first, bool last) const
 {
-    AMQFrame fragment(0, AMQContentBody(body.getData().substr(offset, size)));
+    AMQFrame fragment(in_place<AMQContentBody>(
+                          body.getData().substr(offset, size)));
     setFlags(fragment, first, last);
     handler.handle(fragment);
 }

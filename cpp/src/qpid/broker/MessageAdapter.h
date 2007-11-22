@@ -33,7 +33,7 @@
 namespace qpid {	
 namespace broker {
 
-// FIXME aconway 2007-11-09: No longer needed, we only have one type of message.
+// TODO aconway 2007-11-09: No longer needed, we only have one type of message.
 struct MessageAdapter
 {
     virtual ~MessageAdapter() {}

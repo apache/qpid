@@ -31,9 +31,7 @@ using namespace qpid::framing;
 
 DtxManager::DtxManager(TransactionalStore* const _store) : store(_store) {}
 
-DtxManager::~DtxManager() {
-    // timer.stop(); // FIXME aconway 2007-10-23: leaking threads.
-}
+DtxManager::~DtxManager() {}
 
 void DtxManager::start(const std::string& xid, DtxBuffer::shared_ptr ops)
 {

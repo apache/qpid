@@ -32,13 +32,13 @@ AMQMethodBody* FutureResponse::getResponse(SessionCore& session)
 {
     waitForCompletion();
     session.assertOpen();            
-    return response.get();
+    return response.getMethod();
 }
 
 void FutureResponse::received(const AMQMethodBody* r)
 {
     Monitor::ScopedLock l(lock);
-    response = *r;
+    response.setBody(*r);
     complete = true;
     lock.notifyAll();
 }
