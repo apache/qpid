@@ -66,7 +66,6 @@ broker_unit_tests =	\
   TxAckTest		\
   TxBufferTest		\
   TxPublishTest		\
-  MessageHandlerTest    \
   MessageBuilderTest    \
   ClientSessionTest
 

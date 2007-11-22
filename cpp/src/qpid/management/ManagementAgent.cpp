@@ -98,15 +98,14 @@ void ManagementAgent::SendBuffer (Buffer&  buf,
                                   string   routingKey)
 {
     intrusive_ptr<Message> msg (new Message ());
-    AMQFrame method  (0, MessageTransferBody(ProtocolVersion(),
-                                             0, exchange->getName (), 0, 0));
-    AMQFrame header  (0, AMQHeaderBody());
-    AMQFrame content;
+    AMQFrame method (in_place<MessageTransferBody>(
+                         ProtocolVersion(), 0, exchange->getName (), 0, 0));
+    AMQFrame header (in_place<AMQHeaderBody>());
+    AMQFrame content(in_place<AMQContentBody>());
 
     QPID_LOG (debug, "ManagementAgent::SendBuffer - key="
               << routingKey << " len=" << length);
 
-    content.setBody(AMQContentBody());
     content.castBody<AMQContentBody>()->decode(buf, length);
 
     method.setEof  (false);

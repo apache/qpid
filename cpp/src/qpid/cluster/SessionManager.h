@@ -57,10 +57,6 @@ class SessionManager : public framing::HandlerUpdater, public framing::FrameHand
     /** ChannelUpdater: add cluster handlers to session. */
     void update(framing::ChannelId, framing::FrameHandler::Chains&);
 
-    // FIXME aconway 2007-08-30: Need setUp and tearDown instead of just
-    // update, so we can tear down closed sesions.
-    // Or add FrameHandler::destroy(Session) to notify all handlers?
-
     /** FrameHandler: map frames from the cluster to sessions. */
     void handle(framing::AMQFrame&);
 

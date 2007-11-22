@@ -43,7 +43,8 @@ void ChannelAdapter::init(ChannelId i, FrameHandler& out, ProtocolVersion v)
 void ChannelAdapter::send(const AMQBody& body)
 {
     assertChannelOpen();
-    AMQFrame frame(getId(), body);
+    AMQFrame frame(body);
+    frame.setChannel(getId());
     handlers.out(frame);
 }
 

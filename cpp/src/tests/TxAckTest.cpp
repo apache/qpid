@@ -70,8 +70,9 @@ public:
     {
         for(int i = 0; i < 10; i++){
             intrusive_ptr<Message> msg(new Message());
-            AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, "exchange", 0, 0));
-            AMQFrame header(0, AMQHeaderBody());
+            AMQFrame method(in_place<MessageTransferBody>(
+                                ProtocolVersion(), 0, "exchange", 0, 0));
+            AMQFrame header(in_place<AMQHeaderBody>());
             msg->getFrames().append(method);
             msg->getFrames().append(header);
             msg->getProperties<DeliveryProperties>()->setDeliveryMode(PERSISTENT);

@@ -147,7 +147,8 @@ class FramingTest : public CppUnit::TestCase
         Buffer wbuff(buffer, sizeof(buffer));
         std::string a = "hostA";
         std::string b = "hostB";
-        AMQFrame in(999, ConnectionRedirectBody(version, a, b));
+        AMQFrame in(in_place<ConnectionRedirectBody>(version, a, b));
+        in.setChannel(999);
         in.encode(wbuff);
 
         Buffer rbuff(buffer, sizeof(buffer));
@@ -160,7 +161,8 @@ class FramingTest : public CppUnit::TestCase
     {
         Buffer wbuff(buffer, sizeof(buffer));
         std::string s = "hostA";
-        AMQFrame in(999, BasicConsumeOkBody(version, s));
+        AMQFrame in(in_place<BasicConsumeOkBody>(version, s));
+        in.setChannel(999);
         in.encode(wbuff);
 
         Buffer rbuff(buffer, sizeof(buffer));

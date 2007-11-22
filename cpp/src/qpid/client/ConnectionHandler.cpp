@@ -112,7 +112,7 @@ void ConnectionHandler::close()
 
 void ConnectionHandler::send(const framing::AMQBody& body)
 {
-    AMQFrame f(0, body);
+    AMQFrame f(body);
     out(f);
 }
 

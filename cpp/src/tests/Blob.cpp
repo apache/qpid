@@ -95,7 +95,7 @@ BOOST_AUTO_TEST_CASE(testAssign) {
         BOOST_CHECK_EQUAL(1, Foo::instances);
         BOOST_CHECK_EQUAL(1, Bar::instances);
 
-        b2.construct(in_place<Foo>(4)); 
+        b2 = in_place<Foo>(4); 
         BOOST_CHECK_EQUAL(4, b2.get()->id);
         BOOST_CHECK_EQUAL(2, Foo::instances);
         BOOST_CHECK_EQUAL(0, Bar::instances);

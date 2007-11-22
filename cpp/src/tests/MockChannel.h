@@ -37,12 +37,6 @@ struct MockOutputHandler : public qpid::framing::OutputHandler {
  */
 struct MockChannel : public qpid::framing::ChannelAdapter
 {
-    typedef qpid::framing::BasicGetBody Body;
-    static Body::shared_ptr basicGetBody() {
-        return Body::shared_ptr(
-            new Body(qpid::framing::ProtocolVersion()));
-    }
-
     MockOutputHandler out;
 
     MockChannel(qpid::framing::ChannelId id) {

@@ -31,49 +31,16 @@
 namespace qpid {
 namespace framing {
 
-namespace {
-struct GetBodyVisitor : public NoBlankVisitor<AMQBody*> {
-    QPID_USING_NOBLANK(AMQBody*);
-    AMQBody* operator()(MethodHolder& t) const { return t.get(); }
-    template <class T> AMQBody* operator()(T& t) const { return &t; }
-};
+AMQFrame::~AMQFrame() {}
 
-struct EncodeVisitor : public NoBlankVisitor<void> {
-    Buffer& buffer;
-    EncodeVisitor(Buffer& b) : buffer(b) {}
-    
-    QPID_USING_NOBLANK(void);
-    template <class T> void operator()(const T& t) const { return t.encode(buffer); }
-};
+void AMQFrame::setBody(const AMQBody& b) { body = new BodyHolder(b); }
 
-struct SizeVisitor : public NoBlankVisitor<uint32_t> {
-    QPID_USING_NOBLANK(uint32_t);
-    template <class T> uint32_t operator()(const T& t) const { return t.size(); }
-};
+void AMQFrame::setMethod(ClassId c, MethodId m) { body = new BodyHolder(c,m); }
 
-struct DecodeVisitor : public NoBlankVisitor<void> {
-    Buffer& buffer;
-    uint32_t size;
-    DecodeVisitor(Buffer& b, uint32_t s) : buffer(b), size(s) {}
-    QPID_USING_NOBLANK(void);
-    void operator()(MethodHolder& t) const { return t.decode(buffer); }
-    template <class T> void operator()(T& t) const { return t.decode(buffer, size); }
-};
-
-}
-
-AMQBody* AMQFrame::getBody() {
-    return boost::apply_visitor(GetBodyVisitor(), body);
-}
-
-const AMQBody* AMQFrame::getBody() const {
-    return boost::apply_visitor(GetBodyVisitor(), const_cast<Variant&>(body));
-}
-
-// This is now misleadingly named as it is not the frame size as defined in the spec 
-// (as it also includes the end marker)
-uint32_t AMQFrame::size() const{
-    return frameOverhead() + boost::apply_visitor(SizeVisitor(), body);
+// This is now misleadingly named as it is not the frame size as
+// defined in the spec (as it also includes the end marker)
+uint32_t AMQFrame::size() const {
+    return frameOverhead() + body->size();
 }
 
 uint32_t AMQFrame::frameOverhead() {
@@ -90,7 +57,7 @@ void AMQFrame::encode(Buffer& buffer) const
     buffer.putOctet(0x0f & subchannel);
     buffer.putShort(channel);    
     buffer.putLong(0);
-    boost::apply_visitor(EncodeVisitor(buffer), body);
+    body->encode(buffer);
     buffer.putOctet(0xCE);
 }
 
@@ -119,45 +86,34 @@ bool AMQFrame::decode(Buffer& buffer)
     (void) buffer.getLong(); // reserved2
     
     // Verify that the protocol header meets current spec
-    // TODO: should we check reserved2 against zero as well? - the spec isn't clear
+    // TODO: should we check reserved2 against zero as well? - the
+    // spec isn't clear
     if ((flags & 0x30) != 0 || reserved1 != 0 || (field1 & 0xf0) != 0)
         throw SyntaxErrorException(QPID_MSG("Reserved bits not zero"));
 
-    // TODO: should no longer care about body size and only pass up B,E,b,e flags
+    // TODO: should no longer care about body size and only pass up
+    // B,E,b,e flags
     uint16_t body_size = frame_size + 1 - frameOverhead(); 
     if (buffer.available() < body_size+1u){
         buffer.restore();
         return false;
     }
-    decodeBody(buffer, body_size, type);
-
+    body = new BodyHolder();
+    body->decode(type,buffer, body_size);
     uint8_t end = buffer.getOctet();
     if (end != 0xCE)
         throw SyntaxErrorException(QPID_MSG("Frame end not found"));
     return true;
 }
 
-void AMQFrame::decodeBody(Buffer& buffer, uint32_t size, uint8_t type)
-{    
-    switch(type)
-    {
-      case METHOD_BODY: body = MethodHolder(); break;
-      case HEADER_BODY: body = AMQHeaderBody();	break;
-      case CONTENT_BODY: body = AMQContentBody(); break;
-      case HEARTBEAT_BODY: body = AMQHeartbeatBody(); break;
-
-      default:
-	throw SyntaxErrorException(QPID_MSG("Invalid frame type " << type));
-    }
-    boost::apply_visitor(DecodeVisitor(buffer,size), body);
-}
-
 std::ostream& operator<<(std::ostream& out, const AMQFrame& f)
 {
-    return out << "Frame[" 
-               << (f.getBof() ? "B" : "") << (f.getEof() ? "E" : "") << (f.getBos() ? "b" : "") << (f.getEos() ? "e" : "") << "; "
-               << "channel=" << f.getChannel() << "; " << *f.getBody()
-               << "]";
+    return
+        out << "Frame[" 
+            << (f.getBof() ? "B" : "") << (f.getEof() ? "E" : "")
+            << (f.getBos() ? "b" : "") << (f.getEos() ? "e" : "") << "; "
+            << "channel=" << f.getChannel() << "; " << *f.getBody()
+            << "]";
 }
 
 

@@ -165,7 +165,7 @@ void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t max
         for (uint64_t offset = 0; offset < expectedSize; offset += maxContentSize)
         {            
             uint64_t remaining = expectedSize - offset;
-            AMQFrame frame(0, AMQContentBody());
+            AMQFrame frame(in_place<AMQContentBody>());
             string& data = frame.castBody<AMQContentBody>()->getData();
 
             store->loadContent(queue, *this, data, offset,
@@ -196,7 +196,7 @@ void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) 
     frames.map_if(f, TypeFilter<HEADER_BODY>());    
 }
 
-// FIXME aconway 2007-11-09: Obsolete, remove. Was used to cover over
+// TODO aconway 2007-11-09: Obsolete, remove. Was used to cover over
 // 0-8/0-9 message differences.
 MessageAdapter& Message::getAdapter() const
 {

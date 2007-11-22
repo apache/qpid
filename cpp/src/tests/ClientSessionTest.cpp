@@ -71,7 +71,6 @@ class ClientSessionTest : public CppUnit::TestCase
     CPPUNIT_TEST(testUseSuspendedError);
     CPPUNIT_TEST(testSuspendResume);
     CPPUNIT_TEST(testDisconnectResume);
-    CPPUNIT_TEST(testAutoDelete);
     CPPUNIT_TEST_SUITE_END();
 
     shared_ptr<broker::Broker> broker;
@@ -97,9 +96,7 @@ public:
     void declareSubscribe(const std::string& q="my-queue",
                           const std::string& dest="my-dest")
     {
-        // FIXME aconway 2007-10-18: autoDelete queues are destroyed on channel close, not session.
-        // Fix & make all test queues exclusive, autoDelete
-        session.queueDeclare(queue=q);  // FIXME aconway 2007-10-01: exclusive=true, autoDelete=true);
+        session.queueDeclare(queue=q);
         session.messageSubscribe(queue=q, destination=dest, acquireMode=1);
         session.messageFlow(destination=dest, unit=0, value=0xFFFFFFFF);//messages
         session.messageFlow(destination=dest, unit=1, value=0xFFFFFFFF);//bytes
@@ -202,27 +199,6 @@ public:
         c->disconnect(); // Simulate disconnect, resume on a new connection.
         c2->resume(session);
         CPPUNIT_ASSERT(queueExists("after"));
-    }
-
-    void testAutoDelete() {
-        // Verify that autoDelete queues survive suspend/resume.
-        session = c->newSession(60);
-        session.queueDeclare(queue="my-queue", exclusive=true, autoDelete=true);
-        CPPUNIT_ASSERT(queueExists("my-queue"));
-        session.suspend();
-        c->resume(session);
-        CPPUNIT_ASSERT(queueExists("my-queue"));
-
-        // Verify they survive disconnect/resume on new Connection
-        c->disconnect();
-        c2->resume(session);
-
-        try { 
-            // FIXME aconway 2007-10-23: Negative test, need to
-            // fix auto-delete queues to clean up with session, not channel.
-            CPPUNIT_ASSERT(queueExists("my-queue"));
-            CPPUNIT_FAIL("Negative test passed unexpectedly");
-        } catch(const ChannelException&) {}
     }
 };
 

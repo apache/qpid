@@ -57,7 +57,7 @@ class SemanticHandler : public DeliveryAdapter,
 
     SemanticState state;
     SessionState& session;
-    // FIXME aconway 2007-09-20: Why are these on the handler rather than the
+    // TODO aconway 2007-09-20: Why are these on the handler rather than the
     // state?
     IncomingExecutionContext incoming;
     framing::Window outgoing;

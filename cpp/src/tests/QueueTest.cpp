@@ -73,8 +73,9 @@ class QueueTest : public CppUnit::TestCase
   public:
     intrusive_ptr<Message> message(std::string exchange, std::string routingKey) {
         intrusive_ptr<Message> msg(new Message());
-        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
-        AMQFrame header(0, AMQHeaderBody());
+        AMQFrame method(in_place<MessageTransferBody>(
+                            ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(in_place<AMQHeaderBody>());
         msg->getFrames().append(method);
         msg->getFrames().append(header);
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
