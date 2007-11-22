@@ -403,7 +403,7 @@ void  SessionCore::flowOk(bool /*active*/) {
 }
 
 void  SessionCore::highWaterMark(uint32_t /*lastSentMark*/) {
-    // FIXME aconway 2007-10-02: may be removed from spec.
+    // TODO aconway 2007-10-02: may be removed from spec.
     assert(0); throw NotImplementedException("session.highWaterMark");
 }
 

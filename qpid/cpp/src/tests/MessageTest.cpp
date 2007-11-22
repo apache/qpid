@@ -51,10 +51,11 @@ class MessageTest : public CppUnit::TestCase
 
         intrusive_ptr<Message> msg(new Message());
 
-        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
-        AMQFrame header(0, AMQHeaderBody());
-        AMQFrame content1(0, AMQContentBody(data1));
-        AMQFrame content2(0, AMQContentBody(data2));
+        AMQFrame method(in_place<MessageTransferBody>(
+                            ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(in_place<AMQHeaderBody>());
+        AMQFrame content1(in_place<AMQContentBody>(data1));
+        AMQFrame content2(in_place<AMQContentBody>(data2));
 
         msg->getFrames().append(method);
         msg->getFrames().append(header);

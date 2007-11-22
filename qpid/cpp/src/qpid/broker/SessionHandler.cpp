@@ -124,13 +124,13 @@ void  SessionHandler::resume(const Uuid& id) {
 
 void  SessionHandler::flow(bool /*active*/) {
     assertAttached("flow");
-    // FIXME aconway 2007-09-19: Removed in 0-10, remove 
+    // TODO aconway 2007-09-19: Removed in 0-10, remove 
     assert(0); throw NotImplementedException("session.flow");
 }
 
 void  SessionHandler::flowOk(bool /*active*/) {
     assertAttached("flowOk");
-    // FIXME aconway 2007-09-19: Removed in 0-10, remove 
+    // TODO aconway 2007-09-19: Removed in 0-10, remove 
     assert(0); throw NotImplementedException("session.flowOk");
 }
 
@@ -181,7 +181,7 @@ void  SessionHandler::ack(uint32_t     cumulativeSeenMark,
 }
 
 void  SessionHandler::highWaterMark(uint32_t /*lastSentMark*/) {
-    // FIXME aconway 2007-10-02: may be removed from spec.
+    // TODO aconway 2007-10-02: may be removed from spec.
     assert(0); throw NotImplementedException("session.high-water-mark");
 }
 

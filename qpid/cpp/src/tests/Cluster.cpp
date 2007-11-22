@@ -34,7 +34,8 @@ static const ProtocolVersion VER;
 /** Verify membership in a cluster with one member. */
 BOOST_AUTO_TEST_CASE(testClusterOne) {
     TestCluster cluster("clusterOne", "amqp:one:1");
-    AMQFrame send(1, SessionOpenBody(VER));
+    AMQFrame send(in_place<SessionOpenBody>(VER));
+    send.setChannel(1);
     cluster.handle(send);
     AMQFrame received = cluster.received.pop();
     BOOST_CHECK_TYPEID_EQUAL(SessionOpenBody, *received.getBody());
@@ -59,7 +60,8 @@ BOOST_AUTO_TEST_CASE(testClusterTwo) {
         BOOST_REQUIRE(cluster.waitFor(2)); // Myself and child.
 
         // Exchange frames with child.
-        AMQFrame send(1, SessionOpenBody(VER));
+        AMQFrame send(SessionOpenBody(VER));
+        send.setChannel(1);
         cluster.handle(send);
         AMQFrame received = cluster.received.pop();
         BOOST_CHECK_TYPEID_EQUAL(SessionOpenBody, *received.getBody());
@@ -89,8 +91,8 @@ struct CountHandler : public FrameHandler {
     
 /** Test the ClassifierHandler */
 BOOST_AUTO_TEST_CASE(testClassifierHandlerWiring) {
-    AMQFrame queueDecl(0, QueueDeclareBody(VER));
-    AMQFrame messageTrans(0, MessageTransferBody(VER));
+    AMQFrame queueDecl(in_place<QueueDeclareBody>(VER));
+    AMQFrame messageTrans(in_place<MessageTransferBody>(VER));
     CountHandler wiring;
     CountHandler other;
     

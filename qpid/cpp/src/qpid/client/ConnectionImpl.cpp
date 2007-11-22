@@ -97,7 +97,7 @@ void ConnectionImpl::idleIn()
 
 void ConnectionImpl::idleOut()
 {
-    AMQFrame frame(0, new AMQHeartbeatBody());
+    AMQFrame frame(in_place<AMQHeartbeatBody>());
     connector->send(frame);
 }
 

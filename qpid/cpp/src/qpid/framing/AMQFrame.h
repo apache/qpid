@@ -25,46 +25,48 @@
 #include "AMQHeaderBody.h"
 #include "AMQContentBody.h"
 #include "AMQHeartbeatBody.h"
-#include "MethodHolder.h"
 #include "ProtocolVersion.h"
+#include "BodyHolder.h"
 
 #include <boost/cast.hpp>
-#include <boost/variant.hpp>
 
 namespace qpid {
 namespace framing {
-	
+
+class BodyHolder;
+
 class AMQFrame : public AMQDataBlock
 {
   public:
-    AMQFrame() : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(0) {}
+    AMQFrame(intrusive_ptr<BodyHolder> b=0) : body(b) { init(); }
+    AMQFrame(const AMQBody& b) { setBody(b); init(); }
+    ~AMQFrame();
 
-    /** Construct a frame with a copy of b */
-    AMQFrame(ChannelId c, const AMQBody* b) : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(c) {
-        setBody(*b);
+    template <class InPlace>
+    AMQFrame(const InPlace& ip, typename EnableInPlace<InPlace>::type* =0) {
+        init(); setBody(ip);
     }
-    
-    AMQFrame(ChannelId c, const AMQBody& b) : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(c) {
-        setBody(b);
-    }
-    
-    AMQFrame(const AMQBody& b) : bof(true), eof(true), bos(true), eos(true), subchannel(0), channel(0) {
-        setBody(b);
-    }
-    
+
     ChannelId getChannel() const { return channel; }
     void setChannel(ChannelId c) { channel = c; }
 
-    AMQBody* getBody();
-    const AMQBody* getBody() const;
+    intrusive_ptr<BodyHolder> getHolder() { return body; }
+    
+    AMQBody* getBody() { return body ? body->get() : 0; }
+    const AMQBody* getBody() const { return body ? body->get() : 0; }
 
     AMQMethodBody* getMethod() { return getBody()->getMethod(); }
     const AMQMethodBody* getMethod() const { return getBody()->getMethod(); }
 
-    /** Copy a body instance to the frame */
-    void setBody(const AMQBody& b) { CopyVisitor cv(*this); b.accept(cv); }
+    void setBody(const AMQBody& b);
 
-    /** Convenience template to cast the body to an expected type. */
+    template <class InPlace>
+    typename EnableInPlace<InPlace>::type setBody(const InPlace& ip) {
+        body = new BodyHolder(ip);
+    }
+
+    void setMethod(ClassId c, MethodId m);
+
     template <class T> T* castBody() {
         return boost::polymorphic_downcast<T*>(getBody());
     }
@@ -72,8 +74,6 @@ class AMQFrame : public AMQDataBlock
     template <class T> const T* castBody() const {
         return boost::polymorphic_downcast<const T*>(getBody());
     }
-
-    bool empty() { return boost::get<boost::blank>(&body); }
 
     void encode(Buffer& buffer) const; 
     bool decode(Buffer& buffer); 
@@ -92,33 +92,15 @@ class AMQFrame : public AMQDataBlock
     static uint32_t frameOverhead();
 
   private:
-    struct CopyVisitor : public AMQBodyConstVisitor {
-        AMQFrame& frame;
-        CopyVisitor(AMQFrame& f) : frame(f) {}
-        void visit(const AMQHeaderBody& x) { frame.body=x; }
-        void visit(const AMQContentBody& x) { frame.body=x; }
-        void visit(const AMQHeartbeatBody& x) { frame.body=x; }
-        void visit(const AMQMethodBody& x) { frame.body=MethodHolder(x); }
-    };
-    friend struct CopyVisitor;
+    void init() { bof = eof = bos = eos = true; subchannel=0; channel=0; }
 
-    typedef boost::variant<boost::blank,
-                           AMQHeaderBody,
-                           AMQContentBody,
-                           AMQHeartbeatBody,
-                           MethodHolder> Variant;
-
-    void visit(AMQHeaderBody& x) { body=x; }
-
-    void decodeBody(Buffer& buffer, uint32_t size, uint8_t type);
-
-    bool bof;
-    bool eof;
-    bool bos;
-    bool eos;
-    uint8_t subchannel;
-    uint16_t channel;
-    Variant body;
+    intrusive_ptr<BodyHolder> body;
+    uint16_t channel : 16;
+    uint8_t subchannel : 8;
+    bool bof : 1;
+    bool eof : 1;
+    bool bos : 1;
+    bool eos : 1;
 };
 
 std::ostream& operator<<(std::ostream&, const AMQFrame&);

@@ -100,8 +100,9 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string exchange("builder-exchange");
         std::string key("builder-exchange");
 
-        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
-        AMQFrame header(0, AMQHeaderBody());
+        AMQFrame method(in_place<MessageTransferBody>(
+                            ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(in_place<AMQHeaderBody>());
 
         header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(0);        
         header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);
@@ -123,9 +124,9 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string exchange("builder-exchange");
         std::string key("builder-exchange");
 
-        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
-        AMQFrame header(0, AMQHeaderBody());
-        AMQFrame content(0, AMQContentBody(data));
+        AMQFrame method(in_place<MessageTransferBody>(ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(in_place<AMQHeaderBody>());
+        AMQFrame content(in_place<AMQContentBody>(data));
         method.setEof(false);
         header.setBof(false);
         header.setEof(false);
@@ -156,10 +157,11 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string exchange("builder-exchange");
         std::string key("builder-exchange");
 
-        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
-        AMQFrame header(0, AMQHeaderBody());
-        AMQFrame content1(0, AMQContentBody(data1));
-        AMQFrame content2(0, AMQContentBody(data2));
+        AMQFrame method(in_place<MessageTransferBody>(
+                            ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(in_place<AMQHeaderBody>());
+        AMQFrame content1(in_place<AMQContentBody>(data1));
+        AMQFrame content2(in_place<AMQContentBody>(data2));
         method.setEof(false);
         header.setBof(false);
         header.setEof(false);
@@ -191,10 +193,11 @@ class MessageBuilderTest : public CppUnit::TestCase
         std::string exchange("builder-exchange");
         std::string key("builder-exchange");
 
-        AMQFrame method(0, MessageTransferBody(ProtocolVersion(), 0, exchange, 0, 0));
-        AMQFrame header(0, AMQHeaderBody());
-        AMQFrame content1(0, AMQContentBody(data1));
-        AMQFrame content2(0, AMQContentBody(data2));
+        AMQFrame method(in_place<MessageTransferBody>(
+                            ProtocolVersion(), 0, exchange, 0, 0));
+        AMQFrame header(in_place<AMQHeaderBody>());
+        AMQFrame content1(in_place<AMQContentBody>(data1));
+        AMQFrame content2(in_place<AMQContentBody>(data2));
 
         header.castBody<AMQHeaderBody>()->get<MessageProperties>(true)->setContentLength(data1.size() + data2.size());        
         header.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true)->setRoutingKey(key);

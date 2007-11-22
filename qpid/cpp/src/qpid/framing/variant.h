@@ -32,7 +32,7 @@ class Buffer;
 
 /** boost::static_visitor that throws exception if variant contains blank.
  * Sublclasses need to have a using() declaration, can be generated
- * with QPID_USING_BLANK_THROW(R)
+ * with QPID_USING_NOBLANK(R)
  */
 template <class R=void>
 struct NoBlankVisitor : public boost::static_visitor<R> {

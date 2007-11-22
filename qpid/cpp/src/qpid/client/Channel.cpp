@@ -33,10 +33,6 @@
 #include <boost/bind.hpp>
 #include "qpid/framing/all_method_bodies.h"
 
-// FIXME aconway 2007-01-26: Evaluate all throws, ensure consistent
-// handling of errors that should close the connection or the channel.
-// Make sure the user thread receives a connection in each case.
-//
 using namespace std;
 using namespace boost;
 using namespace qpid::framing;

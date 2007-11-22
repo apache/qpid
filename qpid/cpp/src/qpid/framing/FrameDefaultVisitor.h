@@ -24,8 +24,6 @@
 #include "qpid/framing/MethodBodyDefaultVisitor.h"
 #include "qpid/framing/AMQBody.h"
 #include "qpid/framing/AMQMethodBody.h"
-#include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/FrameHandler.h"
 
 namespace qpid {
 namespace framing {
