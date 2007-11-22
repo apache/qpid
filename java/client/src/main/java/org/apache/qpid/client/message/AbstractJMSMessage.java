@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.UUID;
+import java.io.IOException;
 
 public abstract class AbstractJMSMessage extends AMQMessage implements org.apache.qpid.jms.Message
 {
@@ -57,6 +58,48 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     private JMSHeaderAdapter _headerAdapter;
     private BasicMessageConsumer _consumer;
     private boolean _strictAMQP;
+
+    /**
+     * This is 0_10 specific
+     */
+    private org.apache.qpidity.api.Message _010message = null;
+
+    public void set010Message(org.apache.qpidity.api.Message m )
+    {
+        _010message = m;
+    }
+
+    public void dataChanged()
+    {
+        if (_010message != null)
+        {
+            _010message.clearData();
+            try
+            {
+                if (_data != null)
+                {
+                    _010message.appendData(_data.buf());
+                }
+                else
+                {
+                    _010message.appendData(java.nio.ByteBuffer.allocate(0));
+                }
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    /**
+     * End 010 specific
+     */
+
+    public org.apache.qpidity.api.Message get010Message()
+    {
+        return _010message;
+    }
 
     protected AbstractJMSMessage(ByteBuffer data)
     {
@@ -652,6 +695,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         {
             throw new MessageNotWriteableException("You need to call clearProperties() to make the message writable");
         }
+        _contentHeaderProperties.updated();
     }
 
     public boolean isReadable()
@@ -673,6 +717,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
         else
         {
             _data.flip();
+            dataChanged();
             _changedData = false;
         }
     }
