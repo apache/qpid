@@ -51,9 +51,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     {
         ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare(destination.getExchangeName().toString(),
                                                                           destination.getExchangeClass().toString(),
-                                                                          null,
-                                                                          null
-                                                                          );
+                                                                          null, null);
     }
 
     //--- Overwritten methods
@@ -66,97 +64,91 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                             boolean wait) throws JMSException
     {
         message.prepareForSending();
-        org.apache.qpidity.api.Message qpidityMessage = new ByteBufferMessage();
-        if(_logger.isDebugEnabled())
+        if (message.get010Message() == null)
         {
-            _logger.debug("Message Props: " + message.toString());
-        }
-        try
-        {
-            if (message.getData() != null)
+            message.set010Message(new ByteBufferMessage());
+            if (message.getData() == null)
             {
-                qpidityMessage.appendData(message.getData().buf());
-            }
-            else
-            {
-                   qpidityMessage.appendData(ByteBuffer.allocate(0));
+                try
+                {
+                    message.get010Message().appendData(ByteBuffer.allocate(0));
+                }
+                catch (IOException e)
+                {
+                    throw new JMSException(e.getMessage());
+                }
             }
         }
-        catch (IOException e)
-        {
-            throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-        }
+
         // set the delivery properties
         if (!_disableTimestamps)
         {
             final long currentTime = System.currentTimeMillis();
-            qpidityMessage.getDeliveryProperties().setTimestamp(currentTime);
+            message.get010Message().getDeliveryProperties().setTimestamp(currentTime);
             if (timeToLive > 0)
             {
-                qpidityMessage.getDeliveryProperties().setExpiration(currentTime + timeToLive);
+                message.get010Message().getDeliveryProperties().setExpiration(currentTime + timeToLive);
             }
             else
             {
-                qpidityMessage.getDeliveryProperties().setExpiration(0);
+                message.get010Message().getDeliveryProperties().setExpiration(0);
             }
+            origMessage.setJMSTimestamp(message.get010Message().getDeliveryProperties().getTimestamp());
         }
-            qpidityMessage.getDeliveryProperties().setDeliveryMode((byte) deliveryMode);
-        qpidityMessage.getDeliveryProperties().setPriority((byte) priority);
-        qpidityMessage.getDeliveryProperties().setExchange(destination.getExchangeName().toString());
-        qpidityMessage.getDeliveryProperties().setRoutingKey(destination.getRoutingKey().toString());
-        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
-        // set the application properties
-        qpidityMessage.getMessageProperties().setContentType(contentHeaderProperties.getContentType().toString());
-        AMQShortString type = contentHeaderProperties.getType();
-        if( type != null )
-        {
-            qpidityMessage.getMessageProperties().setType( type.toString());
-        }
-        qpidityMessage.getMessageProperties().setMessageId(message.getJMSMessageID()) ;
-        AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
-        if( correlationID != null )
-        {
-            qpidityMessage.getMessageProperties().setCorrelationId(correlationID.toString());
-        }
-        String replyToURL = contentHeaderProperties.getReplyToAsString();
-        if (replyToURL != null)
-        {
-            AMQBindingURL dest;
-            try
-            {
-                dest = new AMQBindingURL(replyToURL);
-            }
-            catch (URLSyntaxException e)
-            {
-                throw ExceptionHelper.convertQpidExceptionToJMSException(e);
-            }
-            qpidityMessage.getMessageProperties()
-                    .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
-        }
-        if (contentHeaderProperties.getHeaders() != null)
-        {
-             //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
-            contentHeaderProperties.getHeaders().remove(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());  
-            qpidityMessage.getMessageProperties().setApplicationHeaders(FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders()));
-            for(String key:qpidityMessage.getMessageProperties().getApplicationHeaders().keySet())
-            {
-                _logger.debug(key + "=" + qpidityMessage.getMessageProperties().getApplicationHeaders().get(key));
-            }
-        }
-        if(_logger.isDebugEnabled() )
-        {
-            _logger.debug("Updating original message");
-        }
-        origMessage.setJMSPriority(qpidityMessage.getDeliveryProperties().getPriority());
-        origMessage.setJMSTimestamp(qpidityMessage.getDeliveryProperties().getTimestamp());
-        origMessage.setJMSExpiration(qpidityMessage.getDeliveryProperties().getExpiration());
+        message.get010Message().getDeliveryProperties().setDeliveryMode((byte) deliveryMode);
+        message.get010Message().getDeliveryProperties().setPriority((byte) priority);
+        message.get010Message().getDeliveryProperties().setExchange(destination.getExchangeName().toString());
+        message.get010Message().getDeliveryProperties().setRoutingKey(destination.getRoutingKey().toString());
+        origMessage.setJMSPriority(message.get010Message().getDeliveryProperties().getPriority());
+        origMessage.setJMSExpiration(message.get010Message().getDeliveryProperties().getExpiration());
         origMessage.setJMSMessageID(message.getJMSMessageID());
         origMessage.setJMSDeliveryMode(deliveryMode);
+        
+        BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
+        if (contentHeaderProperties.reset())
+        {
+            // set the application properties
+            message.get010Message().getMessageProperties()
+                    .setContentType(contentHeaderProperties.getContentType().toString());
+            AMQShortString type = contentHeaderProperties.getType();
+            if (type != null)
+            {
+                message.get010Message().getMessageProperties().setType(type.toString());
+            }
+            message.get010Message().getMessageProperties().setMessageId(message.getJMSMessageID());
+            AMQShortString correlationID = contentHeaderProperties.getCorrelationId();
+            if (correlationID != null)
+            {
+                message.get010Message().getMessageProperties().setCorrelationId(correlationID.toString());
+            }
+            String replyToURL = contentHeaderProperties.getReplyToAsString();
+            if (replyToURL != null)
+            {
+                AMQBindingURL dest;
+                try
+                {
+                    dest = new AMQBindingURL(replyToURL);
+                }
+                catch (URLSyntaxException e)
+                {
+                    throw ExceptionHelper.convertQpidExceptionToJMSException(e);
+                }
+                message.get010Message().getMessageProperties()
+                        .setReplyTo(new ReplyTo(dest.getExchangeName().toString(), dest.getRoutingKey().toString()));
+            }
+            if (contentHeaderProperties.getHeaders() != null)
+            {
+                //JMS_QPID_DESTTYPE   is always set but useles so this is a temporary fix
+                contentHeaderProperties.getHeaders().remove(CustomJMSXProperty.JMS_QPID_DESTTYPE.getShortStringName());
+                message.get010Message().getMessageProperties()
+                        .setApplicationHeaders(FiledTableSupport.convertToMap(contentHeaderProperties.getHeaders()));
+            }
+        }
         // send the message
         try
         {
             ((AMQSession_0_10) getSession()).getQpidSession().messageTransfer(destination.getExchangeName().toString(),
-                                                                              qpidityMessage,
+                                                                              message.get010Message(),
                                                                               org.apache.qpidity.nclient.Session.TRANSFER_CONFIRM_MODE_NOT_REQUIRED,
                                                                               org.apache.qpidity.nclient.Session.TRANSFER_ACQUIRE_MODE_PRE_ACQUIRE);
         }
@@ -164,19 +156,19 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         {
             throw ExceptionHelper.convertQpidExceptionToJMSException(e);
         }
-        catch(RuntimeException rte)
+        catch (RuntimeException rte)
         {
-            JMSException ex =  new JMSException("Exception when sending message");
+            JMSException ex = new JMSException("Exception when sending message");
             ex.setLinkedException(rte);
             throw ex;
         }
-
     }
 
 
     public boolean isBound(AMQDestination destination) throws JMSException
     {
-        return _session.isQueueBound(destination.getExchangeName(), destination.getAMQQueueName(), destination.getRoutingKey());
+        return _session.isQueueBound(destination.getExchangeName(), destination.getAMQQueueName(),
+                                     destination.getRoutingKey());
     }
 }
 
