@@ -93,7 +93,6 @@ class Channel : private sys::Runnable
 
     void dispatch(framing::FrameSet& msg, const std::string& destination);
 
-    // FIXME aconway 2007-02-23: Get rid of friendships.
     friend class Connection;
 
   public:

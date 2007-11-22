@@ -23,7 +23,7 @@
 #define _FutureResponse_
 
 #include "qpid/framing/amqp_framing.h"
-#include "qpid/framing/MethodHolder.h"
+#include "qpid/framing/BodyHolder.h"
 #include "FutureCompletion.h"
 
 namespace qpid {
@@ -33,7 +33,7 @@ class SessionCore;
 
 class FutureResponse : public FutureCompletion 
 {
-    framing::MethodHolder response;
+    framing::BodyHolder response;
 public:
     framing::AMQMethodBody* getResponse(SessionCore& session);
     void received(const framing::AMQMethodBody* response);

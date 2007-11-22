@@ -52,8 +52,9 @@ struct BasicGetToken : BaseToken
 
     AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId id)
     {
-        return AMQFrame(0, BasicGetOkBody(
-            ProtocolVersion(), id.getValue(), msg->getRedelivered(), msg->getExchangeName(),
+        return AMQFrame(in_place<BasicGetOkBody>(
+            ProtocolVersion(), id.getValue(),
+            msg->getRedelivered(), msg->getExchangeName(),
             msg->getRoutingKey(), queue->getMessageCount())); 
     }
 };
@@ -68,9 +69,10 @@ struct BasicConsumeToken : BaseToken
 
     AMQFrame sendMethod(intrusive_ptr<Message> msg, DeliveryId id)
     {
-        return AMQFrame(0, BasicDeliverBody(
+        return AMQFrame(in_place<BasicDeliverBody>(
             ProtocolVersion(), consumer, id.getValue(),
-            msg->getRedelivered(), msg->getExchangeName(), msg->getRoutingKey()));
+            msg->getRedelivered(), msg->getExchangeName(),
+            msg->getRoutingKey()));
     }
 
 };
@@ -90,7 +92,9 @@ struct MessageDeliveryToken : BaseToken
         if (msg->getRedelivered()){
             msg->getProperties<DeliveryProperties>()->setRedelivered(true);
         }
-        return AMQFrame(0, MessageTransferBody(ProtocolVersion(), 0, destination, confirmMode, acquireMode));
+        return AMQFrame(in_place<MessageTransferBody>(
+                            ProtocolVersion(), 0, destination,
+                            confirmMode, acquireMode));
     }
 };
 

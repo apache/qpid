@@ -22,7 +22,6 @@
  *
  */
 #include "qpid/framing/amqp_types.h"
-#include "qpid/shared_ptr.h"
 
 #include <ostream>
 
@@ -47,8 +46,6 @@ struct AMQBodyConstVisitor {
 class AMQBody
 {
   public:
-    typedef shared_ptr<AMQBody> shared_ptr;
-
     virtual ~AMQBody();
 
     virtual uint8_t type() const = 0;

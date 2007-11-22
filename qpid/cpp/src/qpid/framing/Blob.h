@@ -25,38 +25,45 @@
 #include <boost/aligned_storage.hpp>
 #include <boost/checked_delete.hpp>
 #include <boost/utility/typed_in_place_factory.hpp>
+#include <boost/type_traits/is_base_and_derived.hpp>
+#include <boost/utility/enable_if.hpp>
 
 #include <new>
 
 #include <assert.h>
 
 
-namespace boost {
+namespace qpid {
+namespace framing {
 
-/**
- * 0-arg typed_in_place_factory constructor and in_place() override.
- * 
- * Boost doesn't provide the 0 arg version since it assumes
- * in_place_factory will be used when there is no default ctor.
- */
+using boost::in_place;          
+using boost::typed_in_place_factory_base;
+
+/** 0-arg typed_in_place_factory, missing in boost. */
 template <class T>
-class typed_in_place_factory0 : public typed_in_place_factory_base {
-  public:
+struct typed_in_place_factory0 : public typed_in_place_factory_base {
     typedef T value_type ; 
     void apply ( void* address ) const { new (address) T(); }
 };
 
+/** 0-arg in_place<T>() function, missing from boost. */
 template<class T>
 typed_in_place_factory0<T> in_place() { return typed_in_place_factory0<T>(); }
 
-} // namespace boost
-
-
-namespace qpid {
-namespace framing {
-
-using boost::in_place;
-
+template <class T, class R=void>
+struct EnableInPlace
+    : public boost::enable_if<boost::is_base_and_derived<
+                                  typed_in_place_factory_base, T>,
+                              R>
+{};
+       
+template <class T, class R=void>
+struct DisableInPlace
+    : public boost::disable_if<boost::is_base_and_derived<
+                                   typed_in_place_factory_base, T>,
+                               R>
+{};
+       
 template <class T> struct BlobHelper {
     static void destroy(void* ptr) { static_cast<T*>(ptr)->~T(); }
     static void copy(void* dest, const void* src) {
@@ -108,11 +115,10 @@ class Blob
         basePtr=0;
     }
 
-    template<class TypedInPlaceFactory>
-    void construct (const TypedInPlaceFactory& factory,
-                    const boost::typed_in_place_factory_base* )
+    template<class Factory>
+    typename EnableInPlace<Factory>::type apply(const Factory& factory)
     {
-        typedef typename TypedInPlaceFactory::value_type T;
+        typedef typename Factory::value_type T;
         assert(empty());
         factory.apply(store.address());
         setType<T>();
@@ -135,28 +141,31 @@ class Blob
     Blob(const Blob& b) { initialize(); assign(b); }
 
     /** @see construct() */
-    template<class Expr>
-    Blob( const Expr & expr ) { initialize(); construct(expr,&expr); }
+    template<class InPlace>
+    Blob(const InPlace & expr, typename EnableInPlace<InPlace>::type* =0) {
+        initialize(); apply(expr);
+    }
 
     ~Blob() { clear(); }
 
-    /** Assign a blob */
+    /** Assign from another blob. */
     Blob& operator=(const Blob& b) {
         clear();
         assign(b);
         return *this;
     }
 
-    /** Construcct an object in the blob. Destroyes the previous object.
-     *@param expr an expresion of the form: in_place<T>(x,y,z)
-     * will construct an object using the constructor T(x,y,z)
-     */
-    template<class Expr> void
-    construct(const Expr& expr) { clear(); construct(expr,&expr); }
+    /** Assign from an in_place constructor expression. */
+    template<class InPlace>
+    typename EnableInPlace<InPlace,Blob&>::type operator=(const InPlace& expr) {
+        clear(); apply(expr); return *this;
+    }
 
-    /** Copy construct an instance of T into the Blob. */
+    /** Assign from an object of type T. */
     template <class T>
-    Blob& operator=(const T& x) { clear(); construct(in_place<T>(x)); return *this; }
+    typename DisableInPlace<T, Blob&>::type operator=(const T& x) {
+        clear(); apply(in_place<T>(x)); return *this;
+    }
 
     /** Get pointer to blob contents, returns 0 if empty. */
     BaseType* get() { return  basePtr; }

@@ -46,7 +46,7 @@ SessionState::SessionState(
       version(h.getConnection().getVersion()),
       semanticHandler(new SemanticHandler(*this))
 {
-    // FIXME aconway 2007-09-20: SessionManager may add plugin
+    // TODO aconway 2007-09-20: SessionManager may add plugin
     // handlers to the chain.
  }
 

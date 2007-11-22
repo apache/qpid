@@ -40,8 +40,6 @@ class MethodBodyConstVisitor;
 class AMQMethodBody : public AMQBody {
   public:
     AMQMethodBody() {}
-    AMQMethodBody(uint8_t, uint8_t) {}
-    
     virtual ~AMQMethodBody();
 
     virtual void accept(MethodBodyConstVisitor&) const = 0;

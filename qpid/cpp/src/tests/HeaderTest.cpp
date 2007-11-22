@@ -56,7 +56,7 @@ class HeaderTest : public CppUnit::TestCase
     }
 
     void testMessageProperties() {
-        AMQFrame out(0, AMQHeaderBody());
+        AMQFrame out(in_place<AMQHeaderBody>());
         MessageProperties* props1 = 
             out.castBody<AMQHeaderBody>()->get<MessageProperties>(true);
 
@@ -96,7 +96,7 @@ class HeaderTest : public CppUnit::TestCase
     }
 
     void testDeliveryProperies() {
-        AMQFrame out(0, AMQHeaderBody());
+        AMQFrame out(in_place<AMQHeaderBody>());
         DeliveryProperties* props1 = 
             out.castBody<AMQHeaderBody>()->get<DeliveryProperties>(true);
 
