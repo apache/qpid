@@ -17,21 +17,20 @@
 // under the License.
 //
 
-#include "Vhost.h"
-#include "qpid/management/ManagementAgent.h"
+#include "Manageable.h"
 
-using namespace qpid::broker;
-using qpid::management::ManagementAgent;
+using namespace qpid::management;
 
-Vhost::Vhost (management::Manageable* parentBroker)
+std::string Manageable::StatusText (status_t status)
 {
-    if (parentBroker != 0)
+    switch (status)
     {
-        mgmtObject = management::Vhost::shared_ptr
-            (new management::Vhost (this, parentBroker, "/"));
-
-        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
-        agent->addObject (mgmtObject);
+    case STATUS_OK              : return "OK";
+    case STATUS_UNKNOWN_OBJECT  : return "UnknownObject";
+    case STATUS_UNKNOWN_METHOD  : return "UnknownMethod";
+    case STATUS_NOT_IMPLEMENTED : return "NotImplemented";
     }
+
+    return "??";
 }
 

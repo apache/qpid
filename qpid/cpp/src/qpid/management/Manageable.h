@@ -22,10 +22,7 @@
 
 #include "ManagementObject.h"
 #include "Args.h"
-#include "qpid/sys/Time.h"
-#include <qpid/framing/Buffer.h>
-#include <boost/shared_ptr.hpp>
-#include <map>
+#include <string>
 
 namespace qpid { 
 namespace management {
@@ -39,10 +36,12 @@ class Manageable
     //  status_t is a type used to pass completion status from the method handler.
     //
     typedef uint32_t status_t;
+    static std::string StatusText (status_t status);
 
     static const status_t STATUS_OK              = 0;
     static const status_t STATUS_UNKNOWN_OBJECT  = 1;
     static const status_t STATUS_UNKNOWN_METHOD  = 2;
+    static const status_t STATUS_NOT_IMPLEMENTED = 3;
 
     //  Every "Manageable" object must hold a reference to exactly one
     //  management object.  This object is always of a class derived from

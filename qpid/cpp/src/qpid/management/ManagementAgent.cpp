@@ -271,8 +271,8 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
     ManagementObjectMap::iterator iter = managementObjects.find (objId);
     if (iter == managementObjects.end ())
     {
-        outBuffer.putLong        (2);
-        outBuffer.putShortString ("Invalid Object Id");
+        outBuffer.putLong        (Manageable::STATUS_UNKNOWN_OBJECT);
+        outBuffer.putShortString (Manageable::StatusText (Manageable::STATUS_UNKNOWN_OBJECT));
     }
     else
     {
