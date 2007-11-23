@@ -34,6 +34,11 @@ class Args
 
 inline Args::~Args (void) {}
 
+class ArgsNone : public Args
+{
+};
+
 }}
+
 
 #endif  /*!_Args_*/

@@ -1,5 +1,5 @@
-#ifndef _ArgsBrokerEcho_
-#define _ArgsBrokerEcho_
+#ifndef _ARGS_/*MGEN:Method.NameUpper*/_
+#define _ARGS_/*MGEN:Method.NameUpper*/_
 
 //
 // Licensed to the Apache Software Foundation (ASF) under one
@@ -20,19 +20,20 @@
 // under the License.
 //
 
-#include "Args.h"
+/*MGEN:Root.Disclaimer*/
+
+#include "qpid/management/Args.h"
 #include <string>
 
 namespace qpid { 
 namespace management {
 
-class ArgsBrokerEcho : public Args
+class Args/*MGEN:Method.NameCamel*/ : public Args
 {
   public:
-    uint32_t     io_sequence;
-    std::string  io_body;
+/*MGEN:Method.Arguments*/
 };
 
 }}
 
-#endif  /*!_ArgsBrokerEcho_*/
+#endif  /*!_ARGS_/*MGEN:Method.NameUpper*/_*/

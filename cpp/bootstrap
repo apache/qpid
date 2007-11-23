@@ -15,6 +15,10 @@ cat > src/rubygen.mk <<EOF
 \$(srcdir)/rubygen.mk: force
 	\$(rgen_cmd)
 EOF
+cat > src/managementgen.mk <<EOF
+\$(srcdir)/managementgen.mk: force
+	\$(mgen_cmd)
+EOF
 
 
 automake

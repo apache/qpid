@@ -1,0 +1,293 @@
+<schema package="qpid">
+
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+  
+    http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+
+  <!-- Type information:
+
+       Numeric types with "_wm" suffix are watermarked numbers.  These are compound
+       values containing a current value, and a low and high water mark for the reporting
+       interval.  The low and high water marks are set to the current value at the
+       beginning of each interval and track the minimum and maximum values of the statistic
+       over the interval respectively.
+
+       Access rights for configuration elements:
+
+           RO => Read Only
+           RC => Read/Create, can be set at create time only, read-only thereafter
+           RW => Read/Write
+
+           If access rights are omitted for a configElement, they are assumed to be RO.
+
+  -->
+
+  <!-- Questions:  Does C++ broker round-robin dests on queues? -->
+
+  <!--
+  ===============================================================
+  System
+  ===============================================================
+  -->
+  <class name="system">
+    <configElement name="sysId" index="y" type="sstr" access="RC"/>
+
+    <!-- RT config/instrumentation TBD -->
+
+  </class>
+
+  <!--
+  ===============================================================
+  Broker
+  ===============================================================
+  -->
+  <class name="broker">
+    <configElement name="systemRef"            type="objId"  access="RC" index="y" desc="System ID"/>
+    <configElement name="port"                 type="uint16" access="RC" index="y" desc="TCP Port for AMQP Service"/>
+    <configElement name="workerThreads"        type="uint16" access="RO" desc="Thread pool size"/>
+    <configElement name="maxConns"             type="uint16" access="RO" desc="Maximum allowed connections"/>
+    <configElement name="connBacklog"          type="uint16" access="RO" desc="Connection backlog limit for listening socket"/>
+    <configElement name="stagingThreshold"     type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
+    <configElement name="storeLib"             type="sstr"   access="RO" desc="Name of persistent storage library"/>
+    <configElement name="asyncStore"           type="bool"   access="RO" desc="Use async persistent store"/>
+    <configElement name="mgmtPubInterval"      type="uint16" min="1" access="RW" unit="second" desc="Interval for management broadcasts"/>
+    <configElement name="initialDiskPageSize"  type="uint32" access="RO" desc="Number of disk pages allocated for storage"/>
+    <configElement name="initialPagesPerQueue" type="uint32" access="RO" desc="Number of disk pages allocated per queue"/>
+    <configElement name="clusterName"          type="sstr"   access="RO"
+                   desc="Name of cluster this server is a member of, zero-length for standalone server"/>
+    <configElement name="version"              type="sstr"   access="RO" desc="Running software version"/>
+
+
+
+    <method name="joinCluster">
+      <arg name="clusterName" dir="I" type="sstr"/>
+    </method>
+
+    <method name="leaveCluster"/>
+
+    <method name="echo">
+      <arg name="sequence" dir="IO" type="uint32" default="0"/>
+      <arg name="body"     dir="IO" type="lstr"   default=""/>
+    </method>
+    <method name="crash" desc="Temporary test method to crash the broker"/>
+  </class>
+
+  <!--
+  ===============================================================
+  Virtual Host
+  ===============================================================
+  -->
+  <class name="vhost">
+    <configElement name="brokerRef" type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="name"      type="sstr"   access="RC" index="y"/>
+  </class>
+
+  <!--
+  ===============================================================
+  Queue
+  ===============================================================
+  -->
+  <class name="queue">
+    <configElement name="vhostRef"        type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="name"            type="sstr"   access="RC" index="y"/>
+
+    <configElement name="durable"         type="bool"   access="RC"/>
+    <configElement name="autoDelete"      type="bool"   access="RC"/>
+    <configElement name="exclusive"       type="bool"   access="RC"/>
+    <configElement name="pageMemoryLimit" type="uint32" access="RO"/>
+
+    <!-- Persistent Journal Support -->
+    <instElement name="journalLocation"            type="sstr"                  desc="Logical directory on disk"/>
+    <instElement name="journalBaseFileName"        type="sstr"                  desc="Base filename prefix for journal"/>
+    <instElement name="journalInitialFileCount"    type="uint32"                desc="Number of files initially allocated to this journal"/>
+    <instElement name="journalCurrentFileCount"    type="uint32"                desc="Number of files currently allocated to this journal"/>
+    <instElement name="journalDataFileSize"        type="uint32"  unit="byte"   desc="Size of each journal data file"/>
+    <instElement name="journalFreeFileCount"       type="hilo32"                desc="Number of files free on this journal. Includes free files trapped in holes."/>
+    <instElement name="journalAvailableFileCount"  type="hilo32"                desc="Number of files available to be written.  Excluding holes"/>
+    <instElement name="journalRecordDepth"         type="hilo32"  unit="record" desc="Number of enqueued records (durable messages)"/>
+    <instElement name="journalRecordEnqueues"      type="count64" unit="record" desc="Total enqueued records on journal"/>
+    <instElement name="journalRecordDequeues"      type="count64" unit="record" desc="Total dequeued records on journal"/>
+    <instElement name="journalWriteWaitFailures"   type="count64" unit="record" desc="AIO Wait failures on write"/>
+    <instElement name="journalWriteBusyFailures"   type="count64" unit="record" desc="AIO Busy failures on write"/>
+    <instElement name="journalReadRecordCount"     type="count64" unit="record" desc="Records read from the journal"/>
+    <instElement name="journalReadBusyFailures"    type="count64" unit="record" desc="AIO Busy failures on read"/>
+    <instElement name="journalWritePageCacheDepth" type="hilo32"  unit="page"   desc="Current depth of write-page-cache"/>
+    <instElement name="journalWritePageSize"       type="uint32"  unit="byte"   desc="Page size in write-page-cache"/>
+    <instElement name="journalReadPageCacheDepth"  type="hilo32"  unit="page"   desc="Current depth of read-page-cache"/>
+    <instElement name="journalReadPageSize"        type="uint32"  unit="byte"   desc="Page size in read-page-cache"/>
+
+    <instElement name="msgTotalEnqueues"    type="count64" unit="message"     desc="Total messages enqueued"/>
+    <instElement name="msgTotalDequeues"    type="count64" unit="message"     desc="Total messages dequeued"/>
+    <instElement name="msgTxnEnqueues"      type="count64" unit="message"     desc="Transactional messages enqueued"/>
+    <instElement name="msgTxnDequeues"      type="count64" unit="message"     desc="Transactional messages dequeued"/>
+    <instElement name="msgPersistEnqueues"  type="count64" unit="message"     desc="Persistent messages enqueued"/>
+    <instElement name="msgPersistDequeues"  type="count64" unit="message"     desc="Persistent messages dequeued"/>
+    <instElement name="msgDepth"            type="hilo32"  unit="message"     desc="Current size of queue in messages"/>
+    <instElement name="byteTotalEnqueues"   type="count64" unit="octet"       desc="Total messages enqueued"/>
+    <instElement name="byteTotalDequeues"   type="count64" unit="octet"       desc="Total messages dequeued"/>
+    <instElement name="byteTxnEnqueues"     type="count64" unit="octet"       desc="Transactional messages enqueued"/>
+    <instElement name="byteTxnDequeues"     type="count64" unit="octet"       desc="Transactional messages dequeued"/>
+    <instElement name="bytePersistEnqueues" type="count64" unit="octet"       desc="Persistent messages enqueued"/>
+    <instElement name="bytePersistDequeues" type="count64" unit="octet"       desc="Persistent messages dequeued"/>
+    <instElement name="byteDepth"           type="hilo32"  unit="octet"       desc="Current size of queue in bytes"/>
+    <instElement name="enqueueTxnStarts"    type="count64" unit="transaction" desc="Total enqueue transactions started "/>
+    <instElement name="enqueueTxnCommits"   type="count64" unit="transaction" desc="Total enqueue transactions committed"/>
+    <instElement name="enqueueTxnRejects"   type="count64" unit="transaction" desc="Total enqueue transactions rejected"/>
+    <instElement name="enqueueTxnCount"     type="hilo32"  unit="transaction" desc="Current pending enqueue transactions"/>
+    <instElement name="dequeueTxnStarts"    type="count64" unit="transaction" desc="Total dequeue transactions started"/>
+    <instElement name="dequeueTxnCommits"   type="count64" unit="transaction" desc="Total dequeue transactions committed"/>
+    <instElement name="dequeueTxnRejects"   type="count64" unit="transaction" desc="Total dequeue transactions rejected"/>
+    <instElement name="dequeueTxnCount"     type="hilo32"  unit="transaction" desc="Current pending dequeue transactions"/>
+    <instElement name="consumers"           type="hilo32"  unit="consumer"    desc="Current consumers on queue"/>
+    <instElement name="bindings"            type="hilo32"  unit="binding"     desc="Current bindings"/>
+    <instElement name="unackedMessages"     type="hilo32"  unit="message"     desc="Messages consumed but not yet acked"/>
+
+    <method name="purge"            desc="Discard all messages on queue"/>
+    <method name="increaseJournalSize" desc="Increase number of disk pages allocated for this queue">
+      <arg name="pages" type="uint32" dir="I" desc="New total page allocation"/>
+    </method>
+
+  </class>
+
+  <!--
+  ===============================================================
+  Exchange
+  ===============================================================
+  -->
+  <class name="exchange">
+    <configElement name="vhostRef"   type="objId" access="RC" index="y" parentRef="y"/>
+    <configElement name="name"       type="sstr"  access="RC" index="y"/>
+    <configElement name="type"       type="sstr"  access="RC"/>
+
+    <instElement name="producers"    type="hilo32"  desc="Current producers on exchange"/>
+    <instElement name="bindings"     type="hilo32"  desc="Current bindings"/>
+    <instElement name="msgReceives"  type="count64" desc="Total messages received"/>
+    <instElement name="msgDrops"     type="count64" desc="Total messages dropped (no matching key)"/>
+    <instElement name="msgRoutes"    type="count64" desc="Total routed messages"/>
+    <instElement name="byteReceives" type="count64" desc="Total bytes received"/>
+    <instElement name="byteDrops"    type="count64" desc="Total bytes dropped (no matching key)"/>
+    <instElement name="byteRoutes"   type="count64" desc="Total routed bytes"/>
+  </class>
+
+  <!--
+  ===============================================================
+  Binding
+  ===============================================================
+  -->
+  <class name="binding">
+    <configElement name="queueRef"    type="objId" access="RC" index="y"/>
+    <configElement name="exchangeRef" type="objId" access="RC" index="y"/>
+    <configElement name="bindingKey"  type="sstr"  access="RC"/>
+<!--<configElement name="arguments"   type="fieldTable" access="RC"/> -->
+
+    <instElement name="msgMatched" type="count64"/>
+  </class>
+  
+  <!--
+  ===============================================================
+  Client
+  ===============================================================
+  -->
+  <class name="client">
+    <configElement name="vhostRef" type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="ipAddr"   type="uint32" access="RC" index="y"/>
+    <configElement name="port"     type="uint16" access="RC" index="y"/>
+
+    <instElement name="authIdentity"  type="sstr"/>
+    <instElement name="msgsProduced"  type="count64"/>
+    <instElement name="msgsConsumed"  type="count64"/>
+    <instElement name="bytesProduced" type="count64"/>
+    <instElement name="bytesConsumed" type="count64"/>
+
+    <method name="close"/> 
+    <method name="detach"/>
+  </class>
+
+  <!--
+  ===============================================================
+  Session
+  ===============================================================
+  -->
+  <class name="session">
+    <configElement name="vhostRef"         type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="name"             type="sstr"   access="RC" index="y"/>
+    <configElement name="clientRef"        type="sstr"   access="RO"/>
+    <configElement name="detachedLifespan" type="uint32" access="RO"/>
+
+    <instElement name="attached"          type="bool"/>
+    <instElement name="remainingLifespan" type="count32"/>
+    <instElement name="framesOutstanding" type="count32"/>
+
+    <method name="solicitAck"/>
+    <method name="detach"/>
+    <method name="resetLifespan"/>
+    <method name="close"/>
+  </class>
+
+  <!--
+  ===============================================================
+  Destination
+  ===============================================================
+  -->
+  <class name="destination">
+    <configElement name="sessionRef" type="objId"  access="RC" index="y" parentRef="y"/>
+    <configElement name="name"       type="sstr"   access="RC" index="y"/>
+
+    <instElement name="flowMode"       type="uint8"/>
+    <instElement name="maxMsgCredits"  type="uint32"/>
+    <instElement name="maxByteCredits" type="uint32"/>
+    <instElement name="msgCredits"     type="uint32"/>
+    <instElement name="byteCredits"    type="uint32"/>
+
+    <method name="throttle" desc="Apply extra rate limiting to destination: 0 = Normal, 10 = Maximum">
+      <arg name="strength" type="uint8" dir="I" min="0" max="10"/> 
+    </method>
+    <method name="stop"/>
+    <method name="start"/>
+  </class>
+
+  <!--
+  ===============================================================
+  Producer
+  ===============================================================
+  -->
+  <class name="producer">
+    <configElement name="destinationRef" access="RC" type="objId" index="y"/>
+    <configElement name="exchangeRef"    access="RC" type="objId" index="y"/>
+
+    <instElement name="msgsProduced"  type="count64"/>
+    <instElement name="bytesProduced" type="count64"/>
+  </class>
+
+  <!--
+  ===============================================================
+  Consumer
+  ===============================================================
+  -->
+  <class name="consumer">
+    <configElement name="destinationRef" access="RC" type="objId" index="y"/>
+    <configElement name="queueRef"       access="RC" type="objId" index="y"/>
+
+    <instElement name="msgsConsumed"    type="count64"/>
+    <instElement name="bytesConsumed"   type="count64"/>
+    <instElement name="unackedMessages" type="hilo32" desc="Messages consumed but not yet acked"/>
+
+    <method name="close"/>
+  </class>
+</schema>
+
