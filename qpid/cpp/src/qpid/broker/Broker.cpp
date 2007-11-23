@@ -19,6 +19,7 @@
  *
  */
 
+#include "config.h"
 #include "Broker.h"
 #include "Connection.h"
 #include "DirectExchange.h"
@@ -124,7 +125,19 @@ Broker::Broker(const Broker::Options& conf) :
         managementAgent = ManagementAgent::getAgent ();
         managementAgent->setInterval (conf.mgmtPubInterval);
 
-        mgmtObject = management::Broker::shared_ptr (new management::Broker (this, conf));
+        mgmtObject = management::Broker::shared_ptr (new management::Broker (this, 0, 0, conf.port));
+        mgmtObject->set_workerThreads        (conf.workerThreads);
+        mgmtObject->set_maxConns             (conf.maxConnections);
+        mgmtObject->set_connBacklog          (conf.connectionBacklog);
+        mgmtObject->set_stagingThreshold     (conf.stagingThreshold);
+        mgmtObject->set_storeLib             (conf.store);
+        mgmtObject->set_asyncStore           (conf.storeAsync);
+        mgmtObject->set_mgmtPubInterval      (conf.mgmtPubInterval);
+        mgmtObject->set_initialDiskPageSize  (0);
+        mgmtObject->set_initialPagesPerQueue (0);
+        mgmtObject->set_clusterName          ("");
+        mgmtObject->set_version              (PACKAGE_VERSION);
+        
         managementAgent->addObject (mgmtObject);
 
         // Since there is currently no support for virtual hosts, a placeholder object
@@ -248,11 +261,27 @@ ManagementObject::shared_ptr Broker::GetManagementObject(void) const
     return dynamic_pointer_cast<ManagementObject> (mgmtObject);
 }
 
-Manageable::status_t Broker::ManagementMethod (uint32_t /*methodId*/,
+Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
                                                Args&    /*_args*/)
 {
-    QPID_LOG (debug, "Broker::ManagementMethod");
-    return Manageable::STATUS_OK;
+    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+
+    QPID_LOG (debug, "Broker::ManagementMethod [id=" << methodId << "]");
+
+    switch (methodId)
+    {
+    case management::Broker::METHOD_ECHO :
+        status = Manageable::STATUS_OK;
+        break;
+
+    case management::Broker::METHOD_JOINCLUSTER :
+    case management::Broker::METHOD_LEAVECLUSTER :
+    case management::Broker::METHOD_CRASH :
+        status = Manageable::STATUS_NOT_IMPLEMENTED;
+        break;
+    }
+
+    return status;
 }
 
 }} // namespace qpid::broker
