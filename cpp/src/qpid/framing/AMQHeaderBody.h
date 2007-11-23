@@ -62,7 +62,8 @@ class AMQHeaderBody :  public AMQBody
         }        
         void print(std::ostream& out) const {
             const boost::optional<T>& p=this->OptProps<T>::props;
-            Base::print(out << *p);
+            if (p) out << *p;
+            Base::print(out);
         }
     };
 
