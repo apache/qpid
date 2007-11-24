@@ -21,10 +21,10 @@
 package org.apache.qpid.gentools;
 
 @SuppressWarnings("serial")
-public class TargetDirectoryException extends Exception
+public class TargetDirectoryException extends RuntimeException
 {
-	public TargetDirectoryException(String msg)
-	{
-		super(msg);
-	}
+    public TargetDirectoryException(String msg)
+    {
+        super(msg);
+    }
 }

@@ -22,7 +22,14 @@
 	<property name="src" location="src" />
 
 	<target name="compile">
-    	<javac srcdir="${src}" source="1.5" fork="true" debug="on"/>
+    	<javac srcdir="${src}" source="1.5" fork="true" debug="on">
+			<classpath>
+			    <fileset dir="${src}/../lib">
+					<include name="**/*.jar"/>
+				</fileset>
+			</classpath>
+
+		</javac>
     </target>
     
 	<target name="clean">

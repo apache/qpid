@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.ConnectionCloseOkBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -45,14 +46,14 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionCloseBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionCloseBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        final ConnectionCloseBody body = evt.getMethod();
+
         if (_logger.isInfoEnabled())
         {
-            _logger.info("ConnectionClose received with reply code/reply text " + body.replyCode + "/" +
-                         body.replyText + " for " + session);
+            _logger.info("ConnectionClose received with reply code/reply text " + body.getReplyCode() + "/" +
+                         body.getReplyText() + " for " + session);
         }
         try
         {
@@ -62,10 +63,10 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
         {
             _logger.error("Error closing protocol session: " + e, e);
         }
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame response = ConnectionCloseOkBody.createAMQFrame(evt.getChannelId(), (byte) 8, (byte) 0);
-        session.writeFrame(response);
+
+        MethodRegistry methodRegistry = session.getMethodRegistry();
+        ConnectionCloseOkBody responseBody = methodRegistry.createConnectionCloseOkBody();
+        session.writeFrame(responseBody.generateFrame(channelId));
+
     }
 }

@@ -266,8 +266,8 @@ public class AMQChannel
             // returns true iff the message was delivered (i.e. if all data was
             // received
             if (_currentMessage.addContentBodyFrame(_storeContext,
-                                                    protocolSession.getRegistry().getProtocolVersionMethodConverter().convertToContentChunk(
-                                                            contentBody)))
+                        protocolSession.getMethodRegistry().getProtocolVersionMethodConverter().convertToContentChunk(
+                            contentBody)))
             {
                 // callback to allow the context to do any post message processing
                 // primary use is to allow message return processing in the non-tx case

@@ -27,8 +27,8 @@
 package org.apache.qpid.server.output;
 
 import org.apache.qpid.server.output.ProtocolOutputConverter.Factory;
-import org.apache.qpid.server.output.amqp0_8.ProtocolOutputConverterImpl;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.framing.ProtocolVersion;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -36,27 +36,26 @@ import java.util.HashMap;
 public class ProtocolOutputConverterRegistry
 {
 
-    private static final Map<Byte, Map<Byte, Factory>> _registry =
-            new HashMap<Byte, Map<Byte, Factory>>();
+    private static final Map<ProtocolVersion, Factory> _registry =
+            new HashMap<ProtocolVersion, Factory>();
 
 
     static
     {
-        register((byte) 8, (byte) 0, ProtocolOutputConverterImpl.getInstanceFactory());
+        register(ProtocolVersion.v8_0, org.apache.qpid.server.output.amqp0_8.ProtocolOutputConverterImpl.getInstanceFactory());
+        register(ProtocolVersion.v0_9, org.apache.qpid.server.output.amqp0_9.ProtocolOutputConverterImpl.getInstanceFactory());
+
     }
 
-    private static void register(byte major, byte minor, Factory converter)
+    private static void register(ProtocolVersion version, Factory converter)
     {
-        if(!_registry.containsKey(major))
-        {
-            _registry.put(major, new HashMap<Byte, Factory>());
-        }
-        _registry.get(major).put(minor, converter);
+
+        _registry.put(version,converter);
     }
 
 
     public static ProtocolOutputConverter getConverter(AMQProtocolSession session)
     {
-        return _registry.get(session.getProtocolMajorVersion()).get(session.getProtocolMinorVersion()).newInstance(session);
+        return _registry.get(session.getProtocolVersion()).newInstance(session);
     }
 }

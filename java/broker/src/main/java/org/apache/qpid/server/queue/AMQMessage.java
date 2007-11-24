@@ -187,7 +187,7 @@ public class AMQMessage
 
         private ProtocolVersionMethodConverter getProtocolVersionMethodConverter()
         {
-            return _protocolSession.getRegistry().getProtocolVersionMethodConverter();
+            return _protocolSession.getMethodRegistry().getProtocolVersionMethodConverter();
         }
 
         public void remove()

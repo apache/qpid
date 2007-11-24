@@ -25,12 +25,12 @@ import java.util.TreeMap;
 @SuppressWarnings("serial")
 public class AmqpMethodMap extends TreeMap<String, AmqpMethod>
 {
-	public void removeVersion(AmqpVersion version)
-	{
-		for (String methodName : keySet())
-		{
-			get(methodName).removeVersion(version);
-		}
-	}
+    public void removeVersion(AmqpVersion version)
+    {
+        for (String methodName : keySet())
+        {
+            get(methodName).removeVersion(version);
+        }
+    }
 
 }

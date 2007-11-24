@@ -21,10 +21,7 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionOpenBody;
-import org.apache.qpid.framing.ConnectionOpenOkBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -56,20 +53,20 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
         return new AMQShortString(Long.toString(System.currentTimeMillis()));
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionOpenBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionOpenBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        ConnectionOpenBody body = evt.getMethod();
+
 
         //ignore leading '/'
         String virtualHostName;
-        if ((body.virtualHost != null) && body.virtualHost.charAt(0) == '/')
+        if ((body.getVirtualHost() != null) && body.getVirtualHost().charAt(0) == '/')
         {
-            virtualHostName = new StringBuilder(body.virtualHost.subSequence(1, body.virtualHost.length())).toString();
+            virtualHostName = new StringBuilder(body.getVirtualHost().subSequence(1, body.getVirtualHost().length())).toString();
         }
         else
         {
-            virtualHostName = body.virtualHost == null ? null : String.valueOf(body.virtualHost);
+            virtualHostName = body.getVirtualHost() == null ? null : String.valueOf(body.getVirtualHost());
         }
 
         VirtualHost virtualHost = stateManager.getVirtualHostRegistry().getVirtualHost(virtualHostName);
@@ -105,14 +102,14 @@ public class ConnectionOpenMethodHandler implements StateAwareMethodListener<Con
                 session.setContextKey(generateClientID());
             }
 
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            AMQFrame response = ConnectionOpenOkBody.createAMQFrame((short) 0,
-                                                                    (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                    body.virtualHost);
+            MethodRegistry methodRegistry = session.getMethodRegistry();
+            AMQMethodBody responseBody = methodRegistry.createConnectionOpenOkBody(body.getVirtualHost());
+
             stateManager.changeState(AMQState.CONNECTION_OPEN);
-            session.writeFrame(response);
+
+            session.writeFrame(responseBody.generateFrame(channelId));
+
+            
         }
     }
 }

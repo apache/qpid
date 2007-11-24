@@ -38,4 +38,10 @@ public class AMQFrameDecodingException extends AMQException
     {
         super(errorCode, message, t);
     }
+
+    public AMQFrameDecodingException(AMQConstant errorCode, String message)
+    {
+        super(errorCode, message);
+    }
+
 }

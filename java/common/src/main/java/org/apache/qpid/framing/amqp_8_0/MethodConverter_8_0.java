@@ -19,12 +19,14 @@
  *
  */
 
-package org.apache.qpid.framing;
+package org.apache.qpid.framing.amqp_8_0;
 
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
+import org.apache.qpid.framing.amqp_8_0.BasicPublishBodyImpl;
+import org.apache.qpid.framing.*;
 
 import org.apache.mina.common.ByteBuffer;
 
@@ -73,53 +75,72 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
     public void configure()
     {
 
-        _basicPublishClassId = BasicPublishBody.getClazz(getProtocolMajorVersion(),getProtocolMinorVersion());
-        _basicPublishMethodId = BasicPublishBody.getMethod(getProtocolMajorVersion(),getProtocolMinorVersion());
+        _basicPublishClassId = BasicPublishBodyImpl.CLASS_ID;
+        _basicPublishMethodId = BasicPublishBodyImpl.METHOD_ID;
                 
     }
 
     public MessagePublishInfo convertToInfo(AMQMethodBody methodBody)
     {
-        final BasicPublishBody body = (BasicPublishBody) methodBody;
-        
-        return new MessagePublishInfo()
-        {
+        final BasicPublishBody publishBody = ((BasicPublishBody) methodBody);
 
-            public AMQShortString getExchange()
-            {
-                return body.getExchange();
-            }
+        final AMQShortString exchange = publishBody.getExchange();
+        final AMQShortString routingKey = publishBody.getRoutingKey();
 
-            public boolean isImmediate()
-            {
-                return body.getImmediate();
-            }
-
-            public boolean isMandatory()
-            {
-                return body.getMandatory();
-            }
-
-            public AMQShortString getRoutingKey()
-            {
-                return body.getRoutingKey();
-            }
-        };
+        return new MessagePublishInfoImpl(exchange == null ? null : exchange.intern(),
+                                          publishBody.getImmediate(),
+                                          publishBody.getMandatory(),
+                                          routingKey == null ? null : routingKey.intern());
 
     }
 
     public AMQMethodBody convertToBody(MessagePublishInfo info)
     {
 
-        return new BasicPublishBody(getProtocolMajorVersion(),
-                                    getProtocolMinorVersion(),
-                                    _basicPublishClassId,
-                                    _basicPublishMethodId,
+        return new BasicPublishBodyImpl(0,
                                     info.getExchange(),
-                                    info.isImmediate(),
-                                    info.isMandatory(),
                                     info.getRoutingKey(),
-                                    0) ; // ticket
+                                    info.isMandatory(),
+                                    info.isImmediate()) ;
 
+    }
+
+    private static class MessagePublishInfoImpl implements MessagePublishInfo
+    {
+        private final AMQShortString _exchange;
+        private final boolean _immediate;
+        private final boolean _mandatory;
+        private final AMQShortString _routingKey;
+
+        public MessagePublishInfoImpl(final AMQShortString exchange,
+                                      final boolean immediate,
+                                      final boolean mandatory,
+                                      final AMQShortString routingKey)
+        {
+            _exchange = exchange;
+            _immediate = immediate;
+            _mandatory = mandatory;
+            _routingKey = routingKey;
+        }
+
+        public AMQShortString getExchange()
+        {
+            return _exchange;
+        }
+
+        public boolean isImmediate()
+        {
+            return _immediate;
+        }
+
+        public boolean isMandatory()
+        {
+            return _mandatory;
+        }
+
+        public AMQShortString getRoutingKey()
+        {
+            return _routingKey;
+        }
     }
 }

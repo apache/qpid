@@ -2,6 +2,8 @@ package org.apache.qpid.framing;
 
 import junit.framework.TestCase;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
+import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
+
 import org.apache.mina.common.ByteBuffer;
 
 /*
@@ -58,8 +60,8 @@ public class SpecificMethodFrameListenerTest extends TestCase
 
     public void testProcessMethod() throws AMQFrameDecodingException
     {
-        ChannelCloseOkBody ccob = (ChannelCloseOkBody) ChannelCloseOkBody.getFactory().newInstance((byte) 8, (byte) 0, ByteBuffer.allocate(0), 0);
-        ChannelOpenOkBody coob = (ChannelOpenOkBody) ChannelOpenOkBody.getFactory().newInstance((byte) 8, (byte) 0, ByteBuffer.allocate(0), 0);
+        ChannelCloseOkBody ccob = MethodRegistry.getMethodRegistry(ProtocolVersion.v0_9).createChannelCloseOkBody();
+        ChannelOpenOkBody coob =  ((MethodRegistry_0_9)(MethodRegistry.getMethodRegistry(ProtocolVersion.v0_9))).createChannelOpenOkBody(new byte[0]);
 
         assertTrue("This SpecificMethodFrameListener should process a ChannelCloseOkBody", close1a.processMethod(1, ccob));
         assertFalse("This SpecificMethodFrameListener should NOT process a ChannelOpenOkBody", close1a.processMethod(1, coob));

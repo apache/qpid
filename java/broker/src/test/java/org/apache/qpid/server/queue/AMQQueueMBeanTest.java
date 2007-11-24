@@ -288,7 +288,7 @@ public class AMQQueueMBeanTest extends TestCase
 
             // Add the body so we have somthing to test later
             currentMessage.addContentBodyFrame(_storeContext,
-                                               _protocolSession.getRegistry()
+                                               _protocolSession.getMethodRegistry()
                                                        .getProtocolVersionMethodConverter()
                                                        .convertToContentChunk(
                                                        new ContentBody(ByteBuffer.allocate((int) MESSAGE_SIZE),

@@ -25,11 +25,7 @@ import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionSecureBody;
-import org.apache.qpid.framing.ConnectionSecureOkBody;
-import org.apache.qpid.framing.ConnectionTuneBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -57,10 +53,10 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionSecureOkBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionSecureOkBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        ConnectionSecureOkBody body = evt.getMethod();
+
 
         //fixme Vhost not defined yet
         //session.getVirtualHost().getAuthenticationManager();
@@ -71,8 +67,8 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
         {
             throw new AMQException("No SASL context set up in session");
         }
-
-        AuthenticationResult authResult = authMgr.authenticate(ss, body.response);
+        MethodRegistry methodRegistry = session.getMethodRegistry();
+        AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
         switch (authResult.status)
         {
             case ERROR:
@@ -80,45 +76,34 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 // throw new AMQException(AMQConstant.NOT_ALLOWED.getCode(), AMQConstant.NOT_ALLOWED.getName());
                 _logger.info("Authentication failed");
                 stateManager.changeState(AMQState.CONNECTION_CLOSING);
-                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                // Be aware of possible changes to parameter order as versions change.
-                AMQFrame close = ConnectionCloseBody.createAMQFrame(0,
-                    (byte)8, (byte)0,	// AMQP version (major, minor)
-                    ConnectionCloseBody.getClazz((byte)8, (byte)0),		// classId
-                    ConnectionCloseBody.getMethod((byte)8, (byte)0),	// methodId
-                    AMQConstant.NOT_ALLOWED.getCode(),	// replyCode
-                    AMQConstant.NOT_ALLOWED.getName());	// replyText
-                session.writeFrame(close);
+
+
+                ConnectionCloseBody connectionCloseBody =
+                        methodRegistry.createConnectionCloseBody(AMQConstant.NOT_ALLOWED.getCode(),
+                                                                 AMQConstant.NOT_ALLOWED.getName(),
+                                                                 body.getClazz(),
+                                                                 body.getMethod());
+
+                session.writeFrame(connectionCloseBody.generateFrame(0) );
                 disposeSaslServer(session);
                 break;
             case SUCCESS:
                 _logger.info("Connected as: " + ss.getAuthorizationID());
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
-                // TODO: Check the value of channelMax here: This should be the max
-                // value of a 2-byte unsigned integer (as channel is only 2 bytes on the wire),
-                // not Integer.MAX_VALUE (which is signed 4 bytes).
-                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                // Be aware of possible changes to parameter order as versions change.
-                AMQFrame tune = ConnectionTuneBody.createAMQFrame(0,
-                    (byte)8, (byte)0,	// AMQP version (major, minor)
-                    Integer.MAX_VALUE,	// channelMax
-                    ConnectionStartOkMethodHandler.getConfiguredFrameSize(),	// frameMax
-                    HeartbeatConfig.getInstance().getDelay());	// heartbeat
-                session.writeFrame(tune);
+
+                ConnectionTuneBody tuneBody =
+                        methodRegistry.createConnectionTuneBody(0xFFFF,
+                                                                ConnectionStartOkMethodHandler.getConfiguredFrameSize(),
+                                                                HeartbeatConfig.getInstance().getDelay());
+                session.writeFrame(tuneBody.generateFrame(0));
                 session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));                
                 disposeSaslServer(session);
                 break;
             case CONTINUE:
                 stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
-                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                // Be aware of possible changes to parameter order as versions change.
-                AMQFrame challenge = ConnectionSecureBody.createAMQFrame(0,
-                    (byte)8, (byte)0,	// AMQP version (major, minor)
-                    authResult.challenge);	// challenge
-                session.writeFrame(challenge);
+
+                ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.challenge);
+                session.writeFrame(secureBody.generateFrame(0));
         }
     }
 

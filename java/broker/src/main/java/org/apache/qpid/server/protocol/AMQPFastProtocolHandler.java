@@ -30,13 +30,7 @@ import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.util.SessionUtil;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQProtocolHeaderException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.HeartbeatBody;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ConnectorConfiguration;
@@ -177,15 +171,12 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         {
             _logger.error("Exception caught in" + session + ", closing session explictly: " + throwable, throwable);
 
-            // Be aware of possible changes to parameter order as versions change.
-            protocolSession.write(ConnectionCloseBody.createAMQFrame(0,
-                                                                     session.getProtocolMajorVersion(),
-                                                                     session.getProtocolMinorVersion(),    // AMQP version (major, minor)
-                                                                     0,    // classId
-                                                                     0,    // methodId
-                                                                     200,    // replyCode
-                                                                     new AMQShortString(throwable.getMessage())    // replyText
-            ));
+
+            MethodRegistry methodRegistry = MethodRegistry.getMethodRegistry(session.getProtocolVersion());
+            ConnectionCloseBody closeBody = methodRegistry.createConnectionCloseBody(200,new AMQShortString(throwable.getMessage()),0,0);
+                        
+            protocolSession.write(closeBody.generateFrame(0));
+
             protocolSession.close();
         }
     }

@@ -22,6 +22,8 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
+import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
+
 public class ContentHeaderPropertiesFactory
 {
     private static final ContentHeaderPropertiesFactory _instance = new ContentHeaderPropertiesFactory();
@@ -43,7 +45,7 @@ public class ContentHeaderPropertiesFactory
         // AMQP version change: "Hardwired" version to major=8, minor=0
         // TODO: Change so that the actual version is obtained from
         // the ProtocolInitiation object for this session.
-        if (classId == BasicConsumeBody.getClazz((byte)8, (byte)0))
+        if (classId == BasicConsumeBodyImpl.CLASS_ID)
         {
         	properties = new BasicContentHeaderProperties();
         }

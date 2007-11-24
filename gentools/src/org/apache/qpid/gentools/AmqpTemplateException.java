@@ -21,10 +21,10 @@
 package org.apache.qpid.gentools;
 
 @SuppressWarnings("serial")
-public class AmqpTemplateException extends Exception
+public class AmqpTemplateException extends RuntimeException
 {
-	public AmqpTemplateException(String msg)
-	{
-		super(msg);
-	}
+    public AmqpTemplateException(String msg)
+    {
+        super(msg);
+    }
 }

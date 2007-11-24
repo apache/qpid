@@ -43,7 +43,7 @@ public class RunBrokerWithCommand
         }
         catch (Exception e)
         {
-            System.out.println("Unable to start broker due to: " + e.getMessage());
+            System.err.println("Unable to start broker due to: " + e.getMessage());
 
             e.printStackTrace();
             exit(1);
@@ -55,7 +55,7 @@ public class RunBrokerWithCommand
         try
         {
             Process task = Runtime.getRuntime().exec(args[0]);
-            System.out.println("Started Proccess: " + args[0]);
+            System.err.println("Started Proccess: " + args[0]);
 
             InputStream inputStream = task.getInputStream();
 
@@ -70,19 +70,21 @@ public class RunBrokerWithCommand
             out.join();
             err.join();
 
-            System.out.println("Waiting for process to exit: " + args[0]);
+            System.err.println("Waiting for process to exit: " + args[0]);
             task.waitFor();
-            System.out.println("Done Proccess: " + args[0]);
+            System.err.println("Done Proccess: " + args[0]);
 
         }
         catch (IOException e)
         {
-            System.out.println("Proccess had problems: " + e.getMessage());
+            System.err.println("Proccess had problems: " + e.getMessage());
+            e.printStackTrace(System.err);
             exit(1);
         }
         catch (InterruptedException e)
         {
-            System.out.println("Proccess had problems: " + e.getMessage());
+            System.err.println("Proccess had problems: " + e.getMessage());
+            e.printStackTrace(System.err);
 
             exit(1);
         }

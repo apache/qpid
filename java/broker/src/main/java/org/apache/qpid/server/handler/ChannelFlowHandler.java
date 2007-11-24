@@ -22,9 +22,7 @@ package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ChannelFlowBody;
-import org.apache.qpid.framing.ChannelFlowOkBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -46,27 +44,23 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelFlowBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ChannelFlowBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        ChannelFlowBody body = evt.getMethod();
 
-        AMQChannel channel = session.getChannel(evt.getChannelId());
+
+        AMQChannel channel = session.getChannel(channelId);
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(evt.getChannelId());
+            throw body.getChannelNotFoundException(channelId);
         }
 
-        channel.setSuspended(!body.active);
-        _logger.debug("Channel.Flow for channel " + evt.getChannelId() + ", active=" + body.active);
+        channel.setSuspended(!body.getActive());
+        _logger.debug("Channel.Flow for channel " + channelId + ", active=" + body.getActive());
 
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        AMQFrame response = ChannelFlowOkBody.createAMQFrame(evt.getChannelId(),
-            (byte)8, (byte)0,	// AMQP version (major, minor)
-            body.active);	// active
-        session.writeFrame(response);
+        MethodRegistry methodRegistry = session.getMethodRegistry();
+        AMQMethodBody responseBody = methodRegistry.createChannelFlowOkBody(body.getActive());
+        session.writeFrame(responseBody.generateFrame(channelId));
     }
 }

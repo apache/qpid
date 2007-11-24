@@ -45,11 +45,11 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicRejectBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, BasicRejectBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
 
-        int channelId = evt.getChannelId();
+
 
 //        if (_logger.isDebugEnabled())
 //        {
@@ -63,18 +63,18 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
 
         if (channel == null)
         {
-            throw evt.getMethod().getChannelNotFoundException(channelId);
+            throw body.getChannelNotFoundException(channelId);
         }
 
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Rejecting:" + evt.getMethod().deliveryTag +
-                          ": Requeue:" + evt.getMethod().requeue +
+            _logger.debug("Rejecting:" + body.getDeliveryTag() +
+                          ": Requeue:" + body.getRequeue() +
                           //": Resend:" + evt.getMethod().resend +
                           " on channel:" + channel.debugIdentity());
         }
 
-        long deliveryTag = evt.getMethod().deliveryTag;
+        long deliveryTag = body.getDeliveryTag();
 
         UnacknowledgedMessage message = channel.getUnacknowledgedMessageMap().get(deliveryTag);
 
@@ -103,7 +103,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
             if (_logger.isTraceEnabled())
             {
                 _logger.trace("Rejecting: DT:" + deliveryTag + "-" + message.message.debugIdentity() +
-                              ": Requeue:" + evt.getMethod().requeue +
+                              ": Requeue:" + body.getRequeue() +
                               //": Resend:" + evt.getMethod().resend +
                               " on channel:" + channel.debugIdentity());
             }
@@ -114,7 +114,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
                 message.message.reject(message.message.getDeliveredSubscription(message.queue));
             }
 
-            if (evt.getMethod().requeue)
+            if (body.getRequeue())
             {
                 channel.requeue(deliveryTag);
             }

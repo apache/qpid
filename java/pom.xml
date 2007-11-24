@@ -150,7 +150,6 @@ under the License.
         <module>common</module>
         <module>broker</module>
         <module>client</module>
-        <module>cluster</module>
         <module>systests</module>
         <module>perftests</module>
         <module>integrationtests</module>
@@ -585,11 +584,6 @@ under the License.
             <dependency>
                 <groupId>org.apache.qpid</groupId>
                 <artifactId>qpid-mgmt-client</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.qpid</groupId>
-                <artifactId>qpid-cluster</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

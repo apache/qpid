@@ -54,6 +54,6 @@ public class AMQHeadersExchange extends AMQDestination
         //Not sure what the best approach is here, probably to treat this like a topic
         //and allow server to generate names. As it is AMQ specific it doesn't need to
         //fit the JMS API expectations so this is not as yet critical.
-        return false;
+        return getAMQQueueName() == null;
     }
 }

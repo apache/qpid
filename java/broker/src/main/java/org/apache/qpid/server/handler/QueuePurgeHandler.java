@@ -24,6 +24,8 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.QueuePurgeBody;
 import org.apache.qpid.framing.QueuePurgeOkBody;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -55,22 +57,22 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         _failIfNotFound = failIfNotFound;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<QueuePurgeBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, QueuePurgeBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
-        AMQChannel channel = session.getChannel(evt.getChannelId());
+        AMQChannel channel = session.getChannel(channelId);
 
-        QueuePurgeBody body = evt.getMethod();
+
         AMQQueue queue;
-        if(body.queue == null)
+        if(body.getQueue() == null)
         {
 
            if (channel == null)
            {
-               throw body.getChannelNotFoundException(evt.getChannelId());
+               throw body.getChannelNotFoundException(channelId);
            }
 
            //get the default queue on the channel:
@@ -86,14 +88,14 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         }
         else
         {
-            queue = queueRegistry.getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.getQueue());
         }
 
         if(queue == null)
         {
             if(_failIfNotFound)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
             }
         }
         else
@@ -101,14 +103,13 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
                 long purged = queue.clearQueue(channel.getStoreContext());
 
 
-                if(!body.nowait)
+                if(!body.getNowait())
                 {
-                    // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                    // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                    // Be aware of possible changes to parameter order as versions change.
-                    session.writeFrame(QueuePurgeOkBody.createAMQFrame(evt.getChannelId(),
-                        (byte)8, (byte)0,	// AMQP version (major, minor)
-                        purged));	// messageCount
+
+                    MethodRegistry methodRegistry = session.getMethodRegistry();
+                    AMQMethodBody responseBody = methodRegistry.createQueuePurgeOkBody(purged);
+                    session.writeFrame(responseBody.generateFrame(channelId));
+                    
                 }
         }
     }

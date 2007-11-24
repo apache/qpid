@@ -22,5 +22,5 @@ package org.apache.qpid.gentools;
 
 public interface VersionConsistencyCheck
 {
-	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet);
+    public boolean isVersionConsistent(AmqpVersionSet globalVersionSet);
 }

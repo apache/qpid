@@ -37,7 +37,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ChannelCloseMethodHandlerNoCloseOk implements StateAwareMethodListener
+public class ChannelCloseMethodHandlerNoCloseOk implements StateAwareMethodListener<ChannelCloseBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseMethodHandlerNoCloseOk.class);
 
@@ -48,14 +48,15 @@ public class ChannelCloseMethodHandlerNoCloseOk implements StateAwareMethodListe
         return _handler;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
+    public void methodReceived(AMQStateManager stateManager,  ChannelCloseBody method, int channelId)
         throws AMQException
     {
         _logger.debug("ChannelClose method received");
-        ChannelCloseBody method = (ChannelCloseBody) evt.getMethod();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
 
-        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
-        AMQShortString reason = method.replyText;
+
+        AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
+        AMQShortString reason = method.getReplyText();
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Channel close reply code: " + errorCode + ", reason: " + reason);
@@ -95,6 +96,6 @@ public class ChannelCloseMethodHandlerNoCloseOk implements StateAwareMethodListe
 
         }
 
-        protocolSession.channelClosed(evt.getChannelId(), errorCode, String.valueOf(reason));
+        session.channelClosed(channelId, errorCode, String.valueOf(reason));
     }
 }

@@ -579,19 +579,17 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             throws AMQException, FailoverException
     {
 
+        ChannelOpenBody channelOpenBody = getProtocolHandler().getMethodRegistry().createChannelOpenBody(null);
+
         // TODO: Be aware of possible changes to parameter order as versions change.
 
-        _protocolHandler.syncWrite(ChannelOpenBody.createAMQFrame(channelId, _protocolHandler.getProtocolMajorVersion(),
-                                                                  _protocolHandler.getProtocolMinorVersion(), null), // outOfBand
-                                                                                                                     ChannelOpenOkBody.class);
+        _protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
+
+        BasicQosBody basicQosBody = getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
 
         // todo send low water mark when protocol allows.
         // todo Be aware of possible changes to parameter order as versions change.
-        _protocolHandler.syncWrite(BasicQosBody.createAMQFrame(channelId, _protocolHandler.getProtocolMajorVersion(),
-                                                               _protocolHandler.getProtocolMinorVersion(), false, // global
-                                                               prefetchHigh, // prefetchCount
-                                                               0), // prefetchSize
-                                                                   BasicQosOkBody.class);
+        _protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
 
         if (transacted)
         {
@@ -600,9 +598,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 _logger.debug("Issuing TxSelect for " + channelId);
             }
 
+            TxSelectBody body = getProtocolHandler().getMethodRegistry().createTxSelectBody();
+
             // TODO: Be aware of possible changes to parameter order as versions change.
-            _protocolHandler.syncWrite(TxSelectBody.createAMQFrame(channelId, _protocolHandler.getProtocolMajorVersion(),
-                                                                   _protocolHandler.getProtocolMinorVersion()), TxSelectOkBody.class);
+            _protocolHandler.syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
         }
     }
 

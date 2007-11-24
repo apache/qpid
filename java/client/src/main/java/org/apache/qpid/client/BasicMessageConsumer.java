@@ -514,11 +514,9 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
                 if (sendClose)
                 {
-                    // TODO: Be aware of possible changes to parameter order as versions change.
-                    final AMQFrame cancelFrame =
-                            BasicCancelBody.createAMQFrame(_channelId, _protocolHandler.getProtocolMajorVersion(),
-                                                           _protocolHandler.getProtocolMinorVersion(), _consumerTag, // consumerTag
-                                                           false); // nowait
+                    BasicCancelBody body = getSession().getMethodRegistry().createBasicCancelBody(_consumerTag, false);
+
+                    final AMQFrame cancelFrame = body.generateFrame(_channelId);
 
                     try
                     {
@@ -603,15 +601,15 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         if (debug)
         {
-            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliverBody().deliveryTag);
+            _logger.debug("notifyMessage called with message number " + messageFrame.getDeliverBody().getDeliveryTag());
         }
 
         try
         {
             AbstractJMSMessage jmsMessage =
-                    _messageFactory.createMessage(messageFrame.getDeliverBody().deliveryTag,
-                                                  messageFrame.getDeliverBody().redelivered, messageFrame.getDeliverBody().exchange,
-                                                  messageFrame.getDeliverBody().routingKey, messageFrame.getContentHeader(), messageFrame.getBodies());
+                _messageFactory.createMessage(messageFrame.getDeliverBody().getDeliveryTag(),
+                    messageFrame.getDeliverBody().getRedelivered(), messageFrame.getDeliverBody().getExchange(),
+                    messageFrame.getDeliverBody().getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
 
             if (debug)
             {

@@ -23,6 +23,7 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.QueueDeleteBody;
 import org.apache.qpid.framing.QueueDeleteOkBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -56,22 +57,21 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
 
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<QueueDeleteBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, QueueDeleteBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MessageStore store = virtualHost.getMessageStore();
 
-        QueueDeleteBody body = evt.getMethod();
         AMQQueue queue;
-        if (body.queue == null)
+        if (body.getQueue() == null)
         {
-            AMQChannel channel = session.getChannel(evt.getChannelId());
+            AMQChannel channel = session.getChannel(channelId);
 
             if (channel == null)
             {
-                throw body.getChannelNotFoundException(evt.getChannelId());
+                throw body.getChannelNotFoundException(channelId);
             }
 
             //get the default queue on the channel:            
@@ -79,43 +79,40 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
         }
         else
         {
-            queue = queueRegistry.getQueue(body.queue);
+            queue = queueRegistry.getQueue(body.getQueue());
         }
 
         if (queue == null)
         {
             if (_failIfNotFound)
             {
-                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.queue + " does not exist.");
+                throw body.getChannelException(AMQConstant.NOT_FOUND, "Queue " + body.getQueue() + " does not exist.");
             }
         }
         else
         {
-            if (body.ifEmpty && !queue.isEmpty())
+            if (body.getIfEmpty() && !queue.isEmpty())
             {
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is not empty.");
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is not empty.");
             }
-            else if (body.ifUnused && !queue.isUnused())
+            else if (body.getIfUnused() && !queue.isUnused())
             {
                 // TODO - Error code
-                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.queue + " is still used.");
+                throw body.getChannelException(AMQConstant.IN_USE, "Queue: " + body.getQueue() + " is still used.");
 
             }
             else
             {
-                int purged = queue.delete(body.ifUnused, body.ifEmpty);
+                int purged = queue.delete(body.getIfUnused(), body.getIfEmpty());
 
                 if (queue.isDurable())
                 {
                     store.removeQueue(queue.getName());
                 }
-                
-                // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-                // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-                // Be aware of possible changes to parameter order as versions change.
-                session.writeFrame(QueueDeleteOkBody.createAMQFrame(evt.getChannelId(),
-                                                                    (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                    purged));    // messageCount
+
+                MethodRegistry methodRegistry = session.getMethodRegistry();
+                QueueDeleteOkBody responseBody = methodRegistry.createQueueDeleteOkBody(purged);
+                session.writeFrame(responseBody.generateFrame(channelId));
             }
         }
     }

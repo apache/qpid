@@ -21,7 +21,6 @@
 package org.apache.qpid.gentools;
 
 import java.io.PrintStream;
-//import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeSet;
 
@@ -30,35 +29,39 @@ public class AmqpVersionSet extends TreeSet<AmqpVersion> implements Printable, C
 {
     public AmqpVersionSet()
     {
-    	super();
+        super();
     }
-    
+
     public AmqpVersionSet(AmqpVersion version)
     {
-    	super();
+        super();
         add(version);
     }
-    
+
     public AmqpVersion find(AmqpVersion version)
     {
-    	for (AmqpVersion v : this)
-    	{
-    		if (v.compareTo(version) == 0)
-    			return v;
-    	}
-    	return null;
+        for (AmqpVersion v : this)
+        {
+            if (v.compareTo(version) == 0)
+            {
+                return v;
+            }
+        }
+        return null;
     }
-    
-	public void print(PrintStream out, int marginSize, int tabSize)
-	{
-		out.print(Utils.createSpaces(marginSize) + "Version Set: " + toString() + Utils.lineSeparator);
-	}
-    
+
+    public void print(PrintStream out, int marginSize, int tabSize)
+    {
+        out.print(Utils.createSpaces(marginSize) + "Version Set: " + toString() + Utils.LINE_SEPARATOR);
+    }
+
     public int compareTo(AmqpVersionSet other)
     {
         int res = size() - other.size();
         if (res != 0)
+        {
             return res;
+        }
         Iterator<AmqpVersion> vItr = iterator();
         Iterator<AmqpVersion> oItr = other.iterator();
         while (vItr.hasNext() && oItr.hasNext())
@@ -67,7 +70,9 @@ public class AmqpVersionSet extends TreeSet<AmqpVersion> implements Printable, C
             AmqpVersion oVersion = oItr.next();
             res = version.compareTo(oVersion);
             if (res != 0)
+            {
                 return res;
+            }
         }
         return 0;
     }

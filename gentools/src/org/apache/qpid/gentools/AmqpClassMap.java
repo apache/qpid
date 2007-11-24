@@ -25,5 +25,5 @@ import java.util.TreeMap;
 @SuppressWarnings("serial")
 public class AmqpClassMap extends TreeMap<String, AmqpClass>
 {
-	
+
 }

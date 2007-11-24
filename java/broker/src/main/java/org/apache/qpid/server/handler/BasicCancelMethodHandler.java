@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicCancelOkBody;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -46,34 +47,30 @@ public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicC
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<BasicCancelBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, BasicCancelBody body, int channelId) throws AMQException
     {
-        AMQProtocolSession protocolSession = stateManager.getProtocolSession();
+        AMQProtocolSession session = stateManager.getProtocolSession();
 
-        final AMQChannel channel = protocolSession.getChannel(evt.getChannelId());
-        final BasicCancelBody body = evt.getMethod();
+        final AMQChannel channel = session.getChannel(channelId);
+
 
         if (channel == null)
         {
-            throw body.getChannelNotFoundException(evt.getChannelId());
+            throw body.getChannelNotFoundException(channelId);
         }
 
         if (_log.isDebugEnabled())
         {
-            _log.debug("BasicCancel: for:" + body.consumerTag +
-                       " nowait:" + body.nowait);
+            _log.debug("BasicCancel: for:" + body.getConsumerTag() +
+                       " nowait:" + body.getNowait());
         }
 
-        channel.unsubscribeConsumer(protocolSession, body.consumerTag);
-        if (!body.nowait)
+        channel.unsubscribeConsumer(session, body.getConsumerTag());
+        if (!body.getNowait())
         {
-            // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-            // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-            // Be aware of possible changes to parameter order as versions change.
-            final AMQFrame responseFrame = BasicCancelOkBody.createAMQFrame(evt.getChannelId(),
-                                                                            (byte) 8, (byte) 0,    // AMQP version (major, minor)
-                                                                            body.consumerTag);    // consumerTag
-            protocolSession.writeFrame(responseFrame);
+            MethodRegistry methodRegistry = session.getMethodRegistry();
+            BasicCancelOkBody cancelOkBody = methodRegistry.createBasicCancelOkBody(body.getConsumerTag());
+            session.writeFrame(cancelOkBody.generateFrame(channelId));
         }
     }
 }

@@ -22,47 +22,51 @@ package org.apache.qpid.gentools;
 
 public class AmqpVersion implements Comparable<AmqpVersion>
 {
-	private int major;
-	private int minor;
-	
-	public AmqpVersion(int major, int minor)
-	{
-		this.major = major;
-		this.minor = minor;
-	}
+    private final int _major;
+    private final int _minor;
 
-	public AmqpVersion(AmqpVersion version)
-	{
-		this.major = version.major;
-		this.minor = version.minor;
-	}
-	
-	public int getMajor()
-	{
-		return major;
-	}
-	
-	public int getMinor()
-	{
-		return minor;
-	}
-	
-	public int compareTo(AmqpVersion v)
-	{
-		if (major != v.major)
-			return major - v.major;
-		if (minor != v.minor)
-			return minor - v.minor;
-		return 0;
-	}
-	
-	public String namespace()
-	{
-		return "ver_" + major + "_" + minor;
-	}
-	
-	public String toString()
-	{
-		return major + "-" + minor;
-	}
+    public AmqpVersion(int major, int minor)
+    {
+        _major = major;
+        _minor = minor;
+    }
+
+    public AmqpVersion(AmqpVersion version)
+    {
+        _major = version.getMajor();
+        _minor = version.getMinor();
+    }
+
+    public int getMajor()
+    {
+        return _major;
+    }
+
+    public int getMinor()
+    {
+        return _minor;
+    }
+
+    public int compareTo(AmqpVersion v)
+    {
+        if (_major != v.getMajor())
+        {
+            return _major - v.getMajor();
+        }
+        if (_minor != v.getMinor())
+        {
+            return _minor - v.getMinor();
+        }
+        return 0;
+    }
+
+    public String namespace()
+    {
+        return "ver_" + _major + "_" + _minor;
+    }
+
+    public String toString()
+    {
+        return _major + "-" + _minor;
+    }
 }

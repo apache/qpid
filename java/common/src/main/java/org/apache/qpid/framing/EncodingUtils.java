@@ -229,7 +229,11 @@ public class EncodingUtils
                 encodedString[i] = (byte) cha[i];
             }
 
-            writeBytes(buffer, encodedString);
+            // TODO: check length fits in an unsigned byte
+            writeUnsignedByte(buffer,  (short)encodedString.length);
+            buffer.put(encodedString);
+
+
         }
         else
         {
@@ -928,15 +932,15 @@ public class EncodingUtils
 
     public static byte[] readBytes(ByteBuffer buffer)
     {
-        short length = buffer.getUnsigned();
+        long length = buffer.getUnsignedInt();
         if (length == 0)
         {
             return null;
         }
         else
         {
-            byte[] dataBytes = new byte[length];
-            buffer.get(dataBytes, 0, length);
+            byte[] dataBytes = new byte[(int)length];
+            buffer.get(dataBytes, 0, (int)length);
 
             return dataBytes;
         }
@@ -947,13 +951,14 @@ public class EncodingUtils
         if (data != null)
         {
             // TODO: check length fits in an unsigned byte
-            writeUnsignedByte(buffer, (short) data.length);
+            writeUnsignedInteger(buffer,  (long)data.length);
             buffer.put(data);
         }
         else
-        {
+        {                                                    
             // really writing out unsigned byte
-            buffer.put((byte) 0);
+            //buffer.put((byte) 0);
+            writeUnsignedInteger(buffer, 0L);
         }
     }
 

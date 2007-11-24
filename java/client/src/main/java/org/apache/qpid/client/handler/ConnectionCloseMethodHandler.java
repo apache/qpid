@@ -36,7 +36,7 @@ import org.apache.qpid.protocol.AMQMethodEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConnectionCloseMethodHandler implements StateAwareMethodListener
+public class ConnectionCloseMethodHandler implements StateAwareMethodListener<ConnectionCloseBody>
 {
     private static final Logger _logger = LoggerFactory.getLogger(ConnectionCloseMethodHandler.class);
 
@@ -50,24 +50,26 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
     private ConnectionCloseMethodHandler()
     { }
 
-    public void methodReceived(AMQStateManager stateManager, AMQProtocolSession protocolSession, AMQMethodEvent evt)
-        throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionCloseBody method, int channelId)
+                throws AMQException
     {
         _logger.info("ConnectionClose frame received");
-        ConnectionCloseBody method = (ConnectionCloseBody) evt.getMethod();
+        final AMQProtocolSession session = stateManager.getProtocolSession();
+        
 
         // does it matter
         // stateManager.changeState(AMQState.CONNECTION_CLOSING);
 
-        AMQConstant errorCode = AMQConstant.getConstant(method.replyCode);
-        AMQShortString reason = method.replyText;
+        AMQConstant errorCode = AMQConstant.getConstant(method.getReplyCode());
+        AMQShortString reason = method.getReplyText();
 
         try
         {
+
+            ConnectionCloseOkBody closeOkBody = session.getMethodRegistry().createConnectionCloseOkBody();
             // TODO: check whether channel id of zero is appropriate
             // Be aware of possible changes to parameter order as versions change.
-            protocolSession.writeFrame(ConnectionCloseOkBody.createAMQFrame((short) 0, method.getMajor(),
-                    method.getMinor()));
+            session.writeFrame(closeOkBody.generateFrame(0));
 
             if (errorCode != AMQConstant.REPLY_SUCCESS)
             {
@@ -75,7 +77,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
                 {
                     _logger.info("Authentication Error:" + Thread.currentThread().getName());
 
-                    protocolSession.closeProtocolSession();
+                    session.closeProtocolSession();
 
                     // todo this is a bit of a fudge (could be conssidered such as each new connection needs a new state manager or at least a fresh state.
                     stateManager.changeState(AMQState.CONNECTION_NOT_STARTED);
@@ -94,9 +96,11 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener
         {
             // this actually closes the connection in the case where it is not an error.
 
-            protocolSession.closeProtocolSession();
+            session.closeProtocolSession();
 
             stateManager.changeState(AMQState.CONNECTION_CLOSED);
         }
     }
+
+
 }

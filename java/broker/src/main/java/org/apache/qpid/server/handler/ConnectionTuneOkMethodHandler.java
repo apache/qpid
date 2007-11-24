@@ -40,15 +40,15 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
         return _instance;
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ConnectionTuneOkBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ConnectionTuneOkBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
-        ConnectionTuneOkBody body = evt.getMethod();
+
         if (_logger.isDebugEnabled())
         {
             _logger.debug(body);
         }
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
-        session.initHeartbeats(body.heartbeat);
+        session.initHeartbeats(body.getHeartbeat());
     }
 }

@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.protocol;
 
+import org.apache.qpid.framing.ProtocolVersion;
+
 /**
  * ProtocolVersionAware is implemented by all AMQP handling classes, that need to provide an awareness to callers of
  * the version of the AMQP protocol that they are able to handle.
@@ -32,6 +34,7 @@ package org.apache.qpid.protocol;
 public interface ProtocolVersionAware
 {
     /**
+     * @deprecated
      * Reports the AMQP minor version, that the implementer can handle.
      *
      * @return The AMQP minor version.
@@ -39,9 +42,12 @@ public interface ProtocolVersionAware
     public byte getProtocolMinorVersion();
 
     /**
+     * @deprecated
      * Reports the AMQP major version, that the implementer can handle.
      *
      * @return The AMQP major version.
      */
     public byte getProtocolMajorVersion();
+
+    public ProtocolVersion getProtocolVersion();
 }

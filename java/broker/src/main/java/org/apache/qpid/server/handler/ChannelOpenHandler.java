@@ -20,11 +20,17 @@
  */
 package org.apache.qpid.server.handler;
 
+import java.util.UUID;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.ChannelOpenBody;
-import org.apache.qpid.framing.ChannelOpenOkBody;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
+import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -44,18 +50,55 @@ public class ChannelOpenHandler implements StateAwareMethodListener<ChannelOpenB
     {
     }
 
-    public void methodReceived(AMQStateManager stateManager, AMQMethodEvent<ChannelOpenBody> evt) throws AMQException
+    public void methodReceived(AMQStateManager stateManager, ChannelOpenBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
 
-        final AMQChannel channel = new AMQChannel(session,evt.getChannelId(), virtualHost.getMessageStore(),
+        final AMQChannel channel = new AMQChannel(session,channelId, virtualHost.getMessageStore(),
                                                   virtualHost.getExchangeRegistry());
         session.addChannel(channel);
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        AMQFrame response = ChannelOpenOkBody.createAMQFrame(evt.getChannelId(), (byte)8, (byte)0);
-        session.writeFrame(response);
+
+        ChannelOpenOkBody response;
+
+        ProtocolVersion pv = session.getProtocolVersion();
+
+        if(pv.equals(ProtocolVersion.v8_0))
+        {
+            MethodRegistry_8_0 methodRegistry = (MethodRegistry_8_0) MethodRegistry.getMethodRegistry(ProtocolVersion.v8_0);
+            response = methodRegistry.createChannelOpenOkBody();
+
+        }
+        else if(pv.equals(ProtocolVersion.v0_9))
+        {
+            MethodRegistry_0_9 methodRegistry = (MethodRegistry_0_9) MethodRegistry.getMethodRegistry(ProtocolVersion.v0_9);
+            UUID uuid = UUID.randomUUID();
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            DataOutputStream dataOut = new DataOutputStream(output);
+            try
+            {
+                dataOut.writeLong(uuid.getMostSignificantBits());
+                dataOut.writeLong(uuid.getLeastSignificantBits());
+                dataOut.flush();
+                dataOut.close();
+            }
+            catch (IOException e)
+            {
+                // This *really* shouldn't happen as we're not doing any I/O
+                throw new RuntimeException("I/O exception when writing to byte array", e);
+            }
+
+            // should really associate this channelId to the session
+            byte[] channelName = output.toByteArray();
+            
+            response = methodRegistry.createChannelOpenOkBody(channelName);
+        }
+        else
+        {
+            throw new AMQException(AMQConstant.INTERNAL_ERROR, "Got channel open for protocol version not catered for: " + pv, null);
+        }
+
+
+        session.writeFrame(response.generateFrame(channelId));
     }
 }

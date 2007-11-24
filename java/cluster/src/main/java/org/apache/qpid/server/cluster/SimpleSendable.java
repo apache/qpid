@@ -22,7 +22,7 @@ package org.apache.qpid.server.cluster;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.MethodConverter_8_0;
+import org.apache.qpid.framing.amqp_8_0.MethodConverter_8_0;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.server.queue.AMQMessage;

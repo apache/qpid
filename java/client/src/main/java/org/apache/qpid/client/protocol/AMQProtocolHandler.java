@@ -41,16 +41,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.codec.AMQCodecFactory;
-import org.apache.qpid.framing.AMQBody;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.ConnectionCloseOkBody;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
@@ -618,16 +609,11 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     {
         getStateManager().changeState(AMQState.CONNECTION_CLOSING);
 
-        // AMQP version change: Hardwire the version to 0-8 (major=8, minor=0)
-        // TODO: Connect this to the session version obtained from ProtocolInitiation for this session.
-        // Be aware of possible changes to parameter order as versions change.
-        final AMQFrame frame =
-                ConnectionCloseBody.createAMQFrame(0, _protocolSession.getProtocolMajorVersion(),
-                                                   _protocolSession.getProtocolMinorVersion(), // AMQP version (major, minor)
-                                                   0, // classId
-                                                   0, // methodId
-                                                   AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
-                                                   new AMQShortString("JMS client is closing the connection.")); // replyText
+        ConnectionCloseBody body = _protocolSession.getMethodRegistry().createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
+                new AMQShortString("JMS client is closing the connection."),0,0);
+
+
+        final AMQFrame frame = body.generateFrame(0);
 
         try
         {
@@ -729,5 +715,15 @@ public class AMQProtocolHandler extends IoHandlerAdapter
     public byte getProtocolMinorVersion()
     {
         return _protocolSession.getProtocolMinorVersion();
+    }
+
+    public MethodRegistry getMethodRegistry()
+    {
+        return getStateManager().getMethodRegistry();
+    }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolSession.getProtocolVersion();
     }
 }

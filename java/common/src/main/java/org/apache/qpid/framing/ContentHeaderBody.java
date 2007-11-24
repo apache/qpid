@@ -22,7 +22,7 @@ package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
 
-public class ContentHeaderBody extends AMQBody
+public class ContentHeaderBody implements AMQBody
 {
     public static final byte TYPE = 2;
 

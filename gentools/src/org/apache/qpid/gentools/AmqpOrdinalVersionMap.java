@@ -26,47 +26,52 @@ import java.util.TreeMap;
 @SuppressWarnings("serial")
 public class AmqpOrdinalVersionMap extends TreeMap<Integer, AmqpVersionSet> implements VersionConsistencyCheck
 {
-	public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
-	{
-		if (size() != 1)
-			return false;
-		return get(firstKey()).equals(globalVersionSet);
-	}
-    
-    public int getOrdinal(AmqpVersion version)
-    throws AmqpTypeMappingException
+    public boolean isVersionConsistent(AmqpVersionSet globalVersionSet)
     {
-    	for (Integer thisOrdinal : keySet())
+        if (size() != 1)
+        {
+            return false;
+        }
+        return get(firstKey()).equals(globalVersionSet);
+    }
+
+    public int getOrdinal(AmqpVersion version)
+            throws AmqpTypeMappingException
+    {
+        for (Integer thisOrdinal : keySet())
         {
             AmqpVersionSet versionSet = get(thisOrdinal);
             if (versionSet.contains(version))
+            {
                 return thisOrdinal;
+            }
         }
         throw new AmqpTypeMappingException("Unable to locate version " + version + " in ordianl version map.");
     }
-	
-	public boolean removeVersion(AmqpVersion version)
-	{
-		Boolean res = false;
-		ArrayList<Integer> removeList = new ArrayList<Integer>();
-		for (Integer ordinal : keySet())
-		{
-			AmqpVersionSet versionSet = get(ordinal);
-			if (versionSet.contains(version))
-			{
-				versionSet.remove(version);
-				if (versionSet.isEmpty())
-				{
-					removeList.add(ordinal);
-				}
-				res = true;
-			}
-		}
-		// Get rid of ordinals no longer in use
-		for (Integer ordinal : removeList)
-		{
-			remove(ordinal);
-		}
-		return res;
-	}
+
+    public boolean removeVersion(AmqpVersion version)
+    {
+        Boolean res = false;
+        ArrayList<Integer> removeList = new ArrayList<Integer>();
+        for (Integer ordinal : keySet())
+        {
+            AmqpVersionSet versionSet = get(ordinal);
+            if (versionSet.contains(version))
+            {
+                versionSet.remove(version);
+                if (versionSet.isEmpty())
+                {
+                    removeList.add(ordinal);
+                }
+                res = true;
+            }
+        }
+        // Get rid of ordinals no longer in use
+        for (Integer ordinal : removeList)
+        {
+            remove(ordinal);
+        }
+        return res;
+    }
+
 }

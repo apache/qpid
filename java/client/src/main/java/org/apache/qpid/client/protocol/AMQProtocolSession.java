@@ -20,40 +20,29 @@
  */
 package org.apache.qpid.client.protocol;
 
-import org.apache.commons.lang.StringUtils;
-
 import org.apache.mina.common.CloseFuture;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.WriteFuture;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.ConnectionTuneParameters;
-// import org.apache.qpid.client.message.UnexpectedBodyReceivedException;
-import org.apache.qpid.client.message.UnprocessedMessage;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.MainRegistry;
-import org.apache.qpid.framing.ProtocolInitiation;
-import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.framing.VersionSpecificRegistry;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.security.sasl.SaslClient;
-
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.UUID;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.ConnectionTuneParameters;
+import org.apache.qpid.client.message.UnprocessedMessage;
+import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+import org.apache.qpid.client.handler.ClientMethodDispatcherImpl;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes. <p/> The underlying protocol
@@ -100,12 +89,19 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     protected int _queueId = 1;
     protected final Object _queueIdLock = new Object();
 
-    private byte _protocolMinorVersion;
-    private byte _protocolMajorVersion;
-    private VersionSpecificRegistry _registry =
-        MainRegistry.getVersionSpecificRegistry(ProtocolVersion.getLatestSupportedVersion());
+    private ProtocolVersion _protocolVersion;
+//    private VersionSpecificRegistry _registry =
+//        MainRegistry.getVersionSpecificRegistry(ProtocolVersion.getLatestSupportedVersion());
 
-    private final AMQConnection _connection;
+
+    private MethodRegistry _methodRegistry =
+            MethodRegistry.getMethodRegistry(ProtocolVersion.getLatestSupportedVersion());
+
+
+    private MethodDispatcher _methodDispatcher;
+
+
+    private final AMQConnection _connection;    
 
     public AMQProtocolSession(AMQProtocolHandler protocolHandler, IoSession protocolSession, AMQConnection connection)
     {
@@ -125,6 +121,9 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         _stateManager = stateManager;
         _stateManager.setProtocolSession(this);
+        _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
+        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
+                                                                 stateManager);
         _connection = connection;
 
     }
@@ -163,6 +162,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public void setStateManager(AMQStateManager stateManager)
     {
         _stateManager = stateManager;
+        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(_protocolVersion,
+                                                                 stateManager);         
     }
 
     public String getVirtualHost()
@@ -434,26 +435,55 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         session.confirmConsumerCancelled(consumerTag);
     }
 
-    public void setProtocolVersion(final byte versionMajor, final byte versionMinor)
+    public void setProtocolVersion(final ProtocolVersion pv)
     {
-        _protocolMajorVersion = versionMajor;
-        _protocolMinorVersion = versionMinor;
-        _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);
+        _protocolVersion = pv;
+        _methodRegistry = MethodRegistry.getMethodRegistry(pv);
+        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(pv, _stateManager);
+
+      //  _registry = MainRegistry.getVersionSpecificRegistry(versionMajor, versionMinor);
     }
 
     public byte getProtocolMinorVersion()
     {
-        return _protocolMinorVersion;
+        return _protocolVersion.getMinorVersion();
     }
 
     public byte getProtocolMajorVersion()
     {
-        return _protocolMajorVersion;
+        return _protocolVersion.getMajorVersion();
     }
 
-    public VersionSpecificRegistry getRegistry()
+    public ProtocolVersion getProtocolVersion()
     {
-        return _registry;
+        return _protocolVersion;
     }
 
+//    public VersionSpecificRegistry getRegistry()
+//    {
+//        return _registry;
+//    }
+
+    public MethodRegistry getMethodRegistry()
+    {
+        return _methodRegistry;
+    }
+
+    public MethodDispatcher getMethodDispatcher()
+    {
+        return _methodDispatcher;
+    }
+
+
+    public void setTicket(int ticket, int channelId)
+    {
+        final AMQSession session = getSession(channelId);
+        session.setTicket(ticket);
+    }
+
+
+    public void setMethodDispatcher(MethodDispatcher methodDispatcher)
+    {
+        _methodDispatcher = methodDispatcher;
+    }
 }

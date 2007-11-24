@@ -26,53 +26,64 @@ import java.util.TreeMap;
 @SuppressWarnings("serial")
 public class AmqpDomain extends TreeMap<String, AmqpVersionSet> implements Printable
 {
-	public String domainName;
+    private final String _domainName;
 
-	public AmqpDomain(String domainName)
-	{
-		this.domainName = domainName;
-	}
+    public AmqpDomain(String domainName)
+    {
+        _domainName = domainName;
+    }
 
-	public void addDomain(String domainType, AmqpVersion version) throws AmqpParseException
-	{
-		AmqpVersionSet versionSet = get(domainType);
-		if (versionSet == null) // First time, create new entry
-		{
-			versionSet = new AmqpVersionSet();
-			put(domainType, versionSet);
-		}
-		versionSet.add(version);
-	}
+    public void addDomain(String domainType, AmqpVersion version) throws AmqpParseException
+    {
+        AmqpVersionSet versionSet = get(domainType);
+        if (versionSet == null) // First time, create new entry
+        {
+            versionSet = new AmqpVersionSet();
+            put(domainType, versionSet);
+        }
+        versionSet.add(version);
+    }
 
-	public String getDomainType(AmqpVersion version)
-	    throws AmqpTypeMappingException
-	{
-		for (String thisDomainType : keySet())
-		{
-			AmqpVersionSet versionSet = get(thisDomainType);
-			if (versionSet.contains(version))
-				return thisDomainType;
-		} throw new AmqpTypeMappingException("Unable to find version " + version + ".");
-	}
-	
-	public boolean hasVersion(String type, AmqpVersion v)
-	{
-		AmqpVersionSet vs = get(type);
-		if (vs == null)
-			return false;
-		return vs.contains(v);
-	}
-	
-	public void print(PrintStream out, int marginSize, int tabSize)
-	{
-		String margin = Utils.createSpaces(marginSize);
-		String tab = Utils.createSpaces(tabSize);
-		out.println(margin + domainName + ":");
-		
-		for (String thisDomainType : keySet())
-		{
-			AmqpVersionSet vs = get(thisDomainType);
-			out.println(margin + tab + thisDomainType + " : " + vs.toString());
-		}
-	}
+    public String getDomainType(AmqpVersion version)
+            throws AmqpTypeMappingException
+    {
+        for (String thisDomainType : keySet())
+        {
+            AmqpVersionSet versionSet = get(thisDomainType);
+            if (versionSet.contains(version))
+            {
+                return thisDomainType;
+            }
+        }
+        throw new AmqpTypeMappingException("Unable to find version " + version + ".");
+    }
+
+    public boolean hasVersion(String type, AmqpVersion v)
+    {
+        AmqpVersionSet vs = get(type);
+        if (vs == null)
+        {
+            return false;
+        }
+        return vs.contains(v);
+    }
+
+    public void print(PrintStream out, int marginSize, int tabSize)
+    {
+        String margin = Utils.createSpaces(marginSize);
+        String tab = Utils.createSpaces(tabSize);
+        out.println(margin + getDomainName() + ":");
+
+        for (String thisDomainType : keySet())
+        {
+            AmqpVersionSet vs = get(thisDomainType);
+            out.println(margin + tab + thisDomainType + " : " + vs.toString());
+        }
+    }
+
+    public String getDomainName()
+    {
+        return _domainName;
+    }
+
 }

@@ -21,10 +21,10 @@
 package org.apache.qpid.gentools;
 
 @SuppressWarnings("serial")
-public class AmqpParseException extends Exception
+public class AmqpParseException extends RuntimeException
 {
-	public AmqpParseException(String msg)
-	{
-		super(msg);
-	}
+    public AmqpParseException(String msg)
+    {
+        super(msg);
+    }
 }
