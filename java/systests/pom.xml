@@ -91,6 +91,7 @@
             </plugin>
 
             <!-- Runs the framework based tests against an in-vm broker. -->
+	    <!--
             <plugin>
                 <groupId>uk.co.thebadgerset</groupId>
                 <artifactId>junit-toolkit-maven-plugin</artifactId>
@@ -112,7 +113,7 @@
                             <testrunneroptions>
                                 <option>-X:decorators "org.apache.qpid.test.framework.qpid.InVMBrokerDecorator:org.apache.qpid.test.framework.qpid.AMQPFeatureDecorator"</option>
                                 <option>-o</option>
-                                <option>--csv</option>
+                                <option>##csv</option>
                             </testrunneroptions>
                             
                             <testrunnerproperties>
@@ -136,6 +137,7 @@
                     </execution>
                 </executions>
             </plugin>
+	    -->
 
         </plugins>
 
