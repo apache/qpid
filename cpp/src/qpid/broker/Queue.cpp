@@ -431,9 +431,11 @@ bool Queue::enqueue(TransactionContext* ctxt, intrusive_ptr<Message> msg)
 {
     if (msg->isPersistent() && store) {
         msg->enqueueAsync(this, store); //increment to async counter -- for message sent to more than one queue
-        store->enqueue(ctxt, *msg.get(), *this);
+        intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(msg);
+        store->enqueue(ctxt, pmsg, *this);
         return true;
     }
+    //msg->enqueueAsync();   // increments intrusive ptr cnt
     return false;
 }
 
@@ -442,9 +444,11 @@ bool Queue::dequeue(TransactionContext* ctxt, intrusive_ptr<Message> msg)
 {
     if (msg->isPersistent() && store) {
         msg->dequeueAsync(this, store); //increment to async counter -- for message sent to more than one queue
-        store->dequeue(ctxt, *msg.get(), *this);
+        intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(msg);
+        store->dequeue(ctxt, pmsg, *this);
         return true;
     }
+    //msg->dequeueAsync();   // decrements intrusive ptr cnt
     return false;
 }
 
