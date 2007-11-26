@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.perftests;
+package org.apache.qpid.test.testcases;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -40,9 +40,8 @@ import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 import java.util.LinkedList;
 
 /**
- * QpidTestThroughputPerf runs a test over a {@link Circuit} controlled by the test parameters. It logs timings of
- * the time required to receive samples consisting of batches of messages. As the time samples is taken over a reasonable
- * sized message batch, it measures message throughput.
+ * MessageThroughputPerf runs a test over a {@link Circuit} controlled by the test parameters. It logs timings of
+ * the time required to receive samples consisting of batches of messages.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
@@ -51,11 +50,14 @@ import java.util.LinkedList;
  *
  * @todo Check that all of the messages were sent. Check that the receiving end got the same number of messages as
  *       the publishing end.
+ *
+ * @todo Set this up to run with zero sized tests. Size zero means send forever. Continuous sending to be interrupted
+ *       by completion of the test duration, or shutdown hook when the user presses Ctrl-C.
  */
-public class QpidTestThroughputPerf extends FrameworkBaseCase implements TimingControllerAware, TestThreadAware
+public class MessageThroughputPerf extends FrameworkBaseCase implements TimingControllerAware, TestThreadAware
 {
     /** Used for debugging. */
-    private static final Logger log = Logger.getLogger(QpidTestThroughputPerf.class);
+    private static final Logger log = Logger.getLogger(MessageThroughputPerf.class);
 
     /** Holds the timing controller, used to log test timings from self-timed tests. */
     private TimingController timingController;
@@ -68,7 +70,7 @@ public class QpidTestThroughputPerf extends FrameworkBaseCase implements TimingC
      *
      * @param name The test case name.
      */
-    public QpidTestThroughputPerf(String name)
+    public MessageThroughputPerf(String name)
     {
         super(name);
     }
@@ -163,7 +165,7 @@ public class QpidTestThroughputPerf extends FrameworkBaseCase implements TimingC
         // Build a new test suite
         TestSuite suite = new TestSuite("Qpid Throughput Performance Tests");
 
-        suite.addTest(new QpidTestThroughputPerf("testThroughput"));
+        suite.addTest(new MessageThroughputPerf("testThroughput"));
 
         return suite;
     }

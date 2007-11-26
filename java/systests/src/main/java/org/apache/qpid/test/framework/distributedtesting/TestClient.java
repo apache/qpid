@@ -23,17 +23,14 @@ package org.apache.qpid.test.framework.distributedtesting;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import org.apache.qpid.interop.clienttestcases.*;
-import org.apache.qpid.sustained.SustainedClientTestCase;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.clocksynch.ClockSynchThread;
-import org.apache.qpid.test.framework.clocksynch.ClockSynchronizer;
 import org.apache.qpid.test.framework.clocksynch.UDPClockSynchronizer;
-import org.apache.qpid.test.framework.distributedcircuit.TestClientCircuitEnd;
+import org.apache.qpid.util.ReflectionUtils;
+import org.apache.qpid.util.ReflectionUtilsException;
 
 import uk.co.thebadgerset.junit.extensions.SleepThrottle;
-import uk.co.thebadgerset.junit.extensions.Throttle;
 import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
@@ -46,7 +43,7 @@ import java.util.*;
  * (http://cwiki.apache.org/confluence/display/qpid/Interop+Testing+Specification). A test client is an agent that
  * reacts to control message sequences send by the test {@link Coordinator}.
  *
- * <p/><table><caption>Messages Handled by SustainedTestClient</caption>
+ * <p/><table><caption>Messages Handled by TestClient</caption>
  * <tr><th> Message               <th> Action
  * <tr><td> Invite(compulsory)    <td> Reply with Enlist.
  * <tr><td> Invite(test case)     <td> Reply with Enlist if test case available.
@@ -115,19 +112,19 @@ public class TestClient implements MessageListener
      * Creates a new interop test client, listenting to the specified broker and virtual host, with the specified client
      * identifying name.
      *
-     * @param brokerUrl   The url of the broker to connect to.
-     * @param virtualHost The virtual host to conect to.
+     * @param pBrokerUrl   The url of the broker to connect to.
+     * @param pVirtualHost The virtual host to conect to.
      * @param clientName  The client name to use.
      * @param join        Flag to indicate that this client should attempt to join running tests.
      */
-    public TestClient(String brokerUrl, String virtualHost, String clientName, boolean join)
+    public TestClient(String pBrokerUrl, String pVirtualHost, String clientName, boolean join)
     {
-        log.debug("public TestClient(String brokerUrl = " + brokerUrl + ", String virtualHost = " + virtualHost
+        log.debug("public TestClient(String pBrokerUrl = " + pBrokerUrl + ", String pVirtualHost = " + pVirtualHost
             + ", String clientName = " + clientName + ", boolean join = " + join + "): called");
 
         // Retain the connection parameters.
-        this.brokerUrl = brokerUrl;
-        this.virtualHost = virtualHost;
+        brokerUrl = pBrokerUrl;
+        virtualHost = pVirtualHost;
         this.clientName = clientName;
         this.join = join;
     }
@@ -186,9 +183,12 @@ public class TestClient implements MessageListener
         Collection<Class<? extends TestClientControlledTest>> testCaseClasses =
             new ArrayList<Class<? extends TestClientControlledTest>>();
         // ClasspathScanner.getMatches(TestClientControlledTest.class, "^TestCase.*", true);
-        Collections.addAll(testCaseClasses, TestCase1DummyRun.class, TestCase2BasicP2P.class, TestCase3BasicPubSub.class,
-            TestCase4P2PMessageSize.class, TestCase5PubSubMessageSize.class, SustainedClientTestCase.class,
-            TestClientCircuitEnd.class);
+        testCaseClasses.addAll(loadTestCases("org.apache.qpid.interop.clienttestcases.TestCase1DummyRun",
+                "org.apache.qpid.interop.clienttestcases.TestCase2BasicP2P",
+                "org.apache.qpid.interop.clienttestcases.TestCase3BasicPubSub",
+                "org.apache.qpid.interop.clienttestcases.TestCase4P2PMessageSize",
+                "org.apache.qpid.interop.clienttestcases.TestCase5PubSubMessageSize",
+                "org.apache.qpid.test.framework.distributedcircuit.TestClientCircuitEnd"));
 
         try
         {
@@ -200,6 +200,40 @@ public class TestClient implements MessageListener
             console.info(e.getMessage());
             System.exit(1);
         }
+    }
+
+    /**
+     * Parses a list of class names, and loads them if they are available on the class path.
+     *
+     * @param classNames The names of the classes to load.
+     *
+     * @return A list of the loaded test case classes.
+     */
+    public static List<Class<? extends TestClientControlledTest>> loadTestCases(String... classNames)
+    {
+        List<Class<? extends TestClientControlledTest>> testCases =
+            new LinkedList<Class<? extends TestClientControlledTest>>();
+
+        for (String className : classNames)
+        {
+            try
+            {
+                Class<?> cls = ReflectionUtils.forName(className);
+                testCases.add((Class<? extends TestClientControlledTest>) cls);
+            }
+            catch (ReflectionUtilsException e)
+            {
+                // Ignore, class could not be found, so test not available.
+                console.warn("Requested class " + className + " cannot be found, ignoring it.");
+            }
+            catch (ClassCastException e)
+            {
+                // Ignore, class was not of correct type to be a test case.
+                console.warn("Requested class " + className + " is not an instance of TestClientControlledTest.");
+            }
+        }
+
+        return testCases;
     }
 
     /**

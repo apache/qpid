@@ -32,7 +32,7 @@ package org.apache.qpid.test.framework.clocksynch;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Trigger a clock synchronziation.
+ * <tr><td> Trigger a clock synchronization.
  * <tr><td> Compute a clock delta to apply to the local clock.
  * <tr><td> Estimate the error in the synchronzation.
  * </table>

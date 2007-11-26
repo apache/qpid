@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.test.framework.localcircuit;
 
-import org.apache.qpid.client.AMQNoConsumersException;
-import org.apache.qpid.client.AMQNoRouteException;
 import org.apache.qpid.test.framework.*;
+
+import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
@@ -31,7 +31,7 @@ import javax.jms.Session;
 /**
  * Provides an implementation of the {@link Publisher} interface and wraps a single message producer and consumer on
  * a single controlSession, as a {@link CircuitEnd}. A local publisher also acts as a circuit end, because for a locally
- * located circuit the assertions may be applied directly, there does not need to be any inter process messaging
+ * located circuit the assertions may be applied directly, there does not need to be any inter-process messaging
  * between the publisher and its single circuit end, in order to ascertain its status.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
@@ -46,14 +46,17 @@ import javax.jms.Session;
 public class LocalPublisherImpl extends CircuitEndBase implements Publisher
 {
     /** Holds a reference to the containing circuit. */
-    private LocalCircuitImpl circuit;
+    protected LocalCircuitImpl circuit;
 
     /**
-     * Creates a circuit end point on the specified producer, consumer and controlSession.
+     * Creates a circuit end point on the specified producer, consumer and controlSession. Monitors are also configured
+     * for messages and exceptions received by the circuit end.
      *
      * @param producer The message producer for the circuit end point.
      * @param consumer The message consumer for the circuit end point.
      * @param session  The controlSession for the circuit end point.
+     * @param messageMonitor   The monitor to notify of all messages received by the circuit end.
+     * @param exceptionMonitor The monitor to notify of all exceptions received by the circuit end.
      */
     public LocalPublisherImpl(MessageProducer producer, MessageConsumer consumer, Session session,
         MessageMonitor messageMonitor, ExceptionMonitor exceptionMonitor)
@@ -74,9 +77,11 @@ public class LocalPublisherImpl extends CircuitEndBase implements Publisher
     /**
      * Provides an assertion that the publisher encountered no exceptions.
      *
+     * @param testProps
+     *
      * @return An assertion that the publisher encountered no exceptions.
      */
-    public Assertion noExceptionsAssertion()
+    public Assertion noExceptionsAssertion(ParsedProperties testProps)
     {
         return new AssertionBase()
             {
@@ -109,41 +114,26 @@ public class LocalPublisherImpl extends CircuitEndBase implements Publisher
     }
 
     /**
-     * Provides an assertion that the publisher got a no consumers exception on every message.
+     * Provides an assertion that the AMQP channel was forcibly closed by an error condition.
      *
-     * @return An assertion that the publisher got a no consumers exception on every message.
+     * @param testProps The test configuration properties.
+     *
+     * @return An assertion that the AMQP channel was forcibly closed by an error condition.
      */
-    public Assertion noConsumersAssertion()
+    public Assertion channelClosedAssertion(ParsedProperties testProps)
     {
-        return new AssertionBase()
-            {
-                public boolean apply()
-                {
-                    boolean passed = true;
-                    ExceptionMonitor connectionExceptionMonitor = circuit.getConnectionExceptionMonitor();
-
-                    if (!connectionExceptionMonitor.assertOneJMSExceptionWithLinkedCause(AMQNoConsumersException.class))
-                    {
-                        passed = false;
-
-                        addError("Was expecting linked exception type " + AMQNoConsumersException.class.getName()
-                            + " on the connection.\n");
-                        addError((connectionExceptionMonitor.size() > 0)
-                            ? ("Actually got the following exceptions on the connection, " + connectionExceptionMonitor)
-                            : "Got no exceptions on the connection.");
-                    }
-
-                    return passed;
-                }
-            };
+        return new NotApplicableAssertion(testProps);
     }
 
     /**
-     * Provides an assertion that the publisher got a no rout exception on every message.
+     * Provides an assertion that the publisher got a given exception during the test.
      *
-     * @return An assertion that the publisher got a no rout exception on every message.
+     * @param testProps The test configuration properties.
+     * @param exceptionClass The exception class to check for.
+     *
+     * @return An assertion that the publisher got a given exception during the test.
      */
-    public Assertion noRouteAssertion()
+    public Assertion exceptionAssertion(ParsedProperties testProps, final Class<? extends Exception> exceptionClass)
     {
         return new AssertionBase()
             {
@@ -152,11 +142,11 @@ public class LocalPublisherImpl extends CircuitEndBase implements Publisher
                     boolean passed = true;
                     ExceptionMonitor connectionExceptionMonitor = circuit.getConnectionExceptionMonitor();
 
-                    if (!connectionExceptionMonitor.assertOneJMSExceptionWithLinkedCause(AMQNoRouteException.class))
+                    if (!connectionExceptionMonitor.assertExceptionOfType(exceptionClass))
                     {
                         passed = false;
 
-                        addError("Was expecting linked exception type " + AMQNoRouteException.class.getName()
+                        addError("Was expecting linked exception type " + exceptionClass.getName()
                             + " on the connection.\n");
                         addError((connectionExceptionMonitor.size() > 0)
                             ? ("Actually got the following exceptions on the connection, " + connectionExceptionMonitor)

@@ -20,23 +20,15 @@
  */
 package org.apache.qpid.test.framework;
 
-import junit.framework.TestCase;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.test.framework.localcircuit.LocalCircuitImpl;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
-import org.apache.qpid.util.ConversationFactory;
 
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
-import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * FrameworkBaseCase provides a starting point for writing test cases against the test framework. Its main purpose is
@@ -56,7 +48,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     private static final Logger log = Logger.getLogger(FrameworkBaseCase.class);
 
     /** Holds the test sequencer to create and run test circuits with. */
-    protected CircuitFactory circuitFactory = new DefaultCircuitFactory();
+    protected CircuitFactory circuitFactory = new LocalCircuitFactory();
 
     /**
      * Creates a new test case with the specified name.
@@ -116,7 +108,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase
      *
      * @param asserts The list of failed assertions.
      */
-    protected void assertNoFailures(List<Assertion> asserts)
+    protected static void assertNoFailures(List<Assertion> asserts)
     {
         log.debug("protected void assertNoFailures(List<Assertion> asserts = " + asserts + "): called");
 
@@ -140,7 +132,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase
      *
      * @return The error message.
      */
-    protected String assertionsToString(List<Assertion> asserts)
+    protected static String assertionsToString(List<Assertion> asserts)
     {
         String errorMessage = "";
 
@@ -160,9 +152,6 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     protected void setUp() throws Exception
     {
         NDC.push(getName());
-
-        // Ensure that the in-vm broker is created.
-        TransportConnection.createVMBroker(1);
     }
 
     /**
@@ -170,16 +159,7 @@ public class FrameworkBaseCase extends AsymptoticTestCase
      */
     protected void tearDown()
     {
-        try
-        {
-            // Ensure that the in-vm broker is cleaned up so that the next test starts afresh.
-            TransportConnection.killVMBroker(1);
-            ApplicationRegistry.remove(1);
-        }
-        finally
-        {
-            NDC.pop();
-        }
+        NDC.pop();
     }
 
     /**
@@ -195,86 +175,5 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     public String getTestCaseNameForTestMethod(String methodName)
     {
         return methodName;
-    }
-
-    /**
-     * DefaultCircuitFactory is a test sequencer that creates test circuits with publishing and receiving ends rooted
-     * on the same JVM.
-     */
-    public class DefaultCircuitFactory implements CircuitFactory
-    {
-        /**
-         * Holds a test coordinating conversation with the test clients. This should consist of assigning the test roles,
-         * begining the test and gathering the test reports from the participants.
-         *
-         * @param testCircuit    The test circuit.
-         * @param assertions     The list of assertions to apply to the test circuit.
-         * @param testProperties The test case definition.
-         */
-        public void sequenceTest(Circuit testCircuit, List<Assertion> assertions, Properties testProperties)
-        {
-            assertNoFailures(testCircuit.test(1, assertions));
-        }
-
-        /**
-         * Creates a test circuit for the test, configered by the test parameters specified.
-         *
-         * @param testProperties The test parameters.
-         * @return A test circuit.
-         */
-        public Circuit createCircuit(ParsedProperties testProperties)
-        {
-            return LocalCircuitImpl.createCircuit(testProperties);
-        }
-
-        /**
-         * Sets the sender test client to coordinate the test with.
-         *
-         * @param sender The contact details of the sending client in the test.
-         */
-        public void setSender(TestClientDetails sender)
-        {
-            throw new RuntimeException("Not implemented.");
-        }
-
-        /**
-         * Sets the receiving test client to coordinate the test with.
-         *
-         * @param receiver The contact details of the sending client in the test.
-         */
-        public void setReceiver(TestClientDetails receiver)
-        {
-            throw new RuntimeException("Not implemented.");
-        }
-
-        /**
-         * Supplies the sending test client.
-         *
-         * @return The sending test client.
-         */
-        public TestClientDetails getSender()
-        {
-            throw new RuntimeException("Not implemented.");
-        }
-
-        /**
-         * Supplies the receiving test client.
-         *
-         * @return The receiving test client.
-         */
-        public List<TestClientDetails> getReceivers()
-        {
-            throw new RuntimeException("Not implemented.");
-        }
-
-        /**
-         * Accepts the conversation factory over which to hold the test coordinating conversation.
-         *
-         * @param conversationFactory The conversation factory to coordinate the test over.
-         */
-        public void setConversationFactory(ConversationFactory conversationFactory)
-        {
-            throw new RuntimeException("Not implemented.");
-        }
     }
 }

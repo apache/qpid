@@ -82,7 +82,59 @@
                     <includes>
                         <include>**/*Test.class</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/testcases/ImmediateMessageTest.class</exclude>
+                        <exclude>**/testcases/MandatoryMessageTest.class</exclude>
+                        <exclude>**/testcases/RollbackTest.class</exclude>
+                    </excludes>
                 </configuration>
+            </plugin>
+
+            <!-- Runs the framework based tests against an in-vm broker. -->
+            <plugin>
+                <groupId>uk.co.thebadgerset</groupId>
+                <artifactId>junit-toolkit-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>framework_tests</id>
+                        <phase>test</phase>
+
+                        <configuration>
+                            <systemproperties>
+                                <property>
+                                    <name>log4j.configuration</name>
+                                    <value>${log4j.configuration}</value>
+                                </property>
+                            </systemproperties>
+                            
+                            <testrunner>uk.co.thebadgerset.junit.extensions.TKTestRunner</testrunner>
+                            
+                            <testrunneroptions>
+                                <option>-X:decorators "org.apache.qpid.test.framework.qpid.InVMBrokerDecorator:org.apache.qpid.test.framework.qpid.AMQPFeatureDecorator"</option>
+                                <option>-o</option>
+                                <option>--csv</option>
+                            </testrunneroptions>
+                            
+                            <testrunnerproperties>
+                                <property>
+                                    <name>notApplicableAssertion</name>
+                                    <value>warn</value>
+                                </property>
+                            </testrunnerproperties>
+                            
+                            <commands>
+                                <Immediate-Message-Test>-n Immediate-Test -s[1] org.apache.qpid.test.testcases.ImmediateMessageTest</Immediate-Message-Test>
+                                <Mandatory-Message-Test>-n Mandatory-Test -s[1] org.apache.qpid.test.testcases.MandatoryMessageTest</Mandatory-Message-Test>
+                                <Rollback-Test>-n Rollback-Test -s[1] org.apache.qpid.test.testcases.RollbackTest</Rollback-Test>
+                            </commands>
+                            
+                        </configuration>
+                        
+                        <goals>
+                            <goal>tktest</goal>
+                        </goals>                        
+                    </execution>
+                </executions>
             </plugin>
 
         </plugins>
