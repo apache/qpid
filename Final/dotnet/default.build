@@ -1,0 +1,136 @@
+<?xml version="1.0"?>
+<project name="Qpid.NET" default="build">
+    <property name="nant.formatter" value="Plain" />
+    <!-- 
+         Build debug or release build?
+    -->
+    <property name="build.config" value="debug" />
+
+    <!--
+        Fileset with build files for each core assembly
+    -->
+    <fileset id="src.builds">
+        <include name="Qpid.Buffer/default.build" />
+        <include name="Qpid.Sasl/default.build" />
+        <include name="Qpid.Messaging/default.build" />
+        <include name="Qpid.Codec/default.build" />
+        <include name="Qpid.Common/default.build" />        
+        <include name="Qpid.Client/default.build" />	
+    </fileset>
+    
+    <!--
+        Fileset with build files for test assemblies
+    -->
+    <fileset id="tests.builds">
+        <include name="Qpid.Buffer.Tests/default.build" />
+        <include name="Qpid.Sasl.Tests/default.build" />
+        <include name="Qpid.Common.Tests/default.build" />        
+        <include name="Qpid.Client.Tests/default.build" />	
+    </fileset>
+
+    <!--
+        Other test or utility assemblies
+    -->
+    <fileset id='other.builds'>
+        <include name="TopicListener/default.build" />	
+        <include name="TopicPublisher/default.build" />	
+        <include name="TestClient/default.build" />	
+    </fileset>
+    <!--
+        Prepare environment for a debug build
+    -->
+    <target name="debug">
+        <property name="build.debug" value="true" />
+        <property name="build.defines" value="DEBUG;TRACE"/>
+    </target>
+    <!--
+        Prepare environment for a release build
+    -->
+    <target name="release">
+        <property name="build.debug" value="false" />
+        <property name="build.defines" value=""/>
+    </target>
+    
+    <!--
+        prepare environment for build
+    -->
+    <target name="init">
+        <property name="base.dir" value="${project::get-base-directory()}" />
+        <property name="build.dir" value="${base.dir}/bin/${framework::get-target-framework()}/${build.config}" />
+        <call target="${build.config}" />	
+    </target>
+    
+    <target name="clean" depends="init">
+        <delete dir="${build.dir}" failonerror="false" />
+    </target>
+    
+    <!--
+        Do the build
+    -->
+    <target name="build" depends="init">
+        <!-- make sure output folder exists -->
+        <mkdir dir="${build.dir}" />
+        <!-- copy reference assemblies over to the output dir -->
+        <copy todir="${build.dir}" file="Qpid.Common/lib/seclib-1.0.0/Org.Mentalis.Security.dll"/>
+        <copy todir="${build.dir}" file="Qpid.Common/lib/log4net/log4net.dll"/>
+        <copy todir="${build.dir}" file="Qpid.Client.Tests/lib/nunit/nunit.framework.dll"/>
+        <!-- 
+             Compile assemblies
+        -->
+        <nant target="build">
+            <buildfiles refid="src.builds" />
+        </nant>
+        <!-- 
+             Compile test assemblies
+        -->
+        <nant target="build">
+            <buildfiles refid="tests.builds" />
+        </nant>
+        <!-- 
+             Compile test assemblies
+        -->
+        <nant target="build">
+            <buildfiles refid="other.builds" />
+        </nant>
+    </target>
+    
+    <!--
+        Execute unit tests
+    -->
+    <target name="test" depends="build">
+        <echo message="Running unit tests for the project." />
+        <nant target="test">
+            <buildfiles refid="tests.builds" />
+        </nant>
+    </target>
+
+    <!-- 
+         Make a release package
+    -->
+    <target name="release-pkg">
+        <echo message="building and packing a release"/>
+        <call target="clean"/>
+        <call target="build"/>
+        <property name="build.date" value="${datetime::now()}"/>
+
+        <zip zipfile="${build.dir}/Qpid.NET-${framework::get-target-framework()}-${datetime::get-year(build.date)}${datetime::get-month(build.date)}${datetime::get-day(build.date)}.zip">
+            <fileset basedir="${build.dir}">
+                <include name="**/*.*"/>
+                <exclude name="**/*.Tests.*"/>
+                <exclude name="**/nunit.framework.dll"/>
+                <exclude name="**/*.exe"/>            
+            </fileset>
+            
+            <fileset basedir="${base.dir}">
+                <include name="LICENSE.txt"/>
+                <include name="NOTICE.txt"/>
+                <include name="README.txt"/>
+                <include name="RELEASE_NOTES.txt"/>
+                <include name="DISCLAIMER"/>                    
+            </fileset>
+        </zip>
+    </target>
+    
+</project>
+
+
