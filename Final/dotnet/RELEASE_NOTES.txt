@@ -1,0 +1,67 @@
+Apache Incubator Qpid .NET M2 Release Notes
+-------------------------------------------
+
+The Qpid M2 release contains support the for AMQP 0-8 specification.
+You can access the 0-8 specification using the following link.
+http://www.amqp.org/tikiwiki/tiki-index.php?page=Download
+
+For full details of Qpid capabilities, as they currently stand, see our
+detailed project documentation at:
+
+http://cwiki.apache.org/confluence/display/qpid/Qpid+.Net+Documentation
+
+From the link above you can access our Getting Started Guide, FAQ, Build How To
+and developer documentation.
+
+
+Known Issues/Outstanding Work
+-----------------------------
+
+You can view the outstanding task list for Qpid by visiting our JIRA:
+http://issues.apache.org/jira/browse/QPID
+
+
+M2 Tasks Completed
+-------------------
+
+The set of JIRA tasks completed as part of the M2 effort is available at:
+https://issues.apache.org/jira/secure/ReleaseNote.jspa?projectId=12310520&styleName=Html&version=12312116
+
+Here is a filtered list of JIRA items for the .NET Client 
+
+Test           QPID-435     HeadersExchangeTest fails     
+ 
+New Feature    QPID-136     implement prefetch       
+New Feature    QPID-291     Support SASL authentication in .NET client       
+
+Improvement    QPID-246     Custom Exception types should be serializable       
+Improvement    QPID-312     Inconsistency in naming conventions       
+Improvement    QPID-338     Integrate JDK 1.4 compatible SASL API Library & CRAM-MD5 Implementation       
+Improvement    QPID-345     Implement Blocking receive modes in BasicMessageConsumer       
+Improvement    QPID-398     Implement SSL/TLS support in the .NET Client       
+Improvement    QPID-452     Improve Message Classes and Message Creation APIs       
+Improvement    QPID-489     Create new build system for .NET Client       
+Improvement    QPID-490     Improve AmqChannel.PurgeQueue() and AmqChannel.DeleteQueue() methods       
+Improvement    QPID-495     Implement default timeouts for AttainState and SyncWriter operations       
+
+Bug            QPID-546     .Net does not handle reply to fields correctly.
+Bug            QPID-237     Build broken because of missing IBytesMessage.Reset() impl in Qpid.Client.Message.QpidBytesMessage       
+Bug            QPID-238     Wrong call to string.Split() in AbstractQmsMessage.GetExchangeName()       
+Bug            QPID-239     Use of assembly name vs. assembly path in AMQConnection.LoadTransportFromAssembly()       
+Bug            QPID-250     .Net client does not use specs from the specs directory.       
+Bug            QPID-257     Test HeadersMatchingConsumer#Test fails.       
+Bug            QPID-258     Test ServiceProvidingClient#Test fails.       
+Bug            QPID-259     Test ServiceRequestingClient#SendMessages fails.       
+Bug            QPID-267     AMQConnection#Stop throws NotImplementedException       
+Bug            QPID-284     .Net build broekn due to missing HeadersMatchingProducers       
+Bug            QPID-335     .NET Client messages not interoperable with Java client       
+Bug            QPID-384     Update AMQConstant.cs to match response codes in AMQP 0.9       
+Bug            QPID-385     Failover support sometimes masks authentication errors       
+Bug            QPID-441     .NET Client does not properly handle bounced (undeliverable) messages       
+Bug            QPID-456     .NET Client doesn't enforce virtual host names start with '/'       
+Bug            QPID-467     Complete Interop Testing       
+Bug            QPID-485     AmqBrokerInfo.Equals method doesn't get the expected result       
+Bug            QPID-486     .NET Client SASL implementation chooses first matching mechanism instead of stronger       
+Bug            QPID-487     The QpidConnectionInfo.ToString() method returns a wrong value       
+Bug            QPID-492     Race condition causes received messages to read wrong headers and/or body       
+
