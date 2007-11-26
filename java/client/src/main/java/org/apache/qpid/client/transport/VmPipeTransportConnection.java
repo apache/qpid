@@ -52,7 +52,7 @@ public class VmPipeTransportConnection implements ITransportConnection
         final VmPipeConnector ioConnector = new VmPipeConnector();
         final IoServiceConfig cfg = ioConnector.getDefaultConfig();
 
-        cfg.setThreadModel(ReadWriteThreadModel.getInstance());             
+        cfg.setThreadModel(ReadWriteThreadModel.getInstance());
 
         final VmPipeAddress address = new VmPipeAddress(_port);
         _logger.info("Attempting connection to " + address);

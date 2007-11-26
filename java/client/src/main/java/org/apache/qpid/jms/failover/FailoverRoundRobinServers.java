@@ -22,7 +22,6 @@ package org.apache.qpid.jms.failover;
 
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,34 +34,22 @@ public class FailoverRoundRobinServers implements FailoverMethod
     /** The default number of times to retry each server */
     public static final int DEFAULT_SERVER_RETRIES = 0;
 
-    /**
-      * The index into the hostDetails array of the broker to which we are connected
-      */
+    /** The index into the hostDetails array of the broker to which we are connected */
     private int _currentBrokerIndex = -1;
 
-    /**
-     * The number of times to retry connecting for each server
-     */
+    /** The number of times to retry connecting for each server */
     private int _serverRetries;
 
-    /**
-     * The current number of retry attempts made
-     */
+    /** The current number of retry attempts made */
     private int _currentServerRetry;
 
-    /**
-     *  The number of times to cycle through the servers
-     */
+    /** The number of times to cycle through the servers */
     private int _cycleRetries;
 
-    /**
-     * The current number of cycles performed.
-     */
+    /** The current number of cycles performed. */
     private int _currentCycleRetries;
 
-    /**
-     * Array of BrokerDetail used to make connections.
-     */
+    /** Array of BrokerDetail used to make connections. */
     private ConnectionURL _connectionDetails;
 
     public FailoverRoundRobinServers(ConnectionURL connectionDetails)
@@ -189,7 +176,23 @@ public class FailoverRoundRobinServers implements FailoverMethod
             }
         }
 
-        return _connectionDetails.getBrokerDetails(_currentBrokerIndex);
+        BrokerDetails broker = _connectionDetails.getBrokerDetails(_currentBrokerIndex);
+
+        String delayStr = broker.getOption(BrokerDetails.OPTIONS_CONNECT_DELAY);
+        if (delayStr != null)
+        {
+            Long delay = Long.parseLong(delayStr);
+            try
+            {
+                Thread.sleep(delay);
+            }
+            catch (InterruptedException ie)
+            {
+                return null;
+            }
+        }
+
+        return broker;
     }
 
     public void setBroker(BrokerDetails broker)

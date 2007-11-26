@@ -21,12 +21,16 @@
 package org.apache.qpid.client.protocol;
 
 import org.apache.mina.common.IdleStatus;
+import org.apache.mina.common.IoFilterChain;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
+import org.apache.mina.filter.ReadThrottleFilterBuilder;
 import org.apache.mina.filter.SSLFilter;
+import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
 import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
-
+import org.apache.mina.filter.executor.ExecutorFilter;
+import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
@@ -208,6 +212,36 @@ public class AMQProtocolHandler extends IoHandlerAdapter
             e.printStackTrace();
         }
 
+        if (!System.getProperties().containsKey("protectio") || Boolean.getBoolean("protectio"))
+        {
+            try
+            {
+                //Add IO Protection Filters
+                IoFilterChain chain = session.getFilterChain();
+
+                int buf_size = 32768;
+                if (session.getConfig() instanceof SocketSessionConfig)
+                {
+                    buf_size = ((SocketSessionConfig) session.getConfig()).getReceiveBufferSize();
+                }
+                session.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
+
+                ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
+                readfilter.setMaximumConnectionBufferSize(buf_size);
+                readfilter.attach(chain);
+
+                WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
+                writefilter.setMaximumConnectionBufferSize(buf_size * 2);
+                writefilter.attach(chain);
+                session.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
+
+                _logger.info("Using IO Read/Write Filter Protection");
+            }
+            catch (Exception e)
+            {
+                _logger.error("Unable to attach IO Read/Write Filter Protection :" + e.getMessage());
+            }
+        }
         _protocolSession = new AMQProtocolSession(this, session, _connection, getStateManager());
         _protocolSession.init();
     }

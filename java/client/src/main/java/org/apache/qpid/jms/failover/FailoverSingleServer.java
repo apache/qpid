@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -96,6 +96,23 @@ public class FailoverSingleServer implements FailoverMethod
 
             return _brokerDetail;
         }
+
+
+        String delayStr = _brokerDetail.getOption(BrokerDetails.OPTIONS_CONNECT_DELAY);
+        if (delayStr != null)
+        {
+            Long delay = Long.parseLong(delayStr);
+            try
+            {
+                Thread.sleep(delay);
+            }
+            catch (InterruptedException ie)
+            {
+                return null;
+            }
+        }
+
+        return _brokerDetail;        
     }
 
     public void setBroker(BrokerDetails broker)

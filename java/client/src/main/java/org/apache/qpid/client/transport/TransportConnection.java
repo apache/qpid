@@ -23,14 +23,13 @@ package org.apache.qpid.client.transport;
 import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
+import org.apache.mina.transport.socket.nio.MultiThreadSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
-
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.ReadWriteThreadModel;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,40 +89,44 @@ public class TransportConnection
         switch (transport)
         {
 
-        case TCP:
-            _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+            case TCP:
+                _instance = new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
+                {
+                    public IoConnector newSocketConnector()
                     {
-                        public IoConnector newSocketConnector()
+                        SocketConnector result;
+                        // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
+                        if (!System.getProperties().containsKey("qpidnio") || Boolean.getBoolean("qpidnio"))
                         {
-                            SocketConnector result;
-                            // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                            if (Boolean.getBoolean("qpidnio"))
-                            {
-                                _logger.error("Using Qpid NIO - sysproperty 'qpidnio' is set.");
-                                // result = new org.apache.qpid.nio.SocketConnector(); // non-blocking connector
-                            }
-                            // else
+                            _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
+                                                                 ? "Qpid NIO is new default"
+                                                                 : "Sysproperty 'qpidnio' is set"));
 
-                            {
-                                _logger.info("Using Mina NIO");
-                                result = new SocketConnector(); // non-blocking connector
-                            }
 
-                            // Don't have the connector's worker thread wait around for other connections (we only use
-                            // one SocketConnector per connection at the moment anyway). This allows short-running
-                            // clients (like unit tests) to complete quickly.
-                            result.setWorkerTimeout(0);
-
-                            return result;
+                            result = new MultiThreadSocketConnector();
                         }
-                    });
-            break;
+                        else
+                        {
+                            _logger.info("Using Mina NIO");
 
-        case VM:
-        {
-            _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
-            break;
-        }
+                            result = new SocketConnector(); // non-blocking connector
+                        }
+
+                        // Don't have the connector's worker thread wait around for other connections (we only use
+                        // one SocketConnector per connection at the moment anyway). This allows short-running
+                        // clients (like unit tests) to complete quickly.
+                        result.setWorkerTimeout(0);
+
+                        return result;
+                    }
+                });
+                break;
+
+            case VM:
+            {
+                _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
+                break;
+            }
         }
 
         return _instance;
@@ -145,7 +148,7 @@ public class TransportConnection
     }
 
     private static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate)
-        throws AMQVMBrokerCreationException
+            throws AMQVMBrokerCreationException
     {
         int port = details.getPort();
 
@@ -160,7 +163,7 @@ public class TransportConnection
                 else
                 {
                     throw new AMQVMBrokerCreationException(null, port, "VM Broker on port " + port
-                        + " does not exist. Auto create disabled.", null);
+                                                                       + " does not exist. Auto create disabled.", null);
                 }
             }
         }
@@ -257,8 +260,8 @@ public class TransportConnection
         IoHandlerAdapter provider;
         try
         {
-            Class[] cnstr = { Integer.class };
-            Object[] params = { port };
+            Class[] cnstr = {Integer.class};
+            Object[] params = {port};
             provider = (IoHandlerAdapter) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
             // Give the broker a second to create
             _logger.info("Created VMBroker Instance:" + port);
@@ -277,7 +280,7 @@ public class TransportConnection
             }
 
             AMQVMBrokerCreationException amqbce =
-                new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", null);
+                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", null);
             amqbce.initCause(e);
             throw amqbce;
         }

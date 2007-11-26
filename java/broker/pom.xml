@@ -6,9 +6,9 @@
     to you under the Apache License, Version 2.0 (the
     "License"); you may not use this file except in compliance
     with the License. You may obtain a copy of the License at
-    
+
     http://www.apache.org/licenses/LICENSE-2.0
-    
+
     Unless required by applicable law or agreed to in writing,
     software distributed under the License is distributed on an
     "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,16 +49,16 @@
             <artifactId>log4j</artifactId>
         </dependency>
 
-        <dependency>  
+        <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>  
-            <version>1.4.0</version> 
+            <artifactId>slf4j-api</artifactId>
+            <version>1.4.0</version>
         </dependency>
 
-        <dependency>  
-            <groupId>org.slf4j</groupId> 
-            <artifactId>slf4j-log4j12</artifactId>  
-            <version>1.4.0</version>  
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-log4j12</artifactId>
+            <version>1.4.0</version>
         </dependency>
 
         <dependency>
@@ -208,7 +208,7 @@
                                         <isset property="skip.python.tests"/>
                                     </condition>
 
-                                    <property name="command" 
+                                    <property name="command"
                                               value="python run-tests -v -I java_failing.txt -b localhost:2100"/>
                                     <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
 

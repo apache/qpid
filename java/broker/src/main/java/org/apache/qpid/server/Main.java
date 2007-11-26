@@ -436,7 +436,7 @@ public class Main
                 }
             }
 
-            //fixme  qpid.AMQP should be using qpidproperties to get value            
+            //fixme  qpid.AMQP should be using qpidproperties to get value
             _brokerLogger.info("Qpid Broker Ready :" + QpidProperties.getReleaseVersion()
                                + " build: " + QpidProperties.getBuildVersion());
         }
