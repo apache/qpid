@@ -36,17 +36,17 @@ using namespace qpid::framing;
 
 class TxPublishTest : public CppUnit::TestCase  
 {
-    typedef std::pair<string, PersistableMessage*> msg_queue_pair;
+    typedef std::pair<string, intrusive_ptr<PersistableMessage> > msg_queue_pair;
 
     class TestMessageStore : public NullMessageStore
     {
     public:
         vector<msg_queue_pair> enqueued;
         
-        void enqueue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& queue)
+        void enqueue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
         {
-            msg.enqueueComplete(); 
- 	    enqueued.push_back(msg_queue_pair(queue.getName(), &msg));
+            msg->enqueueComplete(); 
+ 	        enqueued.push_back(msg_queue_pair(queue.getName(), msg));
         }
         
         //dont care about any of the other methods:
@@ -81,16 +81,15 @@ public:
 
     void testPrepare()
     {
+        intrusive_ptr<PersistableMessage> pmsg = static_pointer_cast<PersistableMessage>(msg);
         //ensure messages are enqueued in store
         op.prepare(0);
         CPPUNIT_ASSERT_EQUAL((size_t) 2, store.enqueued.size());
         CPPUNIT_ASSERT_EQUAL(string("queue1"), store.enqueued[0].first);
-        CPPUNIT_ASSERT_EQUAL((PersistableMessage*) msg.get(), store.enqueued[0].second);
+        CPPUNIT_ASSERT_EQUAL(pmsg, store.enqueued[0].second);
         CPPUNIT_ASSERT_EQUAL(string("queue2"), store.enqueued[1].first);
-        CPPUNIT_ASSERT_EQUAL((PersistableMessage*) msg.get(), store.enqueued[1].second);
-	CPPUNIT_ASSERT_EQUAL( true, ((PersistableMessage*) msg.get())->isEnqueueComplete());
-	
-
+        CPPUNIT_ASSERT_EQUAL(pmsg, store.enqueued[1].second);
+	    CPPUNIT_ASSERT_EQUAL( true, ( static_pointer_cast<PersistableMessage>(msg))->isEnqueueComplete());
     }
 
     void testCommit()
@@ -101,7 +100,7 @@ public:
         CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue1->getMessageCount());
 	intrusive_ptr<Message> msg_dequeue = queue1->dequeue().payload;
 
- 	CPPUNIT_ASSERT_EQUAL( true, ((PersistableMessage*) msg_dequeue.get())->isEnqueueComplete());
+ 	CPPUNIT_ASSERT_EQUAL( true, (static_pointer_cast<PersistableMessage>(msg_dequeue))->isEnqueueComplete());
         CPPUNIT_ASSERT_EQUAL(msg, msg_dequeue);
 
         CPPUNIT_ASSERT_EQUAL((uint32_t) 1, queue2->getMessageCount());

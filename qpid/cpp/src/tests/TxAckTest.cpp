@@ -39,11 +39,11 @@ class TxAckTest : public CppUnit::TestCase
     class TestMessageStore : public NullMessageStore
     {
     public:
-        vector<PersistableMessage*> dequeued;
+        vector<intrusive_ptr<PersistableMessage> > dequeued;
 
-        void dequeue(TransactionContext*, PersistableMessage& msg, const PersistableQueue& /*queue*/)
+        void dequeue(TransactionContext*, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& /*queue*/)
         {
-            dequeued.push_back(&msg);
+            dequeued.push_back(msg);
         }
 
         TestMessageStore() : NullMessageStore() {}
@@ -97,7 +97,7 @@ public:
         CPPUNIT_ASSERT_EQUAL((size_t) 10, deliveries.size());
         int dequeued[] = {0, 1, 2, 3, 4, 6, 8};
         for (int i = 0; i < 7; i++) {
-            CPPUNIT_ASSERT_EQUAL((PersistableMessage*) messages[dequeued[i]].get(), store.dequeued[i]);
+            CPPUNIT_ASSERT_EQUAL(static_pointer_cast<PersistableMessage>(messages[dequeued[i]]), store.dequeued[i]);
         }
     }
 

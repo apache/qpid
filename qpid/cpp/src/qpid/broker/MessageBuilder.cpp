@@ -49,7 +49,8 @@ void MessageBuilder::handle(AMQFrame& frame)
         throw CommandInvalidException(QPID_MSG("Invalid frame sequence for message (state=" << state << ")"));
     }
     if (staging) {
-        store->appendContent(*message, frame.castBody<AMQContentBody>()->getData());
+        intrusive_ptr<const PersistableMessage> cpmsg = boost::static_pointer_cast<const PersistableMessage>(message);
+        store->appendContent(cpmsg, frame.castBody<AMQContentBody>()->getData());
     } else {
         message->getFrames().append(frame);
         //have we reached the staging limit? if so stage message and release content
