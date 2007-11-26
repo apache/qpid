@@ -38,7 +38,7 @@ class MessageBuilderTest : public CppUnit::TestCase
         enum Op {STAGE=1, APPEND=2};
 
         uint64_t id;
-        PersistableMessage* expectedMsg;        
+        intrusive_ptr<PersistableMessage> expectedMsg;        
         string expectedData;
         std::list<Op> ops;
         
@@ -64,17 +64,17 @@ class MessageBuilderTest : public CppUnit::TestCase
             ops.push_back(APPEND); 
         }
 
-        void stage(PersistableMessage& msg)
+        void stage(intrusive_ptr<PersistableMessage>& msg)
         {
             checkExpectation(STAGE);
-            CPPUNIT_ASSERT_EQUAL(expectedMsg, &msg);
-            msg.setPersistenceId(++id);
+            CPPUNIT_ASSERT_EQUAL(expectedMsg, msg);
+            msg->setPersistenceId(++id);
         }
 
-        void appendContent(const PersistableMessage& msg, const string& data)
+        void appendContent(intrusive_ptr<const PersistableMessage>& msg, const string& data)
         {
             checkExpectation(APPEND);
-            CPPUNIT_ASSERT_EQUAL((const PersistableMessage*) expectedMsg, &msg);
+            CPPUNIT_ASSERT_EQUAL(static_pointer_cast<const PersistableMessage>(expectedMsg), msg);
             CPPUNIT_ASSERT_EQUAL(expectedData, data);            
         }
 

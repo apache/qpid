@@ -149,7 +149,8 @@ void Message::releaseContent(MessageStore* _store)
 		store = _store;
 	}
     if (!getPersistenceId()) {
-        store->stage(*this);
+        intrusive_ptr<PersistableMessage> pmsg(this);
+        store->stage(pmsg);
     }
     //remove any content frames from the frameset
     frames.remove(TypeFilter<CONTENT_BODY>());
@@ -162,13 +163,14 @@ void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t max
         //load content from store in chunks of maxContentSize
         uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
         uint64_t expectedSize(frames.getHeaders()->getContentLength());
+        intrusive_ptr<const PersistableMessage> pmsg(this);
         for (uint64_t offset = 0; offset < expectedSize; offset += maxContentSize)
         {            
             uint64_t remaining = expectedSize - offset;
             AMQFrame frame(in_place<AMQContentBody>());
             string& data = frame.castBody<AMQContentBody>()->getData();
 
-            store->loadContent(queue, *this, data, offset,
+            store->loadContent(queue, pmsg, data, offset,
                                remaining > maxContentSize ? maxContentSize : remaining);
             frame.setBof(false);
             frame.setEof(true);

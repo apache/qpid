@@ -55,14 +55,17 @@ public:
     void unbind(const PersistableExchange& exchange, const PersistableQueue& queue, 
                 const std::string& key, const framing::FieldTable& args);
     void recover(RecoveryManager& queues);
-    void stage(PersistableMessage& msg);
-    void destroy(PersistableMessage& msg);
-    void appendContent(const PersistableMessage& msg, const std::string& data);
+    void stage(intrusive_ptr<PersistableMessage>& msg);
+    void destroy(intrusive_ptr<PersistableMessage>& msg);
+    void appendContent(intrusive_ptr<const PersistableMessage>& msg, const std::string& data);
     void loadContent(const qpid::broker::PersistableQueue& queue, 
-	          const PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length);
+	          intrusive_ptr<const PersistableMessage>& msg, std::string& data,
+              uint64_t offset, uint32_t length);
 
-    void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
-    void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue);
+    void enqueue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+                 const PersistableQueue& queue);
+    void dequeue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+                 const PersistableQueue& queue);
     u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
     void flush(const qpid::broker::PersistableQueue& queue);
 	 

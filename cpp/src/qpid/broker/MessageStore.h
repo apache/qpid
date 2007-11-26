@@ -21,6 +21,7 @@
 #ifndef _MessageStore_
 #define _MessageStore_
 
+#include <boost/shared_ptr.hpp>
 #include "PersistableExchange.h"
 #include "PersistableMessage.h"
 #include "PersistableQueue.h"
@@ -94,7 +95,7 @@ public:
 	 * for that queue and avoid searching based on id. Set queue = 0 for
 	 * large message staging when the queue is not known.
      */
-    virtual void stage( PersistableMessage& msg) = 0;
+    virtual void stage(intrusive_ptr<PersistableMessage>& msg) = 0;
             
     /**
      * Destroys a previously staged message. This only needs
@@ -102,12 +103,13 @@ public:
      * enqueued, deletion will be automatic when the message
      * is dequeued from all queues it was enqueued onto).
      */
-    virtual void destroy(PersistableMessage& msg) = 0;
+    virtual void destroy(intrusive_ptr<PersistableMessage>& msg) = 0;
 
     /**
      * Appends content to a previously staged message
      */
-    virtual void appendContent(const PersistableMessage& msg, const std::string& data) = 0;
+    virtual void appendContent(intrusive_ptr<const PersistableMessage>& msg,
+                               const std::string& data) = 0;
     
     /**
      * Loads (a section) of content data for the specified
@@ -118,7 +120,8 @@ public:
      * meta-data).
      */
     virtual void loadContent(const qpid::broker::PersistableQueue& queue, 
-	                         const PersistableMessage& msg, std::string& data, uint64_t offset, uint32_t length) = 0;
+	                         intrusive_ptr<const PersistableMessage>& msg,
+                             std::string& data, uint64_t offset, uint32_t length) = 0;
     
     /**
      * Enqueues a message, storing the message if it has not
@@ -134,7 +137,8 @@ public:
      * distributed transaction in which the operation takes
      * place or null for 'local' transactions
      */
-    virtual void enqueue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue) = 0;
+    virtual void enqueue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+                         const PersistableQueue& queue) = 0;
     
     /**
      * Dequeues a message, recording that the given message is
@@ -150,7 +154,8 @@ public:
      * distributed transaction in which the operation takes
      * place or null for 'local' transactions
      */
-    virtual void dequeue(TransactionContext* ctxt, PersistableMessage& msg, const PersistableQueue& queue) = 0;
+    virtual void dequeue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg,
+                         const PersistableQueue& queue) = 0;
 
     /**
      * Flushes all async messages to disk for the specified queue
