@@ -33,6 +33,7 @@
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>-->
         <qpidnio>true</qpidnio>
+        <protectio>true</protectio>
         <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>
@@ -172,5 +173,6 @@
 
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>
 </broker>
+
 
 
