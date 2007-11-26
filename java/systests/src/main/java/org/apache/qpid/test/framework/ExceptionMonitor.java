@@ -36,7 +36,7 @@ import java.util.List;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Record all exceptions received. <td> {@link ExceptionListener}
+ * <tr><td> Record all exceptions received.
  * </table>
  */
 public class ExceptionMonitor implements ExceptionListener
@@ -45,7 +45,7 @@ public class ExceptionMonitor implements ExceptionListener
     private final Logger log = Logger.getLogger(ExceptionMonitor.class);
 
     /** Holds the received exceptions. */
-    List<JMSException> exceptions = new ArrayList<JMSException>();
+    List<Exception> exceptions = new ArrayList<Exception>();
 
     /**
      * Receives incoming exceptions.
@@ -82,6 +82,8 @@ public class ExceptionMonitor implements ExceptionListener
     /**
      * Checks that exactly one exception, with a linked cause of the specified type, has been received.
      *
+     * @param aClass The type of the linked cause.
+     *
      * @return <tt>true</tt> if exactly one exception, with a linked cause of the specified type, been received,
      *         <tt>false</tt> otherwise.
      */
@@ -89,17 +91,48 @@ public class ExceptionMonitor implements ExceptionListener
     {
         if (exceptions.size() == 1)
         {
-            JMSException e = exceptions.get(0);
+            Exception e = exceptions.get(0);
 
-            Exception linkedCause = e.getLinkedException();
-
-            if ((linkedCause != null) && aClass.isInstance(linkedCause))
+            if (e instanceof JMSException)
             {
-                return true;
+                JMSException jmse = (JMSException) e;
+
+                Exception linkedCause = jmse.getLinkedException();
+
+                if ((linkedCause != null) && aClass.isInstance(linkedCause))
+                {
+                    return true;
+                }
             }
         }
 
         return false;
+    }
+
+    /**
+     * Checks that at least one exception of the the specified type, has been received.
+     *
+     * @param exceptionClass The type of the exception.
+     *
+     * @return <tt>true</tt> if at least one exception of the specified type has been received, <tt>false</tt> otherwise.
+     */
+    public synchronized boolean assertExceptionOfType(Class exceptionClass)
+    {
+        // Start by assuming that the exception has no been received.
+        boolean passed = false;
+
+        // Scan all the exceptions for a match.
+        for (Exception e : exceptions)
+        {
+            if (exceptionClass.isInstance(e))
+            {
+                passed = true;
+
+                break;
+            }
+        }
+
+        return passed;
     }
 
     /**
@@ -117,7 +150,7 @@ public class ExceptionMonitor implements ExceptionListener
      */
     public synchronized void reset()
     {
-        exceptions = new ArrayList<JMSException>();
+        exceptions = new ArrayList<Exception>();
     }
 
     /**
@@ -130,7 +163,7 @@ public class ExceptionMonitor implements ExceptionListener
     {
         String result = "ExceptionMonitor: holds " + exceptions.size() + " exceptions.\n\n";
 
-        for (JMSException ex : exceptions)
+        for (Exception ex : exceptions)
         {
             result += getStackTrace(ex) + "\n";
         }

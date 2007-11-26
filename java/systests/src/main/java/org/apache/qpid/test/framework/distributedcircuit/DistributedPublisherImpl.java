@@ -23,10 +23,17 @@ package org.apache.qpid.test.framework.distributedcircuit;
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Publisher;
 
+import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+
 /**
+ * DistributedPublisherImpl represents the status of the publishing side of a test circuit. Its main purpose is to
+ * provide assertions that can be applied to verify the behaviour of a non-local publisher.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Provide assertion that the publishers received no exceptions.
+ * <tr><td> Provide assertion that the publishers received a no consumers error code on every message.
+ * <tr><td> Provide assertion that the publishers received a no route error code on every message.
  * </table>
  */
 public class DistributedPublisherImpl implements Publisher
@@ -35,8 +42,9 @@ public class DistributedPublisherImpl implements Publisher
      * Provides an assertion that the publisher encountered no exceptions.
      *
      * @return An assertion that the publisher encountered no exceptions.
+     * @param testProps
      */
-    public Assertion noExceptionsAssertion()
+    public Assertion noExceptionsAssertion(ParsedProperties testProps)
     {
         throw new RuntimeException("Not implemented.");
     }
@@ -57,6 +65,29 @@ public class DistributedPublisherImpl implements Publisher
      * @return An assertion that the publisher got a no rout exception on every message.
      */
     public Assertion noRouteAssertion()
+    {
+        throw new RuntimeException("Not implemented.");
+    }
+
+    /**
+     * Provides an assertion that the AMQP channel was forcibly closed by an error condition.
+     *
+     * @param testProps The test configuration properties.
+     * @return An assertion that the AMQP channel was forcibly closed by an error condition.
+     */
+    public Assertion channelClosedAssertion(ParsedProperties testProps)
+    {
+        throw new RuntimeException("Not implemented.");
+    }
+
+    /**
+     * Provides an assertion that the publisher got a given exception during the test.
+     *
+     * @param testProps      The test configuration properties.
+     * @param exceptionClass The exception class to check for.
+     * @return An assertion that the publisher got a given exception during the test.
+     */
+    public Assertion exceptionAssertion(ParsedProperties testProps, Class<? extends Exception> exceptionClass)
     {
         throw new RuntimeException("Not implemented.");
     }

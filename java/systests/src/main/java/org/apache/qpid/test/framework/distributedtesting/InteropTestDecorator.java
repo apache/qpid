@@ -50,7 +50,7 @@ import java.util.*;
  * <tr><td> Broadcast test invitations and collect enlists. <td> {@link org.apache.qpid.util.ConversationFactory}.
  * <tr><td> Output test failures for clients unwilling to run the test case. <td> {@link Coordinator}
  * <tr><td> Execute distributed test cases. <td> {@link FrameworkBaseCase}
- * <tr><td> Fail non participating pairings. <td> {@link OptOutTestCase}
+ * <tr><td> Fail non-participating pairings. <td> {@link OptOutTestCase}
  * </table>
  */
 public class InteropTestDecorator extends DistributedTestDecorator

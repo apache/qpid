@@ -46,7 +46,7 @@ import java.util.Properties;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Create distributed circuits from one to many test nodes, for fanout style testing.
  * </table>
  *
  * @todo Adapt this to be an n*m topology circuit factory. Need to add circuit topology definitions to the test
@@ -57,7 +57,7 @@ import java.util.Properties;
  *
  * @todo The createCircuit methods on this and InteropCircuitFactory are going to be identical. This is because the
  *       partitioning into senders and receivers is already done by the test decorators. Either eliminate these factories
- *       as unnesesary, or move the partitioning functionaility into the factories, in which case the test decorators
+ *       as unnesesary, or move the partitioning functionality into the factories, in which case the test decorators
  *       can probably be merged or eliminated. There is confusion over the placement of responsibilities between the
  *       factories and the test decorators... although the test decorators may well do more than just circuit creation
  *       in the future. For example, there may have to be a special decorator for test repetition that does one circuit

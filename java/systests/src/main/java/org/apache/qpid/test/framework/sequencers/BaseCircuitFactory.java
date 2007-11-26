@@ -31,13 +31,20 @@ import java.util.List;
 import java.util.Properties;
 
 /**
+ * BaseCircuitFactory provides some functionality common to all {@link CircuitFactory}s, such as the details of
+ * all {@link org.apache.qpid.test.framework.distributedtesting.TestClient}s that make up the end-points of
+ * the circuits that the factory creates, and an active {@link ConversationFactory} that can be used to generate
+ * control conversations with those circuit end-points.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Hold the details of the sending and receiving end-points to create circuits from.
+ * <tr><td> Provide a conversation factory to create control conversations with the end-points.
  * </table>
  */
 public abstract class BaseCircuitFactory implements CircuitFactory
 {
+
     /** Used for debugging. */
     private final Logger log = Logger.getLogger(BaseCircuitFactory.class);
 

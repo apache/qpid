@@ -41,10 +41,20 @@ import java.util.List;
 import java.util.Properties;
 
 /**
+ * InteropCircuitFactory is a circuit factory that creates distributed test circuits. Given a set of participating
+ * test client nodes, it assigns one node to the SENDER role and one the RECEIVER role.
+ *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Create distributed circuits from pairs of test nodes, for interop style testing.
  * </table>
+ *
+ * @todo The partitioning of a set of nodes into sender and receiver roles is actually done by the interop test
+ *       decorator. See the todo comment in FanOutCircuitFactory about merging the factories with the decorators, or
+ *       more carefully dividing up responsibilities between them.
+ *
+ * @todo The squenceTest code is deprecated, but currently still used by the interop tests. It will be removed once it
+ *       have been fully replaced by the default test procedure.
  */
 public class InteropCircuitFactory extends BaseCircuitFactory
 {

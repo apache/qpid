@@ -51,11 +51,14 @@ public class CircuitEndBase implements CircuitEnd
     ExceptionMonitor exceptionMonitor;
 
     /**
-     * Creates a circuit end point on the specified producer, consumer and controlSession.
+     * Creates a circuit end point on the specified producer, consumer and controlSession. Monitors are also configured
+     * for messages and exceptions received by the circuit end.
      *
-     * @param producer The message producer for the circuit end point.
-     * @param consumer The message consumer for the circuit end point.
-     * @param session  The controlSession for the circuit end point.
+     * @param producer         The message producer for the circuit end point.
+     * @param consumer         The message consumer for the circuit end point.
+     * @param session          The controlSession for the circuit end point.
+     * @param messageMonitor   The monitor to notify of all messages received by the circuit end.
+     * @param exceptionMonitor The monitor to notify of all exceptions received by the circuit end.
      */
     public CircuitEndBase(MessageProducer producer, MessageConsumer consumer, Session session, MessageMonitor messageMonitor,
         ExceptionMonitor exceptionMonitor)

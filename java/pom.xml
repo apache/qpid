@@ -398,7 +398,7 @@ under the License.
                 <plugin>
                     <groupId>uk.co.thebadgerset</groupId>
                     <artifactId>junit-toolkit-maven-plugin</artifactId>
-                    <version>0.6.1</version>
+                    <version>0.7-SNAPSHOT</version>
                 </plugin>
 
         
@@ -546,7 +546,7 @@ under the License.
             <dependency>
                 <groupId>uk.co.thebadgerset</groupId>
                 <artifactId>junit-toolkit</artifactId>
-                <version>0.6.1</version>
+                <version>0.7-SNAPSHOT</version>
                 <scope>compile</scope>
             </dependency>
 
@@ -690,6 +690,14 @@ under the License.
                 <enabled>false</enabled>
             </releases>
         </repository>
+
+        <repository>
+            <id>junittoolkit.snapshots</id>
+            <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
     <pluginRepositories>
@@ -706,6 +714,14 @@ under the License.
             <id>codehaus.snapshots</id>
             <name>Codehaus SNAPSHOT Repository</name>
             <url>http://snapshots.repository.codehaus.org</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </pluginRepository>
+
+        <pluginRepository>
+            <id>junittoolkit.plugin.snapshots</id>
+            <url>http://junit-toolkit.svn.sourceforge.net/svnroot/junit-toolkit/snapshots/</url>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>

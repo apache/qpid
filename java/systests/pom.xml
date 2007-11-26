@@ -82,6 +82,11 @@
                     <includes>
                         <include>**/*Test.class</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/testcases/ImmediateMessageTest.class</exclude>
+                        <exclude>**/testcases/MandatoryMessageTest.class</exclude>
+                        <exclude>**/testcases/RollbackTest.class</exclude>
+                    </excludes>
                 </configuration>
             </plugin>
 
