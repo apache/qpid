@@ -34,6 +34,7 @@ import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.ManagementConfiguration;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
+import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
@@ -59,6 +60,8 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
 
     private final Map<String, VirtualHost> _virtualHosts = new ConcurrentHashMap<String, VirtualHost>();
+
+    private PluginManager _pluginManager;
 
 
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
@@ -117,6 +120,8 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 
         _managedObjectRegistry.start();
 
+        _pluginManager = new PluginManager(_configuration.getString("plugin-directory"));
+        
         initialiseVirtualHosts();
 
     }
@@ -172,5 +177,10 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     public Collection<String> getVirtualHostNames()
     {
         return getConfiguration().getList("virtualhosts.virtualhost.name");
+    }
+    
+    public PluginManager getPluginManager()
+    {
+        return _pluginManager;
     }
 }

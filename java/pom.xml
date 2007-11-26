@@ -150,6 +150,7 @@ under the License.
         <module>common</module>
         <module>broker</module>
         <module>client</module>
+        <module>plugins</module>
         <module>systests</module>
         <module>perftests</module>
         <module>integrationtests</module>

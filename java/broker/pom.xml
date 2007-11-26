@@ -89,6 +89,16 @@
             <scope>test</scope>
         </dependency>
 
+	<dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.osgi.core</artifactId>
+            <version>1.0.0</version>
+        </dependency>        
+        <dependency>
+            <groupId>org.apache.felix</groupId>
+            <artifactId>org.apache.felix.framework</artifactId>
+            <version>1.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

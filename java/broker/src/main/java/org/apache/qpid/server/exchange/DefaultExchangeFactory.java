@@ -20,56 +20,88 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
-import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class DefaultExchangeFactory implements ExchangeFactory
 {
     private static final Logger _logger = Logger.getLogger(DefaultExchangeFactory.class);
 
-    private Map<AMQShortString, Class<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, Class<? extends Exchange>>();
+    private Map<AMQShortString, ExchangeType<? extends Exchange>> _exchangeClassMap = new HashMap<AMQShortString, ExchangeType<? extends Exchange>>();
     private final VirtualHost _host;
 
     public DefaultExchangeFactory(VirtualHost host)
     {
         _host = host;
-        _exchangeClassMap.put(ExchangeDefaults.DIRECT_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestNameExchange.class);
-        _exchangeClassMap.put(ExchangeDefaults.TOPIC_EXCHANGE_CLASS, org.apache.qpid.server.exchange.DestWildExchange.class);
-        _exchangeClassMap.put(ExchangeDefaults.HEADERS_EXCHANGE_CLASS, org.apache.qpid.server.exchange.HeadersExchange.class);
-        _exchangeClassMap.put(ExchangeDefaults.FANOUT_EXCHANGE_CLASS, org.apache.qpid.server.exchange.FanoutExchange.class);
+        registerExchangeType(DestNameExchange.TYPE);
+        registerExchangeType(DestWildExchange.TYPE);
+        registerExchangeType(HeadersExchange.TYPE);
+        registerExchangeType(FanoutExchange.TYPE);
+    }
 
+    public void registerExchangeType(ExchangeType<? extends Exchange> type)
+    {
+        _exchangeClassMap.put(type.getName(), type);
+    }
+    
+    public Collection<ExchangeType<? extends Exchange>> getRegisteredTypes()
+    {
+        return _exchangeClassMap.values();
     }
 
     public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
                                    int ticket)
             throws AMQException
     {
-        Class<? extends Exchange> exchClass = _exchangeClassMap.get(type);
-        if (exchClass == null)
+        ExchangeType<? extends Exchange> exchType = _exchangeClassMap.get(type);
+        if (exchType == null)
         {
 
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type);
         }
-        try
+        Exchange e = exchType.newInstance(_host, exchange, durable, ticket, autoDelete);
+        return e;
+    }
+
+    public void initialise(Configuration hostConfig)
+    {
+        for(Object className : hostConfig.getList("custom-exchanges.class-name"))
         {
-            Exchange e = exchClass.newInstance();
-            e.initialise(_host, exchange, durable, ticket, autoDelete);
-            return e;
+            try
+            {
+                ExchangeType<?> exchangeType = ApplicationRegistry.getInstance().getPluginManager().getExchanges().get(String.valueOf(className));
+                if (exchangeType == null)
+                {
+                    _logger.error("No such custom exchange class found: \""+String.valueOf(className)+"\"");
+                    return;
+                }
+                Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
+                ExchangeType type = exchangeTypeClass.newInstance();
+                registerExchangeType(type);
+            }
+            catch (ClassCastException classCastEx)
+            {
+                _logger.error("No custom exchange class: \""+String.valueOf(className)+"\" cannot be registered as it does not extend class \""+ExchangeType.class+"\"");
+            }
+            catch (IllegalAccessException e)
+            {
+                _logger.error("Cannot create custom exchange class: \""+String.valueOf(className)+"\"",e);
+            }
+            catch (InstantiationException e)
+            {
+                _logger.error("Cannot create custom exchange class: \""+String.valueOf(className)+"\"",e);
+            }
         }
-        catch (InstantiationException e)
-        {
-            throw new AMQException("Unable to create exchange: " + e, e);
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new AMQException("Unable to create exchange: " + e, e);
-        }
+
     }
 }

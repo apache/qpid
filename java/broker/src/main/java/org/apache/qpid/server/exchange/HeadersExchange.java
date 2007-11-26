@@ -33,6 +33,7 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.openmbean.ArrayType;
@@ -81,6 +82,37 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class HeadersExchange extends AbstractExchange
 {
     private static final Logger _logger = Logger.getLogger(HeadersExchange.class);
+
+
+
+    public static final ExchangeType<HeadersExchange> TYPE = new ExchangeType<HeadersExchange>()
+    {
+
+        public AMQShortString getName()
+        {
+            return ExchangeDefaults.HEADERS_EXCHANGE_CLASS;
+        }
+
+        public Class<HeadersExchange> getExchangeClass()
+        {
+            return HeadersExchange.class;
+        }
+
+        public HeadersExchange newInstance(VirtualHost host, AMQShortString name, boolean durable, int ticket,
+                boolean autoDelete) throws AMQException
+        {
+            HeadersExchange exch = new HeadersExchange();
+            exch.initialise(host, name, durable, ticket, autoDelete);
+            return exch;
+        }
+
+        public AMQShortString getDefaultExchangeName()
+        {
+
+            return ExchangeDefaults.HEADERS_EXCHANGE_NAME;
+        }
+    };
+
 
     private final List<Registration> _bindings = new CopyOnWriteArrayList<Registration>();
 

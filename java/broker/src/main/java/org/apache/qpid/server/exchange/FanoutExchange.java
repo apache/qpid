@@ -31,6 +31,7 @@ import org.apache.qpid.server.management.MBeanConstructor;
 import org.apache.qpid.server.management.MBeanDescription;
 import org.apache.qpid.server.queue.AMQMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -115,6 +116,36 @@ public class FanoutExchange extends AbstractExchange
             throw new AMQException("Exception occured in creating the direct exchange mbean", ex);
         }
     }
+
+    public static final ExchangeType<FanoutExchange> TYPE = new ExchangeType<FanoutExchange>()
+    {
+
+    	public AMQShortString getName()
+    	{
+    		return ExchangeDefaults.FANOUT_EXCHANGE_CLASS;
+    	}
+
+    	public Class<FanoutExchange> getExchangeClass()
+    	{
+    		return FanoutExchange.class;
+    	}
+
+    	public FanoutExchange newInstance(VirtualHost host,
+    									  AMQShortString name,
+    									  boolean durable,
+    									  int ticket,
+    									  boolean autoDelete) throws AMQException
+    	{
+    		FanoutExchange exch = new FanoutExchange();
+    		exch.initialise(host, name, durable, ticket, autoDelete);
+    		return exch;
+    	}
+
+    	public AMQShortString getDefaultExchangeName()
+    	{
+    		return ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+    	}
+    };
 
     public Map<AMQShortString, List<AMQQueue>> getBindings()
     {

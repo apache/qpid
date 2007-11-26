@@ -82,6 +82,14 @@
                     <includes>
                         <include>**/*Test.class</include>
                     </includes>
+                    
+                    <systemProperties>
+                      <property>
+                        <name>example.plugin.target</name>
+                        <value>${basedir}/${topDirectoryLocation}/plugins/target</value>
+                      </property>
+                    </systemProperties>
+                    
                     <excludes>
                         <exclude>**/testcases/ImmediateMessageTest.class</exclude>
                         <exclude>**/testcases/MandatoryMessageTest.class</exclude>
@@ -160,4 +168,5 @@
         </resources>
     </build>
 </project>
+
 
