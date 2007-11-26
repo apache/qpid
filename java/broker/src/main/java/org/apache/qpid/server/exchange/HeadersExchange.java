@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQTypedValue;
@@ -200,7 +201,11 @@ public class HeadersExchange extends AbstractExchange
     public void deregisterQueue(AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQException
     {
         _logger.debug("Exchange " + getName() + ": Unbinding " + queue.getName());
-        _bindings.remove(new Registration(new HeadersBinding(args), queue));
+        if(!_bindings.remove(new Registration(new HeadersBinding(args), queue)))
+        {
+            throw new AMQException(AMQConstant.NOT_FOUND, "Queue " + queue + " was not registered with exchange " + this.getName()
+                                   + " with headers args " + args);    
+        }
     }
 
     public void route(AMQMessage payload) throws AMQException

@@ -32,13 +32,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicQosBody;
-import org.apache.qpid.framing.BasicQosOkBody;
-import org.apache.qpid.framing.ChannelOpenBody;
-import org.apache.qpid.framing.ChannelOpenOkBody;
-import org.apache.qpid.framing.TxSelectBody;
-import org.apache.qpid.framing.TxSelectOkBody;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.Connection;
@@ -161,6 +155,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /** Thread Pool for executing connection level processes. Such as returning bounced messages. */
     private final ExecutorService _taskPool = Executors.newCachedThreadPool();
     private static final long DEFAULT_TIMEOUT = 1000 * 30;
+    private ProtocolVersion _protocolVersion;
 
     /**
      * @param broker      brokerdetails
@@ -253,6 +248,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _clientName = connectionURL.getClientName();
         _username = connectionURL.getUsername();
         _password = connectionURL.getPassword();
+
+        _protocolVersion = connectionURL.getProtocolVersion();
+
         setVirtualHost(connectionURL.getVirtualHost());
 
         if (connectionURL.getDefaultQueueExchangeName() != null)
@@ -393,16 +391,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     private void makeBrokerConnection(BrokerDetails brokerDetail) throws IOException, AMQException
     {
+        final Set<AMQState> openOrClosedStates =
+                EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
         try
         {
             TransportConnection.getInstance(brokerDetail).connect(_protocolHandler, brokerDetail);
             // this blocks until the connection has been set up or when an error
             // has prevented the connection being set up
-            _protocolHandler.attainState(AMQState.CONNECTION_OPEN);
-            _failoverPolicy.attainedConnection();
 
-            // Again this should be changed to a suitable notify
-            _connected = true;
+            //_protocolHandler.attainState(AMQState.CONNECTION_OPEN);
+            AMQState state = _protocolHandler.attainState(openOrClosedStates);
+            if(state == AMQState.CONNECTION_OPEN)
+            {
+
+                _failoverPolicy.attainedConnection();
+
+                // Again this should be changed to a suitable notify
+                _connected = true;
+            }
         }
         catch (AMQException e)
         {
@@ -1285,4 +1291,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _sessions.get(channelId);
     }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolVersion;
+    }
+
+    public void setProtocolVersion(ProtocolVersion protocolVersion)
+    {
+        _protocolVersion = protocolVersion;
+        _protocolHandler.getProtocolSession().setProtocolVersion(protocolVersion);
+    }
+
 }

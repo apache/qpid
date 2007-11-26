@@ -36,6 +36,9 @@ public class ServerMethodDispatcherImpl_0_9
 
     private static final BasicRecoverSyncMethodHandler _basicRecoverSyncMethodHandler =
             BasicRecoverSyncMethodHandler.getInstance();
+    private static final QueueUnbindHandler _queueUnbindHandler =
+            QueueUnbindHandler.getInstance();
+
 
     public ServerMethodDispatcherImpl_0_9(AMQStateManager stateManager)
     {
@@ -155,6 +158,7 @@ public class ServerMethodDispatcherImpl_0_9
 
     public boolean dispatchQueueUnbind(QueueUnbindBody body, int channelId) throws AMQException
     {
-        return false;
+        _queueUnbindHandler.methodReceived(getStateManager(),body,channelId);
+        return true;
     }
 }

@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
@@ -52,6 +53,7 @@ public class AMQConnectionURL implements ConnectionURL
     private AMQShortString _defaultTopicExchangeName;
     private AMQShortString _temporaryTopicExchangeName;
     private AMQShortString _temporaryQueueExchangeName;
+    private ProtocolVersion _protocolVersion = ProtocolVersion.defaultProtocolVersion();
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
@@ -255,6 +257,15 @@ public class AMQConnectionURL implements ConnectionURL
         {
             _temporaryTopicExchangeName = new AMQShortString(_options.get(OPTIONS_TEMPORARY_TOPIC_EXCHANGE));
         }
+        if(_options.containsKey(OPTIONS_PROTOCOL_VERSION))
+        {
+            ProtocolVersion pv = ProtocolVersion.parse(_options.get(OPTIONS_PROTOCOL_VERSION));
+            if(pv != null)
+            {
+                _protocolVersion = pv;
+            }
+        }
+
     }
 
     public String getURL()
@@ -375,6 +386,11 @@ public class AMQConnectionURL implements ConnectionURL
     public AMQShortString getTemporaryTopicExchangeName()
     {
         return _temporaryTopicExchangeName;
+    }
+
+    public ProtocolVersion getProtocolVersion()
+    {
+        return _protocolVersion;
     }
 
     public String toString()

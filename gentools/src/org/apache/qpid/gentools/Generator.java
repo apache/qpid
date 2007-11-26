@@ -479,7 +479,11 @@ public abstract class Generator implements LanguageConverter
             Template velocityTemplate = Velocity.getTemplate(template.getName());
             velocityTemplate.merge(context, sw);
             String filename = String.valueOf(context.get("filename"));
-            FileWriter outputFileWriter = new FileWriter(getOutputDirectory() + Utils.FILE_SEPARATOR + filename);
+
+            File outputFile = new File(getOutputDirectory() + Utils.FILE_SEPARATOR + filename);
+            outputFile.getParentFile().mkdirs();
+            FileWriter outputFileWriter = new FileWriter(outputFile);
+
             outputFileWriter.append(sw.toString());
             outputFileWriter.close();
 

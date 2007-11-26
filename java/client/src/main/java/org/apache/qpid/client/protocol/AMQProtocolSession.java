@@ -121,7 +121,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _minaProtocolSession.setWriteTimeout(LAST_WRITE_FUTURE_JOIN_TIMEOUT);
         _stateManager = stateManager;
         _stateManager.setProtocolSession(this);
-        _protocolVersion = ProtocolVersion.getLatestSupportedVersion();
+        _protocolVersion = connection.getProtocolVersion();
         _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
                                                                  stateManager);
         _connection = connection;
@@ -133,7 +133,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         // start the process of setting up the connection. This is the first place that
         // data is written to the server.
 
-        _minaProtocolSession.write(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
+        _minaProtocolSession.write(new ProtocolInitiation(_connection.getProtocolVersion()));
     }
 
     public String getClientID()

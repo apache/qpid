@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -164,5 +165,42 @@ public class AMQStateManager implements AMQMethodListener
     public MethodRegistry getMethodRegistry()
     {
         return getProtocolSession().getMethodRegistry();
+    }
+
+    public AMQState attainState(Set<AMQState> stateSet) throws AMQException
+    {
+        synchronized (_stateLock)
+        {
+            final long waitUntilTime = System.currentTimeMillis() + MAXIMUM_STATE_WAIT_TIME;
+            long waitTime = MAXIMUM_STATE_WAIT_TIME;
+
+            while (!stateSet.contains(_currentState) && (waitTime > 0))
+            {
+                try
+                {
+                    _stateLock.wait(MAXIMUM_STATE_WAIT_TIME);
+                }
+                catch (InterruptedException e)
+                {
+                    _logger.warn("Thread interrupted");
+                }
+
+                if (!stateSet.contains(_currentState))
+                {
+                    waitTime = waitUntilTime - System.currentTimeMillis();
+                }
+            }
+
+            if (!stateSet.contains(_currentState))
+            {
+                _logger.warn("State not achieved within permitted time.  Current state " + _currentState
+                             + ", desired state: " + stateSet);
+                throw new AMQException("State not achieved within permitted time.  Current state " + _currentState
+                                       + ", desired state: " + stateSet);
+            }
+            return _currentState;
+        }
+
+
     }
 }

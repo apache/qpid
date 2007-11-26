@@ -33,6 +33,8 @@ package org.apache.qpid.framing;
 import java.util.SortedSet;
 import java.util.Collections;
 import java.util.TreeSet;
+import java.util.Map;
+import java.util.HashMap;
 
 
 public class ProtocolVersion  implements Comparable
@@ -124,6 +126,9 @@ public class ProtocolVersion  implements Comparable
     }
     
     private static final SortedSet<ProtocolVersion> _supportedVersions;
+	private static final Map<String, ProtocolVersion> _nameToVersionMap =
+	                         new HashMap<String, ProtocolVersion>();
+    private static final ProtocolVersion _defaultVersion;							 
 
 	
 #foreach( $version in $model.getVersionSet() )
@@ -138,8 +143,17 @@ public class ProtocolVersion  implements Comparable
 #foreach( $version in $model.getVersionSet() )
 #set( $versionId = "v$version.getMajor()_$version.getMinor()" )
         versions.add($versionId);
+		_nameToVersionMap.put("${version.getMajor()}-${version.getMinor()}", $versionId);
 #end
         _supportedVersions = Collections.unmodifiableSortedSet(versions);
+		
+		
+		ProtocolVersion systemDefinedVersion =
+		    _nameToVersionMap.get(System.getProperty("org.apache.qpid.amqp_version"));
+			
+	    _defaultVersion = (systemDefinedVersion == null) 
+		                      ? getLatestSupportedVersion() 
+							  : systemDefinedVersion;
     }
 
     
@@ -149,7 +163,16 @@ public class ProtocolVersion  implements Comparable
     }
     
     
+
+    public static ProtocolVersion parse(String name)
+    {
+        return _nameToVersionMap.get(name);
+    }
     
+    public static ProtocolVersion defaultProtocolVersion()
+    {
+        return _defaultVersion;
+    }
     
 
 }
