@@ -93,8 +93,6 @@ public class FailoverSingleServer implements FailoverMethod
             {
                 _currentRetries ++;
             }
-
-            return _brokerDetail;
         }
 
 
@@ -112,7 +110,7 @@ public class FailoverSingleServer implements FailoverMethod
             }
         }
 
-        return _brokerDetail;        
+        return _brokerDetail;
     }
 
     public void setBroker(BrokerDetails broker)
