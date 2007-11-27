@@ -115,8 +115,8 @@
                     
                     <testrunneroptions>
                         <option>-X:decorators "org.apache.qpid.test.framework.qpid.InVMBrokerDecorator:org.apache.qpid.test.framework.qpid.AMQPFeatureDecorator"</option>
-                        <option>-o</option>
-                        <option>--csv</option>
+                        <option>-o ${basedir}/target/surefire-reports</option>
+                        <option>--xml</option>
                     </testrunneroptions>
                     
                     <testrunnerproperties>
