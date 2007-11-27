@@ -87,7 +87,6 @@ inline void SessionCore::waitFor(State s) {
     // We can be CLOSED or SUSPENDED by error at any time.
     state.waitFor(States(s, CLOSED, SUSPENDED));
     check();
-    assert(state==s);
     invariant();
 }
 
@@ -97,7 +96,8 @@ SessionCore::SessionCore(shared_ptr<ConnectionImpl> conn,
       sync(false),
       channel(ch),
       proxy(channel),
-      state(OPENING)
+      state(OPENING),
+      detachedLifetime(0)
 {
     l3.out = &out;
     attaching(conn);
@@ -166,10 +166,11 @@ FrameSet::shared_ptr SessionCore::get() { // user thread
 
 static const std::string CANNOT_REOPEN_SESSION="Cannot re-open a session.";
 
-void SessionCore::open(uint32_t detachedLifetime) { // user thread
+void SessionCore::open(uint32_t timeout) { // user thread
     Lock l(state);
     check(state==OPENING && !session,
           COMMAND_INVALID, CANNOT_REOPEN_SESSION);
+    detachedLifetime=timeout;
     proxy.open(detachedLifetime);
     waitFor(OPEN);
 }
@@ -364,8 +365,22 @@ Future SessionCore::send(const AMQBody& command, const MethodContent& content)
     return Future(l3.send(command, content));
 }
 
+namespace {
+bool isCloseResponse(const AMQFrame& frame) {
+    return frame.getMethod() &&
+        frame.getMethod()->amqpClassId() == SESSION_CLASS_ID &&
+        frame.getMethod()->amqpMethodId() == SESSION_CLOSED_METHOD_ID;
+}
+}
+
 // Network thread.
 void SessionCore::handleIn(AMQFrame& frame) {
+    {
+        Lock l(state);
+        // Ignore frames received while closing other than closed response.
+        if (state==CLOSING && !isCloseResponse(frame))
+            return;             
+    }
     try {
         // Cast to expose private SessionHandler functions.
         if (!invoke(static_cast<SessionHandler&>(*this), *frame.getBody())) {
@@ -382,7 +397,7 @@ void SessionCore::handleOut(AMQFrame& frame)
 {
     Lock l(state);
     if (state==OPEN) {
-        if (session->sent(frame)) 
+        if (detachedLifetime > 0 && session->sent(frame)) 
             proxy.solicitAck();
         channel.handle(frame);
     }

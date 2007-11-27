@@ -28,7 +28,7 @@ using namespace std;
 Options::Options(const std::string& name) : qpid::Options(name),
     time(true), level(true), thread(false), source(false), function(false), trace(false)
 {
-    outputs.push_back("stderr");
+    outputs.push_back("stdout");
     selectors.push_back("error+");
 
     ostringstream levels;
