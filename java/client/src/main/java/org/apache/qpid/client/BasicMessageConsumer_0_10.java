@@ -230,7 +230,10 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
     {
         // notify the session
         ((AMQSession_0_10) getSession()).addMessageTag(msg.getDeliveryTag());
-        super.postDeliver(msg);
+        if (!Boolean.getBoolean("noAck"))
+        {
+            super.postDeliver(msg);
+        }
     }
 
     void notifyMessage(UnprocessedMessage messageFrame, int channelId)
