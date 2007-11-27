@@ -74,7 +74,7 @@ Broker::Options::Options(const std::string& name) :
     storeForce(false),
     enableMgmt(0),
     mgmtPubInterval(10),
-    ack(100)
+    ack(0)
 {
     int c = sys::SystemInfo::concurrency();
     if (c > 0) workerThreads=c;
@@ -102,7 +102,7 @@ Broker::Options::Options(const std::string& name) :
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"),
          "Management Publish Interval")
         ("ack", optValue(ack, "N"),
-         "Send ack/solicit-ack at least every N frames. 0 disables voluntary acks/solitict-ack");
+         "Send session.ack/solicit-ack at least every N frames. 0 disables voluntary ack/solitict-ack");
 }
 
 const std::string empty;

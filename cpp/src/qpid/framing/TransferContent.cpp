@@ -29,8 +29,8 @@ TransferContent::TransferContent(const std::string& data,
                                  const std::string& exchange)
 {
     setData(data);
-    getDeliveryProperties().setRoutingKey(routingKey);
-    getDeliveryProperties().setExchange(exchange);
+    if (routingKey.size()) getDeliveryProperties().setRoutingKey(routingKey);
+    if (exchange.size()) getDeliveryProperties().setExchange(exchange);
 }
 
 AMQHeaderBody TransferContent::getHeader() const
