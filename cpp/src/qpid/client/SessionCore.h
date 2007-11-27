@@ -133,6 +133,7 @@ class SessionCore : public framing::FrameHandler::InOutHandler,
     framing::ChannelHandler channel;
     framing::AMQP_ServerProxy::Session proxy;
     mutable StateMonitor state;
+    uint32_t detachedLifetime;
 };
 
 }} // namespace qpid::client

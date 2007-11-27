@@ -36,6 +36,8 @@ protected:
     shared_ptr<SessionCore> session;
 
 public:
+    Completion() {}
+
     Completion(Future f, shared_ptr<SessionCore> s) : future(f), session(s) {}
 
     void sync()
