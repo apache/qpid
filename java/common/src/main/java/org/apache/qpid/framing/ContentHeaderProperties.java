@@ -55,4 +55,6 @@ public interface ContentHeaderProperties
      * @return flags
      */
     int getPropertyFlags();
+
+    void updated();
 }
