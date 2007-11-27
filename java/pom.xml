@@ -24,16 +24,16 @@ under the License.
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid</artifactId>
-    <version>1.0-incubating-M2.1-SNAPSHOT</version>
+    <version>1.0-incubating-M2.1.1-SNAPSHOT</version>
     <name>Qpid</name>
     <url>http://cwiki.apache.org/confluence/display/qpid</url>
 
     <packaging>pom</packaging>
 
     <scm>
-        <connection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/branches/M2.1/java</connection>
-        <developerConnection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/branches/M2.1/java</developerConnection>
-        <url>http://svn.apache.org/viewvc/incubator/qpid/branches/M2.1/java</url>
+        <connection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/branches/M2.1.1/java</connection>
+        <developerConnection>scm:svn:http://svn.apache.org/repos/asf/incubator/qpid/branches/M2.1.1/java</developerConnection>
+        <url>http://svn.apache.org/viewvc/incubator/qpid/branches/M2.1.1/java</url>
     </scm>
 
     <prerequisites>
@@ -150,7 +150,6 @@ under the License.
         <module>common</module>
         <module>broker</module>
         <module>client</module>
-        <module>cluster</module>
         <module>systests</module>
         <module>perftests</module>
         <module>integrationtests</module>

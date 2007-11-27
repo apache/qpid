@@ -22,14 +22,14 @@
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-broker</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-incubating-M2.1-SNAPSHOT</version>
+    <version>1.0-incubating-M2.1.1-SNAPSHOT</version>
     <name>Qpid Broker</name>
     <url>http://cwiki.apache.org/confluence/display/qpid</url>
 
     <parent>
         <groupId>org.apache.qpid</groupId>
         <artifactId>qpid</artifactId>
-        <version>1.0-incubating-M2.1-SNAPSHOT</version>
+        <version>1.0-incubating-M2.1.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -209,7 +209,7 @@
                                     </condition>
 
                                     <property name="command"
-                                              value="python run-tests -v -I java_failing.txt -b localhost:2100"/>
+                                              value="python run-tests -v -I java_failing.txt -b localhost:2110"/>
                                     <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
 
                                     <ant antfile="python-test.xml" inheritRefs="true">
