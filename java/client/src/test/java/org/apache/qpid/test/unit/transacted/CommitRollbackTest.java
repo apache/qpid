@@ -458,6 +458,7 @@ public class CommitRollbackTest extends TestCase
         assertTrue("Messasge is marked as redelivered" + result, !result.getJMSRedelivered());
 
         _logger.info("Closing Consumer");
+        _session.rollback();
         _consumer.close();
 
         _logger.info("Creating New consumer");

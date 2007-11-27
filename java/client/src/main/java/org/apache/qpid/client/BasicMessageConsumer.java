@@ -953,7 +953,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             }
         }
 
-        // rollback pending messages
+        rollbackPendingMessages();
+    }
+
+    public void rollbackPendingMessages()
+    {
         if (_synchronousQueue.size() > 0)
         {
             if (_logger.isDebugEnabled())
