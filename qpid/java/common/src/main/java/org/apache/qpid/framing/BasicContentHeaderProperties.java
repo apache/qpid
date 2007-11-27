@@ -96,6 +96,23 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     private static final int APPLICATION_ID_MASK = 1 << 3;
     private static final int CLUSTER_ID_MASK = 1 << 2;
 
+
+    /**
+     * This is 0_10 specific. We use this property to check if some message properties have been changed.
+     */
+    private boolean _hasBeenUpdated = false;
+
+    public boolean reset()
+    {
+        boolean result = _hasBeenUpdated;
+        _hasBeenUpdated = false;
+        return result;
+    }
+    public void updated()
+    {
+        _hasBeenUpdated = true;
+    }
+
     public BasicContentHeaderProperties()
     { }
 
@@ -202,6 +219,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setPropertyFlags(int propertyFlags)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags = propertyFlags;
     }
@@ -491,6 +509,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setContentType(AMQShortString contentType)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= (CONTENT_TYPE_MASK);
         _contentType = contentType;
@@ -498,6 +517,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setContentType(String contentType)
     {
+         _hasBeenUpdated = true;
         setContentType((contentType == null) ? null : new AMQShortString(contentType));
     }
 
@@ -516,6 +536,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setEncoding(String encoding)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= ENCONDING_MASK;
         _encoding = (encoding == null) ? null : new AMQShortString(encoding);
@@ -523,6 +544,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setEncoding(AMQShortString encoding)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= ENCONDING_MASK;
         _encoding = encoding;
@@ -542,6 +564,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setHeaders(FieldTable headers)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= HEADERS_MASK;
         _headers = headers;
@@ -591,11 +614,13 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setCorrelationId(String correlationId)
     {
+         _hasBeenUpdated = true;
         setCorrelationId((correlationId == null) ? null : new AMQShortString(correlationId));
     }
 
     public void setCorrelationId(AMQShortString correlationId)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= CORRELATION_ID_MASK;
         _correlationId = correlationId;
@@ -617,12 +642,13 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setReplyTo(String replyTo)
     {
+         _hasBeenUpdated = true;
         setReplyTo((replyTo == null) ? null : new AMQShortString(replyTo));
     }
 
     public void setReplyTo(AMQShortString replyTo)
     {
-
+          _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= REPLY_TO_MASK;
         _replyTo = replyTo;
@@ -631,7 +657,6 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public long getExpiration()
     {
         decodeIfNecessary();
-
         return _expiration;
     }
 
@@ -665,6 +690,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setMessageId(AMQShortString messageId)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= MESSAGE_ID_MASK;
         _messageId = messageId;
@@ -673,7 +699,6 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
     public long getTimestamp()
     {
         decodeIfNecessary();
-
         return _timestamp;
     }
 
@@ -700,11 +725,13 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setType(String type)
     {
+         _hasBeenUpdated = true;
         setType((type == null) ? null : new AMQShortString(type));
     }
 
     public void setType(AMQShortString type)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= TYPE_MASK;
         _type = type;
@@ -731,6 +758,7 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setUserId(AMQShortString userId)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= USER_ID_MASK;
         _userId = userId;
@@ -752,37 +780,42 @@ public class BasicContentHeaderProperties implements CommonContentHeaderProperti
 
     public void setAppId(String appId)
     {
+         _hasBeenUpdated = true;
         setAppId((appId == null) ? null : new AMQShortString(appId));
     }
 
     public void setAppId(AMQShortString appId)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= APPLICATION_ID_MASK;
         _appId = appId;
+        _hasBeenUpdated = true;
     }
 
     public String getClusterIdAsString()
     {
+         _hasBeenUpdated = true;
         decodeIfNecessary();
-
         return (_clusterId == null) ? null : _clusterId.toString();
     }
 
     public AMQShortString getClusterId()
     {
+         _hasBeenUpdated = true;
         decodeIfNecessary();
-
         return _clusterId;
     }
 
     public void setClusterId(String clusterId)
     {
+         _hasBeenUpdated = true;
         setClusterId((clusterId == null) ? null : new AMQShortString(clusterId));
     }
 
     public void setClusterId(AMQShortString clusterId)
     {
+         _hasBeenUpdated = true;
         clearEncodedForm();
         _propertyFlags |= CLUSTER_ID_MASK;
         _clusterId = clusterId;
