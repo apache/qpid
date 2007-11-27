@@ -108,7 +108,7 @@ void Connector::send(AMQFrame& frame){
     writeFrameQueue.push(frame);
     aio->queueWrite();
 
-    QPID_LOG(trace, "SENT: " << frame);
+    QPID_LOG(trace, "SENT [" << this << "]: " << frame);
 }
 
 void Connector::handleClosed() {
@@ -180,8 +180,8 @@ void Connector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
 
 	AMQFrame frame;
 	while(frame.decode(in)){
-	    QPID_LOG(trace, "RECV: " << frame);
-		input->received(frame);
+	    QPID_LOG(trace, "RECV [" << this << "]: " << frame);
+            input->received(frame);
 	}
 	// TODO: unreading needs to go away, and when we can cope
 	// with multiple sub-buffers in the general buffer scheme, it will
