@@ -509,7 +509,7 @@ int main(int argc, char** argv) {
         }
         return 0;
     }
-    catch (const qpid::Options::Exception& e) {
+    catch (const std::exception& e) {
         cout << endl << e.what() << endl; 
     }
     return 1;
