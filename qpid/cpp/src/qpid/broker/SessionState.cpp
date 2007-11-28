@@ -40,7 +40,7 @@ void SessionState::handleOut(AMQFrame& f) {
 
 SessionState::SessionState(
     SessionManager& f, SessionHandler& h, uint32_t timeout_, uint32_t ack) 
-    : framing::SessionState(ack),
+    : framing::SessionState(ack, timeout_ > 0),
       factory(f), handler(&h), id(true), timeout(timeout_),
       broker(h.getConnection().broker),
       version(h.getConnection().getVersion()),

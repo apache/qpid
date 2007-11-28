@@ -61,7 +61,7 @@ class SessionState
      * 
      * N=0 disables voluntary send/solict ack.
      */
-    SessionState(uint32_t ackInterval, const framing::Uuid& id=framing::Uuid(true));
+    SessionState(uint32_t ackInterval, bool enableReplay = true, const framing::Uuid& id=framing::Uuid(true));
 
     /**
      * Create a non-resumable session. Does not store session frames,
