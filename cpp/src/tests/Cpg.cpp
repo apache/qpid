@@ -22,14 +22,16 @@
 #include "qpid/framing/AMQBody.h"
 
 #include <boost/bind.hpp>
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(Cpg);
+#include "unit_test.h"
 
 #include <string>
 #include <iostream>
 #include <iterator>
 #include <vector>
 #include <algorithm>
+
+QPID_AUTO_TEST_SUITE(CpgTestSuite)
+
 
 using namespace std;
 using namespace qpid::cluster;
@@ -106,4 +108,4 @@ BOOST_AUTO_TEST_CASE(CpgBasic) {
 }
 
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

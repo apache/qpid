@@ -16,7 +16,8 @@
  *
  */
 
-#define BOOST_AUTO_TEST_MAIN    // Must come before #include<boost/test/*>
-#include <boost/test/auto_unit_test.hpp>
-
 // Defines test_main function to link with actual unit test code.
+#define BOOST_AUTO_TEST_MAIN	// Boost 1.33
+#define BOOST_TEST_MAIN
+#include "unit_test.h"
+

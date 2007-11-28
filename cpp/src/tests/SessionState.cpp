@@ -17,10 +17,12 @@
  */
 
 #include "qpid/framing/SessionState.h"
+#include "qpid/Exception.h"
 
 #include <boost/bind.hpp>
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(SessionState);
+#include "unit_test.h"
+
+QPID_AUTO_TEST_SUITE(SessionStateTestSuite)
 
 using namespace std;
 using namespace qpid::framing;
@@ -119,7 +121,7 @@ BOOST_AUTO_TEST_CASE(testReplay) {
     try {
         session.receivedAck(6);
         BOOST_FAIL("expected exception");
-    } catch(const qpid::Exception&) {}
+    } catch(const std::exception&) {}
 
 }
 
@@ -141,4 +143,4 @@ BOOST_AUTO_TEST_CASE(testReceived) {
     BOOST_CHECK_EQUAL(5u, *s3.received(f));
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()
