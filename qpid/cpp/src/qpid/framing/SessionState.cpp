@@ -32,7 +32,7 @@
 namespace qpid {
 namespace framing {
 
-SessionState::SessionState(uint32_t ack,  const Uuid& uuid) :
+SessionState::SessionState(uint32_t ack,  bool enableReplay, const Uuid& uuid) :
     state(ATTACHED),
     id(uuid),
     lastReceived(-1),
@@ -41,7 +41,7 @@ SessionState::SessionState(uint32_t ack,  const Uuid& uuid) :
     sendAckAt(lastReceived+ackInterval),
     solicitAckAt(lastSent+ackInterval),
     ackSolicited(false),
-    resumable(true)
+    resumable(enableReplay)
 {}
 
 SessionState::SessionState(const Uuid& uuid) :
