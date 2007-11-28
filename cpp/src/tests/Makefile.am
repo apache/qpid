@@ -27,7 +27,7 @@ CLEANFILES=
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common)
-unit_test_SOURCES= unit_test.cpp \
+unit_test_SOURCES= unit_test.cpp unit_test.h \
 	RefCounted.cpp RefCountedMap.cpp \
 	SessionState.cpp Blob.cpp logging.cpp \
 	Url.cpp Uuid.cpp \
