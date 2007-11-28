@@ -43,9 +43,6 @@ void Dispatcher::run() {
 
         // If can read/write then dispatch appropriate callbacks        
         if (h) {
-            //TODO: this is a temporary fix to ensure that if two
-            //events are being processed concurrently, the first thread
-            //will call dispatchCallbacks serially for each one
             h->dispatchCallbacks(event.type);
         } else {
             // Handle shutdown
