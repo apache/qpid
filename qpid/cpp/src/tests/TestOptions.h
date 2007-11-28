@@ -34,7 +34,11 @@ namespace qpid {
 
 struct TestOptions : public qpid::Options
 {
-    TestOptions() : Options("Test Options"), host("localhost"), port(TcpAddress::DEFAULT_PORT), clientid("cpp"), help(false)
+    TestOptions(const std::string& helpText_=std::string()) :
+        Options("Test Options"),
+        host("localhost"), port(TcpAddress::DEFAULT_PORT),
+        clientid("cpp"), help(false),
+        helpText(helpText_)
     {
         addOptions()
             ("host,h", optValue(host, "HOST"), "Broker host to connect to")
@@ -49,23 +53,24 @@ struct TestOptions : public qpid::Options
         add(log);
     }
 
-    /** As well as parsing, print help & exit if required */
+    /** As well as parsing, throw help message if requested. */
     void parse(int argc, char** argv) {
         try {
             qpid::Options::parse(argc, argv);
         } catch (const std::exception& e) {
-            std::cout << e.what() << std::endl << *this << std::endl;
-            exit(1);
+            std::ostringstream msg;
+            msg << *this << std::endl << std::endl << e.what() << std::endl;
+            throw qpid::Options::Exception(msg.str());
         }
-        if (help) {
-            std::cout << *this << std::endl;
-            exit(0);
-        }
-        trace = log.trace;
         qpid::log::Logger::instance().configure(log, argv[0]);
+        if (help) {
+            std::ostringstream msg;
+            msg << *this << std::endl << std::endl << helpText << std::endl;
+            throw qpid::Options::Exception(msg.str());
+        }
     }
 
-    /** Open a connection usin option values */
+    /** Open a connection using option values */
     void open(qpid::client::Connection& connection) {
         connection.open(host, port, username, password, virtualhost);
     }
@@ -77,9 +82,9 @@ struct TestOptions : public qpid::Options
     std::string clientid;
     std::string username;
     std::string password;
-    bool trace;
     bool help;
     log::Options log;
+    std::string helpText;
 };
 
 }
