@@ -46,7 +46,6 @@ ARGS="$ARGS --npubs $NPUBS --nsubs $NSUBS"
 PERFTEST="`PATH=$PWD:$PATH which perftest` $ARGS"
 
 start() {
-    echo $1 on $2
     ssh $2 $PERFTEST --$1
 }
 
