@@ -83,8 +83,11 @@ struct Opts : public TestOptions {
     size_t qt;
     Mode mode;
     bool summary;
+
+    static const std::string helpText;
     
     Opts() :
+        TestOptions(helpText),
         setup(false), control(false), publish(false), subscribe(false),
         pubs(1), count(500000), size(64), confirm(false), durable(false),
         subs(1), ack(0),
@@ -105,7 +108,7 @@ struct Opts : public TestOptions {
             ("count", optValue(count, "N"), "Each publisher sends N messages.")
             ("size", optValue(size, "BYTES"), "Size of messages in bytes.")
             ("pub-confirm", optValue(confirm), "Publisher use confirm-mode.")
-            ("durable", optValue(durable, "N"), "Publish messages as durable.")
+            ("durable", optValue(durable, "yes|no"), "Publish messages as durable.")
 
             ("nsubs", optValue(subs, "N"), "Create N subscribers.")
             ("sub-ack", optValue(ack, "N"), "N>0: Subscriber acks batches of N.\n"
@@ -152,6 +155,17 @@ struct Opts : public TestOptions {
     }
 };
 
+const std::string Opts::helpText=
+"There are two ways to use perftest: single process or multi-process.\n\n"
+"If none of the --setup, --publish, --subscribe or --control options\n"
+"are given perftest will run a single-process test.\n"
+"For a  multi-process test first run:\n"
+"  perftest --setup <other options>\n"
+"and wait for it to complete. The remaining process should run concurrently::\n"
+"Run --npubs times: perftest --publish <other options>\n"
+"Run --nsubs times: perftest --subscribe <other options>\n"
+"Run once:          perftest --control <other options>\n"
+"Note the <other options> must be identical for all processes.\n";
 
 Opts opts;
 
@@ -432,6 +446,7 @@ struct SubscribeThread : public Client {
 };
 
 int main(int argc, char** argv) {
+    
     string exchange;
     switch (opts.mode) {
       case FANOUT: exchange="amq.fanout"; break;
@@ -441,7 +456,9 @@ int main(int argc, char** argv) {
 
     try {
         opts.parse(argc, argv);
-        if (!opts.setup && !opts.control && !opts.publish && !opts.subscribe)
+        bool singleProcess=
+            (!opts.setup && !opts.control && !opts.publish && !opts.subscribe);
+        if (singleProcess)
             opts.setup = opts.control = opts.publish = opts.subscribe = true;
 
         if (opts.setup) Setup().run();          // Set up queues
@@ -454,13 +471,15 @@ int main(int argc, char** argv) {
             ostringstream key;
             key << "perftest" << i; // Queue or topic name.
             if (opts.publish) {
-                for (size_t j = 0; j < opts.pubs; ++j)  {
+                size_t n = singleProcess ? opts.pubs : 1;
+                for (size_t j = 0; j < n; ++j)  {
                     pubs.push_back(new PublishThread(key.str(), exchange));
                     pubs.back().thread=Thread(pubs.back());
                 }
             }
             if (opts.subscribe) {
-                for (size_t j = 0; j < opts.subs; ++j)  {
+                size_t n = singleProcess ? opts.subs : 1;
+                for (size_t j = 0; j < n; ++j)  {
                     if (opts.mode==SHARED)
                         subs.push_back(new SubscribeThread(key.str()));
                     else
@@ -490,8 +509,10 @@ int main(int argc, char** argv) {
         }
         return 0;
     }
-    catch (const std::exception& e) {
-        cout << "Unexpected exception: " << e.what() << endl; 
-       return 1;
+    catch (const qpid::Options::Exception& e) {
+        cout << endl << e.what() << endl; 
     }
+    return 1;
 }
+
+                                            
