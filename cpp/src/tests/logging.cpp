@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(testOptionsParse) {
 
 BOOST_AUTO_TEST_CASE(testOptionsDefault) {
     Options opts;
-    vector<string> expect=list_of("stderr");
+    vector<string> expect=list_of("stdout");
     BOOST_CHECK_EQUAL(expect, opts.outputs);
     expect=list_of("error+");
     BOOST_CHECK_EQUAL(expect, opts.selectors);
