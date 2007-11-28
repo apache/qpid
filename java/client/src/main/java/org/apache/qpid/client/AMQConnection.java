@@ -1286,4 +1286,9 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _sessions.get(channelId);
     }
+
+    public boolean isFailingOver()
+    {
+        return (_protocolHandler.getFailoverLatch() != null);
+    }
 }

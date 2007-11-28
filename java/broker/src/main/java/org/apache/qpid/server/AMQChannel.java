@@ -229,7 +229,7 @@ public class AMQChannel
                 BasicContentHeaderProperties properties = (BasicContentHeaderProperties) contentHeaderBody.properties;
                 //fixme: fudge for QPID-677
                 properties.getHeaders().keySet();
-                
+
                 properties.setUserId(protocolSession.getAuthorizedID().getName());
             }
 
@@ -381,7 +381,14 @@ public class AMQChannel
     {
         _txnContext.rollback();
         unsubscribeAllConsumers(session);
-        requeue();
+        try
+        {
+            requeue();
+        }
+        catch (AMQException e)
+        {
+            _log.error("Caught AMQException whilst attempting to reque:" + e);        
+        }
 
         setClosing(true);
     }

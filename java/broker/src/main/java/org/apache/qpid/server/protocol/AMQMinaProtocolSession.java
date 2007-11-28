@@ -33,12 +33,27 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.AMQCodecFactory;
 import org.apache.qpid.codec.AMQDecoder;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ConnectionStartBody;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.MainRegistry;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.framing.VersionSpecificRegistry;
 import org.apache.qpid.pool.ReadWriteThreadModel;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.store.MessageStoreClosedException;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
@@ -118,7 +133,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     }
 
     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory)
-        throws AMQException
+            throws AMQException
     {
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
         _minaProtocolSession = session;
@@ -144,7 +159,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     }
 
     public AMQMinaProtocolSession(IoSession session, VirtualHostRegistry virtualHostRegistry, AMQCodecFactory codecFactory,
-        AMQStateManager stateManager) throws AMQException
+                                  AMQStateManager stateManager) throws AMQException
     {
         _stateManager = stateManager;
         _minaProtocolSession = session;
@@ -197,7 +212,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
     }
 
-    private void frameReceived(AMQFrame frame) throws AMQException
+    private void frameReceived(AMQFrame frame)
     {
         int channelId = frame.getChannel();
         AMQBody body = frame.getBodyFrame();
@@ -207,26 +222,57 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
             _logger.debug("Frame Received: " + frame);
         }
 
-        if (body instanceof AMQMethodBody)
+        // Check that this channel is not closing
+        if (channelAwaitingClosure(channelId))
         {
-            methodFrameReceived(channelId, (AMQMethodBody) body);
+            if (body instanceof ChannelCloseOkBody)
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
+                }
+            }
+            else
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
+                }
+
+                return;
+            }
         }
-        else if (body instanceof ContentHeaderBody)
+        try
         {
-            contentHeaderReceived(channelId, (ContentHeaderBody) body);
+            if (body instanceof AMQMethodBody)
+            {
+                methodFrameReceived(channelId, (AMQMethodBody) body);
+            }
+            else if (body instanceof ContentHeaderBody)
+            {
+                contentHeaderReceived(channelId, (ContentHeaderBody) body);
+            }
+            else if (body instanceof ContentBody)
+            {
+                contentBodyReceived(channelId, (ContentBody) body);
+            }
+            else if (body instanceof HeartbeatBody)
+            {
+                // NO OP
+            }
+            else
+            {
+                _logger.warn("Unrecognised frame " + frame.getClass().getName());
+            }
         }
-        else if (body instanceof ContentBody)
+        catch (AMQException e)
         {
-            contentBodyReceived(channelId, (ContentBody) body);
+            //This will occur if we receive Content*Body chunks during an 'inverse' shutdown.
+            // That is one where were the store shuts down before we can gracefully close connections.
+            // note: todo: Here we should send forced ConnectionClose frames.
+            _logger.error("AMQException occured whilst receiving Frame:" + e);
         }
-        else if (body instanceof HeartbeatBody)
-        {
-            // NO OP
-        }
-        else
-        {
-            _logger.warn("Unrecognised frame " + frame.getClass().getName());
-        }
+
     }
 
     private void protocolInitiationReceived(ProtocolInitiation pi)
@@ -246,12 +292,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
             // Interfacing with generated code - be aware of possible changes to parameter order as versions change.
             AMQFrame response =
-                ConnectionStartBody.createAMQFrame((short) 0, getProtocolMajorVersion(), getProtocolMinorVersion(), // AMQP version (major, minor)
-                    locales.getBytes(), // locales
-                    mechanisms.getBytes(), // mechanisms
-                    null, // serverProperties
-                    (short) getProtocolMajorVersion(), // versionMajor
-                    (short) getProtocolMinorVersion()); // versionMinor
+                    ConnectionStartBody.createAMQFrame((short) 0, getProtocolMajorVersion(), getProtocolMinorVersion(), // AMQP version (major, minor)
+                                                       locales.getBytes(), // locales
+                                                       mechanisms.getBytes(), // mechanisms
+                                                       null, // serverProperties
+                                                       (short) getProtocolMajorVersion(), // versionMajor
+                                                       (short) getProtocolMinorVersion()); // versionMinor
             _minaProtocolSession.write(response);
         }
         catch (AMQException e)
@@ -271,35 +317,12 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     private void methodFrameReceived(int channelId, AMQMethodBody methodBody)
     {
-
         final AMQMethodEvent<AMQMethodBody> evt = new AMQMethodEvent<AMQMethodBody>(channelId, methodBody);
-
-        // Check that this channel is not closing
-        if (channelAwaitingClosure(channelId))
-        {
-            if ((evt.getMethod() instanceof ChannelCloseOkBody))
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure - processing close-ok");
-                }
-            }
-            else
-            {
-                if (_logger.isInfoEnabled())
-                {
-                    _logger.info("Channel[" + channelId + "] awaiting closure ignoring");
-                }
-
-                return;
-            }
-        }
 
         try
         {
             try
             {
-
                 boolean wasAnyoneInterested = _stateManager.methodReceived(evt);
 
                 if (!_frameListeners.isEmpty())
@@ -342,8 +365,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
                     closeSession();
 
                     AMQConnectionException ce =
-                        evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR,
-                            AMQConstant.CHANNEL_ERROR.getName().toString());
+                            evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR,
+                                                                   AMQConstant.CHANNEL_ERROR.getName().toString());
 
                     _stateManager.changeState(AMQState.CONNECTION_CLOSING);
                     writeFrame(ce.getCloseFrame(channelId));
@@ -363,23 +386,41 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         }
         catch (Exception e)
         {
+            //NOTE: Currently we throw AMQExceptions sub-classes that are not Protcol problems.
+            // These items should not cause the connection to close unless there is no other option.
+            //note; todo: This should cause the connection to close
+            if (e instanceof MessageStoreClosedException)
+            {
+               _logger.error("Message Store is closed so unable to perform action:" + e);
+                // This should really close the exception as mentioned below.
+                return;
+            }
+
+            //NOTE: TODO: While this is the responsible for closing the connection as a last resort the above section
+            // May have a problem closing channel ... This may be related to a connection fault but we should still
+            // attempt to send a connection close so that the connecion may be shutdown gracefully.
+
+            //Detect when needed and shutdown connection gracefully .. such as Logged MSCException above
+
+            // If an AMQException gets to here then there it should ONLY be donw to a protocol error
+            // from the above attempts to close the Connection.
+            // Notify any exceptions listeners before we just close the conneciton
             _stateManager.error(e);
             for (AMQMethodListener listener : _frameListeners)
             {
                 listener.error(e);
             }
 
+            // This is the last resort
             _minaProtocolSession.close();
         }
     }
 
     private void contentHeaderReceived(int channelId, ContentHeaderBody body) throws AMQException
     {
-
         AMQChannel channel = getAndAssertChannel(channelId);
 
         channel.publishContentHeader(body, this);
-
     }
 
     private void contentBodyReceived(int channelId, ContentBody body) throws AMQException
@@ -430,7 +471,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
     public AMQChannel getChannel(int channelId) throws AMQException
     {
         final AMQChannel channel =
-            ((channelId & CHANNEL_CACHE_SIZE) == channelId) ? _cachedChannels[channelId] : _channelMap.get(channelId);
+                ((channelId & CHANNEL_CACHE_SIZE) == channelId) ? _cachedChannels[channelId] : _channelMap.get(channelId);
         if ((channel == null) || channel.isClosing())
         {
             return null;
@@ -463,8 +504,8 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
         if (_channelMap.size() == _maxNoOfChannels)
         {
             String errorMessage =
-                toString() + ": maximum number of channels has been reached (" + _maxNoOfChannels
-                + "); can't create channel";
+                    toString() + ": maximum number of channels has been reached (" + _maxNoOfChannels
+                    + "); can't create channel";
             _logger.error(errorMessage);
             throw new AMQException(AMQConstant.NOT_ALLOWED, errorMessage);
         }

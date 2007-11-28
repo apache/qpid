@@ -20,27 +20,26 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MessageMetaData;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.exchange.Exchange;
 
-/**
- * A simple message store that stores the messages in a threadsafe structure in memory.
- */
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+
+/** A simple message store that stores the messages in a threadsafe structure in memory. */
 public class MemoryMessageStore implements MessageStore
 {
     private static final Logger _log = Logger.getLogger(MemoryMessageStore.class);
@@ -54,6 +53,7 @@ public class MemoryMessageStore implements MessageStore
     protected ConcurrentMap<Long, List<ContentChunk>> _contentBodyMap;
 
     private final AtomicLong _messageId = new AtomicLong(1);
+    private AtomicBoolean _closed = new AtomicBoolean(false);
 
     public void configure()
     {
@@ -77,6 +77,7 @@ public class MemoryMessageStore implements MessageStore
 
     public void close() throws Exception
     {
+        _closed.getAndSet(true);
         if (_metaDataMap != null)
         {
             _metaDataMap.clear();
@@ -89,8 +90,9 @@ public class MemoryMessageStore implements MessageStore
         }
     }
 
-    public void removeMessage(StoreContext context, Long messageId)
+    public void removeMessage(StoreContext context, Long messageId) throws AMQException
     {
+        checkNotClosed();
         if (_log.isDebugEnabled())
         {
             _log.debug("Removing message with id " + messageId);
@@ -172,9 +174,10 @@ public class MemoryMessageStore implements MessageStore
     public void storeContentBodyChunk(StoreContext context, Long messageId, int index, ContentChunk contentBody, boolean lastContentBody)
             throws AMQException
     {
+        checkNotClosed();
         List<ContentChunk> bodyList = _contentBodyMap.get(messageId);
 
-        if(bodyList == null && lastContentBody)
+        if (bodyList == null && lastContentBody)
         {
             _contentBodyMap.put(messageId, Collections.singletonList(contentBody));
         }
@@ -193,17 +196,28 @@ public class MemoryMessageStore implements MessageStore
     public void storeMessageMetaData(StoreContext context, Long messageId, MessageMetaData messageMetaData)
             throws AMQException
     {
+        checkNotClosed();
         _metaDataMap.put(messageId, messageMetaData);
     }
 
-    public MessageMetaData getMessageMetaData(StoreContext context,Long messageId) throws AMQException
+    public MessageMetaData getMessageMetaData(StoreContext context, Long messageId) throws AMQException
     {
+        checkNotClosed();
         return _metaDataMap.get(messageId);
     }
 
     public ContentChunk getContentBodyChunk(StoreContext context, Long messageId, int index) throws AMQException
     {
+        checkNotClosed();
         List<ContentChunk> bodyList = _contentBodyMap.get(messageId);
         return bodyList.get(index);
+    }
+
+     private void checkNotClosed() throws MessageStoreClosedException
+     {
+        if (_closed.get())
+        {
+            throw new MessageStoreClosedException();
+        }
     }
 }

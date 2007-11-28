@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -99,8 +98,8 @@ public class TransportConnection
                         if (!System.getProperties().containsKey("qpidnio") || Boolean.getBoolean("qpidnio"))
                         {
                             _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
-                                                                 ? "Qpid NIO is new default"
-                                                                 : "Sysproperty 'qpidnio' is set"));
+                                                                              ? "Qpid NIO is new default"
+                                                                              : "Sysproperty 'qpidnio' is set"));
                             result = new MultiThreadSocketConnector();
                         }
                         else
@@ -277,8 +276,7 @@ public class TransportConnection
             }
 
             AMQVMBrokerCreationException amqbce =
-                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", null);
-            amqbce.initCause(e);
+                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", e);
             throw amqbce;
         }
 
@@ -291,14 +289,11 @@ public class TransportConnection
         _acceptor.unbindAll();
         synchronized (_inVmPipeAddress)
         {
-            Iterator keys = _inVmPipeAddress.keySet().iterator();
-
-            while (keys.hasNext())
-            {
-                int id = (Integer) keys.next();
-                _inVmPipeAddress.remove(id);
-            }
-        }
+            _inVmPipeAddress.clear();
+        }        
+        _acceptor = null;
+        _currentInstance = -1;
+        _currentVMPort = -1;
     }
 
     public static void killVMBroker(int port)

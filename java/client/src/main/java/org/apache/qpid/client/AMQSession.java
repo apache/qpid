@@ -420,7 +420,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      *
      * @throws IllegalStateException If the session is closed.
      */
-    public void acknowledge() throws IllegalStateException
+    public void acknowledge() throws JMSException
     {
         if (isClosed())
         {
@@ -2510,6 +2510,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         for (Iterator it = consumers.iterator(); it.hasNext();)
         {
             BasicMessageConsumer consumer = (BasicMessageConsumer) it.next();
+            consumer.failedOver();
             registerConsumer(consumer, true);
         }
     }
