@@ -41,17 +41,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Session extends Invoker
 {
-      static
+    static
     {
-        String enableReplay = "enable_replay";
-            try
-            {
-                ENABLE_REPLAY  = new Boolean(System.getProperties().getProperty(enableReplay, "false"));
-            }
-            catch (Exception e)
-            {
-                ENABLE_REPLAY = false;
-            }
+        String enableReplay = "enable_command_replay";
+        try
+        {
+            ENABLE_REPLAY  = new Boolean(System.getProperties().getProperty(enableReplay, "false"));
+        }
+        catch (Exception e)
+        {
+            ENABLE_REPLAY = false;
+        }
     }
     private static boolean ENABLE_REPLAY = false;
     private static final Logger log = Logger.get(Session.class);
@@ -190,8 +190,6 @@ public class Session extends Invoker
     void complete(long lower, long upper)
     {
         log.debug("%s complete(%d, %d)", this, lower, upper);
-        if( ENABLE_REPLAY )
-        {
         synchronized (commands)
         {
             for (long id = lower; id <= upper; id++)
@@ -200,7 +198,6 @@ public class Session extends Invoker
             }
             commands.notifyAll();
             log.debug("%s   commands remaining: %s", this, commands);
-        }
         }
     }
 
@@ -220,10 +217,9 @@ public class Session extends Invoker
         {
             synchronized (commands)
             {
-                if(ENABLE_REPLAY)
-                {
-                     commands.put(commandsOut++, m);
-                }
+                // You only need to keep the command if you need command level replay.
+                // If not we only need to keep track of commands to make sync work
+                commands.put(commandsOut++,(ENABLE_REPLAY?m:null));
                 channel.method(m);
             }
         }
