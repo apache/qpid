@@ -149,7 +149,7 @@ under the License.
     <modules>
         <module>plugins</module>
         <module>common</module>
-        <module>broker</module>
+     <!--   <module>broker</module> -->
         <module>client</module>
         <module>cluster</module>
         <module>systests</module>
@@ -503,18 +503,20 @@ under the License.
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
-                <version>1.0.0</version>
+                <version>1.1.5</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-filter-ssl</artifactId>
-                <version>1.0.0</version>
+                <version>1.1.5</version>
             </dependency>
+       <!--     
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-java5</artifactId>
-                <version>1.0.0</version>
+                <version>1.1.5</version>
             </dependency>
+       -->  
             <dependency>
                 <groupId>backport-util-concurrent</groupId>
                 <artifactId>backport-util-concurrent</artifactId>
