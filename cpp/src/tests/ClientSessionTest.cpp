@@ -166,7 +166,7 @@ public:
         try {
             c->resume(session);
             CPPUNIT_FAIL("Expected InvalidArgumentException.");
-        } catch(const InvalidArgumentException&) {}
+        } catch(const InternalErrorException&) {}
     }
 
     void testUseSuspendedError() {
