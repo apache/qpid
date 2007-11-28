@@ -139,6 +139,7 @@ public class VirtualHost implements Accessable
 
         _queueRegistry = new DefaultQueueRegistry(this);
         _exchangeFactory = new DefaultExchangeFactory(this);
+        _exchangeFactory.initialise(hostConfig);
         _exchangeRegistry = new DefaultExchangeRegistry(this);
 
         if (store != null)

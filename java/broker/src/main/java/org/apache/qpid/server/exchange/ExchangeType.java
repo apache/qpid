@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,21 +20,16 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Collection;
-
-import org.apache.commons.configuration.Configuration;
-
-import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 
-public interface ExchangeFactory
+public interface ExchangeType<T extends Exchange>
 {
-    Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
-                            int ticket)
-            throws AMQException;
-
-    void initialise(Configuration hostConfig);
-
-    Collection<ExchangeType<? extends Exchange>> getRegisteredTypes();
+    public AMQShortString getName();
+    public Class<T> getExchangeClass();
+    public T newInstance(VirtualHost host, AMQShortString name,
+                         boolean durable, int ticket, boolean autoDelete) throws AMQException;
+    public AMQShortString getDefaultExchangeName();
 }

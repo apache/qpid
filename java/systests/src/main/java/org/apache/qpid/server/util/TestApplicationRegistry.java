@@ -23,6 +23,7 @@ package org.apache.qpid.server.util;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -145,5 +146,11 @@ public class TestApplicationRegistry extends ApplicationRegistry
     {
         return _messageStore;
     }
+
+    public PluginManager getPluginManager()
+    {
+        return null;
+    }
 }
+
 
