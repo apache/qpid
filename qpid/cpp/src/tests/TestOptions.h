@@ -62,6 +62,7 @@ struct TestOptions : public qpid::Options
             msg << *this << std::endl << std::endl << e.what() << std::endl;
             throw qpid::Options::Exception(msg.str());
         }
+        trace = log.trace;
         qpid::log::Logger::instance().configure(log, argv[0]);
         if (help) {
             std::ostringstream msg;
@@ -82,6 +83,7 @@ struct TestOptions : public qpid::Options
     std::string clientid;
     std::string username;
     std::string password;
+    bool trace;
     bool help;
     log::Options log;
     std::string helpText;
