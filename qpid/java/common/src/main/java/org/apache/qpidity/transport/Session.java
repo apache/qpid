@@ -41,7 +41,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Session extends Invoker
 {
-
+      static
+    {
+        String enableReplay = "enable_replay";
+            try
+            {
+                ENABLE_REPLAY  = new Boolean(System.getProperties().getProperty(enableReplay, "false"));
+            }
+            catch (Exception e)
+            {
+                ENABLE_REPLAY = false;
+            }
+    }
+    private static boolean ENABLE_REPLAY = false;
     private static final Logger log = Logger.get(Session.class);
 
     // channel may be null
@@ -178,16 +190,17 @@ public class Session extends Invoker
     void complete(long lower, long upper)
     {
         log.debug("%s complete(%d, %d)", this, lower, upper);
-
+        if( ENABLE_REPLAY )
+        {
         synchronized (commands)
         {
             for (long id = lower; id <= upper; id++)
             {
                 commands.remove(id);
             }
-
             commands.notifyAll();
             log.debug("%s   commands remaining: %s", this, commands);
+        }
         }
     }
 
@@ -207,7 +220,10 @@ public class Session extends Invoker
         {
             synchronized (commands)
             {
-                commands.put(commandsOut++, m);
+                if(ENABLE_REPLAY)
+                {
+                     commands.put(commandsOut++, m);
+                }
                 channel.method(m);
             }
         }
