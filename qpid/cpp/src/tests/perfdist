@@ -1,32 +1,56 @@
 #!/bin/bash
 #
+set -e
 usage() {
 cat <<EOF
-Distributed perftest with ssh.
-Arguments before -- are passed to perftest.
-Arguments after -- are treated as host names.
-Publisher runs on first host. One listener runs on each 
-Remaining host. To run multiple liseners on a host, list it more than once.
-Do not pass --consumers, --publish or --listen options, they are computed
-from the host list.
+usage: $0 <perftest-args> --pubhosts <publish-hosts> --subhosts <subscribe-hosts>
+
+All perftest args must come before --pubhost or --subhost.  Runs one
+publish process on each publish-host, one subscribe process on each
+subscribe-host. To run multiple processes on the same host, list it
+more than once.
+
+Do not pass action flags --setup, --control, --publish, --subscribe they
+will be passed to the appropriate processes.
+
+Do not pass --nsubs or --npubs, they are calculated by counting the host lists.
 EOF
 exit 1
 }
 
-while test "$HOSTS" != "$*"; do
+while test $# -gt 0; do
     case $1 in
-	--consumers|--publish|--listen) usage ;;
-	--) shift; PUB="$1" ; shift ; HOSTS="$*" ;;
+	--publish|--subscribe|--setup|--control|--npubs|--nsubs) usage ;;
+	--pubhosts) COLLECT=PUBHOSTS; shift; break ;;
+	--subhosts) COLLECT=SUBHOSTS; shift; break ;;
 	*) ARGS="$ARGS $1"; shift ;;
     esac
 done
-test -n "$HOSTS" || { echo "No -- found"; usage; }
-N=`echo $HOSTS | wc -w`
-PERFTEST=`PATH=$PWD:$PATH which perftest`
-$PERFTEST --purge $ARGS
-ssh $PUB $PERFTEST $ARGS --publish --consumers $N&
-for h in $HOSTS; do
-    ssh $h $PERFTEST $ARGS --listen&
-done
-wait
 
+if [ -z "$COLLECT" ]; then echo "No --pubhost or --subhost specified"; usage; fi
+
+while test $# -gt 0; do
+    case $1 in
+	--pubhosts) COLLECT=PUBHOSTS; shift ;; 
+	--subhosts) COLLECT=SUBHOSTS; shift ;;
+	*) eval "$COLLECT=\"\$$COLLECT $1\""; shift ;;
+    esac
+done
+
+if [ -z "$PUBHOSTS" ]; then echo "Missing --pubhost or --subhost"; usage; fi
+if [ -z "$SUBHOSTS" ]; then echo "Missing --subhost or --subhost"; usage; fi
+
+NPUBS=`echo $PUBHOSTS | wc -w`
+NSUBS=`echo $SUBHOSTS | wc -w`
+ARGS="$ARGS --npubs $NPUBS --nsubs $NSUBS"
+PERFTEST="`PATH=$PWD:$PATH which perftest` $ARGS"
+
+start() {
+    echo $1 on $2
+    ssh $2 $PERFTEST --$1
+}
+
+$PERFTEST --setup
+for h in $PUBHOSTS; do start publish $h & done
+for h in $SUBHOSTS; do start subscribe $h &  done
+$PERFTEST --control
