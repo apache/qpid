@@ -19,10 +19,6 @@
  *
  */
 
-// FIXME aconway 2007-08-30: Rewrite as a Session test.
-// There is an issue with the tests use of DeliveryAdapter
-// which is no longer exposed on Session (part of SemanticHandler.)
-// 
 #include "qpid/broker/BrokerChannel.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/FanOutExchange.h"
