@@ -19,10 +19,11 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/framing/Buffer.h"
 
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(Uuid);
+#include "unit_test.h"
 
 #include <set>
+
+QPID_AUTO_TEST_SUITE(UuidTestSuite)
 
 using namespace std;
 using namespace qpid::framing;
@@ -74,4 +75,4 @@ BOOST_AUTO_TEST_CASE(testUuidEncodeDecode) {
                       string(decoded.begin(), decoded.end()));
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

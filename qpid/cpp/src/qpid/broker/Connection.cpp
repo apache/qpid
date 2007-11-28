@@ -18,24 +18,26 @@
  * under the License.
  *
  */
-#include "qpid/log/Statement.h"
-#include <iostream>
-#include <assert.h>
-
 #include "Connection.h"
 #include "SessionState.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
 #include "BrokerAdapter.h"
 #include "SemanticHandler.h"
+
+#include "qpid/log/Statement.h"
+#include "qpid/ptr_map.h"
+#include "qpid/framing/AMQP_ClientProxy.h"
 
 #include <boost/bind.hpp>
 
 #include <algorithm>
+#include <iostream>
+#include <assert.h>
 
 using namespace boost;
 using namespace qpid::sys;
 using namespace qpid::framing;
 using namespace qpid::sys;
+using namespace qpid::ptr_map;
 
 namespace qpid {
 namespace broker {
@@ -77,9 +79,8 @@ void Connection::idleIn(){}
 
 void Connection::closed(){ // Physically closed, suspend open sessions.
     try {
-        std::for_each(
-            channels.begin(), channels.end(),
-            boost::bind(&SessionHandler::localSuspend, _1));
+	for (ChannelMap::iterator i = channels.begin(); i != channels.end(); ++i)
+	    get_pointer(i)->localSuspend();
         while (!exclusiveQueues.empty()) {
             Queue::shared_ptr q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();
@@ -105,7 +106,7 @@ SessionHandler& Connection::getChannel(ChannelId id) {
     if (i == channels.end()) {
         i = channels.insert(id, new SessionHandler(*this, id)).first;
     }
-    return *i;
+    return *get_pointer(i);
 }
 
 }}

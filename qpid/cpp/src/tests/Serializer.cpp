@@ -26,12 +26,14 @@
 
 #include <boost/bind.hpp>
 #include <boost/utility/value_init.hpp>
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(Serializer);
+#include "unit_test.h"
 
 #include <set>
 
 #include <unistd.h>
+
+QPID_AUTO_TEST_SUITE(SerializerTestSuite)
+
 
 using namespace qpid;
 using namespace qpid::sys;
@@ -152,4 +154,4 @@ BOOST_AUTO_TEST_CASE(testExternalDispatch) {
     BOOST_CHECK(Thread::logId() != *tester.threads.begin());
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

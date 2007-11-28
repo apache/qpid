@@ -20,6 +20,7 @@
  */
 
 #include "qpid/Options.h"
+#include "qpid/ptr_map.h"
 #include "qpid/Exception.h"
 #include "qpid/client/Channel.h"
 #include "qpid/client/Connection.h"
@@ -71,7 +72,7 @@ class Listener : public MessageListener, private Runnable{
     TestMap tests;
     const string name;
     const string topic;
-    TestMap::iterator test;
+    TestCase* test;
     auto_ptr<Thread> runner;
     ReplyTo reportTo;
     string reportCorrelator;    
@@ -186,7 +187,7 @@ void Listener::received(Message& message)
         test->stop();
         sendReport();
     } else if (type == "TERMINATE") {
-        if (test != tests.end()) test->stop();
+        if (test) test->stop();
         shutdown();
     } else {        
         cerr <<"ERROR!: Received unknown control message: " << type << endl;
@@ -201,8 +202,9 @@ void Listener::shutdown()
 
 bool Listener::invite(const string& name)
 {
-    test = tests.find(name);
-    return test != tests.end();
+    TestMap::iterator i = tests.find(name);
+    test = (i != tests.end()) ? qpid::ptr_map::get_pointer(i) : 0;
+    return test;
 }
 
 void Listener::run()

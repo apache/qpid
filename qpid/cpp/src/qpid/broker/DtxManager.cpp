@@ -22,10 +22,13 @@
 #include "DtxTimeout.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include "qpid/ptr_map.h"
+
 #include <boost/format.hpp>
 #include <iostream>
-using qpid::sys::Mutex;
 
+using qpid::sys::Mutex;
+using namespace qpid::ptr_map;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
@@ -81,14 +84,14 @@ void DtxManager::rollback(const std::string& xid)
     }
 }
 
-DtxManager::WorkMap::iterator DtxManager::getWork(const std::string& xid)
+DtxWorkRecord* DtxManager::getWork(const std::string& xid)
 {
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
         throw InvalidArgumentException(QPID_MSG("Unrecognised xid " << xid));
     }
-    return i;
+    return get_pointer(i);
 }
 
 void DtxManager::remove(const std::string& xid)
@@ -102,20 +105,20 @@ void DtxManager::remove(const std::string& xid)
     }
 }
 
-DtxManager::WorkMap::iterator DtxManager::createWork(std::string xid)
+DtxWorkRecord* DtxManager::createWork(std::string xid)
 {
     Mutex::ScopedLock locker(lock); 
     WorkMap::iterator i = work.find(xid);
     if (i != work.end()) {
         throw CommandInvalidException(QPID_MSG("Xid " << xid << " is already known (use 'join' to add work to an existing xid)"));
     } else {
-        return work.insert(xid, new DtxWorkRecord(xid, store)).first;
+      return get_pointer(work.insert(xid, new DtxWorkRecord(xid, store)).first);
     }
 }
 
 void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
 {
-    WorkMap::iterator record = getWork(xid);
+    DtxWorkRecord* record = getWork(xid);
     DtxTimeout::shared_ptr timeout = record->getTimeout();
     if (timeout.get()) {
         if (timeout->timeout == secs) return;//no need to do anything further if timeout hasn't changed
@@ -140,7 +143,7 @@ void DtxManager::timedout(const std::string& xid)
     if (i == work.end()) {
         QPID_LOG(warning, "Transaction timeout failed: no record for xid");
     } else {
-        i->timedout();
+        get_pointer(i)->timedout();
         //TODO: do we want to have a timed task to cleanup, or can we rely on an explicit completion?
         //timer.add(TimerTask::shared_ptr(new DtxCleanup(60*30/*30 mins*/, *this, xid)));
     }

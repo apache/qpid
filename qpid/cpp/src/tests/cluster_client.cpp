@@ -19,13 +19,14 @@
 #include "qpid/client/Connection.h"
 #include "qpid/shared_ptr.h"
 
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(cluster_client);
+#include "unit_test.h"
 
 #include <fstream>
 #include <vector>
 #include <functional>
 
+
+QPID_AUTO_TEST_SUITE(cluster_clientTestSuite)
 
 using namespace std;
 using namespace qpid;
@@ -78,4 +79,4 @@ BOOST_AUTO_TEST_CASE(testWiringReplication) {
     }
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

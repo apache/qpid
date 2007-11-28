@@ -17,7 +17,7 @@
  */
 
 
-#include <boost/test/auto_unit_test.hpp>
+#include "unit_test.h"
 #include "test_tools.h"
 #include "qpid/Url.h"
 #include <boost/assign.hpp>
@@ -26,7 +26,7 @@ using namespace std;
 using namespace qpid;
 using namespace boost::assign;
 
-BOOST_AUTO_TEST_SUITE(Url);
+QPID_AUTO_TEST_SUITE(UrlTestSuite)
 
 BOOST_AUTO_TEST_CASE(testUrl_str) {
     Url url;
@@ -61,4 +61,4 @@ BOOST_AUTO_TEST_CASE(testUrl_parse) {
 }
 
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

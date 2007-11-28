@@ -35,7 +35,6 @@ namespace broker {
 class DtxManager{
     typedef boost::ptr_map<std::string, DtxWorkRecord> WorkMap;
 
-
     struct DtxCleanup : public TimerTask
     {
         DtxManager& mgr;
@@ -51,8 +50,8 @@ class DtxManager{
     Timer timer;
 
     void remove(const std::string& xid);
-    WorkMap::iterator getWork(const std::string& xid);
-    WorkMap::iterator createWork(std::string xid);
+    DtxWorkRecord* getWork(const std::string& xid);
+    DtxWorkRecord* createWork(std::string xid);
 
 public:
     DtxManager(TransactionalStore* const store);

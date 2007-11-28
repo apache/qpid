@@ -16,7 +16,6 @@
  *
  */
 
-
 #include "test_tools.h"
 #include "qpid/log/Logger.h"
 #include "qpid/log/Options.h"
@@ -25,13 +24,14 @@
 
 #include <boost/test/floating_point_comparison.hpp>
 #include <boost/format.hpp>
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(logging);
+#include "unit_test.h"
 
 #include <exception>
 #include <fstream>
 #include <time.h>
 
+
+QPID_AUTO_TEST_SUITE(loggingTestSuite)
 
 using namespace std;
 using namespace boost;
@@ -42,7 +42,6 @@ BOOST_AUTO_TEST_CASE(testStatementInit) {
     BOOST_CHECK(!s.enabled);
     BOOST_CHECK_EQUAL(string(__FILE__), s.file);
     BOOST_CHECK_EQUAL(line, s.line);
-    BOOST_CHECK_EQUAL(string("void testStatementInit()"), s.function);
     BOOST_CHECK_EQUAL(debug, s.level);
 }
 
@@ -141,7 +140,6 @@ BOOST_AUTO_TEST_CASE(testMacro) {
     vector<string> expect=list_of("foo\n");
     BOOST_CHECK_EQUAL(expect, out->msg);
     BOOST_CHECK_EQUAL(__FILE__, out->stmt.front().file);
-    BOOST_CHECK_EQUAL("void testMacro()", out->stmt.front().function);
 
     // Not enabled:
     QPID_LOG(debug, "bar");
@@ -173,7 +171,6 @@ BOOST_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(Logger::FUNCTION);
     QPID_LOG(critical, "foo");
-    BOOST_CHECK_EQUAL("void testLoggerFormat(): foo\n", out->last());
     
     l.format(Logger::LEVEL);
     QPID_LOG(critical, "foo");
@@ -181,7 +178,7 @@ BOOST_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(~0);               // Everything
     QPID_LOG(critical, "foo");
-    re=".* critical \\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void testLoggerFormat\\(\\): foo\n";
+    re=".* critical \\[[0-9a-f]*] "+string(__FILE__)+":\\d+:void .*testLoggerFormat.*\\(\\): foo\n";
     BOOST_CHECK_REGEX(re, out->last());
 }
 
@@ -370,4 +367,4 @@ BOOST_AUTO_TEST_CASE(testLoggerConfigure) {
     unlink("logging.tmp");
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

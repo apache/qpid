@@ -22,10 +22,11 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/framing/FieldValue.h"
 
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(FieldTable);
+#include "unit_test.h"
 
 using namespace qpid::framing;
+
+QPID_AUTO_TEST_SUITE(FieldTableTestSuite)
 
 BOOST_AUTO_TEST_CASE(testMe)
 {
@@ -80,4 +81,4 @@ BOOST_AUTO_TEST_CASE(testAssignment)
     BOOST_CHECK(IntegerValue(1234) == *d.get("B"));
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()
