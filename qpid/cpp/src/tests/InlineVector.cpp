@@ -20,8 +20,9 @@
  */
 
 #include "qpid/InlineVector.h"
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(InlineVector);
+#include "unit_test.h"
+
+QPID_AUTO_TEST_SUITE(InlineVectorTestSuite)
 
 using namespace qpid;
 using namespace std;
@@ -85,4 +86,4 @@ BOOST_AUTO_TEST_CASE(testInsert) {
 }
 
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

@@ -18,8 +18,9 @@
 
 #include "qpid/RefCounted.h"
 
-#include <boost/test/auto_unit_test.hpp>
-BOOST_AUTO_TEST_SUITE(RefCounted);
+#include "unit_test.h"
+
+QPID_AUTO_TEST_SUITE(RefCountedTestSuiteTestSuite)
 
 using namespace std;
 using namespace qpid;
@@ -69,4 +70,4 @@ BOOST_AUTO_TEST_CASE(testRefCounted) {
     BOOST_CHECK_EQUAL(0, CountMe::instances);
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+QPID_AUTO_TEST_SUITE_END()

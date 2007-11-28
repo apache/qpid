@@ -18,10 +18,10 @@
 
 #include "qpid/sys/RefCountedMap.h"
 
-#include <boost/test/auto_unit_test.hpp>
+#include "unit_test.h"
 #include <boost/bind.hpp>
 
-BOOST_AUTO_TEST_SUITE(RefCountedMap);
+QPID_AUTO_TEST_SUITE(RefCountedMapTestSuite)
 
 using namespace std;
 using namespace qpid;
@@ -121,3 +121,5 @@ BOOST_AUTO_TEST_CASE(testRefCountedMapAttachClose) {
     BOOST_CHECK_EQUAL(0, Data::instances);
     BOOST_CHECK_EQUAL(0, Attachment::instances);
 }
+
+QPID_AUTO_TEST_SUITE_END()
