@@ -334,6 +334,7 @@ struct Controller : public Client {
     }
 };
 
+
 struct PublishThread : public Client {
     string destination;
     string routingKey;
@@ -419,18 +420,31 @@ struct SubscribeThread : public Client {
 
             Message msg;
             AbsTime start=now();
+            size_t lastMsg=0;
             for (size_t i = 0; i < opts.subQuota; ++i) {
                 msg=lq.pop();
-                // FIXME aconway 2007-11-23: Verify message sequence numbers.
-                // Need an array of counters, one per publisher and need
-                // publisher ID in the message for multiple publishers.
+                // TODO aconway 2007-11-23: check message sequence for
+                // multiple publishers. Need an array of counters,
+                // one per publisher and a publisher ID in the
+                // message. Careful not to introduce a lot of overhead
+                // here, e.g. no std::map, std::string etc.
+                //
+                // For now verify order only for a single publisher.
+                if (opts.pubs == 1) {
+                    char* data = const_cast<char*>(msg.getData().data());
+                    size_t n = *reinterpret_cast<uint32_t*>(data);
+                    if (n < lastMsg) {
+                        // Report to control.
+                        Message error("Out-of-sequence messages", "sub_done");
+                        session.messageTransfer(arg::content=error);
+                        return;
+                    }
+                    lastMsg=n;
+                }
             }
             if (opts.ack !=0)
                 msg.acknowledge(); // Cumulative ack for final batch.
             AbsTime end=now();
-
-            // FIXME aconway 2007-11-23: close the subscription,
-            // release any pending messages.
 
             // Report to publisher.
             Message result(lexical_cast<string>(opts.subQuota/secs(start,end)),
