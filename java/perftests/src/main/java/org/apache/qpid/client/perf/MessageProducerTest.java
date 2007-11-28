@@ -10,6 +10,7 @@ import javax.jms.Connection;
 import javax.jms.Destination;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +47,7 @@ public class MessageProducerTest extends Options implements Runnable
     {
         AMQConnection con = ConnectionUtility.getInstance().getConnection();
         con.start();
-        Destination dest = new AMQTopic(con,routingKey);
+        Destination dest = Boolean.getBoolean("useQueue")? new AMQQueue(con,routingKey) : new AMQTopic(con,routingKey);
         JMSProducer prod = new JMSProducer(String.valueOf(_count),(Connection)con, dest,_messageSize, _transacted);
         Thread t = new Thread(prod);
         t.setName("JMSProducer-"+_count);

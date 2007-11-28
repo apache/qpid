@@ -15,6 +15,7 @@ public class Options
     /**
      * System props
      * -DmessageSize
+     * -DuseQueue
      * -Dtransacted
      * -DproducerCount
      * -DconsumerCount
