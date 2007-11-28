@@ -211,7 +211,7 @@ void SessionCore::resume(shared_ptr<ConnectionImpl> c) {
         proxy.resume(getId());
         waitFor(OPEN);
         proxy.ack(sendAck, SequenceNumberSet());
-        // FIXME aconway 2007-10-23: Replay inside the lock might be a prolem
+        // TODO aconway 2007-10-23: Replay inside the lock might be a prolem
         // for large replay sets.
         SessionState::Replay replay=session->replay();
         for (SessionState::Replay::iterator i = replay.begin();
@@ -244,9 +244,10 @@ void SessionCore::attached(const Uuid& sessionId,
     check(state == OPENING || state == RESUMING,
           COMMAND_INVALID, UNEXPECTED_SESSION_ATTACHED);
     if (state==OPENING) {        // New session
-        // FIXME aconway 2007-10-17: arbitrary ack value of 100 for
-        // client, allow configuration.
-        session=in_place<SessionState>(100, detachedLifetime > 0, sessionId);
+        // TODO aconway 2007-10-17: 0 disables sesskon.ack for now.
+        // If AMQP WG decides to keep it, we need to add configuration
+        // for the ack rate.
+        session=in_place<SessionState>(0, detachedLifetime > 0, sessionId);
         setState(OPEN);
     }
     else {                      // RESUMING

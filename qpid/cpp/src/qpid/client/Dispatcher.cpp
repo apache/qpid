@@ -75,20 +75,11 @@ void Dispatcher::run()
         if (content->isA<MessageTransferBody>()) {
             Message msg(*content, session);
             Subscriber::shared_ptr listener = find(msg.getDestination());
-            if (!listener) {
-                // FIXME aconway 2007-11-07: Should close session & throw here?
-                QPID_LOG(error, "No message listener for "
-                         << content->getMethod());
-            } else {
-                listener->received(msg);
-            }
+            assert(listener);
+            listener->received(msg);
         } else {
-            if (handler.get()) {
-                handler->handle(*content);
-            } else {
-                // FIXME aconway 2007-11-07: Should close session & throw here?
-                QPID_LOG(error, "Unhandled method: " << content->getMethod());                                        
-            }
+            assert (handler.get());
+            handler->handle(*content);
         }
     }
 }
