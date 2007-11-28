@@ -246,7 +246,7 @@ void SessionCore::attached(const Uuid& sessionId,
     if (state==OPENING) {        // New session
         // FIXME aconway 2007-10-17: arbitrary ack value of 100 for
         // client, allow configuration.
-        session=in_place<SessionState>(100, sessionId);
+        session=in_place<SessionState>(100, detachedLifetime > 0, sessionId);
         setState(OPEN);
     }
     else {                      // RESUMING
