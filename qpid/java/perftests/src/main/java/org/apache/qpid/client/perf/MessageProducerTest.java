@@ -24,7 +24,8 @@ public class MessageProducerTest extends Options implements Runnable
     private int _count;
     String _logFileName;
     long _startTime;
-    long totalMsgCount;
+    long _totalMsgCount;
+    double _timeElapsed = 0;
 
     public void start() throws Exception
     {
@@ -98,6 +99,8 @@ public class MessageProducerTest extends Options implements Runnable
         try
         {
             FileWriter _logFile = new FileWriter(_logFileName + ".csv",true);
+            long newTotalMsgCount = 0;
+            long totalMsgCountThisInterval = 0;
             for (Integer id : _producers.keySet())
             {
                 JMSProducer prod = _producers.get(id);
@@ -107,23 +110,29 @@ public class MessageProducerTest extends Options implements Runnable
                 buf.append(d.getTime()).append(",");
                 buf.append(prod.getCurrentMessageCount()).append("\n");
                 _logFile.write(buf.toString());
-                totalMsgCount = totalMsgCount + prod.getCurrentMessageCount();
+                newTotalMsgCount = newTotalMsgCount + prod.getCurrentMessageCount();
+                totalMsgCountThisInterval = newTotalMsgCount - _totalMsgCount;
+                _totalMsgCount = newTotalMsgCount;
             }
             _logFile.close();
 
             FileWriter _memoryLog = new FileWriter(_logFileName + "_memory.csv",true);
             StringBuffer buf = new StringBuffer("JMSProducer,");
             Date d = new Date(System.currentTimeMillis());
+            double totaltime = d.getTime() - _startTime;
+            _timeElapsed = totaltime - _timeElapsed;
             buf.append(df.format(d)).append(",");
             buf.append(d.getTime()).append(",");
-            buf.append(totalMsgCount).append(",");
+            buf.append(_totalMsgCount).append(",");
             buf.append(Runtime.getRuntime().totalMemory() -Runtime.getRuntime().freeMemory()).append("\n");
+            buf.append("\n");
+            buf.append("Throughput: total " + (_totalMsgCount /totaltime)*1000 + " msg/s;  this interval: "  +  (totalMsgCountThisInterval/_timeElapsed)*1000 + " msg/s");
             _memoryLog.write(buf.toString());
             _memoryLog.close();
+            System.out.println(buf);
             if (printSummary)
             {
-                double totaltime = d.getTime() - _startTime;
-                double dCount = totalMsgCount;
+                double dCount = _totalMsgCount;
                 double ratio = (dCount/totaltime)*1000;
                 FileWriter _summaryLog = new FileWriter(_logFileName + "_Summary",true);
                 buf = new StringBuffer("MessageProducerTest \n Test started at : ");
@@ -131,12 +140,13 @@ public class MessageProducerTest extends Options implements Runnable
                 d = new Date(System.currentTimeMillis());
                 buf.append(df.format(d)).append("\n Total Time taken (ms):");
                 buf.append(totaltime).append("\n Total messages sent:");
-                buf.append(totalMsgCount).append("\n Producer rate:");
+                buf.append(_totalMsgCount).append("\n Producer rate:");
                 buf.append(ratio).append("\n");
                 _summaryLog.write(buf.toString());
                 System.out.println("---------- Test Ended -------------");
                 _summaryLog.close();
             }
+            _timeElapsed = totaltime;
         }
         catch(Exception e)
         {
