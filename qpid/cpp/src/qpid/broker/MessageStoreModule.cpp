@@ -22,9 +22,6 @@
 #include "MessageStoreModule.h"
 #include <iostream>
 
-// This transfer protects against the unloading of the store lib prior to the handling of the exception
-#define TRANSFER_EXCEPTION(fn) try { fn; } catch (std::exception& e) { throw Exception(e.what()); }
-
 using namespace qpid::broker;
 
 MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
@@ -33,113 +30,113 @@ MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
 
 bool MessageStoreModule::init(const std::string& dir, const bool async, const bool force)
 {
-	TRANSFER_EXCEPTION(return store->init(dir, async, force));
+	return store->init(dir, async, force);
 }
 
 void MessageStoreModule::create(PersistableQueue& queue)
 {
-    TRANSFER_EXCEPTION(store->create(queue));
+    store->create(queue);
 }
 
 void MessageStoreModule::destroy(PersistableQueue& queue)
 {
-    TRANSFER_EXCEPTION(store->destroy(queue));
+    store->destroy(queue);
 }
 
 void MessageStoreModule::create(const PersistableExchange& exchange)
 {
-    TRANSFER_EXCEPTION(store->create(exchange));
+    store->create(exchange);
 }
 
 void MessageStoreModule::destroy(const PersistableExchange& exchange)
 {
-    TRANSFER_EXCEPTION(store->destroy(exchange));
+    store->destroy(exchange);
 }
 
 void MessageStoreModule::bind(const PersistableExchange& e, const PersistableQueue& q, 
                               const std::string& k, const framing::FieldTable& a)
 {
-    TRANSFER_EXCEPTION(store->bind(e, q, k, a));
+    store->bind(e, q, k, a);
 }
 
 void MessageStoreModule::unbind(const PersistableExchange& e, const PersistableQueue& q, 
                                 const std::string& k, const framing::FieldTable& a)
 {
-    TRANSFER_EXCEPTION(store->unbind(e, q, k, a));
+    store->unbind(e, q, k, a);
 }
 
 void MessageStoreModule::recover(RecoveryManager& registry)
 {
-    TRANSFER_EXCEPTION(store->recover(registry));
+    store->recover(registry);
 }
 
 void MessageStoreModule::stage( intrusive_ptr<PersistableMessage>& msg)
 {
-    TRANSFER_EXCEPTION(store->stage(msg));
+    store->stage(msg);
 }
 
 void MessageStoreModule::destroy(intrusive_ptr<PersistableMessage>& msg)
 {
-    TRANSFER_EXCEPTION(store->destroy(msg));
+    store->destroy(msg);
 }
 
 void MessageStoreModule::appendContent(intrusive_ptr<const PersistableMessage>& msg, const std::string& data)
 {
-    TRANSFER_EXCEPTION(store->appendContent(msg, data));
+    store->appendContent(msg, data);
 }
 
 void MessageStoreModule::loadContent(const qpid::broker::PersistableQueue& queue, 
      intrusive_ptr<const PersistableMessage>& msg, string& data, uint64_t offset, uint32_t length)
 {
-    TRANSFER_EXCEPTION(store->loadContent(queue, msg, data, offset, length));
+    store->loadContent(queue, msg, data, offset, length);
 }
 
 void MessageStoreModule::enqueue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
 {
-    TRANSFER_EXCEPTION(store->enqueue(ctxt, msg, queue));
+    store->enqueue(ctxt, msg, queue);
 }
 
 void MessageStoreModule::dequeue(TransactionContext* ctxt, intrusive_ptr<PersistableMessage>& msg, const PersistableQueue& queue)
 {
-    TRANSFER_EXCEPTION(store->dequeue(ctxt, msg, queue));
+    store->dequeue(ctxt, msg, queue);
 }
 
 void MessageStoreModule::flush(const qpid::broker::PersistableQueue& queue)
 {
-    TRANSFER_EXCEPTION(store->flush(queue));
+    store->flush(queue);
 }
 
 u_int32_t MessageStoreModule::outstandingQueueAIO(const PersistableQueue& queue)
 {
-    TRANSFER_EXCEPTION(return store->outstandingQueueAIO(queue));
+    return store->outstandingQueueAIO(queue);
 }
 
 std::auto_ptr<TransactionContext> MessageStoreModule::begin()
 {
-    TRANSFER_EXCEPTION(return store->begin());
+    return store->begin();
 }
 
 std::auto_ptr<TPCTransactionContext> MessageStoreModule::begin(const std::string& xid)
 {
-    TRANSFER_EXCEPTION(return store->begin(xid));
+    return store->begin(xid);
 }
 
 void MessageStoreModule::prepare(TPCTransactionContext& txn)
 {
-    TRANSFER_EXCEPTION(store->prepare(txn));
+    store->prepare(txn);
 }
 
 void MessageStoreModule::commit(TransactionContext& ctxt)
 {
-    TRANSFER_EXCEPTION(store->commit(ctxt));
+    store->commit(ctxt);
 }
 
 void MessageStoreModule::abort(TransactionContext& ctxt)
 {
-    TRANSFER_EXCEPTION(store->abort(ctxt));
+    store->abort(ctxt);
 }
 
 void MessageStoreModule::collectPreparedXids(std::set<std::string>& xids)
 {
-    TRANSFER_EXCEPTION(store->collectPreparedXids(xids));
+    store->collectPreparedXids(xids);
 }
