@@ -31,14 +31,26 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
                 // use default size
                 MAX_NOT_SYNC_DATA_LENGH = 200000000;
             }
+            String flush = "message_size_before_flush";
+            try
+            {
+                MAX_NOT_FLUSH_DATA_LENGH = new Long(System.getProperties().getProperty(flush, "2000000"));
+            }
+            catch (NumberFormatException e)
+            {
+                // use default size
+                MAX_NOT_FLUSH_DATA_LENGH = 20000000;
+            }
     }
 
     private static  long MAX_NOT_SYNC_DATA_LENGH;
+     private static  long MAX_NOT_FLUSH_DATA_LENGH;
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
     private ClosedListener _exceptionListner;
     private RangeSet _acquiredMessages;
     private RangeSet _rejectedMessages;
     private long _currentDataSizeNotSynced;
+    private long _currentDataSizeNotFlushed;
 
 
     public void messageAcknowledge(RangeSet ranges)
@@ -80,6 +92,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     public void data(ByteBuffer buf)
     {
         _currentDataSizeNotSynced = _currentDataSizeNotSynced + buf.remaining();
+        _currentDataSizeNotFlushed = _currentDataSizeNotFlushed + buf.remaining();
         super.data(buf);
     }
 
@@ -122,6 +135,11 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         if( MAX_NOT_SYNC_DATA_LENGH != -1 && _currentDataSizeNotSynced >= MAX_NOT_SYNC_DATA_LENGH)
         {
             sync();
+        }
+         if( MAX_NOT_FLUSH_DATA_LENGH != -1 && _currentDataSizeNotFlushed >= MAX_NOT_FLUSH_DATA_LENGH)
+        {
+           executionFlush();
+            _currentDataSizeNotFlushed = 0;
         }
     }
 
