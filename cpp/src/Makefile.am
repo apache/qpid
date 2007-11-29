@@ -399,6 +399,7 @@ nobase_include_HEADERS = \
   qpid/management/ManagementExchange.h \
   qpid/management/ManagementObject.h \
   qpid/sys/Acceptor.h \
+  qpid/sys/AggregateOutput.h \
   qpid/sys/AsynchIO.h \
   qpid/sys/AtomicCount.h \
   qpid/sys/BlockingQueue.h \
