@@ -45,6 +45,12 @@ class PollerHandle {
 
 public:
     PollerHandle(const Socket& s);
+    
+    // Usual way to delete (will defer deletion until we
+    // can't be returned from a Poller::wait any more)
+    void deferDelete();
+    
+    // Class clients shouldn't ever use this
     virtual ~PollerHandle();
     
     const Socket& getSocket() const {return socket;}
