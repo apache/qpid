@@ -120,7 +120,7 @@ public:
                 for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
                     (*i)->notifyDurableIOComplete();
                 } 
-                synclist.clear();
+                //synclist.clear();
             }            
         }
     }
