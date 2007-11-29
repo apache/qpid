@@ -149,7 +149,7 @@ under the License.
     <modules>
         <module>plugins</module>
         <module>common</module>
-     <!--   <module>broker</module> -->
+        <module>broker</module>
         <module>client</module>
         <module>cluster</module>
         <module>systests</module>
