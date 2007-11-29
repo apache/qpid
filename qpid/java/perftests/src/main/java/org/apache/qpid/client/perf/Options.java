@@ -5,11 +5,9 @@ public class Options
     int _messageSize;
     boolean _transacted;
     boolean _synchronous;
-    String[] destArray;
-    int _producerCount;
-    int _consumerCount;
+    String _destination;
     long _expiry;
-    long _logDuration;
+    long _logFrequency;
     String _logFilePath;
 
     /**
@@ -17,8 +15,6 @@ public class Options
      * -DmessageSize
      * -DuseQueue
      * -Dtransacted
-     * -DproducerCount
-     * -DconsumerCount
      * -Ddestinations
      * -DlogFilePath
      * -Duration=1H,30M,10S
@@ -27,21 +23,16 @@ public class Options
     public void parseOptions()
     {
         _messageSize = Integer.parseInt(System.getProperty("messageSize","100"));
-        _synchronous = Boolean.parseBoolean( System.getProperty("synchronous", "false"));
         _transacted = false;
-        String destinations = System.getProperty("destinations");
-        destArray = destinations.split(",");
-        _producerCount = Integer.parseInt(System.getProperty("producerCount","1"));
-        _consumerCount = Integer.parseInt(System.getProperty("consumerCount","1"));
-        _logDuration = Long.parseLong(System.getProperty("logDuration","10"));
-        _logDuration = _logDuration*1000*60;
+        _destination = System.getProperty("destinations");
+        _logFrequency = Long.parseLong(System.getProperty("logDuration","10"));
         _logFilePath = System.getProperty("logFilePath");
         _expiry = getExpiry();
 
         System.out.println("============= Test Data ===================");
-        System.out.println("Total no of producers  : " + _producerCount);
-        System.out.println(_synchronous? "Total no of synchronous consumers   : " : "Total no of asynchronous consumers   :" + _consumerCount);
-        System.out.println("Log Frequency in mins  : " + _logDuration/(1000*60));
+        System.out.println("Destination            : " + _destination);
+        System.out.println("Collect stats          : " + Boolean.getBoolean("collect_stats"));
+        System.out.println("Log Frequency in msgs  : " + _logFrequency);
         System.out.println("Log file path          : " + _logFilePath);
         System.out.println("Test Duration          : " + printTestDuration());
         System.out.println("============= /Test Data ===================");
