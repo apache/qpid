@@ -132,6 +132,7 @@ libqpidcommon_la_SOURCES = \
   qpid/Exception.cpp \
   qpid/Plugin.cpp \
   qpid/Url.cpp \
+  qpid/sys/AggregateOutput.cpp \
   qpid/sys/AsynchIOAcceptor.cpp \
   qpid/sys/Dispatcher.cpp \
   qpid/sys/Runnable.cpp \
@@ -408,6 +409,8 @@ nobase_include_HEADERS = \
   qpid/sys/Module.h \
   qpid/sys/Monitor.h \
   qpid/sys/Mutex.h \
+  qpid/sys/OutputControl.h \
+  qpid/sys/OutputTask.h \
   qpid/sys/Poller.h \
   qpid/sys/Runnable.h \
   qpid/sys/RefCountedMap.h \

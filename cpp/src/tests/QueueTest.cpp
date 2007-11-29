@@ -47,6 +47,7 @@ public:
         received = true;
         return true;
     };
+    void notify() {}
 };
 
 class FailOnDeliver : public Deliverable
@@ -88,7 +89,7 @@ class QueueTest : public CppUnit::TestCase
         Queue::shared_ptr queue(new Queue("my_test_queue", true));
         intrusive_ptr<Message> received;
 	
-        TestConsumer::shared_ptr c1(new TestConsumer()); 
+        TestConsumer c1;
         queue->consume(c1);
 
        
@@ -98,7 +99,7 @@ class QueueTest : public CppUnit::TestCase
         queue->process(msg1);
 	sleep(2);
 
-        CPPUNIT_ASSERT(!c1->received);
+        CPPUNIT_ASSERT(!c1.received);
  	msg1->enqueueComplete();
 
         received = queue->dequeue().payload;
@@ -127,8 +128,8 @@ class QueueTest : public CppUnit::TestCase
         Queue::shared_ptr queue(new Queue("my_queue", true));
     
         //Test adding consumers:
-        TestConsumer::shared_ptr c1(new TestConsumer()); 
-        TestConsumer::shared_ptr c2(new TestConsumer()); 
+        TestConsumer c1;
+        TestConsumer c2;
         queue->consume(c1);
         queue->consume(c2);
 
@@ -140,20 +141,17 @@ class QueueTest : public CppUnit::TestCase
         intrusive_ptr<Message> msg3 = message("e", "C");
 
         queue->deliver(msg1);
-	if (!c1->received)
-	    sleep(2);
-        CPPUNIT_ASSERT_EQUAL(msg1.get(), c1->last.get());
+        CPPUNIT_ASSERT(queue->dispatch(c1));
+        CPPUNIT_ASSERT_EQUAL(msg1.get(), c1.last.get());
 
         queue->deliver(msg2);
-	if (!c2->received)
-	    sleep(2);
-        CPPUNIT_ASSERT_EQUAL(msg2.get(), c2->last.get());
+        CPPUNIT_ASSERT(queue->dispatch(c2));
+        CPPUNIT_ASSERT_EQUAL(msg2.get(), c2.last.get());
         
-	c1->received = false;
+	c1.received = false;
         queue->deliver(msg3);
-	if (!c1->received)
-	    sleep(2);
-        CPPUNIT_ASSERT_EQUAL(msg3.get(), c1->last.get());        
+        CPPUNIT_ASSERT(queue->dispatch(c1));
+        CPPUNIT_ASSERT_EQUAL(msg3.get(), c1.last.get());        
     
         //Test cancellation:
         queue->cancel(c1);
@@ -203,13 +201,13 @@ class QueueTest : public CppUnit::TestCase
         CPPUNIT_ASSERT_EQUAL(msg2.get(), received.get());
         CPPUNIT_ASSERT_EQUAL(uint32_t(1), queue->getMessageCount());
 
-        TestConsumer::shared_ptr consumer(new TestConsumer()); 
+        TestConsumer consumer;
         queue->consume(consumer);
-        queue->requestDispatch();
-	if (!consumer->received)
+        queue->dispatch(consumer);
+	if (!consumer.received)
 	    sleep(2);
 
-        CPPUNIT_ASSERT_EQUAL(msg3.get(), consumer->last.get());
+        CPPUNIT_ASSERT_EQUAL(msg3.get(), consumer.last.get());
         CPPUNIT_ASSERT_EQUAL(uint32_t(0), queue->getMessageCount());
 
         received = queue->dequeue().payload;
