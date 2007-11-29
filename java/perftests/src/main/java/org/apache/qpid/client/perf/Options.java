@@ -25,7 +25,7 @@ public class Options
         _messageSize = Integer.parseInt(System.getProperty("messageSize","100"));
         _transacted = false;
         _destination = System.getProperty("destinations");
-        _logFrequency = Long.parseLong(System.getProperty("logDuration","10"));
+        _logFrequency = Long.parseLong(System.getProperty("logFrequency","1000"));
         _logFilePath = System.getProperty("logFilePath");
         _expiry = getExpiry();
 
