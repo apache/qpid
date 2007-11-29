@@ -67,6 +67,7 @@ public class JMSAsyncConsumer implements MessageListener, JMSConsumer
             {
                 _logger.error("Error : Message received out of order in JMSSyncConsumer:" + _id + " message id was " + msgId + " expected: " + _currentMsgCount+1);
             }
+            message = null;
             _currentMsgCount ++;
         }
         catch(Exception e)

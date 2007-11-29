@@ -60,7 +60,7 @@ public class AMQSession_0_10 extends AMQSession
     /**
      * The maximum number of pre-fetched messages per destination
      */
-    public static final long MAX_PREFETCH = 100;
+    public static long MAX_PREFETCH = 1000;
 
     /**
      * The underlying QpidSession
@@ -98,6 +98,9 @@ public class AMQSession_0_10 extends AMQSession
 
         super(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetchHighMark,
               defaultPrefetchLowMark);
+
+        MAX_PREFETCH = Integer.parseInt(System.getProperty("max_prefetch","1000"));
+
         // create the qpid session with an expiry  <= 0 so that the session does not expire
         _qpidSession = qpidConnection.createSession(0);
         // set the exception listnere for this session
