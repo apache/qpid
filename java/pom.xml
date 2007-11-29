@@ -108,7 +108,7 @@ under the License.
         <java.source.version>1.5</java.source.version>
         <compile.flags>-Xlint:fallthrough,finally</compile.flags>
 
-        <!-- 
+        <!--
              This should always point to a default minimal log4j configuration that all developers are happy with as a useable default. To use your own
              log4j preferences set up an alternative in your settings.xml and avoid corrupting the default with private preferences.
         -->
@@ -174,7 +174,7 @@ under the License.
                     <include>NOTICE</include>
                 </includes>
             </resource>
- 
+
             <resource>
                 <directory>src/main/java</directory>
                 <excludes>
@@ -247,15 +247,15 @@ under the License.
                              This is done during the 'compile' phase to reflect the version of the currently compiled code and to ensure that
                              these properties are up to date when running from a file system classpath. Consider moving this to, or running a second
                              time, during the 'package' phase to capture the version of any resources added to jar files.
-                             This svnversion command is always run in the top directory to accurately reflect the svnversion range accross all modules 
+                             This svnversion command is always run in the top directory to accurately reflect the svnversion range accross all modules
                              at the time of the build.
                              The properties are placed into a file 'qpidversion.properties' in the target/classes directory of any child module
                              that runs this plugin.
                              The 'qpidversion.properties' file is loaded by the org.apache.qpid.common.QpidProperties class.
-                             Be carefull of the possibility that the 'common' module may run this antrun plugin and recieve its own set of 
-                             qpidversion.properties and then the client or broker being built against an older version of the common library ending 
-                             up with the wrong version information. This is unlikely to happen because the client or broker should pick up its own 
-                             properties from the classpath first. If this happens it will be obvious because the productName property will be 
+                             Be carefull of the possibility that the 'common' module may run this antrun plugin and recieve its own set of
+                             qpidversion.properties and then the client or broker being built against an older version of the common library ending
+                             up with the wrong version information. This is unlikely to happen because the client or broker should pick up its own
+                             properties from the classpath first. If this happens it will be obvious because the productName property will be
                              'Qpid Common Utilities'. If this is a problem then push this ant task down into the client and broker poms and remove it
                              from here.
                         -->
@@ -265,7 +265,7 @@ under the License.
                             <configuration>
                                 <tasks>
 
-                                    <exec executable="svnversion" spawn="false" failifexecutionfails="false" 
+                                    <exec executable="svnversion" spawn="false" failifexecutionfails="false"
                                           dir="${topDirectoryLocation}" outputproperty="svnversion">
                                         <arg line="."/>
                                     </exec>
@@ -402,7 +402,7 @@ under the License.
                     <version>0.7-SNAPSHOT</version>
                 </plugin>
 
-        
+
 
 
             </plugins>
@@ -411,7 +411,7 @@ under the License.
 
         <plugins>
 
-            <!-- Disabled as plugin crashes on the systest module. 
+            <!-- Disabled as plugin crashes on the systest module.
              Also, the resulting NOTICE file doesn't include all license info due to missing data in dependant poms.
 
             <plugin>
@@ -511,17 +511,17 @@ under the License.
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-filter-ssl</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-java5</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>backport-util-concurrent</groupId>
@@ -642,11 +642,11 @@ under the License.
                 <version>${surefire-report.version}</version>
             </plugin>
 
-            <!-- Generate the TODO lists. -->            
+            <!-- Generate the TODO lists. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>taglist-maven-plugin</artifactId>
-            </plugin>            
+            </plugin>
 
             <!-- Generate the source code cross reference. -->
             <plugin>
