@@ -60,6 +60,7 @@ qpidd_SOURCES = qpidd.cpp
 
 posix_plat_src = \
   qpid/sys/epoll/EpollPoller.cpp \
+  qpid/sys/DeletionManager.cpp \
   qpid/sys/posix/Socket.cpp \
   qpid/sys/posix/AsynchIO.cpp \
   qpid/sys/posix/Time.cpp \
