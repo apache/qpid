@@ -26,6 +26,8 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SessionState.h"
 #include "qpid/framing/ProtocolVersion.h"
+#include "qpid/sys/Mutex.h"
+#include "qpid/sys/OutputControl.h"
 #include "qpid/sys/Time.h"
 
 #include <boost/noncopyable.hpp>
@@ -54,7 +56,8 @@ class Connection;
  * themselves have state. 
  */
 class SessionState : public framing::SessionState,
-                     public framing::FrameHandler::InOutHandler
+    public framing::FrameHandler::InOutHandler,
+    public sys::OutputControl
 {
   public:
     ~SessionState();
@@ -76,6 +79,9 @@ class SessionState : public framing::SessionState,
     Broker& getBroker() { return broker; }
     framing::ProtocolVersion getVersion() const { return version; }
 
+    /** OutputControl **/
+    void activateOutput();
+
   protected:
     void handleIn(framing::AMQFrame&);
     void handleOut(framing::AMQFrame&);
@@ -94,7 +100,7 @@ class SessionState : public framing::SessionState,
     sys::AbsTime expiry;        // Used by SessionManager.
     Broker& broker;
     framing::ProtocolVersion version;
-    
+    sys::Mutex lock;
     boost::scoped_ptr<SemanticHandler> semanticHandler;
 
   friend class SessionManager;

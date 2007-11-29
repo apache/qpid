@@ -302,9 +302,6 @@ void BrokerAdapter::BasicHandlerImpl::consume(uint16_t /*ticket*/,
 
     if(!nowait)
         getProxy().getBasic().consumeOk(newTag);
-
-    //allow messages to be dispatched if required as there is now a consumer:
-    queue->requestDispatch();
 } 
         
 void BrokerAdapter::BasicHandlerImpl::cancel(const string& consumerTag){

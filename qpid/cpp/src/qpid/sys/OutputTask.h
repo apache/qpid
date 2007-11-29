@@ -18,25 +18,17 @@
  * under the License.
  *
  */
-#ifndef _ConnectionInputHandler_
-#define _ConnectionInputHandler_
-
-#include "qpid/framing/InputHandler.h"
-#include "qpid/framing/InitiationHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
-#include "OutputTask.h"
-#include "TimeoutHandler.h"
+#ifndef _OutputTask_
+#define _OutputTask_
 
 namespace qpid {
 namespace sys {
 
-    class ConnectionInputHandler :
-        public qpid::framing::InitiationHandler,
-        public qpid::framing::InputHandler, 
-        public TimeoutHandler, public OutputTask
+    class OutputTask 
     {
     public:
-        virtual void closed() = 0;
+        virtual ~OutputTask() {}
+        virtual bool doOutput() = 0;
     };
 
 }

@@ -29,6 +29,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
+#include "qpid/sys/AggregateOutput.h"
 #include "qpid/sys/ConnectionOutputHandler.h"
 #include "qpid/sys/ConnectionInputHandler.h"
 #include "qpid/sys/TimeoutHandler.h"
@@ -70,6 +71,9 @@ class Connection : public sys::ConnectionInputHandler,
 
     Broker& broker;
     std::vector<Queue::shared_ptr> exclusiveQueues;
+    
+    //contained output tasks
+    sys::AggregateOutput outputTasks;
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
@@ -77,6 +81,7 @@ class Connection : public sys::ConnectionInputHandler,
     void idleOut();
     void idleIn();
     void closed();
+    bool doOutput();
 
     void closeChannel(framing::ChannelId channel);
 

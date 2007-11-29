@@ -93,7 +93,6 @@ void SemanticHandler::sendCompletion()
 {
     SequenceNumber mark = incoming.getMark();
     SequenceNumberSet range = incoming.getRange();
-    Mutex::ScopedLock l(outLock);
     session.getProxy().getExecution().complete(mark.getValue(), range);
 }
 
@@ -128,7 +127,6 @@ void SemanticHandler::handleCommand(framing::AMQMethodBody* method)
     if (!invoker.wasHandled()) {
         throw NotImplementedException("Not implemented");
     } else if (invoker.hasResult()) {
-        Mutex::ScopedLock l(outLock);
         session.getProxy().getExecution().result(id.getValue(), invoker.getResult());
     }
     if (method->isSync()) { 
@@ -166,7 +164,6 @@ void SemanticHandler::handleContent(AMQFrame& frame)
 
 DeliveryId SemanticHandler::deliver(QueuedMessage& msg, DeliveryToken::shared_ptr token)
 {
-    Mutex::ScopedLock l(outLock);
     SessionHandler* handler = session.getHandler();
     if (handler) {
         uint32_t maxFrameSize = handler->getConnection().getFrameMax();
