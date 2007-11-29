@@ -26,6 +26,10 @@ import org.apache.log4j.NDC;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
+import uk.co.thebadgerset.junit.extensions.SetupTaskAware;
+import uk.co.thebadgerset.junit.extensions.SetupTaskHandler;
+import uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,13 +46,19 @@ import java.util.List;
  * <tr><td> Convert failed assertions to error messages.
  * </table>
  */
-public class FrameworkBaseCase extends AsymptoticTestCase
+public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTestContext, SetupTaskAware
 {
     /** Used for debugging purposes. */
     private static final Logger log = Logger.getLogger(FrameworkBaseCase.class);
 
     /** Holds the test sequencer to create and run test circuits with. */
     protected CircuitFactory circuitFactory = new LocalCircuitFactory();
+
+    /** Used to read the tests configurable properties through. */
+    protected ParsedProperties testProps;
+
+    /** A default setup task processor to delegate setup tasks to. */
+    protected SetupTaskHandler taskHandler = new SetupTaskHandler();
 
     /**
      * Creates a new test case with the specified name.
@@ -81,6 +91,26 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     public void setCircuitFactory(CircuitFactory circuitFactory)
     {
         this.circuitFactory = circuitFactory;
+    }
+
+    /**
+     * Reports the current test case name.
+     *
+     * @return The current test case name.
+     */
+    public TestCaseVector getTestCaseVector()
+    {
+        return new TestCaseVector(this.getName(), 0);
+    }
+
+    /**
+     * Reports the current test case parameters.
+     *
+     * @return The current test case parameters.
+     */
+    public MessagingTestConfigProperties getTestParameters()
+    {
+        return new MessagingTestConfigProperties(testProps);
     }
 
     /**
@@ -152,6 +182,11 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     protected void setUp() throws Exception
     {
         NDC.push(getName());
+
+        testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
+
+        // Process all optional setup tasks. This may include in-vm broker creation, if a decorator has added it.
+        taskHandler.runSetupTasks();
     }
 
     /**
@@ -160,6 +195,29 @@ public class FrameworkBaseCase extends AsymptoticTestCase
     protected void tearDown()
     {
         NDC.pop();
+
+        // Process all optional tear down tasks. This may include in-vm broker clean up, if a decorator has added it.
+        taskHandler.runTearDownTasks();
+    }
+
+    /**
+     * Adds the specified task to the tests setup.
+     *
+     * @param task The task to add to the tests setup.
+     */
+    public void chainSetupTask(Runnable task)
+    {
+        taskHandler.chainSetupTask(task);
+    }
+
+    /**
+     * Adds the specified task to the tests tear down.
+     *
+     * @param task The task to add to the tests tear down.
+     */
+    public void chainTearDownTask(Runnable task)
+    {
+        taskHandler.chainTearDownTask(task);
     }
 
     /**

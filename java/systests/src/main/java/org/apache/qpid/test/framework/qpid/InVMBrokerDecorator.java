@@ -1,34 +1,15 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
+/* Copyright Rupert Smith, 2005 to 2007, all rights reserved. */
 package org.apache.qpid.test.framework.qpid;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
-import junit.framework.TestSuite;
 
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 
+import uk.co.thebadgerset.junit.extensions.SetupTaskAware;
 import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
 
 /**
@@ -41,7 +22,7 @@ import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
  * <tr><td> Create/Destroy an in-vm broker on every test run.
  * </table>
  *
- * @todo May need to add a more fine grained injection point for the in-vm broker management, as this may act at the
+ * @todo May need to add a more fine grained injection point for the in-vm broker management, as this acts at the
  *       suite level, rather than the individual test level.
  */
 public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
@@ -61,32 +42,59 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
     }
 
     /**
-     * Runs the tests with in-vm broker management.
+     * Runs the tests with in-vm broker creation and clean-up added to the tests task stack.
      *
      * @param testResult The the results object to monitor the test results with.
      */
     public void run(TestResult testResult)
     {
-        /*for (Test test : getAllUnderlyingTests())
+        for (Test test : getAllUnderlyingTests())
         {
-            FrameworkBaseCase frameworkTest = (FrameworkBaseCase) test;
-        }*/
+            // Check that the test to have an in-vm broker setup/teardown task added to it, is actually a framework
+            // test that can handle setup tasks.
+            if ((test instanceof FrameworkBaseCase) && (test instanceof SetupTaskAware))
+            {
+                SetupTaskAware frameworkTest = (SetupTaskAware)test;
 
-        // Ensure that the in-vm broker is created.
-        try
-        {
-            TransportConnection.createVMBroker(1);
-        }
-        catch (AMQVMBrokerCreationException e)
-        {
-            throw new RuntimeException("In-VM broker creation failed: " + e.getMessage(), e);
+                frameworkTest.chainSetupTask(new Runnable()
+                    {
+                        public void run()
+                        {
+                            // Ensure that the in-vm broker is created.
+                            try
+                            {
+                                TransportConnection.createVMBroker(1);
+                            }
+                            catch (AMQVMBrokerCreationException e)
+                            {
+                                throw new RuntimeException("In-VM broker creation failed: " + e.getMessage(), e);
+                            }
+                        }
+                    });
+
+                frameworkTest.chainTearDownTask(new Runnable()
+                    {
+                        public void run()
+                        {
+                            // Ensure that the in-vm broker is cleaned up so that the next test starts afresh.
+                            TransportConnection.killVMBroker(1);
+                            ApplicationRegistry.remove(1);
+                        }
+                    });
+            }
         }
 
         // Run the test.
         test.run(testResult);
+    }
 
-        // Ensure that the in-vm broker is cleaned up so that the next test starts afresh.
-        TransportConnection.killVMBroker(1);
-        ApplicationRegistry.remove(1);
+    /**
+     * Prints the name of the test for debugging purposes.
+     *
+     * @return The name of the test.
+     */
+    public String toString()
+    {
+        return "InVMBrokerDecorator: [test = " + test + "]";
     }
 }

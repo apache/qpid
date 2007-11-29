@@ -399,7 +399,7 @@ under the License.
                 <plugin>
                     <groupId>uk.co.thebadgerset</groupId>
                     <artifactId>junit-toolkit-maven-plugin</artifactId>
-                    <version>0.7-SNAPSHOT</version>
+                    <version>0.7.1-SNAPSHOT</version>
                 </plugin>
 
         
@@ -547,7 +547,7 @@ under the License.
             <dependency>
                 <groupId>uk.co.thebadgerset</groupId>
                 <artifactId>junit-toolkit</artifactId>
-                <version>0.7-SNAPSHOT</version>
+                <version>0.7.1-SNAPSHOT</version>
                 <scope>compile</scope>
             </dependency>
 

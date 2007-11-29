@@ -24,6 +24,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import org.apache.qpid.test.framework.Assertion;
 import org.apache.qpid.test.framework.Circuit;
@@ -45,7 +46,7 @@ import java.util.LinkedList;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td>
+ * <tr><td> Measure message throughput accross a test circuit. <td> {@link Circuit}
  * </table>
  *
  * @todo Check that all of the messages were sent. Check that the receiving end got the same number of messages as
@@ -117,10 +118,33 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
     }
 
     /**
+     * Overrides the parent setUp method so that the in-vm broker creation is not done on a per test basis.
+     *
+     * @throws Exception Any exceptions allowed to fall through and fail the test.
+     */
+    protected void setUp() throws Exception
+    {
+        NDC.push(getName());
+
+        testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
+    }
+
+    /**
+     * Overrides the parent setUp method so that the in-vm broker clean-up is not done on a per test basis.
+     */
+    protected void tearDown()
+    {
+        NDC.pop();
+    }
+
+    /**
      * Performs test fixture creation on a per thread basis. This will only be called once for each test thread.
      */
     public void threadSetUp()
     {
+        // Run the test setup tasks. This may create an in-vm broker, if a decorator has injected a task for this.
+        taskHandler.runSetupTasks();
+
         // Get the test parameters, any overrides on the command line will have been applied.
         ParsedProperties testProps = TestContextProperties.getInstance(MessagingTestConfigProperties.defaults);
 
@@ -144,7 +168,10 @@ public class MessageThroughputPerf extends FrameworkBaseCase implements TimingCo
      * Called when a test thread is destroyed.
      */
     public void threadTearDown()
-    { }
+    {
+        // Run the test teardown tasks. This may destroy the in-vm broker, if a decorator has injected a task for this.
+        taskHandler.runSetupTasks();
+    }
 
     /**
      * Holds the per-thread test configurations.

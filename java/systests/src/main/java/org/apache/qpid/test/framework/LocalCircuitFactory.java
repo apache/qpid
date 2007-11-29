@@ -75,6 +75,7 @@ public class LocalCircuitFactory implements CircuitFactory
      * Creates a test circuit for the test, configered by the test parameters specified.
      *
      * @param testProperties The test parameters.
+     *
      * @return A test circuit.
      */
     public Circuit createCircuit(ParsedProperties testProperties)

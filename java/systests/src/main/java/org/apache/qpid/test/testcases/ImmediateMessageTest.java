@@ -65,9 +65,6 @@ import uk.co.thebadgerset.junit.extensions.util.TestContextProperties;
  */
 public class ImmediateMessageTest extends FrameworkBaseCase
 {
-    /** Used to read the tests configurable properties through. */
-    ParsedProperties testProps;
-
     /**
      * Creates a new test case with the specified name.
      *
