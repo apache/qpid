@@ -84,9 +84,9 @@ public class MessageConsumerTest extends Options implements MessageListener
                 }
                 if (System.currentTimeMillis() - _startTime >= _expiry)
                 {
+                    printSummary();
                     _session.close();
                     _connection.stop();
-                    printSummary();
                     return;
                 }
             }
