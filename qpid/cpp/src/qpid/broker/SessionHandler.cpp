@@ -70,6 +70,7 @@ void SessionHandler::handleIn(AMQFrame& f) {
                 QPID_MSG("Channel " << channel.get() << " is not open"));
     } catch(const ChannelException& e) {
         ignoring=true;          // Ignore trailing frames sent by client.
+        session->detach();
         session.reset();
         peerSession.closed(e.code, e.what());
     }catch(const ConnectionException& e){
@@ -81,14 +82,9 @@ void SessionHandler::handleIn(AMQFrame& f) {
 }
 
 void SessionHandler::handleOut(AMQFrame& f) {
-    ConditionalScopedLock<Semaphore> s(suspension);
-    if (s.lockAcquired() && session.get() && session->isAttached()) {
-        channel.handle(f);          // Send it.
-        if (session->sent(f))
-            peerSession.solicitAck();
-    } else {
-        QPID_LOG(error, "Dropping frame as session is no longer attached to a channel: " << f);
-    }
+    channel.handle(f);          // Send it.
+    if (session->sent(f))
+        peerSession.solicitAck();
 }
 
 void SessionHandler::assertAttached(const char* method) const {
@@ -138,6 +134,7 @@ void  SessionHandler::close() {
     assertAttached("close");
     QPID_LOG(info, "Received session.close");
     ignoring=false;
+    session->detach();
     session.reset();
     peerSession.closed(REPLY_SUCCESS, "ok");
     assert(&connection.getChannel(channel.get()) == this);
@@ -147,14 +144,15 @@ void  SessionHandler::close() {
 void  SessionHandler::closed(uint16_t replyCode, const string& replyText) {
     QPID_LOG(warning, "Received session.closed: "<<replyCode<<" "<<replyText);
     ignoring=false;
+    session->detach();
     session.reset();
 }
 
 void SessionHandler::localSuspend() {
-    ScopedLock<Semaphore> s(suspension);
     if (session.get() && session->isAttached()) {
         session->detach();
         connection.broker.getSessionManager().suspend(session);
+        session.reset();
     }
 }
 

@@ -43,7 +43,7 @@ class PersistableMessage : public Persistable
 {
     sys::Monitor asyncEnqueueLock;
     sys::Monitor asyncDequeueLock;
-	sys::Mutex storeLock;
+    sys::Mutex storeLock;
 	
     /**
      * Tracks the number of outstanding asynchronous enqueue
@@ -84,12 +84,12 @@ public:
     	asyncEnqueueCounter(0), 
     	asyncDequeueCounter(0),
         store(0),
-		contentReleased(false) 
-	{}
+        contentReleased(false) 
+        {}
 
     void flush();
     
-	inline bool isContentReleased()const {return contentReleased; }
+    inline bool isContentReleased()const {return contentReleased; }
 	
     inline void waitForEnqueueComplete() {
         sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
@@ -104,27 +104,35 @@ public:
     }
 
     inline void enqueueComplete() {
-        sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
-        if (asyncEnqueueCounter > 0) {
-            if (--asyncEnqueueCounter == 0) {
-                asyncEnqueueLock.notify();
-				if (store) {
-                    for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-        	            (*i)->notifyDurableIOComplete();
-                    } 
+        bool notify = false;
+        {
+            sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
+            if (asyncEnqueueCounter > 0) {
+                if (--asyncEnqueueCounter == 0) {
+                    asyncEnqueueLock.notify();
+                    notify = true;
                 }
             }
+        }
+        if (notify) {
+            sys::ScopedLock<sys::Mutex> l(storeLock);
+            if (store) {
+                for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
+                    (*i)->notifyDurableIOComplete();
+                } 
+                synclist.clear();
+            }            
         }
     }
 
     inline void enqueueAsync(PersistableQueue* queue, MessageStore* _store) { 
-		if (_store){
-			sys::ScopedLock<sys::Mutex> l(storeLock);
-		    store = _store;
-		    synclist.push_back(queue);
-		}
-	    enqueueAsync();
-	}
+        if (_store){
+            sys::ScopedLock<sys::Mutex> l(storeLock);
+            store = _store;
+            synclist.push_back(queue);
+        }
+        enqueueAsync();
+    }
 
     inline void enqueueAsync() { 
         sys::ScopedLock<sys::Monitor> l(asyncEnqueueLock);
@@ -154,13 +162,13 @@ public:
     }
 
     inline void dequeueAsync(PersistableQueue* queue, MessageStore* _store) { 
-		if (_store){
+        if (_store){
             sys::ScopedLock<sys::Mutex> l(storeLock);
             store = _store;
-			synclist.push_back(queue);
-		}
-	    dequeueAsync();
-	}
+            synclist.push_back(queue);
+        }
+        dequeueAsync();
+    }
 
     inline void dequeueAsync() { 
         sys::ScopedLock<sys::Monitor> l(asyncDequeueLock);

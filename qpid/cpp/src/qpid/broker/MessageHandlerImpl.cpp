@@ -139,8 +139,6 @@ MessageHandlerImpl::subscribe(uint16_t /*ticket*/,
     string tag = destination;
     state.consume(MessageDelivery::getMessageDeliveryToken(destination, confirmMode, acquireMode), 
                     tag, queue, noLocal, confirmMode == 1, acquireMode == 0, exclusive, &filter);
-    // Dispatch messages as there is now a consumer.
-    queue->requestDispatch();
 }
 
 void

@@ -61,7 +61,6 @@ class SemanticHandler : public DeliveryAdapter,
     // state?
     IncomingExecutionContext incoming;
     framing::Window outgoing;
-    sys::Mutex outLock;
     MessageBuilder msgBuilder;
     RangedOperation ackOp;
 
@@ -93,6 +92,9 @@ public:
     void noop();
     void result(uint32_t command, const std::string& data);
     void sync();
+
+
+    SemanticState& getSemanticState() { return state; }
 };
 
 }}

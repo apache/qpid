@@ -18,25 +18,33 @@
  * under the License.
  *
  */
-#ifndef _ConnectionInputHandler_
-#define _ConnectionInputHandler_
+#ifndef _AggregateOutput_
+#define _AggregateOutput_
 
-#include "qpid/framing/InputHandler.h"
-#include "qpid/framing/InitiationHandler.h"
-#include "qpid/framing/ProtocolInitiation.h"
+#include <vector>
+#include "Mutex.h"
+#include "OutputControl.h"
 #include "OutputTask.h"
-#include "TimeoutHandler.h"
 
 namespace qpid {
 namespace sys {
 
-    class ConnectionInputHandler :
-        public qpid::framing::InitiationHandler,
-        public qpid::framing::InputHandler, 
-        public TimeoutHandler, public OutputTask
+    class AggregateOutput : public OutputTask, public OutputControl
     {
+        typedef std::vector<OutputTask*> TaskList;
+
+        TaskList tasks;
+        size_t next;
+        OutputControl& control;
+
     public:
-        virtual void closed() = 0;
+        AggregateOutput(OutputControl& c) : next(0), control(c) {};
+        //this may be called on any thread
+        void activateOutput();
+        //all the following will be called on the same thread
+        bool doOutput();
+        void addOutputTask(OutputTask* t);
+        void removeOutputTask(OutputTask* t);
     };
 
 }

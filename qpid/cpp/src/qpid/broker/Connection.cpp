@@ -44,6 +44,7 @@ namespace broker {
 
 Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_) :
     broker(broker_),
+    outputTasks(*out_),
     out(out_),
     framemax(65536), 
     heartbeat(0),
@@ -94,6 +95,11 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
                  e.what());
         assert(0);
     }
+}
+
+bool Connection::doOutput()
+{
+    return outputTasks.doOutput();
 }
 
 void Connection::closeChannel(uint16_t id) {
