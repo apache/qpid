@@ -142,7 +142,7 @@ public class FanoutExchange extends AbstractExchange
 
     	public AMQShortString getDefaultExchangeName()
     	{
-    		return ExchangeDefaults.DIRECT_EXCHANGE_NAME;
+    		return ExchangeDefaults.FANOUT_EXCHANGE_NAME;
     	}
     };
 
