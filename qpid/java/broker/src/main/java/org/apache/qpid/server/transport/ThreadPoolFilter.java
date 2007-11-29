@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,11 +31,12 @@ import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoFilterAdapter;
 import org.apache.mina.common.IoHandler;
 import org.apache.mina.common.IoSession;
-import org.apache.mina.util.BlockingQueue;
-import org.apache.mina.util.ByteBufferUtil;
-import org.apache.mina.util.IdentityHashSet;
-import org.apache.mina.util.Queue;
-import org.apache.mina.util.Stack;
+//import org.apache.mina.util.BlockingQueue;
+//import org.apache.mina.util.ByteBufferUtil;
+//import org.apache.mina.util.IdentityHashSet;
+//import org.apache.mina.util.Queue;
+//import org.apache.mina.util.Stack;
+//import org.apache.mina.util.IdentityHashSet;
 
 /**
  * A Thread-pooling filter.  This filter forwards {@link IoHandler} events
@@ -47,6 +48,7 @@ import org.apache.mina.util.Stack;
  */
 public class ThreadPoolFilter extends IoFilterAdapter
 {
+
     /**
      * Default maximum size of thread pool (2G).
      */
@@ -62,7 +64,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
      * thread IDs.  {@link Worker} first checks this queue and then
      * uses {@link #threadId} when no reusable thread ID is available.
      */
-    private static final Queue threadIdReuseQueue = new Queue();
+    /* private static final Queue threadIdReuseQueue = new Queue();
     private static int threadId = 0;
 
     private static int acquireThreadId()
@@ -87,16 +89,16 @@ public class ThreadPoolFilter extends IoFilterAdapter
         {
             threadIdReuseQueue.push(new Integer(id));
         }
-    }
+    } */
 
-    private final String threadNamePrefix;
+    private final String threadNamePrefix = "";
     private final Map buffers = new IdentityHashMap();
-    private final BlockingQueue unfetchedSessionBuffers = new BlockingQueue();
-    private final Set allSessionBuffers = new IdentityHashSet();
+    //private final BlockingQueue unfetchedSessionBuffers = new BlockingQueue();
+    //private final Set allSessionBuffers = new IdentityHashSet();
 
-    private Worker leader;
-    private final Stack followers = new Stack();
-    private final Set allWorkers = new IdentityHashSet();
+    //private Worker leader;
+    //private final Stack followers = new Stack();
+    //private final Set allWorkers = new IdentityHashSet();
 
     private int maximumPoolSize = DEFAULT_MAXIMUM_POOL_SIZE;
     private int keepAliveTime = DEFAULT_KEEP_ALIVE_TIME;
@@ -131,20 +133,21 @@ public class ThreadPoolFilter extends IoFilterAdapter
         {
             throw new IllegalArgumentException("threadNamePrefix is empty.");
         }
-        this.threadNamePrefix = threadNamePrefix;
+       // this.threadNamePrefix = threadNamePrefix;
     }
 
     public String getThreadNamePrefix()
     {
-        return threadNamePrefix;
+        return null; // threadNamePrefix;
     }
 
     public int getPoolSize()
     {
-        synchronized (poolSizeLock)
+       /* synchronized (poolSizeLock)
         {
             return poolSize;
-        }
+        }*/
+        return 0;
     }
 
     public int getMaximumPoolSize()
@@ -171,7 +174,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
         this.keepAliveTime = keepAliveTime;
     }
 
-    public void init()
+/*    public void init()
     {
         shuttingDown = false;
         leader = new Worker();
@@ -188,7 +191,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
             List allWorkers;
             synchronized (poolSizeLock)
             {
-                allWorkers = new ArrayList(this.allWorkers);
+               // allWorkers = new ArrayList(this.allWorkers);
             }
 
             // You may not interrupt the current thread.
@@ -216,10 +219,10 @@ public class ThreadPoolFilter extends IoFilterAdapter
             }
         }
 
-        this.allSessionBuffers.clear();
-        this.unfetchedSessionBuffers.clear();
+      //  this.allSessionBuffers.clear();
+      //  this.unfetchedSessionBuffers.clear();
         this.buffers.clear();
-        this.followers.clear();
+      //  this.followers.clear();
         this.leader = null;
     }
 
@@ -228,7 +231,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
         synchronized (poolSizeLock)
         {
             poolSize++;
-            allWorkers.add(worker);
+            //allWorkers.add(worker);
         }
     }
 
@@ -237,13 +240,14 @@ public class ThreadPoolFilter extends IoFilterAdapter
         synchronized (poolSizeLock)
         {
             poolSize--;
-            allWorkers.remove(worker);
+            //allWorkers.remove(worker);
         }
     }
 
     private void fireEvent(NextFilter nextFilter, IoSession session,
                            EventType type, Object data)
     {
+        /*
         final BlockingQueue unfetchedSessionBuffers = this.unfetchedSessionBuffers;
         final Set allSessionBuffers = this.allSessionBuffers;
         final Event event = new Event(type, nextFilter, data);
@@ -264,6 +268,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
                 unfetchedSessionBuffers.push(buf);
             }
         }
+        */
     }
 
     /**
@@ -273,7 +278,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
      *
      * @return A non-null {@link SessionBuffer}
      */
-    protected SessionBuffer fetchSessionBuffer(Queue unfetchedSessionBuffers)
+ /*   protected SessionBuffer fetchSessionBuffer(Queue unfetchedSessionBuffers)
     {
         return (SessionBuffer) unfetchedSessionBuffers.pop();
     }
@@ -311,7 +316,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
     {
         private final IoSession session;
 
-        private final Queue eventQueue = new Queue();
+        //private final Queue eventQueue = new Queue();
 
         private SessionBuffer(IoSession session)
         {
@@ -323,7 +328,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
             return session;
         }
 
-        public Queue getEventQueue()
+     /*   public Queue getEventQueue()
         {
             return eventQueue;
         }
@@ -702,4 +707,6 @@ public class ThreadPoolFilter extends IoFilterAdapter
     {
         nextFilter.filterClose(session);
     }
-}
+
+    */
+
