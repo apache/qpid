@@ -21,6 +21,7 @@
 
 #include "qpid/sys/Poller.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/sys/DeletionManager.h"
 #include "qpid/sys/posix/check.h"
 #include "qpid/sys/posix/PrivatePosix.h"
 
@@ -33,6 +34,13 @@
 
 namespace qpid {
 namespace sys {
+
+// Deletion manager to handle deferring deletion of PollerHandles to when they definitely aren't being used 
+DeletionManager<PollerHandle> PollerHandleDeletionManager;
+
+//  Instantiate (and define) class static for DeletionManager
+template <>
+DeletionManager<PollerHandle>::AllThreadsStatuses DeletionManager<PollerHandle>::allThreadsStatuses(0);
 
 class PollerHandlePrivate {
     friend class Poller;
@@ -96,6 +104,10 @@ PollerHandle::PollerHandle(const Socket& s) :
 
 PollerHandle::~PollerHandle() {
     delete impl;
+}
+
+void PollerHandle::deferDelete() {
+    PollerHandleDeletionManager.markForDeletion(this);
 }
 
 /**
@@ -239,9 +251,9 @@ void Poller::rearmFd(PollerHandle& handle) {
 }
 
 void Poller::shutdown() {
-	// Allow sloppy code to shut us down more than once
-	if (impl->isShutdown)
-		return;
+    // Allow sloppy code to shut us down more than once
+    if (impl->isShutdown)
+        return;
 
     // Don't use any locking here - isshutdown will be visible to all
     // after the epoll_ctl() anyway (it's a memory barrier)
@@ -261,6 +273,7 @@ Poller::Event Poller::wait(Duration timeout) {
 
     // Repeat until we weren't interupted
     do {
+        PollerHandleDeletionManager.markAllUnusedInThisThread();
         int rc = ::epoll_wait(impl->epollFd, &epe, 1, timeoutMs);
         
         if (impl->isShutdown) {
