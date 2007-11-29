@@ -106,7 +106,7 @@ OutputHandler* Connector::getOutputHandler(){
 void Connector::send(AMQFrame& frame){
     Mutex::ScopedLock l(writeLock);
     writeFrameQueue.push(frame);
-    aio->queueWrite();
+    aio->notifyPendingWrite();
 
     QPID_LOG(trace, "SENT [" << this << "]: " << frame);
 }

@@ -53,7 +53,9 @@ namespace qpid {
             Consumer(bool preAcquires = true) : acquires(preAcquires) {}
             bool preAcquires() const { return acquires; }
             virtual bool deliver(QueuedMessage& msg) = 0;
+            virtual void notify() = 0;
             virtual bool filter(intrusive_ptr<Message>) { return true; }
+            virtual bool accept(intrusive_ptr<Message>) { return true; }
             virtual ~Consumer(){}
         };
     }

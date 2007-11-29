@@ -97,6 +97,13 @@ private:
     std::deque<BufferBase*> bufferQueue;
     std::deque<BufferBase*> writeQueue;
     bool queuedClose;
+    /**
+     * This flag is used to detect and handle concurrency between
+     * calls to notifyPendingWrite() (which can be made from any thread) and
+     * the execution of the writeable() method (which is always on the
+     * thread processing this handle.
+     */
+    volatile bool writePending;
 
 public:
     AsynchIO(const Socket& s,
@@ -107,7 +114,8 @@ public:
     void start(Poller::shared_ptr poller);
     void queueReadBuffer(BufferBase* buff);
     void unread(BufferBase* buff);
-    void queueWrite(BufferBase* buff = 0);
+    void queueWrite(BufferBase* buff);
+    void notifyPendingWrite();
     void queueWriteClose();
     bool writeQueueEmpty() { return writeQueue.empty(); }
     BufferBase* getQueuedBuffer();

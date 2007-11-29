@@ -35,6 +35,7 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/AccumulatedAck.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/sys/AggregateOutput.h"
 #include "qpid/shared_ptr.h"
 
 #include <list>
@@ -51,11 +52,11 @@ class SessionState;
  * attached to a channel or suspended. 
  */
 class SemanticState : public framing::FrameHandler::Chains,
+                      public sys::OutputTask,
                       private boost::noncopyable
 {
-    class ConsumerImpl : public Consumer
+    class ConsumerImpl : public Consumer, public sys::OutputTask
     {
-        sys::Mutex lock;
         SemanticState* const parent;
         const DeliveryToken::shared_ptr token;
         const string name;
@@ -69,16 +70,17 @@ class SemanticState : public framing::FrameHandler::Chains,
         uint32_t byteCredit;
 
         bool checkCredit(intrusive_ptr<Message>& msg);
+        void allocateCredit(intrusive_ptr<Message>& msg);
 
       public:
-        typedef shared_ptr<ConsumerImpl> shared_ptr;
-
         ConsumerImpl(SemanticState* parent, DeliveryToken::shared_ptr token, 
                      const string& name, Queue::shared_ptr queue,
                      bool ack, bool nolocal, bool acquire);
         ~ConsumerImpl();
         bool deliver(QueuedMessage& msg);            
         bool filter(intrusive_ptr<Message> msg);            
+        bool accept(intrusive_ptr<Message> msg);            
+        void notify();
 
         void setWindowMode();
         void setCreditMode();
@@ -89,20 +91,11 @@ class SemanticState : public framing::FrameHandler::Chains,
         void acknowledged(const DeliveryRecord&);    
         Queue::shared_ptr getQueue() { return queue; }
         bool isBlocked() const { return blocked; }
+
+        bool doOutput();
     };
 
-    struct FlushCompletion : DispatchCompletion
-    {
-        sys::Monitor lock;
-        ConsumerImpl& consumer;
-        bool complete;
-        
-        FlushCompletion(ConsumerImpl& c) : consumer(c), complete(false) {}
-        void wait();
-        void completed();
-    };
-
-    typedef std::map<std::string,ConsumerImpl::shared_ptr> ConsumerImplMap;
+    typedef boost::ptr_map<std::string,ConsumerImpl> ConsumerImplMap;
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
 
     SessionState& session;
@@ -114,27 +107,26 @@ class SemanticState : public framing::FrameHandler::Chains,
     Prefetch outstanding;
     NameGenerator tagGenerator;
     std::list<DeliveryRecord> unacked;
-    sys::Mutex deliveryLock;
     TxBuffer::shared_ptr txBuffer;
     DtxBuffer::shared_ptr dtxBuffer;
     bool dtxSelected;
     DtxBufferMap suspendedXids;
     framing::AccumulatedAck accumulatedAck;
     bool flowActive;
-
     boost::shared_ptr<Exchange> cacheExchange;
+    sys::AggregateOutput outputTasks;
     
     void route(intrusive_ptr<Message> msg, Deliverable& strategy);
     void record(const DeliveryRecord& delivery);
     bool checkPrefetch(intrusive_ptr<Message>& msg);
     void checkDtxTimeout();
-    ConsumerImpl::shared_ptr find(const std::string& destination);
+    ConsumerImpl& find(const std::string& destination);
     void ack(DeliveryId deliveryTag, DeliveryId endTag, bool cumulative);
     void acknowledged(const DeliveryRecord&);
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
-    void requestDispatch(ConsumerImpl::shared_ptr);
-    void cancel(ConsumerImpl::shared_ptr);
+    void requestDispatch(ConsumerImpl&);
+    void cancel(ConsumerImpl&);
 
   public:
     SemanticState(DeliveryAdapter&, SessionState&);
@@ -188,6 +180,8 @@ class SemanticState : public framing::FrameHandler::Chains,
     void release(DeliveryId first, DeliveryId last);
     void reject(DeliveryId first, DeliveryId last);
     void handle(intrusive_ptr<Message> msg);
+
+    bool doOutput() { return outputTasks.doOutput(); }
 };
 
 }} // namespace qpid::broker

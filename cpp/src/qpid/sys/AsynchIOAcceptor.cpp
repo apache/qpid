@@ -115,6 +115,7 @@ public:
 	// Output side
 	void send(framing::AMQFrame&);
 	void close();
+        void activateOutput();
 
 	// Input side
 	void readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff);
@@ -135,7 +136,7 @@ void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, Conn
     	boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
     	boost::bind(&AsynchIOHandler::eof, async, _1),
     	boost::bind(&AsynchIOHandler::disconnect, async, _1),
-		boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
+        boost::bind(&AsynchIOHandler::closedSocket, async, _1, _2),
     	boost::bind(&AsynchIOHandler::nobuffs, async, _1),
     	boost::bind(&AsynchIOHandler::idle, async, _1));
 	async->init(aio, handler);
@@ -195,12 +196,16 @@ void AsynchIOHandler::send(framing::AMQFrame& frame) {
 	}
 
 	// Activate aio for writing here
-	aio->queueWrite();
+	aio->notifyPendingWrite();
 }
 
 void AsynchIOHandler::close() {
 	ScopedLock<Mutex> l(frameQueueLock);
 	frameQueueClosed = true;
+}
+
+void AsynchIOHandler::activateOutput() {
+    aio->notifyPendingWrite();
 }
 
 // Input side
@@ -272,9 +277,11 @@ void AsynchIOHandler::idle(AsynchIO&){
 	ScopedLock<Mutex> l(frameQueueLock);
 	
 	if (frameQueue.empty()) {
-		// At this point we know that we're write idling the connection
-		// so we could note that somewhere or do something special
-		return;
+            // At this point we know that we're write idling the connection
+            // so tell the input handler to queue any available output:
+            inputHandler->doOutput();
+            //if still no frames, theres nothing to do:
+            if (frameQueue.empty()) return;
 	}
 	
 	do {

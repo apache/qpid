@@ -30,6 +30,7 @@ namespace qpid {
 namespace broker {
 
 using namespace framing;
+using sys::Mutex;
 
 void SessionState::handleIn(AMQFrame& f) { semanticHandler->handle(f); }
 
@@ -48,7 +49,8 @@ SessionState::SessionState(
 {
     // TODO aconway 2007-09-20: SessionManager may add plugin
     // handlers to the chain.
- }
+    getConnection().outputTasks.addOutputTask(&semanticHandler->getSemanticState());
+}
 
 SessionState::~SessionState() {
     // Remove ID from active session list.
@@ -70,11 +72,28 @@ Connection& SessionState::getConnection() {
 }
 
 void SessionState::detach() {
+    getConnection().outputTasks.removeOutputTask(&semanticHandler->getSemanticState());
+    Mutex::ScopedLock l(lock);
     handler = 0;
 }
 
 void SessionState::attach(SessionHandler& h) {
-    handler = &h;
+    {
+        Mutex::ScopedLock l(lock);
+        handler = &h;
+    }
+    h.getConnection().outputTasks.addOutputTask(&semanticHandler->getSemanticState());
 }
+
+void SessionState::activateOutput()
+{
+    Mutex::ScopedLock l(lock);
+    if (isAttached()) {
+        getConnection().outputTasks.activateOutput();
+    }
+}
+    //This class could be used as the callback for queue notifications
+    //if not attached, it can simply ignore the callback, else pass it
+    //on to the connection
 
 }} // namespace qpid::broker
