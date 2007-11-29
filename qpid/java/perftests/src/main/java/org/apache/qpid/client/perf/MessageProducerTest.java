@@ -1,6 +1,7 @@
 package org.apache.qpid.client.perf;
 
 import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 import java.util.Map;
@@ -25,7 +26,6 @@ public class MessageProducerTest extends Options implements Runnable
     String _logFileName;
     long _startTime;
     long _totalMsgCount;
-    double _timeElapsed = 0;
 
     public void start() throws Exception
     {
@@ -58,100 +58,132 @@ public class MessageProducerTest extends Options implements Runnable
 
     private void startTimerThread()
     {
-        Thread t = new Thread(this);
-        t.setName("MessageProducerTest-TimerThread");
-        t.start();
+        _startTime = System.currentTimeMillis();
+        if(Boolean.getBoolean("collect_stats"))
+        {
+            Thread t = new Thread(this);
+            t.setName("MessageProducerTest-TimerThread");
+            t.start();
+        }
+        try
+        {
+            printSummary();
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
     }
 
     public void run()
     {
         boolean run = true;
-        _startTime = System.currentTimeMillis();
-        runReaper(false);
+        printHeading();
+        runReaper();
         try
         {
-            while(run)
+            while (run)
             {
                 Thread.sleep(_logDuration);
-                runReaper(false);
+                runReaper();
 
-                if(System.currentTimeMillis() - _startTime > _expiry )
+                if (System.currentTimeMillis() - _startTime > _expiry)
                 {
                     // time to stop the test.
                     for (Integer id : _producers.keySet())
                     {
-                        JMSProducer prod = _producers.get(id);
-                        prod.stopProducing();
+                        JMSProducer producer = _producers.get(id);
+                        producer.stopProducing();
                     }
-                    runReaper(true);
+                    runReaper();
                     run = false;
                 }
             }
         }
         catch (InterruptedException e)
         {
-            _logger.error("The timer thread exited",e);
+            _logger.error("The timer thread exited", e);
         }
     }
 
-    public void runReaper(boolean printSummary)
+    public void runReaper()
     {
         try
         {
-            FileWriter _logFile = new FileWriter(_logFileName + ".csv",true);
-            long newTotalMsgCount = 0;
             long totalMsgCountThisInterval = 0;
+
             for (Integer id : _producers.keySet())
             {
-                JMSProducer prod = _producers.get(id);
-                StringBuffer buf = new StringBuffer("JMSProducer(").append(prod.getId()).append("),");
-                Date d = new Date(System.currentTimeMillis());
-                buf.append(df.format(d)).append(",");
-                buf.append(d.getTime()).append(",");
-                buf.append(prod.getCurrentMessageCount()).append("\n");
-                _logFile.write(buf.toString());
-                newTotalMsgCount = newTotalMsgCount + prod.getCurrentMessageCount();
-                totalMsgCountThisInterval = newTotalMsgCount - _totalMsgCount;
-                _totalMsgCount = newTotalMsgCount;
-            }
-            _logFile.close();
+                JMSProducer producer = _producers.get(id);
+                totalMsgCountThisInterval = totalMsgCountThisInterval + producer.getCurrentMessageCount();
 
-            FileWriter _memoryLog = new FileWriter(_logFileName + "_memory.csv",true);
-            StringBuffer buf = new StringBuffer("JMSProducer,");
+            }
+            _totalMsgCount = _totalMsgCount + totalMsgCountThisInterval;
+
+            FileWriter _memoryLog = new FileWriter(_logFileName + ".csv",true);
+            StringBuffer buf = new StringBuffer();
             Date d = new Date(System.currentTimeMillis());
             double totaltime = d.getTime() - _startTime;
-            _timeElapsed = totaltime - _timeElapsed;
             buf.append(df.format(d)).append(",");
             buf.append(d.getTime()).append(",");
             buf.append(_totalMsgCount).append(",");
+            buf.append(_totalMsgCount*1000 /totaltime).append(",");
+            buf.append(totalMsgCountThisInterval).append(",");
+            buf.append(totalMsgCountThisInterval*1000/_logDuration).append(",");
             buf.append(Runtime.getRuntime().totalMemory() -Runtime.getRuntime().freeMemory()).append("\n");
             buf.append("\n");
-            buf.append("Throughput: total " + (_totalMsgCount /totaltime)*1000 + " msg/s;  this interval: "  +  (totalMsgCountThisInterval/_timeElapsed)*1000 + " msg/s");
             _memoryLog.write(buf.toString());
             _memoryLog.close();
             System.out.println(buf);
-            if (printSummary)
-            {
-                double dCount = _totalMsgCount;
-                double ratio = (dCount/totaltime)*1000;
-                FileWriter _summaryLog = new FileWriter(_logFileName + "_Summary",true);
-                buf = new StringBuffer("MessageProducerTest \n Test started at : ");
-                buf.append(df.format(new Date(_startTime))).append("\n Test finished at : ");
-                d = new Date(System.currentTimeMillis());
-                buf.append(df.format(d)).append("\n Total Time taken (ms):");
-                buf.append(totaltime).append("\n Total messages sent:");
-                buf.append(_totalMsgCount).append("\n Producer rate:");
-                buf.append(ratio).append("\n");
-                _summaryLog.write(buf.toString());
-                System.out.println("---------- Test Ended -------------");
-                _summaryLog.close();
-            }
-            _timeElapsed = totaltime;
         }
-        catch(Exception e)
+        catch (Exception e)
         {
-            _logger.error("Error printing info to the log file",e);
+            _logger.error("Error printing info to the log file", e);
         }
+    }
+
+    private void printHeading()
+    {
+        try
+        {
+            FileWriter _memoryLog = new FileWriter(_logFileName + ".csv",true);
+            String s = "Date/Time,Time (ms),total msg count,total rate (msg/sec),interval count,interval rate (msg/sec),memory";
+            _memoryLog.write(s);
+            _memoryLog.close();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    private void printSummary() throws Exception
+    {
+        if (Boolean.getBoolean("collect_stats"))
+        {
+            for (Integer id : _producers.keySet())
+            {
+                JMSProducer producer = _producers.get(id);
+                _totalMsgCount = _totalMsgCount + producer.getCurrentMessageCount();
+
+            }
+        }
+
+        long current = System.currentTimeMillis();
+        double time = current - _startTime;
+        double ratio = _totalMsgCount*1000/time;
+        FileWriter _summaryLog = new FileWriter(_logFileName + "_Summary",true);
+
+        StringBuffer buf = new StringBuffer("MessageProducerTest \n Test started at : ");
+        buf.append(df.format(new Date(_startTime))).append("\n Test finished at : ");
+        Date d = new Date(current);
+        buf.append(df.format(d)).append("\n Total Time taken (ms):");
+        buf.append(time).append("\n Total messages sent:");
+        buf.append(_totalMsgCount).append("\n producer rate:");
+        buf.append(ratio).append("\n");
+        _summaryLog.write(buf.toString());
+        System.out.println("---------- Test Ended -------------");
+        _summaryLog.close();
     }
 
     public static void main(String[] args)
