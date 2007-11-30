@@ -2,13 +2,13 @@ package org.apache.qpid.client.perf;
 
 public class Options
 {
-    int _messageSize;
-    boolean _transacted;
-    boolean _synchronous;
-    String _destination;
-    long _expiry;
-    long _logFrequency;
-    String _logFilePath;
+    public int _messageSize;
+    public boolean _transacted;
+    public boolean _synchronous;
+    public String _destination;
+    public long _expiry;
+    public long _logFrequency;
+    public String _logFilePath;
 
     /**
      * System props
@@ -24,7 +24,7 @@ public class Options
     {
         _messageSize = Integer.parseInt(System.getProperty("messageSize","100"));
         _transacted = false;
-        _destination = System.getProperty("destinations");
+        _destination = System.getProperty("destination", "foo");
         _logFrequency = Long.parseLong(System.getProperty("logFrequency","10000"));
         _logFilePath = System.getProperty("logFilePath");
         _expiry = getExpiry();
