@@ -21,7 +21,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
 {
     static
     {
-        String max = "message_size_before_sync";
+            String max = "message_size_before_sync"; // KB's
             try
             {
                 MAX_NOT_SYNC_DATA_LENGH = new Long(System.getProperties().getProperty(max, "200000000"));
@@ -132,7 +132,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     public void endData()
     {
         super.endData();
-        if( MAX_NOT_SYNC_DATA_LENGH != -1 && _currentDataSizeNotSynced >= MAX_NOT_SYNC_DATA_LENGH)
+    /*    if( MAX_NOT_SYNC_DATA_LENGH != -1 && _currentDataSizeNotSynced >= MAX_NOT_SYNC_DATA_LENGH)
         {
             sync();
         }
@@ -140,7 +140,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         {
            executionFlush();
             _currentDataSizeNotFlushed = 0;
-        }
+        }*/
     }
 
     public RangeSet getAccquiredMessages()

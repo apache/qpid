@@ -103,7 +103,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         origMessage.setJMSExpiration(message.get010Message().getDeliveryProperties().getExpiration());
         origMessage.setJMSMessageID(message.getJMSMessageID());
         origMessage.setJMSDeliveryMode(deliveryMode);
-        
+
         BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
         if (contentHeaderProperties.reset())
         {
@@ -159,6 +159,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         catch (RuntimeException rte)
         {
             JMSException ex = new JMSException("Exception when sending message");
+            rte.printStackTrace();
             ex.setLinkedException(rte);
             throw ex;
         }
