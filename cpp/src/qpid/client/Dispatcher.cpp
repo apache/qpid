@@ -69,18 +69,22 @@ void Dispatcher::run()
     boost::state_saver<bool>  reset(running); // Reset to false on exit.
     running = true;
     queue->open();
-    while (!queue->isClosed()) {
-        Mutex::ScopedUnlock u(lock);
-        FrameSet::shared_ptr content = queue->pop();
-        if (content->isA<MessageTransferBody>()) {
-            Message msg(*content, session);
-            Subscriber::shared_ptr listener = find(msg.getDestination());
-            assert(listener);
-            listener->received(msg);
-        } else {
-            assert (handler.get());
-            handler->handle(*content);
+    try {
+        while (!queue->isClosed()) {
+            Mutex::ScopedUnlock u(lock);
+            FrameSet::shared_ptr content = queue->pop();
+            if (content->isA<MessageTransferBody>()) {
+                Message msg(*content, session);
+                Subscriber::shared_ptr listener = find(msg.getDestination());
+                assert(listener);
+                listener->received(msg);
+            } else {
+                assert (handler.get());
+                handler->handle(*content);
+            }
         }
+    } catch (const ClosedException&) {
+        //ignore it and return
     }
 }
 
