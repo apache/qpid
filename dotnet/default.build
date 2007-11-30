@@ -125,7 +125,8 @@
                 <include name="LICENSE.txt"/>
                 <include name="NOTICE.txt"/>
                 <include name="README.txt"/>
-                <include name="RELEASE_NOTES.txt"/>                    
+                <include name="RELEASE_NOTES.txt"/>
+                <include name="DISCLAIMER"/>                    
             </fileset>
         </zip>
     </target>
