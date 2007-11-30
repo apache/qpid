@@ -19,6 +19,7 @@ import org.apache.qpidity.transport.ConnectionEvent;
 import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
+import org.apache.qpidity.transport.network.nio.NioHandler;
 
 
 public class Client implements org.apache.qpidity.nclient.Connection
@@ -72,7 +73,16 @@ public class Client implements org.apache.qpidity.nclient.Connection
         connectionDelegate.setPassword(password);
         connectionDelegate.setVirtualHost(virtualHost);
 
-        _conn = MinaHandler.connect(host, port,connectionDelegate);
+        if (System.getProperty("transport","mina").equalsIgnoreCase("nio"))
+        {
+            System.out.println("using NIO");
+            _conn = NioHandler.connect(host, port,connectionDelegate);
+        }
+        else
+        {
+            System.out.println("using MINA");
+            _conn = MinaHandler.connect(host, port,connectionDelegate);
+        }
 
         // XXX: hardcoded version numbers
         _conn.send(new ConnectionEvent(0, new ProtocolHeader(1, 0, 10)));
@@ -119,6 +129,11 @@ public class Client implements org.apache.qpidity.nclient.Connection
         ClientSession ssn = new ClientSession();
         ssn.attach(ch);
         ssn.sessionOpen(expiryInSeconds);
+        if (Boolean.getBoolean("batch") && System.getProperty("transport").equalsIgnoreCase("nio"))
+        {
+            System.out.println("using batching");
+            NioHandler.startBatchingFrames(_conn.getConnectionId());
+        }
         return ssn;
     }
 

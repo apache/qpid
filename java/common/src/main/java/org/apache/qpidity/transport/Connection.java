@@ -48,6 +48,8 @@ public class Connection
 
     final private Sender<ConnectionEvent> sender;
     final private ConnectionDelegate delegate;
+    // want to make this final
+    private int _connectionId;
 
     final private Map<Integer,Channel> channels = new HashMap<Integer,Channel>();
 
@@ -56,6 +58,16 @@ public class Connection
     {
         this.sender = sender;
         this.delegate = delegate;
+    }
+
+    public void setConnectionId(int id)
+    {
+        _connectionId = id;
+    }
+
+    public int getConnectionId()
+    {
+        return _connectionId;
     }
 
     public ConnectionDelegate getConnectionDelegate()
