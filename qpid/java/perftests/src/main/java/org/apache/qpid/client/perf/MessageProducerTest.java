@@ -4,11 +4,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.jms.BytesMessage;
-import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
@@ -27,10 +24,11 @@ public class MessageProducerTest extends Options
 
     String _logFileName;
     long _startTime;
+    long _intervalStartTime;
     long _totalMsgCount;
     long _intervalCount;
 
-    private Connection _connection;
+    private AMQConnection _connection;
     private Session _session;
     private BytesMessage _payload;
     private MessageProducer _producer;
@@ -39,8 +37,7 @@ public class MessageProducerTest extends Options
     {
        this.parseOptions();
        _logFileName = _logFilePath + "/MessageProducerTest_" + System.currentTimeMillis();
-
-       AMQConnection _connection = ConnectionUtility.getInstance().getConnection();
+       _connection = ConnectionUtility.getInstance().getConnection();
        _connection.start();
        Destination dest = Boolean.getBoolean("useQueue")? new AMQQueue(_connection,_destination) : new AMQTopic(_connection,_destination);
        _session = _connection.createSession(_transacted, Session.AUTO_ACKNOWLEDGE);
@@ -72,10 +69,10 @@ public class MessageProducerTest extends Options
                 // check every x messages to see if times up
                 if(_intervalCount >= _logFrequency)
                 {
-                    _intervalCount = 0;
                     if (Boolean.getBoolean("collect_stats"))
                     {
                         runReaper();
+                        _intervalCount = 0;
                     }
                     if (System.currentTimeMillis() - _startTime >= _expiry)
                     {
@@ -101,16 +98,24 @@ public class MessageProducerTest extends Options
             FileWriter _memoryLog = new FileWriter(_logFileName + ".csv",true);
             StringBuffer buf = new StringBuffer();
             Date d = new Date(System.currentTimeMillis());
-            double totaltime = d.getTime() - _startTime;
+            long currentTime = d.getTime();
+            long intervalTime =  currentTime -  _intervalStartTime;
+            long totalTime = currentTime - _startTime;
             buf.append(df.format(d)).append(",");
             buf.append(d.getTime()).append(",");
-            buf.append(_totalMsgCount).append(",");
-            buf.append(_totalMsgCount*1000 /totaltime).append(",");
+            buf.append(" total Msg Count: ").append(_totalMsgCount).append(",");
+            if(totalTime > 0 )            
+            buf.append(" rate: ").append(_totalMsgCount * 1000 / totalTime);
+            buf.append(",");
+            buf.append(" interval Count: ").append(_intervalCount).append(",");
+            if(intervalTime > 0 )            
+                buf.append(" interval rate: ").append(_intervalCount * 1000 / intervalTime).append(",");
             buf.append(Runtime.getRuntime().totalMemory() -Runtime.getRuntime().freeMemory()).append("\n");
             buf.append("\n");
             _memoryLog.write(buf.toString());
             _memoryLog.close();
             System.out.println(buf);
+            _intervalStartTime = d.getTime();
         }
         catch (Exception e)
         {

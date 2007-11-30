@@ -5,19 +5,15 @@ import java.io.IOException;
 import java.sql.Date;
 import java.text.SimpleDateFormat;
 
-import javax.jms.BytesMessage;
-import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.message.TestMessageFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,34 +24,28 @@ public class MessageConsumerTest extends Options implements MessageListener
 
     String _logFileName;
     long _startTime;
+    long _intervalStartTime;
     long _totalMsgCount;
     long _intervalCount;
 
-    private Connection _connection;
+    private AMQConnection _connection;
     private Session _session;
-    private BytesMessage _payload;
-    private MessageConsumer _consumer;
-    private boolean _verifyOrder = false;
 
     public void init() throws Exception
     {
        this.parseOptions();
        _logFileName = _logFilePath + "/MessageConsumerTest_" + System.currentTimeMillis();
-
-       AMQConnection _connection = ConnectionUtility.getInstance().getConnection();
+       _connection = ConnectionUtility.getInstance().getConnection();
        _connection.start();
        Destination dest = Boolean.getBoolean("useQueue")? new AMQQueue(_connection,_destination) : new AMQTopic(_connection,_destination);
        _session = _connection.createSession(_transacted, Session.AUTO_ACKNOWLEDGE);
-       _payload = TestMessageFactory.newBytesMessage(_session, _messageSize);
-       _consumer = _session.createConsumer(dest);
-       if(!_synchronous)
+        MessageConsumer _consumer = _session.createConsumer(dest);
+        if(!_synchronous)
        {
            _consumer.setMessageListener(this);
        }
-       _verifyOrder = Boolean.getBoolean("verifyOrder");
 
        _startTime = System.currentTimeMillis();
-       boolean run = true;
        if(Boolean.getBoolean("collect_stats"))
        {
            printHeading();
@@ -72,7 +62,6 @@ public class MessageConsumerTest extends Options implements MessageListener
             {
                 _logger.error("Error : Message received out of order in JMSSyncConsumer:" + _id + " message id was " + msgId + " expected: " + _currentMsgCount+1);
             }*/
-            message = null;
             _totalMsgCount ++;
             _intervalCount++;
             if(_intervalCount >= _logFrequency)
@@ -87,7 +76,6 @@ public class MessageConsumerTest extends Options implements MessageListener
                     printSummary();
                     _session.close();
                     _connection.stop();
-                    return;
                 }
             }
         }
@@ -101,19 +89,27 @@ public class MessageConsumerTest extends Options implements MessageListener
     {
         try
         {
-            FileWriter _memoryLog = new FileWriter(_logFileName + ".csv",true);
+           FileWriter _memoryLog = new FileWriter(_logFileName + ".csv",true);
             StringBuffer buf = new StringBuffer();
             Date d = new Date(System.currentTimeMillis());
-            double totaltime = d.getTime() - _startTime;
+            long currentTime = d.getTime();
+            long intervalTime =  currentTime -  _intervalStartTime;
+            long totalTime = currentTime - _startTime;
             buf.append(df.format(d)).append(",");
             buf.append(d.getTime()).append(",");
-            buf.append(_totalMsgCount).append(",");
-            buf.append(_totalMsgCount*1000 /totaltime).append(",");
+            buf.append(" total Msg Count: ").append(_totalMsgCount).append(",");
+            if(totalTime > 0 )
+                buf.append(" rate: ").append(_totalMsgCount * 1000 / totalTime);
+            buf.append(",");
+            buf.append(" interval Count: ").append(_intervalCount).append(",");
+            if(intervalTime > 0 )
+                buf.append(" interval rate: ").append(_intervalCount * 1000 / intervalTime).append(",");
             buf.append(Runtime.getRuntime().totalMemory() -Runtime.getRuntime().freeMemory()).append("\n");
             buf.append("\n");
             _memoryLog.write(buf.toString());
             _memoryLog.close();
             System.out.println(buf);
+            _intervalStartTime = d.getTime();
         }
         catch (Exception e)
         {
