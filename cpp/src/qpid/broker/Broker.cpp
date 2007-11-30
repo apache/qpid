@@ -77,7 +77,7 @@ Broker::Options::Options(const std::string& name) :
     ack(0)
 {
     int c = sys::SystemInfo::concurrency();
-    if (c > 0) workerThreads=c;
+    workerThreads=std::max(2,c);
     addOptions()
         ("port,p", optValue(port,"PORT"),
          "Tells the broker to listen on PORT")
