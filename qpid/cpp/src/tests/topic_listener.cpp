@@ -33,11 +33,10 @@
  */
 
 #include "TestOptions.h"
-#include "qpid/client/Channel.h"
 #include "qpid/client/Connection.h"
-#include "qpid/client/Exchange.h"
 #include "qpid/client/MessageListener.h"
-#include "qpid/client/Queue.h"
+#include "qpid/client/Session_0_10.h"
+#include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/FieldValue.h"
 #include <iostream>
@@ -54,7 +53,8 @@ using namespace std;
  * defined.
  */
 class Listener : public MessageListener{    
-    Channel* const channel;
+    Session_0_10& session;
+    SubscriptionManager& mgr;
     const string responseQueue;
     const bool transactional;
     bool init;
@@ -64,7 +64,7 @@ class Listener : public MessageListener{
     void shutdown();
     void report();
 public:
-    Listener(Channel* channel, const string& reponseQueue, bool tx);
+    Listener(Session_0_10& session, SubscriptionManager& mgr, const string& reponseQueue, bool tx);
     virtual void received(Message& msg);
 };
 
@@ -72,14 +72,14 @@ public:
  * A utility class for managing the options passed in.
  */
 struct Args : public qpid::TestOptions {
-    int ackmode;
+    int ack;
     bool transactional;
     int prefetch;
-    Args() : ackmode(NO_ACK), transactional(false), prefetch(1000) {
+    Args() : ack(0), transactional(false), prefetch(0) {
         addOptions()
-            ("ack", optValue(ackmode, "MODE"), "Ack mode: 0=NO_ACK, 1=AUTO_ACK, 2=LAZY_ACK")
+            ("ack", optValue(ack, "MODE"), "Ack frequency in messages (defaults to half the prefetch value)")
             ("transactional", optValue(transactional), "Use transactions")
-            ("prefetch", optValue(prefetch, "N"), "prefetch count");
+            ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)");
     }
 };
 
@@ -98,24 +98,35 @@ int main(int argc, char** argv){
         else {
             cout << "topic_listener: Started." << endl;
             Connection connection(args.trace);
-            connection.open(args.host, args.port, args.username, args.password, args.virtualhost);
-            Channel channel(args.transactional, args.prefetch);
-            connection.openChannel(channel);
-        
+            args.open(connection);
+            Session_0_10 session = connection.newSession();
+            if (args.transactional) {
+                session.txSelect();
+            }
+
             //declare exchange, queue and bind them:
-            Queue response("response");
-            channel.declareQueue(response);
-        
-            Queue control;
-            channel.declareQueue(control);
-            qpid::framing::FieldTable bindArgs;
-            channel.bind(Exchange::STANDARD_TOPIC_EXCHANGE, control, "topic_control", bindArgs);
+            session.queueDeclare(arg::queue="response");
+            std::string control = "control_" + session.getId().str();
+            session.queueDeclare(arg::queue=control);
+            session.queueBind(arg::exchange="amq.topic", arg::queue=control, arg::routingKey="topic_control");
+
             //set up listener
-            Listener listener(&channel, response.getName(), args.transactional);
-            channel.consume(control, "c1", &listener, AckMode(args.ackmode));
+            SubscriptionManager mgr(session);
+            Listener listener(session, mgr, "response", args.transactional);
+            if (args.prefetch) {
+                mgr.setAckPolicy(AckPolicy(args.ack ? args.ack : (args.prefetch / 2)));
+                mgr.setFlowControl(args.prefetch, SubscriptionManager::UNLIMITED, true);
+            } else {
+                mgr.setConfirmMode(false);
+                mgr.setFlowControl(SubscriptionManager::UNLIMITED, SubscriptionManager::UNLIMITED, false);
+            }
+            mgr.subscribe(listener, control);
+
             cout << "topic_listener: Consuming." << endl;
-            channel.run();
-            cout << "topic_listener: run returned, closing connection" << endl;
+            mgr.run();
+            cout << "topic_listener: run returned, closing session" << endl;
+            session.close();
+            cout << "closing connection" << endl;
             connection.close();
             cout << "topic_listener: normal exit" << endl;
         }
@@ -126,8 +137,8 @@ int main(int argc, char** argv){
     return 1;
 }
 
-Listener::Listener(Channel* _channel, const string& _responseq, bool tx) : 
-    channel(_channel), responseQueue(_responseq), transactional(tx), init(false), count(0){}
+Listener::Listener(Session_0_10& s, SubscriptionManager& m, const string& _responseq, bool tx) : 
+    session(s), mgr(m), responseQueue(_responseq), transactional(tx), init(false), count(0){}
 
 void Listener::received(Message& message){
     if(!init){        
@@ -149,7 +160,7 @@ void Listener::received(Message& message){
 }
 
 void Listener::shutdown(){
-    channel->close();
+    mgr.stop();
 }
 
 void Listener::report(){
@@ -158,11 +169,11 @@ void Listener::report(){
     stringstream reportstr;
     reportstr << "Received " << count << " messages in "
               << time/TIME_MSEC << " ms.";
-    Message msg(reportstr.str());
+    Message msg(reportstr.str(), responseQueue);
     msg.getHeaders().setString("TYPE", "REPORT");
-    channel->publish(msg, string(), responseQueue);
+    session.messageTransfer(arg::content=msg);
     if(transactional){
-        channel->commit();
+        session.txCommit();
     }
 }
 
