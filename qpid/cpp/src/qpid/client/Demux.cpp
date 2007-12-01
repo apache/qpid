@@ -74,6 +74,15 @@ void Demux::close()
     defaultQueue->close();
 }
 
+void Demux::open()
+{
+    sys::Mutex::ScopedLock l(lock);
+    for (iterator i = records.begin(); i != records.end(); i++) {
+        i->queue->open();
+    }
+    defaultQueue->open();
+}
+
 Demux::QueuePtr Demux::add(const std::string& name, Condition condition)
 {
     sys::Mutex::ScopedLock l(lock);
