@@ -99,7 +99,8 @@ class InProcessConnector :
                     }
                 }
             }
-            catch (const ClosedException&) {
+            catch (const std::exception& e) {
+                QPID_LOG(debug, QPID_MSG(receiver << " Terminated: " << e.what()));
                 return;
             }
         }
@@ -155,7 +156,8 @@ class InProcessConnector :
         }
     };
 
-    InProcessConnector(shared_ptr<broker::Broker> b,
+
+    InProcessConnector(shared_ptr<broker::Broker> b=broker::Broker::create(),
                        framing::ProtocolVersion v=framing::ProtocolVersion()) :
         Connector(v),
         protocolInit(v),
@@ -204,6 +206,8 @@ class InProcessConnector :
         clientOut.queue.setConnectionInputHandler(0);
     }
 
+    shared_ptr<broker::Broker> getBroker() { return broker; }
+    
   private:
     sys::Mutex lock;
     framing::ProtocolInitiation protocolInit;
@@ -215,29 +219,25 @@ class InProcessConnector :
 };
 
 struct InProcessConnection : public client::Connection {
-    InProcessConnection(shared_ptr<broker::Broker> b)
+    /** Connect to an existing broker */
+    InProcessConnection(shared_ptr<broker::Broker> b=broker::Broker::create())
         : client::Connection(
-            shared_ptr<client::Connector>(
-                new InProcessConnector(b)))
-    {
-        open("");
-    }
+            shared_ptr<client::Connector>(new InProcessConnector(b)))
+    { open(""); }
 
-    ~InProcessConnection() { }
+    InProcessConnector& getConnector() {
+        return static_cast<InProcessConnector&>(*impl->getConnector());
+    }
     
     /** Simulate disconnected network connection. */
-    void disconnect() { impl->getConnector()->close(); }
+    void disconnect() { getConnector().close(); }
     
-    /** Sliently discard frames sent by either party, lost network traffic. */
-    void discard() {
-        dynamic_pointer_cast<InProcessConnector>(
-            impl->getConnector())->discard();
-    }
-};   
+    /** Discard frames, simulates lost network traffic. */
+    void discard() { getConnector().discard(); }
 
-/** A connector with its own broker */
-struct InProcessBroker : public InProcessConnector {
-    InProcessBroker() : InProcessConnector(broker::Broker::create()) {}
+    shared_ptr<broker::Broker> getBroker() {
+        return getConnector().getBroker();
+    }
 };
 
 } // namespace qpid

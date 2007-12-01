@@ -26,8 +26,10 @@ CLEANFILES=
 
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
-unit_test_LDADD=-lboost_unit_test_framework -lboost_regex $(lib_common)
+unit_test_LDADD=-lboost_unit_test_framework -lboost_regex \
+	$(lib_client) $(lib_broker) 
 unit_test_SOURCES= unit_test.cpp unit_test.h \
+	exception_test.cpp \
 	RefCounted.cpp RefCountedMap.cpp \
 	SessionState.cpp Blob.cpp logging.cpp \
 	Url.cpp Uuid.cpp \
@@ -91,7 +93,6 @@ unit_tests =		\
 
 testprogs=		\
   client_test		\
-  exception_test	\
   topic_listener	\
   topic_publisher	
 #  echo_service
@@ -100,7 +101,7 @@ check_PROGRAMS += $(testprogs) interop_runner
 
 TESTS_ENVIRONMENT = VALGRIND=$(VALGRIND) srcdir=$(srcdir) $(srcdir)/run_test
 
-system_tests = client_test exception_test quick_perftest quick_topictest
+system_tests = client_test quick_perftest quick_topictest
 TESTS += run-unit-tests start_broker $(system_tests) python_tests stop_broker 
 
 EXTRA_DIST +=								\
