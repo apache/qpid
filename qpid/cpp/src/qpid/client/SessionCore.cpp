@@ -125,26 +125,26 @@ void SessionCore::detach(int c, const std::string& t) {
     channel.next = 0;
     code=c;
     text=t;
+    l3.getDemux().close();
 }
 
 void SessionCore::doClose(int code, const std::string& text) {
     if (state != CLOSED) {
         session.reset();
-        l3.getDemux().close();
-        l3.getCompletionTracker().close();
         detach(code, text);
         setState(CLOSED);
+        l3.getCompletionTracker().close();
     }
     invariant();
 }
 
 void SessionCore::doSuspend(int code, const std::string& text) {
-    if (state != CLOSED) {
-        invariant();
+    if (state != CLOSED && state != SUSPENDED) {
         detach(code, text);
         session->suspend();
         setState(SUSPENDED);
     }
+    invariant();
 }
 
 ExecutionHandler& SessionCore::getExecution() { // user thread
@@ -221,6 +221,7 @@ void SessionCore::resume(shared_ptr<ConnectionImpl> c) {
             channel.handle(*i);     // Direct to channel.
             check();
         }
+        l3.getDemux().open();
     }
 }
 

@@ -51,6 +51,7 @@ public:
     
     void handle(framing::FrameSet::shared_ptr);
     void close();
+    void open();
 
     QueuePtr add(const std::string& name, Condition);
     void remove(const std::string& name);
