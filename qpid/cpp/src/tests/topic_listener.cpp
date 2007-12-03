@@ -74,11 +74,14 @@ public:
 struct Args : public qpid::TestOptions {
     int ack;
     bool transactional;
+    bool durable;
     int prefetch;
-    Args() : ack(0), transactional(false), prefetch(0) {
+
+    Args() : ack(0), transactional(false), durable(false), prefetch(0) {
         addOptions()
             ("ack", optValue(ack, "MODE"), "Ack frequency in messages (defaults to half the prefetch value)")
             ("transactional", optValue(transactional), "Use transactions")
+            ("durable", optValue(durable), "subscribers should use durable queues")
             ("prefetch", optValue(prefetch, "N"), "prefetch count (0 implies no flow control, and no acking)");
     }
 };
@@ -107,7 +110,7 @@ int main(int argc, char** argv){
             //declare exchange, queue and bind them:
             session.queueDeclare(arg::queue="response");
             std::string control = "control_" + session.getId().str();
-            session.queueDeclare(arg::queue=control);
+            session.queueDeclare(arg::queue=control, arg::durable=args.durable);
             session.queueBind(arg::exchange="amq.topic", arg::queue=control, arg::routingKey="topic_control");
 
             //set up listener
