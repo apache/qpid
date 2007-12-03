@@ -142,8 +142,6 @@ public class MessageMirror extends BaseExample
 
                 // Print out the details of the just received message
                 System.out.println(CLASS + ": Message received:");
-                System.out.println("\tID=" + requestMessage.getJMSMessageID());
-                System.out.println("\tCorrelationID=" + requestMessage.getJMSCorrelationID());
 
                 if (requestMessage instanceof TextMessage)
                 {
@@ -160,11 +158,11 @@ public class MessageMirror extends BaseExample
                 {
                     System.out.println("Activating response queue listener for: " + destination);
                     responseMessage =
-                            session.createTextMessage("Activating response queue listener for: " + destination);
-                    String correlationID = requestMessage.getJMSCorrelationID();
-                    if (correlationID != null)
+                            session.createTextMessage();
+                     if (requestMessage instanceof TextMessage)
                     {
-                        responseMessage.setJMSCorrelationID(correlationID);
+                       responseMessage.setText(((TextMessage) requestMessage).getText().toUpperCase());
+                        System.out.println("\tResponse = " + responseMessage.getText());                        
                     }
                     messageProducer = session.createProducer(requestMessage.getJMSReplyTo());
                     messageProducer.send(responseMessage);
