@@ -107,42 +107,19 @@ public class P2PRequestor extends BaseExample
             // Create a message to send as a request for service
             TextMessage request;
 
-            request = session.createTextMessage("\"Twas brillig, and the slithy toves\",\n" +
-                    "\t\t\"Did gire and gymble in the wabe.\",\n" +
-                    "\t\t\"All mimsy were the borogroves,\",\n" +
-                    "\t\t\"And the mome raths outgrabe.\"");
+            request = session.createTextMessage();
 
-            // Declare a message to be used for receiving any response
-           Message response;
-
-            // Get the number of times that this sample should request service
+         // Get the number of times that this sample should request service
             for (int i = 0; i < getNumberMessages(); i++)
             {
-                /**
-                 * Set a message correlation value. This is not strictly required it is
-                 * just an example of how messages requests can be tied together.
-                 */
-                request.setJMSCorrelationID("Message " + i);
-                System.out.println(CLASS + ": Sending request " + i);
-
-                response = requestor.request(request);
-
-                // Print out the details of the message sent
-                System.out.println(CLASS + ": Message details of request");
-                System.out.println("\tID = " + request.getJMSMessageID());
-                System.out.println("\tCorrelationID = " + request.getJMSCorrelationID());
-                 System.out.println("\tContents= " + ((TextMessage)request).getText());
-
-                // Print out the details of the response received
-                System.out.println(CLASS + ": Message details of response");
-                System.out.println("\tID = " + response.getJMSMessageID());
-                System.out.println("\tCorrelationID = " + response.getJMSCorrelationID());
-                if (response instanceof TextMessage)
-                {
-                    System.out.println("\tContents= " + ((TextMessage) response).getText());
-                }
-
-                System.out.println();
+                request = session.createTextMessage("Twas brillig, and the slithy toves");
+                sendReceive(request, requestor);
+                request = session.createTextMessage("Did gire and gymble in the wabe");
+                sendReceive(request, requestor);
+                request = session.createTextMessage("All mimsy were the borogroves,");
+                sendReceive(request, requestor);
+                request = session.createTextMessage("And the mome raths outgrabe.");
+                sendReceive(request, requestor);
             }
 
             //send the final message  for ending the mirror
@@ -162,6 +139,18 @@ public class P2PRequestor extends BaseExample
         catch (Exception exp)
         {
             System.err.println(CLASS + ": Caught an Exception: " + exp);
+        }
+    }
+
+     private void sendReceive(TextMessage request, QueueRequestor requestor) throws JMSException
+    {
+        Message response;
+        response = requestor.request(request);
+        System.out.println("\tRequest Contents= " + request.getText());
+        // Print out the details of the response received
+        if (response instanceof TextMessage)
+        {
+            System.out.println("\t Response Contents= " + ((TextMessage) response).getText());
         }
     }
 }
