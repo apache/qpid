@@ -84,7 +84,7 @@ public class NioHandler implements Runnable
 
     public void run()
     {
-        _readBuf = ByteBuffer.allocate(1024);
+        _readBuf = ByteBuffer.allocate(512);
         long read = 0;
         while(_ch.isConnected() && _ch.isOpen())
         {
@@ -93,10 +93,12 @@ public class NioHandler implements Runnable
                 read = _ch.read(_readBuf);
                 if (read > 0)
                 {
-                    ByteBuffer b = _readBuf;
+                    _readBuf.flip();
+                    ByteBuffer b = ByteBuffer.allocate(_readBuf.remaining());
+                    b.put(_readBuf);
                     b.flip();
-                    _receiver.received(b);
                     _readBuf.clear();
+                    _receiver.received(b);
                 }
             }
             catch(Exception e)
