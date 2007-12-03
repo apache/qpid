@@ -59,6 +59,7 @@ class Publisher : public MessageListener{
     Session_0_10& session;
     const string controlTopic;
     const bool transactional;
+    const bool durable;
     Monitor monitor;
     int count;
     
@@ -66,7 +67,7 @@ class Publisher : public MessageListener{
     string generateData(int size);
 
 public:
-    Publisher(Session_0_10& session, const string& controlTopic, bool tx);
+    Publisher(Session_0_10& session, const string& controlTopic, bool tx, bool durable);
     virtual void received(Message& msg);
     int64_t publish(int msgs, int listeners, int size);
     void terminate();
@@ -78,23 +79,21 @@ public:
 struct Args : public TestOptions {
     int messages;
     int subscribers;
-    int ack;
     bool transactional;
-    int prefetch;
+    bool durable;
     int batches;
     int delay;
     int size;
 
     Args() : messages(1000), subscribers(1),
-             ack(500), transactional(false), prefetch(1000),
+             transactional(false), durable(false),
              batches(1), delay(0), size(256)
     {
         addOptions()
             ("messages", optValue(messages, "N"), "how many messages to send")
             ("subscribers", optValue(subscribers, "N"), "how many subscribers to expect reports from")
-            ("ack", optValue(ack, "MODE"), "Acknowledgement mode:0=NO_ACK, 1=AUTO_ACK, 2=LAZY_ACK")
             ("transactional", optValue(transactional), "client should use transactions")
-            ("prefetch", optValue(prefetch, "N"), "prefetch count")
+            ("durable", optValue(durable), "messages should be durable")
             ("batches", optValue(batches, "N"), "how many batches to run")
             ("delay", optValue(delay, "SECONDS"), "Causes a delay between each batch")
             ("size", optValue(size, "BYTES"), "size of the published messages");
@@ -121,7 +120,7 @@ int main(int argc, char** argv) {
 
             //set up listener
             SubscriptionManager mgr(session);
-            Publisher publisher(session, "topic_control", args.transactional);
+            Publisher publisher(session, "topic_control", args.transactional, args.durable);
             mgr.subscribe(publisher, "response");
             mgr.start();
 
@@ -158,8 +157,8 @@ int main(int argc, char** argv) {
     return 1;
 }
 
-Publisher::Publisher(Session_0_10& _session, const string& _controlTopic, bool tx) : 
-    session(_session), controlTopic(_controlTopic), transactional(tx){}
+Publisher::Publisher(Session_0_10& _session, const string& _controlTopic, bool tx, bool d) : 
+    session(_session), controlTopic(_controlTopic), transactional(tx), durable(d), count(0) {}
 
 void Publisher::received(Message& ){
     //count responses and when all are received end the current batch
@@ -176,6 +175,9 @@ void Publisher::waitForCompletion(int msgs){
 
 int64_t Publisher::publish(int msgs, int listeners, int size){
     Message msg(generateData(size), controlTopic);
+    if (durable) {
+        msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
+    }
     AbsTime start = now();
     {
         Monitor::ScopedLock l(monitor);
