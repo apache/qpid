@@ -71,6 +71,8 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
         string storeDir;
         bool storeAsync;
         bool storeForce;
+        u_int16_t numJrnlFiles;
+        u_int32_t jrnlFsizePgs;
         bool enableMgmt;
         uint16_t mgmtPubInterval;
         uint32_t ack;
