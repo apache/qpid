@@ -38,7 +38,7 @@ class MessageStoreModule : public MessageStore
 public:
     MessageStoreModule(const std::string& name);
 
-	bool init(const std::string& dir, const bool async, const bool force);
+	bool init(const Options* options);
     std::auto_ptr<TransactionContext> begin();
     std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     void prepare(TPCTransactionContext& txn);
