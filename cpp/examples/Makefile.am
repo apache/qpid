@@ -24,15 +24,13 @@ EXTRA_DIST=$(nobase_pkgdata_DATA)
 
 # Note: we don't use normal automake SUBDIRS because the example
 # makefiles don't understand all the recursive automake targets.
-#
-src=../../$(top_srcdir)/src
-bld=../../$(top_builddir)/src
-EXAMPLE_FLAGS=-I$(src) -I$(src)/gen -I$(bld)/gen -L$(bld)/.libs
-
-all:
-	cd examples; $(MAKE) CXX="$(CXX)" CXXFLAGS="$(EXAMPLE_FLAGS)" all
 
 clean:
 	cd examples; $(MAKE) clean
 
-
+# Build the installed examples, then clean up to avoid rpmbuild warnings.
+EXAMPLE_FLAGS=-I$(DESTDIR)$(includedir) -L$(DESTDIR)$(libdir) -Wl,-rpath,$(DESTDIR)$(libdir)
+EXAMPLE_DIR=$(DESTDIR)$(pkgdatadir)/examples 
+installcheck-local:
+	cd $(EXAMPLE_DIR) && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(EXAMPLE_FLAGS)" all
+	cd $(EXAMPLE_DIR) && $(MAKE) clean
