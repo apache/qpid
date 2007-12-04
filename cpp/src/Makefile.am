@@ -119,7 +119,7 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/InitiationHandler.cpp \
   qpid/framing/ProtocolInitiation.cpp \
   qpid/framing/ProtocolVersion.cpp \
-  qpid/framing/SessionState.cpp qpid/framing/SessionState.h \
+  qpid/framing/SessionState.cpp \
   qpid/framing/SendContent.cpp \
   qpid/framing/SequenceNumber.cpp \
   qpid/framing/SequenceNumberSet.cpp \
@@ -376,6 +376,7 @@ nobase_include_HEADERS = \
   qpid/framing/ProtocolInitiation.h \
   qpid/framing/ProtocolVersion.h \
   qpid/framing/Proxy.h \
+  qpid/framing/SessionState.h \
   qpid/framing/SendContent.h \
   qpid/framing/SequenceNumber.h \
   qpid/framing/SequenceNumberSet.h \
