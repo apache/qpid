@@ -152,6 +152,9 @@ fi
 
 %changelog
 
+* Thu Nov 8 2007 Alan Conway <aconway@redhat.com> - 0.2-12
+- installcheck target to build examples in installation.
+
 * Thu Nov 8 2007 Alan Conway <aconway@redhat.com> - 0.2-10
 - added examples to RPM package.
 

@@ -57,10 +57,10 @@ rgen_srcs=#{make_continue rgen_srcs}
 
 # Header file install rules.
 EOS
-    ["framing", "client", "broker"].each { |ns|
+    ["framing", "client/no_keyword","client", "broker"].each { |ns|
       dir="qpid/#{ns}"
       dir_ = dir.tr("/", "_")
-      regex=%r|#{dir}/.+\.h$|
+      regex=%r|#{dir}/[^/]+\.h$|
       out << <<EOS
 #{dir_}dir = $(includedir)/#{dir}
 dist_#{dir_}_HEADERS = #{make_continue rgen_srcs.grep(regex)}
