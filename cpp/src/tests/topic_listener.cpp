@@ -99,7 +99,6 @@ int main(int argc, char** argv){
         if(args.help)
             cout << args << endl;
         else {
-            cout << "topic_listener: Started." << endl;
             Connection connection(args.trace);
             args.open(connection);
             Session_0_10 session = connection.newSession();
@@ -110,7 +109,11 @@ int main(int argc, char** argv){
             //declare exchange, queue and bind them:
             session.queueDeclare(arg::queue="response");
             std::string control = "control_" + session.getId().str();
-            session.queueDeclare(arg::queue=control, arg::durable=args.durable);
+            if (args.durable) {
+                session.queueDeclare(arg::queue=control, arg::durable=true);
+            } else {
+                session.queueDeclare(arg::queue=control, arg::exclusive=true, arg::autoDelete=true);
+            }
             session.queueBind(arg::exchange="amq.topic", arg::queue=control, arg::routingKey="topic_control");
 
             //set up listener
@@ -125,13 +128,14 @@ int main(int argc, char** argv){
             }
             mgr.subscribe(listener, control);
 
-            cout << "topic_listener: Consuming." << endl;
+            cout << "topic_listener: listening..." << endl;
             mgr.run();
-            cout << "topic_listener: run returned, closing session" << endl;
+            if (args.durable) {
+                session.queueDelete(arg::queue=control);
+            }
             session.close();
             cout << "closing connection" << endl;
             connection.close();
-            cout << "topic_listener: normal exit" << endl;
         }
         return 0;
     } catch (const std::exception& error) {
@@ -148,16 +152,19 @@ void Listener::received(Message& message){
         start = now();
         count = 0;
         init = true;
+        cout << "Batch started." << endl;
     }
     FieldTable::ValuePtr type(message.getHeaders().get("TYPE"));
 
     if(!!type && StringValue("TERMINATION_REQUEST") == *type){
         shutdown();
     }else if(!!type && StringValue("REPORT_REQUEST") == *type){
+        message.acknowledge();//acknowledge everything upto this point
+        cout <<"Batch ended, sending report." << endl;
         //send a report:
         report();
         init = false;
-    }else if (++count % 100 == 0){        
+    }else if (++count % 1000 == 0){        
         cout <<"Received " << count << " messages." << endl;
     }
 }
