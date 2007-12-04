@@ -38,7 +38,7 @@ class NullMessageStore : public MessageStore
 public:
     NullMessageStore(bool warn = false);
 
-    virtual bool init(const std::string& dir, const bool async, const bool force);
+    virtual bool init(const Options* options);
     virtual std::auto_ptr<TransactionContext> begin();
     virtual std::auto_ptr<TPCTransactionContext> begin(const std::string& xid);
     virtual void prepare(TPCTransactionContext& txn);

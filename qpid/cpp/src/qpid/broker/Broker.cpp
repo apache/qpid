@@ -72,6 +72,8 @@ Broker::Options::Options(const std::string& name) :
     storeDir("/var"),
     storeAsync(false),
     storeForce(false),
+    numJrnlFiles(8),
+    jrnlFsizePgs(24),
     enableMgmt(0),
     mgmtPubInterval(10),
     ack(0)
@@ -89,14 +91,20 @@ Broker::Options::Options(const std::string& name) :
          "Sets the connection backlog limit for the server socket")
         ("staging-threshold", optValue(stagingThreshold, "N"),
          "Stages messages over N bytes to disk")
+// TODO: These options need to come from within the store module
         ("store,s", optValue(store,"LIBNAME"),
          "Tells the broker to use the message store shared library LIBNAME for persistence")
         ("store-directory", optValue(storeDir,"DIR"),
          "Store directory location for persistence.")
         ("store-async", optValue(storeAsync,"yes|no"),
-         "Use async persistence storage - if store supports it, enable AIO 0-DIRECT.")
+         "Use async persistence storage - if store supports it, enables AIO O_DIRECT.")
         ("store-force", optValue(storeForce,"yes|no"),
-         "Force changing modes of store, will delete all existing data if mode is changed. Be SURE you want to do this")
+         "Force changing modes of store, will delete all existing data if mode is changed. Be SURE you want to do this!")
+        ("num-jfiles", qpid::optValue(numJrnlFiles, "N"),
+         "Number of files in persistence journal")
+        ("jfile-size-pgs", qpid::optValue(jrnlFsizePgs, "N"),
+         "Size of each journal file in multiples of read pages (1 read page = 64kiB)")
+// End of store module options
         ("mgmt,m", optValue(enableMgmt,"yes|no"),
          "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"),
@@ -152,7 +160,7 @@ Broker::Broker(const Broker::Options& conf) :
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     
     if(store.get()) {
-        if (!store->init(conf.storeDir, conf.storeAsync, conf.storeForce)){
+        if (!store->init(&conf)){
               throw Exception( "Existing Journal in different mode, backup/move existing data \
 			  before changing modes. Or use --store-force yes to blow existing data away.");
 		}else{

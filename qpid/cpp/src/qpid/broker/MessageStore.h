@@ -22,6 +22,7 @@
 #define _MessageStore_
 
 #include <boost/shared_ptr.hpp>
+#include <qpid/Options.h>
 #include "PersistableExchange.h"
 #include "PersistableMessage.h"
 #include "PersistableQueue.h"
@@ -47,7 +48,7 @@ public:
      * @param async true, enable async, false, enable sync
      * @param force true, delete data on mode change, false, error on mode change
 	 */
-	virtual bool init(const std::string& dir, const bool async, const bool force) = 0;
+	virtual bool init(const Options* options) = 0;
 
     /**
      * Record the existence of a durable queue
