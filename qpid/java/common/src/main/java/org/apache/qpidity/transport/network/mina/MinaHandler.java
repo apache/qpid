@@ -24,13 +24,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.ConnectFuture;
-import org.apache.mina.common.IdleStatus;
-import org.apache.mina.common.IoAcceptor;
-import org.apache.mina.common.IoHandler;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.common.SimpleByteBufferAllocator;
+import org.apache.mina.common.*;
 
 import org.apache.mina.transport.socket.nio.SocketAcceptor;
 import org.apache.mina.transport.socket.nio.SocketConnector;
@@ -165,6 +159,8 @@ public class MinaHandler<E> implements IoHandler
     {
         MinaHandler<E> handler = new MinaHandler<E>(binding);
         SocketConnector connector = new SocketConnector();
+        IoServiceConfig acceptorConfig = connector.getDefaultConfig();
+        acceptorConfig.setThreadModel(ThreadModel.MANUAL);
         connector.setWorkerTimeout(0);
         ConnectFuture cf = connector.connect(address, handler);
         cf.join();
