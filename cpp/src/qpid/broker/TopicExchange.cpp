@@ -152,8 +152,9 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, TopicPattern& pattern)
 
 void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/){
     RWlock::ScopedRlock l(lock);
+    Tokens   tokens(routingKey);
     for (BindingMap::iterator i = bindings.begin(); i != bindings.end(); ++i) {
-        if (i->first.match(routingKey)) {
+        if (i->first.match(tokens)) {
             Queue::vector& qv(i->second);
             for(Queue::vector::iterator j = qv.begin(); j != qv.end(); j++){
                 msg.deliverTo(*j);
