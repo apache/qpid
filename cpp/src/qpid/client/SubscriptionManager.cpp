@@ -102,11 +102,6 @@ void SubscriptionManager::stop()
     dispatcher.stop();
 }
 
-void SubscriptionManager::start()
-{
-    dispatcher.start();
-}
-
 }} // namespace qpid::client
 
 #endif

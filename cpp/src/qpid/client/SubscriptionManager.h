@@ -82,9 +82,6 @@ public:
      */
     void run(bool autoStop=true);
 
-    /** Deliver messages in another thread. */
-    void start();
-
     /** Cause run() to return */
     void stop();
 
