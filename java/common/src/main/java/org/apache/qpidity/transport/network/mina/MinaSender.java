@@ -30,15 +30,13 @@ import org.apache.qpidity.transport.Sender;
 
 /**
  * MinaSender
- *
  */
 
 public class MinaSender implements Sender<java.nio.ByteBuffer>
 {
-    private static final int TIMEOUT = 2*60*1000;
+    private static final int TIMEOUT = 2 * 60 * 1000;
 
     private final IoSession session;
-    private final Object lock = new Object();
     private WriteFuture lastWrite = null;
 
     public MinaSender(IoSession session)
@@ -48,26 +46,20 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
 
     public void send(java.nio.ByteBuffer buf)
     {
-        synchronized (lock)
+        if (session.isClosing())
         {
-            if( session.isClosing())
-            {
-                throw new RuntimeException("Trying to write on a closed socket");
-            }
-            lastWrite = session.write(ByteBuffer.wrap(buf));
+            throw new RuntimeException("Trying to write on a closed socket");
         }
+        lastWrite = session.write(ByteBuffer.wrap(buf));
     }
 
     public void close()
     {
         // MINA will sometimes throw away in-progress writes when you
         // ask it to close
-        synchronized (lock)
+        if (lastWrite != null)
         {
-            if (lastWrite != null)
-            {
-                lastWrite.join();
-            }
+            lastWrite.join();
         }
         CloseFuture closed = session.close();
         closed.join();
