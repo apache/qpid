@@ -41,6 +41,9 @@ bool TxAck::prepare(TransactionContext* ctxt) throw(){
             }
         }
         return true;
+    }catch(const std::exception& e){
+        QPID_LOG(error, "Failed to prepare: " << e.what());
+        return false;
     }catch(...){
         QPID_LOG(error, "Failed to prepare");
         return false;
