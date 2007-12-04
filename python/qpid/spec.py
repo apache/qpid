@@ -372,7 +372,8 @@ def load(specfile, *errata):
       try:
         spec.constants.add(const)
       except ValueError, e:
-        print "Warning:", e
+        pass
+        #print "Warning:", e
 
     # domains are typedefs
     structs = []
