@@ -11,7 +11,6 @@ nobase_pkgdata_DATA=						\
 	examples/fanout/fanout_publisher.cpp			\
 	examples/pub-sub/Makefile				\
 	examples/pub-sub/topic_publisher.cpp			\
-	examples/pub-sub/topic_config_queues.cpp		\
 	examples/pub-sub/topic_listener.cpp			\
 	examples/direct/Makefile				\
 	examples/direct/direct_publisher.cpp			\
