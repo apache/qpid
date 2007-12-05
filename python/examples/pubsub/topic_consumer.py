@@ -74,15 +74,16 @@ client = Client(host, port, spec)
 client.start({"LOGIN": user, "PASSWORD": password})
 
 session = client.session()
-session = session.session_open()  # keep the session object, we'll need the session id
+session_info = session.session_open() 
+session_id = session_info.session_id
 
 #----- Main Body -- ----------------------------------------
 
 
-news = "news" + base64.urlsafe_b64encode(session.session_id)
-weather = "weather" + base64.urlsafe_b64encode(session.session_id)
-usa = "usa" + base64.urlsafe_b64encode(session.session_id)
-europe = "europe" + base64.urlsafe_b64encode(session.session_id)
+news = "news" + base64.urlsafe_b64encode(session_id)
+weather = "weather" + base64.urlsafe_b64encode(session_id)
+usa = "usa" + base64.urlsafe_b64encode(session_id)
+europe = "europe" + base64.urlsafe_b64encode(session_id)
 
 session.queue_declare(queue=news, exclusive=True)
 session.queue_declare(queue=weather, exclusive=True)
@@ -113,8 +114,5 @@ dump_queue(client, europe)
 #----- Cleanup ------------------------------------------------
 
 # Clean up before exiting so there are no open threads.
-#
-# Close Channel 1.
 
 session.session_close()
-

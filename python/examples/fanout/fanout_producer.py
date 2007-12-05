@@ -46,4 +46,3 @@ session.message_transfer(destination="amq.fanout", content=message)
 # Clean up before exiting so there are no open threads.
 
 session.session_close()
-
