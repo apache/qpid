@@ -15,31 +15,22 @@ EOF
 exit 1
 }
 
+collect() { eval $COLLECT=\""\$$COLLECT $*"\"; }
+
+COLLECT=ARGS
 while test $# -gt 0; do
     case $1 in
-	--publish|--subscribe|--setup|--control|--npubs|--nsubs) usage ;;
-	--pubhosts) COLLECT=PUBHOSTS; shift; break ;;
-	--subhosts) COLLECT=SUBHOSTS; shift; break ;;
-	*) ARGS="$ARGS $1"; shift ;;
-    esac
-done
-
-if [ -z "$COLLECT" ]; then echo "No --pubhost or --subhost specified"; usage; fi
-
-while test $# -gt 0; do
-    case $1 in
+	--publish|--subscribe|--setup|--control) usage ;;
+	--npubs) collect $1 $2; NPUBS=$2; shift 2 ;;
+	--nsubs) collect $1 $2; NSUBS=$2; shift 2 ;;
 	--pubhosts) COLLECT=PUBHOSTS; shift ;; 
 	--subhosts) COLLECT=SUBHOSTS; shift ;;
-	*) eval "$COLLECT=\"\$$COLLECT $1\""; shift ;;
+	*) collect $1; shift ;;
     esac
 done
+if [ -z "$PUBHOSTS" ]; then echo "Missing --pubhosts"; usage; fi
+if [ -z "$SUBHOSTS" ]; then echo "Missing --subhosts"; usage; fi
 
-if [ -z "$PUBHOSTS" ]; then echo "Missing --pubhost or --subhost"; usage; fi
-if [ -z "$SUBHOSTS" ]; then echo "Missing --subhost or --subhost"; usage; fi
-
-NPUBS=`echo $PUBHOSTS | wc -w`
-NSUBS=`echo $SUBHOSTS | wc -w`
-ARGS="$ARGS --npubs $NPUBS --nsubs $NSUBS"
 PERFTEST="`PATH=$PWD:$PATH which perftest` $ARGS"
 
 start() {
@@ -47,6 +38,8 @@ start() {
 }
 
 $PERFTEST --setup
-for h in $PUBHOSTS; do start publish $h & done
-for h in $SUBHOSTS; do start subscribe $h &  done
+PUBS=($PUBHOSTS)
+for (( i=0 ; i < $NPUBS ; ++i)); do start publish ${PUBS[i % ${#PUBS[*]}]} & done
+SUBS=($SUBHOSTS)
+for (( i=0 ; i < $NSUBS ; ++i)); do start subscribe ${SUBS[i % ${#SUBS[*]}]} & done
 $PERFTEST --control
