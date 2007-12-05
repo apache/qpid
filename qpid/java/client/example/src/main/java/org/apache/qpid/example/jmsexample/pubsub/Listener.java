@@ -17,7 +17,7 @@
  */
 package org.apache.qpid.example.jmsexample.pubsub;
 
-import org.apache.qpid.example.jmsexample.BaseExample;
+import org.apache.qpid.example.jmsexample.common.BaseExample;
 
 import javax.jms.*;
 
