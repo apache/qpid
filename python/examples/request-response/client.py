@@ -22,7 +22,7 @@ def dump_queue(client, queue_name):
   consumer_tag = queue_name     # Use the queue name as the consumer tag - need a unique tag
   queue = client.queue(consumer_tag)
 
-  # Call basic_consume() to tell the broker to deliver messages
+  # Call message_subscribe() to tell the broker to deliver messages
   # from the AMQP queue to a local client queue. The broker will
   # start delivering messages as soon as basic_consume() is called.
 
@@ -46,8 +46,8 @@ def dump_queue(client, queue_name):
 
 
   #  Messages are not removed from the queue until they
-  #  are acknowledged. Using multiple=True, all messages
-  #  in the channel up to and including the one identified
+  #  are acknowledged. Using cumulative=True, all messages
+  #  in the session up to and including the one identified
   #  by the delivery tag are acknowledged. This is more efficient,
   #  because there are fewer network round-trips.
 
@@ -71,8 +71,11 @@ spec = qpid.spec.load(amqp_spec)
 client = Client(host, port, spec)
 client.start({"LOGIN": user, "PASSWORD": password})
 
+# Open the session. Save the session id.
+
 session = client.session()
-session.session_open() 
+session_info = session.session_open()
+session_id = session_info.session_id
 
 #----- Main Body -- ----------------------------------------
 
@@ -80,7 +83,7 @@ session.session_open()
 # same string as the name of the queue and the name of the routing
 # key.
 
-replyTo = "ReplyTo:" # + base64.urlsafe_b64encode(session.session_id)
+replyTo = "ReplyTo:" + base64.urlsafe_b64encode(session_id)
 session.queue_declare(queue=replyTo, exclusive=True)
 session.queue_bind(exchange="amq.direct", queue=replyTo, routing_key=replyTo)
 
@@ -109,4 +112,4 @@ dump_queue(client, replyTo)
 
 # Clean up before exiting so there are no open threads.
 
-session.session_close()
+session.session_close() 
