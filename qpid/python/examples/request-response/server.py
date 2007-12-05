@@ -41,7 +41,7 @@ client.start({"LOGIN": user, "PASSWORD": password})
 # Open Channel 1 so we can use it to manage our queue.
 
 session = client.session()
-session.session_open()  # keep the session object, we'll need the session id
+session.session_open() 
 
 #----- Main Body -- ----------------------------------------
 
@@ -82,8 +82,5 @@ while True:
 #----- Cleanup ------------------------------------------------
 
 # Clean up before exiting so there are no open threads.
-#
-# Close Channel 1.
 
 session.session_close()
-

@@ -49,9 +49,5 @@ session.queue_bind(exchange="amq.direct", queue="message_queue", routing_key="ro
 
 #----- Cleanup ---------------------------------------------
 
-# Clean up before exiting so there are no open threads.
-#
-# Close Channel 1.
-# Close the connection using Channel 0, which is used for all connection methods.
 session.session_close()
 

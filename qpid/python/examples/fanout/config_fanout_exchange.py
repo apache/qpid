@@ -50,5 +50,5 @@ session.queue_bind(exchange="amq.fanout", queue="message_queue")
 #----- Cleanup ---------------------------------------------
 
 # Clean up before exiting so there are no open threads.
-# channel.session_close()
 
+session.session_close()
