@@ -92,9 +92,5 @@ session.message_transfer(destination="amq.topic", content=message)
 #----- Cleanup --------------------------------------------
 
 # Clean up before exiting so there are no open threads.
-#
-# Close Channel 1.
-
 
 session.session_close()
-

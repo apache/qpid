@@ -72,4 +72,4 @@ message.complete(cumulative=True)
 # Clean up before exiting so there are no open threads.
 #
 
-# session.session_close()
+session.session_close()
