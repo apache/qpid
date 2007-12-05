@@ -5,15 +5,12 @@ usage() {
 cat <<EOF
 usage: $0 <perftest-args> --pubhosts <publish-hosts> --subhosts <subscribe-hosts>
 
-All perftest args must come before --pubhost or --subhost.  Runs one
-publish process on each publish-host, one subscribe process on each
-subscribe-host. To run multiple processes on the same host, list it
-more than once.
+All perftest args must come before --pubhosts or --subhosts. If
+--npubs or --nsubs is larger than corresponding hosts list, the list
+is used round-robin.
 
 Do not pass action flags --setup, --control, --publish, --subscribe they
 will be passed to the appropriate processes.
-
-Do not pass --nsubs or --npubs, they are calculated by counting the host lists.
 EOF
 exit 1
 }
