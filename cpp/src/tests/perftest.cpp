@@ -231,9 +231,13 @@ class Stats {
     
     // Functor to collect rates.
     void operator()(const string& data) {
-        double d=lexical_cast<double>(data);
-        values.push_back(d);
-        sum += d;
+        try {
+            double d=lexical_cast<double>(data);
+            values.push_back(d);
+            sum += d;
+        } catch (...) {
+            throw Exception(QPID_MSG("Bad data, expecting double: " << data));
+        }
     }
     
     double mean() const {
