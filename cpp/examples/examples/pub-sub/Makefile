@@ -1,7 +1,7 @@
 CXX=g++ 
 CXXFLAGS= 
 
-PROGRAMS=topic_config_queues topic_listener topic_publisher
+PROGRAMS=topic_listener topic_publisher
 all: $(PROGRAMS)
 
 topic_listener: topic_listener.cpp
