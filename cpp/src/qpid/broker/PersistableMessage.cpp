@@ -28,12 +28,18 @@ using namespace qpid::broker;
 
 void PersistableMessage::flush()
 {
-    sys::ScopedLock<sys::Mutex> l(storeLock);
-    if (store) {
-        for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-            store->flush(*(*i));
-        } 
+    syncList copy;
+    {
+        sys::ScopedLock<sys::Mutex> l(storeLock);
+	if (store) {
+	    copy = synclist;
+	} else {
+            return;//early exit as nothing to do
+	}
     }
+    for (syncList::iterator i = copy.begin(); i != copy.end(); ++i) {
+        store->flush(*(*i));
+    } 
 }
 
     
