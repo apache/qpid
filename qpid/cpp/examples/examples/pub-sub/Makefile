@@ -4,9 +4,6 @@ CXXFLAGS=
 PROGRAMS=topic_config_queues topic_listener topic_publisher
 all: $(PROGRAMS)
 
-topic_config_queues: topic_config_queues.cpp
-	$(CXX) $(CXXFLAGS) -lqpidclient -o $@ $^
-
 topic_listener: topic_listener.cpp
 	$(CXX) $(CXXFLAGS) -lqpidclient -o $@ $^
 
