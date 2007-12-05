@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package org.apache.qpid.example.jmsexample;
+package org.apache.qpid.example.jmsexample.common;
 
 import javax.jms.*;
 import javax.naming.Context;
