@@ -33,7 +33,6 @@ struct DtxTimeoutException : public Exception {};
 
 struct DtxTimeout : public TimerTask
 {
-    typedef boost::shared_ptr<DtxTimeout> shared_ptr;
     const uint32_t timeout;
     DtxManager& mgr;
     const std::string xid;
