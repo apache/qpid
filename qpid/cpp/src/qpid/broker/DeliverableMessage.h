@@ -33,6 +33,7 @@ namespace qpid {
             DeliverableMessage(intrusive_ptr<Message>& msg);
             virtual void deliverTo(Queue::shared_ptr& queue);
             Message& getMessage();
+            uint64_t contentSize();
             virtual ~DeliverableMessage(){}
         };
     }

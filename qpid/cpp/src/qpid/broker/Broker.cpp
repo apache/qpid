@@ -130,6 +130,7 @@ Broker::Broker(const Broker::Options& conf) :
     sessionManager(conf.ack)
 {
     if(conf.enableMgmt){
+        ManagementAgent::enableManagement ();
         managementAgent = ManagementAgent::getAgent ();
         managementAgent->setInterval (conf.mgmtPubInterval);
 
@@ -154,7 +155,8 @@ Broker::Broker(const Broker::Options& conf) :
         Vhost* vhost = new Vhost (this);
         vhostObject = Vhost::shared_ptr (vhost);
 
-        queues.setParent (vhost);
+        queues.setParent    (vhost);
+        exchanges.setParent (vhost);
     }
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
@@ -284,7 +286,6 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
 
     case management::Broker::METHOD_JOINCLUSTER :
     case management::Broker::METHOD_LEAVECLUSTER :
-    case management::Broker::METHOD_CRASH :
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
     }

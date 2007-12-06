@@ -25,6 +25,7 @@
 #include "qpid/Options.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Timer.h"
+#include "qpid/sys/Mutex.h"
 #include "ManagementObject.h"
 #include <boost/shared_ptr.hpp>
 
@@ -41,11 +42,12 @@ class ManagementAgent
 
     typedef boost::shared_ptr<ManagementAgent> shared_ptr;
 
+    static void       enableManagement (void);
     static shared_ptr getAgent (void);
 
     void setInterval     (uint16_t _interval) { interval = _interval; }
-    void setExchange     (broker::Exchange::shared_ptr  mgmtExchange,
-                          broker::Exchange::shared_ptr  directExchange);
+    void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
+                          broker::Exchange::shared_ptr directExchange);
     void addObject       (ManagementObject::shared_ptr object);
     void clientAdded     (void);
     void dispatchCommand (broker::Deliverable&             msg,
@@ -64,6 +66,9 @@ class ManagementAgent
     };
 
     static shared_ptr            agent;
+    static bool                  enabled;
+
+    qpid::sys::RWlock            userLock;
     ManagementObjectMap          managementObjects;
     broker::Timer                timer;
     broker::Exchange::shared_ptr mExchange;
