@@ -397,6 +397,24 @@ class SchemaArg:
   def getDir (self):
     return self.dir
 
+  def genSchema (self, stream):
+    stream.write ("    ft = FieldTable ();\n")
+    stream.write ("    ft.setString (NAME,    \"" + self.name + "\");\n")
+    stream.write ("    ft.setInt    (TYPE,    TYPE_" + self.type.type.base +");\n")
+    stream.write ("    ft.setString (DIR,     \"" + self.dir + "\");\n")
+    if self.unit != None:
+      stream.write ("    ft.setString (UNIT,    \"" + self.unit   + "\");\n")
+    if self.min != None:
+      stream.write ("    ft.setInt    (MIN,     " + self.min    + ");\n")
+    if self.max != None:
+      stream.write ("    ft.setInt    (MAX,     " + self.max    + ");\n")
+    if self.maxLen != None:
+      stream.write ("    ft.setInt    (MAXLEN,  " + self.maxLen + ");\n")
+    if self.desc != None:
+      stream.write ("    ft.setString (DESC,    \"" + self.desc + "\");\n")
+    if self.default != None:
+      stream.write ("    ft.setString (DEFAULT, \"" + self.default + "\");\n")
+    stream.write ("    buf.put (ft);\n\n")
 
 #=====================================================================================
 #
@@ -454,6 +472,16 @@ class SchemaMethod:
       ctype  = arg.type.type.cpp
       dirTag = arg.dir.lower() + "_"
       stream.write ("    " + ctype + " " + dirTag + arg.getName () + ";\n")
+
+  def genSchema (self, stream):
+    stream.write ("    ft = FieldTable ();\n")
+    stream.write ("    ft.setString (NAME,     \"" + self.name + "\");\n")
+    stream.write ("    ft.setInt    (ARGCOUNT, " + str (len (self.args)) + ");\n")
+    if self.desc != None:
+      stream.write ("    ft.setString (DESC,     \"" + self.desc + "\");\n")
+    stream.write ("    buf.put (ft);\n\n")
+    for arg in self.args:
+      arg.genSchema (stream)
 
 #=====================================================================================
 #
@@ -549,15 +577,6 @@ class SchemaClass:
         config.genAccessor (stream)
     for inst in self.instElements:
       inst.genAccessor (stream)
-
-  def genArgDeclaration (self, stream):
-    argsFound = 0
-    for method in self.methods:
-       argsFound = argsFound + len (method.args)
-    for event in self.events:
-       argsFound = argsFound + len (event.args)
-    if argsFound > 0:
-      stream.write ("FieldTable arg;");
 
   def genConfigCount (self, stream):
     stream.write ("%d" % len (self.configElements))
@@ -683,7 +702,8 @@ class SchemaClass:
       number = number + 1
 
   def genMethodSchema (self, stream):
-    pass ###########################################################################
+    for method in self.methods:
+      method.genSchema (stream)
 
   def genNameCap (self, stream):
     stream.write (self.name.capitalize ())

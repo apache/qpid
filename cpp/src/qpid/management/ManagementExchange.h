@@ -35,9 +35,10 @@ class ManagementExchange : public virtual TopicExchange
   public:
     static const std::string typeName;
 
-    ManagementExchange (const string& name);
+    ManagementExchange (const string& name, Manageable* _parent = 0);
     ManagementExchange (const string& _name, bool _durable, 
-                        const qpid::framing::FieldTable& _args);
+                        const qpid::framing::FieldTable& _args,
+                        Manageable* _parent = 0);
 
     virtual std::string getType() const { return typeName; }            
 

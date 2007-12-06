@@ -27,6 +27,7 @@
 #include "MessageStore.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/management/Manageable.h"
 
 namespace qpid {
 namespace broker {
@@ -36,7 +37,9 @@ namespace broker {
         typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
         ExchangeMap exchanges;
         qpid::sys::RWlock lock;
+        management::Manageable* parent;
      public:
+        ExchangeRegistry () : parent(0) {}
         std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type)
             throw(UnknownExchangeTypeException);
         std::pair<Exchange::shared_ptr, bool> declare(const std::string& name, const std::string& type, 
@@ -45,6 +48,11 @@ namespace broker {
         void destroy(const std::string& name);
         Exchange::shared_ptr get(const std::string& name);
         Exchange::shared_ptr getDefault();
+
+        /**
+         * Register the manageable parent for declared queues
+         */
+        void setParent (management::Manageable* _parent) { parent = _parent; }
     };
 }
 }

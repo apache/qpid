@@ -66,10 +66,12 @@ namespace qpid {
             virtual bool prepare(TransactionContext* ctxt) throw();
             virtual void commit() throw();
             virtual void rollback() throw();
-
+            
             virtual void deliverTo(Queue::shared_ptr& queue);
 
             virtual ~TxPublish(){}
+
+            uint64_t contentSize();
         };
     }
 }

@@ -32,15 +32,16 @@ namespace qpid {
 namespace broker {
 
 class FanOutExchange : public virtual Exchange {
-    std::vector<Queue::shared_ptr> bindings;
+    std::vector<Binding::shared_ptr> bindings;
     qpid::sys::RWlock lock;
 
   public:
     static const std::string typeName;
         
-    FanOutExchange(const std::string& name);
+    FanOutExchange(const std::string& name, management::Manageable* parent = 0);
     FanOutExchange(const string& _name, bool _durable, 
-                   const qpid::framing::FieldTable& _args);
+                   const qpid::framing::FieldTable& _args,
+                   management::Manageable* parent = 0);
 
     virtual std::string getType() const { return typeName; }            
         

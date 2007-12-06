@@ -27,11 +27,14 @@ Vhost::Vhost (management::Manageable* parentBroker)
 {
     if (parentBroker != 0)
     {
-        mgmtObject = management::Vhost::shared_ptr
-            (new management::Vhost (this, parentBroker, "/"));
-
         ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
-        agent->addObject (mgmtObject);
+
+        if (agent.get () != 0)
+        {
+            mgmtObject = management::Vhost::shared_ptr
+                (new management::Vhost (this, parentBroker, "/"));
+            agent->addObject (mgmtObject);
+        }
     }
 }
 

@@ -67,3 +67,7 @@ void TxPublish::Commit::operator()(Queue::shared_ptr& queue){
     queue->process(msg);
 }
 
+uint64_t TxPublish::contentSize ()
+{
+    return msg->contentSize ();
+}
