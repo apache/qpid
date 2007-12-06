@@ -84,7 +84,7 @@
       <arg name="sequence" dir="IO" type="uint32" default="0"/>
       <arg name="body"     dir="IO" type="lstr"   default=""/>
     </method>
-    <method name="crash" desc="Temporary test method to crash the broker"/>
+<!--<method name="crash" desc="Temporary test method to crash the broker"/>-->
   </class>
 
   <!--
@@ -157,7 +157,7 @@
     <instElement name="bindings"            type="hilo32"  unit="binding"     desc="Current bindings"/>
     <instElement name="unackedMessages"     type="hilo32"  unit="message"     desc="Messages consumed but not yet acked"/>
 
-    <method name="purge"            desc="Discard all messages on queue"/>
+    <method name="purge"               desc="Discard all messages on queue"/>
     <method name="increaseJournalSize" desc="Increase number of disk pages allocated for this queue">
       <arg name="pages" type="uint32" dir="I" desc="New total page allocation"/>
     </method>
@@ -172,7 +172,7 @@
   <class name="exchange">
     <configElement name="vhostRef"   type="objId" access="RC" index="y" parentRef="y"/>
     <configElement name="name"       type="sstr"  access="RC" index="y"/>
-    <configElement name="type"       type="sstr"  access="RC"/>
+    <configElement name="type"       type="sstr"  access="RO"/>
 
     <instElement name="producers"    type="hilo32"  desc="Current producers on exchange"/>
     <instElement name="bindings"     type="hilo32"  desc="Current bindings"/>
@@ -190,9 +190,9 @@
   ===============================================================
   -->
   <class name="binding">
+    <configElement name="exchangeRef" type="objId" access="RC" index="y" parentRef="y"/>
     <configElement name="queueRef"    type="objId" access="RC" index="y"/>
-    <configElement name="exchangeRef" type="objId" access="RC" index="y"/>
-    <configElement name="bindingKey"  type="sstr"  access="RC"/>
+    <configElement name="bindingKey"  type="sstr"  access="RC" index="y"/>
 <!--<configElement name="arguments"   type="fieldTable" access="RC"/> -->
 
     <instElement name="msgMatched" type="count64"/>
@@ -226,7 +226,7 @@
   <class name="session">
     <configElement name="vhostRef"         type="objId"  access="RC" index="y" parentRef="y"/>
     <configElement name="name"             type="sstr"   access="RC" index="y"/>
-    <configElement name="clientRef"        type="sstr"   access="RO"/>
+    <configElement name="clientRef"        type="objId"  access="RO"/>
     <configElement name="detachedLifespan" type="uint32" access="RO"/>
 
     <instElement name="attached"          type="bool"/>
