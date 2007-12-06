@@ -2,7 +2,7 @@
 
 # Work out the CLASSPATH divider
 UNAME=`uname -s`
-case $UNAME in 
+case $UNAME in
     CYGWIN*)
 	DIVIDER=";"
     ;;
@@ -31,14 +31,12 @@ echo "Using QPID_SAMPLE: $QPID_SAMPLE"
 # set the CLASSPATH
 CLASSPATH=`find "$QPID_HOME" -name '*.jar' | tr '\n' "$DIVIDER"`
 
-#create output dir
-mkdir $QPID_SAMPLE/classes
 
-# compile the samples 
-javac -cp  "$CLASSPATH" -sourcepath "$QPID_SAMPLE" -d "$QPID_SAMPLE/classes/" `find $QPID_SAMPLE -name '*.java'`
+# compile the samples
+javac -cp  "$CLASSPATH" -sourcepath "$QPID_SAMPLE" -d . `find $QPID_SAMPLE -name '*.java'`
 
 # Add output classes to CLASSPATH
-CLASSPATH="$CLASSPATH$DIVIDER$QPID_SAMPLE/classes"
+CLASSPATH="$CLASSPATH$DIVIDER$."
 
 
 # Check if the user supplied a sample classname
