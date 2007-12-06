@@ -30,6 +30,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::sys;
+using qpid::intrusive_ptr;
 using boost::dynamic_pointer_cast;
 
 class TimerTest : public CppUnit::TestCase  
@@ -104,10 +105,10 @@ public:
     {
         Counter counter;
         Timer timer;
-        TestTask::shared_ptr task1(new TestTask(Duration(3 * TIME_SEC), counter));
-        TestTask::shared_ptr task2(new TestTask(Duration(1 * TIME_SEC), counter));
-        TestTask::shared_ptr task3(new TestTask(Duration(4 * TIME_SEC), counter));
-        TestTask::shared_ptr task4(new TestTask(Duration(2 * TIME_SEC), counter));
+        intrusive_ptr<TestTask> task1(new TestTask(Duration(3 * TIME_SEC), counter));
+        intrusive_ptr<TestTask> task2(new TestTask(Duration(1 * TIME_SEC), counter));
+        intrusive_ptr<TestTask> task3(new TestTask(Duration(4 * TIME_SEC), counter));
+        intrusive_ptr<TestTask> task4(new TestTask(Duration(2 * TIME_SEC), counter));
         
         timer.add(task1);
         timer.add(task2);
