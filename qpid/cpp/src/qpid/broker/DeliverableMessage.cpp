@@ -37,3 +37,7 @@ Message& DeliverableMessage::getMessage()
     return *msg;
 }
 
+uint64_t DeliverableMessage::contentSize ()
+{
+    return msg->contentSize ();
+}

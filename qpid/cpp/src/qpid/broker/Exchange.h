@@ -28,13 +28,16 @@
 #include "MessageStore.h"
 #include "PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/Exchange.h"
+#include "qpid/management/Binding.h"
 
 namespace qpid {
     namespace broker {
         using std::string;
         class ExchangeRegistry;
 
-        class Exchange : public PersistableExchange{
+        class Exchange : public PersistableExchange, public management::Manageable {
         private:
             const string name;
             const bool durable;
@@ -43,13 +46,31 @@ namespace qpid {
             uint32_t alternateUsers;
             mutable uint64_t persistenceId;
 
+        protected:
+            struct Binding : public management::Manageable {
+                typedef boost::shared_ptr<Binding>       shared_ptr;
+                typedef std::vector<Binding::shared_ptr> vector;
+
+                Queue::shared_ptr               queue;
+                const std::string               key;
+                const qpid::framing::FieldTable args;
+                management::Binding::shared_ptr mgmtBinding;
+
+                Binding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent = 0);
+                ~Binding ();
+                management::ManagementObject::shared_ptr GetManagementObject () const;
+                management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args);
+            };
+
+            management::Exchange::shared_ptr mgmtExchange;
+
         public:
             typedef boost::shared_ptr<Exchange> shared_ptr;
 
-            explicit Exchange(const string& _name) : name(_name), durable(false), persistenceId(0){}
-            Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args) 
-                : name(_name), durable(_durable), args(_args), alternateUsers(0), persistenceId(0){}
-            virtual ~Exchange(){}
+            explicit Exchange(const string& name, management::Manageable* parent = 0);
+            Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
+                     management::Manageable* parent = 0);
+            virtual ~Exchange();
 
             const string& getName() const { return name; }
             bool isDurable() { return durable; }
@@ -75,6 +96,10 @@ namespace qpid {
 
             static Exchange::shared_ptr decode(ExchangeRegistry& exchanges, framing::Buffer& buffer);
 
+            // Manageable entry points
+            management::ManagementObject::shared_ptr GetManagementObject (void) const;
+            management::Manageable::status_t
+                ManagementMethod (uint32_t, management::Args&) { return management::Manageable::STATUS_UNKNOWN_METHOD; }
         };
     }
 }

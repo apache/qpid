@@ -33,6 +33,7 @@ using namespace qpid::broker;
 using namespace qpid::sys;
 
 ManagementAgent::shared_ptr ManagementAgent::agent;
+bool                        ManagementAgent::enabled = 0;
 
 ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval)
 {
@@ -40,16 +41,21 @@ ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval)
     nextObjectId = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
 }
 
+void ManagementAgent::enableManagement (void)
+{
+    enabled = 1;
+}
+
 ManagementAgent::shared_ptr ManagementAgent::getAgent (void)
 {
-    if (agent.get () == 0)
+    if (enabled && agent.get () == 0)
         agent = shared_ptr (new ManagementAgent (10));
 
     return agent;
 }
 
-void ManagementAgent::setExchange (Exchange::shared_ptr _mexchange,
-                                   Exchange::shared_ptr _dexchange)
+void ManagementAgent::setExchange (broker::Exchange::shared_ptr _mexchange,
+                                   broker::Exchange::shared_ptr _dexchange)
 {
     mExchange = _mexchange;
     dExchange = _dexchange;
@@ -57,6 +63,7 @@ void ManagementAgent::setExchange (Exchange::shared_ptr _mexchange,
 
 void ManagementAgent::addObject (ManagementObject::shared_ptr object)
 {
+    RWlock::ScopedWlock writeLock (userLock);
     uint64_t objectId = nextObjectId++;
 
     object->setObjectId (objectId);
@@ -74,6 +81,8 @@ void ManagementAgent::Periodic::fire ()
 
 void ManagementAgent::clientAdded (void)
 {
+    RWlock::ScopedRlock readLock (userLock);
+
     for (ManagementObjectMap::iterator iter = managementObjects.begin ();
          iter != managementObjects.end ();
          iter++)
@@ -94,7 +103,7 @@ void ManagementAgent::EncodeHeader (Buffer& buf)
 
 void ManagementAgent::SendBuffer (Buffer&  buf,
                                   uint32_t length,
-                                  Exchange::shared_ptr exchange,
+                                  broker::Exchange::shared_ptr exchange,
                                   string   routingKey)
 {
     intrusive_ptr<Message> msg (new Message ());
@@ -129,9 +138,10 @@ void ManagementAgent::PeriodicProcessing (void)
 {
 #define BUFSIZE   65536
 #define THRESHOLD 16384
-    char      msgChars[BUFSIZE];
-    uint32_t  contentSize;
-    string    routingKey;
+    RWlock::ScopedWlock writeLock (userLock);
+    char                msgChars[BUFSIZE];
+    uint32_t            contentSize;
+    string              routingKey;
     std::list<uint64_t> deleteList;
 
     if (managementObjects.empty ())
@@ -157,7 +167,7 @@ void ManagementAgent::PeriodicProcessing (void)
             SendBuffer (msgBuffer, contentSize, mExchange, routingKey);
         }
 
-        if (object->getConfigChanged ())
+        if (object->getConfigChanged () || object->isDeleted ())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
             EncodeHeader (msgBuffer);
