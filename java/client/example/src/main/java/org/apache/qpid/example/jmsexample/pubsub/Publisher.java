@@ -82,7 +82,7 @@ public class Publisher extends BaseExample
             topic = session.createTopic("usa.news");
             message.setStringProperty("topicName", "usa.news");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
+            System.out.println(CLASS + ": Creating a Message Publisher");
             messagePublisher = session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
