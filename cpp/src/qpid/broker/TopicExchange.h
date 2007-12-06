@@ -71,7 +71,7 @@ class TopicPattern : public Tokens
 };
 
 class TopicExchange : public virtual Exchange{
-    typedef std::map<TopicPattern, Queue::vector> BindingMap;
+    typedef std::map<TopicPattern, Binding::vector> BindingMap;
     BindingMap bindings;
     qpid::sys::RWlock lock;
 
@@ -79,9 +79,9 @@ class TopicExchange : public virtual Exchange{
   public:
     static const std::string typeName;
 
-    TopicExchange(const string& name);
+    TopicExchange(const string& name, management::Manageable* parent = 0);
     TopicExchange(const string& _name, bool _durable, 
-                  const qpid::framing::FieldTable& _args);
+                  const qpid::framing::FieldTable& _args, management::Manageable* parent = 0);
 
     virtual std::string getType() const { return typeName; }            
 

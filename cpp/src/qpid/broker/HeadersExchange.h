@@ -32,8 +32,8 @@ namespace broker {
 
 
 class HeadersExchange : public virtual Exchange {    
-    typedef std::pair<qpid::framing::FieldTable, Queue::shared_ptr> Binding;
-    typedef std::vector<Binding> Bindings;
+    typedef std::pair<qpid::framing::FieldTable, Binding::shared_ptr> HeaderMap;
+    typedef std::vector<HeaderMap> Bindings;
 
     Bindings bindings;
     qpid::sys::RWlock lock;
@@ -41,9 +41,10 @@ class HeadersExchange : public virtual Exchange {
   public:
     static const std::string typeName;
 
-    HeadersExchange(const string& name);
+    HeadersExchange(const string& name, management::Manageable* parent = 0);
     HeadersExchange(const string& _name, bool _durable, 
-                    const qpid::framing::FieldTable& _args);
+                    const qpid::framing::FieldTable& _args,
+                    management::Manageable* parent = 0);
     
     virtual std::string getType() const { return typeName; }            
         

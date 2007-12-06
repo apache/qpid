@@ -31,17 +31,17 @@
 namespace qpid {
 namespace broker {
     class DirectExchange : public virtual Exchange{
-        typedef std::vector<Queue::shared_ptr> Queues;
-        typedef std::map<string, Queues > Bindings;
+        typedef std::vector<Binding::shared_ptr> Queues;
+        typedef std::map<string, Queues> Bindings;
         Bindings bindings;
         qpid::sys::RWlock lock;
 
     public:
         static const std::string typeName;
         
-        DirectExchange(const std::string& name);
+        DirectExchange(const std::string& name, management::Manageable* parent = 0);
         DirectExchange(const string& _name, bool _durable, 
-                       const qpid::framing::FieldTable& _args);
+                       const qpid::framing::FieldTable& _args, management::Manageable* parent = 0);
 
         virtual std::string getType() const { return typeName; }            
         

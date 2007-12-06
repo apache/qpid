@@ -30,6 +30,7 @@ namespace qpid {
             bool delivered;
             Deliverable() : delivered(false) {}
             virtual void deliverTo(Queue::shared_ptr& queue) = 0;
+            virtual uint64_t contentSize() { return 0; }
             virtual ~Deliverable(){}
         };
     }

@@ -27,13 +27,14 @@ using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 
-ManagementExchange::ManagementExchange (const string& _name) :
-    Exchange (_name), TopicExchange(_name) {}
+ManagementExchange::ManagementExchange (const string& _name, Manageable* _parent) :
+    Exchange (_name, _parent), TopicExchange(_name, _parent) {}
 ManagementExchange::ManagementExchange (const std::string& _name,
                                         bool               _durable,
-                                        const FieldTable&  _args) :
-    Exchange     (_name, _durable, _args),
-    TopicExchange(_name, _durable, _args) {}
+                                        const FieldTable&  _args,
+                                        Manageable*        _parent) :
+    Exchange (_name, _durable, _args, _parent), 
+    TopicExchange(_name, _durable, _args, _parent) {}
 
 
 bool ManagementExchange::bind (Queue::shared_ptr queue,

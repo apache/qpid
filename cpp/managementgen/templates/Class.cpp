@@ -53,12 +53,15 @@ namespace {
     const string MAX("max");
     const string MAXLEN("maxlen");
     const string DESC("desc");
+    const string ARGCOUNT("argCount");
+    const string ARGS("args");
+    const string DIR("dir");
+    const string DEFAULT("default");
 }
 
 void /*MGEN:Class.NameCap*/::writeSchema (Buffer& buf)
 {
     FieldTable ft;
-    /*MGEN:Class.ArgDeclaration*/
 
     schemaNeeded = false;
 
