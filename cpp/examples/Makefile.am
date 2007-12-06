@@ -7,7 +7,6 @@ nobase_pkgdata_DATA=						\
 	examples/fanout/Makefile				\
 	examples/fanout/fanout_config_queues.cpp		\
 	examples/fanout/listener.cpp				\
-	examples/fanout/fanout_consumer.cpp			\
 	examples/fanout/fanout_publisher.cpp			\
 	examples/pub-sub/Makefile				\
 	examples/pub-sub/topic_publisher.cpp			\
