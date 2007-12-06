@@ -36,7 +36,7 @@ ManagementAgent::shared_ptr ManagementAgent::agent;
 
 ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval)
 {
-    timer.add (TimerTask::shared_ptr (new Periodic(*this, interval)));
+    timer.add (intrusive_ptr<TimerTask> (new Periodic(*this, interval)));
     nextObjectId = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
 }
 
@@ -68,7 +68,7 @@ ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
 
 void ManagementAgent::Periodic::fire ()
 {
-    agent.timer.add (TimerTask::shared_ptr (new Periodic (agent, agent.interval)));
+    agent.timer.add (intrusive_ptr<TimerTask> (new Periodic (agent, agent.interval)));
     agent.PeriodicProcessing ();
 }
 
