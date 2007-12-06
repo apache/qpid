@@ -48,7 +48,7 @@ class DtxWorkRecord
     bool rolledback;
     bool prepared;
     bool expired;
-    DtxTimeout::shared_ptr timeout;
+    intrusive_ptr<DtxTimeout> timeout;
     Work work;
     std::auto_ptr<TPCTransactionContext> txn;
     qpid::sys::Mutex lock;
@@ -65,8 +65,8 @@ public:
     void add(DtxBuffer::shared_ptr ops);
     void recover(std::auto_ptr<TPCTransactionContext> txn, DtxBuffer::shared_ptr ops);
     void timedout();
-    void setTimeout(DtxTimeout::shared_ptr t) { timeout = t; }
-    DtxTimeout::shared_ptr getTimeout() { return timeout; }
+    void setTimeout(intrusive_ptr<DtxTimeout> t) { timeout = t; }
+    intrusive_ptr<DtxTimeout> getTimeout() { return timeout; }
 };
 
 }

@@ -119,12 +119,12 @@ DtxWorkRecord* DtxManager::createWork(std::string xid)
 void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
 {
     DtxWorkRecord* record = getWork(xid);
-    DtxTimeout::shared_ptr timeout = record->getTimeout();
+    intrusive_ptr<DtxTimeout> timeout = record->getTimeout();
     if (timeout.get()) {
         if (timeout->timeout == secs) return;//no need to do anything further if timeout hasn't changed
         timeout->cancelled = true;
     }
-    timeout = DtxTimeout::shared_ptr(new DtxTimeout(secs, *this, xid));
+    timeout = intrusive_ptr<DtxTimeout>(new DtxTimeout(secs, *this, xid));
     record->setTimeout(timeout);
     timer.add(boost::static_pointer_cast<TimerTask>(timeout));
     
@@ -132,7 +132,7 @@ void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
 
 uint32_t DtxManager::getTimeout(const std::string& xid)
 {
-    DtxTimeout::shared_ptr timeout = getWork(xid)->getTimeout();
+    intrusive_ptr<DtxTimeout> timeout = getWork(xid)->getTimeout();
     return !timeout ? 0 : timeout->timeout;
 }
 
@@ -145,7 +145,7 @@ void DtxManager::timedout(const std::string& xid)
     } else {
         get_pointer(i)->timedout();
         //TODO: do we want to have a timed task to cleanup, or can we rely on an explicit completion?
-        //timer.add(TimerTask::shared_ptr(new DtxCleanup(60*30/*30 mins*/, *this, xid)));
+        //timer.add(intrusive_ptr<TimerTask>(new DtxCleanup(60*30/*30 mins*/, *this, xid)));
     }
 }
 

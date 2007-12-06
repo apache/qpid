@@ -27,9 +27,14 @@ using qpid::sys::Monitor;
 using qpid::sys::Thread;
 using namespace qpid::broker;
 
-TimerTask::TimerTask(Duration timeout) : duration(timeout), time(AbsTime::now(), timeout), cancelled(false) {}
-TimerTask::TimerTask(AbsTime _time) : duration(0), time(_time), cancelled(false) {}
+TimerTask::TimerTask(Duration timeout) :
+    duration(timeout), time(AbsTime::now(), timeout), cancelled(false) {}
+
+TimerTask::TimerTask(AbsTime _time) :
+    duration(0), time(_time), cancelled(false) {}
+
 TimerTask::~TimerTask(){}
+
 void TimerTask::reset() { time.reset(AbsTime::now(), duration); }
 
 Timer::Timer() : active(false) 
@@ -49,7 +54,7 @@ void Timer::run()
         if (tasks.empty()) {
             monitor.wait();
         } else {
-            TimerTask::shared_ptr t = tasks.top();
+            intrusive_ptr<TimerTask> t = tasks.top();
             if (t->cancelled) {
                 tasks.pop();
             } else if(t->time < AbsTime::now()) {
@@ -62,7 +67,7 @@ void Timer::run()
     }
 }
 
-void Timer::add(TimerTask::shared_ptr task)
+void Timer::add(intrusive_ptr<TimerTask> task)
 {
     Monitor::ScopedLock l(monitor);
     tasks.push(task);
@@ -93,92 +98,9 @@ void Timer::signalStop()
     }
 }
 
-bool Later::operator()(const TimerTask::shared_ptr& a, const TimerTask::shared_ptr& b) const
+bool Later::operator()(const intrusive_ptr<TimerTask>& a,
+                       const intrusive_ptr<TimerTask>& b) const
 {
     return a.get() && b.get() && a->time > b->time;
 }
-
-bool LaterA::operator()(const TimerTaskA::intrusive_ptr& a, const TimerTaskA::intrusive_ptr& b) const
-{
-    return a.get() && b.get() && a->time > b->time;
-}
-
-TimerA::TimerA(): active(false) 
-{
-    start();
-}
-
-TimerA::~TimerA() 
-{
-    stop();
-}
-
-void TimerA::run()
-{
-    Monitor::ScopedLock l(monitor);
-    while(active){
-        if (itasks.empty()) {
-            monitor.wait();
-        } else {
-            TimerTaskA::intrusive_ptr t = itasks.top();
-            if (t->cancelled) {
-                itasks.pop();
-            } else if(t->time < AbsTime::now()) {
-                itasks.pop();
-                t->fire();
-            } else {
-                monitor.wait(t->time);
-            }
-        }
-    }
-//    ::run();
-}
-
-TimerTaskA::TimerTaskA(qpid::sys::Duration timeout): TimerTask(timeout), ref_cnt(0) {}
-TimerTaskA::TimerTaskA(qpid::sys::AbsTime time): TimerTask(time), ref_cnt(0) {}
-TimerTaskA::~TimerTaskA() {}
-
-
-void TimerA::add(TimerTaskA::intrusive_ptr& task)
-{
-    Monitor::ScopedLock l(monitor);
-    itasks.push(task);
-    monitor.notify();
-}
-
-void TimerA::start()
-{
-    Monitor::ScopedLock l(monitor);
-    if (!active) {
-        active = true;
-        runner = Thread(this);
-    }
-}
-
-void TimerA::stop()
-{
-    signalStop();
-    runner.join();
-}
-
-void TimerA::signalStop()
-{
-    Monitor::ScopedLock l(monitor);
-    if (active) {
-        active = false;
-        monitor.notifyAll();
-    }
-}
-
-void qpid::broker::intrusive_ptr_add_ref(TimerTaskA* fe)
-{
-    fe->ref();
-}
-
-void qpid::broker::intrusive_ptr_release(TimerTaskA* fe)
-{
-    fe->unref();
-    if (fe->refcnt() == 0) delete fe;
-}
-
 

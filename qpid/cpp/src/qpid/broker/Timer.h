@@ -21,22 +21,19 @@
 #ifndef _Timer_
 #define _Timer_
 
-#include <memory>
-#include <queue>
-#include <boost/shared_ptr.hpp>
-#include <boost/intrusive_ptr.hpp>
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
+#include "qpid/RefCounted.h"
+
+#include <memory>
+#include <queue>
 
 namespace qpid {
 namespace broker {
 
-struct TimerTask
-{
+struct TimerTask : public RefCounted {
     const qpid::sys::Duration duration;
-    typedef boost::shared_ptr<TimerTask> shared_ptr;
-
     qpid::sys::AbsTime time;
     volatile bool cancelled;
 
@@ -47,79 +44,35 @@ struct TimerTask
     virtual void fire() = 0;
 };
 
-struct TimerTaskA : public TimerTask
-{
-    typedef boost::intrusive_ptr<TimerTaskA> intrusive_ptr;
-
-    TimerTaskA(qpid::sys::Duration timeout);
-    TimerTaskA(qpid::sys::AbsTime time);
-    virtual ~TimerTaskA();
-    
-    size_t          ref_cnt;
-    inline size_t refcnt(void) { return ref_cnt;}
-    inline void ref(void) { ref_cnt++; }
-    inline void unref(void) { ref_cnt--; }
+struct Later {
+    bool operator()(const intrusive_ptr<TimerTask>& a,
+                    const intrusive_ptr<TimerTask>& b) const;
 };
 
-struct Later
-{
-    bool operator()(const TimerTask::shared_ptr& a, const TimerTask::shared_ptr& b) const;
-};
-
-struct LaterA
-{
-     bool operator()(const TimerTaskA::intrusive_ptr& a, const TimerTaskA::intrusive_ptr& b) const;
-};
-
-
-class Timer : private qpid::sys::Runnable
-{
-protected:
+class Timer : private qpid::sys::Runnable {
+  protected:
     qpid::sys::Monitor monitor;            
-    std::priority_queue<TimerTask::shared_ptr, std::vector<TimerTask::shared_ptr>, Later> tasks;
+    std::priority_queue<intrusive_ptr<TimerTask>,
+                        std::vector<intrusive_ptr<TimerTask> >,
+                        Later> tasks;
     qpid::sys::Thread runner;
     bool active;
 
     virtual void run();
     void signalStop();
 
-public:
+  public:
     Timer();
     virtual ~Timer();
 
-    void add(TimerTask::shared_ptr task);
+    void add(intrusive_ptr<TimerTask> task);
     void start();
     void stop();
 
 };
 
-class TimerA : private qpid::sys::Runnable
-{
-protected:
-    qpid::sys::Monitor monitor;            
-    std::priority_queue<TimerTaskA::intrusive_ptr&, std::vector<TimerTaskA::intrusive_ptr>,
-             LaterA> itasks;
-    qpid::sys::Thread runner;
-    bool active;
-    
-    virtual void run();
-    void signalStop();
 
-public:
-    TimerA();
-    virtual ~TimerA();
-
-    void add(TimerTaskA::intrusive_ptr& task);
-    void start();
-    void stop();
-};
-
-void intrusive_ptr_add_ref(TimerTaskA* r);
-void intrusive_ptr_release(TimerTaskA* r);
-
-
-}
-}
+}}
 
 
 #endif
