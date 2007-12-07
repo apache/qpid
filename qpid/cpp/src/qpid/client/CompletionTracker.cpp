@@ -31,12 +31,13 @@ namespace
 const std::string empty;
 }
 
-CompletionTracker::CompletionTracker() {}
+CompletionTracker::CompletionTracker() : closed(false) {}
 CompletionTracker::CompletionTracker(const SequenceNumber& m) : mark(m) {}
 
 void CompletionTracker::close()
 {   
     sys::Mutex::ScopedLock l(lock);
+    closed=true;
     while (!listeners.empty()) {
         Record r(listeners.front());
         {
@@ -47,17 +48,18 @@ void CompletionTracker::close()
     }
 }
 
+
 void CompletionTracker::completed(const SequenceNumber& _mark)
 {   
     sys::Mutex::ScopedLock l(lock);
     mark = _mark;
     while (!listeners.empty() && !(listeners.front().id > mark)) {
         Record r(listeners.front());
+        listeners.pop_front();
         {
             sys::Mutex::ScopedUnlock u(lock);
             r.completed();
         }
-        listeners.pop_front();
     }
 }
 
@@ -88,14 +90,13 @@ void CompletionTracker::listenForResult(const SequenceNumber& point, ResultListe
 bool CompletionTracker::add(const Record& record)
 {
     sys::Mutex::ScopedLock l(lock);
-    if (record.id < mark) {
+    if (record.id < mark || closed) {
         return false;
     } else {
         //insert at the correct position
         Listeners::iterator i = seek(record.id);
         if (i == listeners.end()) i = listeners.begin();
         listeners.insert(i, record);
-
         return true;
     }
 }

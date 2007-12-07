@@ -60,7 +60,8 @@ private:
     };
 
     typedef std::list<Record> Listeners;
-
+    bool closed;
+    
     sys::Mutex lock;
     framing::SequenceNumber mark;
     Listeners listeners;

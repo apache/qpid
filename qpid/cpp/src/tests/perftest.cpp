@@ -205,7 +205,7 @@ struct Setup : public Client {
             }
         }
         // Make sure this is all completed before we return.
-        session.execution().sendSyncRequest();
+        session.getExecution().sendSyncRequest();
     }
 };
 
@@ -231,13 +231,9 @@ class Stats {
     
     // Functor to collect rates.
     void operator()(const string& data) {
-        try {
-            double d=lexical_cast<double>(data);
-            values.push_back(d);
-            sum += d;
-        } catch (...) {
-            throw Exception(QPID_MSG("Bad data, expecting double: " << data));
-        }
+        double d=lexical_cast<double>(data);
+        values.push_back(d);
+        sum += d;
     }
     
     double mean() const {

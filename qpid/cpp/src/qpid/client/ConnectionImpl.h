@@ -62,6 +62,8 @@ class ConnectionImpl : public framing::FrameHandler,
     typedef boost::shared_ptr<ConnectionImpl> shared_ptr;
 
     ConnectionImpl(boost::shared_ptr<Connector> c);
+    ~ConnectionImpl();
+    
     void addSession(const boost::shared_ptr<SessionCore>&);
         
     void open(const std::string& host, int port = 5672, 

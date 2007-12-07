@@ -44,6 +44,8 @@ ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c)
     connector->setShutdownHandler(this);
 }
 
+ConnectionImpl::~ConnectionImpl() { close(); }
+
 void ConnectionImpl::addSession(const boost::shared_ptr<SessionCore>& session)
 {
     Mutex::ScopedLock l(lock);

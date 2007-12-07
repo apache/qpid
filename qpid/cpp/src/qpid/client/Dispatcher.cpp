@@ -52,8 +52,8 @@ Dispatcher::Dispatcher(Session_0_10& s, const std::string& q)
     : session(s), running(false)
 {
     queue = q.empty() ? 
-        session.execution().getDemux().getDefault() : 
-        session.execution().getDemux().get(q); 
+        session.getExecution().getDemux().getDefault() : 
+        session.getExecution().getDemux().get(q); 
 }
 
 void Dispatcher::start()

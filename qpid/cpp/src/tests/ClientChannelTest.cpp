@@ -20,7 +20,7 @@
  */
 #include <vector>
 #include "qpid_test_plugin.h"
-#include "InProcessBroker.h"
+#include "BrokerFixture.h"
 #include "qpid/client/Channel.h"
 #include "qpid/client/Message.h"
 #include "qpid/client/Queue.h"
@@ -44,7 +44,7 @@ const size_t FRAME_MAX = 256;
  * The test base defines the tests methods, derived classes
  * instantiate the channel in Basic or Message mode.
  */
-class ChannelTestBase : public CppUnit::TestCase  
+class ChannelTestBase : public CppUnit::TestCase, public BrokerFixture
 {
     struct Listener: public qpid::client::MessageListener {
         vector<Message> messages;
@@ -56,7 +56,6 @@ class ChannelTestBase : public CppUnit::TestCase
         }
     };
     
-    qpid::InProcessBrokerClient connection; 
     const std::string qname;
     const std::string data;
     Queue queue;
@@ -69,8 +68,7 @@ class ChannelTestBase : public CppUnit::TestCase
   public:
 
     ChannelTestBase()
-        : connection(FRAME_MAX),
-          qname("testq"), data("hello"),
+        : qname("testq"), data("hello"),
           queue(qname, true), exchange("", Exchange::DIRECT_EXCHANGE)
     {}
 
