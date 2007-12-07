@@ -28,7 +28,7 @@ TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex \
 	$(lib_client) $(lib_broker) 
-unit_test_SOURCES= unit_test.cpp unit_test.h \
+unit_test_SOURCES= unit_test.cpp unit_test.h BrokerFixture.h \
 	exception_test.cpp \
 	RefCounted.cpp RefCountedMap.cpp \
 	SessionState.cpp Blob.cpp logging.cpp \
