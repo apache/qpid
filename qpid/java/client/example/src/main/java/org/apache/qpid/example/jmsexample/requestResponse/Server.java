@@ -30,10 +30,10 @@ import javax.jms.*;
  * received message has a ReplyTo header then a new response message is sent
  * to that specified destination.
  */
-public class MessageMirror extends BaseExample
+public class Server extends BaseExample
 {
     /* Used in log output. */
-    private static final String CLASS = "MessageMirror";
+    private static final String CLASS = "Server";
 
     /* The destination type */
     private String _destinationType;
@@ -42,11 +42,11 @@ public class MessageMirror extends BaseExample
     private String _destinationName;
 
     /**
-     * Create a MessageMirror client.
+     * Create a Server client.
      *
      * @param args Command line arguments.
      */
-    public MessageMirror(String[] args)
+    public Server(String[] args)
     {
         super(CLASS, args);
         _destinationType = _argProcessor.getStringArgument("-destinationType");
@@ -63,9 +63,9 @@ public class MessageMirror extends BaseExample
         _options.put("-destinationType", "Destination Type: queue/topic");
         _defaults.put("-destinationType", "queue");
         _options.put("-destinationName", "Destination Name");
-        _defaults.put("-destinationName", "message_queue");
-        MessageMirror messageMirror = new MessageMirror(args);
-        messageMirror.runTest();
+        _defaults.put("-destinationName", "request");
+        Server server = new Server(args);
+        server.runTest();
     }
 
     /**
@@ -140,30 +140,38 @@ public class MessageMirror extends BaseExample
 
                 requestMessage = messageConsumer.receive();
 
-                // Print out the details of the just received message
-                System.out.println(CLASS + ": Message received:");
-
+                String text;
                 if (requestMessage instanceof TextMessage)
                 {
-                    if (((TextMessage) requestMessage).getText().equals("That's all, folks!"))
-                    {
-                        System.out.println("Received final message for " + destination);
-                        end = true;
-                    }
-                    System.out.println("\tContents = " + ((TextMessage) requestMessage).getText());
+                    text = ((TextMessage) requestMessage).getText();
+                }
+                else
+                {
+                    byte[] body = new byte[(int) ((BytesMessage) requestMessage).getBodyLength()];
+                    ((BytesMessage) requestMessage).readBytes(body);
+                    text = new String(body);
+                }
+
+
+                if (text.equals("That's all, folks!"))
+                {
+                    System.out.println(CLASS + ": Received final message for " + destination);
+                    end = true;
+                }
+                else
+                {
+                    System.out.println(CLASS + ": \tContents = " + text);
                 }
 
                 // Now bounce the message if a ReplyTo header was set.
                 if (requestMessage.getJMSReplyTo() != null)
                 {
                     System.out.println(CLASS + ": Activating response queue listener for: " + destination);
-                    responseMessage =
-                            session.createTextMessage();
-                     if (requestMessage instanceof TextMessage)
-                    {
-                       responseMessage.setText(((TextMessage) requestMessage).getText().toUpperCase());
-                        System.out.println(CLASS + ": \tResponse = " + responseMessage.getText());
-                    }
+                    responseMessage = session.createTextMessage();
+
+                    responseMessage.setText(text.toUpperCase());
+                    System.out.println(CLASS + ": \tResponse = " + responseMessage.getText());
+
                     messageProducer = session.createProducer(requestMessage.getJMSReplyTo());
                     messageProducer.send(responseMessage);
                 }
