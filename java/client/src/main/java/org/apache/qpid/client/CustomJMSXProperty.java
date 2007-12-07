@@ -31,8 +31,8 @@ public enum CustomJMSXProperty
     JMS_AMQP_NULL,
     JMS_QPID_DESTTYPE,
     JMSXGroupID,
-    JMSXGroupSeq,
-    JMSXUserID;
+    JMSXGroupSeq;
+//    JMSXUserID;
 
 
     private final AMQShortString _nameAsShortString;

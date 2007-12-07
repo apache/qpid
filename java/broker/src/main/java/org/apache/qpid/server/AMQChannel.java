@@ -223,15 +223,15 @@ public class AMQChannel
                 _log.trace(debugIdentity() + "Content header received on channel " + _channelId);
             }
 
-            if (ENABLE_JMSXUserID)
-            {
-                //Set JMSXUserID
-                BasicContentHeaderProperties properties = (BasicContentHeaderProperties) contentHeaderBody.properties;
-                //fixme: fudge for QPID-677
-                properties.getHeaders().keySet();
-
-                properties.setUserId(protocolSession.getAuthorizedID().getName());
-            }
+//            if (ENABLE_JMSXUserID)
+//            {
+//                //Set JMSXUserID
+//                BasicContentHeaderProperties properties = (BasicContentHeaderProperties) contentHeaderBody.properties;
+//                //fixme: fudge for QPID-677
+//                properties.getHeaders().keySet();
+//
+//                properties.setUserId(protocolSession.getAuthorizedID().getName());
+//            }
 
             _currentMessage.setContentHeaderBody(contentHeaderBody);
             _currentMessage.setExpiration();
