@@ -31,5 +31,5 @@ EXAMPLE_FLAGS=-I$(DESTDIR)$(includedir) -L$(DESTDIR)$(libdir) -Wl,-rpath,$(DESTD
 EXAMPLE_DIR=$(DESTDIR)$(pkgdatadir)/examples 
 installcheck-local:
 	cd $(EXAMPLE_DIR) && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(EXAMPLE_FLAGS)" all
-	cd ${EXAMPLE_DIR) && $(abs_srcdir)/verify
+	cd $(EXAMPLE_DIR) && $(abs_srcdir)/verify
 	cd $(EXAMPLE_DIR) && $(MAKE) clean
