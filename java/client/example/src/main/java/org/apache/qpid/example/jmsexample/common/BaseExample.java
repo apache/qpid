@@ -49,7 +49,7 @@ abstract public class BaseExample
     private static final String DEFAULT_CONNECTION_FACTORY_NAME = "ConnectionFactory";
 
     /* Default number of messages to process. */
-    private static final int DEFAULT_NUMBER_MESSAGES = 1;
+    private static final int DEFAULT_NUMBER_MESSAGES = 10;
 
     /* JNDI provider URL. */
     private String _providerURL;

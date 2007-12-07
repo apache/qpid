@@ -28,23 +28,23 @@ import javax.jms.*;
  * This example illustrates the use of the JMS utility class <code>QueueRequestor</code>
  * which provides a synchronous RPC-like abstraction using temporary destinations
  * to deliver responses back to the client.
- *
+ * <p/>
  * <p>Run with <code>-help</code> argument for a description of command line arguments.
- *
  */
-public class P2PRequestor extends BaseExample
+public class Client extends BaseExample
 {
     /* Used in log output. */
-    private static final String CLASS = "P2PRequestor";
+    private static final String CLASS = "Client";
 
     /* The queue name  */
     private String _queueName;
 
     /**
-     * Create a P2PRequestor client.
+     * Create a Client client.
+     *
      * @param args Command line arguments.
      */
-    public P2PRequestor(String[] args)
+    public Client(String[] args)
     {
         super(CLASS, args);
         _queueName = _argProcessor.getStringArgument("-queueName");
@@ -52,13 +52,14 @@ public class P2PRequestor extends BaseExample
 
     /**
      * Run the message requestor example.
+     *
      * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
-         _options.put("-queueName", "The queue name");
-        _defaults.put("-queueName", "message_queue");
-        P2PRequestor requestor = new P2PRequestor(args);
+        _options.put("-queueName", "The queue name");
+        _defaults.put("-queueName", "request");
+        Client requestor = new Client(args);
         requestor.runTest();
     }
 
@@ -74,7 +75,8 @@ public class P2PRequestor extends BaseExample
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
-            System.out.println(CLASS + ": Setting an ExceptionListener on the connection as sample uses a MessageConsumer");
+            System.out.println(
+                    CLASS + ": Setting an ExceptionListener on the connection as sample uses a MessageConsumer");
 
             connection.setExceptionListener(new ExceptionListener()
             {
@@ -109,7 +111,7 @@ public class P2PRequestor extends BaseExample
 
             request = session.createTextMessage();
 
-         // Get the number of times that this sample should request service
+            // Get the number of times that this sample should request service
             for (int i = 0; i < getNumberMessages(); i++)
             {
                 request = session.createTextMessage("Twas brillig, and the slithy toves");
@@ -126,8 +128,8 @@ public class P2PRequestor extends BaseExample
             // And send a final message to indicate termination.
             request.setText("That's all, folks!");
             MessageProducer messageProducer = session.createProducer(destination);
-           messageProducer.send(request, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-                                  
+            messageProducer.send(request, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+
             // Close the connection to the server
             System.out.println(CLASS + ": Closing connection");
             connection.close();
@@ -142,15 +144,24 @@ public class P2PRequestor extends BaseExample
         }
     }
 
-     private void sendReceive(TextMessage request, QueueRequestor requestor) throws JMSException
+    private void sendReceive(TextMessage request, QueueRequestor requestor) throws JMSException
     {
         Message response;
         response = requestor.request(request);
         System.out.println(CLASS + ": \tRequest Content= " + request.getText());
         // Print out the details of the response received
+        String text;
         if (response instanceof TextMessage)
         {
-            System.out.println(CLASS + ": \t Response Content= " + ((TextMessage) response).getText());
+            text = ((TextMessage) response).getText();
         }
+        else
+        {
+            byte[] body = new byte[(int) ((BytesMessage) response).getBodyLength()];
+            ((BytesMessage) response).readBytes(body);
+            text = new String(body);
+        }
+        System.out.println(CLASS + ": \tResponse Content= " + text);
     }
 }
+
