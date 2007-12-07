@@ -18,11 +18,11 @@
  */
 package org.apache.qpid.example.subscriber;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.example.shared.Statics;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import javax.jms.*;
-
 /**
  * Subclass of Subscriber which consumes a heartbeat message
  */
@@ -31,7 +31,7 @@ public class MonitoredSubscriber extends Subscriber
 {
     protected String _monitorDestinationName;
 
-    private static final Logger _logger = Logger.getLogger(MonitoredSubscriber.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MonitoredSubscriber.class);
 
     private static MessageConsumer _monitorConsumer;
 

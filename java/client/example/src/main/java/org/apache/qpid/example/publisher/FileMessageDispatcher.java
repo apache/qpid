@@ -24,10 +24,11 @@ import java.io.File;
 
 import javax.jms.JMSException;
 
-import org.apache.log4j.Logger;
 
 import org.apache.qpid.example.shared.FileUtils;
 import org.apache.qpid.example.shared.Statics;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Class that sends message files to the Publisher to distribute
@@ -37,7 +38,7 @@ import org.apache.qpid.example.shared.Statics;
 public class FileMessageDispatcher
 {
 
-    protected static final Logger _logger = Logger.getLogger(FileMessageDispatcher.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(FileMessageDispatcher.class);
 
     protected static Publisher _publisher = null;
 

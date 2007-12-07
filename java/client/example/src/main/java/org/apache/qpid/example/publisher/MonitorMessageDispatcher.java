@@ -18,8 +18,9 @@
  */
 package org.apache.qpid.example.publisher;
 
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Logger;
+
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -31,7 +32,7 @@ import javax.jms.JMSException;
 public class MonitorMessageDispatcher
 {
 
-    private static final Logger _logger = Logger.getLogger(MonitorMessageDispatcher.class);
+    private static final Logger _logger = LoggerFactory.getLogger(MonitorMessageDispatcher.class);
 
     protected static MonitorPublisher _monitorPublisher = null;
 
@@ -46,8 +47,6 @@ public class MonitorMessageDispatcher
     public static void main(String[] args)
     {
         //Switch on logging appropriately for your app
-        BasicConfigurator.configure();
-
         try
         {
             int i =0;
