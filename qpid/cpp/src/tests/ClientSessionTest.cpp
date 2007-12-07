@@ -19,7 +19,7 @@
  *
  */
 #include "qpid_test_plugin.h"
-#include "InProcessBroker.h"
+#include "BrokerFixture.h"
 #include "qpid/client/Dispatcher.h"
 #include "qpid/client/Session_0_10.h"
 #include "qpid/framing/TransferContent.h"
@@ -61,7 +61,7 @@ struct DummyListener : public MessageListener
     }
 };
 
-class ClientSessionTest : public CppUnit::TestCase
+class ClientSessionTest : public CppUnit::TestCase, public BrokerFixture
 {
     CPPUNIT_TEST_SUITE(ClientSessionTest);
     CPPUNIT_TEST(testQueueQuery);
@@ -74,23 +74,14 @@ class ClientSessionTest : public CppUnit::TestCase
     CPPUNIT_TEST_SUITE_END();
 
     shared_ptr<broker::Broker> broker;
-    Session_0_10 session;
-    // Defer construction & thread creation to setUp
-    boost::optional<InProcessConnection> c;
-    boost::optional<InProcessConnection> c2;
 
-public:
+  public:
 
     void setUp() {
         broker = broker::Broker::create();
-        c=boost::in_place<InProcessConnection>(broker);
-        c2=boost::in_place<InProcessConnection>(broker);
     }
 
     void tearDown() {
-        c2.reset();
-        c.reset();
-        broker.reset();
     }
 
     void declareSubscribe(const std::string& q="my-queue",
@@ -109,7 +100,7 @@ public:
     
     void testQueueQuery() 
     {
-        session = c->newSession();
+        session =connection.newSession();
         session.queueDeclare(queue="my-queue", alternateExchange="amq.fanout", exclusive=true, autoDelete=true);
         TypedResult<QueueQueryResult> result = session.queueQuery(std::string("my-queue"));
         CPPUNIT_ASSERT_EQUAL(false, result.get().getDurable());
@@ -120,7 +111,7 @@ public:
 
     void testTransfer()
     {
-        session = c->newSession();
+        session =connection.newSession();
         declareSubscribe();
         session.messageTransfer(content=TransferContent("my-message", "my-queue"));
         //get & test the message:
@@ -128,12 +119,12 @@ public:
         CPPUNIT_ASSERT(msg->isA<MessageTransferBody>());
         CPPUNIT_ASSERT_EQUAL(std::string("my-message"), msg->getContent());
         //confirm receipt:
-        session.execution().completed(msg->getId(), true, true);
+        session.getExecution().completed(msg->getId(), true, true);
     }
 
     void testDispatcher()
     {
-        session = c->newSession();
+        session =connection.newSession();
         declareSubscribe();
 
         TransferContent msg1("One");
@@ -161,16 +152,16 @@ public:
     }
 
     void testResumeExpiredError() {
-        session = c->newSession(0);
+        session =connection.newSession(0);
         session.suspend();  // session has 0 timeout.
         try {
-            c->resume(session);
+           connection.resume(session);
             CPPUNIT_FAIL("Expected InvalidArgumentException.");
         } catch(const InternalErrorException&) {}
     }
 
     void testUseSuspendedError() {
-        session = c->newSession(60);
+        session =connection.newSession(60);
         session.suspend();
         try {
             session.exchangeQuery(name="amq.fanout");
@@ -179,26 +170,27 @@ public:
     }
 
     void testSuspendResume() {
-        session = c->newSession(60);
+        session =connection.newSession(60);
         declareSubscribe();
         session.suspend();
         // Make sure we are still subscribed after resume.
-        c->resume(session);
+       connection.resume(session);
         session.messageTransfer(content=TransferContent("my-message", "my-queue"));
         FrameSet::shared_ptr msg = session.get();
         CPPUNIT_ASSERT_EQUAL(string("my-message"), msg->getContent());
     }
 
     void testDisconnectResume() {
-        session = c->newSession(60);
+        session =connection.newSession(60);
         session.queueDeclare(queue="before");
         CPPUNIT_ASSERT(queueExists("before"));
-        // Simulate lost frames.
-        c->discard();
         session.queueDeclare(queue=string("after"));
-        c->disconnect(); // Simulate disconnect, resume on a new connection.
-        c2->resume(session);
+        disconnect(connection);
+        Connection c2;
+        open(c2);
+        c2.resume(session);
         CPPUNIT_ASSERT(queueExists("after"));
+        c2.close();
     }
 };
 

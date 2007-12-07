@@ -65,12 +65,12 @@ public:
 
     void acknowledge(Session_0_10& session, bool cumulative = true, bool send = true) const
     {
-        session.execution().completed(id, cumulative, send);
+        session.getExecution().completed(id, cumulative, send);
     }
 
     void acknowledge(bool cumulative = true, bool send = true) const
     {
-        const_cast<Session_0_10&>(session).execution().completed(id, cumulative, send);
+        const_cast<Session_0_10&>(session).getExecution().completed(id, cumulative, send);
     }
 
     /**@internal for incoming messages */

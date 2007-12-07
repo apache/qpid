@@ -203,8 +203,10 @@ void SessionCore::resume(shared_ptr<ConnectionImpl> c) {
     // user thread
     {
         Lock l(state);
-        if (state==OPEN)
-            doSuspend(REPLY_SUCCESS, OK);
+        if (state==SUSPENDED) { // Clear error that caused suspend
+            code=REPLY_SUCCESS;
+            text=OK;
+        }
         check(state==SUSPENDED, COMMAND_INVALID, CANNOT_RESUME_SESSION);
         SequenceNumber sendAck=session->resuming();
         attaching(c);

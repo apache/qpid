@@ -167,6 +167,8 @@ void ExecutionHandler::sendCompletion()
     out(frame);    
 }
 
+SequenceNumber ExecutionHandler::lastSent() const { return outgoingCounter; }
+
 SequenceNumber ExecutionHandler::send(const AMQBody& command, CompletionTracker::ResultListener listener)
 {
     Mutex::ScopedLock l(lock);

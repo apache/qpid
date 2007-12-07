@@ -80,6 +80,7 @@ public:
     framing::SequenceNumber send(const framing::AMQBody& command, ResultListener=ResultListener());
     framing::SequenceNumber send(const framing::AMQBody& command, const framing::MethodContent& content, 
                                  ResultListener=ResultListener());
+    framing::SequenceNumber lastSent() const;
     void sendSyncRequest();
     void sendFlushRequest();
     void completed(const framing::SequenceNumber& id, bool cumulative, bool send);
