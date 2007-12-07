@@ -66,7 +66,7 @@ public class Subscriber
         catch (Exception e)
         {
             e.printStackTrace();
-            _log.error(e);
+            _log.error("Exception", e);
         }
     }
 
