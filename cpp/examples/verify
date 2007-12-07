@@ -1,0 +1,68 @@
+#!/bin/sh
+# Run from the installed examples/ dir with a full path to this script.
+#
+
+DIR=$PWD
+SRC=`dirname $0`/examples
+
+# Utility functions
+
+run() {
+    echo ==== $*; eval "$*"; echo ====;
+}
+
+waitfor() { until grep -a -l "$2" $1 >/dev/null ; do sleep 1 ; done ; }
+
+verify() {
+    ex=`basename $PWD`
+    diff -ac verify.out verify.in || { echo "FAIL: $ex  " ; RET=1 ; return 1; } 
+}
+
+HEX="[a-fA-F0-9]"
+remove_uuid() {
+    sed "s/$HEX\{8\}-$HEX\{4\}-$HEX\{4\}-$HEX\{4\}-$HEX\{12\}//g" $*
+}
+
+# Scripts for each example
+
+direct() {
+    run ./direct_config_queues  > verify.out
+    run ./direct_publisher >> verify.out
+    run ./listener >> verify.out
+    run ./direct_persistent_config_queues >> verify.out
+    run ./direct_persistent_publisher >> verify.out
+    run ./listener >> verify.out
+}
+
+fanout() {
+    run ./fanout_config_queues > verify.out
+    run ./fanout_publisher >>verify.out
+    run ./listener >>verify.out
+}
+
+pub_sub() {
+    ./topic_listener | tee topic_listener.out > topic_listener.wait &
+    waitfor topic_listener.wait  "Listening"
+    run ./topic_publisher > verify.out
+    wait 
+    run remove_uuid "topic_listener.out | sort" >> verify.out
+}
+    
+request_response() {
+    ./server | tee server.out > server.wait &
+    waitfor server.wait "Waiting"
+    run ./client | remove_uuid > verify.out
+    kill %%
+    wait 2> /dev/null
+    run remove_uuid server.out >> verify.out
+}
+
+# Main
+for ex in direct fanout pub-sub request-response; do
+    func=`echo $ex | tr - _`
+    cp $SRC/$ex/verify.in $ex
+    echo "Verifing $ex"
+    ( cd $ex && $func && verify && rm -f verify.in *.out *.wait) 
+done
+
+exit $RET
