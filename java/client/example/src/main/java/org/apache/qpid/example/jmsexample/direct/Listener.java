@@ -109,7 +109,7 @@ public class Listener extends BaseExample implements MessageListener
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // lookup the queue
-            Queue destination =  session.createQueue(_queueName);
+            Queue destination = session.createQueue(_queueName);
 
             // Create a MessageConsumer
             System.out.println(CLASS + ": Creating a MessageConsumer");
@@ -164,22 +164,29 @@ public class Listener extends BaseExample implements MessageListener
     {
         try
         {
+            String text = "";
             if (message instanceof TextMessage)
             {
-                System.out.println(CLASS + ": Received message: " + ((TextMessage) message).getText());
-                if (((TextMessage) message).getText().equals("That's all, folks!"))
+                text = ((TextMessage) message).getText();
+            }
+            else
+            {
+                byte[] body = new byte[(int) ((BytesMessage) message).getBodyLength()];
+                ((BytesMessage) message).readBytes(body);
+                text = new String(body);
+            }
+            if (text.equals("That's all, folks!"))
+            {
+                System.out.println(CLASS + ": Received final message for " + _queueName);
+                synchronized (_lock)
                 {
-                    System.out.println(CLASS + ": Shutting down listener for " + _queueName);
-                    synchronized (_lock)
-                    {
-                        _finished = true;
-                        _lock.notifyAll();
-                    }
+                    _finished = true;
+                    _lock.notifyAll();
                 }
             }
             else
             {
-                System.out.println(" [not text message]");
+                System.out.println(CLASS + ": Received  message:  " + text);
             }
         }
         catch (JMSException exp)
