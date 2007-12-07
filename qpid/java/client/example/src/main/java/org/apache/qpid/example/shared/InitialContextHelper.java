@@ -27,7 +27,8 @@ import java.util.Properties;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Class that provides helper methods for JNDI
@@ -38,7 +39,7 @@ public class InitialContextHelper
     public static final String _defaultPropertiesName = "example.properties";
     protected static Properties _fileProperties;
     protected static InitialContext _initialContext;
-    protected static final Logger _log = Logger.getLogger(InitialContextHelper.class);
+    protected static final Logger _log = LoggerFactory.getLogger(InitialContextHelper.class);
 
     public InitialContextHelper(String propertiesName) throws ContextException
     {

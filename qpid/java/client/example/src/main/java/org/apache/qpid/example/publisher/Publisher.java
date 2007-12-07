@@ -18,8 +18,6 @@
  */
 package org.apache.qpid.example.publisher;
 
-import org.apache.log4j.Logger;
-
 import org.apache.qpid.client.AMQConnectionFactory;
 
 import javax.jms.JMSException;
@@ -33,10 +31,12 @@ import javax.jms.Session;
 import javax.naming.InitialContext;
 
 import org.apache.qpid.example.shared.InitialContextHelper;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 public class Publisher
 {
-    private static final Logger _log = Logger.getLogger(Publisher.class);
+    private static final Logger _log = LoggerFactory.getLogger(Publisher.class);
 
     protected InitialContextHelper _contextHelper;
 
@@ -88,7 +88,7 @@ public class Publisher
         catch (Exception e)
         {
             e.printStackTrace();
-            _log.error(e);
+            _log.error("Exception", e);
         }
     }
 
@@ -113,7 +113,7 @@ public class Publisher
             try
             {
                 _session.rollback();
-                _log.error(e);
+                _log.error("JMSException", e);
                 e.printStackTrace();
                 return false;
             }

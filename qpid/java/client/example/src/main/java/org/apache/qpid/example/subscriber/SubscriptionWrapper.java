@@ -18,8 +18,6 @@
  */
 package org.apache.qpid.example.subscriber;
 
-import org.apache.log4j.BasicConfigurator;
-
 /**
  * Allows you to simply start a subscriber
  */
@@ -33,9 +31,6 @@ public class SubscriptionWrapper {
      */
     public static void main(String args[])
     {
-        //switch on logging
-        BasicConfigurator.configure();
-        
          _subscriber = new Subscriber();
 
         _subscriber.subscribe();

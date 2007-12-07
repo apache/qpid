@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.example.subscriber;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.client.AMQConnectionFactory;
 
 import javax.jms.*;
@@ -28,6 +27,8 @@ import javax.jms.Session;
 import javax.naming.InitialContext;
 
 import org.apache.qpid.example.shared.InitialContextHelper;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 /**
  * Subscriber which consumes messages from a queue
@@ -35,7 +36,7 @@ import org.apache.qpid.example.shared.InitialContextHelper;
 
 public class Subscriber
 {
-    private static final Logger _log = Logger.getLogger(Subscriber.class);
+    private static final Logger _log = LoggerFactory.getLogger(Subscriber.class);
 
     protected static Connection _connection;
 
