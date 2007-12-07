@@ -33,6 +33,7 @@
 #include "TxPublish.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include "qpid/ptr_map.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -53,6 +54,7 @@ using std::bind2nd;
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
+using namespace qpid::ptr_map;
 
 SemanticState::SemanticState(DeliveryAdapter& da, SessionState& ss)
     : session(ss),
@@ -71,7 +73,7 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionState& ss)
 SemanticState::~SemanticState() {
     //cancel all consumers
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
-        cancel(*i);
+        cancel(*get_pointer(i));
     }
 
     if (dtxBuffer.get()) {
@@ -418,7 +420,7 @@ void SemanticState::ack(DeliveryId first, DeliveryId last, bool cumulative)
 void SemanticState::requestDispatch()
 {    
     for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
-        requestDispatch(*i);
+        requestDispatch(*get_pointer(i));
     }
 }
 
