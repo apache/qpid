@@ -208,7 +208,7 @@ libqpidbroker_la_SOURCES = \
 libqpidclient_la_LIBADD = libqpidcommon.la
 libqpidclient_la_SOURCES =			\
   $(rgen_client_cpp)				\
-  qpid/client/Session.h				\
+  qpid/client/SessionBase.cpp			\
   qpid/client/Connection.cpp			\
   qpid/client/Channel.cpp			\
   qpid/client/Exchange.cpp			\
@@ -335,6 +335,7 @@ nobase_include_HEADERS = \
   qpid/client/MessageListener.h \
   qpid/client/MessageQueue.h \
   qpid/client/Response.h \
+  qpid/client/SessionBase.h \
   qpid/client/Session.h \
   qpid/client/SessionCore.h \
   qpid/client/StateManager.h \

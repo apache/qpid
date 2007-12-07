@@ -174,7 +174,7 @@ void Channel::cancel(const std::string& tag, bool synch) {
 
 bool Channel::get(Message& msg, const Queue& _queue, AckMode ackMode) {
     string tag = "get-handler";
-    ScopedDivert handler(tag, session.execution().getDemux());
+    ScopedDivert handler(tag, session.getExecution().getDemux());
     Demux::QueuePtr incoming = handler.getQueue();
 
     session.messageSubscribe(destination=tag, queue=_queue.getName(), confirmMode=(ackMode == NO_ACK ? 0 : 1));
@@ -243,7 +243,7 @@ void Channel::dispatch(FrameSet& content, const std::string& destination)
             bool send = i->second.ackMode == AUTO_ACK
                 || (prefetch &&  ++(i->second.count) > (prefetch / 2));
             if (send) i->second.count = 0;
-            session.execution().completed(content.getId(), true, send);
+            session.getExecution().completed(content.getId(), true, send);
         }
     } else {
         QPID_LOG(warning, "Dropping message for unrecognised consumer: " << destination);                        

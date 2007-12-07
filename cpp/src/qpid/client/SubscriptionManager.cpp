@@ -38,29 +38,30 @@ SubscriptionManager::SubscriptionManager(Session_0_10& s)
       confirmMode(true), acquireMode(false)
 {}
 
-void SubscriptionManager::subscribeInternal(
+Completion SubscriptionManager::subscribeInternal(
     const std::string& q, const std::string& dest)
 {
-    session.messageSubscribe(arg::queue=q, arg::destination=dest,
+    Completion c = session.messageSubscribe(arg::queue=q, arg::destination=dest,
                              arg::confirmMode=confirmMode, arg::acquireMode=acquireMode);
     setFlowControl(dest, messages, bytes, window);
+    return c;
 }
 
-void SubscriptionManager::subscribe(
+Completion SubscriptionManager::subscribe(
     MessageListener& listener, const std::string& q, const std::string& d)
 {
     std::string dest=d.empty() ? q:d;
     dispatcher.listen(dest, &listener, autoAck);
-    subscribeInternal(q, dest);
+    return subscribeInternal(q, dest);
 }
 
-void SubscriptionManager::subscribe(
+Completion SubscriptionManager::subscribe(
     LocalQueue& lq, const std::string& q, const std::string& d)
 {
     std::string dest=d.empty() ? q:d;
     lq.session=session;
-    lq.queue=session.execution().getDemux().add(dest, ByTransferDest(dest));
-    subscribeInternal(q, dest);
+    lq.queue=session.getExecution().getDemux().add(dest, ByTransferDest(dest));
+    return subscribeInternal(q, dest);
 }
 
 void SubscriptionManager::setFlowControl(
@@ -91,7 +92,9 @@ void SubscriptionManager::cancel(const std::string dest)
     session.messageCancel(dest);
 }
 
-void SubscriptionManager::run(bool autoStop)
+void SubscriptionManager::setAutoStop(bool set) { autoStop=set; }
+
+void SubscriptionManager::run()
 {
     dispatcher.setAutoStop(autoStop);
     dispatcher.run();
