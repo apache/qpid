@@ -12,11 +12,13 @@ public class FiledTableSupport
   public static FieldTable convertToFieldTable(Map<String,?> props)
   {
       FieldTable ft = new FieldTable();
-      for (String key : props.keySet())
+      if (props != null)
       {
-          ft.setObject(key, props.get(key));
+          for (String key : props.keySet())
+          {
+              ft.setObject(key, props.get(key));
+          }
       }
-
       return ft;
   }
 
