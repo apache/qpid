@@ -142,11 +142,11 @@ public class PubSubRequestor extends BaseExample
     {
         Message response;
         response = requestor.request(request);
-        System.out.println("\tRequest Contents= " + request.getText());
+        System.out.println(CLASS + ": \tRequest Content= " + request.getText());
         // Print out the details of the response received
         if (response instanceof TextMessage)
         {
-            System.out.println("\t Response Contents= " + ((TextMessage) response).getText());
+            System.out.println(CLASS + ": \t Response Content= " + ((TextMessage) response).getText());
         }
     }
 }

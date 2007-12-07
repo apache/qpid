@@ -156,13 +156,13 @@ public class MessageMirror extends BaseExample
                 // Now bounce the message if a ReplyTo header was set.
                 if (requestMessage.getJMSReplyTo() != null)
                 {
-                    System.out.println("Activating response queue listener for: " + destination);
+                    System.out.println(CLASS + ": Activating response queue listener for: " + destination);
                     responseMessage =
                             session.createTextMessage();
                      if (requestMessage instanceof TextMessage)
                     {
                        responseMessage.setText(((TextMessage) requestMessage).getText().toUpperCase());
-                        System.out.println("\tResponse = " + responseMessage.getText());                        
+                        System.out.println(CLASS + ": \tResponse = " + responseMessage.getText());
                     }
                     messageProducer = session.createProducer(requestMessage.getJMSReplyTo());
                     messageProducer.send(responseMessage);

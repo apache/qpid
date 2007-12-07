@@ -109,20 +109,19 @@ public class Consumer extends BaseExample
             boolean end = false;
             while (!end)
             {
-                System.out.println(CLASS + ": Receiving a message");
                 message = messageConsumer.receive();
                 if (message instanceof TextMessage)
                 {
-                    System.out.println(" - contents = " + ((TextMessage) message).getText());
+                    System.out.println(CLASS + ": Received  message:  " + ((TextMessage) message).getText());
                     if (((TextMessage) message).getText().equals("That's all, folks!"))
                     {
-                        System.out.println("Received final message for " + _queueName);
+                        System.out.println(CLASS + ": Received final message for " + _queueName);
                         end = true;
                     }
                 }
                 else
                 {
-                    System.out.println(" not text message");
+                    System.out.println(CLASS + ": Received messages is  not a text message");
                 }
             }
 
