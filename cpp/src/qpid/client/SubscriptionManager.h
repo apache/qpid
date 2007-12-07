@@ -23,21 +23,24 @@
  */
 #include "qpid/sys/Mutex.h"
 #include <qpid/client/Dispatcher.h>
+#include <qpid/client/Completion.h>
 #include <qpid/client/Session_0_10.h>
 #include <qpid/client/MessageListener.h>
 #include <qpid/client/LocalQueue.h>
+#include <qpid/sys/Runnable.h>
+
 #include <set>
 #include <sstream>
 
 namespace qpid {
 namespace client {
 
-class SubscriptionManager
+class SubscriptionManager : public sys::Runnable
 {
     typedef sys::Mutex::ScopedLock Lock;
     typedef sys::Mutex::ScopedUnlock Unlock;
 
-    void subscribeInternal(const std::string& q, const std::string& dest);
+    Completion subscribeInternal(const std::string& q, const std::string& dest);
     
     qpid::client::Dispatcher dispatcher;
     qpid::client::Session_0_10& session;
@@ -47,8 +50,9 @@ class SubscriptionManager
     AckPolicy autoAck;
     bool confirmMode;
     bool acquireMode;
-
-public:
+    bool autoStop;
+    
+  public:
     SubscriptionManager(Session_0_10& session);
     
     /**
@@ -59,9 +63,9 @@ public:
      *@param tag Unique destination tag for the listener.
      * If not specified, the queue name is used.
      */
-    void subscribe(MessageListener& listener,
-                   const std::string& queue,
-                   const std::string& tag=std::string());
+    Completion subscribe(MessageListener& listener,
+                         const std::string& queue,
+                         const std::string& tag=std::string());
 
     /**
      * Subscribe a LocalQueue to receive messages from queue.
@@ -70,17 +74,21 @@ public:
      *@param tag Unique destination tag for the listener.
      * If not specified, the queue name is used.
      */
-    void subscribe(LocalQueue& localQueue,
+    Completion subscribe(LocalQueue& localQueue,
                    const std::string& queue,
                    const std::string& tag=std::string());
 
     /** Cancel a subscription. */
     void cancel(const std::string tag);
 
-    /** Deliver messages until stop() is called.
-     *@param autoStop If true, return when all listeners are cancelled.
+    /** Deliver messages until stop() is called. */
+    void run();
+
+    /** If set true, run() will stop when all subscriptions
+     * are cancelled. If false, run will only stop when stop()
+     * is called. True by default.
      */
-    void run(bool autoStop=true);
+    void setAutoStop(bool set=true);
 
     /** Cause run() to return */
     void stop();

@@ -88,6 +88,8 @@ class Connector : public framing::OutputHandler,
     void eof(qpid::sys::AsynchIO&);
     
   friend class Channel;
+  friend class TestConnector;
+
   public:
     Connector(framing::ProtocolVersion pVersion,
               bool debug = false, uint32_t buffer_size = 1024);

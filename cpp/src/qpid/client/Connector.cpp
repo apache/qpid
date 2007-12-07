@@ -51,7 +51,8 @@ Connector::Connector(
 {
 }
 
-Connector::~Connector(){
+Connector::~Connector() {
+    close();
     if (receiver.id() && receiver.id() != Thread::current().id())
         receiver.join();
 }
@@ -76,7 +77,6 @@ void Connector::init(){
     receiver = Thread(this);
 }
 
-// Call with closedLock held
 bool Connector::closeInternal() {
     Mutex::ScopedLock l(closedLock);
     if (!closed) {

@@ -68,19 +68,8 @@ class SessionNoKeywordGen < CppGen
 
   def generate()
     h_file(@file) {
-      include "qpid/framing/amqp_framing.h"
-      include "qpid/framing/Uuid.h"
-      include "qpid/framing/amqp_structs.h"
-      include "qpid/framing/ProtocolVersion.h"
-      include "qpid/framing/MethodContent.h"
-      include "qpid/framing/TransferContent.h"
-      include "qpid/client/Completion.h"
-      include "qpid/client/ConnectionImpl.h"
-      include "qpid/client/Response.h"
-      include "qpid/client/SessionCore.h"
-      include "qpid/client/TypedResult.h"
-      include "qpid/shared_ptr.h"
-      include "<string>"
+      include "qpid/client/SessionBase.h"
+
       namespace("qpid::client") { 
         genl "using std::string;"
         genl "using framing::Content;"
@@ -94,59 +83,23 @@ class SessionNoKeywordGen < CppGen
             genl "AMQP #{@amqp.version} session API."
             genl @amqp.class_("session").doc
           }
-          cpp_class(@classname) {
+          cpp_class(@classname, "public SessionBase") {
             public
-            gen <<EOS
-#{@classname}();
-
-/** Get the next message frame-set from the session. */
-framing::FrameSet::shared_ptr get() { return impl->get(); }
-
-/** Get the session ID */
-Uuid getId() const { return impl->getId(); }
-
-/** @param sync if true all session methods block till a response arrives. */
-void setSynchronous(bool sync) { impl->setSync(sync); }
-
-/** Suspend the session, can be resumed on a different connection.
- * @see Connection::resume()
- */
-void suspend();
-
-/** Close the session */
-void close();
-
-Execution& execution() { return impl->getExecution(); }
-
-typedef framing::TransferContent DefaultContent;
-EOS
+            genl "Session_0_10() {}"
+            genl "Session_0_10(shared_ptr<SessionCore> core) : SessionBase(core) {}"
             session_methods.each { |m|
               genl
               doxygen(m)
               args=m.sig_c_default.join(", ") 
               genl "#{m.return_type} #{m.session_function}(#{args});" 
             }
-            genl
-            protected
-            gen <<EOS
-shared_ptr<SessionCore> impl;
-framing::ProtocolVersion version;
-friend class Connection;
-#{@classname}(shared_ptr<SessionCore>);
-EOS
           }}}}
 
     cpp_file(@file) { 
       include @classname
       include "qpid/framing/all_method_bodies.h"
       namespace(@namespace) {
-        gen <<EOS
-using namespace framing;
-#{@classname}::#{@classname}() {}
-#{@classname}::#{@classname}(shared_ptr<SessionCore> core) : impl(core) {}
-void #{@classname}::suspend() { impl->suspend(); }
-void #{@classname}::close() { impl->close(); }
-EOS
+        genl "using namespace framing;"
         session_methods.each { |m|
           genl
           sig=m.signature_c.join(", ")
