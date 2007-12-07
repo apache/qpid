@@ -166,10 +166,10 @@ public class Listener extends BaseExample implements MessageListener
         {
             if (message instanceof TextMessage)
             {
-                System.out.println(" - contents = " + ((TextMessage) message).getText());
+                System.out.println(CLASS + ": Received message: " + ((TextMessage) message).getText());
                 if (((TextMessage) message).getText().equals("That's all, folks!"))
                 {
-                    System.out.println("Shutting down listener for " + _queueName);
+                    System.out.println(CLASS + ": Shutting down listener for " + _queueName);
                     synchronized (_lock)
                     {
                         _finished = true;

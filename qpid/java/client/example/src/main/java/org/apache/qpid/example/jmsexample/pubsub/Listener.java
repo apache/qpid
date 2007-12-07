@@ -185,13 +185,11 @@ public class Listener extends BaseExample
                 // Increment the number of messages that have been received
                 _messageCount = _messageCount + 1;
                 // Print out the details of the just received message
-                System.out
-                        .print(_topicName + ":  message received: " + _messageCount + " " + message.getJMSMessageID());
-                System.out.println(" - contents = " + ((TextMessage) message).getText());
+                System.out.println(CLASS + ":  Received message:  " + ((TextMessage) message).getText());
                 // If this is the total number of messages required
                 if (((TextMessage) message).getText().equals("That's all, folks!"))
                 {
-                    System.out.println("Shutting down listener for " + _topicName);
+                    System.out.println(CLASS + ": Shutting down listener for " + _topicName);
                     synchronized (_lock)
                     {
                         _finished++;
