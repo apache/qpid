@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-package  org.apache.qpid.example.jmsexample.direct;
+package org.apache.qpid.example.jmsexample.direct;
 
 import org.apache.qpid.example.jmsexample.common.BaseExample;
 
@@ -110,18 +110,25 @@ public class Consumer extends BaseExample
             while (!end)
             {
                 message = messageConsumer.receive();
+                String text = "";
                 if (message instanceof TextMessage)
                 {
-                    System.out.println(CLASS + ": Received  message:  " + ((TextMessage) message).getText());
-                    if (((TextMessage) message).getText().equals("That's all, folks!"))
-                    {
-                        System.out.println(CLASS + ": Received final message for " + _queueName);
-                        end = true;
-                    }
+                    text = ((TextMessage) message).getText();
                 }
                 else
                 {
-                    System.out.println(CLASS + ": Received messages is  not a text message");
+                    byte[] body = new byte[(int) ((BytesMessage) message).getBodyLength()]; 
+                    ((BytesMessage) message).readBytes(body);
+                    text = new String(body);
+                }
+                if (text.equals("That's all, folks!"))
+                {
+                    System.out.println(CLASS + ": Received final message for " + _queueName);
+                    end = true;
+                }
+                else
+                {
+                    System.out.println(CLASS + ": Received  message:  " + text);
                 }
             }
 
