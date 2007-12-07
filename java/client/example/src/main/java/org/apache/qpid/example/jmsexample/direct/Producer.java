@@ -79,23 +79,19 @@ public class Producer extends BaseExample
             // Create a Message
             TextMessage message;
             System.out.println(CLASS + ": Creating a TestMessage to send to the destination");
-            message = session.createTextMessage();
-
-            // Set a  property for illustrative purposes
-            //message.setDoubleProperty("Amount", 10.1);
 
             // Loop to publish the requested number of messages.
             for (int i = 1; i < getNumberMessages() + 1; i++)
             {
                 // NOTE: We have NOT HAD TO START THE CONNECTION TO BEGIN SENDING  messages,
                 // this is different to the consumer end as a CONSUMERS CONNECTIONS MUST BE STARTED BEFORE RECEIVING.
-                message.setText("Message " + i);
+                message = session.createTextMessage("Message " + i);
                 System.out.println(CLASS + ": Sending message: " + i);
                 messageProducer.send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);             
             }
 
             // And send a final message to indicate termination.
-	        message.setText("That's all, folks!");
+            message = session.createTextMessage("That's all, folks!");            
             messageProducer.send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
             // Close the connection to the broker
