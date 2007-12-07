@@ -101,7 +101,7 @@ void SemanticState::consume(DeliveryToken::shared_ptr token, string& tagInOut,
 void SemanticState::cancel(const string& tag){
     ConsumerImplMap::iterator i = consumers.find(tag);
     if (i != consumers.end()) {
-        cancel(*i);
+        cancel(*get_pointer(i));
         consumers.erase(i); 
         //should cancel all unacked messages for this consumer so that
         //they are not redelivered on recovery
@@ -436,7 +436,7 @@ void SemanticState::acknowledged(const DeliveryRecord& delivery)
     delivery.subtractFrom(outstanding);
     ConsumerImplMap::iterator i = consumers.find(delivery.getTag());
     if (i != consumers.end()) {
-        i->acknowledged(delivery);
+        get_pointer(i)->acknowledged(delivery);
     }
 }
 
@@ -502,7 +502,7 @@ SemanticState::ConsumerImpl& SemanticState::find(const std::string& destination)
     if (i == consumers.end()) {
         throw NotFoundException(QPID_MSG("Unknown destination " << destination));
     } else {
-        return *i;
+        return *get_pointer(i);
     }
 }
 
