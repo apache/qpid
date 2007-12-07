@@ -18,8 +18,9 @@
  */
 package org.apache.qpid.example.publisher;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.client.BasicMessageProducer;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -33,7 +34,7 @@ import javax.jms.Session;
 public class MonitorPublisher extends Publisher
 {
 
-    private static final Logger _log = Logger.getLogger(Publisher.class);
+    private static final Logger _log = LoggerFactory.getLogger(Publisher.class);
 
     BasicMessageProducer _producer;
 
@@ -64,7 +65,7 @@ public class MonitorPublisher extends Publisher
         catch (JMSException e)
         {
             //Have to assume our commit failed but do not rollback here as channel closed
-            _log.error(e);
+            _log.error("JMSException", e);
             e.printStackTrace();
             throw new UndeliveredMessageException("Cannot deliver immediate message", e);
         }
@@ -93,7 +94,7 @@ public class MonitorPublisher extends Publisher
         catch (JMSException e)
         {
             //Have to assume our commit failed but do not rollback here as channel closed
-            _log.error(e);
+            _log.error("JMSException", e);
             e.printStackTrace();
             throw new UndeliveredMessageException("Cannot deliver immediate message", e);
         }
