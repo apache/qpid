@@ -20,11 +20,14 @@ nobase_pkgdata_DATA=						\
 
 EXTRA_DIST=$(nobase_pkgdata_DATA)
 
+
 # Note: we don't use normal automake SUBDIRS because the example
 # makefiles don't understand all the recursive automake targets.
 
 clean:
 	cd examples; $(MAKE) clean
+
+abs_srcdir=@abs_srcdir@
 
 # Build the installed examples, then clean up to avoid rpmbuild warnings.
 EXAMPLE_FLAGS=-I$(DESTDIR)$(includedir) -L$(DESTDIR)$(libdir) -Wl,-rpath,$(DESTDIR)$(libdir)
