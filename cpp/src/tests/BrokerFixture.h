@@ -29,16 +29,6 @@
 #include "qpid/client/Session_0_10.h"
 #include "qpid/client/SubscriptionManager.h"
 
-namespace qpid { namespace client {
-/** Back door into private Connector stuff */
-struct TestConnector {
-    static void disconnect(qpid::client::Connector& c) {
-        c.socket.close();
-        c.handleClosed();
-    }
-};
-}}
-
 /**
  * A fixture to create an in-process broker and connect to it for tests.
  */
@@ -85,16 +75,6 @@ struct BrokerFixture {
     /** Open a connection to the local broker */
     void open(qpid::client::Connection& c) {
         c.open("localhost", broker->getPort());
-    }
-
-    /** Close a connection's socket */ 
-    static void disconnect(qpid::client::Connection& c) {
-        struct Expose : public qpid::client::Connection {
-            void disconnect() {
-                qpid::client::TestConnector::disconnect(*impl->getConnector());
-            }
-        };
-        static_cast<Expose&>(c).disconnect();
     }
 };
 
