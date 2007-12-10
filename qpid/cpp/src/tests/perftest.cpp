@@ -231,9 +231,13 @@ class Stats {
     
     // Functor to collect rates.
     void operator()(const string& data) {
-        double d=lexical_cast<double>(data);
-        values.push_back(d);
-        sum += d;
+        try {
+            double d=lexical_cast<double>(data);
+            values.push_back(d);
+            sum += d;
+        } catch (const std::exception&) {
+            throw Exception("Bad report: "+data);
+        }
     }
     
     double mean() const {
@@ -423,7 +427,7 @@ struct SubscribeThread : public Client {
             size_t lastMsg=0;
             for (size_t i = 0; i < opts.subQuota; ++i) {
                 msg=lq.pop();
-                // TODO aconway 2007-11-23: check message sequence for
+                // TODO aconway 2007-11-23: check message order for. 
                 // multiple publishers. Need an array of counters,
                 // one per publisher and a publisher ID in the
                 // message. Careful not to introduce a lot of overhead
@@ -435,7 +439,10 @@ struct SubscribeThread : public Client {
                     size_t n = *reinterpret_cast<uint32_t*>(data);
                     if (n < lastMsg) {
                         // Report to control.
-                        Message error("Out-of-sequence messages", "sub_done");
+                        Message error(
+                            QPID_MSG("Out-of-sequence messages, expected n>="
+                                     << lastMsg << " got " << n),
+                            "sub_done");
                         session.messageTransfer(arg::content=error);
                         return;
                     }
