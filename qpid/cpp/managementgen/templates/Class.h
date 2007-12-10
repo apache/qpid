@@ -22,6 +22,7 @@
 
 /*MGEN:Root.Disclaimer*/
 
+#include "qpid/sys/Mutex.h"
 #include "qpid/management/ManagementObject.h"
 
 namespace qpid { 
@@ -52,6 +53,7 @@ class /*MGEN:Class.NameCap*/ : public ManagementObject
   public:
 
     typedef boost::shared_ptr</*MGEN:Class.NameCap*/> shared_ptr;
+    qpid::sys::Mutex accessorLock;
 
     /*MGEN:Class.NameCap*/ (Manageable* coreObject, Manageable* parentObject,
         /*MGEN:Class.ConstructorArgs*/);
