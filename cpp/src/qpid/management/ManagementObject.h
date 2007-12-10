@@ -54,8 +54,8 @@ class ManagementObject
     static const uint8_t TYPE_LSTR = 7;
 
     static const uint8_t ACCESS_RC = 1;
-    static const uint8_t ACCESS_RW = 1;
-    static const uint8_t ACCESS_RO = 1;
+    static const uint8_t ACCESS_RW = 2;
+    static const uint8_t ACCESS_RO = 3;
 
     static const uint8_t DIR_I     = 1;
     static const uint8_t DIR_O     = 2;

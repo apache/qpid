@@ -109,27 +109,6 @@
     <configElement name="durable"         type="bool"   access="RC"/>
     <configElement name="autoDelete"      type="bool"   access="RC"/>
     <configElement name="exclusive"       type="bool"   access="RC"/>
-    <configElement name="pageMemoryLimit" type="uint32" access="RO"/>
-
-    <!-- Persistent Journal Support -->
-    <instElement name="journalLocation"            type="sstr"                  desc="Logical directory on disk"/>
-    <instElement name="journalBaseFileName"        type="sstr"                  desc="Base filename prefix for journal"/>
-    <instElement name="journalInitialFileCount"    type="uint32"                desc="Number of files initially allocated to this journal"/>
-    <instElement name="journalCurrentFileCount"    type="uint32"                desc="Number of files currently allocated to this journal"/>
-    <instElement name="journalDataFileSize"        type="uint32"  unit="byte"   desc="Size of each journal data file"/>
-    <instElement name="journalFreeFileCount"       type="hilo32"                desc="Number of files free on this journal. Includes free files trapped in holes."/>
-    <instElement name="journalAvailableFileCount"  type="hilo32"                desc="Number of files available to be written.  Excluding holes"/>
-    <instElement name="journalRecordDepth"         type="hilo32"  unit="record" desc="Number of enqueued records (durable messages)"/>
-    <instElement name="journalRecordEnqueues"      type="count64" unit="record" desc="Total enqueued records on journal"/>
-    <instElement name="journalRecordDequeues"      type="count64" unit="record" desc="Total dequeued records on journal"/>
-    <instElement name="journalWriteWaitFailures"   type="count64" unit="record" desc="AIO Wait failures on write"/>
-    <instElement name="journalWriteBusyFailures"   type="count64" unit="record" desc="AIO Busy failures on write"/>
-    <instElement name="journalReadRecordCount"     type="count64" unit="record" desc="Records read from the journal"/>
-    <instElement name="journalReadBusyFailures"    type="count64" unit="record" desc="AIO Busy failures on read"/>
-    <instElement name="journalWritePageCacheDepth" type="hilo32"  unit="page"   desc="Current depth of write-page-cache"/>
-    <instElement name="journalWritePageSize"       type="uint32"  unit="byte"   desc="Page size in write-page-cache"/>
-    <instElement name="journalReadPageCacheDepth"  type="hilo32"  unit="page"   desc="Current depth of read-page-cache"/>
-    <instElement name="journalReadPageSize"        type="uint32"  unit="byte"   desc="Page size in read-page-cache"/>
 
     <instElement name="msgTotalEnqueues"    type="count64" unit="message"     desc="Total messages enqueued"/>
     <instElement name="msgTotalDequeues"    type="count64" unit="message"     desc="Total messages dequeued"/>
