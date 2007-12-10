@@ -21,6 +21,7 @@
 
 #include "unit_test.h"
 #include "BrokerFixture.h"
+#include "SocketProxy.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
@@ -71,31 +72,33 @@ struct Catcher : public Runnable {
 };
 
 BOOST_FIXTURE_TEST_CASE(DisconnectedGet, BrokerFixture) {
-    Catcher<ClosedException> get(bind(&Session_0_10::get, session));
-    disconnect(connection);
+    ProxyConnection c(broker->getPort());
+    Catcher<ClosedException> get(bind(&Session_0_10::get, c.session));
+    c.proxy.client.close();           // Close the client side.
     BOOST_CHECK(get.join());
 }
 
 BOOST_FIXTURE_TEST_CASE(DisconnectedPop, BrokerFixture) {
-    session.queueDeclare(arg::queue="q");
+    ProxyConnection c(broker->getPort());
+    c.session.queueDeclare(arg::queue="q");
     subs.subscribe(lq, "q");
     Catcher<ClosedException> pop(bind(&LocalQueue::pop, boost::ref(lq)));
-    disconnect(connection);
+    c.proxy.client.close();
     BOOST_CHECK(pop.join());
 }
 
-// FIXME aconway 2007-12-07: This test hangs sporadically at t.join
-// BOOST_FIXTURE_TEST_CASE(DisconnectedListen, BrokerFixture) {
-//     struct NullListener : public MessageListener {
-//         void received(Message&) { BOOST_FAIL("Unexpected message"); }
-//     } l;
-//     session.queueDeclare(arg::queue="q");
-//     subs.subscribe(l, "q");
-//     Thread t(subs);
-//     disconnect(connection);
-//     t.join();
-//     BOOST_CHECK_THROW(session.close(), InternalErrorException);    
-// }
+BOOST_FIXTURE_TEST_CASE(DisconnectedListen, BrokerFixture) {
+    struct NullListener : public MessageListener {
+        void received(Message&) { BOOST_FAIL("Unexpected message"); }
+    } l;
+    ProxyConnection c;
+    c.session.queueDeclare(arg::queue="q");
+    subs.subscribe(l, "q");
+    Thread t(subs);
+    c.proxy.client.close();
+    t.join();
+    BOOST_CHECK_THROW(c.session.close(), InternalErrorException);    
+}
 
 BOOST_FIXTURE_TEST_CASE(NoSuchQueueTest, BrokerFixture) {
     BOOST_CHECK_THROW(subs.subscribe(lq, "no such queue").sync(), NotFoundException);

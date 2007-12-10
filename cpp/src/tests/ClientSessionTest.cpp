@@ -20,6 +20,7 @@
  */
 #include "qpid_test_plugin.h"
 #include "BrokerFixture.h"
+#include "SocketProxy.h"
 #include "qpid/client/Dispatcher.h"
 #include "qpid/client/Session_0_10.h"
 #include "qpid/framing/TransferContent.h"
@@ -181,14 +182,15 @@ class ClientSessionTest : public CppUnit::TestCase, public BrokerFixture
     }
 
     void testDisconnectResume() {
-        session =connection.newSession(60);
-        session.queueDeclare(queue="before");
+        ProxyConnection c(broker->getPort());
+        Session_0_10 s = c.session;
+        s.queueDeclare(queue="before");
         CPPUNIT_ASSERT(queueExists("before"));
-        session.queueDeclare(queue=string("after"));
-        disconnect(connection);
+        s.queueDeclare(queue=string("after"));
+        c.proxy.client.close();       // Disconnect the client.
         Connection c2;
         open(c2);
-        c2.resume(session);
+        c2.resume(s);
         CPPUNIT_ASSERT(queueExists("after"));
         c2.close();
     }
