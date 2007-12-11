@@ -102,12 +102,18 @@ void ConnectionHandler::waitForOpen()
 
 void ConnectionHandler::close()
 {
-    if (getState() != OPEN) {
-        throw Exception("Connection not open");
+    switch (getState()) {
+      case NEGOTIATING:
+      case OPENING:
+        setState(FAILED);
+        break;
+      case OPEN:
+        setState(CLOSING);
+        send(ConnectionCloseBody(version, 200, OK, 0, 0));
+        waitFor(CLOSED);
+        break;
+        // Nothing to do for CLOSING, CLOSED, FAILED or NOT_STARTED
     }
-    setState(CLOSING);
-    send(ConnectionCloseBody(version, 200, OK, 0, 0));
-    waitFor(CLOSED);
 }
 
 void ConnectionHandler::send(const framing::AMQBody& body)
