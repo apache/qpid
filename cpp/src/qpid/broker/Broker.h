@@ -90,7 +90,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
      * port, which will be different if the configured port is
      * 0.
      */
-    virtual int16_t getPort() const;
+    virtual uint16_t getPort() const;
 
     /** Return the broker's URL. */
     virtual std::string getUrl() const;
