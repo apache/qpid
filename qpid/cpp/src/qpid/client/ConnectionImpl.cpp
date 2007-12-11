@@ -88,6 +88,7 @@ void ConnectionImpl::open(const std::string& host, int port,
 
 void ConnectionImpl::close()
 {
+    Mutex::ScopedLock l(lock);
     if (!isClosed)
         handler.close();
 }
