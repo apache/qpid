@@ -41,20 +41,22 @@ struct SocketProxy : public qpid::sys::Runnable
     
   private:
 
-    void init(const std::string& host, int port) {
-        client.connect(host,port);
+    void init(const std::string& host, int connectPort) {
+        client.connect(host, connectPort);
         port = server.listen();
         thread=qpid::sys::Thread(this);
     }
 
     void run() {
-        do {
-            ssize_t recv = server.recv(buffer, sizeof(buffer));
-            if (recv <= 0) return;
-            ssize_t sent=client.send(buffer, recv);
-            if (sent < 0) return;
-            assert(sent == recv); // Assumes we can send as we receive.
-        } while (true);
+        try {
+            do {
+                ssize_t recv = server.recv(buffer, sizeof(buffer));
+                if (recv <= 0) return;
+                ssize_t sent=client.send(buffer, recv);
+                if (sent < 0) return;
+                assert(sent == recv); // Assumes we can send as we receive.
+            } while (true);
+        } catch(...) {}
     }
 
     qpid::sys::Thread thread;
