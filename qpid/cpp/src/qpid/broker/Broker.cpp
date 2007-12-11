@@ -238,7 +238,7 @@ Broker::~Broker() {
     shutdown();
 }
 
-int16_t Broker::getPort() const  { return getAcceptor().getPort(); }
+uint16_t Broker::getPort() const  { return getAcceptor().getPort(); }
 
 std::string Broker::getUrl() const {
     return Url(TcpAddress(getAcceptor().getHost(), getPort())).str();
