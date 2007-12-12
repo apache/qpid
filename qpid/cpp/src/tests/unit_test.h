@@ -25,6 +25,7 @@
 // Workaround so we can build against boost 1.33 and boost 1.34.
 // Remove when we no longer need to support 1.33.
 // 
+#include <boost/version.hpp>
 
 #if (BOOST_VERSION < 103400)
 

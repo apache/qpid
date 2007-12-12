@@ -29,7 +29,6 @@ namespace qpid {
 /**
  * An allocator that has inline storage for up to Max objects
  * of type BaseAllocator::value_type.
- * Store small requests inline, uses BaseAllocator::allocate otherwise.
  */
 template <class BaseAllocator, size_t Max> 
 class InlineAllocator : public BaseAllocator {
@@ -43,14 +42,14 @@ class InlineAllocator : public BaseAllocator {
     pointer allocate(size_type n) {
         if (n <= Max && !allocated) {
             allocated=true;
-            return data();
+            return store;
         }
         else 
             return BaseAllocator::allocate(n, 0);
     }
 
     void deallocate(pointer p, size_type n) {
-        if (p == data()) allocated=false;
+        if (p == store) allocated=false;
         else BaseAllocator::deallocate(p, n);
     }
 
@@ -61,11 +60,7 @@ class InlineAllocator : public BaseAllocator {
     };
 
   private:
-    value_type* data() {
-        return reinterpret_cast<value_type*>(store);
-    }
-
-    char store[Max * sizeof(value_type)];
+    value_type store[Max];
     bool allocated;
 };
 
