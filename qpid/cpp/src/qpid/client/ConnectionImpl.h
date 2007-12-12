@@ -49,12 +49,14 @@ class ConnectionImpl : public framing::FrameHandler,
     framing::ProtocolVersion version;
     sys::Mutex lock;
     bool isClosed;
+    bool isClosing;
 
     void incoming(framing::AMQFrame& frame);    
     void closed(uint16_t, const std::string&);
     void idleOut();
     void idleIn();
     void shutdown();
+    bool setClosing();
 
     template <class F> void forChannels(F functor);
 
