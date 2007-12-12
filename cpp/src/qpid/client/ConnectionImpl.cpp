@@ -32,7 +32,7 @@ using namespace qpid::framing;
 using namespace qpid::sys;
 
 ConnectionImpl::ConnectionImpl(boost::shared_ptr<Connector> c)
-    : connector(c), isClosed(false)
+    : connector(c), isClosed(false), isClosing(false)
 {
     handler.in = boost::bind(&ConnectionImpl::incoming, this, _1);
     handler.out = boost::bind(&Connector::send, connector, _1);
@@ -86,11 +86,21 @@ void ConnectionImpl::open(const std::string& host, int port,
     handler.waitForOpen();
 }
 
-void ConnectionImpl::close()
+bool ConnectionImpl::setClosing()
 {
     Mutex::ScopedLock l(lock);
-    if (!isClosed)
+    if (isClosing || isClosed) {
+        return false;
+    }
+    isClosing = true;
+    return true;
+}
+
+void ConnectionImpl::close()
+{
+    if (setClosing()) {
         handler.close();
+    }
 }
 
 void ConnectionImpl::idleIn()
