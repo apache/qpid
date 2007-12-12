@@ -1,6 +1,5 @@
 {
    Benign error in libcpg.
-
    Memcheck:Param
    socketcall.sendmsg(msg.msg_iov[i])
    obj:*/libpthread-2.5.so
@@ -8,13 +7,12 @@
 }
 
 {
-   Uninitialised value problem in dlopen
+   Uninitialised value problem in _dl_relocate (F7, F8)
    Memcheck:Cond
    fun:_dl_relocate_object
    fun:*dl_*
-   obj:/lib64/ld-2.6.so
-   obj:*
 }
+
 {
    False "possibly leaked" in boost program_options - global std::string var.
    Memcheck:Leak
@@ -24,30 +22,11 @@
    fun:_ZNSsC1EPKcRKSaIcE
    obj:/usr/lib/libboost_program_options.so.1.33.1
 }
-#
-# Bogus uninit bytes error: only occur on i386.
-#
+
 {
-   Syscall param epoll_ctl(event) points to uninitialised byte(s)
+   Bogus epoll_ctl error on i386
    Memcheck:Param
    epoll_ctl(event)
    fun:epoll_ctl
 }
-{
-   Bogus error appearing on Fedora 7.
-   Memcheck:Cond
-   fun:_dl_relocate_object
-   fun:dl_main
-   fun:_dl_sysdep_start
-   fun:_dl_start
-   obj:/lib/ld-2.6.so
-}
 
-{
-   Bogus error appearing on Fedora 7.
-   Memcheck:Cond
-   fun:_dl_relocate_object
-   fun:dl_open_worker
-   fun:_dl_catch_error
-   fun:_dl_open
-}
