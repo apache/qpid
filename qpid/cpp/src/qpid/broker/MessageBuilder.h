@@ -32,7 +32,7 @@ namespace qpid {
 
         class MessageBuilder : public framing::FrameHandler{
         public:
-            MessageBuilder(MessageStore* const store = 0, uint64_t stagingThreshold = 0);
+            MessageBuilder(MessageStore* const store, uint64_t stagingThreshold);
             void handle(framing::AMQFrame& frame);
             intrusive_ptr<Message> getMessage() { return message; }
             void start(const framing::SequenceNumber& id);

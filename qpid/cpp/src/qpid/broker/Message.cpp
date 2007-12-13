@@ -177,7 +177,7 @@ void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t max
             if (offset > 0) {
                 frame.setBos(false);
             }
-            if (remaining) {
+            if (remaining > maxContentSize) {
                 frame.setEos(false);
             }
             out.handle(frame);
