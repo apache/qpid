@@ -1,45 +1,50 @@
 #!/bin/bash
 #
+# Distributed perftest.
+# Runs perftest clients on multiple hosts using ssh.
+# 
+
 set -e
 usage() {
 cat <<EOF
-usage: $0 <perftest-args> --pubhosts <publish-hosts> --subhosts <subscribe-hosts>
+usage: $0 <perftest-args> -- <client-hosts ...> 
 
-All perftest args must come before --pubhosts or --subhosts. If
---npubs or --nsubs is larger than corresponding hosts list, the list
-is used round-robin.
+Run perftest with clients running on the listed hosts.  Clients are
+assigned to hosts publishers first, then subscribers the host list is
+used round-robin if there are more clients than hosts. perftest-args should
+include a --host <brokerhost>  flag.
 
-Do not pass action flags --setup, --control, --publish, --subscribe they
-will be passed to the appropriate processes.
+Do not pass preftest action flags: --setup, --control, --publish, --subscribe.
+The script will pass them to the appropriate client processes.
+
+Note all perftest args must come before  --.
+
+Error: $*
 EOF
 exit 1
 }
 
 collect() { eval $COLLECT=\""\$$COLLECT $*"\"; }
-
+NPUBS=1
+NSUBS=1
 COLLECT=ARGS
 while test $# -gt 0; do
     case $1 in
-	--publish|--subscribe|--setup|--control) usage ;;
+	--publish|--subscribe|--setup|--control) usage "Don't pass perftest action flags: $1" ;;
 	--npubs) collect $1 $2; NPUBS=$2; shift 2 ;;
 	--nsubs) collect $1 $2; NSUBS=$2; shift 2 ;;
-	--pubhosts) COLLECT=PUBHOSTS; shift ;; 
-	--subhosts) COLLECT=SUBHOSTS; shift ;;
+	--) COLLECT=HOSTS; shift ;; 
 	*) collect $1; shift ;;
     esac
 done
-if [ -z "$PUBHOSTS" ]; then echo "Missing --pubhosts"; usage; fi
-if [ -z "$SUBHOSTS" ]; then echo "Missing --subhosts"; usage; fi
+if [ -z "$HOSTS" ]; then usage "No hosts listed after --"; fi
+PATH="`dirname $0`:$PATH"	
+PERFTEST="`which perftest` $ARGS" || usage "Can't find perftest executable"
 
-PERFTEST="`PATH=$PWD:$PATH which perftest` $ARGS"
-
-start() {
-    ssh $2 $PERFTEST --$1
-}
+HOSTS=($HOSTS)
+start() { ssh ${HOSTS[i % ${#HOSTS[*]}]} $PERFTEST $*& }
 
 $PERFTEST --setup
-PUBS=($PUBHOSTS)
-for (( i=0 ; i < $NPUBS ; ++i)); do start publish ${PUBS[i % ${#PUBS[*]}]} & done
-SUBS=($SUBHOSTS)
-for (( i=0 ; i < $NSUBS ; ++i)); do start subscribe ${SUBS[i % ${#SUBS[*]}]} & done
+for (( i=0 ; i < $NPUBS ; ++i)); do start --publish; done
+for (( ; i < $NPUBS+$NSUBS ; ++i)); do start --subscribe; done
 $PERFTEST --control

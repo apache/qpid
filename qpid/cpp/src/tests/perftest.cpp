@@ -89,7 +89,7 @@ struct Opts : public TestOptions {
     Opts() :
         TestOptions(helpText),
         setup(false), control(false), publish(false), subscribe(false),
-        pubs(1), count(500000), size(64), confirm(false), durable(false),
+        pubs(1), count(500000), size(1024), confirm(true), durable(false),
         subs(1), ack(0),
         qt(1), mode(SHARED), summary(false)
     {
@@ -107,7 +107,7 @@ struct Opts : public TestOptions {
             ("npubs", optValue(pubs, "N"), "Create N publishers.")
             ("count", optValue(count, "N"), "Each publisher sends N messages.")
             ("size", optValue(size, "BYTES"), "Size of messages in bytes.")
-            ("pub-confirm", optValue(confirm), "Publisher use confirm-mode.")
+            ("pub-confirm", optValue(confirm, "yes|no"), "Publisher use confirm-mode.")
             ("durable", optValue(durable, "yes|no"), "Publish messages as durable.")
 
             ("nsubs", optValue(subs, "N"), "Create N subscribers.")
@@ -115,7 +115,7 @@ struct Opts : public TestOptions {
              "N==0: Subscriber uses unconfirmed mode")
             
             ("qt", optValue(qt, "N"), "Create N queues or topics.")
-            ("summary,s", optValue(summary), "Summary output only.");
+            ("summary,s", optValue(summary), "Summary output: pubs/sec subs/sec transfers/sec Mbytes/sec");
     }
 
     // Computed values
@@ -315,20 +315,26 @@ struct Controller : public Client {
             process(opts.totalSubs, "sub_done", boost::ref(subRates));
             AbsTime end=now(); 
             double time=secs(start, end);
-
+            double txrate=opts.transfers/time;
+            double mbytes=(txrate*opts.size)/(1024*1024);
+            
             if (!opts.summary) {
-                cout << endl << "Publish rates: " << endl;
+                cout << endl << "Total " << opts.transfers << " transfers of "
+                     << opts.size << " bytes in "
+                     << time << " seconds." << endl;
+                cout << endl << "Publish transfers/sec:    " << endl;
                 pubRates.print(cout);
-                cout << endl << "Subscribe rates: " << endl;
+                cout << endl << "Subscribe transfers/sec:  " << endl;
                 subRates.print(cout);
-                cout << endl << "Total transfers: " << opts.transfers << endl;
-                cout << "Total time (secs): " << time << endl;
-                cout << "Total rate: " << opts.transfers/time << endl;
+                cout << endl
+                     << "Total transfers/sec:      " << txrate << endl
+                     << "Total Mbytes/sec: " << mbytes << endl;
             }
             else {
                 cout << pubRates.mean() << "\t"
                      << subRates.mean() << "\t"
-                     << opts.transfers/time << endl;
+                     << txrate << "\t"
+                     << mbytes << endl;
             }
         }
         catch (const std::exception& e) {
