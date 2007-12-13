@@ -113,7 +113,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
-    uint64_t getStagingThreshold() { return stagingThreshold; }
+    uint64_t getStagingThreshold() { return config.stagingThreshold; }
     DtxManager& getDtxManager() { return dtxManager; }
 
     SessionManager& getSessionManager() { return sessionManager; }
@@ -132,7 +132,6 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
-    uint64_t stagingThreshold;
     ConnectionFactory factory;
     DtxManager dtxManager;
     HandlerUpdaters handlerUpdaters;

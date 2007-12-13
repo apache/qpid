@@ -94,7 +94,7 @@ class MessageBuilderTest : public CppUnit::TestCase
   public:
 
     void testHeaderOnly(){
-        MessageBuilder builder;
+        MessageBuilder builder(0, 0);
         builder.start(SequenceNumber());
 
         std::string exchange("builder-exchange");
@@ -117,7 +117,7 @@ class MessageBuilderTest : public CppUnit::TestCase
     }
 
     void test1ContentFrame(){
-        MessageBuilder builder;
+        MessageBuilder builder(0, 0);
         builder.start(SequenceNumber());
 
         std::string data("abcdefg");
@@ -149,7 +149,7 @@ class MessageBuilderTest : public CppUnit::TestCase
     }
 
     void test2ContentFrames(){
-        MessageBuilder builder;
+        MessageBuilder builder(0, 0);
         builder.start(SequenceNumber());
 
         std::string data1("abcdefg");

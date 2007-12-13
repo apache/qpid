@@ -206,8 +206,7 @@ void ExecutionHandler::sendContent(const MethodContent& content)
     if(data_length > 0){
         header.setEof(false);
         out(header);   
-        //frame itself uses 8 bytes
-        u_int32_t frag_size = maxFrameSize - 8;
+        u_int32_t frag_size = maxFrameSize - AMQFrame::frameOverhead();
         if(data_length < frag_size){
             AMQFrame frame(in_place<AMQContentBody>(content.getData()));
             frame.setBof(false);
