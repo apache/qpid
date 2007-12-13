@@ -3,7 +3,7 @@
 #
 
 DIR=$PWD
-SRC=`dirname $0`/examples
+SRC=`dirname $0 | sed 's|^\([^/].*\)|'$PWD'/\1|'`/examples
 
 # Utility functions
 
@@ -11,11 +11,13 @@ run() {
     echo ==== $*; eval "$*"; echo ====;
 }
 
-waitfor() { until grep -a -l "$2" $1 >/dev/null ; do sleep 1 ; done ; }
+waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; }
 
 verify() {
     ex=`basename $PWD`
-    diff -ac verify.out verify.in || { echo "FAIL: $ex  " ; RET=1 ; return 1; } 
+    diff -ac verify.out $SRC/$ex/verify.in || {
+	echo "FAIL: $ex  " ; RET=1 ; return 1;
+    } 
 }
 
 HEX="[a-fA-F0-9]"
@@ -60,9 +62,8 @@ request_response() {
 # Main
 for ex in direct fanout pub-sub request-response; do
     func=`echo $ex | tr - _`
-    cp $SRC/$ex/verify.in $ex
     echo "Verifing $ex"
-    ( cd $ex && $func && verify && rm -f verify.in *.out *.wait) 
+    ( cd $ex && $func && verify && rm -f *.out *.wait) 
 done
 
 exit $RET
