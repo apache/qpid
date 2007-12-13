@@ -124,7 +124,6 @@ Broker::Broker(const Broker::Options& conf) :
     config(conf),
     store(createStore(conf)),
     queues(store.get()),
-    stagingThreshold(0),
     factory(*this),
     dtxManager(store.get()),
     sessionManager(conf.ack)
