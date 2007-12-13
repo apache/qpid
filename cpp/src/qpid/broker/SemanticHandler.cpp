@@ -40,6 +40,7 @@ using namespace qpid::sys;
 
 SemanticHandler::SemanticHandler(SessionState& s) : 
     state(*this,s), session(s),
+    msgBuilder(&s.getBroker().getStore(), s.getBroker().getStagingThreshold()),
     ackOp(boost::bind(&SemanticState::ackRange, &state, _1, _2))
  {}
 
@@ -150,7 +151,7 @@ void SemanticHandler::handleContent(AMQFrame& frame)
         msg = msgBuilder.getMessage();
     }
     msgBuilder.handle(frame);
-    if (msg->getFrames().isComplete()) {//end of frameset will be indicated by frame flags
+    if (frame.getEof() && frame.getEos()) {//end of frameset will be indicated by frame flags
         msg->setPublisher(&session.getConnection());
         state.handle(msg);        
         msgBuilder.end();
