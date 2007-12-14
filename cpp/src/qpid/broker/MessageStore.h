@@ -104,7 +104,7 @@ public:
      * enqueued, deletion will be automatic when the message
      * is dequeued from all queues it was enqueued onto).
      */
-    virtual void destroy(intrusive_ptr<PersistableMessage>& msg) = 0;
+    virtual void destroy(PersistableMessage& msg) = 0;
 
     /**
      * Appends content to a previously staged message

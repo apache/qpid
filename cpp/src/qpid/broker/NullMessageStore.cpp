@@ -84,7 +84,7 @@ void NullMessageStore::stage(intrusive_ptr<PersistableMessage>&)
     QPID_LOG(info, "Can't stage message. Persistence not enabled.");
 }
 
-void NullMessageStore::destroy(intrusive_ptr<PersistableMessage>&)
+void NullMessageStore::destroy(PersistableMessage&)
 {
 }
 

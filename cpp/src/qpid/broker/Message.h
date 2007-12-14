@@ -48,7 +48,8 @@ public:
     typedef boost::intrusive_ptr<Message> shared_ptr;
 
     Message(const framing::SequenceNumber& id = framing::SequenceNumber());
-            
+    ~Message();
+        
     uint64_t getPersistenceId() const { return persistenceId; }
     void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
 
@@ -127,6 +128,7 @@ public:
     mutable uint64_t persistenceId;
     bool redelivered;
     bool loaded;
+    bool staged;
     ConnectionToken* publisher;
     mutable MessageAdapter* adapter;
 
