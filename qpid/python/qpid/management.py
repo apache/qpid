@@ -108,7 +108,7 @@ class ManagementMetadata:
 
     configs = []
     insts   = []
-    methods = []
+    methods = {}
     events  = []
 
     configs.append (("id", 4, "", "", 1, 1, None, None, None, None, None))
@@ -195,7 +195,7 @@ class ManagementMetadata:
 
         arg = (name, type, dir, unit, desc, min, max, maxlen, default)
         args.append (arg)
-      methods.append ((mname, mdesc, args))
+      methods[mname] = (mdesc, args)
 
 
     self.schema[(className,'C')] = configs
@@ -297,18 +297,19 @@ class ManagedBroker:
       return
 
     (userSequence, className, methodName) = data
+    args = {}
 
     if status == 0:
       ms = self.metadata.schema[(className,'M')]
       arglist = None
-      for (mname, mdesc, margs) in ms:
+      for mname in ms:
+        (mdesc, margs) = ms[mname]
         if mname == methodName:
           arglist = margs
       if arglist == None:
         msg.complete ()
         return
 
-      args = {}
       for arg in arglist:
         if arg[2].find("O") != -1:
           args[arg[0]] = self.metadata.decodeValue (codec, arg[1])
@@ -379,7 +380,8 @@ class ManagedBroker:
     
     ms = self.metadata.schema[(className,'M')]
     arglist = None
-    for (mname, mdesc, margs) in ms:
+    for mname in ms:
+      (mdesc, margs) = ms[mname]
       if mname == methodName:
         arglist = margs
     if arglist == None:
