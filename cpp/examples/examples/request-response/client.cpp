@@ -79,7 +79,6 @@ void Listener::listen() {
 
   session.messageSubscribe(arg::queue=destination_name, arg::destination=destination_name);
 
-    // Allocate credit. Sigh. This really should not be required #####
   session.messageFlow(arg::destination=destination_name, arg::unit=0, arg::value=1);//messages ### Define a constant?
   session.messageFlow(arg::destination=destination_name, arg::unit=1, arg::value=0xFFFFFFFF);//bytes ###### Define a constant?
 
@@ -126,8 +125,8 @@ int main() {
 
         // Use the name of the response queue as the routing key
 
-	session.queueDeclare(arg::queue=response_queue.str());  // ### Nice if I could just use strstream for this
-        session.queueBind(arg::queue=response_queue.str(), arg::routingKey=response_queue.str());
+	session.queueDeclare(arg::queue=response_queue.str());
+        session.queueBind(arg::exchange="amq.direct", arg::queue=response_queue.str(), arg::routingKey=response_queue.str());
 
 	// Create a listener for the response queue and start listening.
 
@@ -136,13 +135,13 @@ int main() {
 
 
 	// The routing key for the request queue is simply
-	// "request_queue", and all clients use the same routing key.
+	// "request", and all clients use the same routing key.
 	//
 	// Each client sends the name of their own response queue so
 	// the service knows where to route messages.
 
-	request.getDeliveryProperties().setRoutingKey("request_queue");
-	request.getHeaders().setString("reply-to", response_queue.str());
+	request.getDeliveryProperties().setRoutingKey("request");
+	request.getMessageProperties().setReplyTo(ReplyTo("", response_queue.str()));
 
 	// Now send some requests ...
 
@@ -156,7 +155,7 @@ int main() {
 
 	for (int i=0; i<4; i++) {
 	  request.setData(s[i]);
-          session.messageTransfer(arg::content=request);
+          session.messageTransfer(arg::content=request, arg::destination="amq.direct");
 	  std::cout << "Request: " << s[i] << std::endl;
 	}
 
