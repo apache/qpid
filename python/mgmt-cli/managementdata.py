@@ -90,9 +90,16 @@ class ManagementData:
     finally:
       self.lock.release ()
 
-  def methodReply (self, broker, methodId, status, sText, args):
+  def methodReply (self, broker, sequence, status, sText, args):
     """ Callback for method-reply messages """
-    pass
+    self.lock.acquire ()
+    try:
+      line = "Call Result: " + self.methodsPending[sequence] + \
+             "  " + str (status) + " (" + sText + ")"
+      print line, args
+      del self.methodsPending[sequence]
+    finally:
+      self.lock.release ()
 
   def schemaHandler (self, context, className, configs, insts, methods, events):
     """ Callback for schema updates """
@@ -106,11 +113,13 @@ class ManagementData:
     self.broker.instrumentationListener (1,    self.dataHandler)
     self.broker.methodListener          (None, self.methodReply)
     self.broker.schemaListener          (None, self.schemaHandler)
-    self.lock   = Lock ()
-    self.tables = {}
-    self.schema = {}
-    self.baseId = 0
-    self.disp   = disp
+    self.lock           = Lock ()
+    self.tables         = {}
+    self.schema         = {}
+    self.baseId         = 0
+    self.disp           = disp
+    self.methodSeq      = 1
+    self.methodsPending = {}
     self.broker.start ()
 
   def close (self):
@@ -185,6 +194,11 @@ class ManagementData:
     if tokens[0] == "all":
       for id in self.tables[className]:
         list.append (id - self.baseId)
+
+    elif tokens[0] == "active":
+      for id in self.tables[className]:
+        if self.tables[className][id][0][2] == 0:
+          list.append (id - self.baseId)
 
     else:
       for token in tokens:
@@ -362,10 +376,8 @@ class ManagementData:
       titles = ("Element", "Type", "Unit", "Access", "Notes", "Description")
       self.disp.table ("Schema for class '%s':" % className, titles, rows)
 
-      for method in self.schema[className][2]:
-        mname = method[0]
-        mdesc = method[1]
-        args  = method[2]
+      for mname in self.schema[className][2]:
+        (mdesc, args) = self.schema[className][2][mname]
         caption = "\nMethod '%s' %s" % (mname, self.notNone (mdesc))
         rows = []
         for arg in args:
@@ -398,6 +410,33 @@ class ManagementData:
         return className
     return None
 
+  def callMethod (self, userOid, methodName, args):
+    self.lock.acquire ()
+    methodOk = True
+    try:
+      className = self.getClassForId (userOid + self.baseId)
+      if className == None:
+        raise ValueError ()
+
+      schemaMethod = self.schema[className][2][methodName]
+      if len (args) != len (schemaMethod[1]):
+        print "Wrong number of method args: Need %d, Got %d" % (len (schemaMethod[1]), len (args))
+        raise ValueError ()
+
+      namedArgs = {}
+      for idx in range (len (args)):
+        namedArgs[schemaMethod[1][idx][0]] = args[idx]
+
+      self.methodSeq = self.methodSeq + 1
+      self.methodsPending[self.methodSeq] = methodName
+    except:
+      methodOk = False
+      print "Error in call syntax"
+    self.lock.release ()
+    if methodOk:
+      self.broker.method (self.methodSeq, userOid + self.baseId, className,
+                          methodName, namedArgs)
+
   def do_list (self, data):
     tokens = data.split ()
     if len (tokens) == 0:
@@ -414,4 +453,12 @@ class ManagementData:
       self.schemaTable (data)
 
   def do_call (self, data):
-    print "Not yet implemented"
+    tokens = data.split ()
+    if len (tokens) < 2:
+      print "Not enough arguments supplied"
+      return
+    
+    userOid    = long (tokens[0])
+    methodName = tokens[1]
+    args       = tokens[2:]
+    self.callMethod (userOid, methodName, args)
