@@ -383,8 +383,7 @@ struct PublishThread : public Client {
             for (size_t i=0; i<opts.count; i++) {
                 // Stamp the iteration into the message data, avoid
                 // any heap allocation.
-                char* data = const_cast<char*>(msg.getData().data());
-                *reinterpret_cast<uint32_t*>(data) = i;
+                const_cast<std::string&>(msg.getData()).replace(0, sizeof(uint32_t), reinterpret_cast<const char*>(&i), sizeof(uint32_t));
                 completion = session.messageTransfer(
                     arg::destination=destination,
                     arg::content=msg,
@@ -425,7 +424,17 @@ struct SubscribeThread : public Client {
                           arg::exchange=ex,
                           arg::routingKey=key);
     }
-    
+
+    void verify(bool cond, const char* test, uint32_t expect, uint32_t actual) {
+        if (!cond) {
+            Message error(
+                QPID_MSG("Sequence error: expected  n" << test << expect << " but got " << actual),
+                "sub_done");
+            session.messageTransfer(arg::content=error);
+            throw Exception(error.getData());
+        }
+    }
+
     void run() {                // Subscribe
         try {
             SubscriptionManager subs(session);
@@ -439,29 +448,21 @@ struct SubscribeThread : public Client {
 
             Message msg;
             AbsTime start=now();
-            size_t lastMsg=0;
+            size_t expect=0;
             for (size_t i = 0; i < opts.subQuota; ++i) {
                 msg=lq.pop();
                 // TODO aconway 2007-11-23: check message order for. 
-                // multiple publishers. Need an array of counters,
+                // multiple publishers. Need an acorray of counters,
                 // one per publisher and a publisher ID in the
                 // message. Careful not to introduce a lot of overhead
                 // here, e.g. no std::map, std::string etc.
                 //
                 // For now verify order only for a single publisher.
+                size_t n = *reinterpret_cast<const uint32_t*>(msg.getData().data());
                 if (opts.pubs == 1) {
-                    char* data = const_cast<char*>(msg.getData().data());
-                    size_t n = *reinterpret_cast<uint32_t*>(data);
-                    if (n < lastMsg) {
-                        // Report to control.
-                        Message error(
-                            QPID_MSG("Out-of-sequence messages, expected n>="
-                                     << lastMsg << " got " << n),
-                            "sub_done");
-                        session.messageTransfer(arg::content=error);
-                        return;
-                    }
-                    lastMsg=n;
+                    if (opts.subs == 1 || opts.mode == FANOUT) verify(n==expect, "==", expect, n);
+                    else verify(n>=expect, ">=", expect, n);
+                    expect = n+1;
                 }
             }
             if (opts.ack !=0)
