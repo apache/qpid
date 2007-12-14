@@ -145,16 +145,18 @@ void Message::decodeContent(framing::Buffer& buffer)
 
 void Message::releaseContent(MessageStore* _store)
 {
-    if (!store){
-		store = _store;
-	}
-    if (!getPersistenceId()) {
-        intrusive_ptr<PersistableMessage> pmsg(this);
-        store->stage(pmsg);
+    if (!store) {
+        store = _store;
     }
-    //remove any content frames from the frameset
-    frames.remove(TypeFilter<CONTENT_BODY>());
-    setContentReleased();
+    if (store) {
+        if (!getPersistenceId()) {
+            intrusive_ptr<PersistableMessage> pmsg(this);
+            store->stage(pmsg);
+        }
+        //remove any content frames from the frameset
+        frames.remove(TypeFilter<CONTENT_BODY>());
+        setContentReleased();
+    }
 }
 
 void Message::sendContent(Queue& queue, framing::FrameHandler& out, uint16_t maxFrameSize) const
