@@ -2,7 +2,7 @@ CXX=g++
 CXXFLAGS= 
 LDFLAGS=-lqpidclient
 
-PROGRAMS=fanout_config_queues fanout_publisher listener
+PROGRAMS=declare_queues fanout_producer listener
 
 all: $(PROGRAMS)
 
