@@ -57,7 +57,7 @@ public:
                         const std::string& key, const framing::FieldTable& args);
     virtual void recover(RecoveryManager& queues);
     virtual void stage(intrusive_ptr<PersistableMessage>& msg);
-    virtual void destroy(intrusive_ptr<PersistableMessage>& msg);
+    virtual void destroy(PersistableMessage& msg);
     virtual void appendContent(intrusive_ptr<const PersistableMessage>& msg,
                                const std::string& data);
     virtual void loadContent(const qpid::broker::PersistableQueue& queue,

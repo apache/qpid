@@ -28,6 +28,7 @@
 #include "qpid/framing/SendContent.h"
 #include "qpid/framing/SequenceNumber.h"
 #include "qpid/framing/TypeFilter.h"
+#include "qpid/log/Statement.h"
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -35,7 +36,18 @@ using std::string;
 
 TransferAdapter Message::TRANSFER;
 
-Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false), publisher(0), adapter(0) {}
+Message::Message(const SequenceNumber& id) : frames(id), persistenceId(0), redelivered(false), loaded(false), staged(false), publisher(0), adapter(0) {}
+
+Message::~Message()
+{
+    if (staged) {
+        if (store) {
+            store->destroy(*this);
+        } else {
+            QPID_LOG(error, "Message content was staged but no store is set so it can't be destroyed");
+        }
+    }
+}
 
 std::string Message::getRoutingKey() const
 {
@@ -152,6 +164,7 @@ void Message::releaseContent(MessageStore* _store)
         if (!getPersistenceId()) {
             intrusive_ptr<PersistableMessage> pmsg(this);
             store->stage(pmsg);
+            staged = true;
         }
         //remove any content frames from the frameset
         frames.remove(TypeFilter<CONTENT_BODY>());
