@@ -26,6 +26,7 @@
 #include "qpid/client/Connection.h"
 #include "qpid/client/Completion.h"
 #include "qpid/client/Message.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Time.h"
 
 #include <boost/lexical_cast.hpp>
@@ -67,6 +68,10 @@ struct Opts : public TestOptions {
 
     // Actions
     bool setup, control, publish, subscribe;
+
+    // Queue policy
+    uint32_t queueMaxCount;
+    uint64_t queueMaxSize;
 
     // Publisher
     size_t pubs;
@@ -115,7 +120,10 @@ struct Opts : public TestOptions {
              "N==0: Subscriber uses unconfirmed mode")
             
             ("qt", optValue(qt, "N"), "Create N queues or topics.")
-            ("summary,s", optValue(summary), "Summary output: pubs/sec subs/sec transfers/sec Mbytes/sec");
+            ("summary,s", optValue(summary), "Summary output: pubs/sec subs/sec transfers/sec Mbytes/sec")
+
+            ("queue_max_count", optValue(queueMaxCount, "N"), "queue policy: count to trigger 'flow to disk'")
+            ("queue_max_size", optValue(queueMaxSize, "N"), "queue policy: accumulated size to trigger 'flow to disk'");
     }
 
     // Computed values
@@ -187,9 +195,9 @@ struct Client : public Runnable {
 
 struct Setup : public Client {
     
-    void queueInit(string name, bool durable=false) {
-        session.queueDeclare(arg::queue=name, arg::durable=durable);
-        session.queuePurge(arg::queue=name);
+    void queueInit(string name, bool durable=false, const framing::FieldTable& settings=framing::FieldTable()) {
+        session.queueDeclare(arg::queue=name, arg::durable=durable, arg::arguments=settings);
+        session.queuePurge(arg::queue=name).sync();
     }
 
     void run() {
@@ -198,14 +206,15 @@ struct Setup : public Client {
         queueInit("sub_ready");
         queueInit("sub_done");
         if (opts.mode==SHARED) {
+            framing::FieldTable settings;//queue policy settings
+            settings.setInt("qpid.max_count", opts.queueMaxCount);
+            settings.setInt("qpid.max_size", opts.queueMaxSize);
             for (size_t i = 0; i < opts.qt; ++i) {
                 ostringstream qname;
                 qname << "perftest" << i;
-                queueInit(qname.str(), opts.durable); 
+                queueInit(qname.str(), opts.durable, settings); 
             }
         }
-        // Make sure this is all completed before we return.
-        session.getExecution().sendSyncRequest();
     }
 };
 
