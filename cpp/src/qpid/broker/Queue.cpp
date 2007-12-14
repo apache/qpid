@@ -388,7 +388,13 @@ void Queue::push(intrusive_ptr<Message>& msg){
     if (policy.get()) {
         policy->enqueued(msg->contentSize());
         if (policy->limitExceeded()) {
-            msg->releaseContent(store);
+            if (store) {
+                QPID_LOG(debug, "Message " << msg << " on " << name << " released from memory");
+                msg->releaseContent(store);
+            } else {
+                QPID_LOG(warning, "Message " << msg << " on " << name
+                         << " exceeds the policy for the queue but can't be released from memory as the queue is not durable");
+            }
         }
     }
     notify();
