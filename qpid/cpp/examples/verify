@@ -8,8 +8,10 @@ SRC=`dirname $0 | sed 's|^\([^/].*\)|'$PWD'/\1|'`/examples
 # Start private broker if QPIDD is set.
 
 if [ -n "$QPIDD" ] ; then
-    QPID_PORT=`$QPIDD -dp0` || { echo "Cannot start $QPIDD" ; exit 1; }
-    export QPID_PORT
+    # FIXME aconway 2007-12-14: Should use --port 0, need
+    # to make examples clients more flexible to connect.
+    # 
+    $QPIDD -d || { echo "Cannot start $QPIDD" ; exit 1; }
     trap "$QPIDD -q" EXIT
 fi
 
@@ -73,7 +75,7 @@ request_response() {
 # FIXME aconway 2007-12-14: put back pub-sub and persistence when fixed.
 
 # Main
-for ex in  direct fanout request-response ; do
+for ex in  direct fanout request-response  ; do
     func=`echo $ex | tr - _`
     echo "Verifing $ex"
     ( cd $ex && $func && verify && rm -f *.out *.wait) 
