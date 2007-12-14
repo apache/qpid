@@ -99,9 +99,19 @@ void Listener::wait() {
 void Listener::received(Message& request) {
 
   Message response;
-  string routingKey = request.getHeaders().getString("reply-to");
 
-  std::cout << "Request:: " << request.getData() << "  (" <<routingKey << ")" << std::endl;
+  // Get routing key for response from the request's replyTo property
+
+  string routingKey;
+
+  if (request.getMessageProperties().hasReplyTo()) {
+    routingKey = request.getMessageProperties().getReplyTo().getRoutingKey();
+  } else {
+    std::cout << "Error: " << "No routing key for request (" << request.getData() << ")" << std::endl;
+    return;
+  } 
+
+  std::cout << "Request: " << request.getData() << "  (" <<routingKey << ")" << std::endl;
 
   // Transform message content to upper case
   std::string s = request.getData();
@@ -110,7 +120,7 @@ void Listener::received(Message& request) {
 
   // Send it back to the user
   response.getDeliveryProperties().setRoutingKey(routingKey);
-  session.messageTransfer(arg::content=response);
+  session.messageTransfer(arg::content=response, arg::destination="amq.direct");
 }
 
 
@@ -126,12 +136,12 @@ int main() {
 	// Create a request queue for clients to use when making
 	// requests.
 
-	string request_queue = "request_queue";
+	string request_queue = "request";
 
         // Use the name of the request queue as the routing key
 
 	session.queueDeclare(arg::queue=request_queue);
-        session.queueBind(arg::queue=request_queue, arg::routingKey=request_queue);
+        session.queueBind(arg::exchange="amq.direct", arg::queue=request_queue, arg::routingKey=request_queue);
 
 	// Create a listener for the request queue and start listening.
 

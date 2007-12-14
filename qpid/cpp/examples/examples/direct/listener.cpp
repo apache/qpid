@@ -20,22 +20,22 @@
  */
 
 /**
- *  direct_listener.cpp:
+ *  listener.cpp:
  *
  *  This program is one of three programs designed to be used
  *  together. These programs do not specify the exchange type - the
  *  default exchange type is the direct exchange.
  *  
- *    direct_config_queues.cpp:
+ *    declare_queues.cpp:
  *
  *      Creates a queue on a broker, binding a routing key to route
  *      messages to that queue.
  *
- *    direct_publisher.cpp:
+ *    direct_producer.cpp:
  *
  *      Publishes to a broker, specifying a routing key.
  *
- *    direct_listener.cpp (this program):
+ *    listener.cpp (this program):
  *
  *      Reads from a queue on the broker using a message listener.
  *
@@ -75,8 +75,7 @@ void Listener::listen() {
   std::cout << "Activating listener for: " <<destination_name << std::endl;
   dispatcher.listen(destination_name, this);
 
-  // ### The following line gives up control - it should be possible
-  // ### to listen without giving up control!
+  // The following line gives up control
 
   dispatcher.run();
 }
@@ -110,8 +109,7 @@ int main() {
 
       session.messageSubscribe(arg::queue="message_queue", arg::destination="listener_destination");
 
-      //  Allocate some credit ### This really should not be needed for simple examples ! ####
-
+      //##############
       session.messageFlow(arg::destination="listener_destination", arg::unit=0, arg::value=1);//messages ### Define a constant?
       session.messageFlow(arg::destination="listener_destination", arg::unit=1, arg::value=0xFFFFFFFF);//bytes ###### Define a constant?
 
