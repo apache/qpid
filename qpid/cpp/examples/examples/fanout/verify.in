@@ -1,6 +1,6 @@
-==== ./fanout_config_queues
+==== ./declare_queues
 ====
-==== ./fanout_publisher
+==== ./fanout_producer
 ====
 ==== ./listener
 Activating listener for: listener_destination

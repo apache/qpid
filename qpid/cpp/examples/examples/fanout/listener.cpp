@@ -110,8 +110,6 @@ int main() {
 
       session.messageSubscribe(arg::queue="message_queue", arg::destination="listener_destination");
 
-      //  Allocate some credit ### This really should not be needed for simple examples ! ####
-
       session.messageFlow(arg::destination="listener_destination", arg::unit=0, arg::value=1);//messages ### Define a constant?
       session.messageFlow(arg::destination="listener_destination", arg::unit=1, arg::value=0xFFFFFFFF);//bytes ###### Define a constant?
 
