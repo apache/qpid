@@ -92,7 +92,7 @@ Broker::Options::Options(const std::string& name) :
         ("staging-threshold", optValue(stagingThreshold, "N"),
          "Stages messages over N bytes to disk")
 // TODO: These options need to come from within the store module
-        ("store,s", optValue(store,"LIBNAME"),
+        ("store-lib,s", optValue(store,"LIBNAME"),
          "Tells the broker to use the message store shared library LIBNAME for persistence")
         ("store-directory", optValue(storeDir,"DIR"),
          "Store directory location for persistence.")
