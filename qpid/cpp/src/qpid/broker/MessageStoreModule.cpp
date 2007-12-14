@@ -78,7 +78,7 @@ void MessageStoreModule::stage( intrusive_ptr<PersistableMessage>& msg)
     TRANSFER_EXCEPTION(store->stage(msg));
 }
 
-void MessageStoreModule::destroy(intrusive_ptr<PersistableMessage>& msg)
+void MessageStoreModule::destroy(PersistableMessage& msg)
 {
     TRANSFER_EXCEPTION(store->destroy(msg));
 }
