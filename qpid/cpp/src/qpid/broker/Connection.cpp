@@ -99,7 +99,14 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
 
 bool Connection::doOutput()
 {
-    return outputTasks.doOutput();
+    try{
+        return outputTasks.doOutput();
+    }catch(ConnectionException& e){
+        close(e.code, e.what(), 0, 0);
+    }catch(std::exception& e){
+        close(541/*internal error*/, e.what(), 0, 0);
+    }
+    return false;
 }
 
 void Connection::closeChannel(uint16_t id) {
