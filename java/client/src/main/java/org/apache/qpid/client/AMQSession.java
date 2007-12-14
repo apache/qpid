@@ -106,7 +106,6 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -245,7 +244,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
      */
     private Map<AMQShortString, BasicMessageConsumer> _consumers =
             new ConcurrentHashMap<AMQShortString, BasicMessageConsumer>();
-    
+
     /**
      * Contains a list of consumers which have been removed but which might still have
      * messages to acknowledge, eg in client ack or transacted modes
@@ -655,10 +654,10 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                             lastTag = next;
                         }
                     }
-                    
+
                     if (_transacted)
                     {
-                        // Do the above, but for consumers which have been de-registered since the 
+                        // Do the above, but for consumers which have been de-registered since the
                         // last commit
                         for (int i = 0; i < _removedConsumers.size(); i++)
                         {
@@ -809,7 +808,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive, selector, null, false, false);
+        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, null, false, false);
     }
 
     public MessageConsumer createConsumer(Destination destination, int prefetchHigh, int prefetchLow, boolean noLocal,
@@ -825,7 +824,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
     {
         checkValidDestination(destination);
 
-        return createConsumerImpl(destination, prefetch, prefetch, noLocal, exclusive, selector, rawSelector, false, false);
+        return createConsumerImpl(destination, prefetch, prefetch / 2, noLocal, exclusive, selector, rawSelector, false, false);
     }
 
     public MessageConsumer createConsumer(Destination destination, int prefetchHigh, int prefetchLow, boolean noLocal,
@@ -1714,10 +1713,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     _destinationConsumerCount.remove(dest);
                 }
             }
-            
-            
-             // Consumers that are closed in a transaction must be stored
-             // so that messages they have received can be acknowledged on commit
+
+            // Consumers that are closed in a transaction must be stored
+            // so that messages they have received can be acknowledged on commit
             if (_transacted)
             {
                 _removedConsumers.add(consumer);
@@ -2609,17 +2607,13 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
         return _messageDeliveryLock;
     }
 
-    /**
-     * Signifies that the session has pending sends to commit.
-     */
+    /** Signifies that the session has pending sends to commit. */
     public void markDirty()
     {
         _dirty = true;
     }
 
-    /**
-     * Signifies that the session has no pending sends to commit.
-     */
+    /** Signifies that the session has no pending sends to commit. */
     public void markClean()
     {
         _dirty = false;
@@ -2628,6 +2622,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     /**
      * Check to see if failover has occured since the last call to markClean(commit or rollback).
+     *
      * @return boolean true if failover has occured.
      */
     public boolean hasFailedOver()
@@ -2637,6 +2632,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
     /**
      * Check to see if any message have been sent in this transaction and have not been commited.
+     *
      * @return boolean true if a message has been sent but not commited
      */
     public boolean isDirty()
@@ -2728,7 +2724,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                     }
 
                 }
-                
+
                 for (int i = 0; i < _removedConsumers.size(); i++)
                 {
                     // Sends acknowledgement to server

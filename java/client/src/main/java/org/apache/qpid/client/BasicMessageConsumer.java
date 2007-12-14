@@ -253,6 +253,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         switch (_acknowledgeMode)
         {
+            case Session.DUPS_OK_ACKNOWLEDGE:
+                _logger.info("Recording tag for acking on close:" + msg.getDeliveryTag());
+                _receivedDeliveryTags.add(msg.getDeliveryTag());
+                break;
 
             case Session.CLIENT_ACKNOWLEDGE:
                 _unacknowledgedDeliveryTags.add(msg.getDeliveryTag());
@@ -543,6 +547,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             _logger.info("Closing consumer:" + debugIdentity());
         }
 
+        switch (_acknowledgeMode)
+        {
+            case Session.DUPS_OK_ACKNOWLEDGE:
+                acknowledgeLastDelivered();
+                break;
+        }
+
         synchronized (_connection.getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
@@ -776,7 +787,8 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     _dups_ok_acknowledge_send = true;
                 }
 
-                if (_outstanding <= _prefetchLow)
+                //Can't use <= as _prefetchHigh may equal _prefetchLow so no acking would occur.
+                if (_outstanding < _prefetchLow)
                 {
                     _dups_ok_acknowledge_send = false;
                 }
@@ -786,6 +798,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     if (!_session.isInRecovery())
                     {
                         _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                        _outstanding = 0;
                     }
                 }
 
