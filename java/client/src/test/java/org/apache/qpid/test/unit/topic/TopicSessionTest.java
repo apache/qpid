@@ -339,7 +339,7 @@ public class TopicSessionTest extends QpidTestCase
         m = (TextMessage) noLocal.receive(100);
         assertNull(m);
 
-        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest");
+        AMQConnection con2 = (AMQConnection) getConnection("guest", "guest", "foo");
         TopicSession session2 = con2.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
         TopicPublisher publisher2 = session2.createPublisher(topic);
 
