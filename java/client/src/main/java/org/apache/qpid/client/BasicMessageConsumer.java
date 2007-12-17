@@ -547,13 +547,6 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             _logger.info("Closing consumer:" + debugIdentity());
         }
 
-        switch (_acknowledgeMode)
-        {
-            case Session.DUPS_OK_ACKNOWLEDGE:
-                acknowledgeLastDelivered();
-                break;
-        }
-
         synchronized (_connection.getFailoverMutex())
         {
             if (!_closed.getAndSet(true))
@@ -782,7 +775,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 break;
 
             case Session.DUPS_OK_ACKNOWLEDGE:
-                if (++_outstanding >= _prefetchHigh)
+            /*(    if (++_outstanding >= _prefetchHigh)
                 {
                     _dups_ok_acknowledge_send = true;
                 }
@@ -803,7 +796,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 }
 
                 break;
-
+             */
             case Session.AUTO_ACKNOWLEDGE:
                 // we do not auto ack a message if the application code called recover()
                 if (!_session.isInRecovery())
