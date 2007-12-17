@@ -238,4 +238,19 @@ public class QpidTestCase extends TestCase
         }
         return con;
     }
+
+     public Connection getConnection(String username, String password, String id) throws Exception
+    {
+        _logger.info("get Connection");
+        Connection con;
+        if (_shel.equals(BROKER_VM))
+        {
+            con = new AMQConnection("vm://:1", username, password, id, "test");
+        }
+        else
+        {
+            con = getConnectionFactory().createConnection(username, password);
+        }
+        return con;
+    }
 }
