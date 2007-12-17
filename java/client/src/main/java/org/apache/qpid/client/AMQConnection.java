@@ -615,6 +615,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         checkNotClosed();
         if (!_started)
         {
+            _started = true;
             final Iterator it = _sessions.entrySet().iterator();
             while (it.hasNext())
             {
@@ -629,7 +630,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 }
             }
 
-            _started = true;
         }
     }
 
