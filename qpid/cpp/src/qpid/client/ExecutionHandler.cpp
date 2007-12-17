@@ -206,7 +206,7 @@ void ExecutionHandler::sendContent(const MethodContent& content)
     if(data_length > 0){
         header.setEof(false);
         out(header);   
-        u_int32_t frag_size = maxFrameSize - AMQFrame::frameOverhead();
+        u_int32_t frag_size = maxFrameSize - (AMQFrame::frameOverhead() - 1 /*end of frame marker included in overhead but not in size*/);
         if(data_length < frag_size){
             AMQFrame frame(in_place<AMQContentBody>(content.getData()));
             frame.setBof(false);
