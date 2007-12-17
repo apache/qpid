@@ -31,7 +31,7 @@ namespace sys {
 
 AbsTime AbsTime::now() {
     struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
+    ::clock_gettime(CLOCK_REALTIME, &ts);
     AbsTime time_now;
     time_now.time_ns = toTime(ts).nanosecs;
     return time_now;
