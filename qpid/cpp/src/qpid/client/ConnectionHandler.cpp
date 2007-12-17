@@ -185,8 +185,10 @@ void ConnectionHandler::handle(AMQMethodBody* method)
         if (method->isA<ConnectionCloseBody>()) {
             send(ConnectionCloseOkBody(version));
             setState(CLOSED);
+            ConnectionCloseBody* c=polymorphic_downcast<ConnectionCloseBody*>(method);
+            QPID_LOG(warning, "Broker closed connection: " << c->getReplyCode() 
+                     << ", " << c->getReplyText());
             if (onError) {
-                ConnectionCloseBody* c=polymorphic_downcast<ConnectionCloseBody*>(method);
                 onError(c->getReplyCode(), c->getReplyText());
             }
         } else {
