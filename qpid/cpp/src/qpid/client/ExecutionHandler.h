@@ -72,7 +72,7 @@ public:
     // Allow other classes to set the out handler.
     framing::FrameHandler::Chain out;
 
-    ExecutionHandler(uint64_t maxFrameSize = 65536);
+    ExecutionHandler(uint64_t maxFrameSize = 65535);
 
     // Incoming handler. 
     void handle(framing::AMQFrame& frame);
