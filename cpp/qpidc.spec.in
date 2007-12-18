@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        13%{?dist}
+Release:        14%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -151,6 +151,10 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Tue Dec 18 2007 Nuno Santos <nsantos@redhat.com> - 0.2-14
+- include fixes from Gordon Sim (fragmentation, lazy-loading, staging) 
+  and Alan Conway (exception handling in the client).
 
 * Thu Dec 6 2007 Alan Conway <aconway@redhat.com> - 0.2-13
 - installcheck target to build examples in installation.
