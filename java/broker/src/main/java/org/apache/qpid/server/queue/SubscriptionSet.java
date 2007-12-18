@@ -113,7 +113,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
      * concurrently. Also note that because of race conditions and when subscriptions are removed between calls to
      * nextSubscriber, the IndexOutOfBoundsException also causes the scan to start at the beginning.
      */
-    public Subscription nextSubscriber(AMQMessage msg)
+    public Subscription nextSubscriber(QueueEntry msg)
     {
         if (_subscriptions.isEmpty())
         {
@@ -140,7 +140,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
         }
     }
 
-    private Subscription nextSubscriberImpl(AMQMessage msg)
+    private Subscription nextSubscriberImpl(QueueEntry msg)
     {
         final ListIterator<Subscription> iterator = _subscriptions.listIterator(_currentSubscriber);
         while (iterator.hasNext())

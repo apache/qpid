@@ -321,11 +321,14 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
      */
     public CompositeData viewMessageContent(long msgId) throws JMException
     {
-        AMQMessage msg = _queue.getMessageOnTheQueue(msgId);
-        if (msg == null)
+        QueueEntry entry = _queue.getMessageOnTheQueue(msgId);
+
+        if (entry == null)
         {
             throw new OperationsException("AMQMessage with message id = " + msgId + " is not in the " + _queueName);
         }
+
+        AMQMessage msg = entry.getMessage();
         // get message content
         Iterator<ContentChunk> cBodies = msg.getContentBodyIterator();
         List<Byte> msgContent = new ArrayList<Byte>();
@@ -381,7 +384,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                 + "\n\"From Index\" should be greater than 0 and less than \"To Index\"");
         }
 
-        List<AMQMessage> list = _queue.getMessagesOnTheQueue();
+        List<QueueEntry> list = _queue.getMessagesOnTheQueue();
         TabularDataSupport _messageList = new TabularDataSupport(_messagelistDataType);
 
         try
@@ -389,7 +392,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             // Create the tabular list of message header contents
             for (int i = beginIndex; (i <= endIndex) && (i <= list.size()); i++)
             {
-                AMQMessage msg = list.get(i - 1);
+                AMQMessage msg = list.get(i - 1).getMessage();
                 ContentHeaderBody headerBody = msg.getContentHeaderBody();
                 // Create header attributes list
                 String[] headerAttributes = getMessageHeaderProperties(headerBody);

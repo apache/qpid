@@ -42,9 +42,9 @@ public class ConcurrencyTestDisabled extends MessageTestHelper
 
     private final List<SubscriptionTestHelper> _subscribers = new ArrayList<SubscriptionTestHelper>();
     private final Set<Subscription> _active = new HashSet<Subscription>();
-    private final List<AMQMessage> _messages = new ArrayList<AMQMessage>();
+    private final List<QueueEntry> _messages = new ArrayList<QueueEntry>();
     private int next = 0;//index to next message to send
-    private final List<AMQMessage> _received = Collections.synchronizedList(new ArrayList<AMQMessage>());
+    private final List<QueueEntry> _received = Collections.synchronizedList(new ArrayList<QueueEntry>());
     private final Executor _executor = new OnCurrentThreadExecutor();
     private final List<Thread> _threads = new ArrayList<Thread>();
 
@@ -159,7 +159,7 @@ public class ConcurrencyTestDisabled extends MessageTestHelper
         }
     }
 
-    private AMQMessage nextMessage()
+    private QueueEntry nextMessage()
     {
         synchronized (_messages)
         {
@@ -191,7 +191,7 @@ public class ConcurrencyTestDisabled extends MessageTestHelper
     {
         void doRun() throws Throwable
         {
-            AMQMessage msg = nextMessage();
+            QueueEntry msg = nextMessage();
             if (msg != null)
             {
                 _deliveryMgr.deliver(null, new AMQShortString(toString()), msg, false);

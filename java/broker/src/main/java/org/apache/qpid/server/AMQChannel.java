@@ -36,10 +36,7 @@ import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.exchange.MessageRouter;
 import org.apache.qpid.server.exchange.NoRouteException;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.queue.AMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MessageHandleFactory;
-import org.apache.qpid.server.queue.Subscription;
+import org.apache.qpid.server.queue.*;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
@@ -421,33 +418,32 @@ public class AMQChannel
     /**
      * Add a message to the channel-based list of unacknowledged messages
      *
-     * @param message     the message that was delivered
+     * @param entry       the record of the message on the queue that was delivered
      * @param deliveryTag the delivery tag used when delivering the message (see protocol spec for description of the
      *                    delivery tag)
      * @param consumerTag The tag for the consumer that is to acknowledge this message.
-     * @param queue       the queue from which the message was delivered
      */
-    public void addUnacknowledgedMessage(AMQMessage message, long deliveryTag, AMQShortString consumerTag, AMQQueue queue)
+    public void addUnacknowledgedMessage(QueueEntry entry, long deliveryTag, AMQShortString consumerTag)
     {
         if (_log.isDebugEnabled())
         {
-            if (queue == null)
+            if (entry.getQueue() == null)
             {
-                _log.debug("Adding unacked message with a null queue:" + message.debugIdentity());
+                _log.debug("Adding unacked message with a null queue:" + entry.debugIdentity());
             }
             else
             {
                 if (_log.isDebugEnabled())
                 {
-                    _log.debug(debugIdentity() + " Adding unacked message(" + message.toString() + " DT:" + deliveryTag
-                               + ") with a queue(" + queue + ") for " + consumerTag);
+                    _log.debug(debugIdentity() + " Adding unacked message(" + entry.getMessage().toString() + " DT:" + deliveryTag
+                               + ") with a queue(" + entry.getQueue() + ") for " + consumerTag);
                 }
             }
         }
 
         synchronized (_unacknowledgedMessageMap.getLock())
         {
-            _unacknowledgedMessageMap.add(deliveryTag, new UnacknowledgedMessage(queue, message, consumerTag, deliveryTag));
+            _unacknowledgedMessageMap.add(deliveryTag, new UnacknowledgedMessage(entry, consumerTag, deliveryTag));
             checkSuspension();
         }
     }
@@ -499,16 +495,16 @@ public class AMQChannel
 
         for (UnacknowledgedMessage unacked : messagesToBeDelivered)
         {
-            if (unacked.queue != null)
+            if (!unacked.isQueueDeleted())
             {
                 // Ensure message is released for redelivery
-                unacked.message.release(unacked.queue);
+                unacked.entry.release();
 
                 // Mark message redelivered
-                unacked.message.setRedelivered(true);
+                unacked.getMessage().setRedelivered(true);
 
                 // Deliver Message
-                deliveryContext.deliver(unacked.message, unacked.queue, false);
+                deliveryContext.deliver(unacked.entry, false);
 
                 // Should we allow access To the DM to directy deliver the message?
                 // As we don't need to check for Consumers or worry about incrementing the message count?
@@ -533,13 +529,13 @@ public class AMQChannel
         {
 
             // Ensure message is released for redelivery
-            if (unacked.queue != null)
+            if (!unacked.isQueueDeleted())
             {
-                unacked.message.release(unacked.queue);
+                unacked.entry.release();
             }
 
             // Mark message redelivered
-            unacked.message.setRedelivered(true);
+            unacked.getMessage().setRedelivered(true);
 
             // Deliver these messages out of the transaction as their delivery was never
             // part of the transaction only the receive.
@@ -559,16 +555,16 @@ public class AMQChannel
                 deliveryContext = _txnContext;
             }
 
-            if (unacked.queue != null)
+            if (!unacked.isQueueDeleted())
             {
                 // Redeliver the messages to the front of the queue
-                deliveryContext.deliver(unacked.message, unacked.queue, true);
+                deliveryContext.deliver(unacked.entry, true);
                 // Deliver increments the message count but we have already deliverted this once so don't increment it again
                 // this was because deliver did an increment changed this.
             }
             else
             {
-                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.message.debugIdentity()
+                _log.warn(System.identityHashCode(this) + " Requested requeue of message(" + unacked.getMessage().debugIdentity()
                           + "):" + deliveryTag + " but no queue defined and no DeadLetter queue so DROPPING message.");
                 // _log.error("Requested requeue of message:" + deliveryTag +
                 // " but no queue defined using DeadLetter queue:" + getDeadLetterQueue());
@@ -591,7 +587,7 @@ public class AMQChannel
                     public boolean callback(UnacknowledgedMessage message) throws AMQException
                     {
                         _log.debug(
-                                (count++) + ": (" + message.message.debugIdentity() + ")" + "[" + message.deliveryTag + "]");
+                                (count++) + ": (" + message.getMessage().debugIdentity() + ")" + "[" + message.deliveryTag + "]");
 
                         return false; // Continue
                     }
@@ -630,7 +626,7 @@ public class AMQChannel
             public boolean callback(UnacknowledgedMessage message) throws AMQException
             {
                 AMQShortString consumerTag = message.consumerTag;
-                AMQMessage msg = message.message;
+                AMQMessage msg = message.getMessage();
                 msg.setRedelivered(true);
                 if (consumerTag != null)
                 {
@@ -649,7 +645,7 @@ public class AMQChannel
                     // Message has no consumer tag, so was "delivered" to a GET
                     // or consumer no longer registered
                     // cannot resend, so re-queue.
-                    if (message.queue != null)
+                    if (!message.isQueueDeleted())
                     {
                         if (requeue)
                         {
@@ -690,7 +686,7 @@ public class AMQChannel
 
         for (UnacknowledgedMessage message : msgToResend)
         {
-            AMQMessage msg = message.message;
+            AMQMessage msg = message.getMessage();
 
             // Our Java Client will always suspend the channel when resending!
             // If the client has requested the messages be resent then it is
@@ -705,13 +701,13 @@ public class AMQChannel
             // else
             // {
             // release to allow it to be delivered
-            msg.release(message.queue);
+            message.entry.release();
 
             // Without any details from the client about what has been processed we have to mark
             // all messages in the unacked map as redelivered.
             msg.setRedelivered(true);
 
-            Subscription sub = msg.getDeliveredSubscription(message.queue);
+            Subscription sub = message.entry.getDeliveredSubscription();
 
             if (sub != null)
             {
@@ -741,7 +737,7 @@ public class AMQChannel
                                        + System.identityHashCode(sub));
                         }
 
-                        sub.addToResendQueue(msg);
+                        sub.addToResendQueue(message.entry);
                         _unacknowledgedMessageMap.remove(message.deliveryTag);
                     }
                 } // sync(sub.getSendLock)
@@ -789,10 +785,10 @@ public class AMQChannel
         // Process Messages to Requeue at the front of the queue
         for (UnacknowledgedMessage message : msgToRequeue)
         {
-            message.message.release(message.queue);
-            message.message.setRedelivered(true);
+            message.entry.release();
+            message.entry.setRedelivered(true);
 
-            deliveryContext.deliver(message.message, message.queue, true);
+            deliveryContext.deliver(message.entry, true);
 
             _unacknowledgedMessageMap.remove(message.deliveryTag);
         }
@@ -813,17 +809,18 @@ public class AMQChannel
         {
             public boolean callback(UnacknowledgedMessage message) throws AMQException
             {
-                if (message.queue == queue)
+                if (message.getQueue() == queue)
                 {
                     try
                     {
                         message.discard(_storeContext);
-                        message.queue = null;
+                        message.setQueueDeleted(true);
+                        
                     }
                     catch (AMQException e)
                     {
                         _log.error(
-                                "Error decrementing ref count on message " + message.message.getMessageId() + ": " + e, e);
+                                "Error decrementing ref count on message " + message.getMessage().getMessageId() + ": " + e, e);
                     }
                 }
 

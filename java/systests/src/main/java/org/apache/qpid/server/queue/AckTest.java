@@ -142,7 +142,7 @@ public class AckTest extends TestCase
             msg.incrementReference();
             msg.routingComplete(_messageStore, _storeContext, factory);
             // we manually send the message to the subscription
-            _subscription.send(msg, _queue);
+            _subscription.send(new QueueEntry(_queue,msg), _queue);
         }
     }
 
@@ -167,7 +167,7 @@ public class AckTest extends TestCase
             assertTrue(deliveryTag == i);
             i++;
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
         }
 
         assertTrue(map.size() == msgCount);
@@ -228,7 +228,7 @@ public class AckTest extends TestCase
         {
             assertTrue(deliveryTag == i);
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
             // 5 is the delivery tag of the message that *should* be removed
             if (++i == 5)
             {
@@ -257,7 +257,7 @@ public class AckTest extends TestCase
         {
             assertTrue(deliveryTag == i + 5);
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
             ++i;
         }
     }
@@ -281,7 +281,7 @@ public class AckTest extends TestCase
         {
             assertTrue(deliveryTag == i + 5);
             UnacknowledgedMessage unackedMsg = map.get(deliveryTag);
-            assertTrue(unackedMsg.queue == _queue);
+            assertTrue(unackedMsg.getQueue() == _queue);
             ++i;
         }
     }

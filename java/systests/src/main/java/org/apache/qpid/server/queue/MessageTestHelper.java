@@ -55,12 +55,12 @@ class MessageTestHelper extends TestCase
         ApplicationRegistry.initialise(new NullApplicationRegistry());
     }
 
-    AMQMessage message() throws AMQException
+    QueueEntry message() throws AMQException
     {
         return message(false);
     }
 
-    AMQMessage message(final boolean immediate) throws AMQException
+    QueueEntry message(final boolean immediate) throws AMQException
     {
         MessagePublishInfo publish = new MessagePublishInfo()
         {
@@ -86,8 +86,8 @@ class MessageTestHelper extends TestCase
             }
         };
                               
-        return new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
-                              new ContentHeaderBody());
+        return new QueueEntry(null,new AMQMessage(_messageStore.getNewMessageId(), publish, _txnContext,
+                              new ContentHeaderBody()));
     }
 
 }

@@ -85,7 +85,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
         }
         else
         {
-            if (message.queue == null || message.queue.isDeleted())
+            if (message.isQueueDeleted() || message.getQueue().isDeleted())
             {
                 _logger.warn("Message's Queue as already been purged, unable to Reject. " +
                              "Dropping message should use Dead Letter Queue");
@@ -93,7 +93,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
                 return;
             }
 
-            if (!message.message.isReferenced())
+            if (!message.getMessage().isReferenced())
             {
                 _logger.warn("Message as already been purged, unable to Reject.");
                 return;
@@ -102,7 +102,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
 
             if (_logger.isTraceEnabled())
             {
-                _logger.trace("Rejecting: DT:" + deliveryTag + "-" + message.message.debugIdentity() +
+                _logger.trace("Rejecting: DT:" + deliveryTag + "-" + message.getMessage().debugIdentity() +
                               ": Requeue:" + body.getRequeue() +
                               //": Resend:" + evt.getMethod().resend +
                               " on channel:" + channel.debugIdentity());
@@ -111,7 +111,7 @@ public class BasicRejectMethodHandler implements StateAwareMethodListener<BasicR
             // If we haven't requested message to be resent to this consumer then reject it from ever getting it.
             //if (!evt.getMethod().resend)
             {
-                message.message.reject(message.message.getDeliveredSubscription(message.queue));
+                message.entry.reject();
             }
 
             if (body.getRequeue())

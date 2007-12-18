@@ -87,7 +87,7 @@ public class TxAck implements TxnOp
         //buffer must be marked as persistent:
         for (UnacknowledgedMessage msg : _unacked)
         {
-            if (msg.message.isPersistent())
+            if (msg.getMessage().isPersistent())
             {
                 return true;
             }
@@ -100,7 +100,7 @@ public class TxAck implements TxnOp
         //make persistent changes, i.e. dequeue and decrementReference
         for (UnacknowledgedMessage msg : _unacked)
         {
-            msg.restoreTransientMessageData();
+            //msg.restoreTransientMessageData();
 
             //Message has been ack so discard it. This will dequeue and decrement the reference.
             msg.discard(storeContext);
@@ -116,7 +116,7 @@ public class TxAck implements TxnOp
         for (UnacknowledgedMessage msg : _unacked)
         {
             msg.clearTransientMessageData();
-            msg.message.takeReference();
+            msg.getMessage().takeReference();
         }
     }
 

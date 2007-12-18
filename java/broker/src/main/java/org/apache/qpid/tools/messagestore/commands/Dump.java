@@ -24,6 +24,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.queue.AMQMessage;
+import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.tools.messagestore.MessageStoreTool;
 import org.apache.qpid.tools.utils.Console;
 
@@ -85,7 +86,7 @@ public class Dump extends Show
     }
 
 
-    protected List<List> createMessageData(java.util.List<Long> msgids, List<AMQMessage> messages, boolean showHeaders, boolean showRouting,
+    protected List<List> createMessageData(java.util.List<Long> msgids, List<QueueEntry> messages, boolean showHeaders, boolean showRouting,
                                            boolean showMessageHeaders)
     {
 
@@ -96,8 +97,9 @@ public class Dump extends Show
         display.add(hex);
         display.add(ascii);
 
-        for (AMQMessage msg : messages)
+        for (QueueEntry entry : messages)
         {
+            AMQMessage msg = entry.getMessage();
             if (!includeMsg(msg, msgids))
             {
                 continue;
@@ -252,8 +254,8 @@ public class Dump extends Show
     private void addShowInformation(List<String> column1, List<String> column2, AMQMessage msg,
                                     String title, boolean routing, boolean headers, boolean messageHeaders)
     {
-        List<AMQMessage> single = new LinkedList<AMQMessage>();
-        single.add(msg);
+        List<QueueEntry> single = new LinkedList<QueueEntry>();
+        single.add(new QueueEntry(null,msg));
 
         List<List> routingData = super.createMessageData(null, single, headers, routing, messageHeaders);
 

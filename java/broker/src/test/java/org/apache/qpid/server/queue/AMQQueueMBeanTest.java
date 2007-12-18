@@ -211,7 +211,7 @@ public class AMQQueueMBeanTest extends TestCase
 
         msg.enqueue(_queue);
         msg.routingComplete(_messageStore, _storeContext, new MessageHandleFactory());
-        _queue.process(_storeContext, msg, false);
+        _queue.process(_storeContext, new QueueEntry(_queue, msg), false);
         _queueMBean.viewMessageContent(id);
         try
         {

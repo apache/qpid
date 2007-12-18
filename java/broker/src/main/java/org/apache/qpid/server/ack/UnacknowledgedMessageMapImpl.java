@@ -97,7 +97,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
             UnacknowledgedMessage message = _map.remove(deliveryTag);
             if(message != null)
             {
-                _unackedSize -= message.message.getSize();
+                _unackedSize -= message.getMessage().getSize();
             }
 
             return message;
@@ -127,7 +127,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         synchronized (_lock)
         {
             _map.put(deliveryTag, message);
-            _unackedSize += message.message.getSize();            
+            _unackedSize += message.getMessage().getSize();
             _lastDeliveryTag = deliveryTag;
         }
     }
@@ -186,7 +186,7 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
                 }
 
                 it.remove();
-                _unackedSize -= unacked.getValue().message.getSize();
+                _unackedSize -= unacked.getValue().getMessage().getSize();
 
                 destination.add(unacked.getValue());
                 if (unacked.getKey() == deliveryTag)

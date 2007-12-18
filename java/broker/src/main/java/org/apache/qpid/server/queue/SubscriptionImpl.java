@@ -58,9 +58,9 @@ public class SubscriptionImpl implements Subscription
 
     private final Object _sessionKey;
 
-    private MessageQueue<AMQMessage> _messages;
+    private MessageQueue<QueueEntry> _messages;
 
-    private Queue<AMQMessage> _resendQueue;
+    private Queue<QueueEntry> _resendQueue;
 
     private final boolean _noLocal;
 
@@ -160,7 +160,7 @@ public class SubscriptionImpl implements Subscription
 
         if (filtersMessages())
         {
-            _messages = new ConcurrentLinkedMessageQueueAtomicSize<AMQMessage>();
+            _messages = new ConcurrentLinkedMessageQueueAtomicSize<QueueEntry>();
         }
         else
         {
@@ -226,7 +226,7 @@ public class SubscriptionImpl implements Subscription
      *
      * @throws AMQException
      */
-    public void send(AMQMessage msg, AMQQueue queue) throws AMQException
+    public void send(QueueEntry msg, AMQQueue queue) throws AMQException
     {
         if (msg != null)
         {
@@ -245,7 +245,7 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    private void sendToBrowser(AMQMessage msg, AMQQueue queue) throws AMQException
+    private void sendToBrowser(QueueEntry msg, AMQQueue queue) throws AMQException
     {
         // We don't decrement the reference here as we don't want to consume the message
         // but we do want to send it to the client.
@@ -266,11 +266,11 @@ public class SubscriptionImpl implements Subscription
                 _logger.error("Sending " + msg + " when subscriber(" + this + ") is closed!");
             }
 
-            protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
+            protocolSession.getProtocolOutputConverter().writeDeliver(msg.getMessage(), channel.getChannelId(), deliveryTag, consumerTag);
         }
     }
 
-    private void sendToConsumer(StoreContext storeContext, AMQMessage msg, AMQQueue queue)
+    private void sendToConsumer(StoreContext storeContext, QueueEntry entry, AMQQueue queue)
             throws AMQException
     {
         try
@@ -287,9 +287,9 @@ public class SubscriptionImpl implements Subscription
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("No ack mode so dequeuing message immediately: " + msg.getMessageId());
+                    _logger.debug("No ack mode so dequeuing message immediately: " + entry.getMessage().getMessageId());
                 }
-                queue.dequeue(storeContext, msg);
+                queue.dequeue(storeContext, entry);
             }
 
             synchronized (channel)
@@ -298,19 +298,19 @@ public class SubscriptionImpl implements Subscription
 
                 if (_sendLock.get())
                 {
-                    _logger.error("Sending " + msg + " when subscriber(" + this + ") is closed!");
+                    _logger.error("Sending " + entry + " when subscriber(" + this + ") is closed!");
                 }
 
                 if (_acks)
                 {
-                    channel.addUnacknowledgedMessage(msg, deliveryTag, consumerTag, queue);
+                    channel.addUnacknowledgedMessage(entry, deliveryTag, consumerTag);
                 }
 
-                protocolSession.getProtocolOutputConverter().writeDeliver(msg, channel.getChannelId(), deliveryTag, consumerTag);
+                protocolSession.getProtocolOutputConverter().writeDeliver(entry.getMessage(), channel.getChannelId(), deliveryTag, consumerTag);
 
                 if (!_acks)
                 {
-                    msg.decrementReference(storeContext);
+                    entry.getMessage().decrementReference(storeContext);
                 }
             }
         }
@@ -320,7 +320,7 @@ public class SubscriptionImpl implements Subscription
             // using a try->finally would set it even if an error occured.
             // Is this what we want? 
 
-            msg.setDeliveredToConsumer();
+            entry.setDeliveredToConsumer();
         }
     }
 
@@ -355,19 +355,19 @@ public class SubscriptionImpl implements Subscription
         return _filters != null || _noLocal;
     }
 
-    public boolean hasInterest(AMQMessage msg)
+    public boolean hasInterest(QueueEntry entry)
     {
         //check that the message hasn't been rejected
-        if (msg.isRejectedBy(this))
+        if (entry.isRejectedBy(this))
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Subscription:" + debugIdentity() + " rejected message:" + msg.debugIdentity());
+                _logger.debug("Subscription:" + debugIdentity() + " rejected message:" + entry.debugIdentity());
             }
 //            return false;
         }
 
-        final AMQProtocolSession publisher = msg.getPublisher();
+        final AMQProtocolSession publisher = entry.getMessage().getPublisher();
 
         //todo - client id should be recoreded and this test removed but handled below
         if (_noLocal && publisher != null)
@@ -418,9 +418,9 @@ public class SubscriptionImpl implements Subscription
 
         if (_logger.isTraceEnabled())
         {
-            _logger.trace("(" + debugIdentity() + ") checking filters for message (" + msg.debugIdentity());
+            _logger.trace("(" + debugIdentity() + ") checking filters for message (" + entry.debugIdentity());
         }
-        return checkFilters(msg);
+        return checkFilters(entry);
 
     }
 
@@ -431,7 +431,7 @@ public class SubscriptionImpl implements Subscription
         return id;
     }
 
-    private boolean checkFilters(AMQMessage msg)
+    private boolean checkFilters(QueueEntry msg)
     {
         if (_filters != null)
         {
@@ -439,7 +439,7 @@ public class SubscriptionImpl implements Subscription
 //            {
 //                _logger.trace("(" + debugIdentity() + ") has filters.");
 //            }
-            return _filters.allAllow(msg);
+            return _filters.allAllow(msg.getMessage());
         }
         else
         {
@@ -452,12 +452,12 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    public Queue<AMQMessage> getPreDeliveryQueue()
+    public Queue<QueueEntry> getPreDeliveryQueue()
     {
         return _messages;
     }
 
-    public void enqueueForPreDelivery(AMQMessage msg, boolean deliverFirst)
+    public void enqueueForPreDelivery(QueueEntry msg, boolean deliverFirst)
     {
         if (_messages != null)
         {
@@ -561,19 +561,19 @@ public class SubscriptionImpl implements Subscription
 
             while (!_resendQueue.isEmpty())
             {
-                AMQMessage resent = _resendQueue.poll();
+                QueueEntry resent = _resendQueue.poll();
 
                 if (_logger.isTraceEnabled())
                 {
                     _logger.trace("Removed for resending:" + resent.debugIdentity());
                 }
 
-                resent.release(_queue);
+                resent.release();
                 _queue.subscriberHasPendingResend(false, this, resent);
 
                 try
                 {
-                    channel.getTransactionalContext().deliver(resent, _queue, true);
+                    channel.getTransactionalContext().deliver(resent, true);
                 }
                 catch (AMQException e)
                 {
@@ -611,22 +611,22 @@ public class SubscriptionImpl implements Subscription
         return _isBrowser;
     }
 
-    public boolean wouldSuspend(AMQMessage msg)
+    public boolean wouldSuspend(QueueEntry msg)
     {
-        return channel.wouldSuspend(msg);
+        return channel.wouldSuspend(msg.getMessage());
     }
 
-    public Queue<AMQMessage> getResendQueue()
+    public Queue<QueueEntry> getResendQueue()
     {
         if (_resendQueue == null)
         {
-            _resendQueue = new ConcurrentLinkedQueueAtomicSize<AMQMessage>();
+            _resendQueue = new ConcurrentLinkedQueueAtomicSize<QueueEntry>();
         }
         return _resendQueue;
     }
 
 
-    public Queue<AMQMessage> getNextQueue(Queue<AMQMessage> messages)
+    public Queue<QueueEntry> getNextQueue(Queue<QueueEntry> messages)
     {
         if (_resendQueue != null && !_resendQueue.isEmpty())
         {
@@ -651,7 +651,7 @@ public class SubscriptionImpl implements Subscription
         }
     }
 
-    public void addToResendQueue(AMQMessage msg)
+    public void addToResendQueue(QueueEntry msg)
     {
         // add to our resend queue
         getResendQueue().add(msg);

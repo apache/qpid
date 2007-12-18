@@ -286,7 +286,7 @@ public class AMQQueueAlertTest extends TestCase
 
         for (int i = 0; i < messageCount; i++)
         {
-            _queue.process(_storeContext, messages[i], false);
+            _queue.process(_storeContext, new QueueEntry(_queue,messages[i]), false);
         }
     }
 

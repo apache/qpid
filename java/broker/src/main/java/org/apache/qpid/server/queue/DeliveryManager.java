@@ -64,13 +64,13 @@ interface DeliveryManager
      *
      * @param storeContext
      * @param name         the name of the entity on whose behalf we are delivering the message
-     * @param msg          the message to deliver
+     * @param entry          the message to deliver
      * @param deliverFirst
      *
      * @throws org.apache.qpid.server.queue.FailedDequeueException
      *          if the message could not be dequeued
      */
-    void deliver(StoreContext storeContext, AMQShortString name, AMQMessage msg, boolean deliverFirst) throws FailedDequeueException, AMQException;
+    void deliver(StoreContext storeContext, AMQShortString name, QueueEntry entry, boolean deliverFirst) throws FailedDequeueException, AMQException;
 
     void removeAMessageFromTop(StoreContext storeContext, AMQQueue queue) throws AMQException;
 
@@ -78,15 +78,15 @@ interface DeliveryManager
 
     void startMovingMessages();
 
-    void enqueueMovedMessages(StoreContext context, List<AMQMessage> messageList);
+    void enqueueMovedMessages(StoreContext context, List<QueueEntry> messageList);
 
     void stopMovingMessages();
 
-    void removeMovedMessages(List<AMQMessage> messageListToRemove);
+    void removeMovedMessages(List<QueueEntry> messageListToRemove);
 
-    List<AMQMessage> getMessages();
+    List<QueueEntry> getMessages();
 
-    List<AMQMessage> getMessages(long fromMessageId, long toMessageId);
+    List<QueueEntry> getMessages(long fromMessageId, long toMessageId);
 
     void populatePreDeliveryQueue(Subscription subscription);
 
@@ -96,5 +96,5 @@ interface DeliveryManager
 
     long getOldestMessageArrival();
 
-    void subscriberHasPendingResend(boolean hasContent, Subscription subscription, AMQMessage msg);
+    void subscriberHasPendingResend(boolean hasContent, Subscription subscription, QueueEntry msg);
 }
