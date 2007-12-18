@@ -30,7 +30,9 @@ void qpid::framing::SendContent::operator()(const AMQFrame& f)
     bool first = frameCount == 0;
     bool last = ++frameCount == expectedFrameCount;
 
-    uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
+     /*end of frame marker is included in frameOverhead() but not in
+       real frame size, hence substract -1 from frameOverhead()*/
+    uint16_t maxContentSize = maxFrameSize - (AMQFrame::frameOverhead() - 1);
     const AMQContentBody* body(f.castBody<AMQContentBody>()); 
     if (body->size() > maxContentSize) {
         uint32_t offset = 0;

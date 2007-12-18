@@ -74,9 +74,9 @@ class Connection
      * out). Optional and defaults to false.
      * 
      * @param max_frame_size the maximum frame size that the
-     * client will accept. Optional and defaults to 65536.
+     * client will accept. Optional and defaults to 65535.
      */
-    Connection(bool debug = false, uint32_t max_frame_size = 65536,
+    Connection(bool debug = false, uint32_t max_frame_size = 65535,
                framing::ProtocolVersion=framing::highestProtocolVersion);
     Connection(boost::shared_ptr<Connector>);
     ~Connection();

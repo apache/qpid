@@ -41,7 +41,7 @@ ConnectionHandler::ConnectionHandler()
     locale = "en_US";
     heartbeat = 0; 
     maxChannels = 32767; 
-    maxFrameSize = 65536; 
+    maxFrameSize = 65535; 
     insist = true;
     version = framing::highestProtocolVersion;
 

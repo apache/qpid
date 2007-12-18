@@ -51,7 +51,7 @@ Connection::Connection(bool _debug, uint32_t _max_frame_size, framing::ProtocolV
 
 Connection::Connection(shared_ptr<Connector> c) : 
     channelIdCounter(0), version(framing::highestProtocolVersion), 
-    max_frame_size(65536), 
+    max_frame_size(65535), 
     isOpen(false),
     impl(new ConnectionImpl(c))
 {}
