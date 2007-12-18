@@ -94,8 +94,10 @@ public class TransportConnection
                     public IoConnector newSocketConnector()
                     {
                         SocketConnector result;
+                        // Multi-threaded io commented out until all issues with it are fixed.
                         // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                        if (!System.getProperties().containsKey("qpidnio") || Boolean.getBoolean("qpidnio"))
+                        //if (!System.getProperties().containsKey("qpidnio") || Boolean.getBoolean("qpidnio"))
+                        if (false)
                         {
                             _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
                                                                               ? "Qpid NIO is new default"

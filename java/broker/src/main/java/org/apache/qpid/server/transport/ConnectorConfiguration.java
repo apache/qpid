@@ -100,7 +100,9 @@ public class ConnectorConfiguration
 
     public IoAcceptor createAcceptor()
     {
-        if (_multiThreadNIO)
+        // Multi-threaded io commented out until all issues with it are resolved.
+        //if (_multiThreadNIO)
+        if (false)
         {
             _logger.warn("Using Qpid Multithreaded IO Processing");
             return new org.apache.mina.transport.socket.nio.MultiThreadSocketAcceptor(processors, new NewThreadExecutor());
