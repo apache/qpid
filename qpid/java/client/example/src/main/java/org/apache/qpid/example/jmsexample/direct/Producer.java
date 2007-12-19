@@ -73,7 +73,7 @@ public class Producer extends BaseExample
             Queue   destination = session.createQueue(_queueName);
 
             // Create a Message producer
-            System.out.println(CLASS + ": Creating a Message PRoducer");
+            System.out.println(CLASS + ": Creating a Message Producer");
             MessageProducer messageProducer = session.createProducer(destination);
 
             // Create a Message
