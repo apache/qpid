@@ -17,14 +17,15 @@
  */
 package org.apache.qpid.client.latency;
 
-import org.apache.qpid.requestreply.InitialContextHelper;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.perf.Options;
-import org.apache.qpid.server.queue.AMQQueueMBean;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.requestreply.InitialContextHelper;
 
 import javax.jms.*;
+import javax.naming.Context;
 
 /**
  *
@@ -44,12 +45,13 @@ public class MessageConsumer  extends Options  implements MessageListener
         this.parseOptions();
         try
         {
-            ConnectionFactory factory = (ConnectionFactory) InitialContextHelper.getInitialContext("").lookup("local");
+            Context context = InitialContextHelper.getInitialContext("");
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("local");
              _connection = (AMQConnection) factory.createConnection("guest","guest");
              _session = _connection.createSession(_transacted, Session.AUTO_ACKNOWLEDGE);
-            Destination dest = Boolean.getBoolean("useQueue")? new AMQQueue(_connection,_destination) : new AMQTopic(
-                    _connection,_destination);        
-            Destination syncQueue   = new AMQQueue(_connection, "syncQueue");
+              Destination dest = Boolean.getBoolean("useQueue")? (Destination) context.lookup("testQueue") :
+            (Destination) context.lookup("testTopic");
+            Destination syncQueue   = (Destination) context.lookup("syncQueue");
             _producer = _session.createProducer(syncQueue);
             // this should speedup the message producer
             _producer.setDisableMessageTimestamp(true);
