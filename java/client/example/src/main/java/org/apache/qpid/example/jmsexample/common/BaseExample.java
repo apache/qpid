@@ -49,7 +49,7 @@ abstract public class BaseExample
     private static final String DEFAULT_CONNECTION_FACTORY_NAME = "ConnectionFactory";
 
     /* Default number of messages to process. */
-    private static final int DEFAULT_NUMBER_MESSAGES = 10;
+    private static final int DEFAULT_NUMBER_MESSAGES = 1;
 
     /* JNDI provider URL. */
     private String _providerURL;
@@ -146,7 +146,7 @@ abstract public class BaseExample
             Hashtable<String, String> jndiEnvironment = new Hashtable<String, String>();
             jndiEnvironment.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY_NAME);
             jndiEnvironment.put("connectionfactory.ConnectionFactory",
-                                "qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:127.0.0.1:5672");
+                                "qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:192.168.1.11:5672");
             if (getProviderURL() != null)
             {
                 jndiEnvironment.put(Context.PROVIDER_URL, getProviderURL());
