@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
- topic_producer.py
+ topic_publisher.py
 
  This is a simple AMQP publisher application that uses a 
  Topic exchange. The publisher specifies the routing key
@@ -37,10 +37,6 @@ session.session_open()
 # topic exchange.  The routing keys are "usa.news", "usa.weather", 
 # "europe.news", and "europe.weather".
 
-final = "That's all, folks!"
-
-# We'll use the same routing key for all messages in the loop, and
-# also for the terminating message.
 
 # usa.news
 
@@ -49,21 +45,12 @@ for i in range(5):
   message["routing_key"] = "usa.news"
   session.message_transfer(destination="amq.topic", content=message)
 
-message = Content(final)
-message["routing_key"] = "usa.news"
-session.message_transfer(destination="amq.topic", content=message)
-
 # usa.weather
-
 
 for i in range(5):
   message = Content("message " + str(i))
   message["routing_key"] = "usa.weather"
   session.message_transfer(destination="amq.topic", content=message)
-
-message = Content(final)
-message["routing_key"] = "usa.weather"
-session.message_transfer(destination="amq.topic", content=message)
 
 # europe.news
 
@@ -72,11 +59,6 @@ for i in range(5):
   message["routing_key"] = "europe.news"
   session.message_transfer(destination="amq.topic", content=message)
 
-message = Content(final)
-message["routing_key"] = "europe.news"
-session.message_transfer(destination="amq.topic", content=message)
-
-
 # europe.weather
 
 for i in range(5):
@@ -84,8 +66,10 @@ for i in range(5):
   message["routing_key"] = "europe.weather"
   session.message_transfer(destination="amq.topic", content=message)
 
-message = Content(final)
-message["routing_key"] = "europe.weather"
+# Signal termination
+
+message = Content("That's all, folks!")
+message["routing_key"] = "control"
 session.message_transfer(destination="amq.topic", content=message)
 
 

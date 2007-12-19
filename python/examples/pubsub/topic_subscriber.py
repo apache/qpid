@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 """
- topic_consumer.py
+ topic_subscriber.py
 
- This AMQP client reads all messages from the
- "news", "weather", "usa", and "europe" queues
- created and bound by config_topic_exchange.py. 
+ This subscriber creates private queues and binds them
+ to the topics "usa.#", "europe.#", "#.news", and "#.weather".
 """
 
 import base64
@@ -99,6 +98,13 @@ session.queue_bind(exchange="amq.topic", queue=news, routing_key="#.news")
 session.queue_bind(exchange="amq.topic", queue=weather, routing_key="#.weather")
 session.queue_bind(exchange="amq.topic", queue=usa, routing_key="usa.#")
 session.queue_bind(exchange="amq.topic", queue=europe, routing_key="europe.#")
+
+# Bind each queue to the control queue so we know when to stop
+
+session.queue_bind(exchange="amq.topic", queue=news, routing_key="control")
+session.queue_bind(exchange="amq.topic", queue=weather, routing_key="control")
+session.queue_bind(exchange="amq.topic", queue=usa, routing_key="control")
+session.queue_bind(exchange="amq.topic", queue=europe, routing_key="control")
 
 # Remind the user to start the topic producer
 
