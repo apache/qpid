@@ -95,7 +95,7 @@ public class Listener extends BaseExample
             // lookup the topics usa
             Topic topic = session.createTopic("usa.#");
             // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber fpr topic usa.#");
+            System.out.println(CLASS + ": Creating a Message Subscriber for topic usa.#");
             TopicSubscriber messageSubscriber = session.createSubscriber(topic);
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("usa"));
