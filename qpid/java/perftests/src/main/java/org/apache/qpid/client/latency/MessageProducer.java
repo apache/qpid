@@ -17,15 +17,14 @@
  */
 package org.apache.qpid.client.latency;
 
-import org.apache.qpid.client.perf.Options;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.message.TestMessageFactory;
+import org.apache.qpid.client.perf.Options;
 import org.apache.qpid.requestreply.InitialContextHelper;
+import org.apache.qpidity.transport.network.nio.NioSender;
 
 import javax.jms.*;
-import java.util.Date;
+import javax.naming.Context;
 
 /**
  *
@@ -42,18 +41,20 @@ public class MessageProducer  extends Options
         this.parseOptions();
         try
         {
-            ConnectionFactory factory = (ConnectionFactory) InitialContextHelper.getInitialContext("").lookup("local");
-             _connection = (AMQConnection) factory.createConnection();
-            _connection.start();
+            Context context = InitialContextHelper.getInitialContext("");
+            ConnectionFactory factory = (ConnectionFactory) context.lookup("local");
+            _connection = (AMQConnection) factory.createConnection("guest","guest");
+            Destination dest = Boolean.getBoolean("useQueue")? (Destination) context.lookup("testQueue") :
+                       (Destination) context.lookup("testTopic");
+             Destination syncQueue   = (Destination) context.lookup("syncQueue");
+             _connection.start();
             Session session = _connection.createSession(_transacted, Session.AUTO_ACKNOWLEDGE);
             _payload = TestMessageFactory.newBytesMessage(session, _messageSize);
-            Destination dest = Boolean.getBoolean("useQueue")? new AMQQueue(_connection,_destination) : new AMQTopic(
-                    _connection,_destination);
-            Destination syncQueue   = new AMQQueue(_connection, "syncQueue");
             _producer = session.createProducer(dest);
             _consumer = session.createConsumer(syncQueue);
             // this should speedup the message producer
             _producer.setDisableMessageTimestamp(true);
+             System.out.println("Init end" );
         }
         catch (Exception e)
         {
@@ -65,14 +66,25 @@ public class MessageProducer  extends Options
     {
         try
         {
+            System.out.println("Sending " + _logFrequency + " messages");
+
+           NioSender.setStartBatching();
             long startTime = System.currentTimeMillis();
             for(int i =0; i < _logFrequency; i++ )
             {
-                _producer.send(_payload);
+                _producer.send(_payload, DeliveryMode.PERSISTENT, Message.DEFAULT_PRIORITY, 0);
             }
             long endProducing = System.currentTimeMillis();
             double throughput = (_logFrequency * 1000.0) / (endProducing - startTime);
             System.out.println("The producer throughput is: " + throughput + " msg/s");
+
+          //  startTime = System.currentTimeMillis();
+          //  NioSender.purge();
+          //  endProducing = System.currentTimeMillis();
+          //  throughput = (_logFrequency * 1000.0) / (endProducing - startTime);
+          //  System.out.println("The NIO throughput is: " + throughput + " msg/s");
+
+
             // now wait for the sync message
             _consumer.receive();
             // this is done 
