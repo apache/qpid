@@ -95,7 +95,7 @@ public class Listener extends BaseExample
             // lookup the topics usa
             Topic topic = session.createTopic("usa.#");
             // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber");
+            System.out.println(CLASS + ": Creating a Message Subscriber fpr topic usa.#");
             TopicSubscriber messageSubscriber = session.createSubscriber(topic);
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("usa"));
@@ -103,7 +103,7 @@ public class Listener extends BaseExample
             // lookup the topics world.usa.news
             topic = session.createTopic("europe.#");
             // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber");
+            System.out.println(CLASS + ": Creating a Message Subscriber for topic europe.#");
             messageSubscriber = session.createSubscriber(topic);
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("europe"));
@@ -111,7 +111,7 @@ public class Listener extends BaseExample
             // lookup the topics world.europw
             topic = session.createTopic("#.news");
             // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber");
+            System.out.println(CLASS + ": Creating a Message Subscriber for topic #.news");
             messageSubscriber = session.createSubscriber(topic);
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("news"));
@@ -119,7 +119,7 @@ public class Listener extends BaseExample
             // lookup the topics world.europw
             topic = session.createTopic("#.weather");
             // Create a Message Subscriber
-            System.out.println(CLASS + ": Creating a Message Subscriber");
+            System.out.println(CLASS + ": Creating a Message Subscriber for topic #.weather");
             messageSubscriber = session.createSubscriber(topic);
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("weather"));
@@ -185,7 +185,7 @@ public class Listener extends BaseExample
                 // Increment the number of messages that have been received
                 _messageCount = _messageCount + 1;
                 // Print out the details of the just received message
-                System.out.println(CLASS + ":  Received message:  " + ((TextMessage) message).getText());
+                System.out.println(CLASS + ":  Received message for topic:  " + _topicName + ": " + ((TextMessage) message).getText());
                 // If this is the total number of messages required
                 if (((TextMessage) message).getText().equals("That's all, folks!"))
                 {

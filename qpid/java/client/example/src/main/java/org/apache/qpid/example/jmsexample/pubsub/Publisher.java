@@ -74,7 +74,7 @@ public class Publisher extends BaseExample
             Topic topic = session.createTopic("usa.weather");
             message.setStringProperty("topicName", "usa.weather");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
+            System.out.println(CLASS + ": Creating a Message Publisher for topic usa.weather");
             TopicPublisher messagePublisher = session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
@@ -82,7 +82,7 @@ public class Publisher extends BaseExample
             topic = session.createTopic("usa.news");
             message.setStringProperty("topicName", "usa.news");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisher");
+            System.out.println(CLASS + ": Creating a Message Publisher for topic usa.news");
             messagePublisher = session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
@@ -90,7 +90,7 @@ public class Publisher extends BaseExample
             topic = session.createTopic("europe.weather");
             message.setStringProperty("topicName", "europe.weather");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
+            System.out.println(CLASS + ": Creating a Message Publisher for topic europe.weather");
             messagePublisher = session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
@@ -98,16 +98,15 @@ public class Publisher extends BaseExample
             topic = session.createTopic("europe.news");
             message.setStringProperty("topicName", "europe.news");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
+            System.out.println(CLASS + ": Creating a Message Publisher for topic europe.news");
             messagePublisher = session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
             // send the final message
-            message.setText("That's all, folks!");
+            message = session.createTextMessage("That's all, folks!");
             topic = session.createTopic("#.news");
             message.setStringProperty("topicName", "news");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
             messagePublisher = session.createPublisher(topic);
             messagePublisher
                     .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
@@ -115,7 +114,6 @@ public class Publisher extends BaseExample
             topic = session.createTopic("#.weather");
             message.setStringProperty("topicName", "weather");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
             messagePublisher = session.createPublisher(topic);
             messagePublisher
                     .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
@@ -123,7 +121,6 @@ public class Publisher extends BaseExample
             topic = session.createTopic("europe.#");
             message.setStringProperty("topicName", "europe");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
             messagePublisher = session.createPublisher(topic);
             messagePublisher
                     .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
@@ -131,7 +128,6 @@ public class Publisher extends BaseExample
             topic = session.createTopic("usa.#");
             message.setStringProperty("topicName", "usa");
             // Create a Message Publisher
-            System.out.println(CLASS + ": Creating a Message Publisherr");
             messagePublisher = session.createPublisher(topic);
             messagePublisher
                     .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
