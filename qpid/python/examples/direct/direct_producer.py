@@ -48,4 +48,3 @@ session.message_transfer(destination="amq.direct", content=message)
 # Clean up before exiting so there are no open threads.
 
 session.session_close()
-
