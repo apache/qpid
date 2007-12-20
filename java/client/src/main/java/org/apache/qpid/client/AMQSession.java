@@ -617,7 +617,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
             for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
             {
                 // Sends acknowledgement to server
-                i.next().acknowledgeLastDelivered();
+		i.next().acknowledgeDelivered();
             }
 
             // Commits outstanding messages sent and outstanding acknowledgements.

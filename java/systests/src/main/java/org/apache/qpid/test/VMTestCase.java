@@ -26,6 +26,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.transport.TransportConnection;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
@@ -120,6 +121,13 @@ public class VMTestCase extends TestCase
 
         super.tearDown();
     }
+
+    public int getMessageCount(String queueName)
+    {
+        return ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost(_virtualhost.substring(1))
+                .getQueueRegistry().getQueue(new AMQShortString(queueName)).getMessageCount();
+    }
+
 
     public void testDummyinVMTestCase()
     {

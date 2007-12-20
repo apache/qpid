@@ -755,20 +755,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     /** Acknowledge up to last message delivered (if any). Used when commiting. */
-    void acknowledgeLastDelivered()
+    void acknowledgeDelivered()
     {
-        if (!_receivedDeliveryTags.isEmpty())
+    	while (!_receivedDeliveryTags.isEmpty())
         {
-            long lastDeliveryTag = _receivedDeliveryTags.poll();
-
-            while (!_receivedDeliveryTags.isEmpty())
-            {
-                lastDeliveryTag = _receivedDeliveryTags.poll();
-            }
-
-            assert _receivedDeliveryTags.isEmpty();
-
-            _session.acknowledgeMessage(lastDeliveryTag, true);
+    		_session.acknowledgeMessage(_receivedDeliveryTags.poll(), false);
         }
     }
 
