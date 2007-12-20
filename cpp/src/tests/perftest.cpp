@@ -484,15 +484,16 @@ struct SubscribeThread : public Client {
 
 int main(int argc, char** argv) {
     
-    string exchange;
-    switch (opts.mode) {
-      case FANOUT: exchange="amq.fanout"; break;
-      case TOPIC: exchange="amq.topic"; break;
-      case SHARED: break;
-    }
-
     try {
         opts.parse(argc, argv);
+
+        string exchange;
+        switch (opts.mode) {
+            case FANOUT: exchange="amq.fanout"; break;
+            case TOPIC: exchange="amq.topic"; break;
+            case SHARED: break;
+        }
+        
         bool singleProcess=
             (!opts.setup && !opts.control && !opts.publish && !opts.subscribe);
         if (singleProcess)
