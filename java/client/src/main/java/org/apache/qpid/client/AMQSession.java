@@ -644,15 +644,7 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
 
                     for (Iterator<BasicMessageConsumer> i = _consumers.values().iterator(); i.hasNext();)
                     {
-//                        i.next().acknowledgeLastDelivered();
-//                    }
-
-                        // get next acknowledgement to server
-                        Long next = i.next().getLastDelivered();
-                        if (next != null && next > lastTag)
-                        {
-                            lastTag = next;
-                        }
+                        i.next().acknowledgeDelivered();
                     }
 
                     if (_transacted)
@@ -662,18 +654,9 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                         for (int i = 0; i < _removedConsumers.size(); i++)
                         {
                             // Sends acknowledgement to server
-                            Long next = _removedConsumers.get(i).getLastDelivered();
-                            if (next != null && next > lastTag)
-                            {
-                                lastTag = next;
-                            }
+                            _removedConsumers.get(i).acknowledgeDelivered();
                             _removedConsumers.remove(i);
                         }
-                    }
-
-                    if (lastTag != -1)
-                    {
-                        acknowledgeMessage(lastTag, true);
                     }
 
                     // Commits outstanding messages sent and outstanding acknowledgements.
