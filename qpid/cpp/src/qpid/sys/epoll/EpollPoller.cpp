@@ -165,7 +165,9 @@ class PollerPrivate {
             case ::EPOLLIN: return Poller::READABLE;
             case ::EPOLLOUT: return Poller::WRITABLE;
             case ::EPOLLIN | ::EPOLLOUT: return Poller::READ_WRITABLE;
-            default: return (events & ::EPOLLHUP) ? Poller::DISCONNECTED : Poller::INVALID;
+            default:
+                return (events & ::EPOLLHUP | ::EPOLLERR) ?
+                    Poller::DISCONNECTED : Poller::INVALID;
         }
     }
 
