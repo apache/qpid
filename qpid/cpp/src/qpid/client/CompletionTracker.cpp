@@ -90,7 +90,7 @@ void CompletionTracker::listenForResult(const SequenceNumber& point, ResultListe
 bool CompletionTracker::add(const Record& record)
 {
     sys::Mutex::ScopedLock l(lock);
-    if (record.id < mark || closed) {
+    if (record.id <= mark || closed) {
         return false;
     } else {
         //insert at the correct position
