@@ -41,8 +41,7 @@ parser.add_option ("-m", "--makefile", dest="makefile", metavar="FILE",
 if opts.outdir      == None or \
    opts.typefile    == None or \
    opts.schemafile  == None or \
-   opts.templatedir == None or \
-   opts.makefile    == None:
+   opts.templatedir == None:
   parser.error ("Incorrect options, see --help for help")
 
 gen    = Generator     (opts.outdir,   opts.templatedir)
@@ -51,4 +50,6 @@ schema = PackageSchema (opts.typefile, opts.schemafile)
 gen.makeClassFiles  ("Class.h",   schema)
 gen.makeClassFiles  ("Class.cpp", schema)
 gen.makeMethodFiles ("Args.h",    schema)
-gen.makeMakeFile    (opts.makefile)
+
+if opts.makefile != None:
+  gen.makeMakeFile (opts.makefile)

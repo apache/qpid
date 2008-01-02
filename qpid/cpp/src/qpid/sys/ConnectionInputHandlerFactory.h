@@ -22,6 +22,7 @@
 #define _ConnectionInputHandlerFactory_
 
 #include <boost/noncopyable.hpp>
+#include "qpid/sys/Socket.h"
 
 namespace qpid {
 namespace sys {
@@ -36,7 +37,7 @@ class ConnectionInputHandler;
 class ConnectionInputHandlerFactory : private boost::noncopyable
 {
   public:
-    virtual ConnectionInputHandler* create(ConnectionOutputHandler* ctxt) = 0;
+    virtual ConnectionInputHandler* create(ConnectionOutputHandler* ctxt, const Socket& s) = 0;
     virtual ~ConnectionInputHandlerFactory(){}
 };
 

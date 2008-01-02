@@ -41,6 +41,8 @@ ManagementAgent::ManagementAgent (uint16_t _interval) : interval (_interval)
     nextObjectId = uint64_t (qpid::sys::Duration (qpid::sys::now ()));
 }
 
+ManagementAgent::~ManagementAgent () {}
+
 void ManagementAgent::enableManagement (void)
 {
     enabled = 1;
@@ -52,6 +54,16 @@ ManagementAgent::shared_ptr ManagementAgent::getAgent (void)
         agent = shared_ptr (new ManagementAgent (10));
 
     return agent;
+}
+
+void ManagementAgent::shutdown (void)
+{
+    if (agent.get () != 0)
+    {
+        agent->mExchange.reset ();
+        agent->dExchange.reset ();
+        agent.reset ();
+    }
 }
 
 void ManagementAgent::setExchange (broker::Exchange::shared_ptr _mexchange,
@@ -73,6 +85,8 @@ void ManagementAgent::addObject (ManagementObject::shared_ptr object)
 ManagementAgent::Periodic::Periodic (ManagementAgent& _agent, uint32_t _seconds)
     : TimerTask (qpid::sys::Duration (_seconds * qpid::sys::TIME_SEC)), agent(_agent) {}
 
+ManagementAgent::Periodic::~Periodic () {}
+
 void ManagementAgent::Periodic::fire ()
 {
     agent.timer.add (intrusive_ptr<TimerTask> (new Periodic (agent, agent.interval)));
@@ -93,12 +107,27 @@ void ManagementAgent::clientAdded (void)
     }
 }
 
-void ManagementAgent::EncodeHeader (Buffer& buf)
+void ManagementAgent::EncodeHeader (Buffer& buf, uint8_t opcode, uint8_t cls)
 {
     buf.putOctet ('A');
     buf.putOctet ('M');
     buf.putOctet ('0');
     buf.putOctet ('1');
+    buf.putOctet (opcode);
+    buf.putOctet (cls);
+}
+
+bool ManagementAgent::CheckHeader (Buffer& buf, uint8_t *opcode, uint8_t *cls)
+{
+    uint8_t h1 = buf.getOctet ();
+    uint8_t h2 = buf.getOctet ();
+    uint8_t h3 = buf.getOctet ();
+    uint8_t h4 = buf.getOctet ();
+
+    *opcode = buf.getOctet ();
+    *cls    = buf.getOctet ();
+
+    return h1 == 'A' && h2 == 'M' && h3 == '0' && h4 == '1';
 }
 
 void ManagementAgent::SendBuffer (Buffer&  buf,
@@ -111,9 +140,6 @@ void ManagementAgent::SendBuffer (Buffer&  buf,
                          ProtocolVersion(), 0, exchange->getName (), 0, 0));
     AMQFrame header (in_place<AMQHeaderBody>());
     AMQFrame content(in_place<AMQContentBody>());
-
-    QPID_LOG (debug, "ManagementAgent::SendBuffer - key="
-              << routingKey << " len=" << length);
 
     content.castBody<AMQContentBody>()->decode(buf, length);
 
@@ -156,9 +182,7 @@ void ManagementAgent::PeriodicProcessing (void)
         if (object->getSchemaNeeded ())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
-            EncodeHeader (msgBuffer);
-            msgBuffer.putOctet ('S');  // opcode = Schema Record
-            msgBuffer.putOctet (0);    // content-class = N/A
+            EncodeHeader (msgBuffer, 'S');
             object->writeSchema (msgBuffer);
 
             contentSize = BUFSIZE - msgBuffer.available ();
@@ -170,9 +194,7 @@ void ManagementAgent::PeriodicProcessing (void)
         if (object->getConfigChanged () || object->isDeleted ())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
-            EncodeHeader (msgBuffer);
-            msgBuffer.putOctet ('C');  // opcode = Content Record
-            msgBuffer.putOctet ('C');  // content-class = Configuration
+            EncodeHeader (msgBuffer, 'C', 'C');
             object->writeConfig (msgBuffer);
 
             contentSize = BUFSIZE - msgBuffer.available ();
@@ -184,9 +206,7 @@ void ManagementAgent::PeriodicProcessing (void)
         if (object->getInstChanged ())
         {
             Buffer msgBuffer (msgChars, BUFSIZE);
-            EncodeHeader (msgBuffer);
-            msgBuffer.putOctet ('C');  // opcode = Content Record
-            msgBuffer.putOctet ('I');  // content-class = Instrumentation
+            EncodeHeader (msgBuffer, 'C', 'I');
             object->writeInstrumentation (msgBuffer);
 
             contentSize = BUFSIZE - msgBuffer.available ();
@@ -251,9 +271,6 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
     start = pos + 1;
     string methodName = routingKey.substr (start, routingKey.length () - start);
 
-    QPID_LOG (debug, "Dispatch package: " << packageName << ", class: "
-              << className << ", method: " << methodName);
-
     contentSize = msg.encodedContentSize ();
     if (contentSize < 8 || contentSize > 65536)
         return;
@@ -263,19 +280,41 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
     Buffer   inBuffer  (inMem,  contentSize);
     Buffer   outBuffer (outMem, 4096);
     uint32_t outLen;
+    uint8_t  opcode, unused;
 
     msg.encodeContent (inBuffer);
     inBuffer.reset ();
 
-    uint32_t methodId = inBuffer.getLong     ();
-    uint64_t objId    = inBuffer.getLongLong ();
-    string   replyTo;
+    if (!CheckHeader (inBuffer, &opcode, &unused))
+    {
+        QPID_LOG (debug, "    Invalid content header");
+        return;
+    }
 
-    inBuffer.getShortString (replyTo);
+    if (opcode != 'M')
+    {
+        QPID_LOG (debug, "    Unexpected opcode " << opcode);
+        return;
+    }
 
-    QPID_LOG (debug, "    len = " << contentSize << ", methodId = " <<
-              methodId << ", objId = " << objId);
+    uint32_t   methodId = inBuffer.getLong     ();
+    uint64_t   objId    = inBuffer.getLongLong ();
+    string     replyToKey;
 
+    const framing::MessageProperties* p =
+        msg.getFrames().getHeaders()->get<framing::MessageProperties>();
+    if (p && p->hasReplyTo())
+    {
+        const framing::ReplyTo& rt = p->getReplyTo ();
+        replyToKey = rt.getRoutingKey ();
+    }
+    else
+    {
+        QPID_LOG (debug, "    Reply-to missing");
+        return;
+    }
+
+    EncodeHeader (outBuffer, 'R');
     outBuffer.putLong (methodId);
 
     ManagementObjectMap::iterator iter = managementObjects.find (objId);
@@ -291,7 +330,7 @@ void ManagementAgent::dispatchCommand (Deliverable&      deliverable,
 
     outLen = 4096 - outBuffer.available ();
     outBuffer.reset ();
-    SendBuffer (outBuffer, outLen, dExchange, replyTo);
+    SendBuffer (outBuffer, outLen, dExchange, replyToKey);
     free (inMem);
 }
 

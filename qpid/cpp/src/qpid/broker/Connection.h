@@ -35,9 +35,12 @@
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "Broker.h"
+#include "qpid/sys/Socket.h"
 #include "qpid/Exception.h"
 #include "ConnectionHandler.h"
 #include "SessionHandler.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/Client.h"
 
 #include <boost/ptr_container/ptr_map.hpp>
 
@@ -45,10 +48,12 @@ namespace qpid {
 namespace broker {
 
 class Connection : public sys::ConnectionInputHandler, 
-                   public ConnectionToken
+                   public ConnectionToken,
+                   public management::Manageable
 {
   public:
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker);
+    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const sys::Socket& s);
+    ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */
     SessionHandler& getChannel(framing::ChannelId channel);
@@ -85,6 +90,11 @@ class Connection : public sys::ConnectionInputHandler,
 
     void closeChannel(framing::ChannelId channel);
 
+    // Manageable entry points
+    management::ManagementObject::shared_ptr GetManagementObject (void) const;
+    management::Manageable::status_t
+        ManagementMethod (uint32_t methodId, management::Args& args);
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
@@ -97,6 +107,8 @@ class Connection : public sys::ConnectionInputHandler,
     framing::AMQP_ClientProxy::Connection* client;
     uint64_t stagingThreshold;
     ConnectionHandler adapter;
+    management::Client::shared_ptr mgmtObject;
+    bool mgmtClosing;
 };
 
 }}

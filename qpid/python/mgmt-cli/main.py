@@ -49,6 +49,7 @@ class Mcli (Cmd):
     print "    list <className>                - Print list of objects of the specified class"
     print "    list <className> all            - Print contents of all objects of specified class"
     print "    list <className> active         - Print contents of all non-deleted objects of specified class"
+    print "    list <list-of-IDs>              - Print contents of one or more objects (infer className)"
     print "    list <className> <list-of-IDs>  - Print contents of one or more objects"
     print "        list is space-separated, ranges may be specified (i.e. 1004-1010)"
     print "    call <ID> <methodName> [<args>] - Invoke a method on an object"

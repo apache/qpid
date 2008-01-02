@@ -46,12 +46,16 @@ class ManagementObject
     Manageable* coreObject;
     std::string className;
     
-    static const uint8_t TYPE_U8   = 1;
-    static const uint8_t TYPE_U16  = 2;
-    static const uint8_t TYPE_U32  = 3;
-    static const uint8_t TYPE_U64  = 4;
-    static const uint8_t TYPE_SSTR = 6;
-    static const uint8_t TYPE_LSTR = 7;
+    static const uint8_t TYPE_U8        = 1;
+    static const uint8_t TYPE_U16       = 2;
+    static const uint8_t TYPE_U32       = 3;
+    static const uint8_t TYPE_U64       = 4;
+    static const uint8_t TYPE_SSTR      = 6;
+    static const uint8_t TYPE_LSTR      = 7;
+    static const uint8_t TYPE_ABSTIME   = 8;
+    static const uint8_t TYPE_DELTATIME = 9;
+    static const uint8_t TYPE_REF       = 10;
+    static const uint8_t TYPE_BOOL      = 11;
 
     static const uint8_t ACCESS_RC = 1;
     static const uint8_t ACCESS_RW = 2;

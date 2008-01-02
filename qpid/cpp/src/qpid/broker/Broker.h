@@ -119,6 +119,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     SessionManager& getSessionManager() { return sessionManager; }
 
     management::ManagementObject::shared_ptr GetManagementObject (void) const;
+    management::Manageable*                  GetVhostObject      (void) const;
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
     
