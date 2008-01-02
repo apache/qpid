@@ -118,12 +118,51 @@ class ManagementData:
     self.schema         = {}
     self.baseId         = 0
     self.disp           = disp
+    self.lastUnit       = None
     self.methodSeq      = 1
     self.methodsPending = {}
     self.broker.start ()
 
   def close (self):
     self.broker.stop ()
+
+  def refName (self, oid):
+    if oid == 0:
+      return "NULL"
+    return str (oid - self.baseId)
+
+  def valueDisplay (self, className, key, value):
+    for kind in range (2):
+      schema = self.schema[className][kind]
+      for item in schema:
+        if item[0] == key:
+          typecode = item[1]
+          unit     = item[2]
+          if typecode >= 1 and typecode <= 5:  # numerics
+            if unit == None or unit == self.lastUnit:
+              return str (value)
+            else:
+              self.lastUnit = unit
+              suffix = ""
+              if value != 1:
+                suffix = "s"
+              return str (value) + " " + unit + suffix
+          elif typecode == 6 or typecode == 7: # strings
+            return value
+          elif typecode == 8:
+            if value == 0:
+              return "--"
+            return self.disp.timestamp (value)
+          elif typecode == 9:
+            return str (value)
+          elif typecode == 10:
+            return self.refName (value)
+          elif typecode == 11:
+            if value == 0:
+              return "False"
+            else:
+              return "True"
+    return "*type-error*"
 
   def getObjIndex (self, className, config):
     """ Concatenate the values from index columns to form a unique object name """
@@ -135,9 +174,7 @@ class ManagementData:
           result = result + "."
         for key,val in config:
           if key == item[0]:
-            if key.find ("Ref") != -1:
-              val = val - self.baseId
-            result = result + str (val)
+            result = result + self.valueDisplay (className, key, val)
     return result
 
   def classCompletions (self, prefix):
@@ -168,6 +205,14 @@ class ManagementData:
       return "short-string"
     elif typecode == 7:
       return "long-string"
+    elif typecode == 8:
+      return "abs-time"
+    elif typecode == 9:
+      return "delta-time"
+    elif typecode == 10:
+      return "reference"
+    elif typecode == 11:
+      return "boolean"
     else:
       raise ValueError ("Invalid type code: %d" % typecode)
 
@@ -180,13 +225,19 @@ class ManagementData:
     elif code == 3:
       return "ReadOnly"
     else:
-      raise ValueErrir ("Invalid access code: %d" %code)
+      raise ValueError ("Invalid access code: %d" %code)
 
   def notNone (self, text):
     if text == None:
       return ""
     else:
       return text
+
+  def isOid (self, id):
+    for char in str (id):
+      if not char.isdigit () and not char == '-':
+        return False
+    return True
 
   def listOfIds (self, className, tokens):
     """ Generate a tuple of object ids for a classname based on command tokens. """
@@ -202,13 +253,14 @@ class ManagementData:
 
     else:
       for token in tokens:
-        if token.find ("-") != -1:
-          ids = token.split("-", 2)
-          for id in range (int (ids[0]), int (ids[1]) + 1):
-            if self.getClassForId (long (id) + self.baseId) == className:
-              list.append (id)
-        else:
-          list.append (token)
+        if self.isOid (token):
+          if token.find ("-") != -1:
+            ids = token.split("-", 2)
+            for id in range (int (ids[0]), int (ids[1]) + 1):
+              if self.getClassForId (long (id) + self.baseId) == className:
+                list.append (id)
+          else:
+            list.append (token)
 
     list.sort ()
     result = ()
@@ -258,7 +310,7 @@ class ManagementData:
           if ts[2] > 0:
             destroyTime = self.disp.timestamp (ts[2])
           objIndex = self.getObjIndex (className, config)
-          row = (objId - self.baseId, createTime, destroyTime, objIndex)
+          row = (self.refName (objId), createTime, destroyTime, objIndex)
           rows.append (row)
         self.disp.table ("Objects of type %s" % className,
                          ("ID", "Created", "Destroyed", "Index"),
@@ -270,12 +322,26 @@ class ManagementData:
     """ Generate a display of object data for a particular class """
     self.lock.acquire ()
     try:
-      className = tokens[0]
-      if className not in self.tables:
-        print "Class not known: %s" % className
-        raise ValueError ()
-        
-      userIds = self.listOfIds (className, tokens[1:])
+      self.lastUnit = None
+      if self.isOid (tokens[0]):
+        if tokens[0].find ("-") != -1:
+          rootId = int (tokens[0][0:tokens[0].find ("-")])
+        else:
+          rootId = int (tokens[0])
+
+        className = self.getClassForId (rootId + self.baseId)
+        remaining = tokens
+        if className == None:
+          print "Id not known: %d" % int (tokens[0])
+          raise ValueError ()
+      else:
+        className = tokens[0]
+        remaining = tokens[1:]
+        if className not in self.tables:
+          print "Class not known: %s" % className
+          raise ValueError ()
+
+      userIds = self.listOfIds (className, remaining)
       if len (userIds) == 0:
         print "No object IDs supplied"
         raise ValueError ()
@@ -286,36 +352,37 @@ class ManagementData:
           ids.append (long (id) + self.baseId)
 
       rows = []
+      timestamp = None
       config = self.tables[className][ids[0]][1]
       for eIdx in range (len (config)):
         key = config[eIdx][0]
         if key != "id":
-          isRef = key.find ("Ref") == len (key) - 3
           row   = ("config", key)
           for id in ids:
-            value = self.tables[className][id][1][eIdx][1]
-            if isRef:
-              value = value - self.baseId
-            row = row + (value,)
+            if timestamp == None or \
+               timestamp < self.tables[className][id][0][0]:
+              timestamp = self.tables[className][id][0][0]
+            (key, value) = self.tables[className][id][1][eIdx]
+            row = row + (self.valueDisplay (className, key, value),)
           rows.append (row)
 
       inst = self.tables[className][ids[0]][2]
       for eIdx in range (len (inst)):
         key = inst[eIdx][0]
         if key != "id":
-          isRef = key.find ("Ref") == len (key) - 3
           row = ("inst", key)
           for id in ids:
-            value = self.tables[className][id][2][eIdx][1]
-            if isRef:
-              value = value - self.baseId
-            row = row + (value,)
+            (key, value) = self.tables[className][id][2][eIdx]
+            row = row + (self.valueDisplay (className, key, value),)
           rows.append (row)
 
       titleRow = ("Type", "Element")
       for id in ids:
-        titleRow = titleRow + (str (id - self.baseId),)
-      self.disp.table ("Object of type %s:" % className, titleRow, rows)
+        titleRow = titleRow + (self.refName (id),)
+      caption = "Object of type %s:" % className
+      if timestamp != None:
+        caption = caption + " (last sample time: " + self.disp.timestamp (timestamp) + ")"
+      self.disp.table (caption, titleRow, rows)
 
     except:
       pass
@@ -418,6 +485,10 @@ class ManagementData:
       if className == None:
         raise ValueError ()
 
+      if methodName not in self.schema[className][2]:
+        print "Method '%s' not valid for class '%s'" % (methodName, className)
+        raise ValueError ()
+
       schemaMethod = self.schema[className][2][methodName]
       if len (args) != len (schemaMethod[1]):
         print "Wrong number of method args: Need %d, Got %d" % (len (schemaMethod[1]), len (args))
@@ -431,17 +502,19 @@ class ManagementData:
       self.methodsPending[self.methodSeq] = methodName
     except:
       methodOk = False
-      print "Error in call syntax"
     self.lock.release ()
     if methodOk:
-      self.broker.method (self.methodSeq, userOid + self.baseId, className,
-                          methodName, namedArgs)
+#      try:
+        self.broker.method (self.methodSeq, userOid + self.baseId, className,
+                            methodName, namedArgs)
+#      except ValueError, e:
+#        print "Error invoking method:", e
 
   def do_list (self, data):
     tokens = data.split ()
     if len (tokens) == 0:
       self.listClasses ()
-    elif len (tokens) == 1:
+    elif len (tokens) == 1 and not self.isOid (tokens[0]):
       self.listObjects (data)
     else:
       self.showObjects (tokens)

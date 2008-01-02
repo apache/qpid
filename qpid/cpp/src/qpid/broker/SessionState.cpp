@@ -31,6 +31,10 @@ namespace broker {
 
 using namespace framing;
 using sys::Mutex;
+using qpid::management::ManagementAgent;
+using qpid::management::ManagementObject;
+using qpid::management::Manageable;
+using qpid::management::Args;
 
 void SessionState::handleIn(AMQFrame& f) { semanticHandler->handle(f); }
 
@@ -50,11 +54,34 @@ SessionState::SessionState(
     // TODO aconway 2007-09-20: SessionManager may add plugin
     // handlers to the chain.
     getConnection().outputTasks.addOutputTask(&semanticHandler->getSemanticState());
+
+    Manageable* parent = broker.GetVhostObject ();
+
+    if (parent != 0)
+    {
+        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+
+        if (agent.get () != 0)
+        {
+            mgmtObject = management::Session::shared_ptr
+                (new management::Session (this, parent, id.str ()));
+            mgmtObject->set_attached (1);
+            mgmtObject->set_clientRef (h.getConnection().GetManagementObject()->getObjectId());
+            mgmtObject->set_channelId (h.getChannel());
+            mgmtObject->set_detachedLifespan (getTimeout());
+            agent->addObject (mgmtObject);
+        }
+    }
 }
 
 SessionState::~SessionState() {
     // Remove ID from active session list.
     factory.erase(getId());
+
+    if (mgmtObject.get () != 0)
+    {
+        mgmtObject->resourceDestroy ();
+    }
 }
 
 SessionHandler* SessionState::getHandler() {
@@ -75,12 +102,22 @@ void SessionState::detach() {
     getConnection().outputTasks.removeOutputTask(&semanticHandler->getSemanticState());
     Mutex::ScopedLock l(lock);
     handler = 0;
+    if (mgmtObject.get() != 0)
+    {
+        mgmtObject->set_attached  (0);
+    }
 }
 
 void SessionState::attach(SessionHandler& h) {
     {
         Mutex::ScopedLock l(lock);
         handler = &h;
+        if (mgmtObject.get() != 0)
+        {
+            mgmtObject->set_attached (1);
+            mgmtObject->set_clientRef (h.getConnection().GetManagementObject()->getObjectId());
+            mgmtObject->set_channelId (h.getChannel());
+        }
     }
     h.getConnection().outputTasks.addOutputTask(&semanticHandler->getSemanticState());
 }
@@ -95,5 +132,43 @@ void SessionState::activateOutput()
     //This class could be used as the callback for queue notifications
     //if not attached, it can simply ignore the callback, else pass it
     //on to the connection
+
+ManagementObject::shared_ptr SessionState::GetManagementObject (void) const
+{
+    return dynamic_pointer_cast<ManagementObject> (mgmtObject);
+}
+
+Manageable::status_t SessionState::ManagementMethod (uint32_t methodId,
+                                                     Args&    /*args*/)
+{
+    Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
+
+    switch (methodId)
+    {
+    case management::Session::METHOD_DETACH :
+        if (handler != 0)
+        {
+            handler->localSuspend ();
+        }
+        status = Manageable::STATUS_OK;
+        break;
+
+    case management::Session::METHOD_CLOSE :
+        if (handler != 0)
+        {
+            handler->getConnection().closeChannel(handler->getChannel());
+        }
+        status = Manageable::STATUS_OK;
+        break;
+
+    case management::Session::METHOD_SOLICITACK :
+    case management::Session::METHOD_RESETLIFESPAN :
+        status = Manageable::STATUS_NOT_IMPLEMENTED;
+        break;
+    }
+
+    return status;
+}
+
 
 }} // namespace qpid::broker

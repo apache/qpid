@@ -616,10 +616,6 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId,
         purge ();
         status = Manageable::STATUS_OK;
         break;
-
-    case management::Queue::METHOD_INCREASEJOURNALSIZE :
-        status = Manageable::STATUS_NOT_IMPLEMENTED;
-        break;
     }
 
     return status;

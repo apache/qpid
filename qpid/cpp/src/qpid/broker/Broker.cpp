@@ -231,6 +231,7 @@ void Broker::run() {
 void Broker::shutdown() {
     if (acceptor)
         acceptor->shutdown();
+    ManagementAgent::shutdown ();
 }
 
 Broker::~Broker() {
@@ -268,6 +269,11 @@ void Broker::update(ChannelId channel, FrameHandler::Chains& chains) {
 ManagementObject::shared_ptr Broker::GetManagementObject(void) const
 {
     return dynamic_pointer_cast<ManagementObject> (mgmtObject);
+}
+
+Manageable* Broker::GetVhostObject(void) const
+{
+    return vhostObject.get();
 }
 
 Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
