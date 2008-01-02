@@ -58,6 +58,8 @@ void  SessionManager::suspend(std::auto_ptr<SessionState> session) {
     active.erase(session->getId());
     session->suspend();
     session->expiry = AbsTime(now(),session->getTimeout()*TIME_SEC);
+    if (session->mgmtObject.get() != 0)
+        session->mgmtObject->set_expireTime ((uint64_t) Duration (session->expiry));
     suspended.push_back(session.release()); // In expiry order
     eraseExpired();
 }

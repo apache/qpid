@@ -40,7 +40,7 @@ class ManagementExchange : public virtual TopicExchange
                         const qpid::framing::FieldTable& _args,
                         Manageable* _parent = 0);
 
-    virtual std::string getType() const { return typeName; }            
+    virtual std::string getType() const { return typeName; }
 
     virtual bool bind (Queue::shared_ptr queue,
                        const string&     routingKey,

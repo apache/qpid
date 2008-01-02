@@ -35,9 +35,10 @@ ConnectionFactory::~ConnectionFactory()
 }
 
 qpid::sys::ConnectionInputHandler*
-ConnectionFactory::create(qpid::sys::ConnectionOutputHandler* out)
+ConnectionFactory::create(qpid::sys::ConnectionOutputHandler* out,
+                          const qpid::sys::Socket& s)
 {
-    return new Connection(out, broker);
+    return new Connection(out, broker, s);
 }
 
 }} // namespace qpid::broker

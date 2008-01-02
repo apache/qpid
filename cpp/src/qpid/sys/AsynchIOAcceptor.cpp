@@ -131,7 +131,7 @@ public:
 void AsynchIOAcceptor::accepted(Poller::shared_ptr poller, const Socket& s, ConnectionInputHandlerFactory* f) {
 
 	AsynchIOHandler* async = new AsynchIOHandler; 
-	ConnectionInputHandler* handler = f->create(async);
+	ConnectionInputHandler* handler = f->create(async, s);
     AsynchIO* aio = new AsynchIO(s,
     	boost::bind(&AsynchIOHandler::readbuff, async, _1, _2),
     	boost::bind(&AsynchIOHandler::eof, async, _1),
