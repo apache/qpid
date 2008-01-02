@@ -65,14 +65,12 @@
     <configElement name="stagingThreshold"     type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
     <configElement name="storeLib"             type="sstr"   access="RO" desc="Name of persistent storage library"/>
     <configElement name="asyncStore"           type="bool"   access="RO" desc="Use async persistent store"/>
-    <configElement name="mgmtPubInterval"      type="uint16" min="1" access="RW" unit="second" desc="Interval for management broadcasts"/>
+    <configElement name="mgmtPubInterval"      type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
     <configElement name="initialDiskPageSize"  type="uint32" access="RO" desc="Number of disk pages allocated for storage"/>
     <configElement name="initialPagesPerQueue" type="uint32" access="RO" desc="Number of disk pages allocated per queue"/>
     <configElement name="clusterName"          type="sstr"   access="RO"
                    desc="Name of cluster this server is a member of, zero-length for standalone server"/>
     <configElement name="version"              type="sstr"   access="RO" desc="Running software version"/>
-
-
 
     <method name="joinCluster">
       <arg name="clusterName" dir="I" type="sstr"/>
@@ -80,11 +78,10 @@
 
     <method name="leaveCluster"/>
 
-    <method name="echo">
+    <method name="echo" desc="Request a response to test the path to the management agent">
       <arg name="sequence" dir="IO" type="uint32" default="0"/>
       <arg name="body"     dir="IO" type="lstr"   default=""/>
     </method>
-<!--<method name="crash" desc="Temporary test method to crash the broker"/>-->
   </class>
 
   <!--
@@ -135,12 +132,11 @@
     <instElement name="consumers"           type="hilo32"  unit="consumer"    desc="Current consumers on queue"/>
     <instElement name="bindings"            type="hilo32"  unit="binding"     desc="Current bindings"/>
     <instElement name="unackedMessages"     type="hilo32"  unit="message"     desc="Messages consumed but not yet acked"/>
+    <instElement name="messageLatencyMin"   type="uint64"  unit="nanosecond"  desc="Minimum broker latency through this queue"/>
+    <instElement name="messageLatencyMax"   type="uint64"  unit="nanosecond"  desc="Maximum broker latency through this queue"/>
+    <instElement name="messageLatencyAvg"   type="uint64"  unit="nanosecond"  desc="Average broker latency through this queue"/>
 
-    <method name="purge"               desc="Discard all messages on queue"/>
-    <method name="increaseJournalSize" desc="Increase number of disk pages allocated for this queue">
-      <arg name="pages" type="uint32" dir="I" desc="New total page allocation"/>
-    </method>
-
+    <method name="purge" desc="Discard all messages on queue"/>
   </class>
 
   <!--
@@ -184,17 +180,16 @@
   -->
   <class name="client">
     <configElement name="vhostRef" type="objId"  access="RC" index="y" parentRef="y"/>
-    <configElement name="ipAddr"   type="uint32" access="RC" index="y"/>
-    <configElement name="port"     type="uint16" access="RC" index="y"/>
+    <configElement name="address"  type="sstr"   access="RC" index="y"/>
 
-    <instElement name="authIdentity"  type="sstr"/>
-    <instElement name="msgsProduced"  type="count64"/>
-    <instElement name="msgsConsumed"  type="count64"/>
-    <instElement name="bytesProduced" type="count64"/>
-    <instElement name="bytesConsumed" type="count64"/>
+    <instElement name="closing"          type="bool" desc="This client is closing by management request"/>
+    <instElement name="authIdentity"     type="sstr"/>
+    <instElement name="framesFromClient" type="count64"/>
+    <instElement name="framesToClient"   type="count64"/>
+    <instElement name="bytesFromClient"  type="count64"/>
+    <instElement name="bytesToClient"    type="count64"/>
 
     <method name="close"/> 
-    <method name="detach"/>
   </class>
 
   <!--
@@ -205,11 +200,12 @@
   <class name="session">
     <configElement name="vhostRef"         type="objId"  access="RC" index="y" parentRef="y"/>
     <configElement name="name"             type="sstr"   access="RC" index="y"/>
+    <configElement name="channelId"        type="uint16" access="RO"/>
     <configElement name="clientRef"        type="objId"  access="RO"/>
-    <configElement name="detachedLifespan" type="uint32" access="RO"/>
+    <configElement name="detachedLifespan" type="uint32" access="RO" unit="second"/>
 
     <instElement name="attached"          type="bool"/>
-    <instElement name="remainingLifespan" type="count32"/>
+    <instElement name="expireTime"        type="absTime"/>
     <instElement name="framesOutstanding" type="count32"/>
 
     <method name="solicitAck"/>

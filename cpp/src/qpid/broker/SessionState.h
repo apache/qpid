@@ -29,6 +29,8 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/sys/Time.h"
+#include "qpid/management/Manageable.h"
+#include "qpid/management/Session.h"
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
@@ -57,7 +59,8 @@ class Connection;
  */
 class SessionState : public framing::SessionState,
     public framing::FrameHandler::InOutHandler,
-    public sys::OutputControl
+    public sys::OutputControl,
+    public management::Manageable
 {
   public:
     ~SessionState();
@@ -82,6 +85,11 @@ class SessionState : public framing::SessionState,
     /** OutputControl **/
     void activateOutput();
 
+    // Manageable entry points
+    management::ManagementObject::shared_ptr GetManagementObject (void) const;
+    management::Manageable::status_t
+        ManagementMethod (uint32_t methodId, management::Args& args);
+
   protected:
     void handleIn(framing::AMQFrame&);
     void handleOut(framing::AMQFrame&);
@@ -102,6 +110,7 @@ class SessionState : public framing::SessionState,
     framing::ProtocolVersion version;
     sys::Mutex lock;
     boost::scoped_ptr<SemanticHandler> semanticHandler;
+    management::Session::shared_ptr mgmtObject;
 
   friend class SessionManager;
 };

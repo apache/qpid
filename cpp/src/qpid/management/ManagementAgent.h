@@ -40,10 +40,13 @@ class ManagementAgent
 
   public:
 
+    virtual ~ManagementAgent ();
+
     typedef boost::shared_ptr<ManagementAgent> shared_ptr;
 
     static void       enableManagement (void);
     static shared_ptr getAgent (void);
+    static void       shutdown (void);
 
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
@@ -61,7 +64,7 @@ class ManagementAgent
         ManagementAgent& agent;
 
         Periodic (ManagementAgent& agent, uint32_t seconds);
-        ~Periodic () {}
+        virtual ~Periodic ();
         void fire ();
     };
 
@@ -77,7 +80,8 @@ class ManagementAgent
     uint64_t                     nextObjectId;
 
     void PeriodicProcessing (void);
-    void EncodeHeader       (qpid::framing::Buffer&       buf);
+    void EncodeHeader       (qpid::framing::Buffer& buf, uint8_t  opcode, uint8_t  cls = 0);
+    bool CheckHeader        (qpid::framing::Buffer& buf, uint8_t *opcode, uint8_t *cls);
     void SendBuffer         (qpid::framing::Buffer&       buf,
                              uint32_t                     length,
                              broker::Exchange::shared_ptr exchange,
