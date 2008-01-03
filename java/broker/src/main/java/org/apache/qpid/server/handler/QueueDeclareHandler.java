@@ -82,7 +82,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
         // if we aren't given a queue name, we create one which we return to the client
 
-        if (body.getQueue() == null)
+        if ((body.getQueue() == null) || (body.getQueue().length() == 0))
         {
             queueName = createName();
         }
@@ -109,7 +109,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 }
                 else
                 {
-                    queue = createQueue(body, virtualHost, session);
+                    queue = createQueue(queueName,body, virtualHost, session);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
                         store.createQueue(queue);
@@ -161,13 +161,16 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         return new AMQShortString("tmp_" + UUID.randomUUID());
     }
 
-    protected AMQQueue createQueue(QueueDeclareBody body, VirtualHost virtualHost, final AMQProtocolSession session)
+    protected AMQQueue createQueue(final AMQShortString queueName,
+                                   QueueDeclareBody body,
+                                   VirtualHost virtualHost,
+                                   final AMQProtocolSession session)
             throws AMQException
     {
         final QueueRegistry registry = virtualHost.getQueueRegistry();
         AMQShortString owner = body.getExclusive() ? session.getContextKey() : null;
-        final AMQQueue queue = new AMQQueue(body.getQueue(), body.getDurable(), owner, body.getAutoDelete(), virtualHost);
-        final AMQShortString queueName = queue.getName();
+        final AMQQueue queue = new AMQQueue(queueName, body.getDurable(), owner, body.getAutoDelete(), virtualHost);
+
 
         if (body.getExclusive() && !body.getDurable())
         {
