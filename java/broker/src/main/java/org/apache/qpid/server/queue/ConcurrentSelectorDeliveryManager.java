@@ -211,6 +211,29 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
         }
     }
 
+    /**
+     *  NOTE : This method should only be called when there are no active subscribers
+     */
+    public void removeExpired() throws AMQException
+    {
+        _lock.lock();
+
+
+        for(Iterator<AMQMessage> iter = _messages.iterator(); iter.hasNext();)
+        {
+            AMQMessage msg = iter.next();
+            if(msg.expired(_queue))
+            {
+                _queue.dequeue(_reapingStoreContext,msg);
+                msg.decrementReference(_reapingStoreContext);
+                iter.remove();
+            }
+        }
+
+
+        _lock.unlock();
+    }
+
     /** @return the state of the async processor. */
     public boolean isProcessingAsync()
     {

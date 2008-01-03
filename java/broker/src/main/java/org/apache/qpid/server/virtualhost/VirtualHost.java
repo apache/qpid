@@ -39,8 +39,13 @@ import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.AMQException;
+
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class VirtualHost implements Accessable
 {
@@ -64,6 +69,11 @@ public class VirtualHost implements Accessable
     private AuthenticationManager _authenticationManager;
 
     private AccessManager _accessManager;
+
+
+    private final Timer _houseKeepingTimer = new Timer("Queue-housekeeping", true);
+
+    private static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
 
 
     public void setAccessableName(String name)
@@ -162,6 +172,44 @@ public class VirtualHost implements Accessable
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
+
+        initialiseHouseKeeping(hostConfig);
+
+    }
+
+    private void initialiseHouseKeeping(final Configuration hostConfig)
+    {
+
+        long period = hostConfig.getLong("housekeeping.expiredMessageCheckPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
+
+        /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
+        if(period != 0L)
+        {
+            class RemoveExpiredMessagesTask extends TimerTask
+            {
+                public void run()
+                {
+                    for(AMQQueue q : _queueRegistry.getQueues())
+                    {
+
+                        try
+                        {
+                            q.removeExpiredIfNoSubscribers();
+                        }
+                        catch (AMQException e)
+                        {
+                            _logger.error("Exception in housekeeping for queue: " + q.getName().toString(),e);
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+
+            }
+
+            _houseKeepingTimer.scheduleAtFixedRate(new RemoveExpiredMessagesTask(),
+                                                   period/2,
+                                                   period);
+        }
     }
 
     private void initialiseMessageStore(Configuration config) throws Exception

@@ -26,6 +26,7 @@ import org.apache.qpid.configuration.Configured;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
@@ -37,6 +38,8 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import javax.management.JMException;
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -153,10 +156,7 @@ public class AMQQueue implements Managable, Comparable
     /** total messages received by the queue since startup. */
     public AtomicLong _totalMessagesReceived = new AtomicLong();
 
-    public int compareTo(Object o)
-    {
-        return _name.compareTo(((AMQQueue) o).getName());
-    }
+
 
     public AMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
@@ -936,5 +936,22 @@ public class AMQQueue implements Managable, Comparable
     public void subscriberHasPendingResend(boolean hasContent, SubscriptionImpl subscription, AMQMessage msg)
     {
         _deliveryMgr.subscriberHasPendingResend(hasContent, subscription, msg);
+    }
+
+    public int compareTo(Object o)
+    {
+        return _name.compareTo(((AMQQueue) o).getName());
+    }
+
+
+    public void removeExpiredIfNoSubscribers() throws AMQException
+    {
+        synchronized(_subscribers.getChangeLock())
+        {
+            if(_subscribers.isEmpty())
+            {
+                _deliveryMgr.removeExpired();
+            }
+        }
     }
 }
