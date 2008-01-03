@@ -190,7 +190,7 @@ public class DestNameExchange extends AbstractExchange
     public void route(AMQMessage payload) throws AMQException
     {
         final MessagePublishInfo info = payload.getMessagePublishInfo();
-        final AMQShortString routingKey = info.getRoutingKey();
+        final AMQShortString routingKey = info.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : info.getRoutingKey();
         final List<AMQQueue> queues = (routingKey == null) ? null : _index.get(routingKey);
         if (queues == null || queues.isEmpty())
         {

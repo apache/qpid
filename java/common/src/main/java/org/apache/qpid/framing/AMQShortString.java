@@ -57,6 +57,8 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     private int _hashCode;
     private final int _length;
     private static final char[] EMPTY_CHAR_ARRAY = new char[0];
+    
+    public static final AMQShortString EMPTY_STRING = new AMQShortString((String)null);
 
     public AMQShortString(byte[] data)
     {

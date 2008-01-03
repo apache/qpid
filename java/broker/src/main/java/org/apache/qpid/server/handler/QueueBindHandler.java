@@ -90,7 +90,7 @@ public class QueueBindHandler implements StateAwareMethodListener<QueueBindBody>
         else
         {
             queue = queueRegistry.getQueue(body.getQueue());
-            routingKey = body.getRoutingKey() == null ? null : body.getRoutingKey().intern();
+            routingKey = body.getRoutingKey() == null ? AMQShortString.EMPTY_STRING : body.getRoutingKey().intern();
         }
 
         if (queue == null)

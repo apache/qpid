@@ -181,6 +181,11 @@ public class DestWildExchange extends AbstractExchange
 
     private AMQShortString normalize(AMQShortString routingKey)
     {
+        if(routingKey == null)
+        {
+            routingKey = AMQShortString.EMPTY_STRING;
+        }
+        
         StringTokenizer routingTokens = new StringTokenizer(routingKey.toString(), TOPIC_SEPARATOR);
         List<String> _subscription = new ArrayList<String>();
 
