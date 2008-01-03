@@ -301,6 +301,7 @@ nobase_include_HEADERS = \
   qpid/broker/RecoveryManager.h \
   qpid/broker/RecoveryManagerImpl.h \
   qpid/broker/SemanticHandler.h \
+  qpid/broker/SessionManager.h \
   qpid/broker/Timer.h \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \
