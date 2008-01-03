@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        14%{?dist}
+Release:        15%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -21,6 +21,7 @@ BuildRequires: graphviz
 BuildRequires: help2man
 BuildRequires: libtool
 BuildRequires: pkgconfig
+BuildRequires: ruby
 
 Requires: boost
 
@@ -151,6 +152,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-15
+- add ruby as a build dependency
 
 * Tue Dec 18 2007 Nuno Santos <nsantos@redhat.com> - 0.2-14
 - include fixes from Gordon Sim (fragmentation, lazy-loading, staging) 
