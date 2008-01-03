@@ -5,13 +5,15 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        15%{?dist}
+Release:        16%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
 URL:            @URL@
 Source0:        @DOWNLOAD_URL@/%{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+ExclusiveArch: i386 x86_64
 
 BuildRequires: boost-devel
 BuildRequires: cppunit-devel
@@ -152,6 +154,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-16
+- limit builds to i386 and x86_64 archs
 
 * Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-15
 - add ruby as a build dependency
