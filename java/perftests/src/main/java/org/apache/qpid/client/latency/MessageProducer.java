@@ -68,7 +68,7 @@ public class MessageProducer  extends Options
         {
             System.out.println("Sending " + _logFrequency + " messages");
 
-           NioSender.setStartBatching();
+          // NioSender.setStartBatching();
             long startTime = System.currentTimeMillis();
             for(int i =0; i < _logFrequency; i++ )
             {
