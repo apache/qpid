@@ -53,7 +53,7 @@ perftest_LDADD=$(lib_client)
 # NB: CppUnit test libraries below will be migrated to boost test programs.
 #
 
-# Unit tests
+# cppunit tests
 broker_unit_tests =	\
   AccumulatedAckTest	\
   DtxWorkRecordTest     \
@@ -144,9 +144,6 @@ gen.mk: Makefile.am
 	> $@-t
 	mv $@-t $@
 
-check-unit:
-	$(MAKE) check TESTS=$(UNIT_TESTS) run-unit-tests
-
 CLEANFILES+=valgrind.out *.log *.vglog dummy_test $(unit_wrappers)
 MAINTAINERCLEANFILES=gen.mk
 
@@ -161,3 +158,10 @@ interop_runner_SOURCES = 	\
   TestCase.h			\
   TestOptions.h
 interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
+
+# Longer running stability tests, not run by default check: target.
+# Not run under valgrind, too slow
+LONG_TESTS=fanout_perftest shared_perftest multiq_perftest topic_perftest
+EXTRA_DIST+=$(LONG_TESTS) run_perftest
+check-long:
+	$(MAKE) check TESTS="start_broker $(LONG_TESTS) stop_broker" VALGRIND=

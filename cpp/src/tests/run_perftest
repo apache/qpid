@@ -1,0 +1,8 @@
+#!/bin/sh
+# Args: count [perftest options...]
+# Run a perftest with count multiplied.
+# 
+MULTIPLIER=3
+COUNT=`expr $1 \* $MULTIPLIER`
+shift
+exec `dirname $0`/run_test ./perftest --summary --count $COUNT "$@"
