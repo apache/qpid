@@ -153,21 +153,29 @@ public class Disassembler implements Sender<ConnectionEvent>,
 
     public void header(ConnectionEvent event, Header header)
     {
-        SizeEncoder sizer = new SizeEncoder();
-        for (Struct st : header.getStructs())
+         ByteBuffer buf;
+        if( header.getBuf() == null)
         {
-            sizer.writeLongStruct(st);
-        }
+            SizeEncoder sizer = new SizeEncoder();
+            for (Struct st : header.getStructs())
+            {
+                sizer.writeLongStruct(st);
+            }
 
-        ByteBuffer buf = ByteBuffer.allocate(sizer.size());
-        BBEncoder enc = new BBEncoder(buf);
-        for (Struct st : header.getStructs())
+            buf = ByteBuffer.allocate(sizer.size());
+            BBEncoder enc = new BBEncoder(buf);
+            for (Struct st : header.getStructs())
+            {
+                enc.writeLongStruct(st);
+                enc.flush();
+            }
+            header.setBuf(buf);
+        }
+        else
         {
-            enc.writeLongStruct(st);
-            enc.flush();
+            buf = header.getBuf();          
         }
-        buf.flip();
-
+          buf.flip();
         fragment((byte) 0x0, HEADER, event, buf, true, true);
     }
 
