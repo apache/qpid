@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.qpidity.transport.MessageProperties;
 import org.apache.qpidity.transport.DeliveryProperties;
+import org.apache.qpidity.transport.Header;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -27,7 +28,11 @@ import org.apache.qpidity.transport.DeliveryProperties;
 
 public interface Message
 {
-	public MessageProperties getMessageProperties();
+    public Header getHeader();
+
+    public void setHeader(Header header);
+
+    public MessageProperties getMessageProperties();
 
 	public DeliveryProperties getDeliveryProperties();
 
@@ -45,6 +50,7 @@ public interface Message
 	 * @param src - the data to append
 	 */
 	public void appendData(byte[] src) throws IOException;
+
 
     /**
      * This will abstract the underlying message data.
