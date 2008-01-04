@@ -47,4 +47,11 @@ Message LocalQueue::pop() {
 
 void LocalQueue::setAckPolicy(AckPolicy a) { autoAck=a; }
 
+bool LocalQueue::empty() 
+{ 
+    if (!queue)
+        throw ClosedException();
+    return queue->isEmpty(); 
+}
+
 }} // namespace qpid::client
