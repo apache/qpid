@@ -27,6 +27,7 @@ import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpidity.njms.ExceptionHelper;
 import org.apache.qpidity.nclient.util.ByteBufferMessage;
 import org.apache.qpidity.transport.ReplyTo;
+import org.apache.qpidity.transport.DeliveryProperties;
 
 import javax.jms.Message;
 import javax.jms.JMSException;
@@ -80,30 +81,56 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             }
         }
 
+        DeliveryProperties deliveryProp = message.get010Message().getDeliveryProperties();
         // set the delivery properties
         if (!_disableTimestamps)
         {
             final long currentTime = System.currentTimeMillis();
-            message.get010Message().getDeliveryProperties().setTimestamp(currentTime);
+            deliveryProp.setTimestamp(currentTime);
             if (timeToLive > 0)
             {
-                message.get010Message().getDeliveryProperties().setExpiration(currentTime + timeToLive);
+                deliveryProp.setExpiration(currentTime + timeToLive);
+                message.setJMSExpiration(currentTime + timeToLive);
             }
             else
             {
-                message.get010Message().getDeliveryProperties().setExpiration(0);
+               deliveryProp.setExpiration(0);
+               message.setJMSExpiration(0);
             }
-            origMessage.setJMSTimestamp(message.get010Message().getDeliveryProperties().getTimestamp());
+            message.setJMSTimestamp(currentTime);
         }
-        message.get010Message().getDeliveryProperties().setDeliveryMode((byte) deliveryMode);
-        message.get010Message().getDeliveryProperties().setPriority((byte) priority);
-        message.get010Message().getDeliveryProperties().setExchange(destination.getExchangeName().toString());
-        message.get010Message().getDeliveryProperties().setRoutingKey(destination.getRoutingKey().toString());
-        origMessage.setJMSPriority(message.get010Message().getDeliveryProperties().getPriority());
-        origMessage.setJMSExpiration(message.get010Message().getDeliveryProperties().getExpiration());
-        origMessage.setJMSMessageID(message.getJMSMessageID());
-        origMessage.setJMSDeliveryMode(deliveryMode);
 
+        if (deliveryProp.getDeliveryMode() != deliveryMode)
+        {
+            deliveryProp.setDeliveryMode((byte) deliveryMode);
+            message.setJMSDeliveryMode(deliveryMode);
+        }
+        if (deliveryProp.getPriority() != priority)
+        {
+            deliveryProp.setPriority((byte) priority);
+            message.setJMSPriority(priority);
+        }
+        String excahngeName = destination.getExchangeName().toString();
+        if ( deliveryProp.getExchange() == null || ! deliveryProp.getExchange().equals(excahngeName))
+        {
+            deliveryProp.setExchange(excahngeName);
+        }
+        String routingKey = destination.getRoutingKey().toString();
+        if (deliveryProp.getRoutingKey() == null || ! deliveryProp.getRoutingKey().equals(routingKey))
+        {
+            deliveryProp.setRoutingKey(routingKey);
+        }
+
+        if (message != origMessage)
+        {
+             _logger.debug("Updating original message");
+            origMessage.setJMSPriority(message.getJMSPriority());
+            origMessage.setJMSTimestamp(message.getJMSTimestamp());
+            _logger.debug("Setting JMSExpiration:" + message.getJMSExpiration());
+            origMessage.setJMSExpiration(message.getJMSExpiration());
+            origMessage.setJMSMessageID(message.getJMSMessageID());
+            origMessage.setJMSDeliveryMode(deliveryMode);
+        }
         BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
         if (contentHeaderProperties.reset())
         {

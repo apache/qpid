@@ -186,7 +186,7 @@ public interface Session
      * @see org.apache.qpidity.transport.DeliveryProperties
      * @see org.apache.qpidity.transport.MessageProperties
      */
-    public void header(Struct... headers);
+    public Header header(Struct... headers);
 
     /**
      * Add the following byte array to the content of the message being sent.
