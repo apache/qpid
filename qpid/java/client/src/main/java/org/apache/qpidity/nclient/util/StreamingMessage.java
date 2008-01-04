@@ -7,6 +7,7 @@ import java.nio.channels.SocketChannel;
 
 import org.apache.qpidity.transport.DeliveryProperties;
 import org.apache.qpidity.transport.MessageProperties;
+import org.apache.qpidity.transport.Header;
 import org.apache.qpidity.api.Message;
 
 public class StreamingMessage extends ReadOnlyMessage implements Message
@@ -14,7 +15,15 @@ public class StreamingMessage extends ReadOnlyMessage implements Message
     SocketChannel _socChannel;
     private int _chunkSize;
     private ByteBuffer _readBuf;
-    
+
+    public Header getHeader() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void setHeader(Header header) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public StreamingMessage(SocketChannel in,int chunkSize,DeliveryProperties deliveryProperties,MessageProperties messageProperties)throws IOException
     {
         _messageProperties = messageProperties;
