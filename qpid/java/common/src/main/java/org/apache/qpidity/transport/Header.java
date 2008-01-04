@@ -23,6 +23,7 @@ package org.apache.qpidity.transport;
 import org.apache.qpidity.transport.network.Frame;
 
 import java.util.List;
+import java.nio.ByteBuffer;
 
 
 /**
@@ -34,6 +35,7 @@ import java.util.List;
 public class Header implements ProtocolEvent {
 
     private final List<Struct> structs;
+    private ByteBuffer _buf;
 
     public Header(List<Struct> structs)
     {
@@ -45,6 +47,15 @@ public class Header implements ProtocolEvent {
         return structs;
     }
 
+    public void setBuf(ByteBuffer buf)
+    {
+        _buf = buf;
+    }
+
+    public ByteBuffer getBuf()
+    {
+        return _buf;
+    }
     public <T> T get(Class<T> klass)
     {
         for (Struct st : structs)

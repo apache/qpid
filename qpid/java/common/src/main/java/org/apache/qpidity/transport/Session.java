@@ -229,19 +229,21 @@ public class Session extends Invoker
         }
     }
 
-    public void header(Header header)
+     public void header(Header header)
     {
         channel.header(header);
     }
 
-    public void header(List<Struct> structs)
+    public Header header(List<Struct> structs)
     {
-        header(new Header(structs));
+        Header res = new Header(structs);
+        header(res);
+        return res;
     }
 
-    public void header(Struct ... structs)
+    public Header header(Struct ... structs)
     {
-        header(Arrays.asList(structs));
+        return header(Arrays.asList(structs));
     }
 
     public void data(ByteBuffer buf)

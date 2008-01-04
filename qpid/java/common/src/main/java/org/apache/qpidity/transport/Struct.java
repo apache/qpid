@@ -41,6 +41,18 @@ public abstract class Struct implements Encodable
         return StructFactory.create(type);
     }
 
+    boolean dirty = true;
+
+    public boolean isDirty()
+    {
+        return dirty;
+    }
+
+    public void setDirty(boolean dirty)
+    {
+        this.dirty = dirty;
+    }
+
     public abstract int getStructType();
 
     public abstract List<Field<?,?>> getFields();
