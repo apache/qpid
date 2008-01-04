@@ -370,11 +370,11 @@ class Struct:
     for type, name in self.fields:
       out.getter("boolean", camel(1, "has", name), "has_" + name)
       out.setter("boolean", camel(1, "clear", name), "has_" + name, "false",
-                 post = "this.%s = %s" % (name, DEFAULTS.get(type, "null")))
+                 post = "this.%s = %s; this.dirty = true" % (name, DEFAULTS.get(type, "null")))
       out.getter(jtype(type), camel(1, "get", name), name)
       for mname in (camel(1, "set", name), name):
         out.setter(jtype(type), mname, name,
-                   post = "this.has_%s = true" % name)
+                   post = "this.has_%s = true; this.dirty = true" % name)
 
       out.line()
       out.line('    static {')
@@ -398,6 +398,7 @@ class Struct:
                  (name, STRUCTS[type], STRUCTS[type]))
       else:
         raise Exception("unknown type: %s" % type)
+      out.line('                check(struct).dirty = true;')
       out.line('            }')
       out.line('            public void write(Encoder enc, Object struct) {')
       if TYPES.has_key(type):
