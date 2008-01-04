@@ -1,2 +1,2 @@
 #!/bin/sh
-exec `dirname $0`/run_test ./perftest --count 1000
+exec `dirname $0`/run_test ./perftest --summary --count 1000
