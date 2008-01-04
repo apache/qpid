@@ -99,7 +99,12 @@ public:
         Waitable::ScopedLock l(lock);
         return closed;
     }
-    
+
+    bool isEmpty() const {
+        Waitable::ScopedLock l(lock);
+        return queue.empty();
+    }    
+
   private:
 
     void queueNotify(size_t ignore) {
