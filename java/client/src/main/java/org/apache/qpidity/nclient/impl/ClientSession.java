@@ -74,7 +74,17 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
         // therefore reading the content in one shot.
         ByteBuffer  data = msg.readData();
         super.messageTransfer(destination, confirmMode, acquireMode);
-        super.header(msg.getDeliveryProperties(),msg.getMessageProperties());
+       // super.header(msg.getDeliveryProperties(),msg.getMessageProperties()  );
+        if( msg.getHeader() == null || msg.getDeliveryProperties().isDirty() || msg.getMessageProperties().isDirty() )
+        {
+            msg.setHeader( super.header(msg.getDeliveryProperties(),msg.getMessageProperties()) );
+            msg.getDeliveryProperties().setDirty(false);
+            msg.getMessageProperties().setDirty(false);
+        }
+        else
+        {
+            super.header(msg.getHeader());
+        }
         data( data );
         endData();
     }

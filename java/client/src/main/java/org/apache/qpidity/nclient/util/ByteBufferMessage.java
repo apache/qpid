@@ -7,6 +7,7 @@ import java.util.Queue;
 
 import org.apache.qpidity.transport.DeliveryProperties;
 import org.apache.qpidity.transport.MessageProperties;
+import org.apache.qpidity.transport.Header;
 import org.apache.qpidity.api.Message;
 
 /**
@@ -27,6 +28,15 @@ public class ByteBufferMessage implements Message
     private DeliveryProperties _currentDeliveryProps;
     private MessageProperties _currentMessageProps;
     private long _transferId;
+    private Header _header;
+
+    public void setHeader(Header header) {
+        _header = header;
+    }
+
+    public Header getHeader() {
+        return _header;
+    }
 
     public ByteBufferMessage()
     {
