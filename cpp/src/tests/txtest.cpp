@@ -143,6 +143,7 @@ struct Transfer : public Client, public Runnable
                     in = lq.pop();
                     out.setData(in.getData());
                     out.getMessageProperties().setCorrelationId(in.getMessageProperties().getCorrelationId());
+                    out.getDeliveryProperties().setDeliveryMode(in.getDeliveryProperties().getDeliveryMode());
                     session.messageTransfer(arg::content=out);
                 }
                 in.acknowledge();
