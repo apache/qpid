@@ -9,6 +9,7 @@ import java.nio.channels.FileChannel;
 
 import org.apache.qpidity.transport.DeliveryProperties;
 import org.apache.qpidity.transport.MessageProperties;
+import org.apache.qpidity.transport.Header;
 import org.apache.qpidity.api.Message;
 
 /**
@@ -50,6 +51,14 @@ public class FileMessage extends ReadOnlyMessage implements Message
         {
             _chunkSize = (int)_fileSize;
         }
+    }
+
+    public void setHeader(Header header) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public Header getHeader() {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void readData(byte[] target) throws IOException
