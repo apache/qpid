@@ -1,3 +1,4 @@
+/*MGEN:commentPrefix=//*/
 #ifndef _ARGS_/*MGEN:Method.NameUpper*/_
 #define _ARGS_/*MGEN:Method.NameUpper*/_
 

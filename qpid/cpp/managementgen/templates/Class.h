@@ -1,3 +1,4 @@
+/*MGEN:commentPrefix=//*/
 #ifndef _MANAGEMENT_/*MGEN:Class.NameUpper*/_
 #define _MANAGEMENT_/*MGEN:Class.NameUpper*/_
 
