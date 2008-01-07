@@ -44,6 +44,21 @@ class ManagementData:
   #    element       :== (<element-name>, <element-value>)
   #
 
+  def registerObjId (self, objId):
+    if self.baseId == 0:
+      if objId & 0x8000000000000000L == 0:
+        self.baseId = objId - 1000
+
+  def displayObjId (self, objId):
+    if objId & 0x8000000000000000L == 0:
+      return objId - self.baseId
+    return (objId & 0x7fffffffffffffffL) + 5000
+
+  def rawObjId (self, displayId):
+    if displayId < 5000:
+      return displayId + self.baseId
+    return displayId - 5000 + 0x8000000000000000L
+
   def dataHandler (self, context, className, list, timestamps):
     """ Callback for configuration and instrumentation data updates """
     self.lock.acquire ()
@@ -53,10 +68,9 @@ class ManagementData:
       if className not in self.tables:
         self.tables[className] = {}
 
-      # Calculate a base-id so displayed IDs are reasonable 4-digit numbers
+      # Register the ID so a more friendly presentation can be displayed
       id = long (list[0][1])
-      if self.baseId == 0:
-        self.baseId = id - 1000
+      self.registerObjId (id)
 
       # If this object hasn't been seen before, create a new object record with
       # the timestamps and empty lists for configuration and instrumentation data.
@@ -129,7 +143,7 @@ class ManagementData:
   def refName (self, oid):
     if oid == 0:
       return "NULL"
-    return str (oid - self.baseId)
+    return str (self.displayObjId (oid))
 
   def valueDisplay (self, className, key, value):
     for kind in range (2):
@@ -244,12 +258,12 @@ class ManagementData:
     list = []
     if tokens[0] == "all":
       for id in self.tables[className]:
-        list.append (id - self.baseId)
+        list.append (self.displayObjId (id))
 
     elif tokens[0] == "active":
       for id in self.tables[className]:
         if self.tables[className][id][0][2] == 0:
-          list.append (id - self.baseId)
+          list.append (self.displayObjId (id))
 
     else:
       for token in tokens:
@@ -257,7 +271,7 @@ class ManagementData:
           if token.find ("-") != -1:
             ids = token.split("-", 2)
             for id in range (int (ids[0]), int (ids[1]) + 1):
-              if self.getClassForId (long (id) + self.baseId) == className:
+              if self.getClassForId (self.rawObjId (long (id))) == className:
                 list.append (id)
           else:
             list.append (token)
@@ -329,7 +343,7 @@ class ManagementData:
         else:
           rootId = int (tokens[0])
 
-        className = self.getClassForId (rootId + self.baseId)
+        className = self.getClassForId (self.rawObjId (rootId))
         remaining = tokens
         if className == None:
           print "Id not known: %d" % int (tokens[0])
@@ -348,8 +362,8 @@ class ManagementData:
 
       ids = []
       for id in userIds:
-        if self.getClassForId (long (id) + self.baseId) == className:
-          ids.append (long (id) + self.baseId)
+        if self.getClassForId (self.rawObjId (long (id))) == className:
+          ids.append (self.rawObjId (long (id)))
 
       rows = []
       timestamp = None
@@ -481,7 +495,7 @@ class ManagementData:
     self.lock.acquire ()
     methodOk = True
     try:
-      className = self.getClassForId (userOid + self.baseId)
+      className = self.getClassForId (self.rawObjId (userOid))
       if className == None:
         raise ValueError ()
 
@@ -505,7 +519,7 @@ class ManagementData:
     self.lock.release ()
     if methodOk:
 #      try:
-        self.broker.method (self.methodSeq, userOid + self.baseId, className,
+        self.broker.method (self.methodSeq, self.rawObjId (userOid), className,
                             methodName, namedArgs)
 #      except ValueError, e:
 #        print "Error invoking method:", e

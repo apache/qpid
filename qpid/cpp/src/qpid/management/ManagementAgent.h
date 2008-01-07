@@ -51,7 +51,9 @@ class ManagementAgent
     void setInterval     (uint16_t _interval) { interval = _interval; }
     void setExchange     (broker::Exchange::shared_ptr mgmtExchange,
                           broker::Exchange::shared_ptr directExchange);
-    void addObject       (ManagementObject::shared_ptr object);
+    void addObject       (ManagementObject::shared_ptr object,
+                          uint64_t                     persistenceId = 0,
+                          uint64_t                     idOffset      = 10);
     void clientAdded     (void);
     void dispatchCommand (broker::Deliverable&             msg,
                           const std::string&               routingKey,

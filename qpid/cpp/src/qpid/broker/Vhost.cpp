@@ -33,7 +33,7 @@ Vhost::Vhost (management::Manageable* parentBroker)
         {
             mgmtObject = management::Vhost::shared_ptr
                 (new management::Vhost (this, parentBroker, "/"));
-            agent->addObject (mgmtObject);
+            agent->addObject (mgmtObject, 2, 0);
         }
     }
 }
