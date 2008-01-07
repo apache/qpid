@@ -146,7 +146,7 @@ Broker::Broker(const Broker::Options& conf) :
         mgmtObject->set_clusterName          ("");
         mgmtObject->set_version              (PACKAGE_VERSION);
         
-        managementAgent->addObject (mgmtObject);
+        managementAgent->addObject (mgmtObject, 1, 0);
 
         // Since there is currently no support for virtual hosts, a placeholder object
         // representing the implied single virtual host is added here to keep the

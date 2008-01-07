@@ -461,19 +461,19 @@ class SchemaMethod:
   # Code Generation Functions.  The names of these functions (minus the leading "gen")
   # match the substitution keywords in the template files.
   #===================================================================================
-  def genNameUpper (self, stream):
+  def genNameUpper (self, stream, variables):
     stream.write (self.getFullName ().upper ())
 
-  def genNameCamel (self, stream):
+  def genNameCamel (self, stream, variables):
     stream.write (self.getFullName ())
 
-  def genArguments (self, stream):
+  def genArguments (self, stream, variables):
     for arg in self.args:
       ctype  = arg.type.type.cpp
       dirTag = arg.dir.lower() + "_"
       stream.write ("    " + ctype + " " + dirTag + arg.getName () + ";\n")
 
-  def genSchema (self, stream):
+  def genSchema (self, stream, variables):
     stream.write ("    ft = FieldTable ();\n")
     stream.write ("    ft.setString (NAME,     \"" + self.name + "\");\n")
     stream.write ("    ft.setInt    (ARGCOUNT, " + str (len (self.args)) + ");\n")
@@ -571,25 +571,25 @@ class SchemaClass:
   # Code Generation Functions.  The names of these functions (minus the leading "gen")
   # match the substitution keywords in the template files.
   #===================================================================================
-  def genAccessorMethods (self, stream):
+  def genAccessorMethods (self, stream, variables):
     for config in self.configElements:
       if config.access != "RC":
         config.genAccessor (stream)
     for inst in self.instElements:
       inst.genAccessor (stream)
 
-  def genConfigCount (self, stream):
+  def genConfigCount (self, stream, variables):
     stream.write ("%d" % len (self.configElements))
 
-  def genConfigDeclarations (self, stream):
+  def genConfigDeclarations (self, stream, variables):
     for element in self.configElements:
       element.genDeclaration (stream)
 
-  def genConfigElementSchema (self, stream):
+  def genConfigElementSchema (self, stream, variables):
     for config in self.configElements:
       config.genSchema (stream)
 
-  def genConstructorArgs (self, stream):
+  def genConstructorArgs (self, stream, variables):
     # Constructor args are config elements with read-create access
     result = ""
     first  = 1
@@ -601,12 +601,12 @@ class SchemaClass:
           stream.write (", ")
         element.genFormalParam (stream)
 
-  def genConstructorInits (self, stream):
+  def genConstructorInits (self, stream, variables):
     for element in self.configElements:
       if element.isConstructorArg ():
         stream.write ("," + element.getName () + "(_" + element.getName () + ")")
 
-  def genDoMethodArgs (self, stream):
+  def genDoMethodArgs (self, stream, variables):
     methodCount = 0
     inArgCount  = 0
     for method in self.methods:
@@ -623,26 +623,26 @@ class SchemaClass:
       else:
         stream.write ("string methodName, Buffer& inBuf, Buffer& outBuf")
 
-  def genEventCount (self, stream):
+  def genEventCount (self, stream, variables):
     stream.write ("%d" % len (self.events))
 
-  def genEventSchema (self, stream):
+  def genEventSchema (self, stream, variables):
     pass ###########################################################################
 
-  def genHiLoStatResets (self, stream):
+  def genHiLoStatResets (self, stream, variables):
     for inst in self.instElements:
       inst.genHiLoStatResets (stream)
 
-  def genInitializeElements (self, stream):
+  def genInitializeElements (self, stream, variables):
     for inst in self.instElements:
       inst.genInitialize (stream)
 
-  def genInstChangedStub (self, stream):
+  def genInstChangedStub (self, stream, variables):
     if len (self.instElements) == 0:
       stream.write ("    // Stub for getInstChanged.  There are no inst elements\n")
       stream.write ("    bool getInstChanged (void) { return false; }\n")
 
-  def genInstCount (self, stream):
+  def genInstCount (self, stream, variables):
     count = 0
     for inst in self.instElements:
       count = count + 1
@@ -650,24 +650,24 @@ class SchemaClass:
         count = count + 2
     stream.write ("%d" % count)
 
-  def genInstDeclarations (self, stream):
+  def genInstDeclarations (self, stream, variables):
     for element in self.instElements:
       element.genDeclaration (stream)
 
-  def genInstElementSchema (self, stream):
+  def genInstElementSchema (self, stream, variables):
     for inst in self.instElements:
       inst.genSchema (stream)
 
-  def genMethodArgIncludes (self, stream):
+  def genMethodArgIncludes (self, stream, variables):
     for method in self.methods:
       if method.getArgCount () > 0:
         stream.write ("#include \"qpid/management/Args" +\
                       method.getFullName () + ".h\"\n")
 
-  def genMethodCount (self, stream):
+  def genMethodCount (self, stream, variables):
     stream.write ("%d" % len (self.methods))
 
-  def genMethodHandlers (self, stream):
+  def genMethodHandlers (self, stream, variables):
     for method in self.methods:
       stream.write ("\n    if (methodName == \"" + method.getName () + "\")\n    {\n")
       if method.getArgCount () == 0:
@@ -694,44 +694,44 @@ class SchemaClass:
       stream.write ("        return;\n    }\n")
 
 
-  def genMethodIdDeclarations (self, stream):
+  def genMethodIdDeclarations (self, stream, variables):
     number = 1
     for method in self.methods:
       stream.write ("    static const uint32_t METHOD_" + method.getName().upper() +\
                     " = %d;\n" % number)
       number = number + 1
 
-  def genMethodSchema (self, stream):
+  def genMethodSchema (self, stream, variables):
     for method in self.methods:
-      method.genSchema (stream)
+      method.genSchema (stream, variables)
 
-  def genNameCap (self, stream):
+  def genNameCap (self, stream, variables):
     stream.write (self.name.capitalize ())
 
-  def genNameLower (self, stream):
+  def genNameLower (self, stream, variables):
     stream.write (self.name.lower ())
 
-  def genNameUpper (self, stream):
+  def genNameUpper (self, stream, variables):
     stream.write (self.name.upper ())
 
-  def genParentArg (self, stream):
+  def genParentArg (self, stream, variables):
     for config in self.configElements:
       if config.isParentRef == 1:
         stream.write (" _parent")
         return
 
-  def genParentRefAssignment (self, stream):
+  def genParentRefAssignment (self, stream, variables):
     for config in self.configElements:
       if config.isParentRef == 1:
         stream.write (config.getName () + \
                       " = _parent->GetManagementObject ()->getObjectId ();")
         return
 
-  def genWriteConfig (self, stream):
+  def genWriteConfig (self, stream, variables):
     for config in self.configElements:
       config.genWrite (stream);
 
-  def genWriteInst (self, stream):
+  def genWriteInst (self, stream, variables):
     for inst in self.instElements:
       inst.genWrite (stream);
 

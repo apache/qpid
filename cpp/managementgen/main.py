@@ -24,32 +24,27 @@ from generate import Generator
 from optparse import OptionParser
 
 # Set command line options
-parser = OptionParser ()
-parser.add_option ("-o", "--outDir", dest="outdir", metavar="DIR",
-                   help="Destination directory for generated files")
-parser.add_option ("-t", "--typeFile", dest="typefile", metavar="FILE",
-                   help="Schema type document (XML file)")
-parser.add_option ("-s", "--schemaFile", dest="schemafile", metavar="FILE",
-                   help="Schema defintion document (XML file)")
-parser.add_option ("-i", "--templateDir", dest="templatedir", metavar="DIR",
-                   help="Directory where template files can be found")
+usage  = "usage: %prog [options] schema-document type-document template-directory out-directory"
+parser = OptionParser (usage=usage)
 parser.add_option ("-m", "--makefile", dest="makefile", metavar="FILE",
                    help="Makefile fragment")
 
 (opts, args) = parser.parse_args ()
 
-if opts.outdir      == None or \
-   opts.typefile    == None or \
-   opts.schemafile  == None or \
-   opts.templatedir == None:
-  parser.error ("Incorrect options, see --help for help")
+if len (args) < 4:
+  parser.error ("Too few arguments")
 
-gen    = Generator     (opts.outdir,   opts.templatedir)
-schema = PackageSchema (opts.typefile, opts.schemafile)
+schemafile  = args[0]
+typefile    = args[1]
+templatedir = args[2]
+outdir      = args[3]
+
+gen    = Generator     (outdir,   templatedir)
+schema = PackageSchema (typefile, schemafile)
 
 gen.makeClassFiles  ("Class.h",   schema)
 gen.makeClassFiles  ("Class.cpp", schema)
 gen.makeMethodFiles ("Args.h",    schema)
 
 if opts.makefile != None:
-  gen.makeMakeFile (opts.makefile)
+  gen.makeSingleFile ("Makefile.mk", opts.makefile, force=True)
