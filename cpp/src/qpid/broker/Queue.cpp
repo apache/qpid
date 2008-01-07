@@ -65,7 +65,11 @@ Queue::Queue(const string& _name, bool _autodelete,
         {
             mgmtObject = management::Queue::shared_ptr
                 (new management::Queue (this, parent, _name, _store != 0, _autodelete, 0));
-            agent->addObject (mgmtObject);
+
+            // Add the object to the management agent only if this queue is not durable.
+            // If it's durable, we will add it later when the queue is assigned a persistenceId.
+            if (store == 0)
+                agent->addObject (mgmtObject);
         }
     }
 }
@@ -519,7 +523,12 @@ uint64_t Queue::getPersistenceId() const
 
 void Queue::setPersistenceId(uint64_t _persistenceId) const
 { 
-    persistenceId = _persistenceId; 
+    if (mgmtObject != 0 && persistenceId == 0)
+    {
+        ManagementAgent::shared_ptr agent = ManagementAgent::getAgent ();
+        agent->addObject (mgmtObject, _persistenceId);
+    }
+    persistenceId = _persistenceId;
 }
 
 void Queue::encode(framing::Buffer& buffer) const 

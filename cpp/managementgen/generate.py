@@ -27,13 +27,18 @@ import os
 import os.path
 import filecmp
 
-#=====================================================================================
-#
-#=====================================================================================
 class Template:
+  """
+  Expandable File Template - This class is instantiated each time a
+  template is to be expanded.  It is instantiated with the "filename"
+  which is the full path to the template file and the "handler" which
+  is an object that is responsible for storing variables (setVariable)
+  and expanding tags (substHandler).
+  """
   def __init__ (self, filename, handler):
     self.filename = filename
     self.handler  = handler
+    self.handler.initExpansion ()
 
   def expandLine (self, line, stream, object):
     cursor = 0
@@ -47,29 +52,78 @@ class Template:
       stream.write (line[cursor:sub])
       cursor = subend + 2
 
-      tag    = line[sub:subend]
-      dotPos = tag.find (".")
-      if dotPos == -1:
-        raise ValueError ("Invalid tag: %s" % tag)
-      tagObject = tag[7:dotPos]
-      tagName   = tag[dotPos + 1:len (tag)]
-
-      self.handler (object, stream, tagObject, tagName)
+      tag      = line[sub:subend]
+      equalPos = tag.find ("=")
+      if equalPos == -1:
+        dotPos = tag.find (".")
+        if dotPos == -1:
+          raise ValueError ("Invalid tag: %s" % tag)
+        tagObject = tag[7:dotPos]
+        tagName   = tag[dotPos + 1:len (tag)]
+        self.handler.substHandler (object, stream, tagObject, tagName)
+      else:
+        tagKey = tag[7:equalPos]
+        tagVal = tag[equalPos + 1:len (tag)]
+        self.handler.setVariable (tagKey, tagVal)
 
   def expand (self, object):
     fd     = open (self.filename)
     stream = StringIO ()
-    
+
     for line in fd:
       self.expandLine (line, stream, object)
     fd.close ()
 
     return stream
 
-#=====================================================================================
-#
-#=====================================================================================
+
+class Makefile:
+  """ Object representing a makefile fragment """
+  def __init__ (self, filelists, templateFiles):
+    self.filelists     = filelists
+    self.templateFiles = templateFiles
+
+  def genGenSources (self, stream, variables):
+    mdir = variables["mgenDir"]
+    sdir = variables["specDir"]
+    stream.write (mdir + "/main.py \\\n")
+    stream.write ("    " + mdir + "/generate.py \\\n")
+    stream.write ("    " + mdir + "/schema.py \\\n")
+    stream.write ("    " + sdir + "/management-types.xml \\\n")
+    stream.write ("    " + sdir + "/management-schema.xml \\\n")
+    first = True
+    for template in self.templateFiles:
+      if first:
+        first = False
+        stream.write ("    ")
+      else:
+        stream.write (" \\\n    ")
+      stream.write (mdir + "/templates/" + template)
+
+  def genGenCppFiles (self, stream, variables):
+    first = True
+    for file in self.filelists["cpp"]:
+      if first:
+        first = False
+      else:
+        stream.write (" \\\n    ")
+      stream.write (file)
+
+  def genGenHFiles (self, stream, variables):
+    first = True
+    for file in self.filelists["h"]:
+      if first:
+        first = False
+      else:
+        stream.write (" \\\n    ")
+      stream.write (file)
+
+
 class Generator:
+  """
+  This class manages code generation using template files.  It is instantiated
+  once for an entire code generation session.
+  """
   def createPath (self, path):
     exists = True
     try:
@@ -99,10 +153,12 @@ class Generator:
     self.filelists["cpp"] = []
     self.filelists["mk"]  = []
     self.templateFiles    = []
+    self.variables        = {}
 
-  def genDisclaimer (self, stream):
-    stream.write ("// This source file was created by a code generator.\n")
-    stream.write ("// Please do not edit.")
+  def genDisclaimer (self, stream, variables):
+    prefix = variables["commentPrefix"]
+    stream.write (prefix + " This source file was created by a code generator.\n")
+    stream.write (prefix + " Please do not edit.")
 
   def fileExt (self, path):
     dot = path.rfind (".")
@@ -150,29 +206,35 @@ class Generator:
     path = self.dest + "Args" + method.getFullName () + extension
     return path
 
+  def initExpansion (self):
+    self.variables = {}
+
   def substHandler (self, object, stream, tagObject, tag):
     if tagObject == "Root":
       obj = "self"
     else:
       obj = "object"  # MUST be the same as the 2nd formal parameter
 
-    call = obj + ".gen" + tag + "(stream)"
+    call = obj + ".gen" + tag + "(stream, self.variables)"
     eval (call)
 
-  def makeClassFiles (self, templateFile, schema):
+  def setVariable (self, key, value):
+    self.variables[key] = value
+
+  def makeClassFiles (self, templateFile, schema, force=False):
     """ Generate an expanded template per schema class """
     classes  = schema.getClasses ()
-    template = Template (self.input + templateFile, self.substHandler)
+    template = Template (self.input + templateFile, self)
     self.templateFiles.append (templateFile)
     for _class in classes:
       target = self.targetClassFile (_class, templateFile)
       stream = template.expand (_class)
-      self.writeIfChanged (stream, target)
+      self.writeIfChanged (stream, target, force)
 
-  def makeMethodFiles (self, templateFile, schema):
+  def makeMethodFiles (self, templateFile, schema, force=False):
     """ Generate an expanded template per method-with-arguments """
     classes  = schema.getClasses ()
-    template = Template (self.input + templateFile, self.substHandler)
+    template = Template (self.input + templateFile, self)
     self.templateFiles.append (templateFile)
     for _class in classes:
       methods = _class.getMethods ()
@@ -180,50 +242,12 @@ class Generator:
         if method.getArgCount () > 0:
           target = self.targetMethodFile (method, templateFile)
           stream = template.expand (method)
-          self.writeIfChanged (stream, target)
+          self.writeIfChanged (stream, target, force)
 
-  def makeMakeFile (self, target):
-    stream = StringIO ()
-    stream.write ("# Generated makefile fragment.\n\n")
-    stream.write ("mgen_generator=$(mgen_dir)/main.py \\\n")
-    stream.write ("    $(mgen_dir)/generate.py \\\n")
-    stream.write ("    $(mgen_dir)/schema.py \\\n")
-    stream.write ("    $(top_srcdir)/../specs/management-types.xml \\\n")
-    stream.write ("    $(top_srcdir)/../specs/management-schema.xml \\\n    ")
-    first = 1
-    for template in self.templateFiles:
-      if first == 1:
-        first = 0
-      else:
-        stream.write (" \\\n    ")
-      stream.write ("$(mgen_dir)/templates/" + template)
-    
-    stream.write ("\n\nmgen_broker_cpp=")
-    first = 1
-    for file in self.filelists["cpp"]:
-      if first == 1:
-        first = 0
-      else:
-        stream.write (" \\\n    ")
-      stream.write (file.replace ("../src", "."))
-    stream.write ("\n\n")
-
-    stream.write ("# Header file install rules.\n")
-    stream.write ("qpid_managementdir = $(includedir)/qpid/management\n")
-    stream.write ("dist_qpid_management_HEADERS = ")
-    first = 1
-    for file in self.filelists["h"]:
-      if first == 1:
-        first = 0
-      else:
-        stream.write (" \\\n    ")
-      stream.write (file.replace ("../src", "."))
-    stream.write ("\n\n")
-
-    stream.write ("if GENERATE\n")
-    stream.write ("$(srcdir)/managementgen.mk: $(mgen_generator)\n")
-    stream.write ("\t$(mgen_cmd)\n")
-    stream.write ("\n$(mgen_generator):\n")
-    stream.write ("endif\n")
-
-    self.writeIfChanged (stream, target, force=True)
+  def makeSingleFile (self, templateFile, target, force=False):
+    """ Generate a single expanded template """
+    makefile = Makefile (self.filelists, self.templateFiles)
+    template = Template (self.input + templateFile, self)
+    self.templateFiles.append (templateFile)
+    stream = template.expand (makefile)
+    self.writeIfChanged (stream, target, force)

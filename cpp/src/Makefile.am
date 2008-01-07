@@ -22,10 +22,10 @@ rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate $(srcdir)/gen $(specs) all $(s
 
 # Management generator.
 mgen_dir=$(top_srcdir)/managementgen
-mgen_cmd=$(mgen_dir)/main.py -o $(srcdir)/gen/qpid/management \
-	-t $(top_srcdir)/../specs/management-types.xml \
-	-s $(top_srcdir)/../specs/management-schema.xml \
-	-i $(mgen_dir)/templates -m $(srcdir)/managementgen.mk
+mgen_cmd=$(mgen_dir)/main.py -m $(srcdir)/managementgen.mk \
+	$(top_srcdir)/../specs/management-schema.xml \
+	$(top_srcdir)/../specs/management-types.xml \
+	$(mgen_dir)/templates $(srcdir)/gen/qpid/management
 
 endif				# GENERATE
 
