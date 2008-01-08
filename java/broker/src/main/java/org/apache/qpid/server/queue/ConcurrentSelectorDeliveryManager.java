@@ -224,6 +224,8 @@ public class ConcurrentSelectorDeliveryManager implements DeliveryManager
             AMQMessage msg = iter.next();
             if(msg.expired(_queue))
             {
+                // fixme: Currently we have to update the total byte size here for the data in the queue  
+                _totalMessageSize.addAndGet(-msg.getSize());
                 _queue.dequeue(_reapingStoreContext,msg);
                 msg.decrementReference(_reapingStoreContext);
                 iter.remove();

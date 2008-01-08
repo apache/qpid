@@ -2136,7 +2136,6 @@ public class AMQSession extends Closeable implements Session, QueueSession, Topi
                                                                 amqd.getAMQQueueName(), // queue
                                                                 getTicket()); // ticket
                         QueueDeclareOkHandler okHandler = new QueueDeclareOkHandler();
-                        //getProtocolHandler().syncWrite(queueDeclare, QueueDeclareOkBody.class);
                         getProtocolHandler().writeCommandFrameAndWaitForReply(queueDeclare, okHandler);
 
                         return okHandler._messageCount;
