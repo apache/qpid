@@ -22,9 +22,13 @@ package org.apache.qpid.jms.failover;
 
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FailoverSingleServer implements FailoverMethod
 {
+    private static final Logger _logger = LoggerFactory.getLogger(FailoverSingleServer.class);
+
     /** The default number of times to rety a conection to this server */
     public static final int DEFAULT_SERVER_RETRIES = 1;
 
@@ -78,7 +82,7 @@ public class FailoverSingleServer implements FailoverMethod
 
     public BrokerDetails getCurrentBrokerDetails()
     {
-       return _brokerDetail;
+        return _brokerDetail;
     }
 
     public BrokerDetails getNextBrokerDetails()
@@ -91,11 +95,29 @@ public class FailoverSingleServer implements FailoverMethod
         {
             if (_currentRetries < _retries)
             {
-                _currentRetries ++;
+                _currentRetries++;
             }
-
-            return _brokerDetail;
         }
+
+
+        String delayStr = _brokerDetail.getOption(BrokerDetails.OPTIONS_CONNECT_DELAY);
+        if (delayStr != null && _currentRetries != 1)
+        {
+            Long delay = Long.parseLong(delayStr);
+            _logger.info("Delay between connect retries:" + delay);
+            try
+            {
+
+                Thread.sleep(delay);
+            }
+            catch (InterruptedException ie)
+            {
+                _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
+                return null;
+            }
+        }
+
+        return _brokerDetail;
     }
 
     public void setBroker(BrokerDetails broker)
@@ -138,10 +160,10 @@ public class FailoverSingleServer implements FailoverMethod
 
     public String toString()
     {
-        return "SingleServer:\n"+
-                "Max Retries:"+_retries+
-                "\nCurrent Retry:"+_currentRetries+
-                "\n"+_brokerDetail+"\n";
+        return "SingleServer:\n" +
+               "Max Retries:" + _retries +
+               "\nCurrent Retry:" + _currentRetries +
+               "\n" + _brokerDetail + "\n";
     }
 
 }
