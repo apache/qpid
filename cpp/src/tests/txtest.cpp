@@ -28,6 +28,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <vector>
 
@@ -112,8 +113,12 @@ struct Client
 
     ~Client() 
     {
-        session.close();
-        connection.close();
+        try{
+            session.close();
+            connection.close();
+        } catch(const std::exception& e) {
+            std::cout << e.what() << std::endl;
+        }
     }
 };
 
