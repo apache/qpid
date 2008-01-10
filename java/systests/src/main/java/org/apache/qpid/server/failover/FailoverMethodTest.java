@@ -78,9 +78,11 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             long end = System.currentTimeMillis();
 
             //Failover should take less that 10 seconds.
-            // This is calculated by vm://:1 two retries left after initial connection ( 4s)
+            // This is calculated by vm://:1 two retries left after initial connection (4s)
             // localhost get three retries so (6s) so 10s in total for connection dropping
-            assertTrue("Failover took over 10 seconds:"+(end - start), (end - start) > 10000);
+            assertTrue("Failover took less than 9.5 seconds:"+(end - start), (end - start) > 9500);
+            // The sleep method is not 100% accurate under windows so with 5 sleeps and a 10ms accuracy then there is
+            // the potential for the tests to finish in 500ms sooner than the predicted 10s.
 
         }
         catch (AMQException e)
@@ -112,7 +114,9 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             // This is calculated by vm://:1 two retries left after initial connection
             // so 4s in total for connection dropping
 
-            assertTrue("Failover took over 4 seconds", (end - start) > 4000);
+            assertTrue("Failover took less than 3.7 seconds", (end - start) > 3700);
+            // The sleep method is not 100% accurate under windows so with 3 sleeps and a 10ms accuracy then there is
+            // the potential for the tests to finish in 300ms sooner than the predicted 4s.
 
         }
         catch (AMQException e)
