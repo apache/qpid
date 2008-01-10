@@ -34,7 +34,7 @@ class FieldTable;
 
 class Buffer
 {
-    const uint32_t size;
+    uint32_t size;
     char* data;
     uint32_t position;
     uint32_t r_position;
@@ -43,13 +43,16 @@ class Buffer
 
 public:
 
-    Buffer(char* data, uint32_t size);
+    Buffer(char* data=0, uint32_t size=0);
 
     void record();
     void restore(bool reRecord = false);
     void reset();
-    uint32_t available();
-    
+
+    uint32_t available() { return size - position; }
+    uint32_t getSize() { return size; }
+    uint32_t getPosition() { return position; }
+        
     void putOctet(uint8_t i);
     void putShort(uint16_t i);
     void putLong(uint32_t i);

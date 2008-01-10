@@ -476,7 +476,7 @@ struct SubscribeThread : public Client {
             session.close();
         }
         catch (const std::exception& e) {
-            cout << "Publisher exception: " << e.what() << endl;
+            cout << "SubscribeThread exception: " << e.what() << endl;
             exit(1);
         }
     }
