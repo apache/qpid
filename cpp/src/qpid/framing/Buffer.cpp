@@ -47,10 +47,6 @@ void Buffer::reset(){
     position = 0;
 }
 
-uint32_t Buffer::available(){
-    return size - position;
-}
-
 ///////////////////////////////////////////////////
 
 void Buffer::putOctet(uint8_t i){

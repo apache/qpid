@@ -45,6 +45,33 @@ namespace client {
 class Connector : public framing::OutputHandler, 
                   private sys::Runnable
 {
+    struct Buff;
+
+    /** Batch up frames for writing to aio. */
+    class Writer : public framing::FrameHandler {
+        typedef sys::AsynchIO::BufferBase BufferBase;
+        typedef std::vector<framing::AMQFrame> Frames;
+
+        sys::Mutex lock;
+        sys::AsynchIO* aio;
+        BufferBase* buffer;
+        Frames frames;
+        Frames::iterator lastEof; // Points after last EOF in frames
+        framing::Buffer encode;
+        size_t framesEncoded;
+        
+        void writeOne(const sys::Mutex::ScopedLock&);
+        void newBuffer(const sys::Mutex::ScopedLock&);
+
+      public:
+        
+        Writer();
+        ~Writer();
+        void setAio(sys::AsynchIO*);
+        void handle(framing::AMQFrame&);
+        void write(sys::AsynchIO&);
+    };
+    
     const bool debug;
     const int receive_buffer_size;
     const int send_buffer_size;
@@ -65,8 +92,7 @@ class Connector : public framing::OutputHandler,
     framing::InitiationHandler* initialiser;
     framing::OutputHandler* output;
 
-    sys::Mutex writeLock;
-    std::queue<framing::AMQFrame> writeFrameQueue;
+    Writer writer;
     
     sys::Thread receiver;
 
