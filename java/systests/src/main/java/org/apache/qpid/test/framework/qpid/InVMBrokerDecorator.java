@@ -26,6 +26,7 @@ import junit.framework.TestResult;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 
 import uk.co.thebadgerset.junit.extensions.SetupTaskAware;
@@ -43,6 +44,11 @@ import uk.co.thebadgerset.junit.extensions.WrappedSuiteTestDecorator;
  *
  * @todo May need to add a more fine grained injection point for the in-vm broker management, as this acts at the
  *       suite level, rather than the individual test level.
+ *
+ * @todo Management of in-vm brokers for failure testing. Failure test setups may need to set their connection url to
+ *       use multiple broker (vm://:1;vm://:2), with fail-over between them. There is round-robin fail-over, but also
+ *       retry? A test case using an in-vm broker needs to record which one it is using, so that it can be
+ *       killed/restarted.
  */
 public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
 {
@@ -71,7 +77,7 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
         {
             // Check that the test to have an in-vm broker setup/teardown task added to it, is actually a framework
             // test that can handle setup tasks.
-            if ((test instanceof FrameworkBaseCase) && (test instanceof SetupTaskAware))
+            if ((test instanceof SetupTaskAware))
             {
                 SetupTaskAware frameworkTest = (SetupTaskAware) test;
 
@@ -100,6 +106,16 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                             ApplicationRegistry.remove(1);
                         }
                     });
+
+                // Check if the test is aware whether or not it can control the broker life cycle, and if so provide
+                // additional instrumentation for it to control the in-vm broker through.
+                if (test instanceof BrokerLifecycleAware)
+                {
+                    BrokerLifecycleAware inVMTest = (BrokerLifecycleAware) test;
+                    inVMTest.setInVmBrokers();
+                    inVMTest.setLiveBroker(1);
+                    inVMTest.setFailureMechanism(new CauseFailureInVM(inVMTest));
+                }
             }
         }
 

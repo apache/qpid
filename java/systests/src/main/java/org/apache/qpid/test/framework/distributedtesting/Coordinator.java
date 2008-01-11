@@ -330,6 +330,7 @@ public class Coordinator extends TKTestRunner
         {
             log.debug("Top level handler caught execption.", e);
             console.info(e.getMessage());
+            e.printStackTrace();
             System.exit(EXCEPTION_EXIT);
         }
     }

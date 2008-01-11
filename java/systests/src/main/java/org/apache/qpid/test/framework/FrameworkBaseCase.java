@@ -23,6 +23,7 @@ package org.apache.qpid.test.framework;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
+import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
 import uk.co.thebadgerset.junit.extensions.AsymptoticTestCase;
@@ -46,7 +47,8 @@ import java.util.List;
  * <tr><td> Convert failed assertions to error messages.
  * </table>
  */
-public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTestContext, SetupTaskAware
+public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTestContext, SetupTaskAware,
+    BrokerLifecycleAware
 {
     /** Used for debugging purposes. */
     private static final Logger log = Logger.getLogger(FrameworkBaseCase.class);
@@ -59,6 +61,12 @@ public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTe
 
     /** A default setup task processor to delegate setup tasks to. */
     protected SetupTaskHandler taskHandler = new SetupTaskHandler();
+
+    /** Flag used to track whether the test is in-vm or not. */
+    protected boolean isUsingInVM;
+
+    /** Holds the failure mechanism. */
+    protected CauseFailure failureMechanism = new CauseFailureUserPrompt();
 
     /**
      * Creates a new test case with the specified name.
@@ -233,5 +241,48 @@ public class FrameworkBaseCase extends AsymptoticTestCase implements FrameworkTe
     public String getTestCaseNameForTestMethod(String methodName)
     {
         return methodName;
+    }
+
+    public void setInVmBrokers()
+    {
+        isUsingInVM = true;
+    }
+
+    /**
+     * Indicates whether or not a test case is using in-vm brokers.
+     *
+     * @return <tt>true</tt> if the test is using in-vm brokers, <tt>false</tt> otherwise.
+     */
+    public boolean usingInVmBroker()
+    {
+        return isUsingInVM;
+    }
+
+    /**
+     * Sets the currently live in-vm broker.
+     *
+     * @param i The currently live in-vm broker.
+     */
+    public void setLiveBroker(int i)
+    { }
+
+    /**
+     * Reports the currently live in-vm broker.
+     *
+     * @return The currently live in-vm broker.
+     */
+    public int getLiveBroker()
+    {
+        return 0;
+    }
+
+    /**
+     * Accepts a failure mechanism.
+     *
+     * @param failureMechanism The failure mechanism.
+     */
+    public void setFailureMechanism(CauseFailure failureMechanism)
+    {
+        this.failureMechanism = failureMechanism;
     }
 }
