@@ -56,7 +56,7 @@ class Connector : public framing::OutputHandler,
         sys::AsynchIO* aio;
         BufferBase* buffer;
         Frames frames;
-        Frames::iterator lastEof; // Points after last EOF in frames
+        size_t lastEof; // Position after last EOF in frames
         framing::Buffer encode;
         size_t framesEncoded;
         
