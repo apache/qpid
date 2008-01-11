@@ -139,7 +139,7 @@ public class VirtualHost implements Accessable
         this(name, hostConfig, null);
     }
 
-    private VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
+    public VirtualHost(String name, Configuration hostConfig, MessageStore store) throws Exception
     {
         _name = name;
 
