@@ -40,6 +40,10 @@
 <type name="count32" base="U32"  cpp="uint32_t" encode="@.putLong (#)"     decode="# = @.getLong ()"     accessor="counter" init="0"/>
 <type name="count64" base="U64"  cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" accessor="counter" init="0"/>
 
+<!-- Min/Max/Average statistics -->
+<type name="mma32" base="U32"  cpp="uint32_t" encode="@.putLong (#)"     decode="# = @.getLong ()"     style="mma" accessor="direct" init="0"/>
+<type name="mma64" base="U64"  cpp="uint64_t" encode="@.putLongLong (#)" decode="# = @.getLongLong ()" style="mma" accessor="direct" init="0"/>
+
 <!-- Some Proposed Syntax for User-Defined Types:
 <enum name="enumeratedType" base="U8">
   <item name="value-name1" value="1"/>

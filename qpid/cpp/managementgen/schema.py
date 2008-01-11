@@ -77,12 +77,20 @@ class SchemaType:
   def genAccessor (self, stream, varName, changeFlag = None):
     if self.accessor == "direct":
       stream.write ("    inline void set_" + varName + " (" + self.cpp + " val){\n");
-      stream.write ("        " + varName + " = val;\n");
+      if self.style != "mma":
+        stream.write ("        " + varName + " = val;\n");
       if self.style == "wm":
         stream.write ("        if (" + varName + "Low  > val)\n")
-        stream.write ("            " + varName + "Low  = val;\n");
+        stream.write ("            " + varName + "Low  = val;\n")
         stream.write ("        if (" + varName + "High < val)\n")
-        stream.write ("            " + varName + "High = val;\n");
+        stream.write ("            " + varName + "High = val;\n")
+      if self.style == "mma":
+        stream.write ("        " + varName + "Count++;\n")
+        stream.write ("        " + varName + "Total += val;\n")
+        stream.write ("        if (" + varName + "Min > val)\n")
+        stream.write ("            " + varName + "Min = val;\n")
+        stream.write ("        if (" + varName + "Max < val)\n")
+        stream.write ("            " + varName + "Max = val;\n")
       if changeFlag != None:
         stream.write ("        " + changeFlag + " = true;\n")
       stream.write ("    }\n");
@@ -108,14 +116,31 @@ class SchemaType:
     if self.style == "wm":
       stream.write ("    " + varName + "High = " + varName + ";\n")
       stream.write ("    " + varName + "Low  = " + varName + ";\n")
+    if self.style == "mma":
+      stream.write ("    " + varName + "Count = 0;\n")
+      stream.write ("    " + varName + "Total = 0;\n")
+      stream.write ("    " + varName + "Min   = -1;\n")
+      stream.write ("    " + varName + "Max   = 0;\n")
 
   def genWrite (self, stream, varName):
-    stream.write ("    " + self.encode.replace ("@", "buf").replace ("#", varName) + ";\n")
+    if self.style != "mma":
+      stream.write ("    " + self.encode.replace ("@", "buf").replace ("#", varName) + ";\n")
     if self.style == "wm":
       stream.write ("    " + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "High") + ";\n")
       stream.write ("    " + self.encode.replace ("@", "buf") \
                     .replace ("#", varName + "Low") + ";\n")
+    if self.style == "mma":
+      stream.write ("    " + self.encode.replace ("@", "buf") \
+                    .replace ("#", varName + "Count") + ";\n")
+      stream.write ("    " + self.encode.replace ("@", "buf") \
+                    .replace ("#", varName + "Count ? " + varName + "Min : 0") + ";\n")
+      stream.write ("    " + self.encode.replace ("@", "buf") \
+                    .replace ("#", varName + "Max") + ";\n")
+      stream.write ("    " + self.encode.replace ("@", "buf") \
+                    .replace ("#", varName + "Count ? " + varName + "Total / " +
+                              varName + "Count : 0") + ";\n")
+
 
   def getReadCode (self, varName, bufName):
     result = self.decode.replace ("@", bufName).replace ("#", varName)
@@ -294,10 +319,16 @@ class SchemaInst:
     return self.name
 
   def genDeclaration (self, stream):
-    stream.write ("    " + self.type.type.cpp + "  " + self.name + ";\n")
+    if self.type.type.style != "mma":
+      stream.write ("    " + self.type.type.cpp + "  " + self.name + ";\n")
     if self.type.type.style == 'wm':
       stream.write ("    " + self.type.type.cpp + "  " + self.name + "High;\n")
       stream.write ("    " + self.type.type.cpp + "  " + self.name + "Low;\n")
+    if self.type.type.style == "mma":
+      stream.write ("    " + self.type.type.cpp + "  " + self.name + "Count;\n")
+      stream.write ("    uint64_t  " + self.name + "Total;\n")
+      stream.write ("    " + self.type.type.cpp + "  " + self.name + "Min;\n")
+      stream.write ("    " + self.type.type.cpp + "  " + self.name + "Max;\n")
 
   def genAccessor (self, stream):
     self.type.type.genAccessor (stream, self.name, "instChanged")
@@ -316,7 +347,8 @@ class SchemaInst:
     stream.write ("    buf.put (ft);\n\n")
 
   def genSchema (self, stream):
-    self.genSchemaText (stream, self.name, self.desc)
+    if self.type.type.style != "mma":
+      self.genSchemaText (stream, self.name, self.desc)
     if self.type.type.style == "wm":
       descHigh = self.desc
       descLow  = self.desc
@@ -325,16 +357,36 @@ class SchemaInst:
         descLow  = descLow  + " (Low)"
       self.genSchemaText (stream, self.name + "High", descHigh)
       self.genSchemaText (stream, self.name + "Low",  descLow)
+    if self.type.type.style == "mma":
+      descCount   = self.desc
+      descMin     = self.desc
+      descMax     = self.desc
+      descAverage = self.desc
+      if self.desc != None:
+        descCount   = descCount   + " (Samples)"
+        descMin     = descMin     + " (Min)"
+        descMax     = descMax     + " (Max)"
+        descAverage = descAverage + " (Average)"
+      self.genSchemaText (stream, self.name + "Samples", descCount)
+      self.genSchemaText (stream, self.name + "Min",     descMin)
+      self.genSchemaText (stream, self.name + "Max",     descMax)
+      self.genSchemaText (stream, self.name + "Average", descAverage)
 
   def genWrite (self, stream):
     self.type.type.genWrite (stream, self.name)
 
   def genInitialize (self, stream):
     val = self.type.type.init
-    stream.write ("    " + self.name + " = " + val + ";\n")
+    if self.type.type.style != "mma":
+      stream.write ("    " + self.name + " = " + val + ";\n")
     if self.type.type.style == "wm":
       stream.write ("    " + self.name + "High = " + val + ";\n")
       stream.write ("    " + self.name + "Low  = " + val + ";\n")
+    if self.type.type.style == "mma":
+      stream.write ("    " + self.name + "Count = 0;\n")
+      stream.write ("    " + self.name + "Min   = -1;\n")
+      stream.write ("    " + self.name + "Max   = 0;\n")
+      stream.write ("    " + self.name + "Total = 0;\n")
 
 
 #=====================================================================================
@@ -648,6 +700,8 @@ class SchemaClass:
       count = count + 1
       if inst.type.type.style == "wm":
         count = count + 2
+      if inst.type.type.style == "mma":
+        count = count + 3
     stream.write ("%d" % count)
 
   def genInstDeclarations (self, stream, variables):
