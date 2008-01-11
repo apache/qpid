@@ -166,7 +166,7 @@ struct Connector::Buff : public AsynchIO::BufferBase {
     ~Buff() { delete [] bytes;}
 };
 
-Connector::Writer::Writer() : aio(0), buffer(0), lastEof(frames.begin()) {}
+Connector::Writer::Writer() : aio(0), buffer(0), lastEof(0) {}
 
 Connector::Writer::~Writer() { delete buffer; }
 
@@ -180,7 +180,7 @@ void Connector::Writer::handle(framing::AMQFrame& frame) {
     Mutex::ScopedLock l(lock);
     frames.push_back(frame);
     if (frame.getEof()) {
-        lastEof = frames.end();
+        lastEof = frames.size();
         aio->notifyPendingWrite();
     }
     QPID_LOG(trace, "SENT [" << this << "]: " << frame);
@@ -206,18 +206,18 @@ void Connector::Writer::newBuffer(const Mutex::ScopedLock&) {
 }
 
 // Called in IO thread.
-void Connector::Writer::write(sys::AsynchIO& aio_) {
+void Connector::Writer::write(sys::AsynchIO&) {
     Mutex::ScopedLock l(lock);
-    assert(&aio_ == aio);
     assert(buffer);
-    for (Frames::iterator i = frames.begin(); i != lastEof; ++i) {
-        if (i->size() > encode.available()) writeOne(l);
-        assert(i->size() <= encode.available());
-        i->encode(encode);
+    for (size_t i = 0; i < lastEof; ++i) {
+        AMQFrame& frame = frames[i];
+        if (frame.size() > encode.available()) writeOne(l);
+        assert(frame.size() <= encode.available());
+        frame.encode(encode);
         ++framesEncoded;
     }
-    frames.erase(frames.begin(), lastEof);
-    lastEof = frames.begin();
+    frames.erase(frames.begin(), frames.begin()+lastEof);
+    lastEof = 0;
     if (encode.getPosition() > 0) writeOne(l);
 }
 
