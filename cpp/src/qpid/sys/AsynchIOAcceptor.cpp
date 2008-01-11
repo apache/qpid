@@ -304,8 +304,18 @@ void AsynchIOHandler::idle(AsynchIO&){
             buffUsed += frameSize;
             QPID_LOG(trace, "SENT [" << identifier << "]: " << frame);
 			
-            if (frameQueue.empty())
-                break;
+            if (frameQueue.empty()) {
+                //if we have run out of frames, allow upper layers to
+                //generate more
+                if (!frameQueueClosed) {
+                    inputHandler->doOutput();
+                }
+                if (frameQueue.empty()) {                
+                    //if there are still no frames, we have no more to
+                    //do
+                    break;
+                }
+            }
             frame = frameQueue.front();
             frameSize = frame.size();
         }
