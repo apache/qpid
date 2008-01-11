@@ -1,20 +1,20 @@
 <!--
-  Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
-  distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
-  to you under the Apache License, Version 2.0 (the
-  "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
- 
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements. See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership. The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License. You may obtain a copy of the License at
+    
     http://www.apache.org/licenses/LICENSE-2.0
- 
-  Unless required by applicable law or agreed to in writing,
-  software distributed under the License is distributed on an
-  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
-  specific language governing permissions and limitations
-  under the License.
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied. See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
@@ -84,16 +84,18 @@
                     </includes>
                     
                     <systemProperties>
-                      <property>
-                        <name>example.plugin.target</name>
-                        <value>${basedir}/${topDirectoryLocation}/plugins/target</value>
-                      </property>
+                        <property>
+                            <name>example.plugin.target</name>
+                            <value>${basedir}/${topDirectoryLocation}/plugins/target</value>
+                        </property>
                     </systemProperties>
                     
                     <excludes>
                         <exclude>**/testcases/ImmediateMessageTest.class</exclude>
                         <exclude>**/testcases/MandatoryMessageTest.class</exclude>
-                        <exclude>**/testcases/RollbackTest.class</exclude>
+                        <exclude>**/testcases/RollbackTest.class</exclude>                        
+                        <exclude>**/testcases/TTLTest.class</exclude>
+                        <exclude>**/testcases/FailoverTest.class</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -115,6 +117,7 @@
                     
                     <testrunneroptions>
                         <option>-X:decorators "org.apache.qpid.test.framework.qpid.InVMBrokerDecorator:org.apache.qpid.test.framework.qpid.AMQPFeatureDecorator"</option>
+                        <!--<option>-d30S</option>-->
                         <option>-o ${basedir}/target/surefire-reports</option>
                         <option>--xml</option>
                     </testrunneroptions>
@@ -127,9 +130,28 @@
                     </testrunnerproperties>
                     
                     <commands>
-                        <Immediate-Message-Test>-n Immediate-Test -s[1] org.apache.qpid.test.testcases.ImmediateMessageTest</Immediate-Message-Test>
-                        <Mandatory-Message-Test>-n Mandatory-Test -s[1] org.apache.qpid.test.testcases.MandatoryMessageTest</Mandatory-Message-Test>
-                        <Rollback-Test>-n Rollback-Test -s[1] org.apache.qpid.test.testcases.RollbackTest</Rollback-Test>
+                        <AMQBrokerManagerMBeanTest>-n AMQBrokerManagerMBeanTest org.apache.qpid.server.AMQBrokerManagerMBeanTest </AMQBrokerManagerMBeanTest>
+                        <TxAckTest>-n TxAckTest org.apache.qpid.server.ack.TxAckTest </TxAckTest>
+                        <!--<HeadersExchangeTest>-n HeadersExchangeTest org.apache.qpid.server.exchange.HeadersExchangeTest </HeadersExchangeTest>-->
+                        <ReturnUnroutableMandatoryMessageTest>-n ReturnUnroutableMandatoryMessageTest org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest </ReturnUnroutableMandatoryMessageTest>
+                        <!--<FailoverMethodTest>-n FailoverMethodTest org.apache.qpid.server.failover.FailoverMethodTest </FailoverMethodTest>-->
+                        <DeadlockTest>-n DeadlockTest org.apache.qpid.server.failure.DeadlockTest </DeadlockTest>
+                        <!--<PluginTest>-n PluginTest org.apache.qpid.server.plugins.PluginTest </PluginTest>-->
+                        <AMQProtocolSessionMBeanTest>-n AMQProtocolSessionMBeanTest org.apache.qpid.server.protocol.AMQProtocolSessionMBeanTest </AMQProtocolSessionMBeanTest>
+                        <MaxChannelsTest>-n MaxChannelsTest org.apache.qpid.server.protocol.MaxChannelsTest </MaxChannelsTest>
+                        <AckTest>-n AckTest org.apache.qpid.server.queue.AckTest </AckTest>
+                        <MessageReturnTest>-n MessageReturnTest org.apache.qpid.server.queue.MessageReturnTest </MessageReturnTest>
+                        <QueueDepthWithSelectorTest>-n QueueDepthWithSelectorTest org.apache.qpid.server.queue.QueueDepthWithSelectorTest </QueueDepthWithSelectorTest>
+                        <!--<SubscriptionManagerTest>-n SubscriptionManagerTest org.apache.qpid.server.queue.SubscriptionManagerTest </SubscriptionManagerTest>-->
+                        <SubscriptionSetTest>-n SubscriptionSetTest org.apache.qpid.server.queue.SubscriptionSetTest </SubscriptionSetTest>
+                        <TimeToLiveTest>-n TimeToLiveTest org.apache.qpid.server.queue.TimeToLiveTest </TimeToLiveTest>
+                        <TxnBufferTest>-n TxnBufferTest org.apache.qpid.server.txn.TxnBufferTest </TxnBufferTest>
+                        <!--<TxnTest>-n TxnTest org.apache.qpid.server.txn.TxnTest </TxnTest>-->
+                        <QueueBrowserTest>-n QueueBrowserTest org.apache.qpid.test.client.QueueBrowserTest </QueueBrowserTest>
+
+                        <!--<Immediate-Message-Test>-n Immediate-Test -s[1] org.apache.qpid.test.testcases.ImmediateMessageTest</Immediate-Message-Test>-->
+                        <!--<Mandatory-Message-Test>-n Mandatory-Test -s[1] org.apache.qpid.test.testcases.MandatoryMessageTest</Mandatory-Message-Test>-->
+                        <!--<Rollback-Test>-n Rollback-Test -s[1] org.apache.qpid.test.testcases.RollbackTest</Rollback-Test>-->
                     </commands>
                     
                 </configuration>
