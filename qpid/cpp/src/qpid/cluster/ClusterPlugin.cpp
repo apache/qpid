@@ -47,6 +47,8 @@ struct ClusterPlugin : public Plugin {
 
     Options* getOptions() { return &options; }
 
+    void earlyInitialize(Plugin::Target&) {}
+
     void initialize(Plugin::Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker, and only if the --cluster config is set.

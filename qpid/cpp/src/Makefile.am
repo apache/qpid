@@ -92,6 +92,7 @@ libLogger_la_CXXFLAGS=$(AM_CXXFLAGS) -Wno-unused-parameter
 
 libqpidcommon_la_LIBADD = \
   -lboost_program_options \
+  -lboost_filesystem \
   -luuid \
   libLogger.la \
   $(LIB_DLOPEN) \

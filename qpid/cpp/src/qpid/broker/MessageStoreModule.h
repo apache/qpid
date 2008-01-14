@@ -34,9 +34,9 @@ namespace broker {
  */
 class MessageStoreModule : public MessageStore
 {
-    qpid::sys::Module<MessageStore> store;
+    MessageStore* store;
 public:
-    MessageStoreModule(const std::string& name);
+    MessageStoreModule(MessageStore* store);
 
 	bool init(const Options* options);
     std::auto_ptr<TransactionContext> begin();
@@ -69,7 +69,7 @@ public:
     u_int32_t outstandingQueueAIO(const PersistableQueue& queue);
     void flush(const qpid::broker::PersistableQueue& queue);
 	 
-    ~MessageStoreModule(){}
+    ~MessageStoreModule();
 };
 
 }

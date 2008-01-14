@@ -27,6 +27,7 @@
 #include "qpid/Plugin.h"
 #include "qpid/sys/Shlib.h"
 #include "config.h"
+#include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 #include <iostream>
 #include <fstream>
@@ -36,7 +37,23 @@
 using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::sys;
+using namespace qpid::log;
 using namespace std;
+namespace fs=boost::filesystem;
+
+struct ModuleOptions : public qpid::Options {
+    string         loadDir;
+    vector<string> load;
+    bool           noLoad;
+    ModuleOptions() : qpid::Options("Module options"), loadDir("/usr/lib/qpidd"), noLoad(false)
+    {
+        addOptions()
+            ("load-dir",   optValue(loadDir, "DIR"),  "Load all modules from this directory")
+            ("load",       optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
+            ("no-modules", optValue(noLoad),          "Don't load any modules");
+    }
+};
+
 
 struct DaemonOptions : public qpid::Options {
     bool daemon;
@@ -57,12 +74,14 @@ struct DaemonOptions : public qpid::Options {
 
 struct QpiddOptions : public qpid::Options {
     CommonOptions common;
+    ModuleOptions module;
     Broker::Options broker;
     DaemonOptions daemon;
     qpid::log::Options log;
     
     QpiddOptions() : qpid::Options("Options"), common("", "/etc/qpidd.conf") {
         add(common);
+        add(module);
         add(broker);
         add(daemon);
         add(log);
@@ -77,6 +96,23 @@ struct QpiddOptions : public qpid::Options {
     void usage() const {
         cout << "Usage: qpidd [OPTIONS]" << endl << endl << *this << endl;
     };
+};
+
+// BootstrapOptions is a minimal subset of options used for a pre-parse
+// of the command line to discover which plugin modules need to be loaded.
+// The pre-parse is necessary because plugin modules may supply their own
+// set of options.  CommonOptions is needed to properly support loading
+// from a configuration file.
+struct BootstrapOptions : public qpid::Options {
+    CommonOptions common;
+    ModuleOptions module;
+    qpid::log::Options log;
+
+    BootstrapOptions() : qpid::Options("Options"), common("", "/etc/qpidd.conf") {
+        add(common);
+        add(module);
+        add(log);
+    }
 };
 
 // Globals
@@ -108,24 +144,59 @@ struct QpiddDaemon : public Daemon {
 void tryShlib(const char* libname) {
     try {
         Shlib shlib(libname);
+        QPID_LOG (info, "Loaded Module: " << libname);
     }
-    catch (const exception& e) {
-        // TODO aconway 2007-07-09: Should log failures as INFO
-        // at least, but we try shlibs before logging is configured.
+    catch (const exception& e) {}
+}
+
+void loadModuleDir (string dirname, bool isDefault)
+{
+    fs::path dirPath (dirname);
+
+    if (!fs::exists (dirPath))
+    {
+        if (isDefault)
+            return;
+        throw Exception ("Directory not found: " + dirname);
+    }
+
+    fs::directory_iterator endItr;
+    for (fs::directory_iterator itr (dirPath); itr != endItr; ++itr)
+    {
+        if (!fs::is_directory(*itr) &&
+            itr->string().find (".so") == itr->string().length() - 3)
+            tryShlib (itr->string().data());
     }
 }
   
 
 int main(int argc, char* argv[])
 {
-    try {
-        // Load optional modules
-        tryShlib("libqpidcluster.so.0");
+    try
+    {
+        {
+            BootstrapOptions bootOptions;
+            string           defaultPath (bootOptions.module.loadDir);
+
+            // Parse only the common, load, and log options to see which modules need
+            // to be loaded.  Once the modules are loaded, the command line will
+            // be re-parsed with all of the module-supplied options.
+            bootOptions.parse (argc, argv, bootOptions.common.config, true);
+            qpid::log::Logger::instance().configure(bootOptions.log, argv[0]);
+            if (!bootOptions.module.noLoad) {
+                for (vector<string>::iterator iter = bootOptions.module.load.begin();
+                     iter != bootOptions.module.load.end();
+                     iter++)
+                    tryShlib (iter->data());
+
+                bool isDefault = defaultPath == bootOptions.module.loadDir;
+                loadModuleDir (bootOptions.module.loadDir, isDefault);
+            }
+        }
 
         // Parse options
         options.reset(new QpiddOptions());
         options->parse(argc, argv, options->common.config);
-        qpid::log::Logger::instance().configure(options->log, argv[0]);
 
         // Options that just print information.
         if(options->common.help || options->common.version) {
