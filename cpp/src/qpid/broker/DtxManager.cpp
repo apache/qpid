@@ -32,7 +32,7 @@ using namespace qpid::ptr_map;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxManager::DtxManager(TransactionalStore* const _store) : store(_store) {}
+DtxManager::DtxManager() : store(0) {}
 
 DtxManager::~DtxManager() {}
 
@@ -159,4 +159,10 @@ void DtxManager::DtxCleanup::fire()
     } catch (ConnectionException& e) {
         //assume it was explicitly cleaned up after a call to prepare, commit or rollback
     }
+}
+
+void DtxManager::setStore (TransactionalStore* _store)
+{
+    assert (store == 0 && _store != 0);
+    store = _store;
 }
