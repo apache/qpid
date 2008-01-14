@@ -67,13 +67,7 @@ Broker::Options::Options(const std::string& name) :
     workerThreads(5),
     maxConnections(500),
     connectionBacklog(10),
-    store(),
     stagingThreshold(5000000),
-    storeDir("/var"),
-    storeAsync(false),
-    storeForce(false),
-    numJrnlFiles(8),
-    jrnlFsizePgs(24),
     enableMgmt(0),
     mgmtPubInterval(10),
     ack(0)
@@ -91,20 +85,6 @@ Broker::Options::Options(const std::string& name) :
          "Sets the connection backlog limit for the server socket")
         ("staging-threshold", optValue(stagingThreshold, "N"),
          "Stages messages over N bytes to disk")
-// TODO: These options need to come from within the store module
-        ("store-lib,s", optValue(store,"LIBNAME"),
-         "Tells the broker to use the message store shared library LIBNAME for persistence")
-        ("store-directory", optValue(storeDir,"DIR"),
-         "Store directory location for persistence.")
-        ("store-async", optValue(storeAsync,"yes|no"),
-         "Use async persistence storage - if store supports it, enables AIO O_DIRECT.")
-        ("store-force", optValue(storeForce,"yes|no"),
-         "Force changing modes of store, will delete all existing data if mode is changed. Be SURE you want to do this!")
-        ("num-jfiles", qpid::optValue(numJrnlFiles, "N"),
-         "Number of files in persistence journal")
-        ("jfile-size-pgs", qpid::optValue(jrnlFsizePgs, "N"),
-         "Size of each journal file in multiples of read pages (1 read page = 64kiB)")
-// End of store module options
         ("mgmt,m", optValue(enableMgmt,"yes|no"),
          "Enable Management")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"),
@@ -122,29 +102,36 @@ const std::string qpid_management("qpid.management");
 
 Broker::Broker(const Broker::Options& conf) :
     config(conf),
-    store(createStore(conf)),
-    queues(store.get()),
+    store(0),
     factory(*this),
-    dtxManager(store.get()),
     sessionManager(conf.ack)
 {
+    // Early-Initialize plugins
+    const Plugin::Plugins& plugins=Plugin::getPlugins();
+    for (Plugin::Plugins::const_iterator i = plugins.begin();
+         i != plugins.end();
+         i++)
+        (*i)->earlyInitialize(*this);
+
+    // If no plugin store module registered itself, set up the null store.
+    if (store == 0)
+        setStore (new NullMessageStore (false));
+
+    queues.setStore     (store);
+    dtxManager.setStore (store);
+
     if(conf.enableMgmt){
         ManagementAgent::enableManagement ();
         managementAgent = ManagementAgent::getAgent ();
         managementAgent->setInterval (conf.mgmtPubInterval);
 
         mgmtObject = management::Broker::shared_ptr (new management::Broker (this, 0, 0, conf.port));
-        mgmtObject->set_workerThreads        (conf.workerThreads);
-        mgmtObject->set_maxConns             (conf.maxConnections);
-        mgmtObject->set_connBacklog          (conf.connectionBacklog);
-        mgmtObject->set_stagingThreshold     (conf.stagingThreshold);
-        mgmtObject->set_storeLib             (conf.store);
-        mgmtObject->set_asyncStore           (conf.storeAsync);
-        mgmtObject->set_mgmtPubInterval      (conf.mgmtPubInterval);
-        mgmtObject->set_initialDiskPageSize  (0);
-        mgmtObject->set_initialPagesPerQueue (0);
-        mgmtObject->set_clusterName          ("");
-        mgmtObject->set_version              (PACKAGE_VERSION);
+        mgmtObject->set_workerThreads    (conf.workerThreads);
+        mgmtObject->set_maxConns         (conf.maxConnections);
+        mgmtObject->set_connBacklog      (conf.connectionBacklog);
+        mgmtObject->set_stagingThreshold (conf.stagingThreshold);
+        mgmtObject->set_mgmtPubInterval  (conf.mgmtPubInterval);
+        mgmtObject->set_version          (PACKAGE_VERSION);
         
         managementAgent->addObject (mgmtObject, 1, 0);
 
@@ -160,16 +147,12 @@ Broker::Broker(const Broker::Options& conf) :
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
     
-    if(store.get()) {
-        if (!store->init(&conf)){
-              throw Exception( "Existing Journal in different mode, backup/move existing data \
-			  before changing modes. Or use --store-force yes to blow existing data away.");
-		}else{
-             RecoveryManagerImpl recoverer(queues, exchanges, dtxManager, 
+    if (store != 0) {
+        RecoveryManagerImpl recoverer(queues, exchanges, dtxManager, 
                                       conf.stagingThreshold);
-             store->recover(recoverer);
-        }
+        store->recover(recoverer);
     }
+
     //ensure standard exchanges exist (done after recovery from store)
     declareStandardExchange(amq_direct, DirectExchange::typeName);
     declareStandardExchange(amq_topic, TopicExchange::typeName);
@@ -188,7 +171,6 @@ Broker::Broker(const Broker::Options& conf) :
         QPID_LOG(info, "Management not enabled");
 
     // Initialize plugins
-    const Plugin::Plugins& plugins=Plugin::getPlugins();
     for (Plugin::Plugins::const_iterator i = plugins.begin();
          i != plugins.end();
          i++)
@@ -197,7 +179,7 @@ Broker::Broker(const Broker::Options& conf) :
 
 void Broker::declareStandardExchange(const std::string& name, const std::string& type)
 {
-    bool storeEnabled = store.get();
+    bool storeEnabled = store != NULL;
     std::pair<Exchange::shared_ptr, bool> status = exchanges.declare(name, type, storeEnabled);
     if (status.second && storeEnabled) {
         store->create(*status.first);
@@ -217,13 +199,13 @@ shared_ptr<Broker> Broker::create(const Options& opts)
     return shared_ptr<Broker>(new Broker(opts));
 }
 
-MessageStore* Broker::createStore(const Options& config) {
-    if (config.store.empty())
-        return new NullMessageStore(false);
-    else
-        return new MessageStoreModule(config.store);
+void Broker::setStore (MessageStore* _store)
+{
+    assert (store == 0 && _store != 0);
+    if (store == 0 && _store != 0)
+        store = new MessageStoreModule (_store);
 }
-        
+
 void Broker::run() {
     getAcceptor().run(&factory);
 }
@@ -236,6 +218,7 @@ void Broker::shutdown() {
 
 Broker::~Broker() {
     shutdown();
+    delete store;    
 }
 
 uint16_t Broker::getPort() const  { return getAcceptor().getPort(); }

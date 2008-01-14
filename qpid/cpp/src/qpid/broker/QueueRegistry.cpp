@@ -26,8 +26,8 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 
-QueueRegistry::QueueRegistry(MessageStore* const _store) :
-    counter(1), store(_store), parent(0) {}
+QueueRegistry::QueueRegistry() :
+    counter(1), store(0), parent(0) {}
 
 QueueRegistry::~QueueRegistry(){}
 
@@ -82,6 +82,12 @@ string QueueRegistry::generateName(){
     return name;
 }
 
-MessageStore* const QueueRegistry::getStore() const {
+void QueueRegistry::setStore (MessageStore* _store)
+{
+    assert (store == 0 && _store != 0);
+    store = _store;
+}
+
+MessageStore* QueueRegistry::getStore() const {
     return store;
 }

@@ -38,7 +38,7 @@ namespace broker {
  */
 class QueueRegistry{
   public:
-    QueueRegistry(MessageStore* const store = 0);
+    QueueRegistry();
     ~QueueRegistry();
 
     /**
@@ -86,9 +86,14 @@ class QueueRegistry{
     string generateName();
 
     /**
+     * Set the store to use.  May only be called once.
+     */
+    void setStore (MessageStore*);
+
+    /**
      * Return the message store used.
      */
-    MessageStore* const getStore() const;
+    MessageStore* getStore() const;
 
     /**
      * Register the manageable parent for declared queues
@@ -100,7 +105,7 @@ private:
     QueueMap queues;
     qpid::sys::RWlock lock;
     int counter;
-    MessageStore* const store;
+    MessageStore* store;
     management::Manageable* parent;
 };
 

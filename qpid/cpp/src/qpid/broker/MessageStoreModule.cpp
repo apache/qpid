@@ -27,14 +27,14 @@
 
 using namespace qpid::broker;
 
-MessageStoreModule::MessageStoreModule(const std::string& name) : store(name)
+MessageStoreModule::MessageStoreModule(MessageStore* _store) : store(_store) {}
+
+MessageStoreModule::~MessageStoreModule()
 {
+    delete store;
 }
 
-bool MessageStoreModule::init(const Options* options)
-{
-	TRANSFER_EXCEPTION(return store->init(options));
-}
+bool MessageStoreModule::init(const Options*) { return true; }
 
 void MessageStoreModule::create(PersistableQueue& queue)
 {
