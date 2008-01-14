@@ -59,6 +59,7 @@ namespace broker {
 class Broker : public sys::Runnable, public Plugin::Target, public management::Manageable
 {
   public:
+
     struct Options : public qpid::Options {
         Options(const std::string& name="Broker Options");
         
@@ -66,13 +67,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
         int workerThreads;
         int maxConnections;
         int connectionBacklog;
-        std::string store;      
-        long stagingThreshold;
-        string storeDir;
-        bool storeAsync;
-        bool storeForce;
-        u_int16_t numJrnlFiles;
-        u_int32_t jrnlFsizePgs;
+        uint64_t stagingThreshold;
         bool enableMgmt;
         uint16_t mgmtPubInterval;
         uint32_t ack;
@@ -109,7 +104,8 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     
     /** Apply all handler updaters to a handler chain pair. */
     void update(framing::ChannelId, framing::FrameHandler::Chains&); 
-    
+
+    void setStore (MessageStore*);
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
     ExchangeRegistry& getExchanges() { return exchanges; }
@@ -128,7 +124,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
 
     Options config;
     sys::Acceptor::shared_ptr acceptor;
-    const std::auto_ptr<MessageStore> store;
+    MessageStore* store;
     typedef std::vector<shared_ptr<framing::HandlerUpdater> > HandlerUpdaters;
 
     QueueRegistry queues;
@@ -141,7 +137,6 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     management::Broker::shared_ptr mgmtObject;
     Vhost::shared_ptr              vhostObject;
 
-    static MessageStore* createStore(const Options& config);
     void declareStandardExchange(const std::string& name, const std::string& type);
 };
 
