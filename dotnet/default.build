@@ -8,9 +8,9 @@
     <property name="build.config" value="debug" />
 
     <!-- Sets the build version accross all assemblies in the project. -->
-    <property name="build.version.major" value="0"/>
-    <property name="build.version.minor" value="2"/>
-    <property name="build.version.build" value="1"/>
+    <property name="build.version.major" value="2"/>
+    <property name="build.version.minor" value="1"/>
+    <property name="build.version.build" value="0"/>
     <property name="build.version.revision" value="0"/>
     <property name="build.company" value="Apache"/>
     <property name="build.copyright" value="Apache Software Foundation"/>
