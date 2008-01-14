@@ -130,7 +130,8 @@ struct Options : public po::options_description {
      * is updated by argc/argv or environment variable parsing.
      */
     void parse(int argc, char** argv,
-               const std::string& configfile=std::string());
+               const std::string& configfile=std::string(),
+               bool  allowUnknown = false);
 };
 
 /**

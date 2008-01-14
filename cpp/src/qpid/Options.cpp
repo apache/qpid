@@ -40,6 +40,10 @@ struct EnvOptMapper {
         return std::equal(env.begin(), env.end(), desc->long_name().begin(), &matchChar);
     }
             
+    static bool matchCase(const string& env, boost::shared_ptr<po::option_description> desc) {
+        return env == desc->long_name();
+    }
+            
     EnvOptMapper(const Options& o) : opts(o) {}
     
     string operator()(const string& envVar) {
@@ -54,6 +58,20 @@ struct EnvOptMapper {
         }
         return string();
     }
+
+    string configFileLine (string& line) {
+        size_t pos = line.find ('=');
+        if (pos == string::npos)
+            return string();
+        string key = line.substr (0, pos);
+        typedef const std::vector< boost::shared_ptr<po::option_description> > OptDescs;
+        OptDescs::const_iterator i = 
+            find_if(opts.options().begin(), opts.options().end(), boost::bind(matchCase, key, _1));
+        if (i != opts.options().end())
+            return string (line) + "\n";
+        return string ();
+    }
+
     const Options& opts;
 };
 
@@ -64,23 +82,52 @@ std::string prettyArg(const std::string& name, const std::string& value) {
 
 Options::Options(const string& name) : po::options_description(name) {}
 
-void Options::parse(int argc, char** argv, const std::string& configFile)
+void Options::parse(int argc, char** argv, const std::string& configFile, bool allowUnknown)
 {
     string defaultConfigFile = configFile; // May be changed by env/cmdline
     string parsing;
     try {
         po::variables_map vm;
         parsing="command line options";
-        if (argc > 0 && argv != 0)
-            po::store(po::parse_command_line(argc, argv, *this), vm);
+        if (argc > 0 && argv != 0) {
+            if (allowUnknown) {
+                // This hideous workaround is required because boost 1.33 has a bug
+                // that causes 'allow_unregistered' to not work.
+                po::command_line_parser clp = po::command_line_parser(argc, argv).
+                    options(*this).allow_unregistered();
+                po::parsed_options opts     = clp.run();
+                po::parsed_options filtopts = clp.run();
+                filtopts.options.clear ();
+                for (std::vector< po::basic_option<char> >::iterator i = opts.options.begin();
+                     i != opts.options.end(); i++)
+                    if (!i->unregistered)
+                        filtopts.options.push_back (*i);
+                po::store(filtopts, vm);
+            }
+            else
+                po::store(po::parse_command_line(argc, argv, *this), vm);
+        }
         parsing="environment variables";
         po::store(po::parse_environment(*this, EnvOptMapper(*this)), vm);
         po::notify(vm); // configFile may be updated from arg/env options.
         if (!configFile.empty()) {
             parsing="configuration file "+configFile;
             ifstream conf(configFile.c_str());
-            if (conf.good())
-                po::store(po::parse_config_file(conf, *this), vm);
+            if (conf.good()) {
+                // Remove this hack when we get a stable version of boost that
+                // can allow unregistered options in config files.
+                EnvOptMapper mapper(*this);
+                stringstream filtered;
+
+                while (!conf.eof()) {
+                    string line;
+                    getline (conf, line);
+                    filtered << mapper.configFileLine (line);
+                }
+
+                po::store(po::parse_config_file(filtered, *this), vm);
+                // End of hack
+            }
             else {
                 // No error if default configfile is missing/unreadable
                 // but complain for non-default config file.

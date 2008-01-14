@@ -45,7 +45,7 @@ class DtxManager{
     };
 
     WorkMap work;
-    TransactionalStore* const store;
+    TransactionalStore* store;
     qpid::sys::Mutex lock;
     Timer timer;
 
@@ -54,7 +54,7 @@ class DtxManager{
     DtxWorkRecord* createWork(std::string xid);
 
 public:
-    DtxManager(TransactionalStore* const store);
+    DtxManager();
     ~DtxManager();
     void start(const std::string& xid, DtxBuffer::shared_ptr work);
     void join(const std::string& xid, DtxBuffer::shared_ptr work);
@@ -65,6 +65,7 @@ public:
     void setTimeout(const std::string& xid, uint32_t secs);
     uint32_t getTimeout(const std::string& xid);
     void timedout(const std::string& xid);
+    void setStore(TransactionalStore* store);
 };
 
 }
