@@ -48,9 +48,9 @@ struct ModuleOptions : public qpid::Options {
     ModuleOptions() : qpid::Options("Module options"), loadDir("/usr/lib/qpidd"), noLoad(false)
     {
         addOptions()
-            ("load-dir",   optValue(loadDir, "DIR"),  "Load all modules from this directory")
-            ("load",       optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
-            ("no-modules", optValue(noLoad),          "Don't load any modules");
+            ("load-dir",    optValue(loadDir, "DIR"),  "Load all modules from this directory")
+            ("load-module", optValue(load,    "FILE"), "Specifies additional module(s) to be loaded")
+            ("no-modules",  optValue(noLoad),          "Don't load any modules");
     }
 };
 
