@@ -16,9 +16,7 @@
     <property name="build.copyright" value="Apache Software Foundation"/>
     <property name="build.description" value="Built from svn revision number: "/>
 
-    <!--
-        Fileset with build files for each core assembly
-    -->
+    <!-- Fileset with build files for each core assembly. -->
     <fileset id="src.builds">
         <include name="Qpid.Buffer/default.build" />
         <include name="Qpid.Sasl/default.build" />
@@ -28,9 +26,7 @@
         <include name="Qpid.Client/default.build" />	
     </fileset>
     
-    <!--
-        Fileset with build files for test assemblies
-    -->
+    <!-- Fileset with build files for test assemblies. -->
     <fileset id="tests.builds">
         <include name="Qpid.Buffer.Tests/default.build" />
         <include name="Qpid.Sasl.Tests/default.build" />
@@ -38,9 +34,7 @@
         <include name="Qpid.Client.Tests/default.build" />	
     </fileset>
 
-    <!--
-        Other test or utility assemblies
-    -->
+    <!-- Other test or utility assemblies. -->
     <fileset id='other.builds'>
         <include name="TopicListener/default.build" />	
         <include name="TopicPublisher/default.build" />	
@@ -165,29 +159,24 @@
         <copy todir="${build.dir}" file="Qpid.Common/lib/seclib-1.0.0/Org.Mentalis.Security.dll"/>
         <copy todir="${build.dir}" file="Qpid.Common/lib/log4net/log4net.dll"/>
         <copy todir="${build.dir}" file="Qpid.Client.Tests/lib/nunit/nunit.framework.dll"/>
-        <!-- 
-             Compile assemblies
-        -->
+
+        <!-- Compile assemblies. -->
         <nant target="build">
             <buildfiles refid="src.builds" />
         </nant>
-        <!-- 
-             Compile test assemblies
-        -->
+
+        <!-- Compile test assemblies. -->
         <nant target="build">
             <buildfiles refid="tests.builds" />
         </nant>
-        <!-- 
-             Compile test assemblies
-        -->
+
+        <!-- Compile test assemblies. -->
         <nant target="build">
             <buildfiles refid="other.builds" />
         </nant>
     </target>
     
-    <!--
-        Execute unit tests
-    -->
+    <!-- Execute unit tests. -->
     <target name="test" depends="build">
         <echo message="Running unit tests for the project." />
         <nant target="test">
@@ -195,9 +184,7 @@
         </nant>
     </target>
 
-    <!-- 
-         Make a release package
-    -->
+    <!-- Make a release package. -->
     <target name="release-pkg">
         <echo message="building and packing a release"/>
         <call target="clean"/>
