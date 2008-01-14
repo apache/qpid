@@ -1,10 +1,20 @@
 <?xml version="1.0"?>
 <project name="Qpid.NET" default="build">
+
+    <!-- Determines the formatter to use to format output of test results. -->
     <property name="nant.formatter" value="Plain" />
-    <!-- 
-         Build debug or release build?
-    -->
+
+    <!-- Determines whether a 'debug' or 'release' build is to be done. Defaults to 'debug' -->
     <property name="build.config" value="debug" />
+
+    <!-- Sets the build version accross all assemblies in the project. -->
+    <property name="build.version.major" value="0"/>
+    <property name="build.version.minor" value="2"/>
+    <property name="build.version.build" value="1"/>
+    <property name="build.version.revision" value="0"/>
+    <property name="build.company" value="Apache"/>
+    <property name="build.copyright" value="Apache Software Foundation"/>
+    <property name="build.description" value="Built from svn revision number: "/>
 
     <!--
         Fileset with build files for each core assembly
@@ -36,24 +46,107 @@
         <include name="TopicPublisher/default.build" />	
         <include name="TestClient/default.build" />	
     </fileset>
-    <!--
-        Prepare environment for a debug build
-    -->
+
+    <!-- Runs 'svnversion' to get the repository revision into the build property 'build.svnversion'. -->
+    <target name="svnversion" description="Runs svnversion to get the current repository version into a build script property.">
+        <exec program="svnversion.exe" output="svnversion_tmp.txt">
+            <arg value="-n"/>
+        </exec>
+
+        <loadfile file="svnversion_tmp.txt" property="build.svnversion"/>
+        <delete file="svnversion_tmp.txt"/>       
+
+        <!-- For some competely retarted reason the '-n' parameter to svnversion doesn't really work under windows... 
+             Here is some code to strip the unwanted newlines. -->
+        <script language="C#">
+            <code><![CDATA[
+            public static void ScriptMain(Project project)
+            {
+                project.Properties["build.svnversion"] = project.Properties["build.svnversion"].Trim("\n\r".ToCharArray());
+            }
+            ]]>
+            </code>
+        </script>
+
+    </target>
+
+    <!-- Performs a regex find-and-replace on assembly info files, substituting in a version number. -->
+    <target name="setversion" description="Stamp the version info onto assemblyinfo.cs files" depends="svnversion">
+
+        <echo>build.svnversion = ${build.svnversion}</echo>
+
+        <foreach item="File" property="filename">
+            <in>
+                <items basedir=".">
+                    <include name="**\AssemblyInfo.cs"></include>
+                </items>
+            </in>
+            <do>
+                <script language="C#">
+                    <code><![CDATA[
+                    public static void ScriptMain(Project project)
+                    {
+                        // Read in the entire file to perform the substitution in.
+                        StreamReader reader = new StreamReader(project.Properties["filename"]);
+                        string contents = reader.ReadToEnd();
+                        reader.Close();
+
+                        // Substitute the version numbers.
+                        string replacement = string.Format(
+                                                           "[assembly: AssemblyVersion(\"{0}.{1}.{2}.{3}\")]",
+                                                           project.Properties["build.version.major"],
+                                                           project.Properties["build.version.minor"],
+                                                           project.Properties["build.version.build"],
+                                                           project.Properties["build.version.revision"]
+                                                           );
+                        contents = Regex.Replace(contents, @"\[assembly: AssemblyVersion\("".*""\)\]", replacement);
+
+                        // Substitute the company name and copyright.
+                        replacement = string.Format(
+                                                           "[assembly: AssemblyCompany(\"{0}\")]",
+                                                           project.Properties["build.company"]
+                                                           );
+                        contents = Regex.Replace(contents, @"\[assembly: AssemblyCompany\("".*""\)\]", replacement);
+
+                        replacement = string.Format(
+                                                           "[assembly: AssemblyCopyright(\"{0}\")]",
+                                                           project.Properties["build.copyright"]
+                                                           );
+                        contents = Regex.Replace(contents, @"\[assembly: AssemblyCopyright\("".*""\)\]", replacement);
+
+                        // Update the description.
+                        replacement = string.Format(
+                                                           "[assembly: AssemblyDescription(\"{0} {1}\")]",
+                                                           project.Properties["build.description"],
+                                                           project.Properties["build.svnversion"]
+                                                           );
+                        contents = Regex.Replace(contents, @"\[assembly: AssemblyDescription\("".*""\)\]", replacement);
+
+                        // Write out the file with the substituted version.
+                        StreamWriter writer = new StreamWriter(project.Properties["filename"], false);
+                        writer.Write(contents);
+                        writer.Close();
+                    }
+                    ]]>
+                    </code>
+                </script>
+            </do>
+        </foreach>
+    </target>
+
+    <!-- Prepare environment for a debug build. -->
     <target name="debug">
         <property name="build.debug" value="true" />
         <property name="build.defines" value="DEBUG;TRACE"/>
     </target>
-    <!--
-        Prepare environment for a release build
-    -->
+
+    <!-- Prepare environment for a release build. -->
     <target name="release">
         <property name="build.debug" value="false" />
         <property name="build.defines" value=""/>
     </target>
     
-    <!--
-        prepare environment for build
-    -->
+    <!-- Prepare environment for build. -->
     <target name="init">
         <property name="base.dir" value="${project::get-base-directory()}" />
         <property name="build.dir" value="${base.dir}/bin/${framework::get-target-framework()}/${build.config}" />
@@ -64,10 +157,8 @@
         <delete dir="${build.dir}" failonerror="false" />
     </target>
     
-    <!--
-        Do the build
-    -->
-    <target name="build" depends="init">
+    <!-- Do the build. -->
+    <target name="build" depends="init, setversion">
         <!-- make sure output folder exists -->
         <mkdir dir="${build.dir}" />
         <!-- copy reference assemblies over to the output dir -->
