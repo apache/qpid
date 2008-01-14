@@ -1,32 +1,26 @@
 <?xml version="1.0"?>
 <project name="Apache.Qpid.Client" default="test">
 
-   <target name="build">
+    <target name="build">
         <csc target="library" 
-			define="${build.defines}" 
-			warnaserror="false" debug="${build.debug}" 
-         output="${build.dir}/${project::get-name()}.Tests.dll">
-			
+             define="${build.defines}" 
+             warnaserror="false" debug="${build.debug}" 
+             output="${build.dir}/${project::get-name()}.Tests.dll">
+            
             <sources>
                 <include name="**/*.cs" />
             </sources>
             <references>
-               <include name="${build.dir}/log4net.dll" />
-               <include name="${build.dir}/nunit.framework.dll" />
-               <include name="${build.dir}/${project::get-name()}.dll" />
-               <include name="${build.dir}/Apache.Qpid.Common.dll" />
-               <include name="${build.dir}/Apache.Qpid.Messaging.dll" />
-               <include name="${build.dir}/Apache.Qpid.Sasl.dll" />
+                <include name="${build.dir}/log4net.dll" />
+                <include name="${build.dir}/nunit.framework.dll" />
+                <include name="${build.dir}/${project::get-name()}.dll" />
+                <include name="${build.dir}/Apache.Qpid.Common.dll" />
+                <include name="${build.dir}/Apache.Qpid.Messaging.dll" />
+                <include name="${build.dir}/Apache.Qpid.Sasl.dll" />
             </references>
         </csc>
-         <copy 
-            tofile="${build.dir}/${project::get-name()}.Tests.dll.config" 
-            file="App.config"
-         />
-         <copy 
-            todir="${build.dir}" 
-            file="log4net.config"
-         />
+        <copy tofile="${build.dir}/${project::get-name()}.Tests.dll.config" file="App.config" />
+        <copy todir="${build.dir}" file="log4net.config"/>
     </target>
 
     <target name="test" depends="build">
