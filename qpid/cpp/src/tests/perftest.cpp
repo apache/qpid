@@ -79,6 +79,7 @@ struct Opts : public TestOptions {
     size_t size;
     bool confirm;
     bool durable;
+    bool uniqueData;
 
     // Subscriber
     size_t subs;
@@ -94,7 +95,7 @@ struct Opts : public TestOptions {
     Opts() :
         TestOptions(helpText),
         setup(false), control(false), publish(false), subscribe(false),
-        pubs(1), count(500000), size(1024), confirm(true), durable(false),
+        pubs(1), count(500000), size(1024), confirm(true), durable(false), uniqueData(false),
         subs(1), ack(0),
         qt(1), mode(SHARED), summary(false)
     {
@@ -114,6 +115,7 @@ struct Opts : public TestOptions {
             ("size", optValue(size, "BYTES"), "Size of messages in bytes.")
             ("pub-confirm", optValue(confirm, "yes|no"), "Publisher use confirm-mode.")
             ("durable", optValue(durable, "yes|no"), "Publish messages as durable.")
+            ("unique-data", optValue(uniqueData, "yes|no"), "Make data for each message unique.")
 
             ("nsubs", optValue(subs, "N"), "Create N subscribers.")
             ("sub-ack", optValue(ack, "N"), "N>0: Subscriber acks batches of N.\n"
@@ -368,10 +370,28 @@ struct PublishThread : public Client {
     void run() {                // Publisher
         Completion completion;
         try {
-            size_t msgSize=max(opts.size, sizeof(size_t));
-            Message msg(string(msgSize, 'X'), routingKey);
+            string data;
+            size_t offset(0);
+            if (opts.uniqueData) {
+                offset = 5;
+                data += "data:";//marker (requested for latency testing tool scripts)
+                data += string(sizeof(size_t), 'X');//space for seq no
+                data += string(reinterpret_cast<const char*>(session.getId().data()), session.getId().size());
+                if (opts.size > data.size()) {
+                    data += string(opts.size - data.size(), 'X');
+                } else if(opts.size < data.size()) {
+                    cout << "WARNING: Increased --size to " << data.size()
+                         << " to honour --unique-data" << endl;
+                }
+            } else {
+                size_t msgSize=max(opts.size, sizeof(size_t));
+                data = string(msgSize, 'X');                
+            }
+
+            Message msg(data, routingKey);
             if (opts.durable)
                 msg.getDeliveryProperties().setDeliveryMode(framing::PERSISTENT);
+
 
             SubscriptionManager subs(session);
             LocalQueue lq(AckPolicy(opts.ack));
@@ -383,7 +403,7 @@ struct PublishThread : public Client {
             for (size_t i=0; i<opts.count; i++) {
                 // Stamp the iteration into the message data, avoid
                 // any heap allocation.
-                const_cast<std::string&>(msg.getData()).replace(0, sizeof(uint32_t), reinterpret_cast<const char*>(&i), sizeof(uint32_t));
+                const_cast<std::string&>(msg.getData()).replace(offset, sizeof(uint32_t), reinterpret_cast<const char*>(&i), sizeof(uint32_t));
                 completion = session.messageTransfer(
                     arg::destination=destination,
                     arg::content=msg,
@@ -458,7 +478,8 @@ struct SubscribeThread : public Client {
                 // here, e.g. no std::map, std::string etc.
                 //
                 // For now verify order only for a single publisher.
-                size_t n = *reinterpret_cast<const uint32_t*>(msg.getData().data());
+                size_t offset = opts.uniqueData ? 5 /*marker is 'data:'*/ : 0;
+                size_t n = *reinterpret_cast<const uint32_t*>(msg.getData().data() + offset);
                 if (opts.pubs == 1) {
                     if (opts.subs == 1 || opts.mode == FANOUT) verify(n==expect, "==", expect, n);
                     else verify(n>=expect, ">=", expect, n);
