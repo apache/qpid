@@ -24,7 +24,7 @@
     </target>
 
     <target name="test" depends="build">
-        <nunit2>
+        <nunit2 verbose="true">
             <formatter type="${nant.formatter}" usefile="false" />
             <test>
                 <assemblies>
@@ -32,7 +32,7 @@
                 </assemblies>
                 <categories>
                     <!-- The fail-over tests are interactive so should not be run as part of the build. -->
-                    <exclude name="Failover"/>
+                    <exclude name="Integration"/>
                     <exclude name="SSL" if="${framework::get-target-framework() == 'mono-2.0'}"/>
                 </categories>
             </test>

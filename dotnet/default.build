@@ -7,16 +7,16 @@
     <!-- Determines whether a 'debug' or 'release' build is to be done. Defaults to 'debug' -->
     <property name="build.config" value="debug" />
 
-    <!-- Sets the build version accross all assemblies in the project. -->
+    <!-- Sets build properties consistently accross all assemblies in the project. -->
     <property name="build.version.major" value="2"/>
     <property name="build.version.minor" value="1"/>
     <property name="build.version.build" value="0"/>
     <property name="build.version.revision" value="0"/>
-    <property name="build.company" value="Apache"/>
+    <property name="build.company" value="Apache Software Foundation"/>
     <property name="build.copyright" value="Apache Software Foundation"/>
     <property name="build.description" value="Built from svn revision number: "/>
 
-    <!-- Fileset with build files for each core assembly. -->
+    <!-- Fileset with build files for each 'core' assembly. -->
     <fileset id="src.builds">
         <include name="Qpid.Buffer/default.build" />
         <include name="Qpid.Sasl/default.build" />
@@ -26,12 +26,17 @@
         <include name="Qpid.Client/default.build" />	
     </fileset>
     
-    <!-- Fileset with build files for test assemblies. -->
-    <fileset id="tests.builds">
+    <!-- Fileset with build files for 'pure unit' test assemblies. -->
+    <fileset id="tests.pure.builds">
         <include name="Qpid.Buffer.Tests/default.build" />
         <include name="Qpid.Sasl.Tests/default.build" />
         <include name="Qpid.Common.Tests/default.build" />        
         <include name="Qpid.Client.Tests/default.build" />	
+    </fileset>
+
+    <!-- Fileset with build files for 'integration' test assemblies. -->
+    <fileset id="tests.integration.builds">
+        <include name="Qpid.Integration.Tests/default.build" />	
     </fileset>
 
     <!-- Other test or utility assemblies. -->
@@ -40,6 +45,30 @@
         <include name="TopicPublisher/default.build" />	
         <include name="TestClient/default.build" />	
     </fileset>
+
+    <!-- Prepare environment for a debug build. -->
+    <target name="debug">
+        <property name="build.debug" value="true" />
+        <property name="build.defines" value="DEBUG;TRACE"/>
+    </target>
+
+    <!-- Prepare environment for a release build. -->
+    <target name="release">
+        <property name="build.debug" value="false" />
+        <property name="build.defines" value=""/>
+    </target>
+    
+    <!-- Prepare environment for build. -->
+    <target name="init">
+        <property name="base.dir" value="${project::get-base-directory()}" />
+        <property name="build.dir" value="${base.dir}/bin/${framework::get-target-framework()}/${build.config}" />
+        <call target="${build.config}" />	
+    </target>   
+    
+    <!-- Cleans up the build output directory. -->
+    <target name="clean" depends="init">
+        <delete dir="${build.dir}" failonerror="false" />
+    </target>
 
     <!-- Runs 'svnversion' to get the repository revision into the build property 'build.svnversion'. -->
     <target name="svnversion" description="Runs svnversion to get the current repository version into a build script property.">
@@ -64,7 +93,7 @@
 
     </target>
 
-    <!-- Performs a regex find-and-replace on assembly info files, substituting in a version number. -->
+    <!-- Performs a regex find-and-replace on assembly info files, substituting fields defined as build properties. -->
     <target name="setversion" description="Stamp the version info onto assemblyinfo.cs files" depends="svnversion">
 
         <echo>build.svnversion = ${build.svnversion}</echo>
@@ -128,33 +157,13 @@
         </foreach>
     </target>
 
-    <!-- Prepare environment for a debug build. -->
-    <target name="debug">
-        <property name="build.debug" value="true" />
-        <property name="build.defines" value="DEBUG;TRACE"/>
-    </target>
-
-    <!-- Prepare environment for a release build. -->
-    <target name="release">
-        <property name="build.debug" value="false" />
-        <property name="build.defines" value=""/>
-    </target>
-    
-    <!-- Prepare environment for build. -->
-    <target name="init">
-        <property name="base.dir" value="${project::get-base-directory()}" />
-        <property name="build.dir" value="${base.dir}/bin/${framework::get-target-framework()}/${build.config}" />
-        <call target="${build.config}" />	
-    </target>
-    
-    <target name="clean" depends="init">
-        <delete dir="${build.dir}" failonerror="false" />
-    </target>
-    
     <!-- Do the build. -->
     <target name="build" depends="init, setversion">
-        <!-- make sure output folder exists -->
+        <echo message="Building all modules including tests."/>
+
+        <!-- Make sure output folder exists. -->
         <mkdir dir="${build.dir}" />
+
         <!-- copy reference assemblies over to the output dir -->
         <copy todir="${build.dir}" file="Qpid.Common/lib/seclib-1.0.0/Org.Mentalis.Security.dll"/>
         <copy todir="${build.dir}" file="Qpid.Common/lib/log4net/log4net.dll"/>
@@ -167,7 +176,10 @@
 
         <!-- Compile test assemblies. -->
         <nant target="build">
-            <buildfiles refid="tests.builds" />
+            <buildfiles refid="tests.pure.builds" />
+        </nant>
+        <nant target="build">
+            <buildfiles refid="tests.integration.builds" />
         </nant>
 
         <!-- Compile test assemblies. -->
@@ -176,19 +188,29 @@
         </nant>
     </target>
     
-    <!-- Execute unit tests. -->
+    <!-- Runs all 'pure unit' tests. -->
     <target name="test" depends="build">
-        <echo message="Running unit tests for the project." />
+        <echo message="Running all pure unit tests."/>
         <nant target="test">
-            <buildfiles refid="tests.builds" />
+            <buildfiles refid="tests.pure.builds" />
         </nant>
     </target>
 
-    <!-- Make a release package. -->
+    <!-- Runs all 'integration' tests. -->
+    <target name="integrationtest" depends="build">
+        <echo message="Running all integration tests."/>
+        <nant target="test">
+            <buildfiles refid="tests.integration.builds" />
+        </nant>
+    </target>
+
+    <!-- Creates a release package. -->
     <target name="release-pkg">
-        <echo message="building and packing a release"/>
+        <echo message="Building and packaging a release."/>
+
         <call target="clean"/>
         <call target="build"/>
+
         <property name="build.date" value="${datetime::now()}"/>
 
         <zip zipfile="${build.dir}/Qpid.NET-${framework::get-target-framework()}-${datetime::get-year(build.date)}${datetime::get-month(build.date)}${datetime::get-day(build.date)}.zip">

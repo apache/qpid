@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("TestClient")]
-[assembly: AssemblyDescription("Built from svn revision number:  611749:611758M")]
+[assembly: AssemblyDescription("Built from svn revision number:  612131M")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Apache")]
+[assembly: AssemblyCompany("Apache Software Foundation")]
 [assembly: AssemblyProduct("TestClient")]
 [assembly: AssemblyCopyright("Apache Software Foundation")]
 [assembly: AssemblyTrademark("")]
@@ -29,5 +29,5 @@ using System.Runtime.InteropServices;
 //      Build Number
 //      Revision
 //
-[assembly: AssemblyVersion("0.2.1.0")]
+[assembly: AssemblyVersion("2.1.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
