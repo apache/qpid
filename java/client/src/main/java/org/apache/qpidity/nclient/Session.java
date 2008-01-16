@@ -51,6 +51,7 @@ public interface Session
     public static final short MESSAGE_REJECT_CODE_IMMEDIATE_DELIVERY_FAILED = 1;
     public static final short MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE = 0;
     public static final short MESSAGE_ACQUIRE_MESSAGES_IF_ALL_ARE_AVAILABLE = 1;
+    public static final short MESSAGE_FLOW_MAX_BYTES=1000;
 
     //------------------------------------------------------
     //                 Session housekeeping methods
