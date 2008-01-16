@@ -52,7 +52,7 @@ public class Producer extends BaseExample
     public static void main(String[] args)
     {
         _options.put("-queueName", "Queue name");
-         _defaults.put("-queueName", "message_queue");
+         _defaults.put("-queueName", "direct_message_queue");
         Producer producer = new Producer(args);
         producer.runTest();
     }
@@ -70,7 +70,7 @@ public class Producer extends BaseExample
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // lookup the queue
-            Queue   destination = session.createQueue(_queueName);
+            Queue destination = (Queue) getInitialContext().lookup(_queueName);
 
             // Create a Message producer
             System.out.println(CLASS + ": Creating a Message Producer");
