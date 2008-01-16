@@ -131,12 +131,21 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             origMessage.setJMSMessageID(message.getJMSMessageID());
             origMessage.setJMSDeliveryMode(deliveryMode);
         }
+
         BasicContentHeaderProperties contentHeaderProperties = message.getContentHeaderProperties();
         if (contentHeaderProperties.reset())
         {
             // set the application properties
             message.get010Message().getMessageProperties()
                     .setContentType(contentHeaderProperties.getContentType().toString());
+
+            /* Temp hack to get the JMS client to interoperate with the python client
+               as it relies on content length to determine the boundaries for
+               message framesets. The python client should be fixed.
+            */
+            message.get010Message().getMessageProperties().setContentLength(message.getContentLength());
+
+
             AMQShortString type = contentHeaderProperties.getType();
             if (type != null)
             {

@@ -526,9 +526,9 @@ public class AMQSession_0_10 extends AMQSession
         try
         {
             // this is done so that we can produce to a temporary queue beofre we create a consumer
-            sendCreateQueue(result.getDestinationName(), result.isAutoDelete(), result.isDurable(), result.isExclusive());
-            sendQueueBind(result.getDestinationName(), result.getDestinationName(), new FieldTable(), result.getExchangeName());
-            result.setQueueName(result.getDestinationName());
+            sendCreateQueue(result.getRoutingKey(), result.isAutoDelete(), result.isDurable(), result.isExclusive());
+            sendQueueBind(result.getRoutingKey(), result.getRoutingKey(), new FieldTable(), result.getExchangeName());
+            result.setQueueName(result.getRoutingKey());
         }
         catch (Exception e)
         {
