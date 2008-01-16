@@ -91,7 +91,7 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQShortString getRoutingKey()
     {
-        return getRoutingKey();
+        return super.getRoutingKey();
     }
 
     public boolean isNameRequired()
