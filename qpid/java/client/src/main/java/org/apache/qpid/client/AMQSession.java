@@ -738,7 +738,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
             AMQShortString topicName;
             if (topic instanceof AMQTopic)
             {
-                topicName = ((AMQTopic) topic).getDestinationName();
+                topicName = ((AMQTopic) topic).getRoutingKey();
             }
             else
             {
@@ -1039,7 +1039,7 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
     }
 
     public abstract TemporaryQueue createTemporaryQueue() throws JMSException;
-   
+
     public TemporaryTopic createTemporaryTopic() throws JMSException
     {
         checkNotClosed();

@@ -33,11 +33,6 @@ public class AMQUndefinedDestination extends AMQDestination
         super(exchange, UNKNOWN_EXCHANGE_CLASS, routingKey, queueName);
     }
 
-    public AMQShortString getRoutingKey()
-    {
-        return getDestinationName();  
-    }
-
     public boolean isNameRequired()
     {
         return getAMQQueueName() == null;
