@@ -20,22 +20,31 @@
  */
 package org.apache.qpid.example.jmsexample.direct;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
+import java.util.Properties;
 
-import javax.jms.*;
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 /**
  * The example creates a MessageConsumer on the specified
  * Queue and uses a MessageListener with this MessageConsumer
  * in order to enable asynchronous delivery.
  */
-public class Listener extends BaseExample implements MessageListener
+public class Listener implements MessageListener
 {
     /* Used in log output. */
     private static final String CLASS = "Listener";
-
-    /* The queue name  */
-    private String _queueName;
 
     /**
      * An object to synchronize on.
@@ -54,25 +63,17 @@ public class Listener extends BaseExample implements MessageListener
 
     /**
      * Create an Listener client.
-     *
-     * @param args Command line arguments.
      */
-    public Listener(String[] args)
+    public Listener()
     {
-        super(CLASS, args);
-        _queueName = _argProcessor.getStringArgument("-queueName");
     }
 
     /**
      * Run the message consumer example.
-     *
-     * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
-        _options.put("-queueName", "Queue name");
-        _defaults.put("-queueName", "message_queue");
-        Listener listener = new Listener(args);
+        Listener listener = new Listener();
         listener.runTest();
     }
 
@@ -83,8 +84,20 @@ public class Listener extends BaseExample implements MessageListener
     {
         try
         {
-            // Declare the connection
-            Connection connection = getConnection();
+            // Load JNDI properties
+            Properties properties = new Properties();
+            properties.load(this.getClass().getResourceAsStream("direct.properties"));
+
+            //Create the initial context
+            Context ctx = new InitialContext(properties);
+
+            // look up destination
+            Destination destination = (Destination)ctx.lookup("directQueue");
+
+            // Lookup the connection factory
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            // create the connection
+            Connection connection = conFac.createConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
@@ -107,9 +120,6 @@ public class Listener extends BaseExample implements MessageListener
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
 
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-            // lookup the queue
-            Queue destination = session.createQueue(_queueName);
 
             // Create a MessageConsumer
             System.out.println(CLASS + ": Creating a MessageConsumer");
@@ -144,7 +154,7 @@ public class Listener extends BaseExample implements MessageListener
 
             // Close the JNDI reference
             System.out.println(CLASS + ": Closing JNDI context");
-            getInitialContext().close();
+            ctx.close();
         }
         catch (Exception exp)
         {
@@ -177,7 +187,7 @@ public class Listener extends BaseExample implements MessageListener
             }
             if (text.equals("That's all, folks!"))
             {
-                System.out.println(CLASS + ": Received final message for " + _queueName);
+                System.out.println(CLASS + ": Received final message " + text);
                 synchronized (_lock)
                 {
                     _finished = true;
