@@ -20,45 +20,45 @@
  */
 package org.apache.qpid.example.jmsexample.direct;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
+import java.util.Properties;
 
-import javax.jms.*;
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 /**
  * The example creates a MessageConsumer on the specified
  * Queue which is used to synchronously consume messages.
  */
-public class Consumer extends BaseExample
+public class Consumer
 {
     /**
      * Used in log output.
      */
     private static final String CLASS = "Consumer";
 
-    /* The queue name  */
-    private String _queueName;
-
     /**
      * Create a Consumer client.
-     *
-     * @param args Command line arguments.
      */
-    public Consumer(String[] args)
+    public Consumer()
     {
-        super(CLASS, args);
-        _queueName = _argProcessor.getStringArgument("-queueName");
     }
 
     /**
      * Run the message consumer example.
-     *
-     * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
-        _options.put("-queueName", "Queue name");
-        _defaults.put("-queueName", "direct_message_queue");
-        Consumer syncConsumer = new Consumer(args);
+        Consumer syncConsumer = new Consumer();
         syncConsumer.runTest();
     }
 
@@ -69,8 +69,20 @@ public class Consumer extends BaseExample
     {
         try
         {
-            // Declare the connection
-            Connection connection = getConnection();
+            // Load JNDI properties
+            Properties properties = new Properties();
+            properties.load(this.getClass().getResourceAsStream("direct.properties"));
+
+            //Create the initial context
+            Context ctx = new InitialContext(properties);
+
+            // look up destination
+            Destination destination = (Destination)ctx.lookup("directQueue");
+
+            // Lookup the connection factory
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            // create the connection
+            Connection connection = conFac.createConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
@@ -93,9 +105,6 @@ public class Consumer extends BaseExample
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            // lookup the queue
-            Queue destination = (Queue) getInitialContext().lookup(_queueName);
-                 
             // Create a MessageConsumer
             System.out.println(CLASS + ": Creating a MessageConsumer");
             MessageConsumer messageConsumer = session.createConsumer(destination);
@@ -117,13 +126,13 @@ public class Consumer extends BaseExample
                 }
                 else
                 {
-                    byte[] body = new byte[(int) ((BytesMessage) message).getBodyLength()]; 
+                    byte[] body = new byte[(int) ((BytesMessage) message).getBodyLength()];
                     ((BytesMessage) message).readBytes(body);
                     text = new String(body);
                 }
                 if (text.equals("That's all, folks!"))
                 {
-                    System.out.println(CLASS + ": Received final message for " + _queueName);
+                    System.out.println(CLASS + ": Received final message " + text);
                     end = true;
                 }
                 else
@@ -138,7 +147,7 @@ public class Consumer extends BaseExample
 
             // Close the JNDI reference
             System.out.println(CLASS + ": Closing JNDI context");
-            getInitialContext().close();
+            ctx.close();
         }
         catch (Exception exp)
         {
