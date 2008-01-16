@@ -1,12 +1,14 @@
 package org.apache.qpidity.nclient;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.qpid.client.url.URLParser_0_10;
+import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.QpidURL;
-import org.apache.qpidity.BrokerDetails;
 import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.apache.qpidity.nclient.impl.ClientSession;
@@ -82,6 +84,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
         {
             System.out.println("using MINA");
             _conn = MinaHandler.connect(host, port,connectionDelegate);
+           // _conn = NativeHandler.connect(host, port,connectionDelegate);
         }
 
         // XXX: hardcoded version numbers
@@ -101,12 +104,34 @@ public class Client implements org.apache.qpidity.nclient.Connection
         }
     }
 
+    public void connect(String url)throws QpidException
+    {
+        URLParser_0_10 parser = null;
+        try
+        {
+            parser = new URLParser_0_10(url);
+        }
+        catch(Exception e)
+        {
+            throw new QpidException("Error parsing the URL",ErrorCode.UNDEFINED,e);
+        }
+        List<BrokerDetails> brokers = parser.getAllBrokerDetails();
+        BrokerDetails brokerDetail = brokers.get(0);
+        connect(brokerDetail.getHost(), brokerDetail.getPort(), brokerDetail.getProperty("virtualhost"),
+                brokerDetail.getProperty("username")== null? "guest":brokerDetail.getProperty("username"),
+                brokerDetail.getProperty("password")== null? "guest":brokerDetail.getProperty("password"));
+    }
+
     /*
      * Until the dust settles with the URL disucssion
      * I am not going to implement this.
      */
     public void connect(QpidURL url) throws QpidException
     {
+        throw new UnsupportedOperationException("Not implemented");
+    }
+
+   /* {
         // temp impl to tests
         BrokerDetails details = url.getAllBrokerDetails().get(0);
         connect(details.getHost(),
@@ -115,6 +140,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
                 details.getUserName(),
                 details.getPassword());
     }
+*/
 
     public void close() throws QpidException
     {

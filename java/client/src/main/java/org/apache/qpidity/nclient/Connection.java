@@ -18,7 +18,6 @@
  */
 package org.apache.qpidity.nclient;
 
-import org.apache.qpid.url.QpidURL;
 import org.apache.qpidity.QpidException;
 
 /**
@@ -28,23 +27,24 @@ public interface Connection
 {
    /**
     * Establish the connection using the given parameters
-    * 
+    *
     * @param host
     * @param port
     * @param username
     * @param password
     * @throws QpidException
-    */ 
+    */
    public void connect(String host, int port,String virtualHost,String username, String password) throws QpidException;
-    
-    /**
-     * Establish the connection with the broker identified by the provided URL.
-     *
-     * @param url The URL of the broker.
-     * @throws QpidException If the communication layer fails to connect with the broker.
-     */
-    public void connect(QpidURL url) throws QpidException;
-    
+
+
+   /**
+    * Establish the connection with the broker identified by the URL.
+    *
+    * @param url The URL of the broker.
+    * @throws QpidException If the communication layer fails to connect with the broker.
+    */
+   public void connect(String url) throws QpidException;
+
     /**
      * Close this connection.
      *
@@ -81,6 +81,6 @@ public interface Connection
      *
      * @param exceptionListner The execptionListener
      */
-    
+
     public void setClosedListener(ClosedListener exceptionListner);
 }
