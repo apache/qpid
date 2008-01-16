@@ -42,14 +42,14 @@ import org.apache.qpid.example.jmsexample.common.ArgProcessor;
 abstract public class BaseExample
 {
     /* The AMQP INITIAL_CONTEXT_FACTORY */
-    private static final String INITIAL_CONTEXT_FACTORY_NAME =
+    private static final String INITIAL_CONTEXT_FACTORY_NAME=
             "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
 
     /* Default connection factory name. */
-    private static final String DEFAULT_CONNECTION_FACTORY_NAME = "ConnectionFactory";
+    private static final String DEFAULT_CONNECTION_FACTORY_NAME="ConnectionFactory";
 
     /* Default number of messages to process. */
-    private static final int DEFAULT_NUMBER_MESSAGES = 1;
+    private static final int DEFAULT_NUMBER_MESSAGES=10;
 
     /* JNDI provider URL. */
     private String _providerURL;
@@ -64,10 +64,10 @@ abstract public class BaseExample
     protected ArgProcessor _argProcessor;
 
     /* The supported properties */
-    protected static Properties _options = new Properties();
+    protected static Properties _options=new Properties();
 
     /* The properties default values */
-    protected static Properties _defaults = new Properties();
+    protected static Properties _defaults=new Properties();
 
     /* The broker communication objects */
     private InitialContext _initialContext;
@@ -89,14 +89,14 @@ abstract public class BaseExample
         _options.put("-numMessages", "Number of messages to process");
         _defaults.put("-numMessages", String.valueOf(DEFAULT_NUMBER_MESSAGES));
 
-        _argProcessor = new ArgProcessor(Id, args, _options, _defaults);
+        _argProcessor=new ArgProcessor(Id, args, _options, _defaults);
         _argProcessor.display();
         //Set the initial context factory
-        _providerURL = _argProcessor.getStringArgument("-providerURL");
+        _providerURL=_argProcessor.getStringArgument("-providerURL");
         // Set the number of messages
-        _numberMessages = _argProcessor.getIntegerArgument("-numMessages");
+        _numberMessages=_argProcessor.getIntegerArgument("-numMessages");
         // Set the delivery mode
-        _deliveryMode = _argProcessor.getStringArgument("-deliveryMode")
+        _deliveryMode=_argProcessor.getStringArgument("-deliveryMode")
                 .equals("persistent") ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT;
     }
 
@@ -143,15 +143,18 @@ abstract public class BaseExample
     {
         if (_initialContext == null)
         {
-            Hashtable<String, String> jndiEnvironment = new Hashtable<String, String>();
-            jndiEnvironment.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY_NAME);
-            jndiEnvironment.put("connectionfactory.ConnectionFactory",
-                                "qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:127.0.0.1:5672");
+            Hashtable<String, String> jndiEnvironment=new Hashtable<String, String>();
+            jndiEnvironment.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY_NAME);            
             if (getProviderURL() != null)
             {
                 jndiEnvironment.put(Context.PROVIDER_URL, getProviderURL());
             }
-            _initialContext = new InitialContext(jndiEnvironment);
+            else
+            {
+                jndiEnvironment.put("connectionfactory.ConnectionFactory",
+                        "qpid:password=guest;username=guest;client_id=clientid;virtualhost=test@tcp:127.0.0.1:5672");
+            }
+            _initialContext=new InitialContext(jndiEnvironment);
         }
         return _initialContext;
     }
@@ -166,7 +169,7 @@ abstract public class BaseExample
     {
         if (_connectionFactory == null)
         {
-            _connectionFactory = (ConnectionFactory) getInitialContext().lookup(DEFAULT_CONNECTION_FACTORY_NAME);
+            _connectionFactory=(ConnectionFactory) getInitialContext().lookup(DEFAULT_CONNECTION_FACTORY_NAME);
         }
         return _connectionFactory;
     }
