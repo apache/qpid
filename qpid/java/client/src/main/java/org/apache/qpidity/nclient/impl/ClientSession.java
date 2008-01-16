@@ -44,7 +44,7 @@ public class ClientSession extends org.apache.qpidity.transport.Session implemen
     }
 
     private static  long MAX_NOT_SYNC_DATA_LENGH;
-     private static  long MAX_NOT_FLUSH_DATA_LENGH;
+    private static  long MAX_NOT_FLUSH_DATA_LENGH;
     private Map<String,MessagePartListener> _messageListeners = new HashMap<String,MessagePartListener>();
     private ClosedListener _exceptionListner;
     private RangeSet _acquiredMessages;

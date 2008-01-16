@@ -83,7 +83,6 @@ public class DemoClient
         ssn.data("Topic message");
         ssn.header(new DeliveryProperties().setRoutingKey("stock.us.ibm"),new MessageProperties().setMessageId("456"));
         ssn.endData();
-        ssn.sync();
     }
 
 }

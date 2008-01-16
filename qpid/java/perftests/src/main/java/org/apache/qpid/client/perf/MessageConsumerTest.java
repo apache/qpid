@@ -40,11 +40,7 @@ public class MessageConsumerTest extends Options implements MessageListener
        Destination dest = Boolean.getBoolean("useQueue")? new AMQQueue(_connection,_destination) : new AMQTopic(_connection,_destination);
        _session = _connection.createSession(_transacted, Session.AUTO_ACKNOWLEDGE);
         MessageConsumer _consumer = _session.createConsumer(dest);
-        if(!_synchronous)
-       {
-           _consumer.setMessageListener(this);
-       }
-
+        _consumer.setMessageListener(this);
        _startTime = System.currentTimeMillis();
        if(Boolean.getBoolean("collect_stats"))
        {
