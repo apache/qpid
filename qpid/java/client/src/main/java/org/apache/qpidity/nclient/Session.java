@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,11 +47,11 @@ public interface Session
     public static final short MESSAGE_FLOW_MODE_WINDOW = 1;
     public static final short MESSAGE_FLOW_UNIT_MESSAGE = 0;
     public static final short MESSAGE_FLOW_UNIT_BYTE = 1;
+    public static final long  MESSAGE_FLOW_MAX_BYTES = 0xFFFFFFFF;
     public static final short MESSAGE_REJECT_CODE_GENERIC = 0;
     public static final short MESSAGE_REJECT_CODE_IMMEDIATE_DELIVERY_FAILED = 1;
     public static final short MESSAGE_ACQUIRE_ANY_AVAILABLE_MESSAGE = 0;
     public static final short MESSAGE_ACQUIRE_MESSAGES_IF_ALL_ARE_AVAILABLE = 1;
-    public static final short MESSAGE_FLOW_MAX_BYTES=1000;
 
     //------------------------------------------------------
     //                 Session housekeeping methods
@@ -75,9 +75,9 @@ public interface Session
      */
     public void sessionSuspend();
 
-    //------------------------------------------------------ 
+    //------------------------------------------------------
     //                 Messaging methods
-    //                   Producer           
+    //                   Producer
     //------------------------------------------------------
     /**
      * Transfer the given
@@ -464,7 +464,7 @@ public interface Session
     public void txRollback() throws IllegalStateException;
 
     //---------------------------------------------
-    //            Queue methods 
+    //            Queue methods
     //---------------------------------------------
 
     /**
@@ -586,7 +586,7 @@ public interface Session
                                                    Map<String, Object> arguments);
 
     // --------------------------------------
-    //              exhcange methods 
+    //              exhcange methods
     // --------------------------------------
 
     /**
