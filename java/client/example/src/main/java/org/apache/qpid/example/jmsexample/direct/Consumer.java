@@ -57,7 +57,7 @@ public class Consumer extends BaseExample
     public static void main(String[] args)
     {
         _options.put("-queueName", "Queue name");
-        _defaults.put("-queueName", "message_queue");
+        _defaults.put("-queueName", "direct_message_queue");
         Consumer syncConsumer = new Consumer(args);
         syncConsumer.runTest();
     }
@@ -94,8 +94,8 @@ public class Consumer extends BaseExample
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // lookup the queue
-            Queue destination = session.createQueue(_queueName);
-
+            Queue destination = (Queue) getInitialContext().lookup(_queueName);
+                 
             // Create a MessageConsumer
             System.out.println(CLASS + ": Creating a MessageConsumer");
             MessageConsumer messageConsumer = session.createConsumer(destination);
