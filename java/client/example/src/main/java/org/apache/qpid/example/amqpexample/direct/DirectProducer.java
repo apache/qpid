@@ -1,18 +1,49 @@
 package org.apache.qpid.example.amqpexample.direct;
 
+import java.nio.ByteBuffer;
+
+import org.apache.qpidity.api.Message;
 import org.apache.qpidity.nclient.Client;
 import org.apache.qpidity.nclient.Connection;
 import org.apache.qpidity.nclient.Session;
+import org.apache.qpidity.nclient.util.MessageListener;
 import org.apache.qpidity.transport.DeliveryProperties;
 
-public class DirectProducer
+public class DirectProducer implements MessageListener
 {
-    /**
-     *  This sends 10 messages to the
-     *  amq.direct exchange using the
-     *  routing key as "routing_key"
-     *
-     */
+    boolean finish = false;
+
+    public void onMessage(Message m)
+    {
+        String data = null;
+
+        try
+        {
+            ByteBuffer buf = m.readData();
+            byte[] b = new byte[buf.remaining()];
+            buf.get(b);
+            data = new String(b);
+        }
+        catch(Exception e)
+        {
+            System.out.print("Error reading message");
+            e.printStackTrace();
+        }
+
+        System.out.println("Message: " + data);
+
+
+        if (data != null && data.equals("That's all, folks!"))
+        {
+            finish = true;
+        }
+    }
+
+    public boolean isFinished()
+    {
+        return finish;
+    }
+
     public static void main(String[] args)
     {
         // Create connection
