@@ -47,7 +47,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <summary>Defines the maximum time in milliseconds, to wait for redelivery to occurr.</summary>
         public const int TIMEOUT = 1000;
 
-        /// <summary>Condition used as a coordinate receipt of redelivery exception to the sending thread.</summary>
+        /// <summary>Condition used to coordinate receipt of redelivery exception to the sending thread.</summary>
         private ManualResetEvent errorEvent;
 
         /// <summary>Holds the last received error condition, for examination by the tests sending thread.</summary>
@@ -59,8 +59,23 @@ namespace Apache.Qpid.Integration.Tests.testcases
             base.Init();
 
             errorEvent = new ManualResetEvent(false);
-            lastErrorException = null;            
+            lastErrorException = null;
             _connection.ExceptionListener = new ExceptionListenerDelegate(OnException);
+
+            _connection.Start();
+        }
+
+        [TearDown]
+        public override void Shutdown()
+        {
+            try
+            {
+                _connection.Stop();
+            } 
+            finally 
+            {
+                base.Shutdown();
+            }
         }
         
         /// <summary>

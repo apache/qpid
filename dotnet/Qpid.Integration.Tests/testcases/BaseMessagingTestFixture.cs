@@ -29,12 +29,12 @@ namespace Apache.Qpid.Integration.Tests.testcases
 {
     /// <summary>
     /// Provides a basis for writing Unit tests that communicate with an AMQ protocol broker. By default it creates a connection
-    /// to a message broker running on localhost on the standard AMQ port, 5672, using guest:guest login credentials, on the default exchange,
-    /// 'test' queue.
+    /// to a message broker running on localhost on the standard AMQ port, 5672, using guest:guest login credentials. It also
+    /// creates a standard auto-ack channel on this connection.
     /// </summary>
     public class BaseMessagingTestFixture
     {
-        private static ILog _logger = LogManager.GetLogger(typeof(BaseMessagingTestFixture));
+        private static ILog log = LogManager.GetLogger(typeof(BaseMessagingTestFixture));
 
         /// <summary> The default AMQ connection URL to use for tests. </summary>
         const string connectionUri = "amqp://guest:guest@default/test?brokerlist='tcp://localhost:5672'";
@@ -51,35 +51,27 @@ namespace Apache.Qpid.Integration.Tests.testcases
         [SetUp]
         public virtual void Init()
         {
-            _logger.Info("public virtual void Init(): called");
+            log.Debug("public virtual void Init(): called");
 
-            try
-            {
-                IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
-                _connection = new AMQConnection(connectionInfo);
-                _channel = _connection.CreateChannel(false, AcknowledgeMode.NoAcknowledge, 500, 300);
-            }
-            catch (QpidException e)
-            {
-                _logger.Error("Error initialisng test fixture: " + e, e);
-                throw e;
-            }
+            IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
+            _connection = new AMQConnection(connectionInfo);
+            _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
         }
 
         /// <summary>
-        /// Disposes the test connection. This is called manually because the connection is a field so dispose will not be automatically 
+        /// Disposes of the test connection. This is called manually because the connection is a field so dispose will not be automatically 
         /// called on it.
         /// </summary>
         [TearDown]
         public virtual void Shutdown()
         {
-            _logger.Info("public virtual void Shutdown(): called");
+            log.Debug("public virtual void Shutdown(): called");
 
             if (_connection != null)
             {
-                _logger.Info("Disposing connection.");
+                log.Debug("Disposing connection.");
                 _connection.Dispose();
-                _logger.Info("Connection disposed.");
+                log.Debug("Connection disposed.");
             }
         }
     }

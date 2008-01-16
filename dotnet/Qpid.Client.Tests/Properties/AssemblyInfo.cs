@@ -27,7 +27,7 @@ using log4net.Config;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Apache.Qpid.Client.Tests")]
-[assembly: AssemblyDescription("Built from svn revision number:  612420M")]
+[assembly: AssemblyDescription("Built from svn revision number:  612420:612430M")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Apache Software Foundation")]
 [assembly: AssemblyProduct("Apache.Qpid.Client.Tests")]
