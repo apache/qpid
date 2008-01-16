@@ -74,7 +74,7 @@ public class AMQTopic extends AMQDestination implements Topic
     public static AMQTopic createDurableTopic(AMQTopic topic, String subscriptionName, AMQConnection connection)
             throws JMSException
     {
-        return new AMQTopic(topic.getExchangeName(), topic.getDestinationName(), false,
+        return new AMQTopic(topic.getExchangeName(), topic.getRoutingKey(), false,
                             getDurableTopicQueueName(subscriptionName, connection),
                             true);
     }
@@ -86,12 +86,12 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public String getTopicName() throws JMSException
     {
-        return super.getDestinationName().toString();
+        return super.getRoutingKey().toString();
     }
 
     public AMQShortString getRoutingKey()
     {
-        return getDestinationName();
+        return getRoutingKey();
     }
 
     public boolean isNameRequired()
