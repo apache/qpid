@@ -20,40 +20,42 @@
  */
 package org.apache.qpid.example.jmsexample.direct;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
+import java.util.Properties;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.Message;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.naming.Context;
+import javax.naming.InitialContext;
 
 /**
  * Message producer example, sends message to a queue.
  */
-public class Producer extends BaseExample
+public class Producer
 {
     /* Used in log output. */
     private static final String CLASS = "Producer";
 
-    /* The queue name  */
-    private String _queueName;
+    private int numMessages = 10;
+    private short deliveryMode = 0;
 
     /**
      * Create a Producer client.
-     * @param args Command line arguments.
      */
-    public Producer (String[] args)
+    public Producer ()
     {
-         super(CLASS, args);
-        _queueName = _argProcessor.getStringArgument("-queueName");
     }
 
     /**
      * Run the message producer example.
-     * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
-        _options.put("-queueName", "Queue name");
-         _defaults.put("-queueName", "direct_message_queue");
-        Producer producer = new Producer(args);
+        Producer producer = new Producer();
         producer.runTest();
     }
 
@@ -61,8 +63,21 @@ public class Producer extends BaseExample
     {
         try
         {
-            // Declare the connection
-            Connection connection = getConnection();
+
+            // Load JNDI properties
+            Properties properties = new Properties();
+            properties.load(this.getClass().getResourceAsStream("direct.properties"));
+
+            //Create the initial context
+            Context ctx = new InitialContext(properties);
+
+            // look up destination
+            Destination destination = (Destination)ctx.lookup("directQueue");
+
+            // Lookup the connection factory
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            // create the connection
+            Connection connection = conFac.createConnection();
 
             // Create a session on the connection
             // This session is a default choice of non-transacted and uses the auto acknowledge feature of a session.
@@ -70,7 +85,7 @@ public class Producer extends BaseExample
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // lookup the queue
-            Queue destination = (Queue) getInitialContext().lookup(_queueName);
+            //Queue   destination = session.createQueue(_queueName);
 
             // Create a Message producer
             System.out.println(CLASS + ": Creating a Message Producer");
@@ -81,18 +96,18 @@ public class Producer extends BaseExample
             System.out.println(CLASS + ": Creating a TestMessage to send to the destination");
 
             // Loop to publish the requested number of messages.
-            for (int i = 1; i < getNumberMessages() + 1; i++)
+            for (int i = 1; i < numMessages + 1; i++)
             {
                 // NOTE: We have NOT HAD TO START THE CONNECTION TO BEGIN SENDING  messages,
                 // this is different to the consumer end as a CONSUMERS CONNECTIONS MUST BE STARTED BEFORE RECEIVING.
                 message = session.createTextMessage("Message " + i);
                 System.out.println(CLASS + ": Sending message: " + i);
-                messageProducer.send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);             
+                messageProducer.send(message, deliveryMode, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
             }
 
             // And send a final message to indicate termination.
-            message = session.createTextMessage("That's all, folks!");            
-            messageProducer.send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+            message = session.createTextMessage("That's all, folks!");
+            messageProducer.send(message, deliveryMode, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
             // Close the connection to the broker
             System.out.println(CLASS + ": Closing connection");
@@ -100,11 +115,12 @@ public class Producer extends BaseExample
 
             // Close the JNDI reference
             System.out.println(CLASS + ": Closing JNDI context");
-            getInitialContext().close();
+            ctx.close();
         }
         catch (Exception exp)
         {
             System.err.println(CLASS + ": Caught an Exception: " + exp);
+            exp.printStackTrace();
         }
     }
 }
