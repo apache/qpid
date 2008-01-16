@@ -259,7 +259,14 @@ public class AMQBindingURL implements BindingURL
     {
         if (_exchangeClass.equals(ExchangeDefaults.DIRECT_EXCHANGE_CLASS))
         {
-            return getQueueName();
+            if (containsOption(BindingURL.OPTION_ROUTING_KEY))
+            {
+                return new AMQShortString(getOption(OPTION_ROUTING_KEY));
+            }
+            else
+            {
+                return getQueueName();
+            }
         }
 
         if (containsOption(BindingURL.OPTION_ROUTING_KEY))
