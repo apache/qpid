@@ -19,13 +19,6 @@
  *
  */
 
-/**
- * This file provides a simple test (and example) of basic
- * functionality including declaring an exchange and a queue, binding
- * these together, publishing a message and receiving that message
- * asynchronously.
- */
-
 #include <algorithm>
 #include <iostream>
 #include <memory>
