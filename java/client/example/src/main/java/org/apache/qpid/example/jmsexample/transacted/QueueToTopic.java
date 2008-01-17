@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.example.jmsexample.transacted;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
-
 import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import java.util.Properties;
 
 /**
  * Transactional message example sends a number of messages to a Queue
@@ -40,16 +41,11 @@ import javax.jms.*;
  * </ul>
  * <p/>
  */
-public class QueueToTopic extends BaseExample
+public class QueueToTopic
 {
     /* Used in log output. */
-    private static final String CLASS = "QueueToTopic";
+    private static final String CLASS="QueueToTopic";
 
-    /* The queue name */
-    private String _queueName;
-
-    /* The topic name */
-    private String _topicName;
 
     /* Specify if the transaction is committed */
     private boolean _commit;
@@ -57,31 +53,29 @@ public class QueueToTopic extends BaseExample
     /**
      * Create a QueueToTopic client.
      *
-     * @param args Command line arguments.
+     * @param commit Specifies if the transaction should be committed.
      */
-    public QueueToTopic(String[] args)
+    public QueueToTopic(boolean commit)
     {
-        super(CLASS, args);
-        _queueName = _argProcessor.getStringArgument("-queueName");
-        _topicName = _argProcessor.getStringArgument("-topicName");
-        _commit = _argProcessor.getBooleanArgument("-commit");
+        _commit=commit;
     }
 
     /**
      * Run the message mover example.
      *
      * @param args Command line arguments.
-     * @see BaseExample
      */
     public static void main(String[] args)
     {
-        _options.put("-topicName", "The topic name");
-        _defaults.put("-topicName", "world");
-        _options.put("-queueName", "The queue name");
-        _defaults.put("-queueName", "message_queue");
-        _options.put("-commit", "Commit or rollback the transaction (true|false)");
-        _defaults.put("-commit", "true");
-        QueueToTopic mover = new QueueToTopic(args);
+        boolean commit=true;
+        if (args.length > 1)
+        {
+            if (args[0].equalsIgnoreCase("-rollback"))
+            {
+                commit=!Boolean.getBoolean(args[1]);
+            }
+        }
+        QueueToTopic mover=new QueueToTopic(commit);
         mover.runTest();
     }
 
@@ -89,8 +83,17 @@ public class QueueToTopic extends BaseExample
     {
         try
         {
-           // Declare the connection
-            Connection connection = getConnection();
+            // Load JNDI properties
+            Properties properties=new Properties();
+            properties.load(this.getClass().getResourceAsStream("transacted.properties"));
+
+            //Create the initial context
+            Context ctx=new InitialContext(properties);
+
+            // Lookup the connection factory
+            ConnectionFactory conFac=(ConnectionFactory) ctx.lookup("qpidConnectionfactory");
+            // create the connection
+            Connection connection=conFac.createConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
@@ -116,24 +119,22 @@ public class QueueToTopic extends BaseExample
              * from the topic.
              */
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
-            Session nonTransactedSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session nonTransactedSession=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Lookup the queue
-            System.out.println(CLASS + ": Looking up queue with name: " + _queueName);
-            Queue queue = nonTransactedSession.createQueue(_queueName);
+            Queue queue=(Queue) ctx.lookup("transactedQueue");
 
             // Lookup the topic
-            System.out.println(CLASS + ": Looking up topic with name: " + _topicName);
-            Topic topic = nonTransactedSession.createTopic(_topicName);
-             
+            Topic topic=(Topic) ctx.lookup("transactedTopic");
+
             // Make sure that the queue is empty
             System.out.print(CLASS + ": Purging messages from queue...");
-            MessageConsumer queueMessageConsumer = nonTransactedSession.createConsumer(queue);
+            MessageConsumer queueMessageConsumer=nonTransactedSession.createConsumer(queue);
             Message purgedMessage;
-            int numberPurged = -1;
+            int numberPurged=-1;
             do
             {
-                purgedMessage = queueMessageConsumer.receiveNoWait();
+                purgedMessage=queueMessageConsumer.receiveNoWait();
                 numberPurged++;
             }
             while (purgedMessage != null);
@@ -141,41 +142,42 @@ public class QueueToTopic extends BaseExample
 
             // Create the MessageProducer for the queue
             System.out.println(CLASS + ": Creating a MessageProducer for the queue");
-            MessageProducer messageProducer = nonTransactedSession.createProducer(queue);
+            MessageProducer messageProducer=nonTransactedSession.createProducer(queue);
 
             // Now create the MessageConsumer for the topic
             System.out.println(CLASS + ": Creating a MessageConsumer for the topic");
-            MessageConsumer topicMessageConsumer = nonTransactedSession.createConsumer(topic);
+            MessageConsumer topicMessageConsumer=nonTransactedSession.createConsumer(topic);
 
             // Create a textMessage. We're using a TextMessage for this example.
             System.out.println(CLASS + ": Creating a TestMessage to send to the destination");
-            TextMessage textMessage = nonTransactedSession.createTextMessage("Sample text message");
+            TextMessage textMessage=nonTransactedSession.createTextMessage("Sample text message");
 
             // Loop to publish the requested number of messages to the queue.
-            for (int i = 1; i < getNumberMessages() + 1; i++)
+            for (int i=1; i <= 5; i++)
             {
                 messageProducer
-                        .send(textMessage, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+                        .send(textMessage, DeliveryMode.PERSISTENT, Message.DEFAULT_PRIORITY,
+                                Message.DEFAULT_TIME_TO_LIVE);
 
                 // Print out details of textMessage just sent
                 System.out.println(CLASS + ": Message sent: " + i + " " + textMessage.getJMSMessageID());
             }
 
             // Create a new transacted Session to move the messages from the queue to the topic
-            Session transactedSession = connection.createSession(true, Session.SESSION_TRANSACTED);
+            Session transactedSession=connection.createSession(true, Session.SESSION_TRANSACTED);
 
             // Create a new message consumer from the queue
-            MessageConsumer transactedConsumer = transactedSession.createConsumer(queue);
+            MessageConsumer transactedConsumer=transactedSession.createConsumer(queue);
 
             // Create a new message producer for the topic
-            MessageProducer transactedProducer = transactedSession.createProducer(topic);
+            MessageProducer transactedProducer=transactedSession.createProducer(topic);
 
             // Loop to consume the messages from the queue and publish them to the topic
             Message receivedMessage;
-            for (int i = 1; i < getNumberMessages() + 1; i++)
+            for (int i=1; i <= 5; i++)
             {
                 // Receive a message
-                receivedMessage = transactedConsumer.receive();
+                receivedMessage=transactedConsumer.receive();
                 System.out.println(CLASS + ": Moving message: " + i + " " + receivedMessage.getJMSMessageID());
                 // Publish it to the topic
                 transactedProducer.send(receivedMessage);
@@ -192,7 +194,7 @@ public class QueueToTopic extends BaseExample
                 System.out.println(CLASS + ": Rolling back transacted session.");
                 transactedSession.rollback();
             }
-        
+
             // Now consume any outstanding messages on the queue
             System.out.print(CLASS + ": Mopping up messages from queue");
             if (_commit)
@@ -201,15 +203,15 @@ public class QueueToTopic extends BaseExample
             }
             else
             {
-                System.out.print(" (expecting " + getNumberMessages() + ")...");
+                System.out.print(" (expecting " + 5 + ")...");
             }
 
             Message moppedMessage;
-            int numberMopped = 0;
+            int numberMopped=0;
             do
             {
-                moppedMessage = queueMessageConsumer.receiveNoWait();
-                if( moppedMessage != null)
+                moppedMessage=queueMessageConsumer.receiveNoWait();
+                if (moppedMessage != null)
                 {
                     numberMopped++;
                 }
@@ -222,18 +224,18 @@ public class QueueToTopic extends BaseExample
 
             if (_commit)
             {
-                System.out.print(" (expecting " + getNumberMessages() + ")...");
+                System.out.print(" (expecting " + 5 + ")...");
             }
             else
             {
                 System.out.print(" (expecting none)...");
             }
 
-            numberMopped = 0;
+            numberMopped=0;
             do
             {
-                moppedMessage = topicMessageConsumer.receiveNoWait();
-                if( moppedMessage != null)
+                moppedMessage=topicMessageConsumer.receiveNoWait();
+                if (moppedMessage != null)
                 {
                     numberMopped++;
                 }
@@ -247,7 +249,7 @@ public class QueueToTopic extends BaseExample
 
             // Close the JNDI reference
             System.out.println(CLASS + ": Closing JNDI context");
-            getInitialContext().close();
+            ctx.close();
         }
         catch (Exception exp)
         {

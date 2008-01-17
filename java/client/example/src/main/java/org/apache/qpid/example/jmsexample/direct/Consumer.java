@@ -46,15 +46,10 @@ public class Consumer
      */
     private static final String CLASS = "Consumer";
 
-    /**
-     * Create a Consumer client.
-     */
-    public Consumer()
-    {
-    }
 
     /**
      * Run the message consumer example.
+     * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
@@ -80,7 +75,7 @@ public class Consumer
             Destination destination = (Destination)ctx.lookup("directQueue");
 
             // Lookup the connection factory
-            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
             // create the connection
             Connection connection = conFac.createConnection();
 
@@ -119,7 +114,7 @@ public class Consumer
             while (!end)
             {
                 message = messageConsumer.receive();
-                String text = "";
+                String text;
                 if (message instanceof TextMessage)
                 {
                     text = ((TextMessage) message).getText();

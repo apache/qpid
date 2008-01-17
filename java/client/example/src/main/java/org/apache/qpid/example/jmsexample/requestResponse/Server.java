@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.example.jmsexample.requestResponse;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
-
 import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import java.util.Properties;
 
 /**
  * The example creates a MessageConsumer on the specified
@@ -30,28 +31,11 @@ import javax.jms.*;
  * received message has a ReplyTo header then a new response message is sent
  * to that specified destination.
  */
-public class Server extends BaseExample
+public class Server
 {
     /* Used in log output. */
-    private static final String CLASS = "Server";
+    private static final String CLASS="Server";
 
-    /* The destination type */
-    private String _destinationType;
-
-    /* The destination Name */
-    private String _destinationName;
-
-    /**
-     * Create a Server client.
-     *
-     * @param args Command line arguments.
-     */
-    public Server(String[] args)
-    {
-        super(CLASS, args);
-        _destinationType = _argProcessor.getStringArgument("-destinationType");
-        _destinationName = _argProcessor.getStringArgument("-destinationName");
-    }
 
     /**
      * Run the message mirror example.
@@ -60,11 +44,7 @@ public class Server extends BaseExample
      */
     public static void main(String[] args)
     {
-        _options.put("-destinationType", "Destination Type: queue/topic");
-        _defaults.put("-destinationType", "queue");
-        _options.put("-destinationName", "Destination Name");
-        _defaults.put("-destinationName", "request");
-        Server server = new Server(args);
+        Server server=new Server();
         server.runTest();
     }
 
@@ -75,8 +55,18 @@ public class Server extends BaseExample
     {
         try
         {
-            // Declare the connection
-            Connection connection = getConnection();
+            // Load JNDI properties
+            Properties properties=new Properties();
+            properties.load(this.getClass().getResourceAsStream("requestResponse.properties"));
+
+            //Create the initial context
+            Context ctx=new InitialContext(properties);
+
+            // Lookup the connection factory
+            ConnectionFactory conFac=(ConnectionFactory) ctx.lookup("qpidConnectionfactory");
+
+            // create the connection
+            Connection connection=conFac.createConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
@@ -99,29 +89,18 @@ public class Server extends BaseExample
             // the auto acknowledge feature of a session.
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
 
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            Destination destination;
+            // Lookup the destination
+            Queue destination = (Queue) ctx.lookup("requestQueue");
 
-            if (_destinationType.equals("queue"))
-            {
-                // Lookup the queue
-                System.out.println(CLASS + ": Looking up queue with name: " + _destinationName);
-                destination = session.createQueue(_destinationName);
-            }
-            else
-            {
-                // Lookup the topic
-                System.out.println(CLASS + ": Looking up topic with name: " + _destinationName);
-                destination = session.createTopic(_destinationName);
-            }
 
             // Create a MessageConsumer
             System.out.println(CLASS + ": Creating a MessageConsumer");
-            MessageConsumer messageConsumer = session.createConsumer(destination);
+            MessageConsumer messageConsumer=session.createConsumer(destination);
 
             /**
-             * Create a MessageProducer - note that although we create the
+             * Create a MessageProducer
              */
             System.out.println(CLASS + ": Creating a MessageProducer");
             MessageProducer messageProducer;
@@ -133,46 +112,35 @@ public class Server extends BaseExample
             // Cycle round until all the messages are consumed.
             Message requestMessage;
             TextMessage responseMessage;
-            boolean end = false;
+            boolean end=false;
             while (!end)
             {
                 System.out.println(CLASS + ": Receiving the message");
 
-                requestMessage = messageConsumer.receive();
+                requestMessage=messageConsumer.receive();
 
                 String text;
                 if (requestMessage instanceof TextMessage)
                 {
-                    text = ((TextMessage) requestMessage).getText();
+                    text=((TextMessage) requestMessage).getText();
                 }
                 else
                 {
-                    byte[] body = new byte[(int) ((BytesMessage) requestMessage).getBodyLength()];
+                    byte[] body=new byte[(int) ((BytesMessage) requestMessage).getBodyLength()];
                     ((BytesMessage) requestMessage).readBytes(body);
-                    text = new String(body);
-                }
-
-
-                if (text.equals("That's all, folks!"))
-                {
-                    System.out.println(CLASS + ": Received final message for " + destination);
-                    end = true;
-                }
-                else
-                {
-                    System.out.println(CLASS + ": \tContents = " + text);
+                    text=new String(body);
                 }
 
                 // Now bounce the message if a ReplyTo header was set.
                 if (requestMessage.getJMSReplyTo() != null)
                 {
-                    System.out.println(CLASS + ": Activating response queue listener for: " + destination);
-                    responseMessage = session.createTextMessage();
+                    System.out.println(CLASS + ": Activating response queue listener");
+                    responseMessage=session.createTextMessage();
 
                     responseMessage.setText(text.toUpperCase());
                     System.out.println(CLASS + ": \tResponse = " + responseMessage.getText());
 
-                    messageProducer = session.createProducer(requestMessage.getJMSReplyTo());
+                    messageProducer=session.createProducer(requestMessage.getJMSReplyTo());
                     messageProducer.send(responseMessage);
                 }
                 System.out.println();
@@ -184,7 +152,7 @@ public class Server extends BaseExample
 
             // Close the JNDI reference
             System.out.println(CLASS + ": Closing JNDI context");
-            getInitialContext().close();
+            ctx.close();
         }
         catch (Exception exp)
         {

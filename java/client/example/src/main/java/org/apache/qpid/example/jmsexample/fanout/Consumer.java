@@ -49,7 +49,6 @@ public class Consumer
     /**
      * Create a Consumer client.
      *
-     * @param args Command line arguments.
      */
     public Consumer()
     {
@@ -62,8 +61,6 @@ public class Consumer
      */
     public static void main(String[] args)
     {
-        //_options.put("-queueName", "Queue name");
-        //_defaults.put("-queueName", "message_queue");
         Consumer syncConsumer = new Consumer();
         syncConsumer.runTest();
     }
@@ -77,16 +74,16 @@ public class Consumer
         {
             // Load JNDI properties
             Properties properties = new Properties();
-            properties.load(this.getClass().getResourceAsStream("direct.properties"));
+            properties.load(this.getClass().getResourceAsStream("fanout.properties"));
 
             //Create the initial context
             Context ctx = new InitialContext(properties);
 
             // look up destination
-            Destination destination = (Destination)ctx.lookup("directQueue");
+            Destination destination = (Destination)ctx.lookup("fanoutQueue");
 
             // Lookup the connection factory
-            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
             // create the connection
             Connection connection = conFac.createConnection();
 
@@ -125,7 +122,7 @@ public class Consumer
             while (!end)
             {
                 message = messageConsumer.receive();
-                String text = "";
+                String text;
                 if (message instanceof TextMessage)
                 {
                     text = ((TextMessage) message).getText();
@@ -157,6 +154,7 @@ public class Consumer
         }
         catch (Exception exp)
         {
+            exp.printStackTrace();
             System.err.println(CLASS + ": Caught an Exception: " + exp);
         }
     }

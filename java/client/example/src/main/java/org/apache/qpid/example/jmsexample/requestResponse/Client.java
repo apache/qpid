@@ -20,35 +20,22 @@
  */
 package org.apache.qpid.example.jmsexample.requestResponse;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
 
 import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import java.util.Properties;
 
 /**
  * This example illustrates the use of the JMS utility class <code>QueueRequestor</code>
  * which provides a synchronous RPC-like abstraction using temporary destinations
  * to deliver responses back to the client.
- * <p/>
- * <p>Run with <code>-help</code> argument for a description of command line arguments.
  */
-public class Client extends BaseExample
+public class Client
 {
     /* Used in log output. */
-    private static final String CLASS = "Client";
+    private static final String CLASS="Client";
 
-    /* The queue name  */
-    private String _queueName;
-
-    /**
-     * Create a Client client.
-     *
-     * @param args Command line arguments.
-     */
-    public Client(String[] args)
-    {
-        super(CLASS, args);
-        _queueName = _argProcessor.getStringArgument("-queueName");
-    }
 
     /**
      * Run the message requestor example.
@@ -57,9 +44,7 @@ public class Client extends BaseExample
      */
     public static void main(String[] args)
     {
-        _options.put("-queueName", "The queue name");
-        _defaults.put("-queueName", "request");
-        Client requestor = new Client(args);
+        Client requestor=new Client();
         requestor.runTest();
     }
 
@@ -70,8 +55,18 @@ public class Client extends BaseExample
     {
         try
         {
-            // Declare the connection
-            QueueConnection connection = (QueueConnection) getConnection();
+            // Load JNDI properties
+            Properties properties=new Properties();
+            properties.load(this.getClass().getResourceAsStream("requestResponse.properties"));
+
+            //Create the initial context
+            Context ctx=new InitialContext(properties);
+
+            // Lookup the connection factory
+            ConnectionFactory conFac = (ConnectionFactory) ctx.lookup("qpidConnectionfactory");
+
+            // create the connection
+            QueueConnection connection = (QueueConnection) conFac.createConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
@@ -94,8 +89,7 @@ public class Client extends BaseExample
             QueueSession session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Lookup the destination
-            System.out.println(CLASS + ": Looking up queue with name: " + _queueName);
-            Queue destination = session.createQueue(_queueName);
+            Queue destination = (Queue) ctx.lookup("requestQueue");            
 
             // Create a QueueRequestor
             System.out.println(CLASS + ": Creating a QueueRequestor");
@@ -109,26 +103,18 @@ public class Client extends BaseExample
             // Create a message to send as a request for service
             TextMessage request;
 
-            request = session.createTextMessage();
+            // Send some messages to the server's request queue
+            String[] messages = {"Twas brillig, and the slithy toves",
+                                "Did gire and gymble in the wabe.",
+                                "All mimsy were the borogroves,",
+                                "And the mome raths outgrabe."};
 
             // Get the number of times that this sample should request service
-            for (int i = 0; i < getNumberMessages(); i++)
+            for (String message : messages)
             {
-                request = session.createTextMessage("Twas brillig, and the slithy toves");
-                sendReceive(request, requestor);
-                request = session.createTextMessage("Did gire and gymble in the wabe");
-                sendReceive(request, requestor);
-                request = session.createTextMessage("All mimsy were the borogroves,");
-                sendReceive(request, requestor);
-                request = session.createTextMessage("And the mome raths outgrabe.");
-                sendReceive(request, requestor);
+                request = session.createTextMessage(message);
+                sendReceive(request, requestor);                
             }
-
-            //send the final message  for ending the mirror
-            // And send a final message to indicate termination.
-            request.setText("That's all, folks!");
-            MessageProducer messageProducer = session.createProducer(destination);
-            messageProducer.send(request, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
             // Close the connection to the server
             System.out.println(CLASS + ": Closing connection");
@@ -136,7 +122,7 @@ public class Client extends BaseExample
 
             // Close the JNDI reference
             System.out.println(CLASS + ": Closing JNDI context");
-            getInitialContext().close();
+            ctx.close();
         }
         catch (Exception exp)
         {
@@ -147,19 +133,19 @@ public class Client extends BaseExample
     private void sendReceive(TextMessage request, QueueRequestor requestor) throws JMSException
     {
         Message response;
-        response = requestor.request(request);
+        response=requestor.request(request);
         System.out.println(CLASS + ": \tRequest Content= " + request.getText());
         // Print out the details of the response received
         String text;
         if (response instanceof TextMessage)
         {
-            text = ((TextMessage) response).getText();
+            text=((TextMessage) response).getText();
         }
         else
         {
-            byte[] body = new byte[(int) ((BytesMessage) response).getBodyLength()];
+            byte[] body=new byte[(int) ((BytesMessage) response).getBodyLength()];
             ((BytesMessage) response).readBytes(body);
-            text = new String(body);
+            text=new String(body);
         }
         System.out.println(CLASS + ": \tResponse Content= " + text);
     }

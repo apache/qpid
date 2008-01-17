@@ -22,9 +22,6 @@ package org.apache.qpid.example.jmsexample.fanout;
 
 import java.util.Properties;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
-
-
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -38,19 +35,9 @@ public class Producer
     private static final String CLASS = "Producer";
 
     /* The queue name  */
-    private String _queueName;
     private int numMessages = 10;
     private short deliveryMode = 0;
 
-    /**
-     * Create a Producer client.
-     * @param args Command line arguments.
-     */
-    public Producer ()
-    {
-        // super(CLASS, args);
-        //_queueName = _argProcessor.getStringArgument("-queueName");
-    }
 
     /**
      * Run the message producer example.
@@ -58,8 +45,6 @@ public class Producer
      */
     public static void main(String[] args)
     {
-       // _options.put("-queueName", "Queue name");
-       //  _defaults.put("-queueName", "message_queue");
         Producer producer = new Producer();
         producer.runTest();
     }
@@ -70,15 +55,15 @@ public class Producer
         {
 
             Properties properties = new Properties();
-            properties.load(this.getClass().getResourceAsStream("direct.properties"));
+            properties.load(this.getClass().getResourceAsStream("fanout.properties"));
 
             //Create the initial context
             Context ctx = new InitialContext(properties);
 
-            Destination destination = (Destination)ctx.lookup("directQueue");
+            Destination destination = (Destination)ctx.lookup("fanoutQueue");
 
             // Declare the connection
-            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
             Connection connection = conFac.createConnection();
 
             // Create a session on the connection
