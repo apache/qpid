@@ -53,7 +53,7 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
     protected ByteBuffer _data;
     private boolean _readableProperties = false;
     protected boolean _readableMessage = false;
-    protected boolean _changedData;
+    protected boolean _changedData = true;
     private Destination _destination;
     private JMSHeaderAdapter _headerAdapter;
     private BasicMessageConsumer _consumer;

@@ -423,6 +423,15 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         }, _connection).execute();
     }
 
+
+    public void addBindingKey(BasicMessageConsumer consumer, AMQDestination amqd, String routingKey) throws AMQException
+    {
+        if( consumer.getQueuename() != null)
+        {
+            bindQueue(consumer.getQueuename(), new AMQShortString(routingKey), new FieldTable(), amqd.getExchangeName());
+        }
+    }
+
     public abstract void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey, final FieldTable arguments,
             final AMQShortString exchangeName) throws AMQException, FailoverException;
 
@@ -2155,6 +2164,9 @@ public abstract class AMQSession extends Closeable implements Session, QueueSess
         declareExchange(amqd, protocolHandler, false);
 
         AMQShortString queueName = declareQueue(amqd, protocolHandler);
+
+        // store the consumer queue name
+        consumer.setQueuename(queueName);
 
         // bindQueue(amqd, queueName, protocolHandler, consumer.getRawSelectorFieldTable());
         bindQueue(queueName, amqd.getRoutingKey(), consumer.getRawSelectorFieldTable(), amqd.getExchangeName());

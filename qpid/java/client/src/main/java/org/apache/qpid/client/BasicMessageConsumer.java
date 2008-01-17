@@ -41,6 +41,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.AMQException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -142,6 +143,13 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
      * receive() is in progress.
      */
     private Thread _receivingThread;
+
+
+    /**
+     * Used to store this consumer queue name
+     * Usefull when more than binding key should be used
+     */
+    private AMQShortString _queuename;
 
     /**
      * autoClose denotes that the consumer will automatically cancel itself when there are no more messages to receive
@@ -969,5 +977,20 @@ public abstract class BasicMessageConsumer<H, B> extends Closeable implements Me
     public void stop()
     {
         // do nothing as this is a 0_10 feature
+    }
+
+    public AMQShortString getQueuename()
+    {
+        return _queuename;
+    }
+
+    public void setQueuename(AMQShortString queuename)
+    {
+        this._queuename = queuename;
+    }
+
+    public void addBindingKey(AMQDestination amqd, String routingKey) throws AMQException 
+    {
+        _session.addBindingKey(this,amqd,routingKey);
     }
 }
