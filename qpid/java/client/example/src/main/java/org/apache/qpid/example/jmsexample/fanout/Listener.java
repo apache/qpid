@@ -22,8 +22,6 @@ package org.apache.qpid.example.jmsexample.fanout;
 
 import java.util.Properties;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
-
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -53,16 +51,7 @@ public class Listener implements MessageListener
      */
     private static boolean _failed = false;
 
-    /**
-     * Create an Listener client.
-     *
-     * @param args Command line arguments.
-     */
-    public Listener()
-    {
-        //super(CLASS, args);
-        //_queueName = _argProcessor.getStringArgument("-queueName");
-    }
+
 
     /**
      * Run the message consumer example.
@@ -71,8 +60,6 @@ public class Listener implements MessageListener
      */
     public static void main(String[] args)
     {
-        //_options.put("-queueName", "Queue name");
-        //_defaults.put("-queueName", "message_queue");
         Listener listener = new Listener();
         listener.runTest();
     }
@@ -85,15 +72,15 @@ public class Listener implements MessageListener
         try
         {
             Properties properties = new Properties();
-            properties.load(this.getClass().getResourceAsStream("direct.properties"));
+            properties.load(this.getClass().getResourceAsStream("fanout.properties"));
 
             //Create the initial context
             Context ctx = new InitialContext(properties);
 
-            Destination destination = (Destination)ctx.lookup("directQueue");
+            Destination destination = (Destination)ctx.lookup("fanoutQueue");
 
             // Declare the connection
-            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
             Connection connection = conFac.createConnection();
 
             // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
@@ -171,7 +158,7 @@ public class Listener implements MessageListener
     {
         try
         {
-            String text = "";
+            String text;
             if (message instanceof TextMessage)
             {
                 text = ((TextMessage) message).getText();
