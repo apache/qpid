@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.AMQException;
+
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
@@ -30,7 +32,7 @@ import javax.jms.TopicSubscriber;
  * Wraps a MessageConsumer to fulfill the extended TopicSubscriber contract
  *
  */
-class TopicSubscriberAdaptor implements TopicSubscriber
+class TopicSubscriberAdaptor implements TopicSubscriber, AMQTopicSubscriber
 {
     private final Topic _topic;
     private final BasicMessageConsumer _consumer;
@@ -123,4 +125,8 @@ class TopicSubscriberAdaptor implements TopicSubscriber
         return _consumer;
     }
 
+    public void addBindingKey(Topic topic, String bindingKey) throws AMQException
+    {
+        _consumer.addBindingKey((AMQDestination) topic, bindingKey);
+    }
 }
