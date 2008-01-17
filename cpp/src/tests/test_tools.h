@@ -22,21 +22,41 @@
 #include <boost/test/test_tools.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/regex.hpp>
+#include <boost/assign/list_of.hpp>
 #include <vector>
+#include <ostream>
 
-/** Stream operator so BOOST_CHECK_EQUALS works on vectors. */
-namespace std {
-template <class T>
-ostream& operator <<(ostream& o, const vector<T>& v) {
-    o << " {";
-    typename vector<T>::const_iterator i = v.begin();
-    if (i != v.end())
-        o << *i++;
-    while (i != v.end())
-        o << ", " << *i++;
-    return o << "}";
+// Print a sequence
+template <class T> std::ostream& seqPrint(std::ostream& o, const T& seq) {
+    std::copy(seq.begin(), seq.end(), std::ostream_iterator<typename T::value_type>(o, " "));
+    return o;
 }
-} // namespace std
+
+// Compare sequences 
+template <class T, class U>
+bool seqEqual(const T& a, const U& b) {
+    typename T::const_iterator i = a.begin();
+    typename U::const_iterator j = b.begin();
+    while (i != a.end() && j != b.end() && *i == *j) { ++i; ++j; }
+    return (i == a.end()) && (j == b.end());
+}
+
+// ostream and == operators so we can compare vectors and boost::assign::list_of
+// with BOOST_CHECK_EQUALS
+namespace std {                 // In namespace std so boost can find them.
+
+template <class T>
+ostream& operator<<(ostream& o, const vector<T>& v) { return seqPrint(o, v); }
+
+template <class T>
+ostream& operator<<(ostream& o, const boost::assign_detail::generic_list<T>& l) { return seqPrint(o, l); }
+
+template <class T>
+bool operator == (const vector<T>& a, const boost::assign_detail::generic_list<T>& b) { return seqEqual(a, b); }
+
+template <class T>
+bool operator == (const boost::assign_detail::generic_list<T>& b, const vector<T>& a) { return seqEqual(a, b); }
+}
 
 /** NB: order of parameters is regex first, in line with
  * CHECK(expected, actual) convention.
