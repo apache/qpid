@@ -41,8 +41,6 @@ CLASSPATH="$CLASSPATH$DIVIDER$."
 # Set VM parameters
 QPID_PARAM="$QPID_PARAM -Dlog4j.configuration=file://$QPID_SAMPLE/log4j.xml"
 
-# Set arguments
-QPID_ARGS="$QPID_ARGS -providerURL $QPID_SAMPLE/sample.properties"
 
 # Check if the user supplied a sample classname
 if test "'x$1'" = "'x'"
@@ -50,5 +48,5 @@ then
     echo "No sample classname specified"
     exit;
 else
-    java -cp $CLASSPATH $QPID_PARAM $* $QPID_ARGS
+    java -cp $CLASSPATH $QPID_PARAM $*
 fi
