@@ -52,6 +52,7 @@ public class Producer
 
     /**
      * Run the message producer example.
+     * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
@@ -75,7 +76,7 @@ public class Producer
             Destination destination = (Destination)ctx.lookup("directQueue");
 
             // Lookup the connection factory
-            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
             // create the connection
             Connection connection = conFac.createConnection();
 

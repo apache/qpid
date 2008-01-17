@@ -20,36 +20,27 @@
  */
 package org.apache.qpid.example.jmsexample.pubsub;
 
-import org.apache.qpid.example.jmsexample.common.BaseExample;
 
 import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import java.util.Properties;
 
 /**
  * Publish messages to topics
  */
-public class Publisher extends BaseExample
+public class Publisher
 {
     /* Used in log output. */
-    private static final String CLASS = "Publisher";
+    private static final String CLASS="Publisher";
 
-    /**
-     * Create a Publisher client.
-     *
-     * @param args Command line arguments.
-     */
-    public Publisher(String[] args)
-    {
-        super(CLASS, args);
-    }
-
-    /**
-     * Run the message publisher example.
-     *
+     /**
+     * Run the message producer example.
      * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
-        Publisher publisher = new Publisher(args);
+        Publisher publisher = new Publisher();
         publisher.runTest();
     }
 
@@ -57,80 +48,62 @@ public class Publisher extends BaseExample
     {
         try
         {
+            Properties properties=new Properties();
+            properties.load(this.getClass().getResourceAsStream("pubsub.properties"));
+
+            //Create the initial context
+            Context ctx=new InitialContext(properties);
+
             // Declare the connection
-            TopicConnection connection = (TopicConnection) getConnection();
+            ConnectionFactory conFac=(ConnectionFactory) ctx.lookup("qpidConnectionfactory");
+            TopicConnection connection= (TopicConnection) conFac.createConnection();
 
             // Create a session on the connection
             // This session is a default choice of non-transacted and uses the auto acknowledge feature of a session.
             System.out.println(CLASS + ": Creating a non-transacted, auto-acknowledged session");
-            TopicSession session = connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+            TopicSession session=connection.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
 
             // Create a Message
             TextMessage message;
             System.out.println(CLASS + ": Creating a TestMessage to send to the topics");
-            message = session.createTextMessage();
+            message=session.createTextMessage();
 
-            // lookup the topics .usa.weather
-            Topic topic = session.createTopic("usa.weather");
-            message.setStringProperty("topicName", "usa.weather");
+            // lookup the topics usa.weather
+            Topic topic = (Topic)ctx.lookup("usa.weather");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisher for topic usa.weather");
-            TopicPublisher messagePublisher = session.createPublisher(topic);
+            TopicPublisher messagePublisher=session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
             // lookup the topics usa.news
-            topic = session.createTopic("usa.news");
-            message.setStringProperty("topicName", "usa.news");
+            topic = (Topic)ctx.lookup("usa.news");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisher for topic usa.news");
-            messagePublisher = session.createPublisher(topic);
+            messagePublisher=session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
             // lookup the topics europe.weather
-            topic = session.createTopic("europe.weather");
-            message.setStringProperty("topicName", "europe.weather");
+            topic = (Topic)ctx.lookup("europe.weather");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisher for topic europe.weather");
-            messagePublisher = session.createPublisher(topic);
+            messagePublisher=session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
             // lookup the topics europe.news
-            topic = session.createTopic("europe.news");
-            message.setStringProperty("topicName", "europe.news");
+            topic = (Topic)ctx.lookup("europe.news");
             // Create a Message Publisher
             System.out.println(CLASS + ": Creating a Message Publisher for topic europe.news");
             messagePublisher = session.createPublisher(topic);
             publishMessages(message, messagePublisher);
 
             // send the final message
-            message = session.createTextMessage("That's all, folks!");
-            topic = session.createTopic("#.news");
-            message.setStringProperty("topicName", "news");
+            message=session.createTextMessage("That's all, folks!");
+            topic = (Topic)ctx.lookup("control");
             // Create a Message Publisher
             messagePublisher = session.createPublisher(topic);
             messagePublisher
-                    .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+                    .send(message, DeliveryMode.PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
-            topic = session.createTopic("#.weather");
-            message.setStringProperty("topicName", "weather");
-            // Create a Message Publisher
-            messagePublisher = session.createPublisher(topic);
-            messagePublisher
-                    .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-
-            topic = session.createTopic("europe.#");
-            message.setStringProperty("topicName", "europe");
-            // Create a Message Publisher
-            messagePublisher = session.createPublisher(topic);
-            messagePublisher
-                    .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
-
-            topic = session.createTopic("usa.#");
-            message.setStringProperty("topicName", "usa");
-            // Create a Message Publisher
-            messagePublisher = session.createPublisher(topic);
-            messagePublisher
-                    .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
 
             // Close the connection to the broker
             System.out.println(CLASS + ": Closing connection");
@@ -138,7 +111,7 @@ public class Publisher extends BaseExample
 
             // Close the JNDI reference
             System.out.println(CLASS + ": Closing JNDI context");
-            getInitialContext().close();
+            ctx.close();
         }
         catch (Exception exp)
         {
@@ -148,15 +121,13 @@ public class Publisher extends BaseExample
 
     private void publishMessages(TextMessage message, TopicPublisher messagePublisher) throws JMSException
     {
-        // Loop to publish the requested number of messages.
-        for (int i = 1; i < getNumberMessages() + 1; i++)
+        // Loop to publish 5 messages.
+        for (int i=1; i <= 6; i++)
         {
-            // NOTE: We have NOT HAD TO START THE CONNECTION TO BEGIN SENDING  messages,
-            // this is different to the consumer end as a CONSUMERS CONNECTIONS MUST BE STARTED BEFORE RECEIVING.
-            message.setText("Message " + i);
+            message.setText("message " + i);
             System.out.println(CLASS + ": Sending message: " + i);
             messagePublisher
-                    .send(message, getDeliveryMode(), Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
+                    .send(message, DeliveryMode.PERSISTENT, Message.DEFAULT_PRIORITY, Message.DEFAULT_TIME_TO_LIVE);
         }
     }
 }
