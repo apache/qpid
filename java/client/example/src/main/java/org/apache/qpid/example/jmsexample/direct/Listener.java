@@ -61,15 +61,10 @@ public class Listener implements MessageListener
      */
     private static boolean _failed = false;
 
-    /**
-     * Create an Listener client.
-     */
-    public Listener()
-    {
-    }
 
     /**
      * Run the message consumer example.
+     * @param args Command line arguments.
      */
     public static void main(String[] args)
     {
@@ -95,7 +90,7 @@ public class Listener implements MessageListener
             Destination destination = (Destination)ctx.lookup("directQueue");
 
             // Lookup the connection factory
-            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("local");
+            ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
             // create the connection
             Connection connection = conFac.createConnection();
 
@@ -174,7 +169,7 @@ public class Listener implements MessageListener
     {
         try
         {
-            String text = "";
+            String text;
             if (message instanceof TextMessage)
             {
                 text = ((TextMessage) message).getText();
