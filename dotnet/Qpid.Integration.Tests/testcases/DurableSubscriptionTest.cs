@@ -118,9 +118,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             // Re-attach consumer, check that it gets the messages that it missed.
             IChannel channel3 = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 1);
-            //string topicQueueName3 = channe3.GenerateUniqueName();
-            //channe3.DeclareQueue(topicQueueName3, false, true, true);
-            //channe3.Bind(topicQueueName3, ExchangeNameDefaults.TOPIC, TEST_ROUTING_KEY);
             IMessageConsumer consumer3 = channel3.CreateConsumerBuilder(topicQueueName2)
                 .WithSubscriptionName("TestSubscription")
                 .WithDurable(true)
@@ -131,24 +128,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
             // Clean up any open consumers at the end of the test.
             consumer1.Dispose();
             consumer3.Dispose();
-        }
-
-        /// Consumes n messages, checking that the n+1th is not available within a timeout.
-        private void ConsumeNMessagesOnly(int n, string body, IMessageConsumer consumer)
-        {
-            IMessage msg;
-
-            // Try to receive n messages.
-            for (int i = 0; i < n; i++)
-            {
-                msg = consumer.Receive(500);
-                Assert.IsNotNull(msg, "Consumer did not receive message number " + i);
-                Assert.AreEqual(body, ((ITextMessage)msg).Text, "Incorrect Message recevied on consumer1.");
-            }
-
-            // Check that one more than n cannot be received.
-            msg = consumer.Receive(500);
-            Assert.IsNull(msg, "Consumer got more messages than the number requested (" + n + ").");
         }
     }
 }

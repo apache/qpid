@@ -74,5 +74,43 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 log.Debug("Connection disposed.");
             }
         }
+
+        /// <summary>
+        /// Consumes n messages, checking that the n+1th is not available within a timeout, and that the consumed messages
+        /// are text messages with contents equal to the specified message body.
+        /// </summary>
+        ///
+        /// <param name="n">The number of messages to consume.</param>
+        /// <param name="body">The body text to match against all messages.</param>
+        /// <param name="consumer">The message consumer to recieve the messages on.</param>
+        public static void ConsumeNMessagesOnly(int n, string body, IMessageConsumer consumer)
+        {
+            ConsumeNMessages(n, body, consumer);
+            
+            // Check that one more than n cannot be received.
+            IMessage msg = consumer.Receive(500);
+            Assert.IsNull(msg, "Consumer got more messages than the number requested (" + n + ").");
+        }
+
+        /// <summary>
+        /// Consumes n messages, checking that the n+1th is not available within a timeout, and that the consumed messages
+        /// are text messages with contents equal to the specified message body.
+        /// </summary>
+        ///
+        /// <param name="n">The number of messages to consume.</param>
+        /// <param name="body">The body text to match against all messages.</param>
+        /// <param name="consumer">The message consumer to recieve the messages on.</param>
+        public static void ConsumeNMessages(int n, string body, IMessageConsumer consumer)
+        {
+            IMessage msg;
+            
+            // Try to receive n messages.
+            for (int i = 0; i < n; i++)
+            {
+                msg = consumer.Receive(500);
+                Assert.IsNotNull(msg, "Consumer did not receive message number " + i);
+                Assert.AreEqual(body, ((ITextMessage)msg).Text, "Incorrect Message recevied on consumer1.");
+            }
+        }
     }
 }
