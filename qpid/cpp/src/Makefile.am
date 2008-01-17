@@ -144,7 +144,8 @@ libqpidcommon_la_SOURCES = \
   qpid/Options.cpp \
   qpid/log/Options.cpp \
   qpid/log/Selector.cpp \
-  qpid/log/Statement.cpp
+  qpid/log/Statement.cpp \
+  qpid/IList.h
 
 libqpidbroker_la_LIBADD = libqpidcommon.la -lboost_iostreams
 libqpidbroker_la_SOURCES = \
