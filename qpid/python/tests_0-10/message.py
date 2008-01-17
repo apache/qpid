@@ -480,7 +480,7 @@ class MessageTests(TestBase):
             channel.message_transfer(content=Content(properties={'routing_key' : "q"}, body = "abcdefgh"))
 
         #each message is currently interpreted as requiring msg_size bytes of credit
-        msg_size = 34
+        msg_size = 35
 
         #set byte credit to finite amount (less than enough for all messages)
         channel.message_flow(unit = 1, value = msg_size*5, destination = "c")
