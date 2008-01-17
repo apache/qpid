@@ -169,9 +169,22 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         int channelId = getSession().getChannelId();
         long deliveryId = message.getMessageTransferId();
         String consumerTag = getConsumerTag().toString();
-        AMQShortString exchange = new AMQShortString(message.getDeliveryProperties().getExchange());
-        AMQShortString routingKey = new AMQShortString(message.getDeliveryProperties().getRoutingKey());
-        boolean redelivered = message.getDeliveryProperties().getRedelivered();
+        AMQShortString exchange;
+        AMQShortString routingKey;
+        boolean redelivered = false;
+        Struct[] headers = {message.getMessageProperties(), message.getDeliveryProperties()};
+        if( message.getDeliveryProperties() != null )
+        {
+            exchange = new AMQShortString(message.getDeliveryProperties().getExchange());
+            routingKey = new AMQShortString(message.getDeliveryProperties().getRoutingKey());
+            redelivered = message.getDeliveryProperties().getRedelivered();
+        }
+        else
+        {
+            exchange = new AMQShortString("");
+            routingKey = new AMQShortString("");
+            headers[1] = new DeliveryProperties();
+        }
         UnprocessedMessage_0_10 newMessage =
                 new UnprocessedMessage_0_10(channelId, deliveryId, consumerTag, exchange, routingKey, redelivered);
         try
@@ -182,7 +195,6 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<Struct[], By
         {
             getSession().getAMQConnection().exceptionReceived(e);
         }
-        Struct[] headers = {message.getMessageProperties(), message.getDeliveryProperties()};
         // if there is a replyto destination then we need to request the exchange info
         ReplyTo replyTo = message.getMessageProperties().getReplyTo();
         if (replyTo != null && replyTo.getExchangeName() != null && !replyTo.getExchangeName().equals(""))
