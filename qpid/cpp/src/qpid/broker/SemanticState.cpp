@@ -350,6 +350,7 @@ void SemanticState::handle(intrusive_ptr<Message> msg) {
 
 void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();      
+    msg->getProperties<DeliveryProperties>()->setExchange(exchangeName);
     if (!cacheExchange || cacheExchange->getName() != exchangeName){
         cacheExchange = session.getConnection().broker.getExchanges().get(exchangeName);
     }
