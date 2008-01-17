@@ -55,6 +55,10 @@ check_PROGRAMS+=txtest
 txtest_SOURCES=txtest.cpp  TestOptions.h
 txtest_LDADD=$(lib_client) 
 
+check_PROGRAMS+=latencytest
+latencytest_SOURCES=latencytest.cpp  TestOptions.h
+latencytest_LDADD=$(lib_client) 
+
 # NB: CppUnit test libraries below will be migrated to boost test programs.
 #
 
