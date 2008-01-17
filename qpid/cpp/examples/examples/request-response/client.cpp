@@ -141,7 +141,7 @@ int main() {
 	// the service knows where to route messages.
 
 	request.getDeliveryProperties().setRoutingKey("request");
-	request.getMessageProperties().setReplyTo(ReplyTo("", response_queue.str()));
+	request.getMessageProperties().setReplyTo(ReplyTo("amq.direct", response_queue.str()));
 
 	// Now send some requests ...
 
