@@ -43,15 +43,25 @@ template <class T, int N> class IList;
  * IList<Foo, 0> - uses the 0 links
  * IList<Foo, 1> - uses the 1 links
  *@endcode
+ *
+ *@param T The derived class.
+ *@param N ID for multiple inheritance.
  */
-template<int N=0> class IListNode  : public virtual RefCounted {
+template<class T, int N=0> class IListNode  : public virtual RefCounted {
     intrusive_ptr<IListNode> prev;
     intrusive_ptr<IListNode> next;
     void insert(IListNode*);    
     void erase();
-  template <class T, int NN> friend class IList;
+    virtual T* self() const {   // Virutal so anchor can hide.
+        return boost::polymorphic_downcast<T*>(const_cast<IListNode*>(this));
+    }
+  friend class IList<T,N>;
   public:
     IListNode(IListNode* p=0) : prev(p), next(p) {}
+    T* getNext() { return next ? next->self() : 0; }
+    T* getPrev() { return prev ? prev->self() : 0; }
+    const T* getNext() const { return next ? next->self() : 0; }
+    const T* getPrev() const { return prev ? prev->self() : 0; }
 };
 
 /**
@@ -62,7 +72,7 @@ template<int N=0> class IListNode  : public virtual RefCounted {
  */
 template <class T, int N=0> class IList {
   private:
-    typedef IListNode<N> Node;
+    typedef IListNode<T,N> Node;
 
     template <class R>
     class Iterator :
@@ -109,7 +119,7 @@ template <class T, int N=0> class IList {
     const_iterator last() const { return const_iterator(anchor.prev.get()); }
 
     /// Note: takes a non-const reference, unlike standard containers.
-    void insert(iterator pos, reference x) { x.IListNode<N>::insert(pos.ptr); }
+    void insert(iterator pos, reference x) { x.Node::insert(pos.ptr); }
     void erase(iterator pos) { pos.ptr->erase(); }
     void swap(IList &x) { anchor.swap(x.anchor); }
 
@@ -147,11 +157,13 @@ template <class T, int N=0> class IList {
         Anchor() : Node(this) {}
         // Suppress refcounting for the anchor node.
         void release() const {}
+        // Hide anchor from public get functions.
+        T* self() const { return 0; }
     } anchor;          
 };
 
-template <int N>
-void IListNode<N>::insert(IListNode* node) {
+template <class T, int N>
+void IListNode<T,N>::insert(IListNode* node) {
     assert(!next && !prev);     // Not already in a list.
     assert(node);
     assert(node->next && node->prev);
@@ -161,10 +173,10 @@ void IListNode<N>::insert(IListNode* node) {
     next->prev = this;
 }
 
-template <int N>
-void IListNode<N>::erase() {
+template <class T, int N>
+void IListNode<T,N>::erase() {
     assert(prev && next); 
-    intrusive_ptr<IListNode> self(this); // Protect till exit.
+    intrusive_ptr<IListNode> save(this); // Protect till exit.
     prev->next = next;
     next->prev = prev;
     prev = next = 0;
