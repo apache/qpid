@@ -101,8 +101,13 @@ public class Listener
             javax.jms.TopicSubscriber messageSubscriber=session.createSubscriber(topic);
 
             // Bind each topic queue to the control queue so we know when to stop
-            // Warning: this is  an AMQP specific code
-            ((TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
+            /**
+             * The following line uses a temporary, experimental
+             * Qpid extension to add another binding to the topic's private queue.
+             * This extension is expected to be replaced by an alternative,
+             * less intrusive scheme in the very near future.
+             */
+            ((TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
 
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("usa"));
@@ -114,8 +119,13 @@ public class Listener
             messageSubscriber=session.createSubscriber(topic);
 
             // Bind each topic queue to the control queue so we know when to stop
-            // Warning: this is  an AMQP specific code
-            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
+            /**
+             * The following line uses a temporary, experimental
+             * Qpid extension to add another binding to the topic's private queue.
+             * This extension is expected to be replaced by an alternative,
+             * less intrusive scheme in the very near future.
+             */
+            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
 
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("europe"));
@@ -127,8 +137,13 @@ public class Listener
             messageSubscriber=session.createSubscriber(topic);
 
             // Bind each topic queue to the control queue so we know when to stop
-            // Warning: this is  an AMQP specific code
-            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
+            /**
+             * The following line uses a temporary, experimental
+             * Qpid extension to add another binding to the topic's private queue.
+             * This extension is expected to be replaced by an alternative,
+             * less intrusive scheme in the very near future.
+             */
+            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
 
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("news"));
@@ -140,9 +155,14 @@ public class Listener
             messageSubscriber=session.createSubscriber(topic);
 
             // Bind each topic queue to the control queue so we know when to stop
-            // Warning: this is  an AMQP specific code
-            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
-          
+            /**
+             * The following line uses a temporary, experimental
+             * Qpid extension to add another binding to the topic's private queue.
+             * This extension is expected to be replaced by an alternative,
+             * less intrusive scheme in the very near future.
+             */
+            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey(topic, "control");
+
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("weather"));
 
