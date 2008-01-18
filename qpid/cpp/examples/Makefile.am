@@ -37,7 +37,7 @@ VERIFY=$(abs_top_srcdir)/examples/verify
 
 # Build the examples in the source tree.
 all-local:
-	cd examples && $(MAKE) CXX="$(CXX)" CXXFLAGS="-I../../$(top_srcdir)/src -I../../$(top_srcdir)/src/gen -I../../$(top_builddir)/src/gen -L../../$(top_builddir)/src/.libs -Wl,-rpath,$(abs_top_builddir)/src/.libs" all
+	cd examples && $(MAKE) CXX="$(CXX)" CXXFLAGS="$(CXXFLAGS) -I../../$(top_srcdir)/src -I../../$(top_srcdir)/src/gen -I../../$(top_builddir)/src/gen -L../../$(top_builddir)/src/.libs -Wl,-rpath,$(abs_top_builddir)/src/.libs" all
 
 # Verify the examples in the buid tree.
 check-local: all-local
