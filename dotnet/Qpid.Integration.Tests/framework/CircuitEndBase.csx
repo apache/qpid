@@ -18,7 +18,8 @@
  * under the License.
  *
  */
-using javax.jms.*;
+//using javax.jms.*;
+using Apache.Qpid.Messaging;
 
 namespace Apache.Qpid.Integration.Tests.framework
 {
@@ -74,7 +75,7 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// Gets the message producer at this circuit end point.
         /// </summary>
         /// <return> The message producer at with this circuit end point. </return>
-        public MessageProducer getProducer()
+        public IMessagePublisher GetProducer()
         {
             return producer;
         }
@@ -83,7 +84,7 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// Gets the message consumer at this circuit end point.
         /// </summary>
         /// <return> The message consumer at this circuit end point. </return>
-        public MessageConsumer getConsumer()
+        public IMessageConsumer GetConsumer()
         {
             return consumer;
         }
@@ -93,7 +94,7 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// </summary>
         /// <param name="message"> The message to send. </param>
         /// <exception cref="javax.jms.JMSException"> Any JMS exception occuring during the send is allowed to fall through. </exception>
-        public void send(Message message) throws JMSException
+        public void Send(IMessage message)
         {
             producer.send(message);
         }
@@ -102,7 +103,7 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// Gets the JMS Session associated with this circuit end point.
         /// </summary>
         /// <return> The JMS Session associated with this circuit end point. </return>
-        public Session getSession()
+        public IChannel GetSession()
         {
             return session;
         }
@@ -111,16 +112,16 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// Closes the message producers and consumers and the sessions, associated with this circuit end point.
         /// </summary>
         /// <exception cref="javax.jms.JMSException"> Any JMSExceptions occurring during the close are allowed to fall through. </exception>
-        public void close() throws JMSException
+        public void Close()
         {
             if (producer != null)
             {
-                producer.close();
+                producer.Close();
             }
 
             if (consumer != null)
             {
-                consumer.close();
+                consumer.Close();
             }
         }
 
@@ -128,7 +129,7 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// Returns the message monitor for reporting on received messages on this circuit end.
         /// </summary>
         /// <return> The message monitor for this circuit end. </return>
-        public MessageMonitor getMessageMonitor()
+        public MessageMonitor GetMessageMonitor()
         {
             return messageMonitor;
         }
@@ -137,7 +138,7 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// Returns the exception monitor for reporting on exceptions received on this circuit end.
         /// </summary>
         /// <return> The exception monitor for this circuit end. </return>
-        public ExceptionMonitor getExceptionMonitor()
+        public ExceptionMonitor GetExceptionMonitor()
         {
             return exceptionMonitor;
         }

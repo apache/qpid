@@ -19,11 +19,12 @@
  *
  */
 using log4net;
+using Apache.Qpid.Messaging;
 
-using javax.jms.Message;
-using javax.jms.MessageListener;
+//using javax.jms.Message;
+//using javax.jms.MessageListener;
 
-using java.util.concurrent.atomic.AtomicInteger;
+//using java.util.concurrent.atomic.AtomicInteger;
 
 namespace Apache.Qpid.Integration.Tests.framework
 {

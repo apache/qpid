@@ -20,19 +20,19 @@
  */
 using log4net;
 
-using Apache.Qpid.Integration.Tests.framework.localcircuit.LocalCircuitImpl;
-using Apache.Qpid.Integration.Tests.framework.localcircuit.LocalPublisherImpl;
-using Apache.Qpid.Integration.Tests.framework.localcircuit.LocalReceiverImpl;
-using Apache.Qpid.Integration.Tests.framework.sequencers.CircuitFactory;
-using org.apache.qpid.util.ConversationFactory;
+using Apache.Qpid.Integration.Tests.framework.localcircuit;//.LocalCircuitImpl;
+//using Apache.Qpid.Integration.Tests.framework.localcircuit.LocalPublisherImpl;
+//using Apache.Qpid.Integration.Tests.framework.localcircuit.LocalReceiverImpl;
+//using Apache.Qpid.Integration.Tests.framework.sequencers.CircuitFactory;
+//using org.apache.qpid.util.ConversationFactory;
 
-using uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
+//using uk.co.thebadgerset.junit.extensions.util.ParsedProperties;
 
-using javax.jms.*;
+//using javax.jms.*;
 
-using System.Collections.Generic.IList;
-using java.util.Properties;
-using java.util.concurrent.atomic.AtomicLong;
+using System.Collections.Generic;//.IList;
+//using java.util.Properties;
+//using java.util.concurrent.atomic.AtomicLong;
 
 namespace Apache.Qpid.Integration.Tests.framework
 {
@@ -76,12 +76,9 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// <param name="testProperties"> The test parameters. </param>
         ///
         /// <return> A test circuit. </return>
-        public Circuit createCircuit(ParsedProperties testProperties)
+        public Circuit createCircuit(TestModel testProperties)
         {
             Circuit result;
-
-            // Cast the test properties into a typed interface for convenience.
-            MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProperties);
 
             // Create a standard publisher/receivers test client pair on a shared connection, individual sessions.
             try
@@ -97,10 +94,10 @@ namespace Apache.Qpid.Integration.Tests.framework
                 // connection.setExceptionListener(exceptionMonitor);
 
                 // Set up the publisher.
-                CircuitEndBase publisherEnd = createPublisherCircuitEnd(connection, props, uniqueId);
+                CircuitEndBase publisherEnd = createPublisherCircuitEnd(connection, testProps, uniqueId);
 
                 // Set up the receiver.
-                CircuitEndBase receiverEnd = createReceiverCircuitEnd(connection, props, uniqueId);
+                CircuitEndBase receiverEnd = createReceiverCircuitEnd(connection, testProps, uniqueId);
 
                 // Start listening for incoming messages.
                 connection.start();
@@ -153,34 +150,31 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// <return> A circuit end suitable for the publishing side of a test circuit. </return>
         ///
         /// <exception cref="JMSException"> Any underlying JMSExceptions are allowed to fall through and fail the creation. </exception>
-        public CircuitEndBase createPublisherCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId)
+        public CircuitEndBase createPublisherCircuitEnd(Connection connection, TestModel testProps, long uniqueId)
             throws JMSException
         {
             log.debug(
-                      "public CircuitEndBase createPublisherCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId = "
+                      "public CircuitEndBase createPublisherCircuitEnd(Connection connection, TestModel testProps, long uniqueId = "
                       + uniqueId + "): called");
 
-            // Cast the test properties into a typed interface for convenience.
-            MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProps);
-
             // Check that the test properties do not contain AMQP/Qpid specific settings, and fail if they do.
-            if (props.getImmediate() || props.getMandatory())
+            if (testProps.getImmediate() || testProps.getMandatory())
             {
                 throw new RuntimeException(
                                            "Cannot create a pure JMS circuit as the test properties require AMQP specific options.");
             }
 
-            Session session = connection.createSession(props.getPublisherTransacted(), props.getAckMode());
+            Session session = connection.createSession(testProps.getPublisherTransacted(), testProps.getAckMode());
 
             Destination destination =
-                props.getPubsub() ? session.createTopic(props.getSendDestinationNameRoot() + "_" + uniqueId)
-                : session.createQueue(props.getSendDestinationNameRoot() + "_" + uniqueId);
+                testProps.getPubsub() ? session.createTopic(testProps.getSendDestinationNameRoot() + "_" + uniqueId)
+                : session.createQueue(testProps.getSendDestinationNameRoot() + "_" + uniqueId);
 
-            MessageProducer producer = props.getPublisherProducerBind() ? session.createProducer(destination) : null;
+            MessageProducer producer = testProps.getPublisherProducerBind() ? session.createProducer(destination) : null;
 
             MessageConsumer consumer =
-                props.getPublisherConsumerBind()
-                ? session.createConsumer(session.createQueue(props.getReceiveDestinationNameRoot() + "_" + uniqueId)) : null;
+                testProps.getPublisherConsumerBind()
+                ? session.createConsumer(session.createQueue(testProps.getReceiveDestinationNameRoot() + "_" + uniqueId)) : null;
 
             MessageMonitor messageMonitor = new MessageMonitor();
 
@@ -192,7 +186,7 @@ namespace Apache.Qpid.Integration.Tests.framework
             ExceptionMonitor exceptionMonitor = new ExceptionMonitor();
             connection.setExceptionListener(exceptionMonitor);
 
-            if (!props.getPublisherConsumerActive() && (consumer != null))
+            if (!testProps.getPublisherConsumerActive() && (consumer != null))
             {
                 consumer.close();
             }
@@ -210,36 +204,33 @@ namespace Apache.Qpid.Integration.Tests.framework
         /// <return> A circuit end suitable for the receiving side of a test circuit. </return>
         ///
         /// <exception cref="JMSException"> Any underlying JMSExceptions are allowed to fall through and fail the creation. </exception>
-        public CircuitEndBase createReceiverCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId)
+        public CircuitEndBase createReceiverCircuitEnd(Connection connection, TestModel testProps, long uniqueId)
             throws JMSException
         {
             log.debug(
-                      "public CircuitEndBase createReceiverCircuitEnd(Connection connection, ParsedProperties testProps, long uniqueId = "
+                      "public CircuitEndBase createReceiverCircuitEnd(Connection connection, TestModel testProps, long uniqueId = "
                       + uniqueId + "): called");
 
-            // Cast the test properties into a typed interface for convenience.
-            MessagingTestConfigProperties props = new MessagingTestConfigProperties(testProps);
-
             // Check that the test properties do not contain AMQP/Qpid specific settings, and fail if they do.
-            if (props.getImmediate() || props.getMandatory())
+            if (testProps.getImmediate() || testProps.getMandatory())
             {
                 throw new RuntimeException(
                                            "Cannot create a pure JMS circuit as the test properties require AMQP specific options.");
             }
 
-            Session session = connection.createSession(props.getPublisherTransacted(), props.getAckMode());
+            Session session = connection.createSession(testProps.getPublisherTransacted(), testProps.getAckMode());
 
             MessageProducer producer =
-                props.getReceiverProducerBind()
-                ? session.createProducer(session.createQueue(props.getReceiveDestinationNameRoot() + "_" + uniqueId)) : null;
+                testProps.getReceiverProducerBind()
+                ? session.createProducer(session.createQueue(testProps.getReceiveDestinationNameRoot() + "_" + uniqueId)) : null;
 
             Destination destination =
-                props.getPubsub() ? session.createTopic(props.getSendDestinationNameRoot() + "_" + uniqueId)
-                : session.createQueue(props.getSendDestinationNameRoot() + "_" + uniqueId);
+                testProps.getPubsub() ? session.createTopic(testProps.getSendDestinationNameRoot() + "_" + uniqueId)
+                : session.createQueue(testProps.getSendDestinationNameRoot() + "_" + uniqueId);
 
             MessageConsumer consumer =
-                props.getReceiverConsumerBind()
-                ? ((props.getDurableSubscription() && props.getPubsub())
+                testProps.getReceiverConsumerBind()
+                ? ((testProps.getDurableSubscription() && testProps.getPubsub())
                    ? session.createDurableSubscriber((Topic) destination, "testsub") : session.createConsumer(destination))
                 : null;
 
@@ -250,7 +241,7 @@ namespace Apache.Qpid.Integration.Tests.framework
                 consumer.setMessageListener(messageMonitor);
             }
 
-            if (!props.getReceiverConsumerActive() && (consumer != null))
+            if (!testProps.getReceiverConsumerActive() && (consumer != null))
             {
                 consumer.close();
             }
@@ -258,6 +249,7 @@ namespace Apache.Qpid.Integration.Tests.framework
             return new CircuitEndBase(producer, consumer, session, messageMonitor, null);
         }
 
+        /*
         /// <summary>
         /// Sets the sender test client to coordinate the test with.
         /// </summary>
@@ -293,7 +285,9 @@ namespace Apache.Qpid.Integration.Tests.framework
         {
             throw new RuntimeException("Not implemented.");
         }
+        */
 
+        /*
         /// <summary>
         /// Accepts the conversation factory over which to hold the test coordinating conversation.
         /// </summary>
@@ -302,5 +296,6 @@ namespace Apache.Qpid.Integration.Tests.framework
         {
             throw new RuntimeException("Not implemented.");
         }
+        */
     }
 }
