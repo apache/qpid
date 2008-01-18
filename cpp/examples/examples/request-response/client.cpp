@@ -107,11 +107,13 @@ void Listener::received(Message& message) {
 using std::stringstream;
 using std::string;
 
-int main() {
+int main(int argc, char** argv) {
+    const char* host = argc>1 ? argv[1] : "127.0.0.1";
+    int port = argc>2 ? atoi(argv[2]) : 5672;
     Connection connection;
     Message request;
     try {
-        connection.open("127.0.0.1", 5672 );
+        connection.open(host, port);
         Session session =  connection.newSession();
 
   //--------- Main body of program --------------------------------------------

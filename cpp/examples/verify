@@ -1,25 +1,21 @@
 #!/bin/sh
 # Run from the installed examples/ dir with a full path to this script.
-#
+# If $QPIDD is set, run a private QPIDD and use it.
+# If $QPID_HOST or $QPID_PORT are set, use them to connect.
 
 DIR=$PWD
 SRC=`dirname $0 | sed 's|^\([^/].*\)|'$PWD'/\1|'`/examples
 
 # Start private broker if QPIDD is set.
-
 if [ -n "$QPIDD" ] ; then
-    # FIXME aconway 2007-12-14: Should use --port 0, need
-    # to make examples clients more flexible to connect.
-    # 
-    $QPIDD -d || { echo "Cannot start $QPIDD" ; exit 1; }
+    export QPID_PORT=`$QPIDD -dp0` || { echo "Cannot start $QPIDD" ; exit 1; }
     trap "$QPIDD -q" EXIT
 fi
 
-# Utility functions
+ARGS="${QPID_HOST:-localhost} $QPID_PORT"
 
-run() {
-    echo ==== $*; eval "$*"; echo ====;
-}
+title() { echo ==== $*; eval "$*"; echo ====; }
+run() { echo ==== $*; eval "$* $ARGS"; echo ====; }
 
 waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; }
 
@@ -38,14 +34,8 @@ remove_uuid() {
 # Scripts for each example
 
 direct() {
-    run ./declare_queues  > verify.out
+    run ./declare_queues > verify.out
     run ./direct_producer >> verify.out
-    run ./listener >> verify.out
-}
-
-persistent() {
-    run ./declare_queues >> verify.out
-    run ./direct_persistent_producer >> verify.out
     run ./listener >> verify.out
 }
 
@@ -56,26 +46,28 @@ fanout() {
 }
 
 pub_sub() {
-    ./topic_listener | tee topic_listener.out > topic_listener.wait &
+    run ./topic_listener | tee topic_listener.out > topic_listener.wait &
     waitfor topic_listener.wait  "Listening"
     run ./topic_publisher > verify.out
-    wait 
-    run remove_uuid "topic_listener.out | sort" >> verify.out
+    kill %%
+    wait 2> /dev/null
+    title "remove_uuid topic_listener.out | sort" >> verify.out
 }
     
 request_response() {
-    ./server | tee server.out > server.wait &
+    run ./server | tee server.out > server.wait &
     waitfor server.wait "Waiting"
     run ./client | remove_uuid > verify.out
-    kill %%
+    kill %% 
     wait 2> /dev/null
-    run remove_uuid server.out >> verify.out
+    title "remove_uuid server.out" >> verify.out
 }
 
 # FIXME aconway 2007-12-14: put back pub-sub and persistence when fixed.
 
 # Main
-for ex in  direct fanout request-response  ; do
+EXAMPLES=${*:-direct fanout pub-sub request-response}
+for ex in $EXAMPLES ; do
     func=`echo $ex | tr - _`
     echo "Verifing $ex"
     ( cd $ex && $func && verify && rm -f *.out *.wait) 
