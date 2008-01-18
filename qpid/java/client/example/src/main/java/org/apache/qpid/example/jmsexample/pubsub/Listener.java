@@ -17,19 +17,18 @@
  */
 package org.apache.qpid.example.jmsexample.pubsub;
 
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.BasicMessageConsumer;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQTopicSubscriber;
+import org.apache.qpid.jms.TopicSubscriber;
 
 import javax.jms.*;
+import javax.jms.Session;
+import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import java.util.Properties;
 
 /**
- * The example creates a MessageConsumer on the specified
- * Topic and uses a MessageListener with this MessageConsumer
+ * The example creates a TopicSubscriber on the specified
+ * Topic and uses a MessageListener with this TopicSubscriber
  * in order to enable asynchronous delivery.
  */
 public class Listener
@@ -74,10 +73,10 @@ public class Listener
             ConnectionFactory conFac=(ConnectionFactory) ctx.lookup("qpidConnectionfactory");
             TopicConnection connection=(TopicConnection) conFac.createConnection();
 
-            // As this application is using a MessageConsumer we need to set an ExceptionListener on the connection
+            // As this application is using a TopicSubscriber we need to set an ExceptionListener on the connection
             // so that errors raised within the JMS client library can be reported to the application
             System.out.println(
-                    CLASS + ": Setting an ExceptionListener on the connection as sample uses a MessageConsumer");
+                    CLASS + ": Setting an ExceptionListener on the connection as sample uses a TopicSubscriber");
 
             connection.setExceptionListener(new ExceptionListener()
             {
@@ -99,11 +98,11 @@ public class Listener
             Topic topic=(Topic) ctx.lookup("usa");
             // Create a Message Subscriber
             System.out.println(CLASS + ": Creating a Message Subscriber for topic usa.#");
-            TopicSubscriber messageSubscriber=session.createSubscriber(topic);
+            javax.jms.TopicSubscriber messageSubscriber=session.createSubscriber(topic);
 
             // Bind each topic queue to the control queue so we know when to stop
             // Warning: this is  an AMQP specific code
-            ((AMQTopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
+            ((TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
 
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("usa"));
@@ -116,7 +115,7 @@ public class Listener
 
             // Bind each topic queue to the control queue so we know when to stop
             // Warning: this is  an AMQP specific code
-            ((AMQTopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
+            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
 
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("europe"));
@@ -129,7 +128,7 @@ public class Listener
 
             // Bind each topic queue to the control queue so we know when to stop
             // Warning: this is  an AMQP specific code
-            ((AMQTopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
+            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
 
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("news"));
@@ -142,13 +141,13 @@ public class Listener
 
             // Bind each topic queue to the control queue so we know when to stop
             // Warning: this is  an AMQP specific code
-            ((AMQTopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
+            ((org.apache.qpid.jms.TopicSubscriber) messageSubscriber).addBindingKey( topic, "control");
           
             // Set a message listener on the messageConsumer
             messageSubscriber.setMessageListener(new MyMessageListener("weather"));
 
             // Now the messageConsumer is set up we can start the connection
-            System.out.println(CLASS + ": Starting connection so MessageConsumer can receive messages");
+            System.out.println(CLASS + ": Starting connection so TopicSubscriber can receive messages");
             connection.start();
 
             // Wait for the messageConsumer to have received all the messages it needs

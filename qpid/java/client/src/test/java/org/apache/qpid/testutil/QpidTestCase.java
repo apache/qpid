@@ -253,4 +253,9 @@ public class QpidTestCase extends TestCase
         }
         return con;
     }
+
+    public void testfoo()
+    {
+        //do nothing, just to avoid maven to report an error  
+    }
 }
