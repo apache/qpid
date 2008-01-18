@@ -26,7 +26,7 @@
 
 #include <cerrno>
 
-#define QPID_POSIX_ERROR(ERRNO) qpid::Exception(QPID_MSG(qpid::strError(ERRNO)) << " " << ERRNO)
+#define QPID_POSIX_ERROR(ERRNO) qpid::Exception(QPID_MSG(qpid::strError(ERRNO)));
 
 /** THROW QPID_POSIX_ERROR(errno) if RESULT is less than zero */
 #define QPID_POSIX_CHECK(RESULT)                        \
