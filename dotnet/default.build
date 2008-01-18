@@ -115,34 +115,28 @@
                         reader.Close();
 
                         // Substitute the version numbers.
-                        string replacement = string.Format(
-                                                           "[assembly: AssemblyVersion(\"{0}.{1}.{2}.{3}\")]",
+                        string replacement = string.Format("[assembly: AssemblyVersion(\"{0}.{1}.{2}.{3}\")]",
                                                            project.Properties["build.version.major"],
                                                            project.Properties["build.version.minor"],
                                                            project.Properties["build.version.build"],
-                                                           project.Properties["build.version.revision"]
-                                                           );
+                                                           project.Properties["build.version.revision"]);
                         contents = Regex.Replace(contents, @"\[assembly: AssemblyVersion\("".*""\)\]", replacement);
 
                         // Substitute the company name and copyright.
-                        replacement = string.Format(
-                                                           "[assembly: AssemblyCompany(\"{0}\")]",
-                                                           project.Properties["build.company"]
-                                                           );
+                        replacement = string.Format("[assembly: AssemblyCompany(\"{0}\")]",
+                                                    project.Properties["build.company"]);
                         contents = Regex.Replace(contents, @"\[assembly: AssemblyCompany\("".*""\)\]", replacement);
 
-                        replacement = string.Format(
-                                                           "[assembly: AssemblyCopyright(\"{0}\")]",
-                                                           project.Properties["build.copyright"]
-                                                           );
+                        replacement = string.Format("[assembly: AssemblyCopyright(\"{0}\")]",
+                                                    project.Properties["build.copyright"]);
                         contents = Regex.Replace(contents, @"\[assembly: AssemblyCopyright\("".*""\)\]", replacement);
 
                         // Update the description.
-                        replacement = string.Format(
-                                                           "[assembly: AssemblyDescription(\"{0} {1}\")]",
-                                                           project.Properties["build.description"],
-                                                           project.Properties["build.svnversion"]
-                                                           );
+                        //replacement = string.Format("[assembly: AssemblyDescription(\"{0} {1}\")]",
+                        //                            project.Properties["build.description"],
+                        //                            project.Properties["build.svnversion"]);
+                        replacement = string.Format("[assembly: AssemblyDescription(\"{0}\")]",
+                                                    project.Properties["build.description"]);
                         contents = Regex.Replace(contents, @"\[assembly: AssemblyDescription\("".*""\)\]", replacement);
 
                         // Write out the file with the substituted version.

@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Apache.Qpid.Sasl")]
-[assembly: AssemblyDescription("Built from svn revision number:  612518:612870M")]
+[assembly: AssemblyDescription("Built from svn revision number: ")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Apache Software Foundation")]
 [assembly: AssemblyProduct("Apache.Qpid.Sasl")]
