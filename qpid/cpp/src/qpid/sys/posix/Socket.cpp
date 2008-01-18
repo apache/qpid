@@ -113,6 +113,17 @@ void Socket::setNonblocking() const {
     QPID_POSIX_CHECK(::fcntl(impl->fd, F_SETFL, O_NONBLOCK));
 }
 
+namespace {
+const char* h_errstr(int e) {
+    switch (e) {
+      case HOST_NOT_FOUND: return "Host not found";
+      case NO_ADDRESS: return "Name does not have an IP address";
+      case TRY_AGAIN: return "A temporary error occurred on an authoritative name server.";
+      case NO_RECOVERY: return "Non-recoverable name server error";
+      default: return "Unknown error";
+    }
+}
+}
 
 void Socket::connect(const std::string& host, int port) const
 {
@@ -123,10 +134,11 @@ void Socket::connect(const std::string& host, int port) const
     // TODO: Be good to make this work for IPv6 as well as IPv4
     // Use more modern lookup functions
     struct hostent* hp = gethostbyname ( host.c_str() );
-    if (hp == 0) throw QPID_POSIX_ERROR(errno);
+    if (hp == 0)
+        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << h_errstr(h_errno)));
     memcpy(&name.sin_addr.s_addr, hp->h_addr_list[0], hp->h_length);
     if (::connect(socket, (struct sockaddr*)(&name), sizeof(name)) < 0)
-        throw QPID_POSIX_ERROR(errno);
+        throw qpid::Exception(QPID_MSG(strError(errno) << ": " << host << ":" << port));
 }
 
 void
