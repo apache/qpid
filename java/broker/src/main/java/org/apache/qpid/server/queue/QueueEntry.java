@@ -114,7 +114,7 @@ public class QueueEntry
 
     public void setRedelivered(boolean b)
     {
-        getMessage().setRedelivered(true);
+        getMessage().setRedelivered(b);
     }
 
     public Subscription getDeliveredSubscription()
