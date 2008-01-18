@@ -720,6 +720,20 @@ class MessageTests(TestBase):
         #check all 'browsed' messages are still on the queue
         self.assertEqual(5, channel.queue_query(queue="q").message_count)
 
+    def test_no_size(self):
+        self.queue_declare(queue = "q", exclusive=True, auto_delete=True)
+
+        ch = self.channel
+        ch.message_transfer(content=SizelessContent(properties={'routing_key' : "q"}, body="message-body"))
+
+        ch.message_subscribe(queue = "q", destination="d", confirm_mode = 0)
+        ch.message_flow(unit = 0, value = 0xFFFFFFFF, destination = "d")
+        ch.message_flow(unit = 1, value = 0xFFFFFFFF, destination = "d")
+
+        queue = self.client.queue("d")
+        msg = queue.get(timeout = 3)
+        self.assertEquals("message-body", msg.content.body)
+
     def assertDataEquals(self, channel, msg, expected):
         self.assertEquals(expected, msg.content.body)
 
@@ -728,3 +742,8 @@ class MessageTests(TestBase):
             extra = queue.get(timeout=1)
             self.fail("Queue not empty, contains: " + extra.content.body)
         except Empty: None
+
+class SizelessContent(Content):
+
+    def size(self):
+        return None

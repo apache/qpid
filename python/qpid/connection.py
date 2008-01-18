@@ -360,7 +360,8 @@ class Header(Frame):
 
     # message properties store the content-length now, and weight is
     # deprecated
-    structs[1].content_length = self.size
+    if self.size != None:
+      structs[1].content_length = self.size
 
     for s in structs:
       c.encode_long_struct(s)
@@ -412,9 +413,10 @@ class Header(Frame):
     length = None
     for s in structs:
       for f in s.type.fields:
-        props[f.name] = s.get(f.name)
-        if f.name == "content_length":
-          length = s.get(f.name)
+        if s.has(f.name):
+          props[f.name] = s.get(f.name)
+          if f.name == "content_length":
+            length = s.get(f.name)
     return Header(None, 0, length, props)
 
   @staticmethod

@@ -226,13 +226,12 @@ class Channel:
       self.write_content(frame.method_type.klass, content)
 
   def write_content(self, klass, content):
-    size = content.size()
-    header = Header(klass, content.weight(), size, content.properties)
+    header = Header(klass, content.weight(), content.size(), content.properties)
     self.write(header)
     for child in content.children:
       self.write_content(klass, child)
     # should split up if content.body exceeds max frame size
-    if size > 0:
+    if content.body:
       self.write(Body(content.body))
 
   def receive(self, frame, work):
@@ -360,14 +359,13 @@ def read_content(queue):
   children = []
   for i in range(header.weight):
     children.append(read_content(queue))
-  size = header.size
-  read = 0
   buf = StringIO()
-  while read < size:
+  eof = header.eof
+  while not eof:
     body = queue.get()
+    eof = body.eof
     content = body.content
     buf.write(content)
-    read += len(content)
   return Content(buf.getvalue(), children, header.properties.copy())
 
 class Future:
