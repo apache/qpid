@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
- direct_consumer.py
+ fanout_consumer.py
 
  This AMQP client reads messages from a message
  queue named "message_queue".
@@ -40,9 +40,9 @@ session.session_open()
 consumer_tag = "consumer1"
 queue = client.queue(consumer_tag)
 
-# Call message_consume() to tell the broker to deliver messages
+# Call message_subscribe() to tell the broker to deliver messages
 # from the AMQP queue to this local client queue. The broker will
-# start delivering messages as soon as message_consume() is called.
+# start delivering messages as soon as message_subscribe() is called.
 
 session.message_subscribe(queue="message_queue", destination=consumer_tag)
 session.message_flow(consumer_tag, 0, 0xFFFFFFFF)

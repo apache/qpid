@@ -38,7 +38,7 @@ password="guest"
 client = Client(host, port, qpid.spec.load(amqp_spec))
 client.start({"LOGIN": user, "PASSWORD": password})
 
-# Open Channel 1 so we can use it to manage our queue.
+# Create a session and open it.
 
 session = client.session()
 session.session_open() 
