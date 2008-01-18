@@ -22,9 +22,9 @@ def dump_queue(client, queue_name):
   consumer_tag = queue_name     # Use the queue name as the consumer tag - need a unique tag
   queue = client.queue(consumer_tag)
 
-  # Call basic_consume() to tell the broker to deliver messages
+  # Call message_subscribe() to tell the broker to deliver messages
   # from the AMQP queue to a local client queue. The broker will
-  # start delivering messages as soon as basic_consume() is called.
+  # start delivering messages as soon as message_subscribe() is called.
 
   session.message_subscribe(queue=queue_name, destination=consumer_tag)
   session.message_flow(consumer_tag, 0, 0xFFFFFFFF)
