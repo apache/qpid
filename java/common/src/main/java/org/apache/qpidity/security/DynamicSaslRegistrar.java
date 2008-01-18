@@ -40,7 +40,7 @@ public class DynamicSaslRegistrar
         if (factories.size() > 0)
         {
             Security.addProvider(new JCAProvider(factories));
-            System.out.println("Dynamic SASL provider added as a security provider");
+            _logger.debug("Dynamic SASL provider added as a security provider");
         }
     }
 
