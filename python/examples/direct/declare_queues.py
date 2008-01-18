@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
- config_direct_exchange.py
+ declare_queues.py 
 
  Creates and binds a queue on an AMQP direct exchange.
 
@@ -33,9 +33,6 @@ session.session_open()
 
 #----- Create a queue -------------------------------------
 
-# Create a queue named "listener" on channel 1, and bind it 
-# to the "amq.direct" exchange.
-# 
 # queue_declare() creates an AMQP queue, which is held
 # on the broker. Published messages are sent to the AMQP queue, 
 # from which messages are delivered to consumers. 
@@ -50,4 +47,5 @@ session.queue_bind(exchange="amq.direct", queue="message_queue", routing_key="ro
 #----- Cleanup ---------------------------------------------
 
 session.session_close()
+
 

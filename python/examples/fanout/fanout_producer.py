@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
- direct_producer.py
+ fanout_producer.py
 
  Publishes messages to an AMQP direct exchange, using
  the routing key "routing_key"
