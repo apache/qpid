@@ -22,6 +22,8 @@ import org.apache.qpidity.transport.ProtocolHeader;
 import org.apache.qpidity.transport.SessionDelegate;
 import org.apache.qpidity.transport.network.mina.MinaHandler;
 import org.apache.qpidity.transport.network.nio.NioHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public class Client implements org.apache.qpidity.nclient.Connection
@@ -30,7 +32,7 @@ public class Client implements org.apache.qpidity.nclient.Connection
     private Connection _conn;
     private ClosedListener _closedListner;
     private final Lock _lock = new ReentrantLock();
-
+    private static Logger _logger = LoggerFactory.getLogger(Client.class);
     /**
      *
      * @return returns a new connection to the broker.
@@ -77,12 +79,18 @@ public class Client implements org.apache.qpidity.nclient.Connection
 
         if (System.getProperty("transport","mina").equalsIgnoreCase("nio"))
         {
-            System.out.println("using NIO");
+            if( _logger.isDebugEnabled())
+            {
+                _logger.debug("using NIO");
+            }
             _conn = NioHandler.connect(host, port,connectionDelegate);
         }
         else
         {
-            System.out.println("using MINA");
+            if( _logger.isDebugEnabled())
+            {
+                _logger.debug("using MINA");
+            }
             _conn = MinaHandler.connect(host, port,connectionDelegate);
            // _conn = NativeHandler.connect(host, port,connectionDelegate);
         }
