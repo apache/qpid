@@ -49,7 +49,9 @@ struct TestNode {
 int TestNode::instances = 0;
 ostream& operator<<(ostream& o, const TestNode& n) { return o << n.id; }
 
-struct SingleNode : public TestNode, public IListNode<> { SingleNode(char i) : TestNode(i) {} };
+struct SingleNode : public TestNode, public IListNode<SingleNode> {
+    SingleNode(char i) : TestNode(i) {}
+};
 typedef IList<SingleNode> TestList;
 
 struct Fixture {
@@ -119,8 +121,16 @@ BOOST_FIXTURE_TEST_CASE(TestIterator, Fixture) {
     {
         TestList l;
         l.push_back(*a);
+        BOOST_CHECK(a->getNext() == 0);
+        BOOST_CHECK(a->getPrev() == 0);
         l.push_back(*b);
+        BOOST_CHECK(a->getNext() == b.get());
+        BOOST_CHECK(a->getPrev() == 0);
+        BOOST_CHECK(b->getNext() == 0);
+        BOOST_CHECK(b->getPrev() == a.get());
         l.push_back(*c);
+        BOOST_CHECK(b->getNext() == c.get());
+        BOOST_CHECK(c->getPrev() == b.get());
     
         TestList::iterator i = l.begin();
         BOOST_CHECK_EQUAL(*i, *a);
@@ -155,7 +165,11 @@ BOOST_FIXTURE_TEST_CASE(testOwnership, Fixture) {
     BOOST_CHECK_EQUAL(0, SingleNode::instances);
 }
 
-struct MultiNode : public TestNode, public IListNode<0>, public IListNode<1>, public IListNode<2> {
+struct MultiNode : public TestNode,
+                   public IListNode<MultiNode, 0>,
+                   public IListNode<MultiNode, 1>,
+                   public IListNode<MultiNode, 2>
+{
     MultiNode(char c) : TestNode(c) {}
 };
 
