@@ -50,23 +50,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <summary>Defines the name of the test topic to use with the tests.</summary>
         public const string TEST_ROUTING_KEY = "commitrollbacktestkey";
 
-        /// <summary>A counter used to supply unique ids. </summary>
-        int uniqueId = 0;
-
-        /// <summary>Used to hold unique ids per test. </summary>
-        int testId;
-
         [SetUp]
         public override void Init()
         {
             base.Init();
 
-            // Set up a unqiue id for this test.
-            testId = uniqueId++;
-
             // Create one producer and one consumer, p2p, tx, consumer with queue bound to producers routing key.
-            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId);
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
         }
 
         [TearDown]
@@ -135,7 +126,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             // Close end-point 1 without committing the message, then re-open to consume again.
             CloseEndPoint(1);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
 
             // Try to receive messages.
             ConsumeNMessagesOnly(1, "A", testConsumer[1]);
@@ -155,7 +146,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             // Close end-point 1 without committing the message, then re-open to consume again.
             CloseEndPoint(1);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
 
             // Try to receive messages.
             ConsumeNMessagesOnly(0, "A", testConsumer[1]);
@@ -175,7 +166,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             // Close end-point 1 without committing the message, then re-open to consume again.
             CloseEndPoint(1);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
 
             // Try to receive messages.
             ConsumeNMessagesOnly(1, "A", testConsumer[1]);

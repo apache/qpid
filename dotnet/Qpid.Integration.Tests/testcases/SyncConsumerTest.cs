@@ -27,105 +27,83 @@ using Apache.Qpid.Messaging;
 
 namespace Apache.Qpid.Integration.Tests.testcases
 {
-  [TestFixture, Category("Integration")]
-   public class SyncConsumerTest : BaseMessagingTestFixture
-   {
-      private static readonly ILog _logger = LogManager.GetLogger(typeof(SyncConsumerTest));
+    [TestFixture, Category("Integration")]
+    public class SyncConsumerTest : BaseMessagingTestFixture
+    {
+        private static readonly ILog _logger = LogManager.GetLogger(typeof(SyncConsumerTest));
+        
+        private string _commandQueueName = "ServiceQ1";
+        private const int MESSAGE_COUNT = 1000;
 
-      private string _commandQueueName = "ServiceQ1";
-      private const int MESSAGE_COUNT = 1000;
-      private const string MESSAGE_DATA_BYTES = "jfd ghljgl hjvhlj cvhvjf ldhfsj lhfdsjf hldsjfk hdslkfj hsdflk  ";
+        private IMessageConsumer _consumer;
+        private IMessagePublisher _publisher;
+        
+        //[SetUp]
+        public override void Init()
+        {
+            base.Init();
+            _publisher = _channel.CreatePublisherBuilder()
+                .WithRoutingKey(_commandQueueName)
+                .WithExchangeName(ExchangeNameDefaults.TOPIC)
+                .Create();
+            
+            _publisher.DisableMessageTimestamp = true;
+            _publisher.DeliveryMode = DeliveryMode.NonPersistent;
+            
+            string queueName = _channel.GenerateUniqueName();
+            _channel.DeclareQueue(queueName, false, true, true);
+            
+            _channel.Bind(queueName, ExchangeNameDefaults.TOPIC, _commandQueueName);
+            
+            _consumer = _channel.CreateConsumerBuilder(queueName)
+                .WithPrefetchLow(100).Create();
+            _connection.Start();
+        }
 
-      private static String GetData(int size)
-      {
-         StringBuilder buf = new StringBuilder(size);
-         int count = 0;
-         while ( count < size + MESSAGE_DATA_BYTES.Length )
-         {
-            buf.Append(MESSAGE_DATA_BYTES);
-            count += MESSAGE_DATA_BYTES.Length;
-         }
-         if ( count < size )
-         {
-            buf.Append(MESSAGE_DATA_BYTES, 0, size - count);
-         }
-
-         return buf.ToString();
-      }
-
-      private IMessageConsumer _consumer;
-      private IMessagePublisher _publisher;
-
-      /*
-      [SetUp]
-      public override void Init()
-      {
-         base.Init();
-         _publisher = _channel.CreatePublisherBuilder()
-             .WithRoutingKey(_commandQueueName)
-             .WithExchangeName(ExchangeNameDefaults.TOPIC)
-             .Create();
-
-         _publisher.DisableMessageTimestamp = true;
-         _publisher.DeliveryMode = DeliveryMode.NonPersistent;
-
-         string queueName = _channel.GenerateUniqueName();
-         _channel.DeclareQueue(queueName, false, true, true);
-
-         _channel.Bind(queueName, ExchangeNameDefaults.TOPIC, _commandQueueName);
-
-         _consumer = _channel.CreateConsumerBuilder(queueName)
-             .WithPrefetchLow(100).Create();
-         _connection.Start();
-      }
-      */
-
-      /*      
-      [Test]
-      public void ReceiveWithInfiniteWait()
-      {
-         // send all messages
-         for ( int i = 0; i < MESSAGE_COUNT; i++ )
-         {
-            ITextMessage msg;
-            try
+        //[Test]
+        public void ReceiveWithInfiniteWait()
+        {
+            // send all messages
+            for ( int i = 0; i < MESSAGE_COUNT; i++ )
             {
-               msg = _channel.CreateTextMessage(GetData(512 + 8 * i));
-            } catch ( Exception e )
-            {
-               _logger.Error("Error creating message: " + e, e);
-               break;
+                ITextMessage msg;
+                try
+                {
+                    msg = _channel.CreateTextMessage(GetData(512 + 8 * i));
+                } catch ( Exception e )
+                {
+                    _logger.Error("Error creating message: " + e, e);
+                    break;
+                }
+                _publisher.Send(msg);
             }
+            
+            _logger.Debug("All messages sent");
+            // receive all messages
+            for ( int i = 0; i < MESSAGE_COUNT; i++ )
+            {
+                try
+                {
+                    IMessage msg = _consumer.Receive();
+                    Assert.IsNotNull(msg);
+                } catch ( Exception e )
+                {
+                    _logger.Error("Error receiving message: " + e, e);
+                    Assert.Fail(e.ToString());
+                }
+            }
+        }
+        
+        //[Test]
+        public void ReceiveWithTimeout()
+        {
+            ITextMessage msg = _channel.CreateTextMessage(GetData(512 + 8));
             _publisher.Send(msg);
-         }
-
-         _logger.Debug("All messages sent");
-         // receive all messages
-         for ( int i = 0; i < MESSAGE_COUNT; i++ )
-         {
-            try
-            {
-               IMessage msg = _consumer.Receive();
-               Assert.IsNotNull(msg);
-            } catch ( Exception e )
-            {
-               _logger.Error("Error receiving message: " + e, e);
-               Assert.Fail(e.ToString());
-            }
-         }
-      }
-
-      [Test]
-      public void ReceiveWithTimeout()
-      {
-         ITextMessage msg = _channel.CreateTextMessage(GetData(512 + 8));
-         _publisher.Send(msg);
-
-         IMessage recvMsg = _consumer.Receive();
-         Assert.IsNotNull(recvMsg);
-         // empty queue, should timeout
-         Assert.IsNull(_consumer.Receive(1000));
-      }
-      */
-   }
+            
+            IMessage recvMsg = _consumer.Receive();
+            Assert.IsNotNull(recvMsg);
+            // empty queue, should timeout
+            Assert.IsNull(_consumer.Receive(1000));
+        }
+    }
 }

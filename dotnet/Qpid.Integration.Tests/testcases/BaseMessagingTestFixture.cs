@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Text;
 using log4net;
 using NUnit.Framework;
 using Apache.Qpid.Messaging;
@@ -36,6 +37,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
     {
         private static ILog log = LogManager.GetLogger(typeof(BaseMessagingTestFixture));
 
+        /// <summary> Used to build dummy data to fill test messages with. </summary>
+        private const string MESSAGE_DATA_BYTES = "-- Test Message -- Test Message -- Test Message -- Test Message -- Test Message ";
+
         /// <summary> The default AMQ connection URL to use for tests. </summary>
         const string connectionUri = "amqp://guest:guest@default/test?brokerlist='tcp://localhost:5672'";
 
@@ -49,16 +53,22 @@ namespace Apache.Qpid.Integration.Tests.testcases
         protected IChannel _channel;
 
         /// <summary> Holds an array of connections for building mutiple test end-points. </summary>
-        protected IConnection[] testConnection = new IConnection[2];
+        protected IConnection[] testConnection = new IConnection[10];
 
         /// <summary> Holds an array of channels for building mutiple test end-points. </summary>
-        protected IChannel[] testChannel = new IChannel[2];
+        protected IChannel[] testChannel = new IChannel[10];
 
         /// <summary> Holds an array of producers for building mutiple test end-points. </summary>
-        protected IMessagePublisher[] testProducer = new IMessagePublisher[2];
+        protected IMessagePublisher[] testProducer = new IMessagePublisher[10];
 
         /// <summary> Holds an array of consumers for building mutiple test end-points. </summary>
-        protected IMessageConsumer[] testConsumer = new IMessageConsumer[2];
+        protected IMessageConsumer[] testConsumer = new IMessageConsumer[10];
+
+        /// <summary> A counter used to supply unique ids. </summary>
+        private int uniqueId = 0;
+
+        /// <summary> Used to hold unique ids per test. </summary>
+        protected int testId;
 
         /// <summary>
         /// Creates the test connection and channel.
@@ -67,6 +77,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
         public virtual void Init()
         {
             log.Debug("public virtual void Init(): called");
+
+            // Set up a unique id for this test.
+            testId = uniqueId++;
 
             _connection = new AMQConnection(connectionInfo);
             _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
@@ -84,23 +97,24 @@ namespace Apache.Qpid.Integration.Tests.testcases
             if (_connection != null)
             {
                 log.Debug("Disposing connection.");
-                //_connection.Close();
+                _connection.Close();
                 _connection.Dispose();
                 log.Debug("Connection disposed.");
             }
         }
 
         /// <summary> Sets up the nth test end-point. </summary>
-        public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey)
+        public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey, AcknowledgeMode ackMode, bool transacted, 
+                                  string exchangeName, bool durable, string subscriptionName)
         {
             testConnection[n] = new AMQConnection(connectionInfo);
             testConnection[n].Start();
-            testChannel[n] = testConnection[n].CreateChannel(true, AcknowledgeMode.AutoAcknowledge, 1);
+            testChannel[n] = testConnection[n].CreateChannel(transacted, ackMode, 1);
             
             if (producer)
             {
                 testProducer[n] = testChannel[n].CreatePublisherBuilder()
-                    .WithExchangeName(ExchangeNameDefaults.DIRECT)
+                    .WithExchangeName(exchangeName)
                     .WithRoutingKey(routingKey)
                     .Create();
             }
@@ -110,8 +124,16 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 string queueName = testChannel[n].GenerateUniqueName();
                 testChannel[n].DeclareQueue(queueName, false, true, true);
                 testChannel[n].Bind(queueName, ExchangeNameDefaults.DIRECT, routingKey);
-                testConsumer[n] = testChannel[n].CreateConsumerBuilder(queueName)
-                    .Create();
+                MessageConsumerBuilder consumerBuilder = testChannel[n].CreateConsumerBuilder(queueName);
+
+                if (durable)
+                {
+                    consumerBuilder
+                        .WithSubscriptionName(subscriptionName)
+                        .WithDurable(true);
+                }
+
+                testConsumer[n] = consumerBuilder.Create();
             }
         }
 
@@ -177,5 +199,33 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 Assert.AreEqual(body, ((ITextMessage)msg).Text, "Incorrect Message recevied on consumer1.");
             }
         }
+
+        /// <summary>Creates the requested number of bytes of dummy text. Usually used for filling test messages. </summary>
+        ///
+        /// <param name="size">The number of bytes of dummy text to generate.</param>
+        ///
+        /// <return>The requested number of bytes of dummy text.</return>
+        public static String GetData(int size)
+        {
+            StringBuilder buf = new StringBuilder(size);
+
+            if (size > 0)
+            {
+                int div = MESSAGE_DATA_BYTES.Length / size;
+                int mod = MESSAGE_DATA_BYTES.Length % size;
+
+                for (int i = 0; i < div; i++)
+                {
+                    buf.Append(MESSAGE_DATA_BYTES);
+                }
+
+                if (mod != 0)
+                {
+                    buf.Append(MESSAGE_DATA_BYTES, 0, mod);
+                }
+            }
+            
+            return buf.ToString();
+        }               
     }
 }

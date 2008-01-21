@@ -38,26 +38,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
         private const int MESSAGE_COUNT = 1000;
 
-        private const string MESSAGE_DATA_BYTES = "****jfd ghljgl hjvhlj cvhvjf ldhfsj lhfdsjf hldsjfk hdslkfj hsdflk  ";
-
         AutoResetEvent _finishedEvent = new AutoResetEvent(false);
-
-        private static String GetData(int size)
-        {
-            StringBuilder buf = new StringBuilder(size);
-            int count = 0;
-            while (count < size + MESSAGE_DATA_BYTES.Length)
-            {
-                buf.Append(MESSAGE_DATA_BYTES);
-                count += MESSAGE_DATA_BYTES.Length;
-            }
-            if (count < size)
-            {
-                buf.Append(MESSAGE_DATA_BYTES, 0, size - count);
-            }
-
-            return buf.ToString();
-        }
 
         private IMessagePublisher _publisher;
 
@@ -65,8 +46,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
         private int _messageReceivedCount = 0;
 
-        /*
-        [SetUp]
+        //[SetUp]
         public override void Init()
         {
             base.Init();
@@ -91,16 +71,33 @@ namespace Apache.Qpid.Integration.Tests.testcases
             }
             _connection.Start();
         }
-        */
 
-        /*
-        [TearDown]
+        //[TearDown]
         public override void Shutdown()
         {
             _connection.Stop();
             base.Shutdown();
         }
-        */
+
+        //[Test]
+        public void RunTest()
+        {
+            for (int i = 0; i < MESSAGE_COUNT; i++)
+            {
+                ITextMessage msg;
+                try
+                {
+                    msg = _channel.CreateTextMessage(GetData(512 + 8*i));
+                }
+                catch (Exception e)
+                {
+                    _logger.Error("Error creating message: " + e, e);
+                    break;
+                }
+                _publisher.Send(msg);
+            }
+            _finishedEvent.WaitOne();
+        }
 
         public void OnMessage(IMessage m)
         {
@@ -112,29 +109,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 _finishedEvent.Set();
             }
             if ( newCount % 100 == 0 ) 
-               System.Diagnostics.Debug.WriteLine(((ITextMessage)m).Text);
-         }
-        
-        /*
-        [Test]
-        public void RunTest()
-        {
-            for (int i = 0; i < MESSAGE_COUNT; i++)
-            {
-                ITextMessage msg;
-                try
-                {
-                   msg = _channel.CreateTextMessage(GetData(512 + 8*i));
-                }
-                catch (Exception e)
-                {
-                    _logger.Error("Error creating message: " + e, e);
-                    break;
-                }
-                _publisher.Send(msg);
-            }
-            _finishedEvent.WaitOne();
-        }
-        */
+                System.Diagnostics.Debug.WriteLine(((ITextMessage)m).Text);
+        }        
     }
 }

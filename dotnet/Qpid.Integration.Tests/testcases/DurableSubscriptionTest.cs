@@ -82,54 +82,35 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private void TestDurableSubscription(AcknowledgeMode ackMode)
         {
             // Create a topic with one producer and two consumers.
-            IChannel channel0 = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 1);
-            IMessagePublisher publisher = channel0.CreatePublisherBuilder()
-                .WithExchangeName(ExchangeNameDefaults.TOPIC)
-                .WithRoutingKey(TEST_ROUTING_KEY)
-                .Create();
-
-            IChannel channel1 = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 1);
-            string topicQueueName1 = channel1.GenerateUniqueName();
-            channel1.DeclareQueue(topicQueueName1, false, true, true);
-            channel1.Bind(topicQueueName1, ExchangeNameDefaults.TOPIC, TEST_ROUTING_KEY);
-            IMessageConsumer consumer1 = channel1.CreateConsumerBuilder(topicQueueName1)
-                .Create();
-
-            IChannel channel2 = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 1);
-            string topicQueueName2 = channel2.GenerateUniqueName();
-            channel2.DeclareQueue(topicQueueName2, false, true, true);
-            channel2.Bind(topicQueueName2, ExchangeNameDefaults.TOPIC, TEST_ROUTING_KEY);
-            IMessageConsumer consumer2 = channel2.CreateConsumerBuilder(topicQueueName2)
-                .WithSubscriptionName("TestSubscription")
-                .WithDurable(true)
-                .Create();
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, false, null);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, false, null);
+            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC,
+                          true, "TestSubscription" + testId);
 
             // Send messages and receive on both consumers.
-            publisher.Send(channel0.CreateTextMessage("A"));
+            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
 
-            ConsumeNMessagesOnly(1, "A", consumer1);
-            ConsumeNMessagesOnly(1, "A", consumer2);
+            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(1, "A", testConsumer[2]);
 
             // Detach one consumer.
-            consumer2.Dispose();
+            CloseEndPoint(2);
 
             // Send message and receive on one consumer.
-            publisher.Send(channel0.CreateTextMessage("B"));
+            testProducer[0].Send(testChannel[0].CreateTextMessage("B"));
 
-            ConsumeNMessagesOnly(1, "B", consumer1);
+            ConsumeNMessagesOnly(1, "B", testConsumer[1]);
 
             // Re-attach consumer, check that it gets the messages that it missed.
-            IChannel channel3 = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 1);
-            IMessageConsumer consumer3 = channel3.CreateConsumerBuilder(topicQueueName2)
-                .WithSubscriptionName("TestSubscription")
-                .WithDurable(true)
-                .Create();
+            SetUpEndPoint(3, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC,
+                          true, "TestSubscription" + testId);
 
-            ConsumeNMessagesOnly(1, "B", consumer3);
+            ConsumeNMessagesOnly(1, "B", testConsumer[3]);
 
             // Clean up any open consumers at the end of the test.
-            consumer1.Dispose();
-            consumer3.Dispose();
+            CloseEndPoint(0);
+            CloseEndPoint(1);
+            CloseEndPoint(3);
         }
     }
 }
