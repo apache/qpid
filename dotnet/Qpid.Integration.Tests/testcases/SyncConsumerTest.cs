@@ -56,6 +56,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
       private IMessageConsumer _consumer;
       private IMessagePublisher _publisher;
 
+      /*
       [SetUp]
       public override void Init()
       {
@@ -77,7 +78,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
              .WithPrefetchLow(100).Create();
          _connection.Start();
       }
+      */
 
+      /*      
       [Test]
       public void ReceiveWithInfiniteWait()
       {
@@ -123,5 +126,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
          // empty queue, should timeout
          Assert.IsNull(_consumer.Receive(1000));
       }
+      */
    }
 }

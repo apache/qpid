@@ -25,14 +25,15 @@
         </csc>
 
         <!--<copy tofile="${build.dir}/${project::get-name()}.dll.config" file="App.config" />-->
-        <!--<copy todir="${build.dir}" file="log4net.config"/>-->
+        <copy todir="${build.dir}" file="log4net.config"/>
 
     </target>
 
     <!-- Runs all of the tests in this module. -->
     <target name="test" depends="build">
-        <nunit2>
-            <formatter type="${nant.formatter}" usefile="false" />
+        <nunit2 verbose="true">
+            <formatter type="${nant.formatter}" usefile="true" outputdir="${build.dir}/testresults/" extension="txt"/>
+            <formatter type="Plain" usefile="false"/>
             <test>
                 <assemblies>
                     <include name="${build.dir}/${project::get-name()}.dll"/>

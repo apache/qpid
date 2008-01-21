@@ -31,7 +31,7 @@ namespace Apache.Qpid.Messaging
     /// You can create a channel by using the CreateChannel() method
     /// of the connection object.
     /// </remarks>
-    public interface IChannel : IDisposable
+    public interface IChannel : IDisposable, ICloseable
     {
         /// <summary>
         /// Acknowledge mode for messages received

@@ -19,10 +19,11 @@
  *
  */
 using System;
+using Apache.Qpid.Messaging;
 
 namespace Apache.Qpid.Client
 {
-    public abstract class Closeable
+  public abstract class Closeable : ICloseable
     {
         /// <summary>
         /// Used to ensure orderly closing of the object. The only method that is allowed to be called

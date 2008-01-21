@@ -66,12 +66,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 base.Shutdown();
             }
         }
-        
+
+        [Test]        
         public void TestDurableSubscriptionNoAck() 
         {
             TestDurableSubscription(AcknowledgeMode.NoAcknowledge);
         }
 
+        [Test]
         public void TestDurableSubscriptionAutoAck()
         {
             TestDurableSubscription(AcknowledgeMode.AutoAcknowledge);

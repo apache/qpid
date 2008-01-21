@@ -22,35 +22,35 @@ using System;
 
 namespace Apache.Qpid.Messaging
 {
-   /// <summary>
-   /// Describes an object that can be used to receive (consume)
-   /// messages from an AMQP queue.
-   /// </summary>
-   /// <remarks>
-   /// Consumers are created using either 
-   /// <see cref="IChannel.CreateConsumer"/> or using 
-   /// the builder pattern (preferred) with 
-   /// <see cref="IChannel.CreateConsumerBuilder"/>.
-   /// 
-   /// <para>
-   /// Consumers offer two different ways of receiving messages:
-   /// You can attach a delegate to the <see cref="OnMessage"/>
-   /// event and be notified when a message arrives, or you can
-   /// use the <see cref="Receive"/> and <see cref="ReceiveNoWait"/>
-   /// methods to control when you receive messages. Be aware that you can use 
-   /// one or the other, but not both at the same time.
-   /// </para>
-   /// <para>
-   /// Regardless of which method you choose, the prefetch settings
-   /// specified when creating the channel will still control when messages
-   /// are actually received from the AMQP broker. Any messages that arrive
-   /// between the prefetch window will be queued by the channel
-   /// until they can be delivered to the consumer (either though the event
-   /// or until the consumer actively calls <see cref="Receive"/>).
-   /// </para>
-   /// </remarks>
-   public interface IMessageConsumer : IDisposable
-   {
+    /// <summary>
+    /// Describes an object that can be used to receive (consume)
+    /// messages from an AMQP queue.
+    /// </summary>
+    /// <remarks>
+    /// Consumers are created using either 
+    /// <see cref="IChannel.CreateConsumer"/> or using 
+    /// the builder pattern (preferred) with 
+    /// <see cref="IChannel.CreateConsumerBuilder"/>.
+    /// 
+    /// <para>
+    /// Consumers offer two different ways of receiving messages:
+    /// You can attach a delegate to the <see cref="OnMessage"/>
+    /// event and be notified when a message arrives, or you can
+    /// use the <see cref="Receive"/> and <see cref="ReceiveNoWait"/>
+    /// methods to control when you receive messages. Be aware that you can use 
+    /// one or the other, but not both at the same time.
+    /// </para>
+    /// <para>
+    /// Regardless of which method you choose, the prefetch settings
+    /// specified when creating the channel will still control when messages
+    /// are actually received from the AMQP broker. Any messages that arrive
+    /// between the prefetch window will be queued by the channel
+    /// until they can be delivered to the consumer (either though the event
+    /// or until the consumer actively calls <see cref="Receive"/>).
+    /// </para>
+    /// </remarks>
+    public interface IMessageConsumer : IDisposable, ICloseable
+    {
       /// <summary>
       /// Fired when a message is received from the broker by the consumer
       /// </summary>

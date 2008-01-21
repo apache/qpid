@@ -24,7 +24,7 @@ namespace Apache.Qpid.Messaging
 {
     public delegate void ExceptionListenerDelegate(Exception ex);
 
-    public interface IConnection : IDisposable
+  public interface IConnection : IDisposable, ICloseable
     {
         /// <summary>
         /// The connection listener that has been registered with this connection.

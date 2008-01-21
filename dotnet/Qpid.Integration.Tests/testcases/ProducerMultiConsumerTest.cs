@@ -27,11 +27,11 @@ using Apache.Qpid.Messaging;
 
 namespace Apache.Qpid.Integration.Tests.testcases
 {
-  [TestFixture, Category("Integration")]
+    [TestFixture, Category("Integration")]
     public class ProducerMultiConsumerTest : BaseMessagingTestFixture
     {
         private static readonly ILog _logger = LogManager.GetLogger(typeof(ProducerMultiConsumerTest));
-
+        
         private string _commandQueueName = "ServiceQ1";
 
         private const int CONSUMER_COUNT = 5;
@@ -65,6 +65,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
         private int _messageReceivedCount = 0;
 
+        /*
         [SetUp]
         public override void Init()
         {
@@ -90,6 +91,16 @@ namespace Apache.Qpid.Integration.Tests.testcases
             }
             _connection.Start();
         }
+        */
+
+        /*
+        [TearDown]
+        public override void Shutdown()
+        {
+            _connection.Stop();
+            base.Shutdown();
+        }
+        */
 
         public void OnMessage(IMessage m)
         {
@@ -104,6 +115,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
                System.Diagnostics.Debug.WriteLine(((ITextMessage)m).Text);
          }
         
+        /*
         [Test]
         public void RunTest()
         {
@@ -123,5 +135,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
             }
             _finishedEvent.WaitOne();
         }
+        */
     }
 }

@@ -32,7 +32,7 @@ namespace Apache.Qpid.Messaging
    /// using the builder pattern (preferred) with 
    /// <see cref="IChannel.CreatePublisherBuilder"/>
    /// </remarks>
-   public interface IMessagePublisher : IDisposable
+  public interface IMessagePublisher : IDisposable, ICloseable
    {
       /// <summary>
       /// Default delivery mode to use with this publisher

@@ -39,11 +39,26 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <summary> The default AMQ connection URL to use for tests. </summary>
         const string connectionUri = "amqp://guest:guest@default/test?brokerlist='tcp://localhost:5672'";
 
+        /// <summary> The default AMQ connection URL parsed as a connection info. </summary>
+        protected IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);
+
         /// <summary> Holds the test connection. </summary>
         protected IConnection _connection;
 
         /// <summary> Holds the test channel. </summary>
         protected IChannel _channel;
+
+        /// <summary> Holds an array of connections for building mutiple test end-points. </summary>
+        protected IConnection[] testConnection = new IConnection[2];
+
+        /// <summary> Holds an array of channels for building mutiple test end-points. </summary>
+        protected IChannel[] testChannel = new IChannel[2];
+
+        /// <summary> Holds an array of producers for building mutiple test end-points. </summary>
+        protected IMessagePublisher[] testProducer = new IMessagePublisher[2];
+
+        /// <summary> Holds an array of consumers for building mutiple test end-points. </summary>
+        protected IMessageConsumer[] testConsumer = new IMessageConsumer[2];
 
         /// <summary>
         /// Creates the test connection and channel.
@@ -53,7 +68,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             log.Debug("public virtual void Init(): called");
 
-            IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);               
             _connection = new AMQConnection(connectionInfo);
             _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
         }
@@ -70,9 +84,60 @@ namespace Apache.Qpid.Integration.Tests.testcases
             if (_connection != null)
             {
                 log.Debug("Disposing connection.");
+                //_connection.Close();
                 _connection.Dispose();
                 log.Debug("Connection disposed.");
             }
+        }
+
+        /// <summary> Sets up the nth test end-point. </summary>
+        public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey)
+        {
+            testConnection[n] = new AMQConnection(connectionInfo);
+            testConnection[n].Start();
+            testChannel[n] = testConnection[n].CreateChannel(true, AcknowledgeMode.AutoAcknowledge, 1);
+            
+            if (producer)
+            {
+                testProducer[n] = testChannel[n].CreatePublisherBuilder()
+                    .WithExchangeName(ExchangeNameDefaults.DIRECT)
+                    .WithRoutingKey(routingKey)
+                    .Create();
+            }
+
+            if (consumer)
+            {
+                string queueName = testChannel[n].GenerateUniqueName();
+                testChannel[n].DeclareQueue(queueName, false, true, true);
+                testChannel[n].Bind(queueName, ExchangeNameDefaults.DIRECT, routingKey);
+                testConsumer[n] = testChannel[n].CreateConsumerBuilder(queueName)
+                    .Create();
+            }
+        }
+
+        /// <summary> Closes down the nth test end-point. </summary>
+        public void CloseEndPoint(int n)
+        {
+            log.Debug("public void CloseEndPoint(int n): called");
+
+            if (testProducer[n] != null)
+            {
+                testProducer[n].Close();
+                testProducer[n].Dispose();
+                testProducer[n] = null;
+            }
+
+            if (testConsumer[n] != null)
+            {
+                testConsumer[n].Close();
+                testConsumer[n].Dispose();
+                testConsumer[n] = null;
+            }
+
+            testConnection[n].Stop();            
+            testConnection[n].Close();
+            testConnection[n].Dispose();
+            testConnection[n] = null;
         }
 
         /// <summary>
@@ -108,7 +173,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             for (int i = 0; i < n; i++)
             {
                 msg = consumer.Receive(500);
-                Assert.IsNotNull(msg, "Consumer did not receive message number " + i);
+                Assert.IsNotNull(msg, "Consumer did not receive message number: " + i);
                 Assert.AreEqual(body, ((ITextMessage)msg).Text, "Incorrect Message recevied on consumer1.");
             }
         }
