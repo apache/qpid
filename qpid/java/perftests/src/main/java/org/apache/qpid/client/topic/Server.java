@@ -26,6 +26,7 @@ import javax.naming.InitialContext;
 
 import javax.jms.*;
 import java.util.Properties;
+import java.io.FileWriter;
 
 
 public class Server
@@ -33,8 +34,13 @@ public class Server
     /**
      * This class logger
      */
-    private static final Logger _logger =LoggerFactory.getLogger(Server.class);
+    private static final Logger _logger=LoggerFactory.getLogger(Server.class);
 
+
+    private final Object _lock=new Object();
+    private long _numMessages=0;
+    public FileWriter _file;
+    public boolean _running=true;
 
     public static void main(String[] args)
     {
@@ -48,6 +54,9 @@ public class Server
             // Load JNDI properties
             Properties properties=new Properties();
             properties.load(this.getClass().getResourceAsStream("topic.properties"));
+
+            String logFilePath=System.getProperty("logFilePath", "./");
+            _file=new FileWriter(logFilePath + "server-" + System.currentTimeMillis() + ".cvs", true);
 
             //Create the initial context
             Context ctx=new InitialContext(properties);
@@ -70,10 +79,11 @@ public class Server
 
             // Create a session on the connection
             // This session is a default choice of non-transacted and uses the auto acknowledge feature of a session.
-            Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            // Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             for (int i=0; i < 50; i++)
             {
+                Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
                 Topic topic=session.createTopic("topic-" + i);
                 TopicSubscriber dursub=session.createDurableSubscriber(topic, "durable-" + i);
                 dursub.setMessageListener(new MyListener());
@@ -81,11 +91,31 @@ public class Server
 
             // Now the messageConsumer is set up we can start the connection
             connection.start();
-            synchronized (connection)
-            {
-                connection.wait();
-            }
+            _logger.info("Ready to consume messages");
+            // listen for the termination message
+            Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue queueCompleted=session.createQueue("completed");
+            Queue queueStarted=session.createQueue("started");
+            MessageProducer prod=session.createProducer(queueStarted);
 
+            Thread logger=new Thread(new MyLogger());
+            logger.setDaemon(true);
+            logger.start();
+
+            prod.send(session.createTextMessage("start"));
+            long startTime=System.currentTimeMillis();
+            MessageConsumer cons=session.createConsumer(queueCompleted);
+            cons.receive();
+
+            _running=false;
+
+            long endTime=System.currentTimeMillis();
+            session.close();
+            _logger.info("Received " + _numMessages);
+            _file.write("Received " + _numMessages + "\n");
+            _logger.info("Throughput " + _numMessages / (endTime - startTime) * 1000 + "msg/s");
+            _file.write("Throughput " + _numMessages / (endTime - startTime) * 1000 + "msg/s");
+            _file.close();
         }
         catch (Exception e)
         {
@@ -97,7 +127,45 @@ public class Server
     {
         public void onMessage(Message message)
         {
-            _logger.debug("Received a message");
+            synchronized (_lock)
+            {
+                _numMessages++;
+                /*if(_numMessages % 1000 == 0)
+                {
+                    _logger.info("received: " + _numMessages);
+                } */
+            }
+        }
+    }
+
+    private class MyLogger implements Runnable
+    {
+        public void run()
+        {
+            long endTime=0;
+            while (_running)
+            {
+                synchronized (_lock)
+                {
+                    try
+                    {
+                        _lock.wait(5000);
+                        if (_running)
+                        {
+                            endTime=endTime + 5;
+                            String s="Throughput " + _numMessages / endTime + " msg/s";
+                            _logger.info(s);
+                            _file.write(s + "\n");
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
         }
     }
 }
