@@ -28,6 +28,7 @@ import java.util.Properties;
 import java.util.Random;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.FileWriter;
 
 public class Client
 {
@@ -74,6 +75,9 @@ public class Client
             Properties properties=new Properties();
             properties.load(this.getClass().getResourceAsStream("topic.properties"));
 
+            String logFilePath = System.getProperty("logFilePath", "./");
+            FileWriter file = new FileWriter(logFilePath + "client-" + System.currentTimeMillis() + ".cvs",true);
+
             //Create the initial context
             Context ctx=new InitialContext(properties);
 
@@ -99,6 +103,14 @@ public class Client
             // Create a session on the connection
             // This session is a default choice of non-transacted and uses the auto acknowledge feature of a session.
             Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
+            Queue queueCompleted = session.createQueue("completed");
+            Queue queueStarted = session.createQueue("started");
+            MessageProducer prod = session.createProducer(queueCompleted);
+            MessageConsumer cons = session.createConsumer(queueStarted);
+            cons.receive();
+            _logger.info("Starting producing messages");
+
             _message=TestMessageFactory.newBytesMessage(session, 1024);
 
             Random random=new Random();
@@ -108,6 +120,7 @@ public class Client
             long intervalThroughput;
             long totalThroughput;
             long numProducers=1;
+            String info;
             startNewProducer(session, random);
             while (testDuration < duration)
             {
@@ -121,17 +134,21 @@ public class Client
                 intervalThroughput=(totalMessagesProduced - messagesProducedLastInterval) / 5;
                 totalThroughput=totalMessagesProduced / testDuration;
                 messagesProducedLastInterval=totalMessagesProduced;
-                _logger.info("Number of producers " + numProducers + " | This interval throughput = " +
-                        intervalThroughput + " | Total throughput = " + totalThroughput);
+                info = "Number of producers " + numProducers + " | This interval throughput = " +
+                        intervalThroughput + " | Total throughput = " + totalThroughput;
+                _logger.info(info);
+                file.write(info + "\n");
                 startNewProducer(session, random);
                 numProducers++;
             }
+            file.close();
             // stop all the producers
             for (Runner runner : _runners)
             {
                 runner.stop();
             }
-
+            _logger.info("Stopping server");
+            prod.send(session.createTextMessage("stop"));
         }
         catch (Exception e)
         {
@@ -144,11 +161,13 @@ public class Client
     {
         // select a random topic
         int topicNumber=random.nextInt(50);
+        _logger.info("creating producer for topic: topic- " + topicNumber);
         Topic topic=session.createTopic("topic-" + topicNumber);
         MessageProducer prod=session.createProducer(topic);
         Runner runner=new Runner(prod);
         _runners.add(runner);
         Thread thread=new Thread(runner);
+        thread.setDaemon(true);
         thread.start();
     }
 
@@ -156,7 +175,6 @@ public class Client
     {
         MessageProducer _prod;
         boolean _produce=true;
-
         private Runner(MessageProducer prod)
         {
             _prod=prod;
