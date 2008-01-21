@@ -24,7 +24,9 @@ AC_PROG_CXX
 AC_USE_SYSTEM_EXTENSIONS
 AC_LANG([C++])	
 
-AM_MISSING_PROG([HELP2MAN], [help2man])
+# AM_MISSING_PROG([HELP2MAN], [help2man])
+AC_CHECK_PROG([HELP2MAN], [help2man], [help2man])
+test -z "$HELP2MAN" && AC_MSG_ERROR([Missing help2man installation (try "yum install help2man").])
 
 AC_ARG_ENABLE(warnings,
 [  --enable-warnings   turn on lots of compiler warnings (recommended)],
