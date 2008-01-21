@@ -5,7 +5,7 @@
 
 Name:           @PACKAGE@
 Version:        @VERSION@
-Release:        17%{?dist}
+Release:        18%{?dist}
 Summary:        Libraries for Qpid C++ client applications
 Group:          System Environment/Libraries
 License:        Apache Software License
@@ -154,6 +154,9 @@ fi
 /sbin/ldconfig
 
 %changelog
+
+* Mon Jan 21 2008 Gordon Sim <gsim@redhat.com> - 0.2-18                                                                       
+- bump up rev for recent changes to plugin modules & mgmt
 
 * Thu Jan 03 2008 Nuno Santos <nsantos@redhat.com> - 0.2-17                                                                       
 - add missing header file SessionManager.h
