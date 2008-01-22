@@ -1,24 +1,13 @@
-/*
- *
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
- *
- */
+/* Copyright Rupert Smith, 2005 to 2007, all rights reserved. */
 package org.apache.qpid.test.unit.topic;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.TopicSubscriber;
 
 import junit.framework.TestCase;
 
@@ -31,14 +20,6 @@ import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.TopicSubscriber;
 
 public class DurableSubscriptionTest extends TestCase
 {
@@ -81,14 +62,14 @@ public class DurableSubscriptionTest extends TestCase
         Message msg;
         _logger.info("Receive message on consumer 1:expecting A");
         msg = consumer1.receive();
-        assertEquals("A", ((TextMessage) msg).getText());
+        assertEquals("A", ((TextMessage)msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(1000);
         assertEquals(null, msg);
 
         _logger.info("Receive message on consumer 1:expecting A");
         msg = consumer2.receive();
-        assertEquals("A", ((TextMessage) msg).getText());
+        assertEquals("A", ((TextMessage)msg).getText());
         msg = consumer2.receive(1000);
         _logger.info("Receive message on consumer 1 :expecting null");
         assertEquals(null, msg);
@@ -101,7 +82,7 @@ public class DurableSubscriptionTest extends TestCase
 
         _logger.info("Receive message on consumer 1 :expecting B");
         msg = consumer1.receive();
-        assertEquals("B", ((TextMessage) msg).getText());
+        assertEquals("B", ((TextMessage)msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(1000);
         assertEquals(null, msg);
@@ -145,43 +126,43 @@ public class DurableSubscriptionTest extends TestCase
         Message msg;
         msg = consumer1.receive(500);
         assertNotNull("Message should be available", msg);
-        assertEquals("Message Text doesn't match", "A", ((TextMessage) msg).getText());
+        assertEquals("Message Text doesn't match", "A", ((TextMessage)msg).getText());
 
         msg = consumer1.receive(500);
         assertNull("There should be no more messages for consumption on consumer1.", msg);
 
         msg = consumer2.receive();
         assertNotNull(msg);
-        assertEquals("Consumer 2 should also received the first msg.", "A", ((TextMessage) msg).getText());
+        assertEquals("Consumer 2 should also received the first msg.", "A", ((TextMessage)msg).getText());
         msg = consumer2.receive(500);
         assertNull("There should be no more messages for consumption on consumer2.", msg);
 
         consumer2.close();
-
-        Session session3 = con.createSession(false, ackMode);
-        MessageConsumer consumer3 = session3.createDurableSubscriber(topic, "MySubscription");
 
         producer.send(session1.createTextMessage("B"));
 
         _logger.info("Receive message on consumer 1 :expecting B");
         msg = consumer1.receive(500);
         assertNotNull("Consumer 1 should get message 'B'.", msg);
-        assertEquals("Incorrect Message recevied on consumer1.", "B", ((TextMessage) msg).getText());
+        assertEquals("Incorrect Message recevied on consumer1.", "B", ((TextMessage)msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
         msg = consumer1.receive(500);
         assertNull("There should be no more messages for consumption on consumer1.", msg);
 
+        Session session3 = con.createSession(false, ackMode);
+        MessageConsumer consumer3 = session3.createDurableSubscriber(topic, "MySubscription");
+
         _logger.info("Receive message on consumer 3 :expecting B");
         msg = consumer3.receive(500);
         assertNotNull("Consumer 3 should get message 'B'.", msg);
-        assertEquals("Incorrect Message recevied on consumer4.", "B", ((TextMessage) msg).getText());
+        assertEquals("Incorrect Message recevied on consumer4.", "B", ((TextMessage)msg).getText());
         _logger.info("Receive message on consumer 3 :expecting null");
         msg = consumer3.receive(500);
         assertNull("There should be no more messages for consumption on consumer3.", msg);
-        
+
         consumer1.close();
         consumer3.close();
-        
+
         con.close();
     }
 
