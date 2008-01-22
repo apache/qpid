@@ -34,9 +34,7 @@ namespace Apache.Qpid.Client
 
         private bool _noLocal;
 
-        /**
-         * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
-         */
+        /** Holds the exclusive status flag for the consumers access to its queue. */
         private bool _exclusive;
 
         public bool Exclusive
@@ -448,6 +446,5 @@ namespace Apache.Qpid.Client
                     break;
             }
         }
-
     }
 }

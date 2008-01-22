@@ -24,6 +24,11 @@ namespace Apache.Qpid.Messaging
 {
     /// <summary>An ICloseable is a resource that can be explicitly closed. Generally speaking a closed resource can no longer be used, and the
     /// act of closing a resource is usually interpreted as a signal that the closed item can have its resource cleaned up and de-allocated.
+    ///
+    /// <p/><table id="crc"><caption>CRC Card</caption>
+    /// <tr><th> Responsibilities <th> Collaborations
+    /// <tr><td> Close (and clean-up) a resource.
+    /// </table>
     /// </summary>
     public interface ICloseable
     {

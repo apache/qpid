@@ -61,12 +61,14 @@ namespace Apache.Qpid.Messaging
       /// </summary>
       /// <returns>The message received</returns>
       IMessage Receive();
+
       /// <summary>
       /// Wait the specified time until a message is receive from the broker
       /// </summary>
       /// <param name="delay">Maximum number of milliseconds to wait for a message</param>
       /// <returns>The message received, or null if the timeout expires</returns>
       IMessage Receive(long delay);
+
       /// <summary>
       /// Return a message if one is already available in the channel. 
       /// Does not wait for one to be received from the broker.

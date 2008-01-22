@@ -32,7 +32,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
     /// a subscription that is currently off-line, and checking that the subscriber gets all of its messages when it
     /// does come on-line.
     ///
-    /// <p><table id="crc"><caption>CRC Card</caption>
+    /// <p/><table id="crc"><caption>CRC Card</caption>
     /// <tr><th> Responsibilities <th> Collaborations
     /// <tr><td> 
     /// </table>

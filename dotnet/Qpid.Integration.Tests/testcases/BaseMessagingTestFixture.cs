@@ -104,6 +104,16 @@ namespace Apache.Qpid.Integration.Tests.testcases
         }
 
         /// <summary> Sets up the nth test end-point. </summary>
+        ///
+        /// <param name="n">The index of the test end-point to set up.</param>
+        /// <param name="producer"><tt>true</tt> to set up a producer on the end-point.</param>
+        /// <param name="consumer"><tt>true</tt> to set up a consumer on the end-point.</param>
+        /// <param name="routingKey">The routing key for the producer to send on.</param>
+        /// <param name="ackMode">The ack mode for the end-points channel.</param>
+        /// <param name="transacted"><tt>true</tt> to use transactions on the end-points channel.</param>
+        /// <param name="exchangeName">The exchange to produce or consume on.</param>
+        /// <param name="durable"><tt>true</tt> to declare the consumers queue as durable.</param>
+        /// <param name="subscriptionName">If durable is true, the fixed unique queue name to use.</param>
         public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey, AcknowledgeMode ackMode, bool transacted, 
                                   string exchangeName, bool durable, string subscriptionName)
         {
@@ -121,19 +131,22 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             if (consumer)
             {
-                string queueName = testChannel[n].GenerateUniqueName();
-                testChannel[n].DeclareQueue(queueName, false, true, true);
-                testChannel[n].Bind(queueName, ExchangeNameDefaults.DIRECT, routingKey);
-                MessageConsumerBuilder consumerBuilder = testChannel[n].CreateConsumerBuilder(queueName);
+                string queueName;
 
+                // Use the subscription name as the queue name if the subscription is durable, otherwise use a generated name.
                 if (durable)
                 {
-                    consumerBuilder
-                        .WithSubscriptionName(subscriptionName)
-                        .WithDurable(true);
+                    queueName = subscriptionName;
+                }
+                else
+                {
+                    queueName = testChannel[n].GenerateUniqueName();
                 }
 
-                testConsumer[n] = consumerBuilder.Create();
+                testChannel[n].DeclareQueue(queueName, durable, true, true);
+                testChannel[n].Bind(queueName, exchangeName, routingKey);
+
+                testConsumer[n] = testChannel[n].CreateConsumerBuilder(queueName).Create();
             }
         }
 
