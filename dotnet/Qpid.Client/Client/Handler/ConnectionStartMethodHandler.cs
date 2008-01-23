@@ -76,6 +76,7 @@ namespace Apache.Qpid.Client.Handler
                 clientProperties["product"] = "Apache.Qpid.NET";
                 clientProperties["version"] = "1.0";
                 clientProperties["platform"] = GetFullSystemInfo();
+                clientProperties["instance"] = ps.ClientID;
                 AMQFrame frame = ConnectionStartOkBody.CreateAMQFrame(
                    evt.ChannelId, clientProperties, selectedMechanism,
                   saslResponse, selectedLocale);
