@@ -1,8 +1,6 @@
-==== ./declare_queues
-====
-==== ./fanout_producer
-====
-==== ./listener
+==== ./declare_queues.out
+==== ./fanout_producer.out
+==== ./listener.out
 Activating listener for: listener_destination
 Message: Message 0
 Message: Message 1
@@ -16,4 +14,3 @@ Message: Message 8
 Message: Message 9
 Message: That's all, folks!
 Shutting down listener for listener_destination
-====

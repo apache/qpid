@@ -14,16 +14,32 @@ fi
 
 ARGS="${QPID_HOST:-localhost} $QPID_PORT"
 
-title() { echo ==== $*; eval "$*"; echo ====; }
-run() { echo ==== $*; eval "$* $ARGS"; echo ====; }
+
+client() { "$@" $ARGS > $1.out; }
+clients() { for cmd in "$@"; do client $cmd; done; }
 
 waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; }
 
+background() {
+    pattern=$1; shift
+    "$@" > $1.out &
+    waitfor $1.out $pattern
+}
+
+outputs() {
+    wait 2> /dev/null		# Wait for all backgroud processes to complete
+    for f in "$@"; do
+	{ echo "==== $f"; eval "cat $f"; } >> verify.out ;
+    done
+}
+
 verify() {
-    ex=`basename $PWD`
-    diff -ac verify.out $SRC/$ex/verify.in || {
-	echo "FAIL: $ex  " ; RET=1 ; return 1;
-    } 
+    dir=$1
+    func=`echo $dir | tr - _`
+    cd $dir || return 1
+    rm -f *.out
+    { $func && diff -ac verify.out $SRC/$dir/verify.in ; } || return 1
+    rm -f *.out
 }
 
 HEX="[a-fA-F0-9]"
@@ -34,42 +50,33 @@ remove_uuid() {
 # Scripts for each example
 
 direct() {
-    run ./declare_queues > verify.out
-    run ./direct_producer >> verify.out
-    run ./listener >> verify.out
+    clients ./declare_queues ./direct_producer ./listener
+    outputs  ./declare_queues.out ./direct_producer.out ./listener.out
 }
 
 fanout() {
-    run ./declare_queues > verify.out
-    run ./fanout_producer >>verify.out
-    run ./listener >>verify.out
+    clients ./declare_queues ./fanout_producer ./listener
+    outputs ./declare_queues.out ./fanout_producer.out ./listener.out
 }
 
 pub_sub() {
-    run ./topic_listener | tee topic_listener.out > topic_listener.wait &
-    waitfor topic_listener.wait  "Listening"
-    run ./topic_publisher > verify.out
-    wait 2> /dev/null
-    title "remove_uuid topic_listener.out | sort" >> verify.out
+    background "Listening" ./topic_listener
+    clients ./topic_publisher
+    outputs ./topic_publisher.out "topic_listener.out | remove_uuid | sort"
 }
     
 request_response() {
-    run ./server | tee server.out > server.wait &
-    waitfor server.wait "Waiting"
-    run ./client | remove_uuid > verify.out
-    kill %% 
-    wait 2> /dev/null
-    title "remove_uuid server.out" >> verify.out
+    background "Waiting" ./server
+    clients ./client
+    kill %% 			# Must kill the server.
+    outputs "./client.out | remove_uuid" " server.out | remove_uuid"
 }
-
-# FIXME aconway 2007-12-14: put back pub-sub and persistence when fixed.
 
 # Main
 EXAMPLES=${*:-direct fanout pub-sub request-response}
 for ex in $EXAMPLES ; do
-    func=`echo $ex | tr - _`
-    echo "Verifing $ex"
-    ( cd $ex && $func && verify && rm -f *.out *.wait) 
+    if ( verify $ex; ) then echo "PASS: $ex"; else
+    echo "FAIL: $ex"; RET=1; fi
 done
 
 exit $RET
