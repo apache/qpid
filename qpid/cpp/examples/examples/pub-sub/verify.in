@@ -1,7 +1,5 @@
-==== ./topic_publisher
-====
-==== remove_uuid topic_listener.out | sort
-====
+==== ./topic_publisher.out
+==== topic_listener.out | remove_uuid | sort
 Declaring queue: europe
 Declaring queue: news
 Declaring queue: usa
@@ -59,5 +57,3 @@ Subscribing to queue europe
 Subscribing to queue news
 Subscribing to queue usa
 Subscribing to queue weather
-==== ./topic_listener
-====
