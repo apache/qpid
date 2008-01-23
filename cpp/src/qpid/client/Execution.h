@@ -27,6 +27,9 @@
 namespace qpid {
 namespace client {
 
+/**
+ * Provides more detailed access to the amqp 'execution layer'.
+ */
 class Execution 
 {
 public:

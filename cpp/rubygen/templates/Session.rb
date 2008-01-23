@@ -174,6 +174,7 @@ to read. You may find it easier to read the documentation for #{@base}
 which provides the same set of functions using normal non-keyword
 declarations.
 
+\\ingroup clientapi
 EOS
         }
         # Session class.
