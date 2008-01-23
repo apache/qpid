@@ -17,11 +17,13 @@ nobase_pkgdata_DATA=						\
 	examples/direct/listener.cpp				\
 	examples/direct/declare_queues.cpp
 
-EXTRA_DIST=$(nobase_pkgdata_DATA) verify \
+VERIFY_SCRIPT=verify \
 	examples/request-response/verify.in \
 	examples/fanout/verify.in \
 	examples/pub-sub/verify.in \
 	examples/direct/verify.in 
+
+EXTRA_DIST=$(nobase_pkgdata_DATA) $(VERIFY_SCRIPT)
 
 # Note: we don't use normal automake SUBDIRS because the example
 # makefiles don't understand all the recursive automake targets.
@@ -51,3 +53,7 @@ installcheck-local:
 	cd $(EXAMPLE_DIR) && QPIDD=$(sbindir)/qpidd $(VERIFY)
 	cd $(EXAMPLE_DIR) && $(MAKE) clean
 
+# Tarball with verify script that can be untarred & run on
+# installed examples.
+verify.tar: $(VERIFY_SCRIPT)
+	tar cf verify.tar $(VERIFY_SCRIPT)
