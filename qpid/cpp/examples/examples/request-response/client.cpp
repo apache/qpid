@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
 	// of the response queue.
 
 	stringstream response_queue;
-	response_queue << "client " << session.getId();
+	response_queue << "client" << session.getId();
 
         // Use the name of the response queue as the routing key
 
