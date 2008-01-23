@@ -6,6 +6,9 @@
 DIR=$PWD
 SRC=`dirname $0 | sed 's|^\([^/].*\)|'$PWD'/\1|'`/examples
 
+# Kill any leftover background jobs.
+trap "kill %% > /dev/null 2>&1"  EXIT
+
 # Start private broker if QPIDD is set.
 if [ -n "$QPIDD" ] ; then
     export QPID_PORT=`$QPIDD -dp0` || { echo "Cannot start $QPIDD" ; exit 1; }
