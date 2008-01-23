@@ -34,14 +34,11 @@ namespace client {
  *
  * \ingroup clientapi
  */
-class MessageQueue : public MessageListener,
-                     public sys::BlockingQueue<Message>
+class MessageQueue : public sys::BlockingQueue<Message>, public MessageListener                     
 {
-    std::queue<Message> messages;
   public:
     void received(Message& msg)
     {
-        std::cout << "Adding message to queue: " << msg.getData() << std::endl;
         push(msg);
     }
 };

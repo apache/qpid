@@ -27,9 +27,9 @@ namespace qpid {
 namespace client {
 
 /**
- * The available acknowledgements modes.
+ * DEPRECATED
  * 
- * \ingroup clientapi
+ * The available acknowledgements modes for Channel (now also deprecated).
  */
 enum AckMode {
     /** No acknowledgement will be sent, broker can

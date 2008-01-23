@@ -26,6 +26,8 @@ namespace client {
 
 /**
  * Policy for automatic acknowledgement of messages.
+ *
+ * \ingroup clientapi
  */
 class AckPolicy
 {

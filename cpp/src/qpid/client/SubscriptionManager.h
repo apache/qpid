@@ -35,6 +35,11 @@
 namespace qpid {
 namespace client {
 
+/**
+ * Utility to assist with creating subscriptions.
+ *  
+ * \ingroup clientapi
+ */
 class SubscriptionManager : public sys::Runnable
 {
     typedef sys::Mutex::ScopedLock Lock;

@@ -27,6 +27,8 @@ namespace qpid {
 namespace client {
 
     /**
+     * DEPRECATED
+     * 
      * A 'handle' used to represent an AMQP queue in the Channel
      * methods. Creating an instance of this class does not cause the
      * queue to be created on the broker. Rather, an instance of this
@@ -48,8 +50,6 @@ namespace client {
      * 
      * We use the term 'temporary queue' to refer to an exclusive
      * queue.
-     * 
-     * \ingroup clientapi
      */
     class Queue{
 	std::string name;

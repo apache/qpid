@@ -27,6 +27,8 @@ namespace qpid {
 namespace client {
     
     /**
+     * DEPRECATED
+     * 
      * A 'handle' used to represent an AMQP exchange in the Channel
      * methods. Exchanges are the destinations to which messages are
      * published. 
@@ -45,8 +47,6 @@ namespace client {
      * (member DEFAULT_EXCHANGE) which is nameless and of type
      * 'direct' and has every declared queue bound to it by queue
      * name.
-     * 
-     * \ingroup clientapi
      */
     class Exchange{
 	const std::string name;
