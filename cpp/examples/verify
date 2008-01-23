@@ -49,7 +49,6 @@ pub_sub() {
     run ./topic_listener | tee topic_listener.out > topic_listener.wait &
     waitfor topic_listener.wait  "Listening"
     run ./topic_publisher > verify.out
-    kill %%
     wait 2> /dev/null
     title "remove_uuid topic_listener.out | sort" >> verify.out
 }
