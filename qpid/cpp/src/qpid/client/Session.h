@@ -26,6 +26,11 @@
 namespace qpid {
 namespace client {
 
+/**
+ * Session is currently just an alias for Session_0_10
+ *
+ * \ingroup clientapi
+ */
 typedef Session_0_10 Session;
 
 }} // namespace qpid::client
