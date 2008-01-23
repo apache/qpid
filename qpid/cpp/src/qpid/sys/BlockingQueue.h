@@ -29,6 +29,9 @@
 namespace qpid {
 namespace sys {
 
+/**
+ * A simple blocking queue template
+ */
 template <class T>
 class BlockingQueue
 {

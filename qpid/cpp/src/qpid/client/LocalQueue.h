@@ -31,6 +31,8 @@ namespace client {
 
 /**
  * Local representation of a remote queue.
+ *
+ * \ingroup clientapi
  */
 class LocalQueue
 {

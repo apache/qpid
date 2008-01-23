@@ -51,11 +51,12 @@ class MessageListener;
 class ReturnedMessageHandler;
 
 /**
+ * THIS CLASS IS DEPRECATED AND WILL BE SHORTLY REMOVED  
+ *
  * Represents an AMQP channel, i.e. loosely a session of work. It
  * is through a channel that most of the AMQP 'methods' are
  * exposed.
  * 
- * \ingroup clientapi
  */
 class Channel : private sys::Runnable
 {
