@@ -49,7 +49,7 @@ void Subscriber::received(Message& msg)
 }
 
 Dispatcher::Dispatcher(Session_0_10& s, const std::string& q)
-    : session(s), running(false)
+    : session(s), running(false), autoStop(true)
 {
     queue = q.empty() ? 
         session.getExecution().getDemux().getDefault() : 
