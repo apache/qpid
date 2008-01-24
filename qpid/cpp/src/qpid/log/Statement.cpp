@@ -18,7 +18,7 @@
 
 #include "Statement.h"
 #include "Logger.h"
-#include "qpid/Exception.h"
+#include <stdexcept>
 #include <syslog.h>
 
 namespace qpid {
@@ -49,7 +49,7 @@ Level LevelTraits::level(const char* name) {
         if (strcmp(names[i], name)==0)
             return Level(i);
     }
-    throw qpid::Exception(std::string("Invalid log level name: ")+name);
+    throw std::runtime_error(std::string("Invalid log level name: ")+name);
 }
 
 const char* LevelTraits::name(Level l) {
