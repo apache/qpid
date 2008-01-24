@@ -142,7 +142,7 @@ void ConnectionHandler::error(uint16_t code, const std::string& message, AMQBody
 
 void ConnectionHandler::fail(const std::string& message)
 {
-    QPID_LOG(error, message);
+    QPID_LOG(warning, message);
     setState(FAILED);
 }
 

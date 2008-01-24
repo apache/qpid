@@ -77,8 +77,9 @@ class Connector : public framing::OutputHandler,
     const int send_buffer_size;
     framing::ProtocolVersion version;
 
-    bool closed;
     sys::Mutex closedLock;
+    bool closed;
+    bool joined;
 
     sys::AbsTime lastIn;
     sys::AbsTime lastOut;
@@ -112,6 +113,8 @@ class Connector : public framing::OutputHandler,
     void writebuff(qpid::sys::AsynchIO&);
     void writeDataBlock(const framing::AMQDataBlock& data);
     void eof(qpid::sys::AsynchIO&);
+
+    std::string identifier;
     
   friend class Channel;
 
@@ -130,6 +133,7 @@ class Connector : public framing::OutputHandler,
     virtual void send(framing::AMQFrame& frame);
     virtual void setReadTimeout(uint16_t timeout);
     virtual void setWriteTimeout(uint16_t timeout);
+    const std::string& getIdentifier() const { return identifier; }
 };
 
 }}

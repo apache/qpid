@@ -125,7 +125,7 @@ void SessionCore::detach(int c, const std::string& t) {
     channel.next = 0;
     code=c;
     text=t;
-    l3.getDemux().close();
+    l3.getDemux().close();      
 }
 
 void SessionCore::doClose(int code, const std::string& text) {
@@ -270,7 +270,6 @@ void  SessionCore::detached() { // network thread
     Lock l(state);
     check(state == SUSPENDING,
           COMMAND_INVALID, UNEXPECTED_SESSION_DETACHED);
-    connection->erase(channel);
     doSuspend(REPLY_SUCCESS, OK);
 }
 
@@ -379,22 +378,28 @@ bool isCloseResponse(const AMQFrame& frame) {
 
 // Network thread.
 void SessionCore::handleIn(AMQFrame& frame) {
+    ConnectionImpl::shared_ptr save;
     {
         Lock l(state);
+        save=connection;
         // Ignore frames received while closing other than closed response.
         if (state==CLOSING && !isCloseResponse(frame))
             return;             
     }
     try {
         // Cast to expose private SessionHandler functions.
-        if (!invoke(static_cast<SessionHandler&>(*this), *frame.getBody())) {
+        if (invoke(static_cast<SessionHandler&>(*this), *frame.getBody())) {
+            // If we were detached by a session command, tell the connection.
+            if (!connection) save->erase(channel);
+        }
+        else {
             session->received(frame);
             l3.handle(frame);
         }
     } catch (const ChannelException& e) {
         QPID_LOG(error, "Channel exception:" << e.what());
         doClose(e.code, e.what());
-    } 
+    }
 }
 
 void SessionCore::handleOut(AMQFrame& frame)

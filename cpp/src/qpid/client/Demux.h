@@ -47,7 +47,8 @@ public:
     typedef sys::BlockingQueue<framing::FrameSet::shared_ptr> Queue;
     typedef boost::shared_ptr<Queue> QueuePtr;
 
-    Demux() : defaultQueue(new Queue()) {}
+    Demux();
+    ~Demux();
     
     void handle(framing::FrameSet::shared_ptr);
     void close();

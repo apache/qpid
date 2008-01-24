@@ -43,6 +43,8 @@ class ConnectionImpl : public framing::FrameHandler,
 
 {
     typedef std::map<uint16_t, boost::weak_ptr<SessionCore> > SessionMap;
+    typedef std::vector<boost::shared_ptr<SessionCore> > SessionVector;
+
     SessionMap sessions; 
     ConnectionHandler handler;
     boost::shared_ptr<Connector> connector;
@@ -51,14 +53,15 @@ class ConnectionImpl : public framing::FrameHandler,
     bool isClosed;
     bool isClosing;
 
+    template <class F> void detachAll(const F&);
+
+    SessionVector closeInternal(const sys::Mutex::ScopedLock&);
     void incoming(framing::AMQFrame& frame);    
     void closed(uint16_t, const std::string&);
     void idleOut();
     void idleIn();
     void shutdown();
     bool setClosing();
-
-    template <class F> void forChannels(F functor);
 
   public:
     typedef boost::shared_ptr<ConnectionImpl> shared_ptr;

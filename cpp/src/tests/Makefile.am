@@ -122,7 +122,6 @@ EXTRA_DIST +=								\
   topictest								\
   .valgrind.supp							\
   .valgrindrc								\
-  InProcessBroker.h							\
   MessageUtils.h							\
   MockChannel.h								\
   MockConnectionInputHandler.h						\
