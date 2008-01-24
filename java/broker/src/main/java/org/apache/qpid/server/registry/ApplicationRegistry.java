@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.Configurator;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -59,24 +58,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         public void run()
         {
             _logger.info("Shutting down application registries...");
-            try
-            {
-                synchronized (ApplicationRegistry.class)
-                {
-                    Iterator<IApplicationRegistry> keyIterator = _instanceMap.values().iterator();
-
-                    while (keyIterator.hasNext())
-                    {
-                        IApplicationRegistry instance = keyIterator.next();
-
-                        instance.close();
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                _logger.error("Error shutting down message store: " + e, e);
-            }
+            removeAll();
         }
     }
 
@@ -116,6 +98,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
         catch (Exception e)
         {
+            _logger.error("Error shutting down message store: " + e, e);
 
         }
         finally
@@ -124,6 +107,14 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
+    public static void removeAll()
+    {
+        Object[] keys = _instanceMap.keySet().toArray();
+        for (Object k : keys)
+        {
+            remove((Integer) k);
+        }
+    }
 
     protected ApplicationRegistry(Configuration configuration)
     {
@@ -154,7 +145,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 catch (Exception e)
                 {
                     _logger.error("Error configuring application: " + e, e);
-                //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
+                    //throw new AMQBrokerCreationException(instanceID, "Unable to create Application Registry instance " + instanceID);
                     throw new RuntimeException("Unable to create Application Registry", e);
                 }
             }
@@ -167,7 +158,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public void close() throws Exception
     {
-        for(VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
+        for (VirtualHost virtualHost : getVirtualHostRegistry().getVirtualHosts())
         {
             virtualHost.close();
         }
@@ -204,7 +195,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return instance;
     }
 
-    
 
     public static void setDefaultApplicationRegistry(String clazz)
     {

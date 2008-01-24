@@ -248,7 +248,7 @@
                                     </condition>
 
                                     <property name="command"
-                                              value="python run-tests -v -I java_failing.txt -b localhost:2100"/>
+                                              value="python run-tests -v -I java_failing.txt -b localhost:2110"/>
                                     <!--value="bash -c 'python run-tests -v -I java_failing.txt'"/>-->
 
                                     <ant antfile="python-test.xml" inheritRefs="true">

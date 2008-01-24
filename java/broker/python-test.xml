@@ -43,9 +43,9 @@ under the License.
 			>
 		<arg value="${command}"/>
         <arg value="-p"/>
-        <arg value="2100"/>
+        <arg value="2110"/>
         <arg value="-m"/>
-        <arg value="2101"/>
+        <arg value="2111"/>
 
         <classpath refid="maven.test.classpath"/>
 		<sysproperty key="QPID_HOME" value="${broker.dir}"/>

@@ -1,4 +1,6 @@
-/*
+package org.apache.qpid.server.store;
+
+import org.apache.qpid.AMQException;/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -7,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,27 +20,17 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.state.listener;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.protocol.BlockingMethodFrameListener;
-import org.apache.qpid.framing.AMQMethodBody;
-
-public class SpecificMethodFrameListener extends BlockingMethodFrameListener
+/**
+ * NOTE: this class currently extends AMQException but
+ * we should be using AMQExceptions internally in the code base for Protocol errors hence
+ * the message store interface should throw a different super class which this should be
+ * moved to reflect
+ */
+public class MessageStoreClosedException extends AMQException
 {
-    private final Class _expectedClass;
-
-    public SpecificMethodFrameListener(int channelId, Class expectedClass)
+    public MessageStoreClosedException()
     {
-        super(channelId);
-        _expectedClass = expectedClass;
+        super("Message store closed");
     }
-
-    public boolean processMethod(int channelId, AMQMethodBody frame) //throws AMQException
-    {
-
-        //equiv to: (frame instanceof _expectedClass)
-        return _expectedClass.isInstance(frame);
-    }
-
 }

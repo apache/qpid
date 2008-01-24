@@ -163,7 +163,6 @@ under the License.
         <module>management/eclipse-plugin</module>
         <module>client/example</module>
         <module>client-java14</module>
-
     </modules>
 
 
@@ -517,17 +516,17 @@ under the License.
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-filter-ssl</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-java5</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             <dependency>
                 <groupId>backport-util-concurrent</groupId>

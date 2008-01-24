@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -101,27 +100,21 @@ public class TransportConnection
                             _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
                                                                  ? "Qpid NIO is new default"
                                                                  : "Sysproperty 'qpidnio' is set"));
-
-
                             result = new MultiThreadSocketConnector();
                         }
                         else
                         {
                             _logger.info("Using Mina NIO");
-
                             result = new SocketConnector(); // non-blocking connector
                         }
-
                         // Don't have the connector's worker thread wait around for other connections (we only use
                         // one SocketConnector per connection at the moment anyway). This allows short-running
                         // clients (like unit tests) to complete quickly.
                         result.setWorkerTimeout(0);
-
                         return result;
                     }
                 });
                 break;
-
             case VM:
             {
                 _instance = getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
@@ -280,8 +273,7 @@ public class TransportConnection
             }
 
             AMQVMBrokerCreationException amqbce =
-                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", null);
-            amqbce.initCause(e);
+                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", e);
             throw amqbce;
         }
 
@@ -294,14 +286,11 @@ public class TransportConnection
         _acceptor.unbindAll();
         synchronized (_inVmPipeAddress)
         {
-            Iterator keys = _inVmPipeAddress.keySet().iterator();
-
-            while (keys.hasNext())
-            {
-                int id = (Integer) keys.next();
-                _inVmPipeAddress.remove(id);
-            }
-        }
+            _inVmPipeAddress.clear();
+        }        
+        _acceptor = null;
+        _currentInstance = -1;
+        _currentVMPort = -1;
     }
 
     public static void killVMBroker(int port)

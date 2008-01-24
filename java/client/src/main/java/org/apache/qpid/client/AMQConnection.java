@@ -1303,4 +1303,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _protocolHandler.getProtocolSession().setProtocolVersion(protocolVersion);
     }
 
+    public boolean isFailingOver()
+    {
+        return (_protocolHandler.getFailoverLatch() != null);
+    }
 }

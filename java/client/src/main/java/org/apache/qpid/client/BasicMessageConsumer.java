@@ -33,14 +33,12 @@ import org.apache.qpid.framing.BasicCancelOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -255,6 +253,10 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         switch (_acknowledgeMode)
         {
+            case Session.DUPS_OK_ACKNOWLEDGE:
+                _logger.info("Recording tag for acking on close:" + msg.getDeliveryTag());
+                _receivedDeliveryTags.add(msg.getDeliveryTag());
+                break;
 
             case Session.CLIENT_ACKNOWLEDGE:
                 _unacknowledgedDeliveryTags.add(msg.getDeliveryTag());
@@ -277,8 +279,28 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         _session.setInRecovery(false);
     }
 
-    private void acquireReceiving() throws JMSException
+    /**
+     * @param immediate if true then return immediately if the connection is failing over
+     *
+     * @return boolean if the acquisition was successful
+     *
+     * @throws JMSException
+     * @throws InterruptedException
+     */
+    private boolean acquireReceiving(boolean immediate) throws JMSException, InterruptedException
     {
+        if (_connection.isFailingOver())
+        {
+            if (immediate)
+            {
+                return false;
+            }
+            else
+            {
+                _connection.blockUntilNotFailingOver();
+            }
+        }
+
         if (!_receiving.compareAndSet(false, true))
         {
             throw new javax.jms.IllegalStateException("Another thread is already receiving.");
@@ -290,6 +312,7 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
 
         _receivingThread = Thread.currentThread();
+        return true;
     }
 
     private void releaseReceiving()
@@ -343,7 +366,18 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
 
         checkPreConditions();
 
-        acquireReceiving();
+        try
+        {
+            acquireReceiving(false);
+        }
+        catch (InterruptedException e)
+        {
+            _logger.warn("Interrupted: " + e);
+            if (isClosed())
+            {
+                return null;
+            }
+        }
 
         _session.startDistpatcherIfNecessary();
 
@@ -424,7 +458,25 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     {
         checkPreConditions();
 
-        acquireReceiving();
+        try
+        {
+            if (!acquireReceiving(true))
+            {
+                //If we couldn't acquire the receiving thread then return null.
+                // This will occur if failing over.
+                return null;
+            }
+        }
+        catch (InterruptedException e)
+        {
+            /*
+             *  This seems slightly shoddy but should never actually be executed
+             *  since we told acquireReceiving to return immediately and it shouldn't
+             *  block on anything.
+             */
+
+            return null;
+        }
 
         _session.startDistpatcherIfNecessary();
 
@@ -721,12 +773,13 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                 break;
 
             case Session.DUPS_OK_ACKNOWLEDGE:
-                if (++_outstanding >= _prefetchHigh)
+            /*(    if (++_outstanding >= _prefetchHigh)
                 {
                     _dups_ok_acknowledge_send = true;
                 }
 
-                if (_outstanding <= _prefetchLow)
+                //Can't use <= as _prefetchHigh may equal _prefetchLow so no acking would occur.
+                if (_outstanding < _prefetchLow)
                 {
                     _dups_ok_acknowledge_send = false;
                 }
@@ -736,11 +789,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
                     if (!_session.isInRecovery())
                     {
                         _session.acknowledgeMessage(msg.getDeliveryTag(), true);
+                        _outstanding = 0;
                     }
                 }
 
                 break;
-
+             */
             case Session.AUTO_ACKNOWLEDGE:
                 // we do not auto ack a message if the application code called recover()
                 if (!_session.isInRecovery())
@@ -777,20 +831,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     }
 
     /** Acknowledge up to last message delivered (if any). Used when commiting. */
-    void acknowledgeLastDelivered()
+    void acknowledgeDelivered()
     {
-        if (!_receivedDeliveryTags.isEmpty())
+    	while (!_receivedDeliveryTags.isEmpty())
         {
-            long lastDeliveryTag = _receivedDeliveryTags.poll();
-
-            while (!_receivedDeliveryTags.isEmpty())
-            {
-                lastDeliveryTag = _receivedDeliveryTags.poll();
-            }
-
-            assert _receivedDeliveryTags.isEmpty();
-
-            _session.acknowledgeMessage(lastDeliveryTag, true);
+    		_session.acknowledgeMessage(_receivedDeliveryTags.poll(), false);
         }
     }
 
@@ -866,21 +911,24 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
         }
     }
 
-    public void acknowledge() // throws JMSException
+    public void acknowledge() throws JMSException
     {
-        if (!isClosed())
+        if (isClosed())
         {
-
+            throw new IllegalStateException("Consumer is closed");
+        }
+        else if (_session.hasFailedOver())
+        {
+            throw new JMSException("has failed over");
+        }
+        else
+        {
             Iterator<Long> tags = _unacknowledgedDeliveryTags.iterator();
             while (tags.hasNext())
             {
                 _session.acknowledgeMessage(tags.next(), false);
                 tags.remove();
             }
-        }
-        else
-        {
-            throw new IllegalStateException("Consumer is closed");
         }
     }
 
@@ -951,7 +999,11 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
             }
         }
 
-        // rollback pending messages
+        rollbackPendingMessages();
+    }
+
+    public void rollbackPendingMessages()
+    {
         if (_synchronousQueue.size() > 0)
         {
             if (_logger.isDebugEnabled())
@@ -1015,5 +1067,12 @@ public class BasicMessageConsumer extends Closeable implements MessageConsumer
     public void clearReceiveQueue()
     {
         _synchronousQueue.clear();
+    }
+
+    /** to be called when a failover has occured */
+    public void failedOver()
+    {
+        clearReceiveQueue();
+        clearUnackedMessages();
     }
 }

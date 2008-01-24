@@ -165,7 +165,14 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         //fixme  -- this can be null
         if (amqProtocolSession != null)
         {
-            amqProtocolSession.closeSession();
+            try
+            {
+                amqProtocolSession.closeSession();
+            }
+            catch (AMQException e)
+            {
+                _logger.error("Caught AMQException whilst closingSession:" + e);
+            }
         }
     }
 
@@ -199,7 +206,7 @@ public class AMQPFastProtocolHandler extends IoHandlerAdapter
         }
         else if (throwable instanceof IOException)
         {
-            _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable, throwable);
+            _logger.error("IOException caught in" + session + ", session closed implictly: " + throwable);
         }
         else
         {

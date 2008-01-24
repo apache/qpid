@@ -376,8 +376,7 @@ public class MultiThreadSocketConnector extends SocketConnector
 
         // Set the ConnectFuture of the specified session, which will be
         // removed and notified by AbstractIoFilterChain eventually.
-//        session.setAttribute( AbstractIoFilterChain.CONNECT_FUTURE, connectFuture );
-        session.setAttribute(AbstractIoFilterChain.class.getName() + ".connectFuture", connectFuture);
+        session.setAttribute( AbstractIoFilterChain.CONNECT_FUTURE, connectFuture );
 
         // Forward the remaining process to the SocketIoProcessor.
         session.getIoProcessor().addNew(session);
