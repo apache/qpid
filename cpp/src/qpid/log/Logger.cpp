@@ -114,7 +114,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
     if (flags&THREAD)
-        os << "[" << hex << qpid::sys::Thread::logId() << "] ";
+        os << "[" << qpid::sys::Thread::logId() << "] ";
     if (flags&FILE)
         os << s.file << ":";
     if (flags&LINE)

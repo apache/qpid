@@ -136,11 +136,11 @@ struct PODMutex
 #define QPID_MUTEX_INITIALIZER { PTHREAD_MUTEX_INITIALIZER }
 
 void PODMutex::lock() {
-    QPID_POSIX_THROW_IF(pthread_mutex_lock(&mutex));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_lock(&mutex));
 }
 
 void PODMutex::unlock() {
-    QPID_POSIX_THROW_IF(pthread_mutex_unlock(&mutex));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_unlock(&mutex));
 }
 
 bool PODMutex::trylock() {
@@ -148,19 +148,19 @@ bool PODMutex::trylock() {
 }
 
 Mutex::Mutex() {
-    QPID_POSIX_THROW_IF(pthread_mutex_init(&mutex, recursiveMutexattr));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_init(&mutex, recursiveMutexattr));
 }
 
 Mutex::~Mutex(){
-    QPID_POSIX_THROW_IF(pthread_mutex_destroy(&mutex));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_destroy(&mutex));
 }
 
 void Mutex::lock() {
-    QPID_POSIX_THROW_IF(pthread_mutex_lock(&mutex));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_lock(&mutex));
 }
 
 void Mutex::unlock() {
-    QPID_POSIX_THROW_IF(pthread_mutex_unlock(&mutex));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_mutex_unlock(&mutex));
 }
 
 bool Mutex::trylock() {
@@ -169,31 +169,31 @@ bool Mutex::trylock() {
 
 
 RWlock::RWlock() {
-    QPID_POSIX_THROW_IF(pthread_rwlock_init(&rwlock, recursiveRWlockattr));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_init(&rwlock, recursiveRWlockattr));
 }
 
 RWlock::~RWlock(){
-    QPID_POSIX_THROW_IF(pthread_rwlock_destroy(&rwlock));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_destroy(&rwlock));
 }
 
 void RWlock::wlock() {
-    QPID_POSIX_THROW_IF(pthread_rwlock_wrlock(&rwlock));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_wrlock(&rwlock));
 }
 
 void RWlock::rlock() {
-    QPID_POSIX_THROW_IF(pthread_rwlock_rdlock(&rwlock));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_rdlock(&rwlock));
 }
 
 void RWlock::unlock() {
-    QPID_POSIX_THROW_IF(pthread_rwlock_unlock(&rwlock));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_unlock(&rwlock));
 }
 
 void RWlock::trywlock() {
-    QPID_POSIX_THROW_IF(pthread_rwlock_trywrlock(&rwlock));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_trywrlock(&rwlock));
 }
 
 void RWlock::tryrlock() {
-    QPID_POSIX_THROW_IF(pthread_rwlock_tryrdlock(&rwlock));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_rwlock_tryrdlock(&rwlock));
 }
 
 

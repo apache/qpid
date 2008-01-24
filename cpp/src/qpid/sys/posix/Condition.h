@@ -52,15 +52,15 @@ class Condition
 };
 
 Condition::Condition() {
-    QPID_POSIX_THROW_IF(pthread_cond_init(&condition, 0));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_cond_init(&condition, 0));
 }
 
 Condition::~Condition() {
-    QPID_POSIX_THROW_IF(pthread_cond_destroy(&condition));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_cond_destroy(&condition));
 }
 
 void Condition::wait(Mutex& mutex) {
-    QPID_POSIX_THROW_IF(pthread_cond_wait(&condition, &mutex.mutex));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_cond_wait(&condition, &mutex.mutex));
 }
 
 bool Condition::wait(Mutex& mutex, const AbsTime& absoluteTime){
@@ -75,11 +75,11 @@ bool Condition::wait(Mutex& mutex, const AbsTime& absoluteTime){
 }
 
 void Condition::notify(){
-    QPID_POSIX_THROW_IF(pthread_cond_signal(&condition));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_cond_signal(&condition));
 }
 
 void Condition::notifyAll(){
-    QPID_POSIX_THROW_IF(pthread_cond_broadcast(&condition));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_cond_broadcast(&condition));
 }
 
 }}

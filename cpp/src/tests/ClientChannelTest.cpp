@@ -44,7 +44,7 @@ const size_t FRAME_MAX = 256;
  * The test base defines the tests methods, derived classes
  * instantiate the channel in Basic or Message mode.
  */
-class ChannelTestBase : public CppUnit::TestCase, public BrokerFixture
+class ChannelTestBase : public CppUnit::TestCase, public SessionFixture
 {
     struct Listener: public qpid::client::MessageListener {
         vector<Message> messages;

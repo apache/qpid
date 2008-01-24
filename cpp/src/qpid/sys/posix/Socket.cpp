@@ -231,6 +231,10 @@ std::string Socket::getPeerAddress() const
     return impl->getName(false, true);
 }
 
+int Socket::toFd() const {
+    return impl->fd;
+}
+
 int toFd(const SocketPrivate* s)
 {
     return s->fd;
