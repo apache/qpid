@@ -31,7 +31,7 @@ namespace Apache.Qpid.Client.Transport
     public class AmqpChannel : IProtocolChannel
     {
         // Warning: don't use this log for regular logging.
-        static readonly ILog _protocolTraceLog = LogManager.GetLogger("Qpid.Client.ProtocolChannel.Tracing");
+        static readonly ILog _protocolTraceLog = LogManager.GetLogger("TRACE.Qpid.Client.ProtocolChannel");
         
         IByteChannel _byteChannel;
         IProtocolEncoder _encoder;
