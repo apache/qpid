@@ -38,8 +38,7 @@
 
 /** Same as _THROW_IF in a release build, but abort a debug build */
 #ifdef NDEBUG
-#define QPID_POSIX_ASSERT_THROW_IF(ERRNO) qpid_posix    \
-    QPID_POSIX_THROW_IF(ERRNO)
+#define QPID_POSIX_ASSERT_THROW_IF(ERRNO) QPID_POSIX_THROW_IF(ERRNO)
 #else
 #define QPID_POSIX_ASSERT_THROW_IF(ERRNO)                               \
     do { int e=(ERRNO); if (e) { errno=e; perror(0); assert(0); } } while(0)
