@@ -20,7 +20,6 @@
  */
 #include "qpid_test_plugin.h"
 #include "BrokerFixture.h"
-#include "SocketProxy.h"
 #include "qpid/client/Dispatcher.h"
 #include "qpid/client/Session_0_10.h"
 #include "qpid/framing/TransferContent.h"
@@ -62,7 +61,7 @@ struct DummyListener : public MessageListener
     }
 };
 
-class ClientSessionTest : public CppUnit::TestCase, public BrokerFixture
+class ClientSessionTest : public CppUnit::TestCase, public ProxySessionFixture
 {
     CPPUNIT_TEST_SUITE(ClientSessionTest);
     CPPUNIT_TEST(testQueueQuery);
@@ -71,7 +70,6 @@ class ClientSessionTest : public CppUnit::TestCase, public BrokerFixture
     CPPUNIT_TEST(testResumeExpiredError);
     CPPUNIT_TEST(testUseSuspendedError);
     CPPUNIT_TEST(testSuspendResume);
-    CPPUNIT_TEST(testDisconnectResume);
     CPPUNIT_TEST_SUITE_END();
 
   public:
@@ -85,11 +83,6 @@ class ClientSessionTest : public CppUnit::TestCase, public BrokerFixture
         session.messageFlow(destination=dest, unit=1, value=0xFFFFFFFF);//bytes
     }
 
-    bool queueExists(const std::string& q) {
-        TypedResult<QueueQueryResult> result = session.queueQuery(q);
-        return result.get().getQueue() == q;
-    }
-    
     void testQueueQuery() 
     {
         session =connection.newSession();
@@ -166,25 +159,10 @@ class ClientSessionTest : public CppUnit::TestCase, public BrokerFixture
         declareSubscribe();
         session.suspend();
         // Make sure we are still subscribed after resume.
-       connection.resume(session);
+        connection.resume(session);
         session.messageTransfer(content=TransferContent("my-message", "my-queue"));
         FrameSet::shared_ptr msg = session.get();
         CPPUNIT_ASSERT_EQUAL(string("my-message"), msg->getContent());
-    }
-
-    void testDisconnectResume() {
-        // FIXME aconway 2007-12-11: Test hanging.
-//         ProxyConnection c(broker->getPort());
-//         Session_0_10 s = c.session;
-//         s.queueDeclare(queue="before");
-//         CPPUNIT_ASSERT(queueExists("before"));
-//         s.queueDeclare(queue=string("after"));
-//         c.proxy.client.close();       // Disconnect the client.
-//         Connection c2;
-//         open(c2);
-//         c2.resume(s);
-//         CPPUNIT_ASSERT(queueExists("after"));
-//         c2.close();
     }
 };
 

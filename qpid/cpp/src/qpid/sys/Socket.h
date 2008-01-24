@@ -97,6 +97,8 @@ public:
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
 
+    int toFd() const;
+    
 private:
 	Socket(SocketPrivate*);
 };

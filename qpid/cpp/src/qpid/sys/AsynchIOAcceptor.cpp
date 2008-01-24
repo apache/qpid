@@ -110,6 +110,7 @@ class AsynchIOHandler : public qpid::sys::ConnectionOutputHandler {
     void init(AsynchIO* a, ConnectionInputHandler* h) {
         aio = a;
         inputHandler = h;
+        identifier = aio->getSocket().getPeerAddress();
     }
 
     // Output side
@@ -229,7 +230,6 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
     }else{
         framing::ProtocolInitiation protocolInit;
         if(protocolInit.decode(in)){
-            identifier = aio->getSocket().getPeerAddress();
             QPID_LOG(debug, "INIT [" << identifier << "]");
             inputHandler->initiated(protocolInit);
             initiated = true;

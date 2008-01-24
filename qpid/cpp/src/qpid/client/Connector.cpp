@@ -27,7 +27,7 @@
 #include "qpid/sys/AsynchIO.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/Poller.h"
-
+#include "qpid/Msg.h"
 #include <boost/bind.hpp>
 
 namespace qpid {
@@ -43,6 +43,7 @@ Connector::Connector(
     send_buffer_size(buffer_size),
     version(ver), 
     closed(true),
+    joined(true),
     timeout(0),
     idleIn(0), idleOut(0), 
     timeoutHandler(0),
@@ -52,11 +53,11 @@ Connector::Connector(
 
 Connector::~Connector() {
     close();
-    if (receiver.id() && receiver.id() != Thread::current().id())
-        receiver.join();
 }
 
 void Connector::connect(const std::string& host, int port){
+    Mutex::ScopedLock l(closedLock);
+    assert(closed);
     socket.connect(host, port);
     closed = false;
     poller = Poller::shared_ptr(new Poller);
@@ -71,20 +72,27 @@ void Connector::connect(const std::string& host, int port){
 }
 
 void Connector::init(){
+    Mutex::ScopedLock l(closedLock);
+    assert(joined);
     ProtocolInitiation init(version);
-
     writeDataBlock(init);
+    joined = false;
     receiver = Thread(this);
 }
 
 bool Connector::closeInternal() {
     Mutex::ScopedLock l(closedLock);
+    bool ret = !closed;
     if (!closed) {
-        poller->shutdown();
         closed = true;
-        return true;
+        poller->shutdown();
     }
-    return false;
+    if (!joined && receiver.id() != Thread::current().id()) {
+        joined = true;
+        Mutex::ScopedUnlock u(closedLock);
+        receiver.join();
+    }
+    return ret;
 }
         
 void Connector::close() {
