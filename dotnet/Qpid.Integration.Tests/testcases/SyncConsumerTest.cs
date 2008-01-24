@@ -24,6 +24,8 @@ using System.Threading;
 using log4net;
 using NUnit.Framework;
 using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Client;
 
 namespace Apache.Qpid.Integration.Tests.testcases
 {
@@ -37,11 +39,21 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
         private IMessageConsumer _consumer;
         private IMessagePublisher _publisher;
+
+        /// <summary> Holds the test connection. </summary>
+        protected IConnection _connection;
+
+        /// <summary> Holds the test channel. </summary>
+        protected IChannel _channel;
         
-        //[SetUp]
+        [SetUp]
         public override void Init()
         {
             base.Init();
+
+            _connection = new AMQConnection(connectionInfo);
+            _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
+
             _publisher = _channel.CreatePublisherBuilder()
                 .WithRoutingKey(_commandQueueName)
                 .WithExchangeName(ExchangeNameDefaults.TOPIC)
@@ -60,7 +72,25 @@ namespace Apache.Qpid.Integration.Tests.testcases
             _connection.Start();
         }
 
-        //[Test]
+        /// <summary>
+        /// Deregisters the on message delegate before closing the connection.
+        /// </summary>
+        [TearDown]
+        public override void Shutdown()
+        {
+            _logger.Info("public void Shutdown(): called");
+
+            //_consumer.OnMessage -= _msgRecDelegate;
+            //_connection.ExceptionListener -= _exceptionDelegate;
+
+            _connection.Stop();
+            _connection.Close();
+            _connection.Dispose();
+
+            base.Shutdown();
+        }
+
+        [Test]
         public void ReceiveWithInfiniteWait()
         {
             // send all messages
@@ -94,7 +124,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             }
         }
         
-        //[Test]
+        [Test]
         public void ReceiveWithTimeout()
         {
             ITextMessage msg = _channel.CreateTextMessage(GetData(512 + 8));

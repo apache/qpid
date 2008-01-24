@@ -40,17 +40,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <summary> Used to build dummy data to fill test messages with. </summary>
         private const string MESSAGE_DATA_BYTES = "-- Test Message -- Test Message -- Test Message -- Test Message -- Test Message ";
 
+        /// <summary> The default timeout in milliseconds to use on receives. </summary>
+        private const long RECEIVE_WAIT = 500;
+
         /// <summary> The default AMQ connection URL to use for tests. </summary>
-        const string connectionUri = "amqp://guest:guest@default/test?brokerlist='tcp://localhost:5672'";
+        const string connectionUri = "amqp://guest:guest@test/test?brokerlist='tcp://localhost:5672'";
 
         /// <summary> The default AMQ connection URL parsed as a connection info. </summary>
         protected IConnectionInfo connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);
-
-        /// <summary> Holds the test connection. </summary>
-        protected IConnection _connection;
-
-        /// <summary> Holds the test channel. </summary>
-        protected IChannel _channel;
 
         /// <summary> Holds an array of connections for building mutiple test end-points. </summary>
         protected IConnection[] testConnection = new IConnection[10];
@@ -65,14 +62,12 @@ namespace Apache.Qpid.Integration.Tests.testcases
         protected IMessageConsumer[] testConsumer = new IMessageConsumer[10];
 
         /// <summary> A counter used to supply unique ids. </summary>
-        private int uniqueId = 0;
+        private static int uniqueId = 0;
 
         /// <summary> Used to hold unique ids per test. </summary>
         protected int testId;
 
-        /// <summary>
-        /// Creates the test connection and channel.
-        /// </summary>
+        /// <summary> Creates the test connection and channel. </summary>
         [SetUp]
         public virtual void Init()
         {
@@ -80,9 +75,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             // Set up a unique id for this test.
             testId = uniqueId++;
-
-            _connection = new AMQConnection(connectionInfo);
-            _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
         }
 
         /// <summary>
@@ -93,14 +85,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
         public virtual void Shutdown()
         {
             log.Debug("public virtual void Shutdown(): called");
-
-            if (_connection != null)
-            {
-                log.Debug("Disposing connection.");
-                _connection.Close();
-                _connection.Dispose();
-                log.Debug("Connection disposed.");
-            }
         }
 
         /// <summary> Sets up the nth test end-point. </summary>
@@ -112,12 +96,13 @@ namespace Apache.Qpid.Integration.Tests.testcases
         /// <param name="ackMode">The ack mode for the end-points channel.</param>
         /// <param name="transacted"><tt>true</tt> to use transactions on the end-points channel.</param>
         /// <param name="exchangeName">The exchange to produce or consume on.</param>
+        /// <param name="declareBind"><tt>true</tt> if the consumers queue should be declared and bound, <tt>false</tt> if it has already been.</param>
         /// <param name="durable"><tt>true</tt> to declare the consumers queue as durable.</param>
         /// <param name="subscriptionName">If durable is true, the fixed unique queue name to use.</param>
-        public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey, AcknowledgeMode ackMode, bool transacted, 
-                                  string exchangeName, bool durable, string subscriptionName)
+        public void SetUpEndPoint(int n, bool producer, bool consumer, string routingKey, AcknowledgeMode ackMode, bool transacted,
+                                  string exchangeName, bool declareBind, bool durable, string subscriptionName)
         {
-            testConnection[n] = new AMQConnection(connectionInfo);
+            testConnection[n] = new AMQConnection(connectionInfo);            
             testConnection[n].Start();
             testChannel[n] = testConnection[n].CreateChannel(transacted, ackMode, 1);
             
@@ -136,15 +121,25 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 // Use the subscription name as the queue name if the subscription is durable, otherwise use a generated name.
                 if (durable)
                 {
+                    // The durable queue is declared without auto-delete, and passively, in case it has already been declared.
                     queueName = subscriptionName;
+                    
+                    if (declareBind)
+                    {
+                        testChannel[n].DeclareQueue(queueName, durable, true, false);
+                        testChannel[n].Bind(queueName, exchangeName, routingKey);
+                    }
                 }
                 else
                 {
                     queueName = testChannel[n].GenerateUniqueName();
-                }
 
-                testChannel[n].DeclareQueue(queueName, durable, true, true);
-                testChannel[n].Bind(queueName, exchangeName, routingKey);
+                    if (declareBind)
+                    {
+                        testChannel[n].DeclareQueue(queueName, durable, true, true);
+                        testChannel[n].Bind(queueName, exchangeName, routingKey);
+                    }
+                }
 
                 testConsumer[n] = testChannel[n].CreateConsumerBuilder(queueName).Create();
             }
@@ -169,10 +164,13 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 testConsumer[n] = null;
             }
 
-            testConnection[n].Stop();            
-            testConnection[n].Close();
-            testConnection[n].Dispose();
-            testConnection[n] = null;
+            if (testConnection[n] != null)
+            {
+                testConnection[n].Stop();            
+                testConnection[n].Close();
+                testConnection[n].Dispose();
+                testConnection[n] = null;
+            }
         }
 
         /// <summary>
@@ -188,7 +186,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             ConsumeNMessages(n, body, consumer);
             
             // Check that one more than n cannot be received.
-            IMessage msg = consumer.Receive(500);
+            IMessage msg = consumer.Receive(RECEIVE_WAIT);
             Assert.IsNull(msg, "Consumer got more messages than the number requested (" + n + ").");
         }
 
@@ -207,7 +205,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             // Try to receive n messages.
             for (int i = 0; i < n; i++)
             {
-                msg = consumer.Receive(500);
+                msg = consumer.Receive(RECEIVE_WAIT);
                 Assert.IsNotNull(msg, "Consumer did not receive message number: " + i);
                 Assert.AreEqual(body, ((ITextMessage)msg).Text, "Incorrect Message recevied on consumer1.");
             }
@@ -239,6 +237,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
             }
             
             return buf.ToString();
-        }               
+        }
     }
 }

@@ -24,92 +24,106 @@ using System.Threading;
 using log4net;
 using NUnit.Framework;
 using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Client;
 
 namespace Apache.Qpid.Integration.Tests.testcases
 {
+    /// ProducerMultiConsumerTest provides some simple topic exchange based fan-out testing.
+    ///
+    /// <p><table id="crc"><caption>CRC Card</caption>
+    /// <tr><th> Responsibilities <th> Collaborations
+    /// <tr><td> Check that all consumers on a topic each receive all message on it.
+    /// </table>
+    /// </summary>
     [TestFixture, Category("Integration")]
     public class ProducerMultiConsumerTest : BaseMessagingTestFixture
     {
         private static readonly ILog _logger = LogManager.GetLogger(typeof(ProducerMultiConsumerTest));
         
-        private string _commandQueueName = "ServiceQ1";
+        /// <summary>Base name for the routing key used for this test (made unique by adding in test id).</summary>
+        private const string TEST_ROUTING_KEY = "ProducerMultiConsumerTest";
 
+        /// <summary>The number of consumers to test.</summary>
         private const int CONSUMER_COUNT = 5;
 
-        private const int MESSAGE_COUNT = 1000;
+        /// <summary>The number of test messages to send.</summary>
+        private const int MESSAGE_COUNT = 10;
 
+        /// <summary>Monitor used to signal succesfull receipt of all test messages.</summary>
         AutoResetEvent _finishedEvent = new AutoResetEvent(false);
 
-        private IMessagePublisher _publisher;
-
-        private IMessageConsumer[] _consumers = new IMessageConsumer[CONSUMER_COUNT];
-
+        /// <summary>Used to count test messages received so far.</summary>
         private int _messageReceivedCount = 0;
 
-        //[SetUp]
+        /// <summary>Flag used to indicate that all messages really were received, and that the test did not just time out. </summary>
+        private bool allReceived = false;
+
+        /// <summary> Creates one producing end-point and many consuming end-points connected on a topic. </summary>
+        [SetUp]
         public override void Init()
         {
             base.Init();
-            _publisher = _channel.CreatePublisherBuilder()
-                .WithRoutingKey(_commandQueueName)
-                .WithExchangeName(ExchangeNameDefaults.TOPIC)
-                .Create();
 
-            _publisher.DisableMessageTimestamp = true;
-            _publisher.DeliveryMode = DeliveryMode.NonPersistent;
-
-            for (int i = 0; i < CONSUMER_COUNT; i++)
+            // Create end-points for all the consumers in the test.
+            for (int i = 1; i <= CONSUMER_COUNT; i++)
             {
-                string queueName = _channel.GenerateUniqueName();
-                _channel.DeclareQueue(queueName, false, true, true);
-                
-                _channel.Bind(queueName, ExchangeNameDefaults.TOPIC, _commandQueueName);
-
-                _consumers[i] = _channel.CreateConsumerBuilder(queueName)
-                    .WithPrefetchLow(100).Create();
-                _consumers[i].OnMessage = new MessageReceivedDelegate(OnMessage);
+                SetUpEndPoint(i, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.TOPIC,
+                              true, false, null);
+                testConsumer[i].OnMessage = new MessageReceivedDelegate(OnMessage);
             }
-            _connection.Start();
+
+            // Create an end-point to publish to the test topic.
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.TOPIC,
+                          true, false, null);
         }
 
-        //[TearDown]
+        /// <summary> Cleans up all test end-points. </summary>
+        [TearDown]
         public override void Shutdown()
         {
-            _connection.Stop();
-            base.Shutdown();
+            try
+            {
+                CloseEndPoint(0);
+
+                for (int i = 1; i <= CONSUMER_COUNT; i++)
+                {
+                    CloseEndPoint(i);
+                }
+            } 
+            finally 
+            {
+                base.Shutdown();
+            }
         }
 
-        //[Test]
-        public void RunTest()
+        /// <summary> Check that all consumers on a topic each receive all message on it. </summary>
+        [Test]
+        public void AllConsumerReceiveAllMessagesOnTopic()
         {
+            Thread.Sleep(500);
+
             for (int i = 0; i < MESSAGE_COUNT; i++)
             {
-                ITextMessage msg;
-                try
-                {
-                    msg = _channel.CreateTextMessage(GetData(512 + 8*i));
-                }
-                catch (Exception e)
-                {
-                    _logger.Error("Error creating message: " + e, e);
-                    break;
-                }
-                _publisher.Send(msg);
+                testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
             }
-            _finishedEvent.WaitOne();
+
+            _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 10), false);
+
+            // Check that all messages really were received.
+            Assert.IsTrue(allReceived, "All messages were not received, only got: " + _messageReceivedCount);
         }
 
+        /// <summary> Atomically increments the message count on every message, and signals once all messages in the test are received. </summary>
         public void OnMessage(IMessage m)
         {
             int newCount = Interlocked.Increment(ref _messageReceivedCount);
-            if (newCount % 1000 == 0) _logger.Info("Received count=" + newCount);
-            if (newCount == (MESSAGE_COUNT * CONSUMER_COUNT))
+
+            if (newCount > (MESSAGE_COUNT * CONSUMER_COUNT))
             {
-                _logger.Info("All messages received");
+                allReceived = true;
                 _finishedEvent.Set();
             }
-            if ( newCount % 100 == 0 ) 
-                System.Diagnostics.Debug.WriteLine(((ITextMessage)m).Text);
         }        
     }
 }

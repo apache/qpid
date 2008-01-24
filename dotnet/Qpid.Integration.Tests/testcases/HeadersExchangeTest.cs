@@ -24,6 +24,8 @@ using log4net;
 using NUnit.Framework;
 using Apache.Qpid.Framing;
 using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Client;
 
 namespace Apache.Qpid.Integration.Tests.testcases
 {
@@ -42,7 +44,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
     /// 
     /// <todo>Consider not using a delegate to callback the OnMessage method. Easier to just call receive on the consumer but using the 
     ///       callback does demonstrate how to do so.</todo>
-  [TestFixture, Category("Integration")]
+    [TestFixture, Category("Integration")]
     public class HeadersExchangeTest : BaseMessagingTestFixture
     {
         private static ILog _logger = LogManager.GetLogger(typeof(HeadersExchangeTest));
@@ -69,11 +71,20 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private MessageReceivedDelegate _msgRecDelegate;
         private ExceptionListenerDelegate _exceptionDelegate;
 
+        /// <summary> Holds the test connection. </summary>
+        protected IConnection _connection;
+
+        /// <summary> Holds the test channel. </summary>
+        protected IChannel _channel;
+
         [SetUp]
         public override void Init()
         {          
             // Ensure that the base init method is called. It establishes a connection with the broker.
-            base.Init();            
+            base.Init();   
+         
+            _connection = new AMQConnection(connectionInfo);
+            _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
 
             _logger.Info("Starting...");
             _logger.Info("Exchange name is '" + _exchangeName + "'...");
@@ -130,6 +141,8 @@ namespace Apache.Qpid.Integration.Tests.testcases
             //_connection.ExceptionListener -= _exceptionDelegate;
 
             _connection.Stop();
+            _connection.Close();
+            _connection.Dispose();
 
             base.Shutdown();
         }

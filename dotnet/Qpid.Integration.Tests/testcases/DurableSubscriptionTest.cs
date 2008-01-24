@@ -50,21 +50,12 @@ namespace Apache.Qpid.Integration.Tests.testcases
         public override void Init()
         {
             base.Init();
-
-            _connection.Start();
         }
 
         [TearDown]
         public override void Shutdown()
         {
-            try
-            {
-                _connection.Stop();
-            } 
-            finally 
-            {
-                base.Shutdown();
-            }
+            base.Shutdown();
         }
 
         [Test]        
@@ -82,9 +73,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private void TestDurableSubscription(AcknowledgeMode ackMode)
         {
             // Create a topic with one producer and two consumers.
-            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, false, null);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, false, null);
-            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC,
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, true, false, null);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, true, false, null);
+            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, true,
                           true, "TestSubscription" + testId);
 
             // Send messages and receive on both consumers.
@@ -102,7 +93,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
             ConsumeNMessagesOnly(1, "B", testConsumer[1]);
 
             // Re-attach consumer, check that it gets the messages that it missed.
-            SetUpEndPoint(3, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC,
+            SetUpEndPoint(3, false, true, TEST_ROUTING_KEY + testId, ackMode, false, ExchangeNameDefaults.TOPIC, true,
                           true, "TestSubscription" + testId);
 
             ConsumeNMessagesOnly(1, "B", testConsumer[3]);
@@ -111,6 +102,63 @@ namespace Apache.Qpid.Integration.Tests.testcases
             CloseEndPoint(0);
             CloseEndPoint(1);
             CloseEndPoint(3);
+        }
+
+        /// <summary> Check that an uncommitted receive can be re-received, on re-consume from the same durable subscription. </summary>
+        [Test]
+        public void TestUncommittedReceiveCanBeRereceivedNewConnection() 
+        {
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.TOPIC,
+                          true, false, null);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.TOPIC, 
+                          true, false, null);
+
+            // Send messages.
+            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            testChannel[0].Commit();
+
+            // Try to receive messages, but don't commit them.
+            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+
+            // Close end-point 1 without committing the message, then re-open the subscription to consume again.
+            CloseEndPoint(1);
+            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
+                          true, false, null);
+
+            // Check that the message was released from the rolled back end-point an can be received on the alternative one instead.
+            ConsumeNMessagesOnly(1, "A", testConsumer[2]);
+
+            CloseEndPoint(2);
+            CloseEndPoint(0);
+        }
+
+        /// <summary> Check that a rolled back receive can be re-received, on re-consume from the same durable subscription. </summary>
+        [Test]
+        public void TestRolledBackReceiveCanBeRereceivedNewConnection() 
+        {
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.TOPIC, 
+                          true, false, null);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.TOPIC, 
+                          true, false, null);
+
+            // Send messages.
+            testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            testChannel[0].Commit();
+            
+            // Try to receive messages, but roll them back.
+            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            testChannel[1].Rollback();
+
+            // Close end-point 1 without committing the message, then re-open the subscription to consume again.
+            CloseEndPoint(1);
+            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
+                          true, false, null);
+
+            // Check that the message was released from the rolled back end-point an can be received on the alternative one instead.
+            ConsumeNMessagesOnly(1, "A", testConsumer[2]);
+
+            CloseEndPoint(2);
+            CloseEndPoint(0);
         }
     }
 }

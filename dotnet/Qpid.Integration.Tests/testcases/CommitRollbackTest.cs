@@ -56,8 +56,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
             base.Init();
 
             // Create one producer and one consumer, p2p, tx, consumer with queue bound to producers routing key.
-            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
+                          true, false, null);
+            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
+                          true, false, null);
         }
 
         [TearDown]
@@ -117,6 +119,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
         [Test]
         public void TestUncommittedReceiveCanBeRereceived() 
         {
+            // Create a third end-point as an alternative delivery route for the message.
+            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
+                          true, false, null);
+
             // Send messages.
             testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
             testChannel[0].Commit();
@@ -126,10 +132,11 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             // Close end-point 1 without committing the message, then re-open to consume again.
             CloseEndPoint(1);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
 
-            // Try to receive messages.
-            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            // Check that the message was released from the rolled back end-point an can be received on the alternative one instead.
+            ConsumeNMessagesOnly(1, "A", testConsumer[2]);
+
+            CloseEndPoint(2);
         }
 
         /// <summary> Check that a committed receive cannot be re-received. </summary>
@@ -144,10 +151,6 @@ namespace Apache.Qpid.Integration.Tests.testcases
             ConsumeNMessagesOnly(1, "A", testConsumer[1]);
             testChannel[1].Commit();
 
-            // Close end-point 1 without committing the message, then re-open to consume again.
-            CloseEndPoint(1);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
-
             // Try to receive messages.
             ConsumeNMessagesOnly(0, "A", testConsumer[1]);
         }
@@ -156,20 +159,23 @@ namespace Apache.Qpid.Integration.Tests.testcases
         [Test]
         public void TestRolledBackReceiveCanBeRereceived() 
         {
+            // Create a third end-point as an alternative delivery route for the message.
+            SetUpEndPoint(2, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, 
+                          true, false, null);
+
             // Send messages.
             testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
             testChannel[0].Commit();
-
+            
             // Try to receive messages.
             ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+
             testChannel[1].Rollback();
 
-            // Close end-point 1 without committing the message, then re-open to consume again.
-            CloseEndPoint(1);
-            SetUpEndPoint(1, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, true, ExchangeNameDefaults.DIRECT, false, null);
-
             // Try to receive messages.
-            ConsumeNMessagesOnly(1, "A", testConsumer[1]);
+            ConsumeNMessagesOnly(1, "A", testConsumer[2]);
+
+            CloseEndPoint(2);
         }
     }
 }

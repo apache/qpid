@@ -23,6 +23,8 @@ using System.Threading;
 using log4net;
 using NUnit.Framework;
 using Apache.Qpid.Messaging;
+using Apache.Qpid.Client.Qms;
+using Apache.Qpid.Client;
 
 namespace Apache.Qpid.Integration.Tests.testcases
 {
@@ -52,11 +54,20 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
         /// <summary>Holds the last received error condition, for examination by the tests sending thread.</summary>
         private Exception lastErrorException;
+
+        /// <summary> Holds the test connection. </summary>
+        protected IConnection _connection;
+
+        /// <summary> Holds the test channel. </summary>
+        protected IChannel _channel;
         
         [SetUp]
         public override void Init()
         {
             base.Init();
+
+            _connection = new AMQConnection(connectionInfo);
+            _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
 
             errorEvent = new ManualResetEvent(false);
             lastErrorException = null;
@@ -70,7 +81,9 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             try
             {
-                _connection.Stop();
+              _connection.Stop();
+              _connection.Close();
+              _connection.Dispose();
             } 
             finally 
             {
