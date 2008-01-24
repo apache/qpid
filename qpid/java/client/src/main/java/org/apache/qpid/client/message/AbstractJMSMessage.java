@@ -724,7 +724,14 @@ public abstract class AbstractJMSMessage extends AMQMessage implements org.apach
 
     public int getContentLength()
     {
-        return _data.remaining();
+        if(_data != null)
+        {
+            return _data.remaining();
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public void setConsumer(BasicMessageConsumer basicMessageConsumer)
