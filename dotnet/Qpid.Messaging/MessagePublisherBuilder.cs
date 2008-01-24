@@ -31,7 +31,7 @@ namespace Apache.Qpid.Messaging
         /// Default value for mandatory flag is true, i.e. server will not silently drop messages where no queue is
         /// connected to the exchange for the message
         /// </summary>
-        const bool DEFAULT_MANDATORY = false;
+        const bool DEFAULT_MANDATORY = true;
 
         IChannel _channel;
         string _exchangeName = null;
