@@ -29,6 +29,7 @@
 #include <sstream>
 #include <fstream>
 #include <iomanip>
+#include <stdexcept>
 #include <syslog.h>
 
 
@@ -50,7 +51,7 @@ struct OstreamOutput : public Logger::Output {
         : out(new ofstream(file.c_str())), mine(out)
     {
         if (!out->good())
-            throw Exception("Can't open log file: "+file);
+            throw std::runtime_error("Can't open log file: "+file);
     }
 
     void log(const Statement&, const std::string& m) {
