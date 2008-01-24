@@ -62,13 +62,12 @@ void Dispatcher::start()
 }
 
 void Dispatcher::run()
-{    
+{
     Mutex::ScopedLock l(lock);
     if (running) 
         throw Exception("Dispatcher is already running.");
     boost::state_saver<bool>  reset(running); // Reset to false on exit.
     running = true;
-    queue->open();
     try {
         while (!queue->isClosed()) {
             Mutex::ScopedUnlock u(lock);

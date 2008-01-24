@@ -45,6 +45,10 @@ ScopedDivert::~ScopedDivert()
     demuxer.remove(dest); 
 }
 
+Demux::Demux() : defaultQueue(new Queue()) {}
+
+Demux::~Demux() { close(); }
+
 Demux::QueuePtr ScopedDivert::getQueue()
 {
     return queue;

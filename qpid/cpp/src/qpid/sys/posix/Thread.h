@@ -60,16 +60,16 @@ class Thread
 Thread::Thread() : thread(0) {}
 
 Thread::Thread(Runnable* runnable) {
-    QPID_POSIX_THROW_IF(pthread_create(&thread, NULL, runRunnable, runnable));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_create(&thread, NULL, runRunnable, runnable));
 }
 
 Thread::Thread(Runnable& runnable) {
-    QPID_POSIX_THROW_IF(pthread_create(&thread, NULL, runRunnable, &runnable));
+    QPID_POSIX_ASSERT_THROW_IF(pthread_create(&thread, NULL, runRunnable, &runnable));
 }
 
 void Thread::join(){
     if (thread != 0)
-        QPID_POSIX_THROW_IF(pthread_join(thread, 0));
+        QPID_POSIX_ASSERT_THROW_IF(pthread_join(thread, 0));
 }
 
 long Thread::id() {
@@ -84,7 +84,7 @@ Thread Thread::current() {
 
 void Thread::yield() 
 {
-    QPID_POSIX_THROW_IF(pthread_yield());
+    QPID_POSIX_ASSERT_THROW_IF(pthread_yield());
 }
 
 

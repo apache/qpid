@@ -59,7 +59,6 @@ class ConnectionHandler : private StateManager,
     void send(const framing::AMQBody& body);
     void error(uint16_t code, const std::string& message, uint16_t classId = 0, uint16_t methodId = 0);
     void error(uint16_t code, const std::string& message, framing::AMQBody* body);
-    void fail(const std::string& message);
 
 public:
     using InputHandler::handle;
@@ -75,6 +74,7 @@ public:
 
     void waitForOpen();
     void close();
+    void fail(const std::string& message);
 
     CloseListener onClose;
     ErrorListener onError;

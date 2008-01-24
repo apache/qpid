@@ -22,6 +22,7 @@
  *
  */
 
+#include "SocketProxy.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/client/Connection.h"
@@ -30,52 +31,74 @@
 #include "qpid/client/SubscriptionManager.h"
 
 /**
- * A fixture to create an in-process broker and connect to it for tests.
+ * A fixture with an in-process broker.
  */
-struct BrokerFixture {
+struct  BrokerFixture {
     typedef qpid::broker::Broker Broker;
     typedef boost::shared_ptr<Broker> BrokerPtr;
 
-    struct OpenConnection : public qpid::client::Connection {
-        OpenConnection(int port) { open("localhost", port); }
-    };
-    
     BrokerPtr broker;
     qpid::sys::Thread brokerThread;
-    OpenConnection connection;
-    qpid::client::Session_0_10 session;
-    qpid::client::SubscriptionManager subs;
-    qpid::client::LocalQueue lq;
-        
-    BrokerPtr newBroker() {
+
+    BrokerFixture() {
         Broker::Options opts;
         opts.port=0;
         opts.workerThreads=1;
-        BrokerPtr b=Broker::create(opts);
-        // TODO aconway 2007-12-05: Without the following line
-        // the test can hang in the connection ctor. This is
-        // a race condition that should be fixed.
-        b->getPort(); 
-        return b;
+        broker = Broker::create(opts);
+        // TODO aconway 2007-12-05: At one point BrokerFixture
+        // tests could hang in Connection ctor if the following
+        // line is removed. This may not be an issue anymore.
+        broker->getPort();
+        brokerThread = qpid::sys::Thread(*broker);
     };
 
-    BrokerFixture() : broker(newBroker()),
-                      brokerThread(*broker),
-                      connection(broker->getPort()),
-                      session(connection.newSession()),
-                      subs(session)
-    {}
-
     ~BrokerFixture() {
-        connection.close();
         broker->shutdown();
         brokerThread.join();
     }
 
-    /** Open a connection to the local broker */
+    /** Open a connection to the broker. */
     void open(qpid::client::Connection& c) {
         c.open("localhost", broker->getPort());
     }
 };
+
+struct LocalConnection : public qpid::client::Connection {
+    LocalConnection(uint16_t port) { open("localhost", port); }
+};
+
+/** A local client connection via a socket proxy. */
+struct ProxyConnection : public qpid::client::Connection {
+    SocketProxy proxy;
+    ProxyConnection(int brokerPort) : proxy(brokerPort) {
+        open("localhost", proxy.getPort());
+    }
+    ~ProxyConnection() { close(); }
+};
+
+/**
+ * A BrokerFixture with open Connection, Session and
+ * SubscriptionManager and LocalQueue for convenience.
+ */
+template <class ConnectionType>
+struct  SessionFixtureT : BrokerFixture {
+    ConnectionType connection;
+    qpid::client::Session_0_10 session;
+    qpid::client::SubscriptionManager subs;
+    qpid::client::LocalQueue lq;
+
+    SessionFixtureT() : connection(broker->getPort()),
+                       session(connection.newSession()),
+                       subs(session)
+    {}
+
+    ~SessionFixtureT() {
+        connection.close();
+    }
+};
+
+typedef SessionFixtureT<LocalConnection> SessionFixture;
+typedef SessionFixtureT<ProxyConnection> ProxySessionFixture;
+
 
 #endif  /*!TESTS_BROKERFIXTURE_H*/

@@ -21,7 +21,6 @@
 
 #include "unit_test.h"
 #include "BrokerFixture.h"
-#include "SocketProxy.h"
 #include "qpid/client/SubscriptionManager.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
@@ -52,7 +51,7 @@ struct Catcher : public Runnable {
         try { f(); }
         catch(const Ex& e) {
             caught=true;
-            BOOST_MESSAGE(e.what());
+            BOOST_MESSAGE(string("Caught expected exception: ")+e.what());
         }
         catch(const std::exception& e) {
             BOOST_ERROR(string("Bad exception: ")+e.what());
@@ -71,37 +70,29 @@ struct Catcher : public Runnable {
     }
 };
 
-// FIXME aconway 2007-12-11: Disabled hanging tests.
-// BOOST_FIXTURE_TEST_CASE(DisconnectedGet, BrokerFixture) {
-//     ProxyConnection c(broker->getPort());
-//     Catcher<ClosedException> get(bind(&Session_0_10::get, c.session));
-//     c.proxy.client.close();           // Close the client side.
-//     BOOST_CHECK(get.join());
-// }
+BOOST_FIXTURE_TEST_CASE(DisconnectedPop, ProxySessionFixture) {
+    ProxyConnection c(broker->getPort());
+    session.queueDeclare(arg::queue="q");
+    subs.subscribe(lq, "q");
+    Catcher<ClosedException> pop(bind(&LocalQueue::pop, boost::ref(lq)));
+    connection.proxy.close();
+    BOOST_CHECK(pop.join());
+}
 
-// BOOST_FIXTURE_TEST_CASE(DisconnectedPop, BrokerFixture) {
-//     ProxyConnection c(broker->getPort());
-//     c.session.queueDeclare(arg::queue="q");
-//     subs.subscribe(lq, "q");
-//     Catcher<ClosedException> pop(bind(&LocalQueue::pop, boost::ref(lq)));
-//     c.proxy.client.close();
-//     BOOST_CHECK(pop.join());
-// }
+BOOST_FIXTURE_TEST_CASE(DisconnectedListen, ProxySessionFixture) {
+    struct NullListener : public MessageListener {
+        void received(Message&) { BOOST_FAIL("Unexpected message"); }
+    } l;
+    ProxyConnection c(broker->getPort());
+    session.queueDeclare(arg::queue="q");
+    subs.subscribe(l, "q");
+    Thread t(subs);
+    connection.proxy.close();
+    t.join();
+    BOOST_CHECK_THROW(session.close(), InternalErrorException);    
+}
 
-// BOOST_FIXTURE_TEST_CASE(DisconnectedListen, BrokerFixture) {
-//     struct NullListener : public MessageListener {
-//         void received(Message&) { BOOST_FAIL("Unexpected message"); }
-//     } l;
-//     ProxyConnection c(broker->getPort());
-//     c.session.queueDeclare(arg::queue="q");
-//     subs.subscribe(l, "q");
-//     Thread t(subs);
-//     c.proxy.client.close();
-//     t.join();
-//     BOOST_CHECK_THROW(c.session.close(), InternalErrorException);    
-// }
-
-BOOST_FIXTURE_TEST_CASE(NoSuchQueueTest, BrokerFixture) {
+BOOST_FIXTURE_TEST_CASE(NoSuchQueueTest, SessionFixture) {
     BOOST_CHECK_THROW(subs.subscribe(lq, "no such queue").sync(), NotFoundException);
 }
 
