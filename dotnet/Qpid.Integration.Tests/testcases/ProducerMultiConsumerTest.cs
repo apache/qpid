@@ -29,11 +29,12 @@ using Apache.Qpid.Client;
 
 namespace Apache.Qpid.Integration.Tests.testcases
 {
-    /// ProducerMultiConsumerTest provides some simple topic exchange based fan-out testing.
+    /// ProducerMultiConsumerTest provides some tests for one producer and multiple consumers.
     ///
     /// <p><table id="crc"><caption>CRC Card</caption>
     /// <tr><th> Responsibilities <th> Collaborations
     /// <tr><td> Check that all consumers on a topic each receive all message on it.
+    /// <tr><td> Check that consumers on the same queue receive each message once accross all consumers.
     /// </table>
     /// </summary>
     [TestFixture, Category("Integration")]
@@ -51,13 +52,16 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private const int MESSAGE_COUNT = 10;
 
         /// <summary>Monitor used to signal succesfull receipt of all test messages.</summary>
-        AutoResetEvent _finishedEvent = new AutoResetEvent(false);
+        AutoResetEvent _finishedEvent;
 
         /// <summary>Used to count test messages received so far.</summary>
-        private int _messageReceivedCount = 0;
+        private int _messageReceivedCount;
+
+        /// <summary>Used to hold the expected number of messages to receive.</summary>
+        private int expectedMessageCount;
 
         /// <summary>Flag used to indicate that all messages really were received, and that the test did not just time out. </summary>
-        private bool allReceived = false;
+        private bool allReceived;
 
         /// <summary> Creates one producing end-point and many consuming end-points connected on a topic. </summary>
         [SetUp]
@@ -65,17 +69,10 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             base.Init();
 
-            // Create end-points for all the consumers in the test.
-            for (int i = 1; i <= CONSUMER_COUNT; i++)
-            {
-                SetUpEndPoint(i, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.TOPIC,
-                              true, false, null);
-                testConsumer[i].OnMessage = new MessageReceivedDelegate(OnMessage);
-            }
-
-            // Create an end-point to publish to the test topic.
-            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.TOPIC,
-                          true, false, null);
+            // Reset all test counts and flags.
+            _messageReceivedCount = 0;
+            allReceived = false;
+            _finishedEvent = new AutoResetEvent(false);
         }
 
         /// <summary> Cleans up all test end-points. </summary>
@@ -84,9 +81,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             try
             {
-                CloseEndPoint(0);
-
-                for (int i = 1; i <= CONSUMER_COUNT; i++)
+                for (int i = 0; i <= CONSUMER_COUNT; i++)
                 {
                     CloseEndPoint(i);
                 }
@@ -101,7 +96,19 @@ namespace Apache.Qpid.Integration.Tests.testcases
         [Test]
         public void AllConsumerReceiveAllMessagesOnTopic()
         {
-            Thread.Sleep(500);
+            // Create end-points for all the consumers in the test.
+            for (int i = 1; i <= CONSUMER_COUNT; i++)
+            {
+                SetUpEndPoint(i, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.TOPIC,
+                              true, false, null);
+                testConsumer[i].OnMessage = new MessageReceivedDelegate(OnMessage);
+            }
+
+            // Create an end-point to publish to the test topic.
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.TOPIC,
+                          true, false, null);
+
+            expectedMessageCount = (MESSAGE_COUNT * CONSUMER_COUNT);
 
             for (int i = 0; i < MESSAGE_COUNT; i++)
             {
@@ -111,7 +118,36 @@ namespace Apache.Qpid.Integration.Tests.testcases
             _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 10), false);
 
             // Check that all messages really were received.
-            Assert.IsTrue(allReceived, "All messages were not received, only got: " + _messageReceivedCount);
+            Assert.IsTrue(allReceived, "All messages were not received, only got " + _messageReceivedCount + " but wanted " + expectedMessageCount);
+        }
+
+        /// <summary> Check that consumers on the same queue receive each message once accross all consumers. </summary>
+        [Test]
+        public void AllConsumerReceiveAllMessagesOnDirect()
+        {
+            // Create end-points for all the consumers in the test.
+            for (int i = 1; i <= CONSUMER_COUNT; i++)
+            {
+                SetUpEndPoint(i, false, true, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.DIRECT,
+                              true, false, null);
+                testConsumer[i].OnMessage = new MessageReceivedDelegate(OnMessage);
+            }
+
+            // Create an end-point to publish to the test topic.
+            SetUpEndPoint(0, true, false, TEST_ROUTING_KEY + testId, AcknowledgeMode.AutoAcknowledge, false, ExchangeNameDefaults.DIRECT,
+                          true, false, null);
+
+            expectedMessageCount = MESSAGE_COUNT;
+
+            for (int i = 0; i < MESSAGE_COUNT; i++)
+            {
+                testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
+            }
+
+            _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 10), false);
+
+            // Check that all messages really were received.
+            Assert.IsTrue(allReceived, "All messages were not received, only got: " + _messageReceivedCount + " but wanted " + expectedMessageCount);
         }
 
         /// <summary> Atomically increments the message count on every message, and signals once all messages in the test are received. </summary>
@@ -119,7 +155,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {
             int newCount = Interlocked.Increment(ref _messageReceivedCount);
 
-            if (newCount > (MESSAGE_COUNT * CONSUMER_COUNT))
+            if (newCount > expectedMessageCount)
             {
                 allReceived = true;
                 _finishedEvent.Set();
