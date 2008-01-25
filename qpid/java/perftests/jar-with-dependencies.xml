@@ -74,7 +74,7 @@
             <directory>target</directory>
             <outputDirectory></outputDirectory>
             <includes>
-                <include>qpid-perftests-1.0-incubating-M2-SNAPSHOT.jar</include>
+                <include>qpid-perftests-1.0-incubating-M3-SNAPSHOT.jar</include>
             </includes>
         </fileSet>
 

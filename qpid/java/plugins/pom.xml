@@ -3,13 +3,13 @@
     <groupId>org.apache.qpid</groupId>
     <artifactId>jython-plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>1.0-incubating-M2-SNAPSHOT</version>
+    <version>1.0-incubating-M3-SNAPSHOT</version>
     <name>Jython Launcher</name>
 
     <parent>
         <groupId>org.apache.qpid</groupId>
         <artifactId>qpid</artifactId>
-        <version>1.0-incubating-M2-SNAPSHOT</version>
+        <version>1.0-incubating-M3-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
