@@ -23,14 +23,14 @@
     <groupId>org.apache.qpid</groupId>
     <artifactId>qpid-systests-distribution</artifactId>
     <packaging>jar</packaging>
-    <version>1.0-incubating-M2-SNAPSHOT</version>
+    <version>1.0-incubating-M3-SNAPSHOT</version>
     <name>Qpid System Tests Distribution</name>
     <url>http://cwiki.apache.org/confluence/display/qpid</url>
 
     <parent>
         <groupId>org.apache.qpid</groupId>
         <artifactId>qpid</artifactId>
-        <version>1.0-incubating-M2-SNAPSHOT</version>
+        <version>1.0-incubating-M3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
