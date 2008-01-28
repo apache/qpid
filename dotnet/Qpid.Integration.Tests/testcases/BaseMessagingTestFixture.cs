@@ -44,7 +44,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
         private const long RECEIVE_WAIT = 500;
 
         /// <summary> The default AMQ connection URL to use for tests. </summary>
-        const string connectionUri = "amqp://guest:guest@test/test?brokerlist='tcp://localhost:5672'";
+        public const string connectionUri = "amqp://guest:guest@test/test?brokerlist='tcp://localhost:5672'";
 
         /// <summary> The default AMQ connection URL parsed as a connection info. </summary>
         protected IConnectionInfo connectionInfo;
@@ -112,7 +112,7 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             testConnection[n] = new AMQConnection(connectionInfo);            
             testConnection[n].Start();
-            testChannel[n] = testConnection[n].CreateChannel(transacted, ackMode, 1);
+            testChannel[n] = testConnection[n].CreateChannel(transacted, ackMode);
             
             if (producer)
             {

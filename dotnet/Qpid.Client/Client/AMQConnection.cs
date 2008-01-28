@@ -816,10 +816,7 @@ namespace Apache.Qpid.Client
             if (ProtocolInitiation.CURRENT_PROTOCOL_VERSION_MAJOR != 7)
             {
                 // Basic.Qos frame appears to not be supported by OpenAMQ 1.0d.
-                _protocolWriter.SyncWrite(
-                    BasicQosBody.CreateAMQFrame(
-                    channelId, (uint)prefetchHigh, 0, false),
-                    typeof (BasicQosOkBody));                
+                _protocolWriter.SyncWrite(BasicQosBody.CreateAMQFrame(channelId, 0, (ushort)prefetchHigh, false), typeof (BasicQosOkBody));
             }
             
             if (transacted)

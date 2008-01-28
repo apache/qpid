@@ -82,7 +82,8 @@ namespace Apache.Qpid.Integration.Tests.testcases
         {          
             // Ensure that the base init method is called. It establishes a connection with the broker.
             base.Init();   
-         
+
+            connectionInfo = QpidConnectionInfo.FromUrl(connectionUri);         
             _connection = new AMQConnection(connectionInfo);
             _channel = _connection.CreateChannel(false, AcknowledgeMode.AutoAcknowledge, 500, 300);
 
