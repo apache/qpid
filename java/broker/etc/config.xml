@@ -100,6 +100,10 @@
                     <class>org.apache.qpid.server.store.MemoryMessageStore</class>
                 </store>
 
+                <housekeeping>
+                    <expiredMessageCheckPeriod>20000</expiredMessageCheckPeriod>
+                </housekeeping>
+
                 <security>
                     <!-- Need protocol changes to allow this-->
                     <authentication>

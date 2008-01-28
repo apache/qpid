@@ -37,7 +37,8 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
     /** Used to control the round robin delivery of content */
     private int _currentSubscriber;
-    private final Object _subscriptionsChange = new Object();
+
+    private final Object _changeLock = new Object();
 
 
     /** Accessor for unit tests. */
@@ -48,7 +49,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
 
     public void addSubscriber(Subscription subscription)
     {
-        synchronized (_subscriptionsChange)
+        synchronized (_changeLock)
         {
             _subscriptions.add(subscription);
         }
@@ -66,7 +67,7 @@ class SubscriptionSet implements WeightedSubscriptionManager
         // TODO: possibly need O(1) operation here.
 
         Subscription sub = null;
-        synchronized (_subscriptionsChange)
+        synchronized (_changeLock)
         {
             int subIndex = _subscriptions.indexOf(subscription);
 
@@ -226,4 +227,11 @@ class SubscriptionSet implements WeightedSubscriptionManager
     {
         return _subscriptions.size();
     }
+
+
+    public Object getChangeLock()
+    {
+        return _changeLock;
+    }
+    
 }

@@ -97,4 +97,6 @@ interface DeliveryManager
     long getOldestMessageArrival();
 
     void subscriberHasPendingResend(boolean hasContent, Subscription subscription, QueueEntry msg);
+
+    void removeExpired() throws AMQException;
 }

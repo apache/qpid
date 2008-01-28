@@ -283,7 +283,10 @@ public class TransportConnection
     public static void killAllVMBrokers()
     {
         _logger.info("Killing all VM Brokers");
-        _acceptor.unbindAll();
+        if (_acceptor != null)
+        {
+        	_acceptor.unbindAll();
+        }
         synchronized (_inVmPipeAddress)
         {
             _inVmPipeAddress.clear();
