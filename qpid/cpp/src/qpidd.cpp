@@ -90,7 +90,8 @@ struct QpiddOptions : public qpid::Options {
         for (Plugin::Plugins::const_iterator i = plugins.begin();
              i != plugins.end();
              ++i)
-            add(*(*i)->getOptions());
+            if ((*i)->getOptions() != 0)
+                add(*(*i)->getOptions());
     }
 
     void usage() const {
@@ -141,12 +142,15 @@ struct QpiddDaemon : public Daemon {
     }
 };
 
-void tryShlib(const char* libname) {
+void tryShlib(const char* libname, bool noThrow) {
     try {
         Shlib shlib(libname);
         QPID_LOG (info, "Loaded Module: " << libname);
     }
-    catch (const exception& e) {}
+    catch (const exception& e) {
+        if (!noThrow)
+            throw;
+    }
 }
 
 void loadModuleDir (string dirname, bool isDefault)
@@ -165,7 +169,7 @@ void loadModuleDir (string dirname, bool isDefault)
     {
         if (!fs::is_directory(*itr) &&
             itr->string().find (".so") == itr->string().length() - 3)
-            tryShlib (itr->string().data());
+            tryShlib (itr->string().data(), true);
     }
 }
   
@@ -187,7 +191,7 @@ int main(int argc, char* argv[])
                 for (vector<string>::iterator iter = bootOptions.module.load.begin();
                      iter != bootOptions.module.load.end();
                      iter++)
-                    tryShlib (iter->data());
+                    tryShlib (iter->data(), false);
 
                 bool isDefault = defaultPath == bootOptions.module.loadDir;
                 loadModuleDir (bootOptions.module.loadDir, isDefault);
