@@ -19,31 +19,32 @@
  *
  */
 using System;
-using System.Text;
 using System.Threading;
 using log4net;
 using NUnit.Framework;
 using Apache.Qpid.Messaging;
 using Apache.Qpid.Client.Qms;
 using Apache.Qpid.Client;
+using Apache.Qpid.Integration.Tests.testcases;
 
-namespace Apache.Qpid.Integration.Tests.testcases
+namespace Apache.Qpid.Integration.Tests.interactive
 {
-    /// ProducerMultiConsumerTest provides some tests for one producer and multiple consumers.
+    /// <summary>
+    /// SendReceiveTest provides a quick interactive send-receive test, where the user is prompted to trigger each send or receive.
     ///
     /// <p><table id="crc"><caption>CRC Card</caption>
     /// <tr><th> Responsibilities <th> Collaborations
-    /// <tr><td> Check that all consumers on a topic each receive all message on it.
-    /// <tr><td> Check that consumers on the same queue receive each message once accross all consumers.
+    /// <tr><td> Run an interactive send-receive loop prompting user to trigger each event.
     /// </table>
     /// </summary>
-    [TestFixture, Category("Integration")]
-    public class ProducerMultiConsumerTest : BaseMessagingTestFixture
+    [TestFixture, Category("Interactive")]
+    public class SendReceiveTest : BaseMessagingTestFixture
     {
-        private static readonly ILog _logger = LogManager.GetLogger(typeof(ProducerMultiConsumerTest));
-        
-        /// <summary>Base name for the routing key used for this test (made unique by adding in test id).</summary>
-        private const string TEST_ROUTING_KEY = "ProducerMultiConsumerTest";
+        /// <summary>Used for debugging purposes.</summary>
+        private static ILog log = LogManager.GetLogger(typeof(SendReceiveTest));
+
+        /// <summary>Defines the name of the test topic to use with the tests.</summary>
+        public const string TEST_ROUTING_KEY = "quicktestkey";
 
         /// <summary>The number of consumers to test.</summary>
         private const int CONSUMER_COUNT = 5;
@@ -112,6 +113,8 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             expectedMessageCount = (MESSAGE_COUNT * CONSUMER_COUNT);
 
+            PromptAndWait("Press to send...");
+
             for (int i = 0; i < MESSAGE_COUNT; i++)
             {
                 testProducer[0].Send(testChannel[0].CreateTextMessage("A"));
@@ -119,12 +122,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
 
             _finishedEvent.WaitOne(new TimeSpan(0, 0, 0, 10), false);
 
+            PromptAndWait("Press to complete test...");
+
             // Check that all messages really were received.
             Assert.IsTrue(allReceived, "All messages were not received, only got " + _messageReceivedCount + " but wanted " + expectedMessageCount);
         }
 
         /// <summary> Check that consumers on the same queue receive each message once accross all consumers. </summary>
-        [Test]
+        //[Test]
         public void AllConsumerReceiveAllMessagesOnDirect()
         {
             // Create end-points for all the consumers in the test.
@@ -163,5 +168,14 @@ namespace Apache.Qpid.Integration.Tests.testcases
                 _finishedEvent.Set();
             }
         }        
+
+        /// <summary>Prompts the user on stdout and waits for a reply on stdin, using the specified prompt message.</summary>
+        ///
+        /// <param name="message">The message to prompt the user with.</param>
+        private void PromptAndWait(string message)
+        {
+            Console.WriteLine("\n" + message);
+            Console.ReadLine();
+        }
     }
 }
