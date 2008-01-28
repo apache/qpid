@@ -106,26 +106,34 @@ BOOST_FIXTURE_TEST_CASE(testDispatcher, ClientSessionFixture)
 {
     session =connection.newSession();
     declareSubscribe();
-
-    TransferContent msg1("One");
-    msg1.getDeliveryProperties().setRoutingKey("my-queue");
-    session.messageTransfer(content=msg1);
-
-    TransferContent msg2("Two");
-    msg2.getDeliveryProperties().setRoutingKey("my-queue");
-    session.messageTransfer(content=msg2);
-
-    TransferContent msg3("Three");
-    msg3.getDeliveryProperties().setRoutingKey("my-queue");
-    session.messageTransfer(content=msg3);
-                
-    DummyListener listener(session, "my-dest", 3);
+    size_t count = 100;
+    for (size_t i = 0; i < count; ++i) 
+        session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
+    DummyListener listener(session, "my-dest", count);
     listener.run();
-    BOOST_CHECK_EQUAL((size_t) 3, listener.messages.size());        
-    BOOST_CHECK_EQUAL(std::string("One"), listener.messages[0].getData());
-    BOOST_CHECK_EQUAL(std::string("Two"), listener.messages[1].getData());
-    BOOST_CHECK_EQUAL(std::string("Three"), listener.messages[2].getData());
+    BOOST_REQUIRE_EQUAL(count, listener.messages.size());        
+    for (size_t i = 0; i < count; ++i) 
+        BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
 }
+
+/* FIXME aconway 2008-01-28: hangs
+BOOST_FIXTURE_TEST_CASE(testDispatcherThread, ClientSessionFixture)
+{
+    session =connection.newSession();
+    declareSubscribe();
+    size_t count = 10000;
+    DummyListener listener(session, "my-dest", count);
+    sys::Thread t(listener);
+    for (size_t i = 0; i < count; ++i) {
+        session.messageTransfer(content=TransferContent(lexical_cast<string>(i), "my-queue"));
+        if (i%100 == 0) cout << "T" << i << std::flush;
+    }
+    t.join();
+    BOOST_REQUIRE_EQUAL(count, listener.messages.size());        
+    for (size_t i = 0; i < count; ++i) 
+        BOOST_CHECK_EQUAL(lexical_cast<string>(i), listener.messages[i].getData());
+}
+*/
 
 BOOST_FIXTURE_TEST_CASE(_FIXTURE, ClientSessionFixture)
 {
