@@ -36,7 +36,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Url.cpp Uuid.cpp \
 	Shlib.cpp FieldValue.cpp FieldTable.cpp Array.cpp \
 	InlineVector.cpp \
-	IList.cpp
+	IList.cpp \
+	ClientSessionTest.cpp
 
 check_LTLIBRARIES += libshlibtest.la
 libshlibtest_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -78,8 +79,7 @@ broker_unit_tests =	\
   TxAckTest		\
   TxBufferTest		\
   TxPublishTest		\
-  MessageBuilderTest    \
-  ClientSessionTest
+  MessageBuilderTest
 
 #client_unit_tests =	\
 #  ClientChannelTest     
