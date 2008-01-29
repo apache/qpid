@@ -50,6 +50,8 @@ std::auto_ptr<SessionState>  SessionManager::open(
     std::auto_ptr<SessionState> session(
         new SessionState(*this, h, timeout_, ack));
     active.insert(session->getId());
+    for_each(observers.begin(), observers.end(),
+             boost::bind(&Observer::opened, _1,boost::ref(*session)));
     return session;
 }
 
@@ -100,6 +102,10 @@ void SessionManager::eraseExpired() {
             suspended.erase(suspended.begin(), keep);
         }
     }
+}
+
+void SessionManager::add(const intrusive_ptr<Observer>& o) {
+    observers.push_back(o);
 }
 
 }} // namespace qpid::broker
