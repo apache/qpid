@@ -59,7 +59,7 @@ public class ExchangeMBeanTest  extends TestCase
         mbean.createNewBinding(_queue.getName().toString(), "binding2");
 
         TabularData data = mbean.bindings();
-        ArrayList<CompositeData> list = new ArrayList<CompositeData>(data.values());
+        ArrayList<Object> list = new ArrayList<Object>(data.values());
         assertTrue(list.size() == 2);
 
         // test general exchange properties
@@ -85,7 +85,7 @@ public class ExchangeMBeanTest  extends TestCase
         mbean.createNewBinding(_queue.getName().toString(), "binding2");
 
         TabularData data = mbean.bindings();
-        ArrayList<CompositeData> list = new ArrayList<CompositeData>(data.values());
+        ArrayList<Object> list = new ArrayList<Object>(data.values());
         assertTrue(list.size() == 2);
 
         // test general exchange properties
@@ -111,7 +111,7 @@ public class ExchangeMBeanTest  extends TestCase
         mbean.createNewBinding(_queue.getName().toString(), "key3=binding3");
 
         TabularData data = mbean.bindings();
-        ArrayList<CompositeData> list = new ArrayList<CompositeData>(data.values());
+        ArrayList<Object> list = new ArrayList<Object>(data.values());
         assertTrue(list.size() == 2);
 
         // test general exchange properties
