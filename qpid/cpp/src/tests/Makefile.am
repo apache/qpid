@@ -123,7 +123,6 @@ EXTRA_DIST +=								\
   .valgrind.supp							\
   .valgrindrc								\
   MessageUtils.h							\
-  MockChannel.h								\
   MockConnectionInputHandler.h						\
   TxMocks.h								\
   qpid_test_plugin.h

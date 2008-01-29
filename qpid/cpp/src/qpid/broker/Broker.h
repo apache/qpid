@@ -46,11 +46,6 @@
 #include <vector>
 
 namespace qpid { 
-
-namespace framing {
-class HandlerUpdater;
-}
-
 namespace broker {
 
 /**
@@ -99,12 +94,6 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     /** Shut down the broker */
     virtual void shutdown();
 
-    /** Register a handler updater. */
-    void add(const shared_ptr<framing::HandlerUpdater>&);
-    
-    /** Apply all handler updaters to a handler chain pair. */
-    void update(framing::ChannelId, framing::FrameHandler::Chains&); 
-
     void setStore (MessageStore*);
     MessageStore& getStore() { return *store; }
     QueueRegistry& getQueues() { return queues; }
@@ -125,13 +114,11 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
     Options config;
     sys::Acceptor::shared_ptr acceptor;
     MessageStore* store;
-    typedef std::vector<shared_ptr<framing::HandlerUpdater> > HandlerUpdaters;
 
     QueueRegistry queues;
     ExchangeRegistry exchanges;
     ConnectionFactory factory;
     DtxManager dtxManager;
-    HandlerUpdaters handlerUpdaters;
     SessionManager sessionManager;
     management::ManagementAgent::shared_ptr managementAgent;
     management::Broker::shared_ptr mgmtObject;
