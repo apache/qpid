@@ -11,11 +11,13 @@ import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Session;
 import org.apache.qpidity.nclient.Client;
+import org.apache.qpidity.nclient.ClosedListener;
+import org.apache.qpidity.ErrorCode;
 import org.apache.qpidity.QpidException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
+public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, ClosedListener
 {
     /**
      * This class logger.
@@ -137,5 +139,14 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate
             throw new AMQException(AMQConstant.CHANNEL_ERROR, "cannot close connection", e);
         }
 
+    }
+
+    public void onClosed(ErrorCode errorCode, String reason)
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Received a connection close from the broker: Error code : " + errorCode.getCode());
+        }
+        _conn._exceptionListener.onException(new JMSException(reason,String.valueOf(errorCode.getCode())));
     }
 }

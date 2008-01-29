@@ -5,10 +5,10 @@ public enum ErrorCode
     //Qpid specific - for the time being
     UNDEFINED(1,"undefined",true),
     MESSAGE_REJECTED(1,"message_rejected",true),
-    
+
     //This might change in the spec, the error class is not applicable
     NO_ERROR(200,"reply-success",true),
-    
+
     //From the spec
     CONTENT_TOO_LARGE(311,"content-too-large",false),
     NO_ROUTE(312,"no-route",false),
@@ -16,10 +16,10 @@ public enum ErrorCode
     CONNECTION_FORCED(320,"connection-forced",true),
     INVALID_PATH(402,"invalid-path",true),
     ACCESS_REFUSED(403,"access-refused",false),
-    NOT_FOUND(404,"not-found",false),    
-    RESOURCE_LOCKED(405,"resource-locked",false),    
+    NOT_FOUND(404,"not-found",false),
+    RESOURCE_LOCKED(405,"resource-locked",false),
     PRE_CONDITION_FAILED(406,"precondition-failed",false),
-    
+
     FRAME_ERROR(501,"frame_error",true),
     SYNTAX_ERROR(502,"syntax_error",true),
     COMMAND_INVALID(503,"command_invalid",true),
@@ -28,11 +28,11 @@ public enum ErrorCode
     NOT_IMPLEMENTED(540,"not_implemented",true),
     INTERNAL_ERROR(541,"internal_error",true),
     INVALID_ARGUMENT(542,"invalid_argument",true);
-        
+
     private int _code;
     private String _desc;
     private boolean _hardError;
-    
+
     private ErrorCode(int code,String desc,boolean hardError)
     {
         _code = code;
@@ -49,12 +49,12 @@ public enum ErrorCode
     {
         return _desc;
     }
-    
+
     private boolean isHardError()
     {
         return _hardError;
     }
-    
+
     public static ErrorCode get(int code)
     {
         switch(code)
@@ -72,17 +72,16 @@ public enum ErrorCode
             case 501 : return FRAME_ERROR;
             case 502 : return SYNTAX_ERROR;
             case 503 : return COMMAND_INVALID;
-            case 504 : return SESSION_ERROR;            
+            case 504 : return SESSION_ERROR;
             case 530 : return NOT_ALLOWED;
             case 540 : return NOT_IMPLEMENTED;
             case 541 : return INTERNAL_ERROR;
             case 542 : return INVALID_ARGUMENT;
-            
+
             default : return UNDEFINED;
         }
     }
-    
-}
+ }
 
 /*
 
