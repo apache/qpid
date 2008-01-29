@@ -111,7 +111,6 @@ libqpidcommon_la_SOURCES = \
   qpid/framing/Array.cpp \
   qpid/framing/BodyHolder.cpp \
   qpid/framing/BodyHandler.cpp \
-  qpid/framing/ChannelAdapter.cpp \
   qpid/framing/Buffer.cpp \
   qpid/framing/FieldTable.cpp \
   qpid/framing/FieldValue.cpp \
@@ -358,7 +357,6 @@ nobase_include_HEADERS = \
   qpid/framing/BodyHandler.h \
   qpid/framing/Buffer.h \
   qpid/framing/ChannelHandler.h \
-  qpid/framing/ChannelAdapter.h \
   qpid/framing/FieldTable.h \
   qpid/framing/FieldValue.h \
   qpid/framing/FrameDefaultVisitor.h \
@@ -367,7 +365,6 @@ nobase_include_HEADERS = \
   qpid/framing/FrameSet.h \
   qpid/framing/FramingContent.h \
   qpid/framing/Handler.h \
-  qpid/framing/HandlerUpdater.h \
   qpid/framing/HeaderProperties.h \
   qpid/framing/InitiationHandler.h \
   qpid/framing/Invoker.h \

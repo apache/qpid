@@ -35,7 +35,6 @@
 #include "qpid/log/Statement.h"
 #include "qpid/Url.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/HandlerUpdater.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Acceptor.h"
 #include "qpid/sys/ConnectionInputHandler.h"
@@ -49,7 +48,6 @@
 #include <memory>
 
 using qpid::sys::Acceptor;
-using qpid::framing::HandlerUpdater;
 using qpid::framing::FrameHandler;
 using qpid::framing::ChannelId;
 using qpid::management::ManagementAgent;
@@ -236,17 +234,6 @@ Acceptor& Broker::getAcceptor() const {
         QPID_LOG(info, "Listening on port " << getPort());
     }
     return *acceptor;
-}
-
-void Broker::add(const shared_ptr<HandlerUpdater>& updater) {
-    QPID_LOG(debug, "Broker added HandlerUpdater");
-    handlerUpdaters.push_back(updater);
-}
-
-void Broker::update(ChannelId channel, FrameHandler::Chains& chains) {
-    for_each(handlerUpdaters.begin(), handlerUpdaters.end(),
-             boost::bind(&HandlerUpdater::update, _1,
-                         channel, boost::ref(chains)));
 }
 
 ManagementObject::shared_ptr Broker::GetManagementObject(void) const

@@ -21,7 +21,7 @@
 
 #include "ClassifierHandler.h"
 
-#include "qpid/framing/HandlerUpdater.h"
+//FIXME aconway 2008-01-29: #include "qpid/framing/HandlerUpdater.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/sys/Mutex.h"
 
@@ -45,10 +45,9 @@ namespace cluster {
 
 /**
  * Manage the clusters session map.
- * 
+ *                              // FIXME aconway 2008-01-29: HandlerUpdater
  */
-class SessionManager : public framing::HandlerUpdater, public framing::FrameHandler,
-                       private boost::noncopyable
+class SessionManager : public framing::FrameHandler, private boost::noncopyable
 {
   public:
     SessionManager(broker::Broker& broker, framing::FrameHandler& cluster);
