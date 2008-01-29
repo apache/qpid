@@ -25,7 +25,6 @@
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/broker/BrokerAdapter.h"
 #include "qpid/broker/Connection.h"
-#include "qpid/framing/ChannelAdapter.h"
 
 #include <boost/utility/in_place_factory.hpp>
 
@@ -37,7 +36,7 @@ using namespace sys;
 using namespace broker;
 
 /** Handler to send frames direct to local broker (bypass correlation etc.) */
-struct SessionManager::BrokerHandler : public FrameHandler, private ChannelAdapter
+struct SessionManager::BrokerHandler : public FrameHandler
 {
     Connection connection;
     SessionHandler sessionAdapter;
@@ -56,7 +55,7 @@ struct SessionManager::BrokerHandler : public FrameHandler, private ChannelAdapt
         connection(0, broker),
         sessionAdapter(connection, 0),
         session(sessionAdapter, 1),
-        adapter(session, static_cast<ChannelAdapter&>(*this)) {}
+        adapter(session, 0) {}  // FIXME aconway 2008-01-29: 
 
     void handle(AMQFrame& frame) {
         AMQMethodBody* body=dynamic_cast<AMQMethodBody*>(frame.getBody());
