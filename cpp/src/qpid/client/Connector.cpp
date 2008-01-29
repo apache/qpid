@@ -59,6 +59,7 @@ void Connector::connect(const std::string& host, int port){
     Mutex::ScopedLock l(closedLock);
     assert(closed);
     socket.connect(host, port);
+    identifier=socket.getPeerAddress();
     closed = false;
     poller = Poller::shared_ptr(new Poller);
     aio = new AsynchIO(socket,
@@ -191,7 +192,7 @@ void Connector::Writer::handle(framing::AMQFrame& frame) {
         lastEof = frames.size();
         aio->notifyPendingWrite();
     }
-    QPID_LOG(trace, "SENT [" << this << "]: " << frame);
+    QPID_LOG(trace, "SENT (" << aio->getSocket().getPeerAddress() << "): " << frame);
 }
 
 void Connector::Writer::writeOne(const Mutex::ScopedLock& l) {
@@ -234,7 +235,7 @@ void Connector::readbuff(AsynchIO& aio, AsynchIO::BufferBase* buff) {
 
     AMQFrame frame;
     while(frame.decode(in)){
-        QPID_LOG(trace, "RECV [" << this << "]: " << frame);
+        QPID_LOG(trace, "RECV (" << identifier << "): " << frame);
         input->received(frame);
     }
     // TODO: unreading needs to go away, and when we can cope
