@@ -145,13 +145,6 @@ std::string Cpg::cantMcastMsg(const Name& group) {
     return "Cannot mcast to CPG group "+group.str();
 }
 
-uint32_t Cpg::getLocalNoideId() const {
-    unsigned int nodeid;
-    check(cpg_local_get(handle, &nodeid), "Cannot get local node ID");
-    assert(nodeid <= std::numeric_limits<uint32_t>::max());
-    return nodeid;
-}
-
 ostream& operator<<(ostream& o, std::pair<cpg_address*,int> a) {
     ostream_iterator<Cpg::Id> i(o, " ");
     std::copy(a.first, a.first+a.second, i);
@@ -176,10 +169,6 @@ ostream& operator <<(ostream& out, const cpg_name& name) {
     return out << string(name.value, name.length);
 }
 
-
-Cpg::Id Cpg::Id::self(Cpg& cpg) {
-    return Id(cpg.getLocalNoideId(), getpid());
-}
 
 }} // namespace qpid::cluster
 

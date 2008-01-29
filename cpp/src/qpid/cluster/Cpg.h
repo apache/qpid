@@ -57,11 +57,9 @@ class Cpg : public Dispatchable {
     
     struct Id {
         uint64_t id;
-        Id() : id(0) {}
+        Id(uint64_t n=0) : id(n) {}
         Id(uint32_t nodeid, uint32_t pid) { id=(uint64_t(nodeid)<<32)+ pid; }
         Id(const cpg_address& addr) : id(Id(addr.nodeid, addr.pid)) {}
-
-        static Id self(Cpg& cpg);
 
         operator uint64_t() const { return id; }
         uint32_t nodeId() const { return id >> 32; }
@@ -132,8 +130,6 @@ class Cpg : public Dispatchable {
 
     cpg_handle_t getHandle() const { return handle; }
 
-    uint32_t getLocalNoideId() const;
-    
   private:
     class Handles;
     struct ClearHandleOnExit;
