@@ -17,7 +17,6 @@
  */
 #include "qpid/broker/Broker.h"
 #include "qpid/cluster/Cluster.h"
-#include "qpid/cluster/SessionManager.h"
 #include "qpid/Plugin.h"
 #include "qpid/Options.h"
 #include "qpid/shared_ptr.h"
@@ -43,7 +42,6 @@ struct ClusterPlugin : public Plugin {
 
     ClusterOptions options;
     boost::optional<Cluster> cluster;
-    boost::optional<SessionManager> sessions;
 
     Options* getOptions() { return &options; }
 
