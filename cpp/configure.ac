@@ -138,10 +138,10 @@ AC_SUBST(DOWNLOAD_URL)
 AC_CHECK_HEADERS([boost/shared_ptr.hpp uuid/uuid.h],,
   AC_MSG_ERROR([Missing required header files.]))
 
-# Check for cluster requirements. Need openais 0.80.3 or higher.x1
+# Check for cluster requirements. 
 save_ldflags=$LDFLAGS  
 LDFLAGS="$LDFLAGS -L/usr/lib/openais -L/usr/lib64/openais"
-AC_CHECK_LIB([cpg],[cpg_local_get],[cpg_lib=yes],[cpg_lib=no])
+AC_CHECK_LIB([cpg],[cpg_initialize],[cpg_lib=yes],[cpg_lib=no])
 AC_CHECK_HEADER([openais/cpg.h],[cpg_h=yes])
 test x$cpg_lib = xyes -a x$cpg_h = xyes && enable_CLUSTER=yes 
 
