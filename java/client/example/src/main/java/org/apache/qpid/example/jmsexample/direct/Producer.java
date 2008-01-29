@@ -34,12 +34,6 @@ import javax.jms.TextMessage;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession_0_10;
-import org.apache.qpidity.nclient.Client;
-import org.apache.qpidity.transport.Option;
-
 /**
  * Message producer example, sends message to a queue.
  */
@@ -81,8 +75,7 @@ public class Producer
             Context ctx = new InitialContext(properties);
 
             // look up destination
-            //Destination destination = (Destination)ctx.lookup("directQueue");
-            Destination destination = new AMQQueue("amq.fancy","myQeueu");
+            Destination destination = (Destination)ctx.lookup("directQueue");
 
             // Lookup the connection factory
             ConnectionFactory conFac = (ConnectionFactory)ctx.lookup("qpidConnectionfactory");
@@ -108,17 +101,6 @@ public class Producer
             // Create a Message producer
             System.out.println(CLASS + ": Creating a Message Producer");
             MessageProducer messageProducer = session.createProducer(destination);
-
-            try{
-                org.apache.qpidity.nclient.Connection con = Client.createConnection();
-                con.connect("qpid:password=pass;username=name@tcp:localhost:5672");
-                org.apache.qpidity.nclient.Session ses = con.createSession(1000000);
-                ses.exchangeDelete("amq.direct", Option.NO_OPTION);
-            }
-            catch(Exception e)
-            {
-                e.printStackTrace();
-            }
 
             // Create a Message
             TextMessage message;
