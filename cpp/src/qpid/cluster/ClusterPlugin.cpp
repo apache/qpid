@@ -55,7 +55,7 @@ struct ClusterPlugin : public Plugin {
         if (broker && !options.clusterName.empty()) {
             assert(!cluster); // A process can only belong to one cluster.
             cluster = boost::in_place(options.clusterName, broker->getUrl(), boost::ref(*broker));
-            broker->add(make_shared_ptr(&cluster->getHandlerUpdater(), nullDeleter));
+            // broker->add(make_shared_ptr(&cluster->getHandlerUpdater(), nullDeleter));
         }
     }
 };

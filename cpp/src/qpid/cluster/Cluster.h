@@ -64,7 +64,8 @@ class Cluster : public framing::FrameHandler,
 
     virtual ~Cluster();
 
-    framing::HandlerUpdater& getHandlerUpdater() { return sessions; }
+    // FIXME aconway 2008-01-29: 
+    //framing::HandlerUpdater& getHandlerUpdater() { return sessions; }
     
     /** Get the current cluster membership. */
     MemberList getMembers() const;
