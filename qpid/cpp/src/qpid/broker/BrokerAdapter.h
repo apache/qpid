@@ -31,7 +31,6 @@ namespace broker {
 class Channel;
 class Connection;
 class Broker;
-class ChannelHandler;
 class ConnectionHandler;
 class BasicHandler;
 class ExchangeHandler;
@@ -86,7 +85,6 @@ class BrokerAdapter : public HandlerImpl, public framing::AMQP_ServerOperations
     ExecutionHandler* getExecutionHandler() { BADHANDLER(); }
     ConnectionHandler* getConnectionHandler() { BADHANDLER(); }
     SessionHandler* getSessionHandler() { BADHANDLER(); }
-    ChannelHandler* getChannelHandler() { BADHANDLER(); }
 #undef BADHANDLER
 
   private:
