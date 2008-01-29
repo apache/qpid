@@ -19,9 +19,10 @@
  *
  */
 
-#include "SessionManager.h"
 #include "Cpg.h"
 
+#include "qpid/framing/FrameHandler.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
@@ -119,7 +120,6 @@ class Cluster : public framing::FrameHandler,
     MemberMap members;
     sys::Thread dispatcher;
     boost::function<void()> callback;
-    SessionManager sessions;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);
