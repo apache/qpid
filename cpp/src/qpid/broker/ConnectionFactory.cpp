@@ -38,7 +38,7 @@ qpid::sys::ConnectionInputHandler*
 ConnectionFactory::create(qpid::sys::ConnectionOutputHandler* out,
                           const qpid::sys::Socket& s)
 {
-    return new Connection(out, broker, s);
+    return new Connection(out, broker, s.getPeerAddress());
 }
 
 }} // namespace qpid::broker
