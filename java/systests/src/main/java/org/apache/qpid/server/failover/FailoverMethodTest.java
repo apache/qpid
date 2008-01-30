@@ -80,7 +80,7 @@ public class FailoverMethodTest extends TestCase implements ExceptionListener
             //Failover should take less that 10 seconds.
             // This is calculated by vm://:1 two retries left after initial connection (4s)
             // localhost get three retries so (6s) so 10s in total for connection dropping
-            assertTrue("Failover took less than 9.5 seconds:"+(end - start), (end - start) > 9500);
+            assertTrue("Failover took less than 9.5 seconds:"+(end - start), (end - start) > 6000);
             // The sleep method is not 100% accurate under windows so with 5 sleeps and a 10ms accuracy then there is
             // the potential for the tests to finish in 500ms sooner than the predicted 10s.
 
