@@ -52,7 +52,7 @@ class Connection : public sys::ConnectionInputHandler,
                    public management::Manageable
 {
   public:
-    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const sys::Socket& s);
+    Connection(sys::ConnectionOutputHandler* out, Broker& broker, const std::string& mgmtId);
     ~Connection ();
 
     /** Get the SessionHandler for channel. Create if it does not already exist */
