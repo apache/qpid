@@ -181,6 +181,16 @@ Manageable::status_t Connection::ManagementMethod (uint32_t methodId,
     return status;
 }
 
+void Connection::setUserId(const string& uid)
+{
+    userId = uid;
+    QPID_LOG (debug, "UserId is " << userId);
+}
+
+const string& Connection::getUserId() const
+{
+    return userId;
+}
 
 }}
 
