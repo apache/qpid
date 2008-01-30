@@ -95,6 +95,9 @@ class Connection : public sys::ConnectionInputHandler,
     management::Manageable::status_t
         ManagementMethod (uint32_t methodId, management::Args& args);
 
+    void setUserId(const string& uid);
+    const string& getUserId() const;
+
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
     typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
@@ -109,6 +112,7 @@ class Connection : public sys::ConnectionInputHandler,
     ConnectionHandler adapter;
     management::Client::shared_ptr mgmtObject;
     bool mgmtClosing;
+    string userId;
 };
 
 }}

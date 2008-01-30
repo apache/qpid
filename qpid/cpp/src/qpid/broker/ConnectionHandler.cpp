@@ -29,10 +29,17 @@ using namespace qpid;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
+
+namespace 
+{
+const std::string PLAIN = "PLAIN";
+const std::string en_US = "en_US";
+}
+
 void ConnectionHandler::init(const framing::ProtocolInitiation& header) {
     FieldTable properties;
-    string mechanisms("PLAIN");
-    string locales("en_US");
+    string mechanisms(PLAIN);
+    string locales(en_US);
     handler->client.start(header.getMajor(), header.getMinor(), properties, mechanisms, locales);
 }
 
@@ -59,9 +66,20 @@ ConnectionHandler::ConnectionHandler(Connection& connection)  : handler(new Hand
 ConnectionHandler::Handler:: Handler(Connection& c) : client(c.getOutput()), connection(c) {}
 
 void ConnectionHandler::Handler::startOk(const FieldTable& /*clientProperties*/,
-    const string& /*mechanism*/, 
-    const string& /*response*/, const string& /*locale*/)
+    const string& mechanism, 
+    const string& response, const string& /*locale*/)
 {
+    //TODO: handle SASL mechanisms more cleverly
+    if (mechanism == PLAIN) {
+        if (response.size() > 0 && response[0] == (char) 0) {
+            string temp = response.substr(1);
+            string::size_type i = temp.find((char)0);
+            string uid = temp.substr(0, i);
+            string pwd = temp.substr(i + 1);
+            //TODO: authentication
+            connection.setUserId(uid);
+        }
+    }
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), connection.getHeartbeat());
 }
         
