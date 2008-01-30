@@ -116,7 +116,7 @@ public class BrokerDetailsImpl implements BrokerDetails
         {
             if (getProtocol().equals(BrokerDetails.PROTOCOL_TCP))
             {
-                _port = 1234;
+                _port = 5672;
             }
             else if (getProtocol().equals(BrokerDetails.PROTOCOL_TLS))
             {
