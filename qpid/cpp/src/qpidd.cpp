@@ -155,7 +155,7 @@ void tryShlib(const char* libname, bool noThrow) {
 
 void loadModuleDir (string dirname, bool isDefault)
 {
-    fs::path dirPath (dirname);
+    fs::path dirPath (dirname, fs::native);
 
     if (!fs::exists (dirPath))
     {
