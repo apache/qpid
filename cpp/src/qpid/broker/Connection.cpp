@@ -47,7 +47,7 @@ using qpid::management::Args;
 namespace qpid {
 namespace broker {
 
-    Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const Socket& s) :
+Connection::Connection(ConnectionOutputHandler* out_, Broker& broker_, const std::string& mgmtId) :
     broker(broker_),
     outputTasks(*out_),
     out(out_),
@@ -67,7 +67,7 @@ namespace broker {
         if (agent.get () != 0)
         {
             mgmtObject = management::Client::shared_ptr
-                (new management::Client (this, parent, s.getPeerAddress ()));
+                (new management::Client (this, parent, mgmtId));
             agent->addObject (mgmtObject);
         }
     }
