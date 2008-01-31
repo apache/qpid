@@ -271,8 +271,7 @@ public class TransportConnection
             }
 
             AMQVMBrokerCreationException amqbce =
-                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", null);
-            amqbce.initCause(e);
+                    new AMQVMBrokerCreationException(null, port, because + " Stopped InVM Qpid.AMQP creation", e);
             throw amqbce;
         }
 
