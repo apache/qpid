@@ -59,6 +59,7 @@ class Connector : public framing::OutputHandler,
         size_t lastEof; // Position after last EOF in frames
         framing::Buffer encode;
         size_t framesEncoded;
+        std::string identifier;
         
         void writeOne(const sys::Mutex::ScopedLock&);
         void newBuffer(const sys::Mutex::ScopedLock&);
