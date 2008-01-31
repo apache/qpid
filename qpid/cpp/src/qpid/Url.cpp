@@ -16,15 +16,54 @@
  *
  */
 
-#include "Url.h"
+#include "qpid/Url.h"
+#include "qpid/Exception.h"
+#include "qpid/Msg.h"
+
 #include <sstream>
 #include <boost/spirit.hpp>
 #include <boost/spirit/actor.hpp>
+
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <errno.h>
 
 using namespace boost::spirit;
 using namespace std;
 
 namespace qpid {
+
+Url Url::getHostnameUrl(uint16_t port) {
+    char name[HOST_NAME_MAX];
+    if (::gethostname(name, sizeof(name)) != 0)
+        throw Exception(QPID_MSG("Cannot get host name: " << strError(errno)));
+    return Url(TcpAddress(name, port));
+}
+
+static const string LOCALHOST("127.0.0.1");
+
+Url Url::getIpAddressesUrl(uint16_t port) {
+    Url url;
+    int s = socket (PF_INET, SOCK_STREAM, 0);
+    for (int i=1;;i++) {
+        struct ifreq ifr;
+        ifr.ifr_ifindex = i;
+        if (::ioctl (s, SIOCGIFNAME, &ifr) < 0)
+            break;
+        /* now ifr.ifr_name is set */
+        if (::ioctl (s, SIOCGIFADDR, &ifr) < 0)
+            continue;
+        struct sockaddr_in *sin = (struct sockaddr_in *) &ifr.ifr_addr;
+        string addr(inet_ntoa(sin->sin_addr));
+        if (addr != LOCALHOST)
+            url.push_back(TcpAddress(addr, port));
+    }
+    close (s);
+    return url;
+}
 
 string Url::str() const {
     ostringstream os;

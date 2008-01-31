@@ -52,6 +52,14 @@ typedef boost::variant<TcpAddress> Address;
 
 /** An AMQP URL contains a list of addresses */
 struct Url : public std::vector<Address> {
+
+    /** Url with the hostname as returned by gethostname(2)  */
+    static Url getHostnameUrl(uint16_t port);
+
+    /** Url with local IP address(es), may be more than one address
+     * on a multi-homed host. */
+    static Url getIpAddressesUrl(uint16_t port);
+
     struct InvalidUrl : public Exception {
         InvalidUrl(const std::string& s) : Exception(s) {}
     };
