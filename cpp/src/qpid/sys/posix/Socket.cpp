@@ -30,6 +30,7 @@
 #include <sys/errno.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#include <cstdlib>
 
 #include <boost/format.hpp>
 
@@ -45,6 +46,7 @@ public:
     int fd;
 
     std::string getName(bool local, bool includeService = false) const;   
+    std::string getService(bool local) const;   
 };
 
 std::string SocketPrivate::getName(bool local, bool includeService) const
@@ -75,6 +77,28 @@ std::string SocketPrivate::getName(bool local, bool includeService) const
             throw QPID_POSIX_ERROR(rc);
         return dispName;
     }
+}
+
+std::string SocketPrivate::getService(bool local) const
+{
+    ::sockaddr_storage name; // big enough for any socket address    
+    ::socklen_t namelen = sizeof(name);
+    
+    int result = -1;
+    if (local) {
+        result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
+    } else {
+        result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
+    }
+
+    QPID_POSIX_CHECK(result);
+
+    char servName[NI_MAXSERV];
+    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, 0, 0, 
+                                 servName, sizeof(servName), 
+                                 NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+        throw QPID_POSIX_ERROR(rc);
+    return servName;
 }
 
 Socket::Socket() :
@@ -229,6 +253,21 @@ std::string Socket::getPeername() const
 std::string Socket::getPeerAddress() const
 {
     return impl->getName(false, true);
+}
+
+std::string Socket::getLocalAddress() const
+{
+    return impl->getName(true, true);
+}
+
+uint Socket::getLocalPort() const
+{
+    return atoi(impl->getService(true).c_str());
+}
+
+uint Socket::getRemotePort() const
+{
+    return atoi(impl->getService(true).c_str());
 }
 
 int Socket::toFd() const {

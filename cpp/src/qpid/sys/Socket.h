@@ -87,7 +87,16 @@ public:
      * socket
      */
     std::string getPeerAddress() const;
+    /** 
+     * Returns an address (host and port) for the local end of the
+     * socket
+     */
+    std::string getLocalAddress() const;
 
+    uint getLocalPort() const;
+    uint getRemotePort() const;
+
+    
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
      */
