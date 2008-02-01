@@ -1,0 +1,209 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ - 
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ - 
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+<project name="module">
+
+  <import file="common.xml"/>
+
+  <map property="module" value="${basedir}" split="${path.separator}">
+    <globmapper from="${project.root}${file.separator}*" to="*"/>
+  </map>
+
+  <property file="${project.root}/build.deps"/>
+
+  <property name="module.build"        location="${build}/${module}"/>
+  <property name="module.classes"      location="${module.build}/classes"/>
+  <property name="module.precompiled"  location="${module.build}/src"/>
+  <property name="module.api"          location="${module.build}/api"/>
+  <property name="module.test.classes" location="${module.build}/test/classes"/>
+  <property name="module.src"          location="src/main/java"/>
+  <property name="module.test.src"     location="src/test/java"/>
+  <property name="module.bin"          location="bin"/>
+  <property name="module.etc"          location="etc"/>
+
+  <map property="module.name" value="${module}">
+    <filtermapper>
+      <replacestring from="${file.separator}" to="-"/>
+    </filtermapper>
+  </map>
+
+  <indirect name="module.libs"         variable="${module.name}.libs"/>
+  <indirect name="module.test.libs"    variable="${module.name}.test.libs"/>
+
+  <path id="module.libs">
+    <filelist dir="${project.root}" files="${module.libs}"/>
+  </path>
+
+  <path id="module.test.libs">
+    <filelist dir="${project.root}" files="${module.test.libs}"/>
+  </path>
+
+  <path id="module.src.path">
+    <pathelement location="${module.src}"/>
+    <pathelement location="${module.precompiled}"/>
+  </path>
+
+  <property name="module.jar" location="${build.lib}/${project.name}-${module.name}-${project.version}.jar"/>
+  <property name="module.test.jar" location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
+
+  <!-- module.depends and module.test.depends are supplied by the importing file -->
+  <property name="module.depends"      value=""/>
+  <property name="module.test.depends" value=""/>
+
+  <map property="module.depends.path" value="${module.depends}" join="${path.separator}">
+    <globmapper from="*" to="${build}/*/classes"/>
+  </map>
+
+  <map property="module.test.depends.path" value="${module.test.depends}" join="${path.separator}">
+    <globmapper from="*" to="${build}/*/classes"/>
+  </map>
+
+  <path id="module.class.path">
+    <pathelement location="${module.classes}"/>
+    <pathelement path="${module.depends.path}"/>
+    <path refid="module.libs"/>
+  </path>
+
+  <path id="module.test.path">
+    <pathelement path="${module.test.classes}"/>
+    <path refid="module.class.path"/>
+    <pathelement path="${module.test.depends.path}"/>
+    <path refid="module.test.libs"/>
+  </path>
+
+  <target name="debug">
+    <echo-prop name="basedir"/>
+    <echo-prop name="project.root"/>
+    <echo-prop name="module"/>
+    <echo-prop name="module.libs"/>
+    <echo-prop name="module.test.libs"/>
+    <echo-prop name="module.name"/>
+    <echo-prop name="module.jar"/>
+    <echo-prop name="module.depends"/>
+    <echo-prop name="module.depends.path"/>
+    <echo-prop name="module.test.depends"/>
+    <echo-prop name="module.test.depends.path"/>
+    <echo-path refid="module.src.path"/>
+    <echo-path refid="module.class.path"/>
+    <echo-path refid="module.test.path"/>
+  </target>
+
+  <target name="prepare">
+    <mkdir dir="${build.bin}"/>
+    <mkdir dir="${build.etc}"/>
+    <mkdir dir="${build.lib}"/>
+    <mkdir dir="${build.results}"/>
+    <mkdir dir="${module.classes}"/>
+    <mkdir dir="${module.precompiled}"/>
+    <mkdir dir="${module.api}"/>
+    <mkdir dir="${module.test.classes}"/>
+  </target>
+
+  <target name="precompile"/>
+
+  <target name="compile" depends="prepare,precompile" description="compile sources">
+    <javac source="${java.source}" target="${java.target}"
+           destdir="${module.classes}" debug="on">
+      <src refid="module.src.path"/>
+      <classpath refid="module.class.path"/>
+    </javac>
+
+    <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+    <copy todir="${module.classes}" verbose="true">
+      <fileset dir="${module.src}">
+        <exclude name="**/*.java"/>
+        <exclude name="**/package.html"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <available property="module.test.src.exists" file="${module.test.src}"/>
+
+  <target name="precompile-tests" if="module.test.src.exists"/>
+
+  <target name="compile-tests" depends="compile,precompile-tests" if="module.test.src.exists"
+          description="compilte unit tests">
+    <javac target="${java.target}" source="${java.source}"
+           destdir="${module.test.classes}" debug="on"
+           srcdir="${module.test.src}">
+      <classpath refid="module.test.path"/>
+    </javac>
+
+    <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+    <copy todir="${module.test.classes}" verbose="true">
+      <fileset dir="${module.test.src}">
+        <exclude name="**/*.java"/>
+        <exclude name="**/package.html"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="test" depends="compile-tests" if="module.test.src.exists"
+          description="execute unit tests">
+    <junit fork="yes" showoutput="true" haltonfailure="no" timeout="90000">
+      <formatter type="plain"/>
+      <formatter type="xml"/>
+      <classpath refid="module.test.path"/>
+      <batchtest fork="yes" todir="${build.results}">
+        <fileset dir="${module.test.src}">
+          <include name="**/*Test.java"/>
+        </fileset>
+      </batchtest>
+    </junit>
+  </target>
+
+  <target name="build" depends="compile" description="compile and copy resources into build tree">
+    <copy todir="${build.bin}" failonerror="false">
+      <fileset dir="${module.bin}"/>
+    </copy>
+    <chmod dir="${build.bin}" perm="ugo+rx" includes="**/*"/>
+    <copy todir="${build.etc}" failonerror="false">
+      <fileset dir="${module.etc}"/>
+    </copy>
+  </target>
+
+  <target name="jar" depends="compile" description="create jar">
+    <jar destfile="${module.jar}" basedir="${module.classes}"/>
+  </target>
+
+  <target name="jar-tests" depends="compile-tests" description="create unit test jar">
+    <jar destfile="${module.test.jar}" basedir="${module.test.classes}"/>
+  </target>
+
+  <target name="libs" description="copy dependencies into build tree">
+    <copy todir="${build.lib}" failonerror="false" flatten="true">
+      <path refid="module.libs"/>
+    </copy>
+  </target>
+
+  <uptodate property="doc.done" targetfile="${module.api}/index.html">
+    <srcfiles dir="${module.src}" includes="**/*.java"/>
+  </uptodate>
+
+  <target name="doc" depends="prepare" unless="doc.done" description="generate api-doc">
+    <javadoc destdir="${module.api}" sourcepathref="module.src.path"
+             classpathref="module.class.path" packagenames="*"/>
+  </target>
+
+  <target name="clean" description="remove build artifacts">
+    <delete dir="${module.build}"/>
+  </target>
+
+</project>
