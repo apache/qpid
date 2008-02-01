@@ -36,7 +36,6 @@
 #include "qpid/management/Broker.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
-#include "qpid/Url.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -47,6 +46,8 @@
 
 namespace qpid { 
 namespace broker {
+
+static const  uint16_t DEFAULT_PORT=5672;
 
 /**
  * A broker instance. 
@@ -72,7 +73,7 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
 
     Broker(const Options& configuration);
     static shared_ptr<Broker> create(const Options& configuration);
-    static shared_ptr<Broker> create(int16_t port = TcpAddress::DEFAULT_PORT);
+    static shared_ptr<Broker> create(int16_t port = DEFAULT_PORT);
 
     /**
      * Return listening port. If called before bind this is
@@ -82,9 +83,6 @@ class Broker : public sys::Runnable, public Plugin::Target, public management::M
      */
     virtual uint16_t getPort() const;
 
-    /** Return the broker's URL. */
-    virtual std::string getUrl() const;
-    
     /**
      * Run the broker. Implements Runnable::run() so the broker
      * can be run in a separate thread.

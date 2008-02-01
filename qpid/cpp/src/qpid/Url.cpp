@@ -36,10 +36,16 @@ using namespace std;
 
 namespace qpid {
 
-Url Url::getHostnameUrl(uint16_t port) {
+std::ostream& operator<<(std::ostream& os, const TcpAddress& a) {
+    return os << "tcp:" << a.host << ":" << a.port;
+}
+
+std::istream& operator>>(std::istream&, const TcpAddress&);
+
+Url Url::getHostNameUrl(uint16_t port) {
     char name[HOST_NAME_MAX];
     if (::gethostname(name, sizeof(name)) != 0)
-        throw Exception(QPID_MSG("Cannot get host name: " << strError(errno)));
+        throw InvalidUrl(QPID_MSG("Cannot get host name: " << strError(errno)));
     return Url(TcpAddress(name, port));
 }
 
@@ -66,9 +72,12 @@ Url Url::getIpAddressesUrl(uint16_t port) {
 }
 
 string Url::str() const {
-    ostringstream os;
-    os << *this;
-    return os.str();
+    if (cache.empty() && !this->empty()) {
+        ostringstream os;
+        os << *this;
+        cache = os.str();
+    }
+    return cache;
 }
 
 ostream& operator<<(ostream& os, const Url& url) {
@@ -140,13 +149,22 @@ struct UrlGrammar : public grammar<UrlGrammar>
 };
 
 void Url::parse(const char* url) {
+    cache.clear();
     if (!boost::spirit::parse(url, UrlGrammar(*this)).full)
         throw InvalidUrl(string("Invalid AMQP url: ")+url);
 }
 
 void Url::parseNoThrow(const char* url) {
+    cache.clear();
     if (!boost::spirit::parse(url, UrlGrammar(*this)).full)
         clear();
+}
+
+std::istream& operator>>(std::istream& is, Url& url) {
+    std::string s;
+    is >> s;
+    url.parse(s);
+    return is;
 }
 
 } // namespace qpid
