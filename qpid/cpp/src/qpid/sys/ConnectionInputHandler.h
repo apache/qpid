@@ -36,6 +36,7 @@ namespace sys {
         public TimeoutHandler, public OutputTask
     {
     public:
+        virtual qpid::framing::ProtocolInitiation getInitiation() = 0;
         virtual void closed() = 0;
     };
 

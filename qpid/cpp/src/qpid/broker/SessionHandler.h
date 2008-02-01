@@ -23,6 +23,7 @@
  */
 
 #include "qpid/framing/FrameHandler.h"
+#include "qpid/framing/AMQP_ClientOperations.h"
 #include "qpid/framing/AMQP_ServerOperations.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
@@ -43,6 +44,7 @@ class SessionState;
  */
 class SessionHandler : public framing::FrameHandler::InOutHandler,
                        public framing::AMQP_ServerOperations::SessionHandler,
+                       public framing::AMQP_ClientOperations::SessionHandler,
                        private boost::noncopyable
 {
   public:
@@ -81,11 +83,16 @@ class SessionHandler : public framing::FrameHandler::InOutHandler,
              const framing::SequenceNumberSet& seenFrameSet);
     void highWaterMark(uint32_t lastSentMark);
     void solicitAck();
+    
+    //extra methods required for assuming client role
+    void attached(const framing::Uuid& sessionId, uint32_t detachedLifetime);
+    void detached();
 
 
     void assertAttached(const char* method) const;
     void assertActive(const char* method) const;
     void assertClosed(const char* method) const;
+
 
     Connection& connection;
     framing::ChannelHandler channel;
