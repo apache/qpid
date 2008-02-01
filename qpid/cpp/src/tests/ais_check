@@ -2,10 +2,12 @@
 # Check for requirements, run AIS tests if found.
 #
 
-test `id -ng` = "ais" || BADGROUP=yes
-{ ps -u root | grep aisexec >/dev/null; } || NOAISEXEC=yes
+id -nG | grep '\<ais\>' || \
+    NOGROUP="You are not a member of the ais group."
+ps -u root | grep aisexec >/dev/null || \
+    NOAISEXEC="The aisexec daemon is not running as root"
 
-if test -n "$BADGROUP" -o -n "$NOAISEXEC"; then
+if test -n "$NOGROUP" -o -n "$NOAISEXEC"; then
     cat <<EOF
 
     =========== WARNING: NOT RUNNING AIS TESTS ==============
@@ -13,18 +15,8 @@ if test -n "$BADGROUP" -o -n "$NOAISEXEC"; then
     Tests that depend on the openais library (used for clustering)
     will not be run because:
 
-EOF
-    test -n "$BADGROUP" && cat <<EOF
-    You do not appear to have you group ID set to "ais". Make ais your
-    primary group, or run "newgrp ais" before running the tests.
-
-EOF
-    test -n "$NOAISEXEC" && cat <<EOF    
-    The aisexec daemon is not running. Make sure /etc/ais/openais.conf
-    is a valid configuration and aisexec is run by root.
-EOF
-
-    cat <<EOF
+    $NOGROUP
+    $NOAISEXEC
 
     ==========================================================
     
@@ -32,8 +24,4 @@ EOF
     exit 0;			# A warning, not a failure.
 fi
 
-FAILED=0
-for test in `cat ais_tests`; do
-    ./$test || FAILED=`expr $FAILED + 1`
-done
-exit $FAILED
+echo ./ais_run | newgrp ais

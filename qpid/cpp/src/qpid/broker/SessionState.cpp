@@ -36,23 +36,17 @@ using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
 
-void SessionState::handleIn(AMQFrame& f) { semanticHandler->handle(f); }
-
-void SessionState::handleOut(AMQFrame& f) {
-    assert(handler);
-    handler->out.handle(f);
-}
-
 SessionState::SessionState(
-    SessionManager& f, SessionHandler& h, uint32_t timeout_, uint32_t ack) 
+    SessionManager* f, SessionHandler* h, uint32_t timeout_, uint32_t ack) 
     : framing::SessionState(ack, timeout_ > 0),
-      factory(f), handler(&h), id(true), timeout(timeout_),
-      broker(h.getConnection().broker),
-      version(h.getConnection().getVersion()),
+      factory(f), handler(h), id(true), timeout(timeout_),
+      broker(h->getConnection().broker),
+      version(h->getConnection().getVersion()),
       semanticHandler(new SemanticHandler(*this))
 {
-    // TODO aconway 2007-09-20: SessionManager may add plugin
-    // handlers to the chain.
+    in.next = semanticHandler.get();
+    out.next = &handler->out;
+
     getConnection().outputTasks.addOutputTask(&semanticHandler->getSemanticState());
 
     Manageable* parent = broker.GetVhostObject ();
@@ -66,8 +60,8 @@ SessionState::SessionState(
             mgmtObject = management::Session::shared_ptr
                 (new management::Session (this, parent, id.str ()));
             mgmtObject->set_attached (1);
-            mgmtObject->set_clientRef (h.getConnection().GetManagementObject()->getObjectId());
-            mgmtObject->set_channelId (h.getChannel());
+            mgmtObject->set_clientRef (h->getConnection().GetManagementObject()->getObjectId());
+            mgmtObject->set_channelId (h->getChannel());
             mgmtObject->set_detachedLifespan (getTimeout());
             agent->addObject (mgmtObject);
         }
@@ -76,12 +70,10 @@ SessionState::SessionState(
 
 SessionState::~SessionState() {
     // Remove ID from active session list.
-    factory.erase(getId());
-
+    if (factory)
+        factory->erase(getId());
     if (mgmtObject.get () != 0)
-    {
         mgmtObject->resourceDestroy ();
-    }
 }
 
 SessionHandler* SessionState::getHandler() {
@@ -101,7 +93,7 @@ Connection& SessionState::getConnection() {
 void SessionState::detach() {
     getConnection().outputTasks.removeOutputTask(&semanticHandler->getSemanticState());
     Mutex::ScopedLock l(lock);
-    handler = 0;
+    handler = 0; out.next = 0; 
     if (mgmtObject.get() != 0)
     {
         mgmtObject->set_attached  (0);
@@ -112,6 +104,7 @@ void SessionState::attach(SessionHandler& h) {
     {
         Mutex::ScopedLock l(lock);
         handler = &h;
+        out.next = &handler->out;
         if (mgmtObject.get() != 0)
         {
             mgmtObject->set_attached (1);

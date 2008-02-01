@@ -16,21 +16,25 @@
  *
  */
 
-#include "qpid/client/Connection.h"
-#include "qpid/shared_ptr.h"
-
 #include "unit_test.h"
+#include "BrokerFixture.h"
+#include "qpid/client/Session.h"
 
 #include <fstream>
 #include <vector>
 #include <functional>
 
-
 QPID_AUTO_TEST_SUITE(cluster_clientTestSuite)
 
-using namespace std;
 using namespace qpid;
 using namespace qpid::client;
+using namespace qpid::framing;
+using namespace qpid::client::arg;
+using framing::TransferContent;
+using std::vector;
+using std::string;
+using std::ifstream;
+using std::ws;
 
 struct ClusterConnections : public vector<shared_ptr<Connection> > {
     ClusterConnections() {
@@ -58,25 +62,23 @@ BOOST_AUTO_TEST_CASE(testWiringReplication) {
     ClusterConnections cluster;
     BOOST_REQUIRE(cluster.size() > 1);
 
-    Exchange fooEx("FooEx", Exchange::TOPIC_EXCHANGE);
-    Queue fooQ("FooQ");
-    
-    Channel broker0;
-    cluster[0]->openChannel(broker0);
-    broker0.declareExchange(fooEx);
-    broker0.declareQueue(fooQ);
-    broker0.bind(fooEx, fooQ, "FooKey");
+    Session broker0 = cluster[0]->newSession();
+    broker0.exchangeDeclare(exchange="ex");
+    broker0.queueDeclare(queue="q");
+    broker0.queueBind(exchange="ex", queue="q", routingKey="key");
     broker0.close();
     
     for (size_t i = 1; i < cluster.size(); ++i) {
-        Channel ch;
-        cluster[i]->openChannel(ch);
-        ch.publish(Message("hello"), fooEx, "FooKey");
-        Message m;
-        BOOST_REQUIRE(ch.get(m, fooQ));
-        BOOST_REQUIRE_EQUAL(m.getData(), "hello");
-        ch.close();
-    }
+        Session s = cluster[i]->newSession();
+        s.messageTransfer(content=TransferContent("data", "key", "ex"));
+        s.messageSubscribe(queue="q", destination="q");
+        s.messageFlow(destination="q", unit=0, value=1);//messages
+        FrameSet::shared_ptr msg = s.get();
+        BOOST_CHECK(msg->isA<MessageTransferBody>());
+        BOOST_CHECK_EQUAL(string("data"), msg->getContent());
+        s.getExecution().completed(msg->getId(), true, true);
+        cluster[i]->close();
+    }    
 }
 
 QPID_AUTO_TEST_SUITE_END()

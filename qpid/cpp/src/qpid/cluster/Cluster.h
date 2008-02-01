@@ -21,7 +21,6 @@
 
 #include "Cpg.h"
 
-#include "qpid/framing/FrameHandler.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Runnable.h"
@@ -39,15 +38,10 @@
 namespace qpid { namespace cluster {
 
 /**
- * Connection to the cluster. Maintains cluster membership
- * data.
- *
- * As FrameHandler, handles frames by sending them to the
- * cluster. Frames received from the cluster are sent to the next
- * FrameHandler in the chain.
+ * Connection to the cluster.
+ * Keeps cluster membership data.
  */
-class Cluster : public framing::FrameHandler,
-                private sys::Runnable, private Cpg::Handler
+class Cluster : private sys::Runnable, private Cpg::Handler
 {
   public:
     /** Details of a cluster member */
@@ -68,7 +62,7 @@ class Cluster : public framing::FrameHandler,
     virtual ~Cluster();
 
     // FIXME aconway 2008-01-29: 
-    //framing::HandlerUpdater& getHandlerUpdater() { return sessions; }
+    intrusive_ptr<broker::SessionManager::Observer> getObserver() { return observer; }
     
     /** Get the current cluster membership. */
     MemberList getMembers() const;
@@ -87,7 +81,7 @@ class Cluster : public framing::FrameHandler,
               sys::Duration timeout=sys::TIME_INFINITE) const;
 
     /** Send frame to the cluster */
-    void handle(framing::AMQFrame&);
+    void send(framing::AMQFrame&, framing::FrameHandler*);
     
   private:
     typedef Cpg::Id Id;
@@ -122,6 +116,7 @@ class Cluster : public framing::FrameHandler,
     MemberMap members;
     sys::Thread dispatcher;
     boost::function<void()> callback;
+    intrusive_ptr<broker::SessionManager::Observer> observer;
 
   friend std::ostream& operator <<(std::ostream&, const Cluster&);
   friend std::ostream& operator <<(std::ostream&, const MemberMap::value_type&);

@@ -69,7 +69,7 @@ struct ClusterPlugin : public Plugin {
             cluster = boost::in_place(options.name,
                                       options.getUrl(broker->getPort()),
                                       boost::ref(*broker));
-            // FIXME aconway 2008-02-01: Add observer.
+            broker->getSessionManager().add(cluster->getObserver());	
         }
     }
 };

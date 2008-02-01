@@ -12,7 +12,7 @@ shift
 OPTS=$*
 CLUSTER=`whoami`		# Cluster name=user name, avoid clashes.
 for (( i=0; i<SIZE; ++i )); do
-    PORT=`../qpidd -dp0 --log-output=cluster$i.log --cluster $CLUSTER $OPTS` || exit 1
+    PORT=`../qpidd --load-module ../.libs/libqpidcluster.so -dp0 --log-output=cluster$i.log --cluster-name $CLUSTER $OPTS` || exit 1
     echo $PORT >> cluster.ports
 done
     
